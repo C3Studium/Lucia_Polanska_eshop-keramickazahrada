@@ -31,6 +31,43 @@
   text-transform: uppercase;
 }
 
+/* Z-A: hlavička „která zakázka" — miniatura + název + provedení/počet. Jen u
+   objednávky s víc zakázkami; s jednou by opakovala, co je v seznamu kusů. */
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / 0.12);
+}
+
+.thumb {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: rgb(var(--ink-05-rgb) / 0.06);
+}
+
+.itemCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.itemTitle {
+  margin: 0;
+  font: 400 clamp(1rem, 1.2vw, 1.12rem) / 1.3 "Sansation-Regular", sans-serif;
+}
+
+.itemMeta {
+  margin: 0;
+  opacity: 0.72;
+  font: 300 clamp(0.85rem, 1vw, 0.95rem) / 1.4 "Sansation-Light", sans-serif;
+}
+
 .rows {
   display: flex;
   flex-direction: column;

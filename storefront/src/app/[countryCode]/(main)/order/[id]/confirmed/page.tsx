@@ -5,6 +5,7 @@ import {
   getCommissionBalance,
   getCommissionCancellation,
   listCommissionNotes,
+  listCommissionNotesByCommission,
   reconcileOrderBalance,
 } from "@lib/data/made-to-order"
 import OrderCompletedTemplate from "@modules/order/templates/order-completed-template"
@@ -62,6 +63,11 @@ export default async function OrderConfirmedPage(props: Props) {
   const commissionCancellation = commissionBalance?.is_commission
     ? await getCommissionCancellation(params.id, selfServiceToken)
     : null
+  // Z-A: u víc zakázek vlákno konverzace per zakázka (jinak null → vlákno objednávky).
+  const commissionNotesById = await listCommissionNotesByCommission(
+    params.id,
+    commissionBalance
+  )
   // Reklamace a vrácení k objednávce (+ zda jde ještě odstoupit) — stejným
   // tokenem. `null` = nepovedlo se načíst → sekce se nevykreslí a tlačítka
   // zůstanou jako dřív (pravidla pohlídá stránka formuláře).
@@ -110,6 +116,7 @@ export default async function OrderConfirmedPage(props: Props) {
         commissionNotes={commissionNotes}
         commissionBalance={commissionBalance}
         commissionCancellation={commissionCancellation}
+        commissionNotesById={commissionNotesById}
         selfServiceToken={selfServiceToken}
         claims={claims}
       />

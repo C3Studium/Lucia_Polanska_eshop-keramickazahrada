@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useEffect, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 
@@ -8,10 +9,12 @@ import {
   submitCommissionCancellation,
 } from "@lib/data/commission-cancellation"
 import {
+  cancellationOf,
   cancelledCommissionText,
   commissionCancelCopy,
   commissionStatusLabel,
-  type CommissionBalance,
+  commissionTitle,
+  type Commission,
   type CommissionCancellation,
 } from "@lib/util/made-to-order"
 import { convertToLocale } from "@lib/util/money"
@@ -22,22 +25,30 @@ import s from "./style.module.scss"
 
 type Props = {
   orderId: string
-  /** `GET …/balance` — stav zakázky; `is_commission:false` / null → panel se nevykreslí. */
-  balance: CommissionBalance | null
+  /** JEDNA zakázka objednávky (`commissionsOf(balance)[i]`). */
+  commission: Commission
   /**
    * `GET …/cancellation` načtené serverem. `undefined` = stránka ho nenačítala
-   * → panel si ho dotáhne sám; `null` = načíst se nepovedlo → zrušení se nenabídne.
+   * → panel si ho dotáhne sám (podle `production_order_id`, nebo ho složí z
+   * `cancellation_preview`); `null` = načíst se nepovedlo → zrušení se nenabídne.
    */
   cancellation?: CommissionCancellation | null
   /** Podepsaný self-service token (host z e-mailu). Přihlášený ho nepotřebuje. */
   token?: string | null
+  /**
+   * Ukázat název výrobku, provedení, miniaturu a počet — u objednávky s víc
+   * zakázkami (Z-A), aby bylo jasné, které zakázky se panel týká. S jednou
+   * zakázkou panel vypadá jako dřív.
+   */
+  showItem?: boolean
   className?: string
 }
 
 /**
- * Panel zakázky na stránkách objednávky (audit § 0, Z3–Z5, Z11): stav podle
- * e-mailu „Zakázka je ve výrobě", smluvní záloha, PDF Potvrzení zakázky a
- * tlačítko „Zrušit zakázku".
+ * Panel JEDNÉ zakázky na stránkách objednávky (audit § 0, Z3–Z5, Z11; Z-A
+ * „zakázka = položka"): název výrobku, stav podle e-mailu „Zakázka je ve
+ * výrobě", smluvní záloha, lhůta, PDF Potvrzení zakázky a tlačítko „Zrušit
+ * zakázku" — ruší jen tuhle zakázku, ostatní položky objednávky běží dál.
  *
  * Zrušení je PŘED e-mailem o zahájení jednokrokové — vrací se vše (Z4), není
  * co rozmýšlet. PO něm dvoukrokové: první klik ukáže, že záloha se nevrací a
@@ -45,32 +56,37 @@ type Props = {
  * částky říká backend; storefront je jen opíše. `can_cancel:false` → tlačítko
  * není, místo něj backendův důvod.
  *
- * Doplatek (tlačítko „Doplatit") zůstává v `BalancePayPanel` hned pod tímhle.
+ * Doplatek (tlačítko „Doplatit") je v `BalancePayPanel` hned pod tímhle —
+ * taky per zakázka.
  */
 export default function CommissionPanel({
   orderId,
-  balance,
+  commission,
   cancellation: initialCancellation,
   token = null,
+  showItem = false,
   className,
 }: Props) {
   const router = useRouter()
-  const [facts, setFacts] = useState<CommissionBalance | null>(balance)
+  const [facts, setFacts] = useState<Commission>(commission)
+  /* Náhled zrušení přibalený k zakázce (`cancellation_preview`) ušetří dotaz;
+     bez něj se panel zeptá `/cancellation` sám. */
   const [cancellation, setCancellation] = useState<
     CommissionCancellation | null | undefined
-  >(initialCancellation)
+  >(initialCancellation ?? cancellationOf(commission))
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
 
-  const isCommission = Boolean(balance?.is_commission)
+  const productionOrderId = commission.production_order_id ?? null
 
   /* Stránka, která cancellation nenačetla (undefined), ho dostane odsud — ať
      panel funguje všude, kde je `balance`, bez úprav každé stránky. */
+  const needsFetch = cancellation === undefined
   useEffect(() => {
-    if (!isCommission || initialCancellation !== undefined) return
+    if (!needsFetch) return
     let cancelled = false
-    loadCommissionCancellation(orderId, token)
+    loadCommissionCancellation(orderId, token, productionOrderId)
       .then((result) => {
         if (!cancelled) setCancellation(result)
       })
@@ -80,9 +96,7 @@ export default function CommissionPanel({
     return () => {
       cancelled = true
     }
-  }, [isCommission, initialCancellation, orderId, token])
-
-  if (!isCommission || !facts) return null
+  }, [needsFetch, orderId, token, productionOrderId])
 
   const currency = facts.currency_code ?? cancellation?.currency_code ?? "czk"
   const money = (amount: number) =>
@@ -91,31 +105,31 @@ export default function CommissionPanel({
   const isCancelled =
     facts.stage === "cancelled" || Boolean(facts.cancellation_phase)
   const status = commissionStatusLabel(facts)
+  const title = commissionTitle(facts)
 
   const cancel = () => {
     if (pending) return
     setError(null)
     startTransition(async () => {
-      const outcome = await submitCommissionCancellation(orderId, { token })
+      const outcome = await submitCommissionCancellation(orderId, {
+        token,
+        productionOrderId,
+      })
       if (!outcome.success) {
         setError(outcome.message)
         return
       }
       /* Lokálně přepnout na „Zrušeno" hned — refresh stránky dotáhne zbytek
          (stav v hlavičce, doplatek zmizí). */
-      setFacts((current) =>
-        current
-          ? {
-              ...current,
-              stage: "cancelled",
-              cancellation_phase: outcome.result.phase,
-              cancelled_by: "customer",
-              cancellation_refund_amount: outcome.result.refund_amount,
-              pay_url: null,
-              outstanding: 0,
-            }
-          : current
-      )
+      setFacts((current) => ({
+        ...current,
+        stage: "cancelled",
+        cancellation_phase: outcome.result.phase,
+        cancelled_by: "customer",
+        cancellation_refund_amount: outcome.result.refund_amount,
+        pay_url: null,
+        outstanding: 0,
+      }))
       setConfirming(false)
       router.refresh()
     })
@@ -129,11 +143,41 @@ export default function CommissionPanel({
   return (
     <section
       className={className ? `${s.root} ${className}` : s.root}
-      aria-label="Zakázka"
+      aria-label={title ? `Zakázka ${title}` : "Zakázka"}
       data-testid="commission-panel"
+      data-production-order-id={productionOrderId ?? undefined}
       data-state={isCancelled ? "cancelled" : facts.production_start_notified_at ? "in_production" : "waiting"}
     >
       <p className={s.eyebrow}>Zakázková výroba</p>
+
+      {/* Z-A: která zakázka — název, provedení, miniatura, počet kusů. */}
+      {showItem && title && (
+        <header className={s.item} data-testid="commission-item">
+          {facts.thumbnail && (
+            <Image
+              className={s.thumb}
+              src={facts.thumbnail}
+              alt=""
+              width={56}
+              height={56}
+              unoptimized
+            />
+          )}
+          <div className={s.itemCopy}>
+            <h3 className={s.itemTitle}>{facts.title?.trim() || title}</h3>
+            {(facts.variant_title?.trim() || (facts.quantity ?? 0) > 1) && (
+              <p className={s.itemMeta}>
+                {[
+                  facts.variant_title?.trim() || null,
+                  (facts.quantity ?? 0) > 1 ? `${facts.quantity} ks` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            )}
+          </div>
+        </header>
+      )}
 
       <dl className={s.rows}>
         <div className={s.row}>

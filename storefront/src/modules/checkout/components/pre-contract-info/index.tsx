@@ -18,7 +18,9 @@ import {
 import { isMadeToOrderLine, type ProductionLeadTime } from "@lib/util/commission"
 import {
   MADE_TO_ORDER_CANCEL_SENTENCE,
+  commissionItemTermsLine,
   commissionTermsSummary,
+  commissionTotalsSentence,
   depositSentence,
   type ProductionPaymentMode,
 } from "@lib/util/made-to-order"
@@ -227,7 +229,35 @@ export default function PreContractInfo({
       ? productionMode.deposit_amount
       : null
   const commissionLines: string[] = []
-  if (commission) {
+  if (commission && madeToOrder.length > 1) {
+    /*
+     * Z-A „zakázka = položka": u víc zakázek řádek pro KAŽDOU — záloha % a
+     * lhůta té položky z profilu, záloha v Kč z rozpisu režimu platby
+     * (`production_lines`, když ho backend dá) — a pod tím součet „Celkem
+     * záloha X teď, doplatky Y po dokončení" z částek backendu.
+     */
+    const paymentLineFor = (item: any) =>
+      productionMode?.production_lines?.find((line) => line.line_id === item.id) ?? null
+    madeToOrder.forEach((item) => {
+      const lead = leadFor(item)
+      const paymentLine = paymentLineFor(item)
+      commissionLines.push(
+        commissionItemTermsLine(
+          {
+            title: titleOf(item),
+            depositPercentage: paymentLine?.deposit_percentage ?? lead?.deposit_percentage,
+            depositAmount: paymentLine?.deposit_amount,
+            maxDays: lead?.production_time_max_days,
+          },
+          money
+        )
+      )
+    })
+    if (productionMode?.has_made_to_order) {
+      commissionLines.push(commissionTotalsSentence(split, money))
+    }
+    commissionLines.push(MADE_TO_ORDER_CANCEL_SENTENCE)
+  } else if (commission) {
     if (contractualDeposit != null) {
       commissionLines.push(
         depositSentence(

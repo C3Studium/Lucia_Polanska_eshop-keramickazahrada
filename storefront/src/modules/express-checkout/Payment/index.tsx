@@ -8,7 +8,11 @@ import {
 } from "@lib/data/cart"
 import { selectProductionPaymentMode } from "@lib/data/made-to-order-actions"
 import { isMadeToOrderLine, type ProductionLeadTime } from "@lib/util/commission"
-import type { ProductionPaymentMode } from "@lib/util/made-to-order"
+import {
+  allMadeToOrderAcked,
+  madeToOrderAckItems,
+  type ProductionPaymentMode,
+} from "@lib/util/made-to-order"
 import CheckoutConsent from "@modules/checkout/components/legal-consent"
 import { ORDER_BUTTON_LABEL } from "@modules/checkout/components/legal-consent/labels"
 import PreContractInfo, {
@@ -103,12 +107,19 @@ export const Payment = ({
   /* §1826 ObčZ wants an affirmative act, not an implied sentence — the same
      checkbox contract as the main checkout, recorded before payment. */
   const [accepted, setAccepted] = useState(false)
-  /* Zakázka → druhé povinné zaškrtnutí (§ 1837 písm. d) OZ), jako v pokladně. */
-  const [madeToOrderAccepted, setMadeToOrderAccepted] = useState(false)
+  /* Zakázka → povinné zaškrtnutí poučení (§ 1837 písm. d) OZ, Z10) — jedno
+     NA KAŽDOU zakázkovou položku (Z-A), jako v pokladně. Id řádku → čas kliku. */
+  const [madeToOrderAcks, setMadeToOrderAcks] = useState<
+    Record<string, string | undefined>
+  >({})
+  const commissionLines = (cart.items ?? [])
+    .filter((item) => isMadeToOrderLine(item as any))
+    .map((item) => ({ id: item.id, title: item.product_title ?? item.title }))
   const hasMadeToOrder =
-    (cart.items ?? []).some((item) => isMadeToOrderLine(item as any)) ||
-    Boolean(productionMode?.has_made_to_order)
-  const consentReady = accepted && (!hasMadeToOrder || madeToOrderAccepted)
+    commissionLines.length > 0 || Boolean(productionMode?.has_made_to_order)
+  const ackItems = madeToOrderAckItems(commissionLines, hasMadeToOrder)
+  const madeToOrderOk = allMadeToOrderAcked(ackItems, madeToOrderAcks)
+  const consentReady = accepted && madeToOrderOk
 
   /* Výrobní lhůta zakázky do předsmluvního souhrnu — veřejný profil výroby,
      dotažený serverovou akcí (stránka rychlého nákupu ho nepředává). */
@@ -165,7 +176,9 @@ export const Payment = ({
   const confirmNote = !accepted
     ? "Než objednávku odešlete, potvrďte prosím souhlas s obchodními podmínkami."
     : !consentReady
-      ? "Potvrďte prosím ještě, že berete na vědomí, že výrobek podle vašeho zadání nelze vrátit do 14 dnů a že záloha se po zahájení výroby nevrací."
+      ? ackItems.length > 1
+        ? "Potvrďte prosím poučení u každého výrobku na zakázku — že ho nelze vrátit do 14 dnů a že záloha se po zahájení výroby nevrací."
+        : "Potvrďte prosím ještě, že berete na vědomí, že výrobek podle vašeho zadání nelze vrátit do 14 dnů a že záloha se po zahájení výroby nevrací."
       : charge.later > 0
         ? `Teď zaplatíte zálohu ${money(charge.now)} online (${payment?.label ?? "ComGate"}, platební brána ComGate). Zbytek ${money(charge.later)} doplatíte po dokončení zakázky.`
         : `Zaplatíte ${money(charge.now)} hned online (${payment?.label ?? "ComGate"}, platební brána ComGate).`
@@ -193,7 +206,9 @@ export const Payment = ({
       await recordCheckoutConsent({
         cartId: cart.id,
         clientAcceptedAt: new Date().toISOString(),
-        madeToOrderAck: hasMadeToOrder && madeToOrderAccepted,
+        madeToOrderAck: hasMadeToOrder && madeToOrderOk,
+        // Čas zaškrtnutí ke každé zakázkové položce → `made_to_order.ack_at` řádku.
+        madeToOrderAcks: hasMadeToOrder ? madeToOrderAcks : undefined,
       })
       const shippingName = String(
         cart.shipping_methods?.at(-1)?.name || ""
@@ -366,10 +381,13 @@ export const Payment = ({
             setAccepted(value)
             if (value) setError(null)
           }}
-          madeToOrder={hasMadeToOrder}
-          madeToOrderAccepted={madeToOrderAccepted}
-          onMadeToOrderAcceptedChange={(value) => {
-            setMadeToOrderAccepted(value)
+          madeToOrderItems={ackItems}
+          madeToOrderAcks={madeToOrderAcks}
+          onMadeToOrderAckChange={(itemId, value) => {
+            setMadeToOrderAcks((current) => ({
+              ...current,
+              [itemId]: value ? new Date().toISOString() : undefined,
+            }))
             if (value) setError(null)
           }}
         />

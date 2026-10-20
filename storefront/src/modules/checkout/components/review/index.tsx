@@ -13,7 +13,11 @@ import {
 import { convertToLocale } from "@lib/util/money"
 
 import { isMadeToOrderLine, type ProductionLeadTime } from "@lib/util/commission"
-import { readCommissionBrief } from "@lib/util/made-to-order"
+import {
+  allMadeToOrderAcked,
+  madeToOrderAckItems,
+  readCommissionBrief,
+} from "@lib/util/made-to-order"
 import CheckoutCommissionBriefs from "../commission-briefs"
 
 import CheckoutConsent from "../legal-consent"
@@ -41,6 +45,9 @@ const CONSENT_GATE_HINT =
   "Než objednávku odešlete, potvrďte prosím souhlas s obchodními podmínkami."
 const MADE_TO_ORDER_GATE_HINT =
   "Potvrďte prosím ještě, že berete na vědomí, že výrobek podle vašeho zadání nelze vrátit do 14 dnů a že záloha se po zahájení výroby nevrací."
+/* Z-A: u víc zakázek má každá vlastní zaškrtnutí — hláška říká, že chybí některé. */
+const MADE_TO_ORDER_GATE_HINT_MANY =
+  "Potvrďte prosím poučení u každého výrobku na zakázku — že ho nelze vrátit do 14 dnů a že záloha se po zahájení výroby nevrací."
 
 const Review = ({
   cart,
@@ -62,7 +69,12 @@ const Review = ({
 }) => {
   const searchParams = useSearchParams()
   const [accepted, setAccepted] = useState(false)
-  const [madeToOrderAccepted, setMadeToOrderAccepted] = useState(false)
+  /* Z-A „zakázka = položka": id řádku → čas zaškrtnutí poučení Z10. Čas se
+     bere hned při kliknutí, ať se k řádku uloží okamžik, kdy zákazník
+     opravdu klikl, ne kdy odeslal objednávku. */
+  const [madeToOrderAcks, setMadeToOrderAcks] = useState<
+    Record<string, string | undefined>
+  >({})
   const [isPaying, setIsPaying] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -79,6 +91,7 @@ const Review = ({
     .filter(isMadeToOrderLine)
     .map((item) => ({
       id: item.id as string,
+      title: (item.product_title || item.title || "") as string,
       brief: readCommissionBrief(item),
     }))
 
@@ -93,12 +106,21 @@ const Review = ({
     briefHasContent(line.brief)
   )
 
-  /* Zakázka v košíku → druhé, povinné zaškrtnutí: poučení, že zboží na
-     zakázku nelze vrátit do 14 dnů (§ 1837 písm. d) OZ). */
+  /* Zakázka v košíku → povinné zaškrtnutí poučení (§ 1837 písm. d) OZ, Z10)
+     — jedno NA KAŽDOU zakázkovou položku (Z-A); objednávka jde dál, až jsou
+     všechna. */
   const hasMadeToOrder =
     commissionLines.length > 0 || Boolean(productionMode?.has_made_to_order)
-  const madeToOrderOk = !hasMadeToOrder || madeToOrderAccepted
+  const ackItems = madeToOrderAckItems(commissionLines, hasMadeToOrder)
+  const madeToOrderOk = allMadeToOrderAcked(ackItems, madeToOrderAcks)
   const consentReady = accepted && madeToOrderOk
+  const setAck = (itemId: string, checked: boolean) => {
+    setMadeToOrderAcks((current) => ({
+      ...current,
+      [itemId]: checked ? new Date().toISOString() : undefined,
+    }))
+    setError(null)
+  }
 
   /* Kolik se zaplatí TEĎ. U zakázky to NENÍ cena košíku — je to zvolená záloha
      (default), půlka, celek nebo vlastní částka ze slideru; zbytek se doplatí
@@ -150,7 +172,9 @@ const Review = ({
   const recordConsent = async () => {
     await recordCheckoutConsent({
       clientAcceptedAt: new Date().toISOString(),
-      madeToOrderAck: hasMadeToOrder && madeToOrderAccepted,
+      madeToOrderAck: hasMadeToOrder && madeToOrderOk,
+      // Čas zaškrtnutí ke každé zakázkové položce → `made_to_order.ack_at` řádku.
+      madeToOrderAcks: hasMadeToOrder ? madeToOrderAcks : undefined,
     })
   }
 
@@ -196,7 +220,9 @@ const Review = ({
     : !accepted
       ? CONSENT_GATE_HINT
       : !madeToOrderOk
-        ? MADE_TO_ORDER_GATE_HINT
+        ? ackItems.length > 1
+          ? MADE_TO_ORDER_GATE_HINT_MANY
+          : MADE_TO_ORDER_GATE_HINT
         : null
 
   return (
@@ -270,12 +296,9 @@ const Review = ({
                   setAccepted(value)
                   setError(null)
                 }}
-                madeToOrder={hasMadeToOrder}
-                madeToOrderAccepted={madeToOrderAccepted}
-                onMadeToOrderAcceptedChange={(value) => {
-                  setMadeToOrderAccepted(value)
-                  setError(null)
-                }}
+                madeToOrderItems={ackItems}
+                madeToOrderAcks={madeToOrderAcks}
+                onMadeToOrderAckChange={setAck}
               />
             </motion.div>
 

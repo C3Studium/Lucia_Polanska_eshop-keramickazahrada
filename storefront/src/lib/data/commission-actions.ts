@@ -10,7 +10,7 @@ import {
   listCommissionNotes,
   uploadCommissionMedia,
 } from "./made-to-order"
-import { madeToOrderMetadata } from "@lib/util/made-to-order"
+import { madeToOrderMetadata, readCommissionBrief } from "@lib/util/made-to-order"
 import type { CommissionNote, CommissionUpload } from "@lib/util/made-to-order"
 import { toCzechErrorMessage } from "@lib/util/error-messages"
 
@@ -74,6 +74,10 @@ export async function saveCommissionBrief(
       (item) => item.id === lineId
     )
     const quantity = Number(line?.quantity) > 0 ? Number(line.quantity) : 1
+    /* Poučení Z10 zaškrtnuté k téhle položce (`ack_at`) se nese dál — klik na
+       tlačítko platby odfoukne kurzor z textarey a samoukládání briefu by
+       jinak čas zaškrtnutí přepsalo. */
+    const ackAt = readCommissionBrief(line ?? {}).ack_at ?? null
 
     await sdk.store.cart.updateLineItem(
       cartId,
@@ -86,7 +90,7 @@ export async function saveCommissionBrief(
          * (`readCommissionBrief`) čtou `metadata.made_to_order`. Uložení plochých
          * klíčů by brief nikde nezobrazilo.
          */
-        metadata: madeToOrderMetadata(input.note, { photos }),
+        metadata: madeToOrderMetadata(input.note, { photos, ack_at: ackAt }),
       } as never,
       {},
       headers
@@ -109,7 +113,12 @@ export async function saveCommissionBrief(
  */
 export async function addOrderCommissionNote(
   orderId: string,
-  input: { note: string; newPhotos: CommissionUpload[] }
+  input: {
+    note: string
+    newPhotos: CommissionUpload[]
+    /** Vlákno JEDNÉ zakázky objednávky (Z-A); bez něj vlákno objednávky. */
+    productionOrderId?: string | null
+  }
 ): Promise<{ success: boolean; notes?: CommissionNote[]; message?: string }> {
   try {
     let image_urls: string[] = []
@@ -132,10 +141,14 @@ export async function addOrderCommissionNote(
       }
     }
 
-    const notes = await addCommissionNote(orderId, {
-      text: input.note.trim() || undefined,
-      image_urls: image_urls.length ? image_urls : undefined,
-    })
+    const notes = await addCommissionNote(
+      orderId,
+      {
+        text: input.note.trim() || undefined,
+        image_urls: image_urls.length ? image_urls : undefined,
+      },
+      input.productionOrderId
+    )
 
     if (!notes) {
       return { success: false, message: "Poznámku se nepovedlo uložit." }
@@ -151,6 +164,9 @@ export async function addOrderCommissionNote(
 }
 
 /** Re-reads the diary, for after an edit. */
-export async function refreshCommissionNotes(orderId: string) {
-  return listCommissionNotes(orderId)
+export async function refreshCommissionNotes(
+  orderId: string,
+  productionOrderId?: string | null
+) {
+  return listCommissionNotes(orderId, productionOrderId)
 }

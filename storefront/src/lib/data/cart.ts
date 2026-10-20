@@ -23,8 +23,16 @@ import {
   type ProductionLeadTime,
 } from "@lib/util/commission"
 import { getProductionProfile } from "./made-to-order"
-import type { ProductionProfile } from "@lib/util/made-to-order"
-import { consentMetadataPatch } from "@modules/checkout/components/legal-consent/consent-metadata"
+import {
+  latestAckAt,
+  madeToOrderMetadata,
+  readCommissionBrief,
+  type ProductionProfile,
+} from "@lib/util/made-to-order"
+import {
+  consentMetadataPatch,
+  validAckIso,
+} from "@modules/checkout/components/legal-consent/consent-metadata"
 import { getPublishedLegalRegistry } from "./legal-registry"
 import {
   normalizujDic,
@@ -652,8 +660,16 @@ export async function recordCheckoutConsent(input: {
   cartId?: string
   /** Kdy zákazník zaškrtl souhlas (ISO z prohlížeče). */
   clientAcceptedAt?: string
-  /** Zaškrtl zákazník poučení u zakázkové výroby? */
+  /** Zaškrtl zákazník poučení u zakázkové výroby? (Všechna zaškrtnutí.) */
   madeToOrderAck: boolean
+  /**
+   * Z-A „zakázka = položka": čas zaškrtnutí poučení Z10 PRO KAŽDÝ zakázkový
+   * řádek (id řádku → ISO z prohlížeče). Zapíše se k řádku jako
+   * `metadata.made_to_order.ack_at` — Medusa řádek zkopíruje do objednávky,
+   * takže důkaz zůstane u výrobku, kterého se týká. Klíč `cart` = jedno
+   * zaškrtnutí za celý košík (zakázka jen z režimu platby, bez řádku).
+   */
+  madeToOrderAcks?: Record<string, string | undefined>
 }): Promise<void> {
   const id = input.cartId || (await getCartId())
   if (!id) {
@@ -664,10 +680,44 @@ export async function recordCheckoutConsent(input: {
     throw new Error("Košík se nepodařilo najít.")
   }
 
-  const hasMadeToOrderLine = ((fresh.items ?? []) as any[]).some(isMadeToOrderLine)
+  const madeToOrderLines = ((fresh.items ?? []) as any[]).filter(isMadeToOrderLine)
+  const hasMadeToOrderLine = madeToOrderLines.length > 0
   if (hasMadeToOrderLine && !input.madeToOrderAck) {
     throw new Error(
       "U zboží vyrobeného na zakázku prosím potvrďte, že ho nelze vrátit ve 14denní lhůtě."
+    )
+  }
+
+  /* Per položka: server soudí z ČERSTVÉHO košíku, které řádky jsou zakázka.
+     Řádek bez vlastního času (prohlížeč zná jen jedno zaškrtnutí — starší
+     klient, nebo jedna zakázka) dostane čas společný. */
+  const acks = input.madeToOrderAcks ?? {}
+  const sharedAckAt = latestAckAt(acks) ?? input.clientAcceptedAt ?? null
+  if (hasMadeToOrderLine && input.madeToOrderAck) {
+    const headers = { ...(await getAuthHeaders()) }
+    await Promise.all(
+      madeToOrderLines.map(async (line: any) => {
+        const ackAt = validAckIso(acks[line.id] ?? acks.cart ?? sharedAckAt)
+        if (!ackAt) return
+        const brief = readCommissionBrief(line)
+        if (brief.ack_at === ackAt) return
+        const quantity = Number(line?.quantity) > 0 ? Number(line.quantity) : 1
+        /* Celý objekt `made_to_order` znovu (brief + ack_at) — Medusa vnořený
+           objekt nahradí, nesloučí; `quantity` je u update řádku povinná. */
+        await sdk.store.cart.updateLineItem(
+          id,
+          line.id,
+          {
+            quantity,
+            metadata: madeToOrderMetadata(brief.specification || brief.note || "", {
+              photos: brief.photos,
+              ack_at: ackAt,
+            }),
+          } as never,
+          {},
+          headers
+        )
+      })
     )
   }
 
@@ -679,6 +729,8 @@ export async function recordCheckoutConsent(input: {
     // I potvrzení, které prohlížeč poslal navíc (zakázku poznal z profilu
     // výroby), je důkaz poučení — neškodí ho uložit.
     madeToOrder: hasMadeToOrderLine || input.madeToOrderAck,
+    // Čas posledního zaškrtnutí (u víc zakázek nejpozdější z nich).
+    madeToOrderAckAt: sharedAckAt,
   })
 
   await updateCart(

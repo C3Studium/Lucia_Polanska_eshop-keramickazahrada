@@ -11,12 +11,19 @@ import PremiumActionLink from "@modules/common/components/premium-action-link"
 import { accountListItemVariants } from "../../motion"
 import AccountInteractiveSurface from "../account-interactive-surface"
 import { productLines } from "@lib/util/packaging"
+import { commissionListLine, type Commission } from "@lib/util/made-to-order"
 
 type OrderCardProps = {
   order: HttpTypes.StoreOrder
+  /**
+   * Zakázky objednávky (Z-A „zakázka = položka") — stručný stav každé pod
+   * údaji: „Zakázka: Domovní číslo — ve výrobě od 20. 10. 2026". Bez nich
+   * (běžná objednávka, nebo se stav nenačetl) jen odkaz do detailu jako dřív.
+   */
+  commissions?: Commission[]
 }
 
-const OrderCard = ({ order }: OrderCardProps) => {
+const OrderCard = ({ order, commissions }: OrderCardProps) => {
   const numberOfItems = useMemo(() => {
     return (
       productLines(order.items).reduce((acc, item) => {
@@ -81,6 +88,21 @@ const OrderCard = ({ order }: OrderCardProps) => {
             <dt>Počet kusů</dt>
             <dd>{numberOfItems} ks</dd>
           </div>
+          {commissions && commissions.length > 0 && (
+            <div className={s.commissions} data-testid="order-commissions">
+              <dt>{commissions.length === 1 ? "Zakázka" : "Zakázky"}</dt>
+              <dd>
+                {commissions.map((commission, index) => (
+                  <span
+                    key={commission.production_order_id ?? commission.line_item_id ?? index}
+                    className={s.commissionLine}
+                  >
+                    {commissionListLine(commission)}
+                  </span>
+                ))}
+              </dd>
+            </div>
+          )}
         </dl>
 
         <div

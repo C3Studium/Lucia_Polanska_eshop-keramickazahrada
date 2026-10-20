@@ -9,6 +9,7 @@ import {
   getCommissionBalance,
   getCommissionCancellation,
   listCommissionNotes,
+  listCommissionNotesByCommission,
 } from "@lib/data/made-to-order"
 import { getOrderProgress } from "@lib/data/order-progress"
 import { orderTermsRef } from "@lib/legal/order-terms"
@@ -77,6 +78,11 @@ export default async function OrderDetailPage(props: Props) {
   const commissionCancellation = commissionBalance?.is_commission
     ? await getCommissionCancellation(order.id, selfServiceToken)
     : null
+  // Z-A: u víc zakázek vlákno konverzace per zakázka (jinak null → vlákno objednávky).
+  const commissionNotesById = await listCommissionNotesByCommission(
+    order.id,
+    commissionBalance
+  )
   // Stav objednávky ze serveru (reklamace, odesláno, výroba zakázky…) —
   // samotný `fulfillment_status` o Denní práci ani reklamacích neví.
   const progress = await getOrderProgress(order.id, selfServiceToken)
@@ -91,6 +97,7 @@ export default async function OrderDetailPage(props: Props) {
       commissionNotes={commissionNotes}
       commissionBalance={commissionBalance}
       commissionCancellation={commissionCancellation}
+      commissionNotesById={commissionNotesById}
       selfServiceToken={selfServiceToken}
       claims={claims}
       edit={edit}

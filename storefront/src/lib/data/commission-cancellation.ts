@@ -23,9 +23,11 @@ import { cancelCommission, getCommissionCancellation } from "./made-to-order"
 
 export async function loadCommissionCancellation(
   orderId: string,
-  token?: string | null
+  token?: string | null,
+  /** Která zakázka objednávky (Z-A); bez něj první / jediná. */
+  productionOrderId?: string | null
 ): Promise<CommissionCancellation | null> {
-  return getCommissionCancellation(orderId, token)
+  return getCommissionCancellation(orderId, token, productionOrderId)
 }
 
 export type CancelCommissionOutcome =
@@ -34,12 +36,17 @@ export type CancelCommissionOutcome =
 
 export async function submitCommissionCancellation(
   orderId: string,
-  input: { reason?: string; token?: string | null }
+  input: {
+    reason?: string
+    token?: string | null
+    /** Ruší se JEDNA zakázka objednávky; ostatní zakázky i zboží běží dál. */
+    productionOrderId?: string | null
+  }
 ): Promise<CancelCommissionOutcome> {
   try {
     const result = await cancelCommission(
       orderId,
-      { reason: input.reason },
+      { reason: input.reason, productionOrderId: input.productionOrderId },
       input.token
     )
 

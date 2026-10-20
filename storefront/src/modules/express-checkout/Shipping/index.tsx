@@ -11,7 +11,6 @@ import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
 import { convertToLocale } from "@lib/util/money"
 import { withCount } from "@lib/util/plurals"
 import {
-  commissionPrompt,
   isMadeToOrderLine,
 } from "@lib/util/commission"
 import {
@@ -21,8 +20,7 @@ import {
   type DeliveryRestriction,
 } from "@lib/util/fragile"
 import { readCommissionBrief } from "@lib/util/made-to-order"
-import { saveCommissionBrief } from "@lib/data/commission-actions"
-import CommissionBrief from "@modules/checkout/components/commission-brief"
+import CheckoutCommissionBriefs from "@modules/checkout/components/commission-briefs"
 import { HttpTypes } from "@medusajs/types"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import { AnimatePresence, motion } from "framer-motion"
@@ -87,13 +85,15 @@ export const Shipping = ({
 
   /* Brief k zakázce (co si zákazník představuje + fotky). Sbírá se tady v kroku
      doručení: zakázka jde stejně jen na odběr/křehkou poštu, express nemá
-     rekapitulaci, a v kroku platby se předtím nezobrazoval vůbec. */
+     rekapitulaci, a v kroku platby se předtím nezobrazoval vůbec.
+
+     Samotné okno kreslí `CheckoutCommissionBriefs`. Tenhle seznam zůstává jen
+     kvůli bráně pod ním — potřebuje vědět, kolik zakázek v košíku je a jak
+     na tom byly při načtení stránky. Nic víc než id a obsah z něj nečte. */
   const commissionLines = (cart.items ?? [])
     .filter(isMadeToOrderLine)
     .map((item) => ({
       id: item.id as string,
-      title: (item.product_title || item.title) as string,
-      prompt: commissionPrompt(item),
       brief: readCommissionBrief(item),
     }))
 
@@ -467,26 +467,21 @@ export const Shipping = ({
 
       {/* Zakázka: co si zákazník představuje + fotky. Až ZA způsobem doručení.
           Ukládá se do EXPRESS košíku (jiný cookie), proto se cart.id předává. */}
-      {commissionLines.map((line) => (
-        <CommissionBrief
-          key={line.id}
-          variant="checkout"
-          title={line.title}
-          prompt={line.prompt}
-          note={line.brief.specification || line.brief.note || ""}
-          photos={line.brief.photos ?? []}
-          onSubmitAction={async (input) =>
-            saveCommissionBrief(line.id, input, cart.id)
-          }
-          onCompletionChange={(complete) =>
-            setCommissionComplete((current) =>
-              current[line.id] === complete
-                ? current
-                : { ...current, [line.id]: complete }
-            )
-          }
-        />
-      ))}
+      {/* Jedno okno, mezi zakázkami se přepíná číslem — tatáž komponenta jako
+          v běžné pokladně, aby se ty dva toky nerozešly. */}
+      <CheckoutCommissionBriefs
+        cart={cart}
+        /* Express má vlastní košík pod jinou cookie, takže si server jeho id
+           sám nenajde — musí se poslat. */
+        passCartId
+        onCompletionChange={(lineId, complete) =>
+          setCommissionComplete((current) =>
+            current[lineId] === complete
+              ? current
+              : { ...current, [lineId]: complete }
+          )
+        }
+      />
 
       {commissionLines.length > 0 && !allCommissionsComplete && (
         <p className={styles.restrictionNote}>

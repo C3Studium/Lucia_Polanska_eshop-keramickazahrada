@@ -40,6 +40,22 @@ export type ProductionPaymentBounds = {
   amount: number
 }
 
+/**
+ * Jeden zakázkový řádek košíku v režimu platby (Z-A „zakázka = položka").
+ * Backend ho zatím nemusí posílat — kde chybí, pokladna ukáže jen % a lhůtu
+ * z profilu (`listProductionLeadTimes`) a částky nevymýšlí.
+ */
+export type ProductionPaymentLine = {
+  line_id: string
+  title?: string | null
+  /** Smluvní procento té položky (1–50, Z2). */
+  deposit_percentage?: number | null
+  /** Smluvní záloha té položky v penězích. */
+  deposit_amount?: number | null
+  /** Cena řádku po slevě — základ doplatku. */
+  line_total?: number | null
+}
+
 export type ProductionPaymentMode = {
   has_made_to_order: boolean
   can_pay_full: boolean
@@ -49,6 +65,8 @@ export type ProductionPaymentMode = {
   balance_later: number
   currency_code?: string
   custom: ProductionPaymentBounds | null
+  /** Rozpis po zakázkových řádcích — volitelný, viz `ProductionPaymentLine`. */
+  production_lines?: ProductionPaymentLine[] | null
 }
 
 /** The deposit that applies to a variant: its override beats the product default. */
@@ -127,6 +145,8 @@ export type CommissionBrief = {
   specification?: string
   note?: string
   photos?: string[]
+  /** Kdy zákazník zaškrtl poučení Z10 k TÉHLE položce (ISO). Zapisuje pokladna. */
+  ack_at?: string
 }
 
 /**
@@ -135,15 +155,21 @@ export type CommissionBrief = {
  * `specification` is the answer to her question on the product page; `note` and `photos` are
  * the brief the customer writes at checkout. All three travel on the line item because Medusa
  * copies that metadata into the order — the cart is gone by the time anything reads it.
+ *
+ * `ack_at` (poučení Z10 per položka) se musí PŘENÉST, když brief ukládá
+ * znovu — `metadata.made_to_order` je jeden objekt a Medusa ho nahradí celý;
+ * samoukládání briefu po kliknutí na tlačítko platby by jinak čas zaškrtnutí
+ * smazalo.
  */
 export const madeToOrderMetadata = (
   specification: string,
-  brief?: { note?: string; photos?: string[] }
+  brief?: { note?: string; photos?: string[]; ack_at?: string | null }
 ) => ({
   made_to_order: {
     specification: specification.trim(),
     ...(brief?.note?.trim() ? { note: brief.note.trim() } : {}),
     ...(brief?.photos?.length ? { photos: brief.photos } : {}),
+    ...(brief?.ack_at ? { ack_at: brief.ack_at } : {}),
   },
 })
 
@@ -161,6 +187,7 @@ export const readCommissionBrief = (item: {
     photos: Array.isArray(raw.photos)
       ? raw.photos.filter((url: unknown): url is string => typeof url === "string")
       : undefined,
+    ack_at: typeof raw.ack_at === "string" ? raw.ack_at : undefined,
   }
 }
 
@@ -204,6 +231,64 @@ export const productionMaxDaysFor = (
  */
 export const MADE_TO_ORDER_ACK_TEXT =
   "Beru na vědomí, že výrobek vyrobený podle mého zadání nelze vrátit ve 14denní lhůtě a že záloha se po zahájení výroby nevrací."
+
+/**
+ * Totéž znění s názvem položky (Z-A „zakázka = položka"): u objednávky s víc
+ * zakázkami má každá své zaškrtnutí a zákazník musí vidět, které se týká
+ * čeho — „výrobek „Domovní číslo“ vyrobený podle mého zadání…". Bez názvu
+ * (jedna zakázka) zůstává přesně `MADE_TO_ORDER_ACK_TEXT`, ať se uložené
+ * znění shoduje s PDF Potvrzení zakázky.
+ */
+export const madeToOrderAckText = (title?: string | null): string => {
+  const name = title?.trim()
+  if (!name) return MADE_TO_ORDER_ACK_TEXT
+  return MADE_TO_ORDER_ACK_TEXT.replace(
+    "výrobek vyrobený",
+    `výrobek „${name}“ vyrobený`
+  )
+}
+
+/** Zakázková položka pokladny, ke které patří vlastní zaškrtnutí Z10. */
+export type MadeToOrderAckItem = {
+  /** Id řádku košíku; `cart`, když zakázku hlásí jen režim platby bez řádku. */
+  id: string
+  title: string | null
+}
+
+/**
+ * Jedno zaškrtnutí na každý zakázkový řádek. Když profil výroby hlásí
+ * zakázku, ale žádný řádek ji nenese (nemělo by nastat — pojistka), zůstane
+ * jedno zaškrtnutí za celý košík jako dřív. Jméno se do textu dává jen při
+ * víc položkách — s jednou je znění přesně to z PDF.
+ */
+export const madeToOrderAckItems = (
+  lines: { id: string; title?: string | null }[],
+  hasMadeToOrder: boolean
+): MadeToOrderAckItem[] => {
+  if (lines.length === 0) {
+    return hasMadeToOrder ? [{ id: "cart", title: null }] : []
+  }
+  if (lines.length === 1) return [{ id: lines[0].id, title: null }]
+  return lines.map((line) => ({
+    id: line.id,
+    title: line.title?.trim() || "výrobek na zakázku",
+  }))
+}
+
+/** Všechna zaškrtnutí Z10 odsouhlasená? (`acks` = id řádku → čas ISO.) */
+export const allMadeToOrderAcked = (
+  items: MadeToOrderAckItem[],
+  acks: Record<string, string | undefined>
+): boolean => items.every((item) => Boolean(acks[item.id]))
+
+/** Čas posledního zaškrtnutí Z10 — ten se uloží do `made_to_order_ack_at`. */
+export const latestAckAt = (
+  acks: Record<string, string | undefined>
+): string | null => {
+  const times = Object.values(acks).filter((value): value is string => Boolean(value))
+  if (!times.length) return null
+  return times.reduce((latest, current) => (current > latest ? current : latest))
+}
 
 /** Jedna věta o zrušení pro předsmluvní informace (Z4 + Z5). */
 export const MADE_TO_ORDER_CANCEL_SENTENCE =
@@ -290,34 +375,237 @@ export const depositSentence = (
   return `${label} = ${money(contractualDeposit)}; teď platíte ${money(now)}. ${balance}`
 }
 
+/**
+ * Řádek „Zakázka" per položka (Z-A): „Domovní číslo: záloha 25 % (500 Kč) ·
+ * výroba do 42 dnů od zahájení". Procento a lhůta jsou z profilu
+ * (`leadTimes`), částka z rozpisu režimu platby (`production_lines`) — a co
+ * backend nedal, se vynechá; bez ničeho zůstane jen „Domovní číslo: na
+ * zakázku".
+ */
+export const commissionItemTermsLine = (
+  {
+    title,
+    depositPercentage,
+    depositAmount,
+    maxDays,
+  }: {
+    title: string
+    depositPercentage?: number | null
+    depositAmount?: number | null
+    maxDays?: number | null
+  },
+  money: (amount: number) => string
+): string => {
+  const amount =
+    typeof depositAmount === "number" && depositAmount > 0
+      ? ` (${money(depositAmount)})`
+      : ""
+  const deposit =
+    depositPercentage != null && depositPercentage > 0
+      ? `záloha ${depositPercentage} %${amount}`
+      : amount
+        ? `záloha${amount}`
+        : null
+  const days = maxDays != null && maxDays > 0 ? `výroba do ${maxDays} dnů od zahájení` : null
+  const terms = [deposit, days].filter(Boolean).join(" · ")
+  return `${title}: ${terms || "na zakázku"}`
+}
+
+/**
+ * Součet za víc zakázek: „Celkem záloha 1 200 Kč teď, doplatky 3 600 Kč po
+ * dokončení." Částky jsou backendu (`chargeSplit` nad režimem platby) —
+ * sčítá se jen slovy.
+ */
+export const commissionTotalsSentence = (
+  { now, later }: { now: number; later: number },
+  money: (amount: number) => string
+): string =>
+  later > 0.005
+    ? `Celkem záloha ${money(now)} teď, doplatky ${money(later)} po dokončení.`
+    : `Celkem ${money(now)} teď, bez doplatků.`
+
 /* ---------------------------------------------------------------------------
  * Stav zakázky v účtu a zrušení (Z3–Z7) — tvar odpovědí backendu a texty.
  * ------------------------------------------------------------------------ */
 
 export type CommissionCancellationPhase = "before_production" | "after_production"
 
-/** `GET /store/made-to-order/:orderId/balance` — stav zakázky pro stránky objednávky. */
-export type CommissionBalance = {
-  is_commission: boolean
+/**
+ * Co by zrušení znamenalo TEĎ, přibalené k zakázce v `balance` (Z-A) — tvar
+ * `cancellation_preview` z kontraktu. Panel z něj složí `CommissionCancellation`
+ * a nemusí se ptát `/cancellation` za každou zakázku zvlášť.
+ */
+export type CommissionCancellationPreview = {
+  phase: CommissionCancellationPhase
+  paid_total: number
+  refund_amount: number
+  deposit_kept: number
+}
+
+/**
+ * JEDNA zakázka = jeden zakázkový řádek objednávky (Z-A „zakázka = položka").
+ * `GET …/balance` vrací `commissions[]`; dokud backend pole neposílá, vzniká
+ * jedna zakázka z polí na nejvyšší úrovni (`commissionsOf`). Proto je skoro
+ * všechno volitelné — co backend nedal, panel neukáže.
+ */
+export type Commission = {
+  /** Id `production_order`; chybí jen u zpětně složené zakázky ze starého tvaru. */
+  production_order_id?: string | null
+  line_item_id?: string | null
+  title?: string | null
+  variant_title?: string | null
+  thumbnail?: string | null
+  quantity?: number | null
   stage?: string
   currency_code?: string
+  item_total?: number | null
+  /** Smluvní záloha (Z2: nejvýš 50 % ceny výrobku) — procento a částka z výrobního profilu. */
+  deposit_percentage?: number | null
+  deposit_amount?: number | null
   deposit_paid?: number
   balance_paid?: number
   outstanding?: number
-  /** Podepsaný odkaz na doplacení (funguje i bez přihlášení); null = není co platit. */
+  /** Podepsaný odkaz na doplacení TÉHLE zakázky; null = není co platit. */
   pay_url?: string | null
-  /** Smluvní záloha (Z2: nejvýš 50 % ceny výrobku) — částka a procento z výrobního profilu. */
-  deposit_amount?: number
-  deposit_percentage?: number
   /** Kdy odešel e-mail „Zakázka je ve výrobě" (Z3). null = výroba nezačala. */
   production_start_notified_at?: string | null
-  cancellation_phase?: CommissionCancellationPhase | null
+  estimated_completion_at?: string | null
+  production_time_max_days?: number | null
   cancelled_by?: "customer" | "seller" | null
+  cancellation_phase?: CommissionCancellationPhase | null
   cancellation_refund_amount?: number | null
+  cancelled_at?: string | null
   /** PDF „Potvrzení zakázky" (Z11), když už vzniklo. */
   confirmation_pdf_url?: string | null
   confirmation_sent_at?: string | null
-  production_time_max_days?: number | null
+  can_cancel?: boolean
+  blocked_reason?: string | null
+  cancellation_preview?: CommissionCancellationPreview | null
+}
+
+/** Součty přes všechny zakázky objednávky (`totals` z kontraktu). */
+export type CommissionTotals = {
+  deposit_paid: number
+  balance_paid: number
+  outstanding: number
+}
+
+/**
+ * `GET /store/made-to-order/:orderId/balance` — stav zakázek pro stránky
+ * objednávky. Pole na nejvyšší úrovni = první zakázka / součty (zpětná
+ * kompatibilita); `commissions[]` + `totals` jsou tvar Z-A.
+ */
+export type CommissionBalance = Commission & {
+  is_commission: boolean
+  commissions?: Commission[] | null
+  totals?: CommissionTotals | null
+}
+
+/**
+ * Seznam zakázek objednávky, ať backend vrací nový tvar (`commissions[]`)
+ * nebo starý (jedna zakázka v polích na nejvyšší úrovni). JEDINÉ místo, kde
+ * se ty dva tvary rozlišují — stránky dál vidí vždy pole.
+ */
+export const commissionsOf = (
+  balance: CommissionBalance | null | undefined
+): Commission[] => {
+  if (!balance?.is_commission) return []
+  if (Array.isArray(balance.commissions) && balance.commissions.length) {
+    return balance.commissions
+  }
+  // Starý tvar: `is_commission`, `commissions`, `totals` nejsou zakázka.
+  const { is_commission: _flag, commissions: _list, totals: _totals, ...single } = balance
+  return [single]
+}
+
+/**
+ * Součty za objednávku: `totals` z backendu, jinak sečtené ze zakázek. U
+ * starého tvaru vyjdou pole na nejvyšší úrovni (jedna zakázka = součet).
+ */
+export const commissionTotalsOf = (
+  balance: CommissionBalance | null | undefined
+): CommissionTotals => {
+  if (balance?.totals) {
+    return {
+      deposit_paid: balance.totals.deposit_paid ?? 0,
+      balance_paid: balance.totals.balance_paid ?? 0,
+      outstanding: balance.totals.outstanding ?? 0,
+    }
+  }
+  return commissionsOf(balance).reduce<CommissionTotals>(
+    (sum, commission) => ({
+      deposit_paid: sum.deposit_paid + (commission.deposit_paid ?? 0),
+      balance_paid: sum.balance_paid + (commission.balance_paid ?? 0),
+      outstanding: sum.outstanding + (commission.outstanding ?? 0),
+    }),
+    { deposit_paid: 0, balance_paid: 0, outstanding: 0 }
+  )
+}
+
+/**
+ * `CommissionCancellation` složená z náhledu přibaleného k zakázce — panel
+ * pak nemusí volat `/cancellation`. `undefined` = náhled chybí (starý tvar)
+ * → panel si ho dotáhne sám.
+ */
+export const cancellationOf = (
+  commission: Commission
+): CommissionCancellation | undefined => {
+  const preview = commission.cancellation_preview
+  if (!preview || typeof commission.can_cancel !== "boolean") return undefined
+  return {
+    can_cancel: commission.can_cancel,
+    blocked_reason: commission.blocked_reason ?? null,
+    phase: preview.phase,
+    production_start_notified_at: commission.production_start_notified_at ?? null,
+    stage: commission.stage ?? "",
+    currency_code: commission.currency_code ?? "czk",
+    paid_total: preview.paid_total,
+    deposit_amount: commission.deposit_amount ?? 0,
+    deposit_percentage: commission.deposit_percentage ?? 0,
+    refund_amount: preview.refund_amount,
+    deposit_kept: preview.deposit_kept,
+  }
+}
+
+/** „Domovní číslo · Modrá" — název zakázky s provedením, pro nadpis panelu a seznam. */
+export const commissionTitle = (commission: Pick<Commission, "title" | "variant_title">) =>
+  [commission.title?.trim(), commission.variant_title?.trim()]
+    .filter(Boolean)
+    .join(" · ") || null
+
+/** „20. 10. 2026" — datum bez času, pro stručný řádek v seznamu objednávek. */
+export const formatCommissionDate = (iso: string): string =>
+  new Intl.DateTimeFormat("cs-CZ", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Europe/Prague",
+  }).format(new Date(iso))
+
+/**
+ * Stručný řádek do seznamu objednávek: „Zakázka: Domovní číslo — ve výrobě od
+ * 20. 10. 2026". Bez názvu jen „Zakázka — …".
+ */
+export const commissionListLine = (
+  commission: Pick<
+    Commission,
+    | "title"
+    | "variant_title"
+    | "stage"
+    | "production_start_notified_at"
+    | "cancellation_phase"
+  >
+): string => {
+  const name = commissionTitle(commission)
+  const status =
+    commission.stage === "cancelled" || commission.cancellation_phase
+      ? "zrušeno"
+      : commission.stage === "completed"
+        ? "hotovo"
+        : commission.production_start_notified_at
+          ? `ve výrobě od ${formatCommissionDate(commission.production_start_notified_at)}`
+          : "čeká na zahájení výroby"
+  return name ? `Zakázka: ${name} — ${status}` : `Zakázka — ${status}`
 }
 
 /** `GET /store/made-to-order/:orderId/cancellation` — co by zrušení TEĎ znamenalo. */

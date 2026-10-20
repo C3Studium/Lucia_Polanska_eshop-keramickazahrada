@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 
 import OrderCard from "../order-card"
 import { HttpTypes } from "@medusajs/types"
+import type { Commission } from "@lib/util/made-to-order"
 import s from "./style.module.scss"
 import PremiumActionLink from "@modules/common/components/premium-action-link"
 import { useEditRerender } from "@lib/hooks/use-edit-rerender"
@@ -15,10 +16,13 @@ import { accountListVariants } from "../../motion"
 const OrderOverview = ({
   orders,
   copy,
+  commissionsByOrder,
 }: {
   orders: HttpTypes.StoreOrder[]
   /** Blok `ucet.objednavky` — odsud jen prázdný stav (`prazdne.nadpis`, `prazdne.text`). */
   copy?: CopyBlock
+  /** Zakázky objednávek (id objednávky → zakázky) pro stručný stav v kartě (Z-A). */
+  commissionsByOrder?: Record<string, Commission[]>
 }) => {
   useEditRerender()
 
@@ -32,7 +36,7 @@ const OrderOverview = ({
       >
         {orders.map((o) => (
           <div key={o.id} className={s.itemWrap}>
-            <OrderCard order={o} />
+            <OrderCard order={o} commissions={commissionsByOrder?.[o.id]} />
           </div>
         ))}
       </motion.div>
