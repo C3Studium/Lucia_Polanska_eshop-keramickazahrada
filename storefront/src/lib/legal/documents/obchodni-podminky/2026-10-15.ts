@@ -345,27 +345,31 @@ const obchodniPodminky: LegalDocumentVersion = {
         },
         {
           type: "p",
-          text: "**Postup.** Zadání si přečteme a potvrdíme vám ho e-mailem. Je-li potřeba něco upřesnit, nebo nejde-li zadání vyrobit tak, jak je popsané, ozveme se dřív, než začneme; nedomluvíme-li se, od smlouvy odstoupíme a zálohu vrátíme celou. Výroba začíná po potvrzení zadání a zaplacení zálohy — o zahájení vám pošleme e-mail. Před konečným výpalem vám pošleme fotografii výrobku ke schválení. Po dokončení vás vyzveme k doplatku a po jeho zaplacení zakázku odešleme nebo předáme.",
+          text: "**Postup.** Zadání si přečteme a potvrdíme vám ho e-mailem. Je-li potřeba něco upřesnit, nebo nejde-li zadání vyrobit tak, jak je popsané, ozveme se dřív, než začneme; nedomluvíme-li se, od smlouvy odstoupíme a vrátíme vám vše, co jste zaplatili. Výroba začíná po potvrzení zadání a připsání zálohy. **Zahájení výroby vám oznámíme e-mailem „Zakázka je ve výrobě“ s datem a časem; výroba je zahájena od tohoto e-mailu** — ne od tvrzení kterékoli strany. Před konečným výpalem vám pošleme fotografii výrobku ke schválení. Po dokončení vás vyzveme k doplatku a po jeho zaplacení zakázku do 2 pracovních dnů odešleme nebo připravíme k předání.",
         },
         {
           type: "p",
-          text: "**Záloha.** Při objednávce zaplatíte zálohu ve výši {{mto.deposit}} ceny výrobku (u zakázky podle poptávky ve výši uvedené v nabídce), nejvýše však 50 % ceny. Zálohu platíte předem online přes platební bránu ComGate, i když si zakázku vyzvednete osobně. Zaplatit můžete i víc, třeba celou cenu najednou. Záloha se počítá jen z ceny zboží; dopravu zaplatíte s doplatkem. Za zálohu i za doplatek dostanete samostatný doklad.",
+          text: "**Záloha.** Při objednávce zaplatíte zálohu ve výši {{mto.deposit}} ceny výrobku (u zakázky podle poptávky ve výši uvedené v nabídce), nejvýše však 50 % ceny výrobku. Zálohu platíte předem online přes platební bránu ComGate, i když si zakázku vyzvednete osobně. Zaplatit můžete i víc, třeba celou cenu najednou — zálohou je i tak jen sjednaná část ceny uvedená u výrobku a v potvrzení zakázky. Záloha se počítá jen z ceny zboží; dopravu zaplatíte s doplatkem. Za zálohu i za doplatek dostanete samostatný doklad. Záloha je paušální náhradou nákladů, které do zakázky vložíme po zahájení výroby (materiál, návrh, vyhrazená kapacita a práce); proto se po zahájení výroby nevrací (viz Zrušení zakázky).",
         },
         {
           type: "p",
-          text: "**Bez práva odstoupit do 14 dnů.** Berete na vědomí, že od smlouvy o zboží na zakázku **nemůžete odstoupit ve 14denní lhůtě** podle § 1829 OZ, protože jde o zboží vyrobené podle vašich požadavků nebo přizpůsobené vašim osobním potřebám (§ 1837 písm. d) OZ). Upozorníme vás na to u výrobku a vy to před odesláním objednávky potvrdíte.",
+          text: "**Bez práva odstoupit do 14 dnů.** Berete na vědomí, že od smlouvy o zboží na zakázku **nemůžete odstoupit ve 14denní lhůtě** podle § 1829 OZ, protože jde o zboží vyrobené podle vašich požadavků nebo přizpůsobené vašim osobním potřebám (§ 1837 písm. d) OZ). Upozorníme vás na to u výrobku a před odesláním objednávky potvrdíte, že to berete na vědomí — a spolu s tím i to, že záloha se po zahájení výroby nevrací. Čas obou potvrzení ukládáme k objednávce.",
         },
         {
           type: "p",
-          text: "**Schválení podoby.** Před konečným výpalem vám e-mailem pošleme fotografii rozpracovaného výrobku. Schválením se tato podoba stává smluvenou předlohou. Drobné úpravy, které ještě jdou udělat, s vámi rádi probereme. Nevyjádříte-li se k fotografii do 5 pracovních dnů, považujeme podobu za schválenou — na tuto lhůtu vás v e-mailu upozorníme.",
+          text: "**Schválení podoby.** Před konečným výpalem vám e-mailem pošleme fotografii hotového tvaru. Na vyjádření máte 5 pracovních dnů; před uplynutím lhůty vám pošleme připomenutí. Schválíte-li fotografii, nebo se v této lhůtě nevyjádříte, je vyfocená podoba ujednanou vlastností výrobku (§ 2161 odst. 1 písm. a) OZ) a rozdíl proti vaší představě už není vadou. Nesoulad se zadáním — jiné číslo, text, motiv nebo rozměr, než jste zadali — zůstává vadou vždy. Drobné úpravy, které ještě jdou udělat, s vámi rádi probereme.",
         },
         {
           type: "p",
-          text: "**Zrušení zakázky z vaší strany.** Zrušíte-li zakázku dřív, než začneme vyrábět, vrátíme zálohu celou. Zrušíte-li ji po zahájení výroby, ponecháme si ze zálohy jen částku odpovídající nákladům skutečně vynaloženým do dne zrušení (materiál, práce, výpal) — vyčíslíme vám je — a zbytek vrátíme do 14 dnů.",
+          text: "**Zrušení zakázky z vaší strany.** Zakázku můžete zrušit v účtu u objednávky nebo e-mailem. Zrušíte-li ji **před zahájením výroby** (před e-mailem „Zakázka je ve výrobě“), vrátíme vám do 14 dnů všechno, co jste zaplatili, stejným způsobem, jakým jste platili. Zrušíte-li ji **po zahájení výroby**, záloha se nevrací: pokrývá materiál, návrh, vyhrazenou kapacitu a práci, které jsme do kusu vložili a který už nikomu jinému neprodáme. Všechno, co jste zaplatili nad zálohu, vám vrátíme do 14 dnů stejným způsobem; doplatek po vás nepožadujeme a rozpracovaný nebo hotový výrobek zůstává nám.",
         },
         {
           type: "p",
-          text: "**Doplatek.** Po dokončení vám pošleme výzvu k doplacení zbytku ceny včetně dopravy s odkazem na online platbu; při osobním odběru můžete doplatit i na místě. Nezaplatíte-li doplatek ani po připomenutí do 30 dnů od výzvy, můžeme od smlouvy odstoupit a ponechat si ze zálohy náklady skutečně vynaložené na výrobu, nejvýše však celou zálohu.",
+          text: "**Zrušení z naší strany.** Nemůžeme-li zakázku vyrobit, nebo nestihneme-li ani náhradní termín, od smlouvy odstoupíme a vrátíme vám do 14 dnů všechno, co jste zaplatili, stejným způsobem, jakým jste platili.",
+        },
+        {
+          type: "p",
+          text: "**Doplatek.** Po dokončení a schválení podoby vám pošleme výzvu k doplacení zbytku ceny včetně dopravy s odkazem na online platbu; při osobním odběru můžete doplatit i na místě. Nezaplatíte-li doplatek ani po připomenutí do 30 dnů od výzvy, platí, že jste zakázku zrušili po zahájení výroby: záloha se nevrací, všechno zaplacené nad zálohu vám vrátíme do 14 dnů a výrobek zůstává nám.",
         },
         {
           type: "p",
@@ -373,11 +377,15 @@ const obchodniPodminky: LegalDocumentVersion = {
         },
         {
           type: "p",
-          text: "**Výrobní lhůta.** Výrobní lhůtu uvádíme u výrobku nebo v nabídce; ruční výroba se sušením a dvěma výpaly se nedá uspěchat. Kdyby se výroba zpozdila (například kus praskne při výpalu a musí vzniknout znovu), dáme vám hned vědět a navrhneme nový termín. Nebude-li vám vyhovovat, můžete od smlouvy odstoupit a zálohu vám vrátíme celou.",
+          text: "**Výrobní lhůta.** Výrobek dokončíme do lhůty uvedené u výrobku nebo v nabídce, počítané ode dne zahájení výroby (e-mail „Zakázka je ve výrobě“); ruční výroba se sušením a dvěma výpaly se nedá uspěchat. Praskne-li kus při výpalu, vyrobíme ho znovu bez příplatku a oznámíme vám nový termín. Nestihneme-li lhůtu, navrhneme náhradní termín; nestihneme-li ani ten, můžete od smlouvy odstoupit a vrátíme vám do 14 dnů všechno, co jste zaplatili.",
         },
         {
           type: "p",
-          text: "**Odchylky ruční výroby.** Ruční výroba přináší drobné odchylky v odstínu glazury, struktuře povrchu a rozměrech (rozměr nejvýše o 5 % větší nebo menší, není-li sjednáno jinak). Tyto odchylky nejsou vadou. Vadou je rozpor se schválenou předlohou nebo poškození výrobku.",
+          text: "**Co je a není vadou.** Každý kus vzniká rukama a žádné dva nejsou stejné. Vadou proto není odstín a kresba glazury, drobné nerovnosti a stopy ruční práce ani drobná odchylka rozměru. Vadou je prasklina, odštěpek, odlupující se glazura, jiný motiv, text nebo rozměr než ve schválené podobě a poškození při přepravě. Práva z vad se řídí [čl. XII](/smluvni-podminky#prava-z-vadneho-plneni) a [Reklamačním řádem](/reklamacni-rad).",
+        },
+        {
+          type: "p",
+          text: "**Potvrzení zakázky.** Spolu s potvrzením objednávky vám pošleme PDF „Potvrzení zakázky“ — shrnutí smlouvy: zadání, cenu, zálohu a doplatek, výrobní lhůtu, pravidla zrušení a co jste při objednávce potvrdili. Je to potvrzení smlouvy v textové podobě (§ 1827 odst. 2 OZ) a najdete ho i v účtu u objednávky.",
         },
         {
           type: "p",

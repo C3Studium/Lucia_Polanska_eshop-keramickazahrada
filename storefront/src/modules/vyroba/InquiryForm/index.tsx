@@ -43,7 +43,7 @@ const STEPS = [
   },
   {
     title: "Výroba",
-    text: "Po připsání zálohy se pustím do práce.",
+    text: "Po připsání zálohy se pustím do práce. V den zahájení vám přijde e-mail „Zakázka je ve výrobě“ — od něj běží výrobní lhůta a od něj se záloha při zrušení nevrací.",
   },
 ] as const
 
@@ -102,7 +102,9 @@ export default async function VyrobaInquiry() {
               <strong>Zakázku na míru nelze vrátit do 14 dnů.</strong> Jde o zboží
               vyrobené podle vašeho zadání, u kterého zákon odstoupení od smlouvy
               ve 14denní lhůtě vylučuje (§ 1837 písm. d) občanského zákoníku). Výši
-              zálohy uvidíte v nabídce — ještě než se rozhodnete.
+              zálohy (nejvýš 50 % ceny) uvidíte v nabídce — ještě než se rozhodnete.
+              Zrušíte-li zakázku před zahájením výroby, vrátím vám vše; po zahájení
+              se záloha nevrací, zbytek ano.
             </p>
           </aside>
 
