@@ -52,13 +52,14 @@ poměrnou část dopravy (případně celou, pokud vrácený kus změnil cenu do
 
 ### 3. Balné u ceny výrobku (OPEN_QUESTIONS #17d)
 
-Ke každému výrobku se účtuje povinné balné (podle produktu 0–X Kč, i u osobního odběru) jako
-samostatná položka „Balné — <název výrobku>“. Zákazník ho poprvé uvidí **v košíku**, na
-stránce výrobku u ceny ne.
+Ke každému výrobku se účtuje povinné balné (podle výrobku 0–X Kč, i u osobního odběru) jako
+samostatná položka „Balné — <název výrobku>“. Od 20. 10. ho stránka výrobku uvádí přímo pod
+cenou: „+ balné 50,- za kus — Cena balení je u každého výrobku jiná a účtuje se zvlášť.“
+(u výrobku bez balného „Balné u tohoto výrobku neúčtujeme.“). Totéž říkají OP a stránka
+Doprava a platba.
 
-**Stav 20. 10.:** balné jsme doplnili přímo k ceně výrobku („+ balné 50,- za kus — cena balení je u každého výrobku jiná a účtuje se zvlášť“), v OP i na stránce Doprava a platba. **Otázka:** Stačí takto, nebo je nutné balné zahrnout do ceny výrobku? Splňuje to § 1811 odst. 2 písm. c) OZ a § 12 zákona o ochraně spotřebitele
-(cena včetně všech daní a poplatků)? Je nutné u ceny výrobku uvádět „+ balné X Kč“, nebo
-balné zahrnout do ceny výrobku?
+**Otázka:** Splňuje to § 1811 odst. 2 písm. c) OZ a § 12 zákona o ochraně spotřebitele (cena
+včetně všech daní a poplatků), nebo je nutné balné zahrnout přímo do ceny výrobku?
 
 ## Pro představu — co už je hotové
 
