@@ -1,7 +1,10 @@
 "use server"
 
 import { sdk } from "@lib/config"
+import { inlineToPlain } from "@lib/legal/inline"
 import { getAuthHeaders } from "./cookies"
+import { getLegalFacts } from "./legal-facts"
+import { getPublishedLegalRegistry } from "./legal-registry"
 
 /**
  * Server actions for the course reservation system (docs/kurzy-system.md).
@@ -46,6 +49,24 @@ export type CourseReservationInput = {
   payment_method: "online" | "on_site"
   /** Honeypot — forwarded verbatim, humans never fill it. */
   website?: string
+  /** Souhlas s OP (čl. Kurzy) — povinný, backend bez něj rezervaci odmítne. */
+  terms_accepted: boolean
+  /** Poučení: u kurzu s pevným termínem nelze odstoupit do 14 dnů (§ 1837 písm. j) OZ). Povinné. */
+  exception_ack: boolean
+  /** Nepovinný souhlas s fotkami z kurzu. */
+  photo_consent: boolean
+  /** Kdy zákazník rezervaci odeslal (ISO z prohlížeče). */
+  client_accepted_at?: string
+}
+
+/** Krátký otisk textu (FNV-1a, 32 bit) — pozná se z něj, které znění storna zákazník viděl. */
+const textFingerprint = (text: string): string => {
+  let hash = 0x811c9dc5
+  for (let index = 0; index < text.length; index++) {
+    hash ^= text.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193) >>> 0
+  }
+  return hash.toString(16).padStart(8, "0")
 }
 
 export type CourseReservationResult =
@@ -149,6 +170,14 @@ export const createCourseReservation = async (
   input: CourseReservationInput
 ): Promise<CourseReservationResult> => {
   const headers = await getAuthHeaders()
+  /* Verze OP a otisk zobrazeného znění storno podmínek se doplní TADY, na
+     serveru — z publikovaného registru právních dokumentů (repo + Studio)
+     a z faktu `course.cancellation` z administrace obchodu (tentýž text, jaký
+     zákazník viděl v rezervaci), ne z prohlížeče. Backend je uloží
+     k rezervaci (`consents`). */
+  const [registry, facts] = await Promise.all([getPublishedLegalRegistry(), getLegalFacts()])
+  const termsVersion = registry.currentTermsVersion()
+  const stornoText = inlineToPlain("{{course.cancellation}}", { facts })
   try {
     const result = await sdk.client.fetch<{
       reservation_id: string
@@ -157,7 +186,11 @@ export const createCourseReservation = async (
     }>(`/store/courses/reservations`, {
       method: "POST",
       headers,
-      body: input,
+      body: {
+        ...input,
+        terms_version: termsVersion,
+        cancellation_terms_text_version: `${termsVersion}:${textFingerprint(stornoText)}`,
+      },
       cache: "no-store",
     })
     return { ok: true, ...result }

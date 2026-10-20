@@ -19,12 +19,18 @@ export const GET = async (
   const reviewModuleService: ProductReviewModuleService = req.scope.resolve(PRODUCT_REVIEW_MODULE)
 
   // Get reviews for product
+  //
+  // Pole jsou pevná a stojí ZA `req.queryConfig`: dřív ho rozprostření
+  // přepsalo, takže platily výchozí pole z middlewaru (bez
+  // `verified_purchase`) a klient si přes `?fields=` mohl vyžádat cokoli,
+  // i `customer_id`. Z queryConfigu se bere jen stránkování a řazení.
   const { data: reviews, metadata: {
     count,
     take,
     skip
   } = { count: 0, take: 10, skip: 0 } } = await query.graph({
     entity: "review",
+    ...req.queryConfig,
     fields: [
       "id",
       "title",
@@ -34,14 +40,14 @@ export const GET = async (
       "last_name",
       "status",
       "product_id",
-      "customer_id",
       "created_at",
+      // Štítek „Ověřený nákup" — storefront ho ukáže jen při `true` (§ 5 ZOS).
+      "verified_purchase",
     ],
     filters: {
       product_id: id,
-      status: "schváleno" 
+      status: "schváleno"
     },
-    ...req.queryConfig
   })
 
   const safe = Array.isArray(reviews) ? reviews.filter((r: any) => !!r) : []

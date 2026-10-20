@@ -2,7 +2,7 @@ import { convertToLocale } from "@lib/util/money"
 import { PLATCE_DPH } from "@lib/util/dph"
 import { HttpTypes } from "@medusajs/types"
 import styles from "../styles/order-summary.module.scss"
-import { packagingSubtotal } from "@lib/util/packaging"
+import { dobirkaFeeSubtotal, packagingSubtotal } from "@lib/util/packaging"
 
 type OrderSummaryProps = {
   order: HttpTypes.StoreOrder
@@ -20,6 +20,9 @@ const OrderSummary = ({ order }: OrderSummaryProps) => {
     })
   }
 
+  const packaging = packagingSubtotal(order.items)
+  const dobirkaFee = dobirkaFeeSubtotal(order.items)
+
   return (
     <div className={styles.root}>
       <h2 className={styles.title}>Kolik to dělá</h2>
@@ -31,17 +34,26 @@ const OrderSummary = ({ order }: OrderSummaryProps) => {
               a sloupec nevycházel. */}
           <span>{getAmount(order.item_subtotal)}</span>
         </div>
-        {/* Rozpad mezisoučtu: výrobky a balné, odsazeně. */}
-        {packagingSubtotal(order.items) !== null && (
+        {/* Rozpad mezisoučtu: výrobky, balné a doběrečné, odsazeně.
+            Doběrečné do „Výrobky" nepatří — vlastní řádek. */}
+        {(packaging !== null || dobirkaFee !== null) && (
           <>
             <div className={styles.row} style={{ paddingLeft: ".9rem", opacity: 0.78, fontSize: ".9em" }}>
               <span>Výrobky</span>
-              <span>{getAmount(order.item_subtotal - (packagingSubtotal(order.items) ?? 0))}</span>
+              <span>{getAmount(order.item_subtotal - (packaging ?? 0) - (dobirkaFee ?? 0))}</span>
             </div>
-            <div className={styles.row} style={{ paddingLeft: ".9rem", opacity: 0.78, fontSize: ".9em" }}>
-              <span>Balné</span>
-              <span>{getAmount(packagingSubtotal(order.items) ?? 0)}</span>
-            </div>
+            {packaging !== null && (
+              <div className={styles.row} style={{ paddingLeft: ".9rem", opacity: 0.78, fontSize: ".9em" }}>
+                <span>Balné</span>
+                <span>{getAmount(packaging)}</span>
+              </div>
+            )}
+            {dobirkaFee !== null && (
+              <div className={styles.row} style={{ paddingLeft: ".9rem", opacity: 0.78, fontSize: ".9em" }}>
+                <span>Doběrečné</span>
+                <span>{getAmount(dobirkaFee)}</span>
+              </div>
+            )}
           </>
         )}
         <div className={styles.meta}>

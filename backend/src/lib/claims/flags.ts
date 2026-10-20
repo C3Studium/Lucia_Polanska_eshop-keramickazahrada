@@ -20,6 +20,8 @@ export const CLAIM_FLAG_ORDER_FIELDS = [
   "items.id",
   "items.metadata",
   "items.product.metadata",
+  // Zakázka i podle kategorie Zakázková výroba (made-to-order.ts, 14. 10. 2026).
+  "items.product.categories.handle",
 ]
 
 const allPayments = (order: any): any[] =>

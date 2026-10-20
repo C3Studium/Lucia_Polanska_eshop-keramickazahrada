@@ -14,6 +14,8 @@ export type CreateReviewStepInput = {
   first_name: string
   last_name: string
   status?: "čeká na schválení" | "schváleno" | "zamítnuto" | "archivováno"
+  /** Výsledek `verify-review-purchase` — nikdy z formuláře. */
+  verified_purchase?: boolean
 }
 
 export const createReviewStep = createStep(
@@ -32,6 +34,7 @@ export const createReviewStep = createStep(
       first_name: input.first_name,
       last_name: input.last_name,
       status: input.status ?? "čeká na schválení",
+      verified_purchase: input.verified_purchase === true,
     })
 
     return new StepResponse(review, review.id)

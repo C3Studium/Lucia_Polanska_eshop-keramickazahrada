@@ -6,6 +6,8 @@ import {
   SANSATION_BOLD_BASE64,
   SANSATION_REGULAR_BASE64,
 } from "./assets/protokol-fonts"
+import type { LegalFactValues } from "./legal-facts"
+import { getLegalFacts } from "./merchant-settings"
 
 /**
  * Reklamační protokol jako PDF — zákonné písemné potvrzení (§ 19 z. č. 634/1992
@@ -16,7 +18,17 @@ import {
  * řeší volající.
  */
 
-const SELLER = {
+export type ProtocolSeller = {
+  name: string
+  address: string
+  /** Prázdné = na dokladu se IČO nevypíše. */
+  ico: string
+  email: string
+  phone: string
+}
+
+/** Záloha, když právní údaje nejde přečíst (nebo údaj chybí). */
+const FALLBACK_SELLER: ProtocolSeller = {
   name: process.env.SELLER_NAME || "Keramická zahrada — Lucie Polanská",
   address: process.env.SELLER_ADDRESS || "Putim 229, 397 01 Písek",
   // Prázdné, dokud se nenastaví — na dokladu se pak IČO prostě nevypíše.
@@ -24,6 +36,21 @@ const SELLER = {
   email: process.env.SELLER_EMAIL || "info@keramickazahrada.cz",
   phone: process.env.SELLER_PHONE || "+420 775 211 578",
 }
+
+/**
+ * Prodávající na protokolu — z právních údajů (administrace → Právní údaje),
+ * stejně jako v obchodních podmínkách a reklamačním řádu. Doklad musí mít
+ * prodávajícího celého, takže nevyplněný údaj spadne na zálohu.
+ */
+export const protocolSeller = (
+  facts?: Partial<LegalFactValues> | null
+): ProtocolSeller => ({
+  name: facts?.["seller.name"] || FALLBACK_SELLER.name,
+  address: facts?.["seller.address"] || FALLBACK_SELLER.address,
+  ico: facts?.["seller.ico"] || FALLBACK_SELLER.ico,
+  email: facts?.["seller.email"] || FALLBACK_SELLER.email,
+  phone: facts?.["seller.phone"] || FALLBACK_SELLER.phone,
+})
 
 export const PROTOCOL_TITLE: Record<string, string> = {
   reklamace: "Reklamační protokol",
@@ -100,7 +127,8 @@ const toBytes = (b64: string): Uint8Array =>
   new Uint8Array(Buffer.from(b64, "base64"))
 
 export const generateProtocolPdf = async (
-  data: ProtocolData
+  data: ProtocolData,
+  seller: ProtocolSeller = protocolSeller()
 ): Promise<Uint8Array> => {
   const doc = await PDFDocument.create()
   doc.registerFontkit(fontkit)
@@ -188,10 +216,14 @@ export const generateProtocolPdf = async (
 
   // ── Strany ────────────────────────────────────────────────────────────────
   text("Prodávající", { font: bold, size: 11, gap: 4 })
-  text(SELLER.name, { size: 10.5, gap: 3 })
-  text(SELLER.address, { size: 10.5, gap: 3 })
-  if (SELLER.ico) text(`IČO: ${SELLER.ico}`, { size: 10.5, gap: 3 })
-  text(`${SELLER.email} · ${SELLER.phone}`, { size: 10, color: muted, gap: 3 })
+  text(seller.name, { size: 10.5, gap: 3 })
+  text(seller.address, { size: 10.5, gap: 3 })
+  if (seller.ico) text(`IČO: ${seller.ico}`, { size: 10.5, gap: 3 })
+  text([seller.email, seller.phone].filter(Boolean).join(" · "), {
+    size: 10,
+    color: muted,
+    gap: 3,
+  })
   space(10)
 
   text("Kupující", { font: bold, size: 11, gap: 4 })
@@ -357,7 +389,9 @@ export const buildAndStoreProtocol = async (
   data: ProtocolData
 ): Promise<{ url: string | null; number: string }> => {
   try {
-    const bytes = await generateProtocolPdf(data)
+    // Nikdy nevyhodí; bez nastavení jsou údaje výchozí z kódu.
+    const { facts } = await getLegalFacts(container)
+    const bytes = await generateProtocolPdf(data, protocolSeller(facts))
     const base64 = Buffer.from(bytes).toString("base64")
     const fileModule = container.resolve(Modules.FILE)
     const [uploaded] = await fileModule.createFiles([

@@ -3,8 +3,8 @@ import type {
   MedusaResponse,
 } from "@medusajs/framework/http"
 import { MedusaError } from "@medusajs/framework/utils"
-import { z } from "zod"
 import { COURSE_MODULE } from "../../../../modules/course"
+import { photoConsentLine } from "../../../../modules/course/legal"
 import type CourseModuleService from "../../../../modules/course/service"
 import { ensureCoursePaymentLink } from "../../../../lib/course-payment"
 import {
@@ -13,6 +13,7 @@ import {
 } from "../../../../lib/course-emails"
 import { signCourseReservationToken } from "../../../../lib/course-reservation-link"
 import { notifyMerchant } from "../../../../lib/notify"
+import { buildReservationConsents, parseReservation } from "./schema"
 
 /**
  * The public reservation create — the „Rezervovat" button on /kurzy.
@@ -26,22 +27,11 @@ import { notifyMerchant } from "../../../../lib/notify"
  * Abuse handling copies the contact form: a honeypot that answers success
  * without doing anything, and a small per-e-mail window so a runaway script
  * cannot fill a term with pending reservations.
+ *
+ * Souhlasy (`./schema.ts`): bez souhlasu s OP a bez potvrzeného poučení
+ * o výjimce z odstoupení (§ 1837 písm. j) OZ) → 400 s českou hláškou. Uloží
+ * se k rezervaci do `consents` i se serverovým časem.
  */
-
-const ReservationSchema = z.object({
-  term_id: z.string().trim().min(1),
-  name: z.string().trim().min(2, "Vyplňte prosím jméno.").max(200),
-  email: z
-    .string()
-    .trim()
-    .email("Zkontrolujte prosím e-mailovou adresu.")
-    .max(320),
-  phone: z.string().trim().min(6, "Zkontrolujte prosím telefon.").max(40),
-  party_size: z.number().int().min(1).max(30),
-  payment_method: z.enum(["online", "on_site"]),
-  /** Honeypot — humans never see the field, so any content marks a bot. */
-  website: z.string().max(400).optional(),
-})
 
 const WINDOW_MS = 10 * 60 * 1000
 const WINDOW_LIMIT = 5
@@ -64,15 +54,9 @@ export const POST = async (
   req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
-  const parsed = ReservationSchema.safeParse(req.body ?? {})
-  if (!parsed.success) {
-    const first = parsed.error.issues[0]
-    res.status(400).json({
-      message:
-        first?.message && /[ěščřžýáíéúů]/i.test(first.message)
-          ? first.message
-          : "Zkontrolujte prosím vyplněné údaje — něco chybí, nebo je v jiném tvaru.",
-    })
+  const parsed = parseReservation(req.body)
+  if ("message" in parsed) {
+    res.status(400).json({ message: parsed.message })
     return
   }
 
@@ -107,6 +91,7 @@ export const POST = async (
       payment_method: input.payment_method,
       source: "web",
       customer_id: customerId,
+      consents: buildReservationConsents(input),
     }))
   } catch (error) {
     if (error instanceof MedusaError) {
@@ -174,6 +159,7 @@ export const POST = async (
         reservation.phone ? `, tel. ${reservation.phone}` : ""
       }`,
       "Zaplatí na místě.",
+      photoConsentLine(reservation.consents),
     ].join("\n"),
     audience: "owner",
     email: true,

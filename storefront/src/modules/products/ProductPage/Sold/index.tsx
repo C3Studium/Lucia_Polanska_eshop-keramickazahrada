@@ -19,8 +19,14 @@ import {
 } from "react"
 
 import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import { itemValue } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
 type SoldProductsProps = {
   products: HttpTypes.StoreProduct[]
+  /** Blok `global.produkt` — hlavička sekce (`dalsi.*`). */
+  block?: CopyBlock
 }
 
 type ProductRailProps = {
@@ -372,11 +378,26 @@ function ProductRail({ products }: ProductRailProps) {
   )
 }
 
-export default function SoldProducts({ products }: SoldProductsProps) {
+export default function SoldProducts({ products, block }: SoldProductsProps) {
+  /* Hlavička se po zapnutí editace sama nepřekreslí (karusel jede z motion
+     hodnot). Viz hook. Před návratem níž — hook musí běžet pokaždé. */
+  useEditRerender()
+
   if (!products.length) return null
   const isCollectionSelection = products.some(
     (product) => product.collection_id
   )
+
+  /*
+   * Texty z bloku `global.produkt`, položky `dalsi.*`. Která z dvojic
+   * („Ze stejné kolekce" / „Z ateliéru") se ukáže, rozhoduje kód podle toho,
+   * odkud výběr pochází — CMS mění jen slova. Patička karuselu („Posuňte
+   * doprava") je nápověda k ovládání a zůstává v kódu.
+   */
+  const text = (label: string, fallback: string) =>
+    itemValue(block, label)?.trim() || fallback
+  const scopeLabel = isCollectionSelection ? "dalsi.kolekce" : "dalsi.atelier"
+  const introLabel = isCollectionSelection ? "dalsi.text-kolekce" : "dalsi.text-atelier"
 
   return (
     <section
@@ -387,23 +408,40 @@ export default function SoldProducts({ products }: SoldProductsProps) {
       aria-labelledby="next-objects-title"
     >
       <div className="soldProducts__head">
-        <span>Mohlo by se hodit · 03</span>
+        <span {...editableItem(block, "dalsi.stitek")}>
+          {text("dalsi.stitek", "Mohlo by se hodit · 03")}
+        </span>
         <div className="soldProducts__line" />
-        <span>
-          {isCollectionSelection ? "Ze stejné kolekce" : "Z ateliéru"}
+        <span {...editableItem(block, scopeLabel)}>
+          {isCollectionSelection
+            ? text("dalsi.kolekce", "Ze stejné kolekce")
+            : text("dalsi.atelier", "Z ateliéru")}
         </span>
       </div>
 
       <div className="soldProducts__intro">
+        {/* Nadpis i odstavec po částech v holých spanech — `editable` píše
+            celé pole a každá část je jiná položka bloku. */}
         <h2 id="next-objects-title">
-          Podívejte se ještě
-          <em> na tyhle kousky.</em>
+          <span {...editableItem(block, "dalsi.nadpis")}>
+            {text("dalsi.nadpis", "Podívejte se ještě")}
+          </span>
+          <em>
+            {" "}
+            <span {...editableItem(block, "dalsi.zvyrazneni")}>
+              {text("dalsi.zvyrazneni", "na tyhle kousky.")}
+            </span>
+          </em>
         </h2>
         <p>
-          {isCollectionSelection
-            ? "Další kusy ze stejné kolekce."
-            : "Další kusy, které mám teď v ateliéru."}{" "}
-          Všechno vzniká ručně a jen v malém počtu.
+          <span {...editableItem(block, introLabel)}>
+            {isCollectionSelection
+              ? text("dalsi.text-kolekce", "Další kusy ze stejné kolekce.")
+              : text("dalsi.text-atelier", "Další kusy, které mám teď v ateliéru.")}
+          </span>{" "}
+          <span {...editableItem(block, "dalsi.dovetek")}>
+            {text("dalsi.dovetek", "Všechno vzniká ručně a jen v malém počtu.")}
+          </span>
         </p>
       </div>
 

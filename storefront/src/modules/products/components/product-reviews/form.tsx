@@ -10,17 +10,32 @@ import { useFormStatus } from "react-dom"
 
 import { retrieveCustomer } from "../../../../lib/data/customer"
 import { addProductReview } from "../../../../lib/client/reviews"
+import { REVIEW_POLICY_TEXT } from "./copy"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import { itemText } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
 import styles from "./form.module.scss"
 
 type ProductReviewsFormProps = {
   productId: string
   previewMode?: boolean
+  /**
+   * Blok `global.produkt` — pozvánka k recenzi (`recenze.oboci`,
+   * `recenze.nadpis` s koncem v `note`, `recenze.text`, `recenze.prihlaseni`).
+   * V kódu zůstává text o ověřování recenzí (§ 5 ZOS), hlášky po odeslání
+   * („ještě ji projdeme a zveřejníme" — jak se schvaluje) a popisky polí.
+   */
+  texts?: CopyBlock
 }
 
 export default function ProductReviewsForm({
   productId,
   previewMode = false,
+  texts,
 }: ProductReviewsFormProps) {
+  /* Pozvánka se před přihlášením nepřekresluje. Viz hook. */
+  useEditRerender()
   const [customer, setCustomer] = useState<HttpTypes.StoreCustomer | null>(null)
   const [hasResolvedCustomer, setHasResolvedCustomer] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -126,14 +141,23 @@ export default function ProductReviewsForm({
 
       <div className={styles.invitation}>
         <div className={styles.invitationCopy}>
-          <span className={styles.eyebrow}>Přidat recenzi</span>
+          <span className={styles.eyebrow} {...editableItem(texts, "recenze.oboci")}>
+            {itemText(texts, "recenze.oboci", "Přidat recenzi")}
+          </span>
+          {/* Začátek nadpisu v holém spanu jen kvůli anotaci — konec je `note`. */}
           <h2>
-            Máte to už doma?
-            <em>Napište, jak se vám to líbí.</em>
+            <span {...editableItem(texts, "recenze.nadpis")}>
+              {itemText(texts, "recenze.nadpis", "Máte to už doma?")}
+            </span>
+            <em {...editableItem(texts, "recenze.nadpis", "note")}>
+              {itemText(texts, "recenze.nadpis", "Napište, jak se vám to líbí.", "note")}
+            </em>
           </h2>
-          <p>
-            Ostatním to hodně pomůže při výběru — a mně taky.
+          <p {...editableItem(texts, "recenze.text")}>
+            {itemText(texts, "recenze.text", "Ostatním to hodně pomůže při výběru — a mně taky.")}
           </p>
+          {/* § 5 ZOS: kdo smí psát, co znamená štítek, jak se schvaluje. */}
+          <p className={styles.policy}>{REVIEW_POLICY_TEXT}</p>
         </div>
 
         <div className={styles.reviewSeal} aria-hidden="true">
@@ -151,9 +175,12 @@ export default function ProductReviewsForm({
         </div>
       ) : !activeCustomer ? (
         <div className={styles.authPrompt}>
-          <p>
-            Abyste mohli napsat recenzi, přihlaste se — nebo si během chvilky
-            založte účet.
+          <p {...editableItem(texts, "recenze.prihlaseni")}>
+            {itemText(
+              texts,
+              "recenze.prihlaseni",
+              "Abyste mohli napsat recenzi, přihlaste se — nebo si během chvilky založte účet."
+            )}
           </p>
           <div className={styles.authActions}>
             <Link href="/account" className={styles.primaryAction}>

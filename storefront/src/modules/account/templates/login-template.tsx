@@ -4,6 +4,7 @@ import { useState } from "react"
 import Register from "@modules/account/components/register"
 import Login from "@modules/account/components/login"
 import { AnimatePresence, motion } from "framer-motion"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
 import type { CopyBlock } from "@lib/util/site-copy"
 import AuthPortal from "../components/auth-portal"
 
@@ -16,9 +17,13 @@ type LoginTemplateProps = {
   redirectTo?: string
   /** Blok `global.prihlaseni` — fotka vedle formuláře. */
   block?: CopyBlock
+  /** Blok `ucet.formular` — věty ve formuláři přihlášení a registrace. */
+  form?: CopyBlock
 }
 
-const LoginTemplate = ({ redirectTo, block }: LoginTemplateProps) => {
+const LoginTemplate = ({ redirectTo, block, form }: LoginTemplateProps) => {
+  /* Formuláře se po zapnutí editace samy nepřekreslí. Viz hook. */
+  useEditRerender()
   const [currentView, setCurrentView] = useState<LOGIN_VIEW>(LOGIN_VIEW.SIGN_IN)
   const isSignIn = currentView === LOGIN_VIEW.SIGN_IN
 
@@ -37,9 +42,9 @@ const LoginTemplate = ({ redirectTo, block }: LoginTemplateProps) => {
           style={styleObj}
         >
           {isSignIn ? (
-            <Login setCurrentView={setCurrentView} redirectTo={redirectTo} />
+            <Login setCurrentView={setCurrentView} redirectTo={redirectTo} copy={form} />
           ) : (
-            <Register setCurrentView={setCurrentView} redirectTo={redirectTo} />
+            <Register setCurrentView={setCurrentView} redirectTo={redirectTo} copy={form} />
           )}
         </motion.div>
       </AnimatePresence>

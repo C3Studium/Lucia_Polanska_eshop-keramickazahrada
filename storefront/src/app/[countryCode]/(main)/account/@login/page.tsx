@@ -17,6 +17,14 @@ export default async function Login({ params, searchParams }: LoginPageProps) {
   const redirectTo =
     query.redirectTo === "/cart" ? `/${countryCode}/cart` : undefined
 
-  const copy = await getPageCopy("global")
-  return <LoginTemplate redirectTo={redirectTo} block={copy["global.prihlaseni"]} />
+  // Hero vedle formuláře je globální (`global.prihlaseni`), věty ve formuláři
+  // patří stránce účtu (`ucet.formular`).
+  const [global, ucet] = await Promise.all([getPageCopy("global"), getPageCopy("ucet")])
+  return (
+    <LoginTemplate
+      redirectTo={redirectTo}
+      block={global["global.prihlaseni"]}
+      form={ucet["ucet.formular"]}
+    />
+  )
 }

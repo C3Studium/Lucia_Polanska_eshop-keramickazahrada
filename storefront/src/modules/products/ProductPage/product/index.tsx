@@ -4,6 +4,7 @@ import { BundleProduct } from "@lib/data/products";
 import { notFound } from "next/navigation";
 import ProductDetails, { type ProductPickMode } from "./details/details";
 import type { ProductionProfile } from "@lib/util/made-to-order";
+import type { CopyBlock } from "@lib/util/site-copy";
 
 
 type ProductTemplateProps = {
@@ -21,9 +22,11 @@ type ProductTemplateProps = {
   isBundlePreview?: boolean
   /** Režim výběru do úpravy objednávky — místo košíku „Přidat k objednávce #N". */
   pick?: ProductPickMode
+  /** Blok `global.produkt` — společné texty stránek výrobku. Bez něj texty z kódu. */
+  texts?: CopyBlock
 }
 
-const Product: React.FC<ProductTemplateProps> = ({ product, region, countryCode, categories, wishlistItems, isAuthenticated, hasSavedAddress, initialRating, initialCount, bundle, isBundlePreview, productionProfile, pick }) => {
+const Product: React.FC<ProductTemplateProps> = ({ product, region, countryCode, categories, wishlistItems, isAuthenticated, hasSavedAddress, initialRating, initialCount, bundle, isBundlePreview, productionProfile, pick, texts }) => {
 
     // If the product is not found return not found page
     if (!product || !product.id) {
@@ -38,7 +41,7 @@ const Product: React.FC<ProductTemplateProps> = ({ product, region, countryCode,
             data-scroll-section
             data-scroll-label="Výrobek"
         >
-            <ProductDetails product={product} categories={categories} region={region} countryCode={countryCode} wishlistItems={wishlistItems} isAuthenticated={isAuthenticated} hasSavedAddress={hasSavedAddress} initialRating={initialRating} initialCount={initialCount} bundle={bundle} isBundlePreview={isBundlePreview} productionProfile={productionProfile} pick={pick} />
+            <ProductDetails product={product} categories={categories} region={region} countryCode={countryCode} wishlistItems={wishlistItems} isAuthenticated={isAuthenticated} hasSavedAddress={hasSavedAddress} initialRating={initialRating} initialCount={initialCount} bundle={bundle} isBundlePreview={isBundlePreview} productionProfile={productionProfile} pick={pick} texts={texts} />
         </section>
     )
 }

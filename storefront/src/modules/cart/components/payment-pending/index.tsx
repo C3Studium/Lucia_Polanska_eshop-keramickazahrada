@@ -3,6 +3,9 @@
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
+import { itemFieldPath, itemValue } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
+import CmsText from "@modules/common/components/cms-text"
 import OrderStateShell from "@modules/order/components/order-state-shell"
 import styles from "./style.module.scss"
 
@@ -18,11 +21,20 @@ export default function PaymentPending({
   orderNumber,
   supportEmail,
   supportPhone,
+  block,
 }: {
   reference: string
   orderNumber?: string
   supportEmail: string
   supportPhone: string
+  /**
+   * Blok `kosik.platba-ceka`: nadpis (`title` + `headline`), odstavec
+   * (`body`) a položky klíčované popiskem — obočí (`oboci`) a poznámka
+   * o obnovování (`poznamka`). Položky, ne pozice v `accent`: CMS z něj
+   * prázdné vyhazuje a poznámka by se posunula do obočí.
+   * Číslo objednávky a kontakty jsou údaje, ne text — drží je kód.
+   */
+  block?: CopyBlock
 }) {
   const router = useRouter()
 
@@ -33,11 +45,21 @@ export default function PaymentPending({
 
   return (
     <OrderStateShell
-      eyebrow="Čekáme na banku"
-      title="Objednávku máme."
-      accent="Teď čekáme na banku."
-      description="Platbu jsme odeslali, banka ji ale zatím nepotvrdila. U převodu to bývá i pár hodin, o víkendu klidně déle. Nemusíte nic dělat — jakmile ji potvrdíme, napíšeme vám."
+      eyebrow={itemValue(block, "oboci")?.trim() || "Čekáme na banku"}
+      title={block?.title?.trim() || "Objednávku máme."}
+      accent={block?.headline?.trim() || "Teď čekáme na banku."}
+      description={
+        block?.bodyText?.trim() ||
+        "Platbu jsme odeslali, banka ji ale zatím nepotvrdila. U převodu to bývá i pár hodin, o víkendu klidně déle. Nemusíte nic dělat — jakmile ji potvrdíme, napíšeme vám."
+      }
       status="pending"
+      editDoc={block?.id ?? null}
+      editFields={{
+        eyebrow: itemFieldPath(block, "oboci"),
+        title: "title",
+        accent: "headline",
+        description: "body",
+      }}
     >
       <dl className={styles.reference}>
         <div>
@@ -53,10 +75,10 @@ export default function PaymentPending({
           </dd>
         </div>
       </dl>
-      <p className={styles.note}>
-        Stránka se sama každých pár vteřin obnoví. Klidně ji zavřete, na výsledek to
-        nemá vliv.
-      </p>
+      <CmsText as="p" className={styles.note} doc={block?.id ?? null} field={itemFieldPath(block, "poznamka")}>
+        {itemValue(block, "poznamka")?.trim() ||
+          "Stránka se sama každých pár vteřin obnoví. Klidně ji zavřete, na výsledek to nemá vliv."}
+      </CmsText>
     </OrderStateShell>
   )
 }

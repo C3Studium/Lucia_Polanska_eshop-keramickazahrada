@@ -65,6 +65,48 @@ export const commissionPrompt = (item: {
   return typeof prompt === "string" ? prompt.trim() : ""
 }
 
+/**
+ * Výrobní lhůta jedné zakázkové položky pro předsmluvní souhrn v pokladně.
+ * `label: null` = lhůtu profil nemá (nebo zakázka je jen kategorií bez profilu).
+ */
+export type ProductionLeadTime = {
+  line_id: string
+  title: string
+  label: string | null
+}
+
+type LeadTimeProfile = {
+  production_time_min_days?: number | null
+  production_time_max_days?: number | null
+  variants?:
+    | {
+        variant_id: string
+        production_time_min_days_override?: number | null
+        production_time_max_days_override?: number | null
+      }[]
+    | null
+}
+
+/**
+ * „14–42 dní" / „do 42 dní" / „od 14 dní" pro variantu — přepis lhůty u
+ * varianty (store API `production-profile` ho vrací) má přednost před lhůtou
+ * produktu. Stejná slova jako `productionTimeLabel` na stránce produktu.
+ */
+export const productionLeadTimeLabel = (
+  profile: LeadTimeProfile | null | undefined,
+  variantId?: string | null
+): string | null => {
+  if (!profile) return null
+  const override = profile.variants?.find((rule) => rule.variant_id === variantId)
+  const min = override?.production_time_min_days_override ?? profile.production_time_min_days
+  const max = override?.production_time_max_days_override ?? profile.production_time_max_days
+
+  if (min && max) return min === max ? `${max} dní` : `${min}–${max} dní`
+  if (max) return `do ${max} dní`
+  if (min) return `od ${min} dní`
+  return null
+}
+
 const fold = (value: string) =>
   value
     .normalize("NFD")

@@ -9,6 +9,15 @@ import { stageAfterBalancePaid } from "../../../../lib/balance-payment"
 
 const PROVIDER_ID = "pp_comgate_comgate"
 
+/*
+ * Pro `paymentModule.getWebhookActionAndData` BEZ prefixu `pp_` — modul si ho
+ * přidává sám (`pp_${provider}`). S plným id hledal `pp_pp_comgate_comgate`,
+ * spadl na „Could not resolve" a každé ověřené oznámení od ComGate skončilo
+ * 500. Platby to dosud zachraňovala jen návratová stránka a úloha
+ * reconcile-checkout-payments (zjištěno v sandboxu 15. 10. 2026).
+ */
+const WEBHOOK_PROVIDER = PROVIDER_ID.replace(/^pp_/, "")
+
 const reconcileMadeToOrderPayment = async (
   req: MedusaRequest,
   sessionId: string,
@@ -104,7 +113,7 @@ const reconcileMadeToOrderPayment = async (
  */
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const event: ProviderWebhookPayload = {
-    provider: PROVIDER_ID,
+    provider: WEBHOOK_PROVIDER,
     payload: {
       data: (req.body || {}) as Record<string, unknown>,
       rawData: req.rawBody || Buffer.from(""),

@@ -40,6 +40,7 @@
 }
 
 .sort {
+  position: relative;
   display: flex;
   align-items: center;
   gap: clamp(.35rem, .5vw, .55rem);
@@ -51,6 +52,68 @@
 
   span { color: var(--grey-02); font-size: clamp(.75rem, .93vw, .9rem); letter-spacing: .1em; text-transform: uppercase; }
   select { border: 0;  background: transparent; color: var(--black-03); font: inherit; font-size: clamp(1rem, .85vw, 1.15rem); cursor: pointer; }
+}
+
+/* Popisek a select v jednom `label`; obal `.sort` je `div`, protože vedle
+   stojí tlačítko s vysvětlením. `display: contents` nechá rozvržení pilulky
+   beze změny. `margin-left: auto` u selectu drží select s tlačítkem „i"
+   u sebe i tam, kde pilulka rozhazuje obsah `space-between` (telefon) —
+   jinde pilulka volné místo nemá, takže se nic nehne.
+   Vysvětlení samo je ze `div`ů, ne `span`ů: pravidla `.sort span` (popisek
+   „Řazení", skrytý pod md) na něj tak nedosáhnou. */
+.sortLabel {
+  display: contents;
+
+  select { margin-left: auto; }
+}
+
+/* Vysvětlení řazení „Doporučené" (§ 5 ZOS). Kroužek s „i" jako přepínač —
+   klik/Enter otevře, Esc nebo klik mimo zavře. Panel visí pod pilulkou
+   zarovnaný k pravému okraji. */
+.sortInfo {
+  display: flex;
+  align-items: center;
+}
+
+.sortInfoButton {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid rgb(var(--black-03-rgb) / .3);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--grey-01);
+  font: italic 400 .8rem/1 "Sentient-Regular", serif;
+  cursor: pointer;
+  transition: background-color .2s ease;
+
+  &:hover,
+  &[aria-expanded="true"] { background: var(--cream-06); }
+  &:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: 2px; }
+}
+
+.sortInfoPanel {
+  position: absolute;
+  top: calc(100% + .5rem);
+  right: 0;
+  z-index: 20;
+  width: min(22rem, calc(100vw - 2rem));
+  padding: .85rem 1rem;
+  border: 1px solid rgb(var(--black-03-rgb) / .14);
+  border-radius: .75rem;
+  background: var(--white);
+  box-shadow: 0 12px 32px rgb(var(--black-03-rgb) / .12);
+  color: var(--black-03);
+  font-size: .875rem;
+  line-height: 1.45;
+  letter-spacing: normal;
+  text-align: left;
+  text-transform: none;
+
+  &[hidden] { display: none; }
 }
 
 .filterButton {

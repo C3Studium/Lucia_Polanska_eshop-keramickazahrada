@@ -1,0 +1,111 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+/*
+ * Předsmluvní informace v posledním kroku. Sazba navazuje na rekapitulaci
+ * Přehledu (`review/style.module.scss`): štítky olivové, hodnoty inkoustem,
+ * oddělené tenkou linkou. Svislé míry na vh, typ na vw (pravidlo kroku).
+ */
+
+.root {
+  --pci-ink: var(--ink-05);
+  --pci-label: var(--olive-04);
+  --pci-rule: rgb(var(--ink-05-rgb) / .18);
+
+  margin-bottom: clamp(1rem, 2.37vh, 2rem);
+  padding-bottom: clamp(1rem, 2.22vh, 1.85rem);
+  border-bottom: 1px solid var(--pci-rule);
+  color: var(--pci-ink);
+}
+
+.title {
+  margin: 0 0 clamp(.65rem, 1.11vh, .95rem);
+  color: var(--pci-label);
+  font: 400 clamp(.8125rem, 1.08vw, 1.05rem)/1.3 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.rows {
+  display: grid;
+  margin: 0;
+  gap: clamp(.55rem, 1.02vh, .85rem);
+}
+
+.rows > div {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 11rem) 1fr;
+  gap: 1.125rem;
+}
+
+.rows dt {
+  color: var(--pci-label);
+  font: 400 clamp(.9375rem, 1.25vw, 1.22rem)/1.45 "Sansation-Regular", sans-serif;
+}
+
+.rows dd {
+  display: grid;
+  margin: 0;
+  color: var(--pci-ink);
+  font: 400 clamp(.9375rem, 1.25vw, 1.22rem)/1.45 "Sansation-Regular", sans-serif;
+  gap: .2rem;
+}
+
+.rows dd small {
+  color: var(--pci-label);
+  font-size: clamp(.8125rem, 1.08vw, 1.05rem);
+}
+
+.line {
+  display: block;
+}
+
+.rows a,
+.docs a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.docs {
+  margin: clamp(.75rem, 1.39vh, 1.15rem) 0 0;
+  color: var(--pci-label);
+  font: 400 clamp(.875rem, 1.17vw, 1.15rem)/1.5 "Sansation-Regular", sans-serif;
+}
+
+/* Zástupný text `[[DOPLNIT: …]]` — vidět, ale ne křiklavě. */
+.placeholder {
+  padding: 0 .2em;
+  border-radius: .2em;
+  background: rgb(var(--clay-06-rgb) / .14);
+  color: inherit;
+}
+
+/* Rychlý nákup: hustší sazba v úzkém sloupci, bez dvousloupcové mřížky. */
+.compact {
+  margin-bottom: clamp(.5rem, 1.1vh, .75rem);
+  padding-bottom: clamp(.5rem, 1.1vh, .75rem);
+}
+
+.compact .rows > div {
+  grid-template-columns: 1fr;
+  gap: .1rem;
+}
+
+.compact .rows dt {
+  font-size: clamp(.75rem, 3.75vw, .825rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.compact .rows dd,
+.compact .docs {
+  font-size: clamp(.875rem, 1.1vw, .975rem);
+}
+
+@media (max-width: 640px) {
+  .rows > div {
+    grid-template-columns: 1fr;
+    gap: .1rem;
+  }
+}

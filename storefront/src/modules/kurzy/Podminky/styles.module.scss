@@ -1,0 +1,135 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+
+/*
+ * „Podmínky kurzů" pod rezervací. Stejný papír a měřítko jako .kurzyRezervace
+ * (modules/kurzy/Rezervace/styles.scss): krémový podklad, Sentient nadpis,
+ * světlý text. Podklad je vlastní barva, ne průhlednost — patička si odstín
+ * bere z prvku nad sebou (layout/Footer, getVisualSurface).
+ */
+
+.podminky {
+  position: relative;
+  padding: clamp(3.5rem, 9vh, 7rem) 6% clamp(5rem, 12vh, 9rem);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .14);
+  background-color: var(--cream-05);
+  color: var(--ink-05);
+}
+
+.inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(1.75rem, 3.5vw, 4rem);
+
+  @media (min-width: 1000px) and (orientation: landscape) {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    align-items: start;
+  }
+}
+
+.head {
+  max-width: 40rem;
+
+  > span {
+    color: rgb(var(--ink-05-rgb) / .66);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    margin: 1.25rem 0 0;
+    font-family: "Sentient-Regular", serif;
+    font-size: clamp(2.4rem, 3.6vw, 4.4rem);
+    font-weight: 400;
+    line-height: 0.92;
+    letter-spacing: -0.05em;
+
+    em {
+      display: block;
+      color: var(--olive-13);
+      font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+      font-weight: 300;
+    }
+  }
+
+  > p {
+    max-width: 34rem;
+    margin: clamp(1rem, 2.2vh, 1.5rem) 0 0;
+    color: rgb(var(--ink-05-rgb) / .72);
+    font-size: clamp(0.95rem, 1vw, 1.12rem);
+    font-weight: 300;
+    line-height: 1.55;
+  }
+}
+
+.body {
+  display: grid;
+  gap: clamp(1.25rem, 2.5vh, 2rem);
+}
+
+.notice {
+  padding: clamp(1rem, 2vh, 1.5rem) clamp(1.125rem, 1.8vw, 1.75rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .18);
+  border-left: 3px solid var(--olive-08);
+  background: rgb(var(--cream-10-rgb) / .55);
+
+  p {
+    margin: 0;
+    font-size: clamp(0.95rem, 1vw, 1.08rem);
+    line-height: 1.55;
+  }
+}
+
+.terms {
+  margin: 0;
+
+  > div {
+    display: grid;
+    grid-template-columns: minmax(7.5rem, 0.32fr) minmax(0, 1fr);
+    gap: 0.5rem 1.25rem;
+    padding: 0.875rem 0;
+    border-top: 1px solid rgb(var(--ink-05-rgb) / .16);
+
+    &:last-child {
+      border-bottom: 1px solid rgb(var(--ink-05-rgb) / .16);
+    }
+
+    @media (max-width: 559.98px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  dt {
+    color: var(--olive-08);
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+    color: rgb(var(--ink-05-rgb) / .82);
+    font-size: clamp(0.95rem, 1vw, 1.08rem);
+    font-weight: 300;
+    line-height: 1.55;
+  }
+}
+
+.more {
+  margin: 0;
+  font-size: 0.95rem;
+
+  a {
+    color: inherit;
+    text-underline-offset: 0.2em;
+  }
+}
+
+/* `[[DOPLNIT: …]]` — chybějící údaj (lib/legal/facts.ts). Záměrně křiklavé. */
+.placeholder {
+  padding: 0.05em 0.3em;
+  border-radius: 0.2em;
+  background: #ffe45c;
+  color: #2b2400;
+  font-weight: 600;
+}

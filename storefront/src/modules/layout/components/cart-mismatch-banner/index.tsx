@@ -5,9 +5,23 @@ import { StoreCart, StoreCustomer } from "@medusajs/types"
 import { AnimatePresence, motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { itemText } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
+import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
 import styles from "./style.module.scss"
 
 type BannerState = "idle" | "pending" | "error"
+
+/**
+ * Texty výzvy — položky `propojeni.*` bloku `global.kosik` (poskytuje hlavní
+ * layout). Hláška o nepovedeném propojení je chyba, ta zůstává v kódu.
+ */
+const BANNER_DEFAULTS = {
+  "propojeni.stitek": "Košík ještě není propojený",
+  "propojeni.text":
+    "Přihlásili jste se v pořádku, ale košík ještě není připojený k vašemu účtu.",
+  "propojeni.tlacitko": "Propojit košík",
+} as const
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -20,6 +34,9 @@ function CartMismatchBanner({
 }) {
   const router = useRouter()
   const [state, setState] = useState<BannerState>("idle")
+  const copy = useCopyBlock("global.kosik")
+  const text = (label: keyof typeof BANNER_DEFAULTS) =>
+    itemText(copy, label, BANNER_DEFAULTS[label])
 
   if (!customer || cart.customer_id) return null
 
@@ -48,11 +65,8 @@ function CartMismatchBanner({
           01
         </div>
         <div className={styles.copy}>
-          <span>Košík ještě není propojený</span>
-          <p>
-            Přihlásili jste se v pořádku, ale košík ještě není připojený
-            k vašemu účtu.
-          </p>
+          <span {...editableItem(copy, "propojeni.stitek")}>{text("propojeni.stitek")}</span>
+          <p {...editableItem(copy, "propojeni.text")}>{text("propojeni.text")}</p>
           <AnimatePresence mode="wait" initial={false}>
             {state === "error" && (
               <motion.small
@@ -84,7 +98,7 @@ function CartMismatchBanner({
             transition={transition3}
             aria-hidden="true"
           />
-          <span>{state === "pending" ? "Propojujeme…" : "Propojit košík"}</span>
+          <span>{state === "pending" ? "Propojujeme…" : text("propojeni.tlacitko")}</span>
           <motion.i
             animate={state === "pending" ? { rotate: 360 } : { rotate: 0 }}
             transition={

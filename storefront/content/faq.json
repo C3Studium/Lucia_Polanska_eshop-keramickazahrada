@@ -39,13 +39,13 @@
   "id": "poskozena-zasilka",
   "category": "doprava",
   "question": "Jak postupovat, když zásilka dorazí poškozená?",
-  "answer": "Vyfoťte prosím balík i poškozený kus hned po rozbalení a ozvěte se nám do 48 hodin. Přiložte číslo objednávky a domluvíme se na výměně, opravě nebo vrácení peněz."
+  "answer": "Vyfoťte prosím balík i poškozený kus a ozvěte se nám s číslem objednávky — čím dřív, tím líp, ale žádná krátká lhůta pro vás neplatí. Domluvíme se na výměně nebo opravě, a když to nejde, vrátíme peníze. U České pošty nic reklamovat nemusíte, to vyřídíme my."
  },
  {
   "id": "vraceni",
   "category": "doprava",
   "question": "Mohu produkt vrátit nebo vyměnit?",
-  "answer": "Nepoužitý výrobek z běžné nabídky můžete vrátit do 14 dnů od převzetí. Zakázkové kusy dělané přímo pro vás vrátit bohužel nejde — pokud tedy nejsou poškozené nebo vadné."
+  "answer": "Výrobek z běžné nabídky můžete vrátit bez udání důvodu do 14 dnů od převzetí. Zakázkové kusy dělané přímo podle vašeho zadání vrátit nejde — pokud ovšem mají vadu, reklamujete je jako každé jiné zboží."
  },
  {
   "id": "kurzy-pro-skoly",

@@ -9,6 +9,7 @@ import {
   Greeting,
   LedgerEnd,
   Note,
+  OptOutLine,
   P,
   Signature,
 } from "../components/email-ui"
@@ -24,6 +25,11 @@ interface PriceDropEmailProps {
   productLink?: string;
   timeLimited?: boolean;
   expiryDate?: string;
+  /**
+   * Odmítnutí dalších upozornění jedním kliknutím (`lib/email-optout-link.ts`,
+   * § 7 odst. 3 zák. 480/2004 Sb.). Bez něj se řádek nevykreslí.
+   */
+  unsubscribe_url?: string | null;
 }
 
 /**
@@ -38,7 +44,8 @@ function PriceDropEmailComponent({
   newPrice = "",
   productLink = "",
   timeLimited = false,
-  expiryDate = ""
+  expiryDate = "",
+  unsubscribe_url = null
 }: PriceDropEmailProps) {
   const productUrl = productLink || storeLink()
   return (
@@ -120,6 +127,19 @@ function PriceDropEmailComponent({
             >
               {originalPrice}
             </Text>
+            {/* § 12a ZOS: přeškrtnutá cena je nejnižší cena za 30 dní před
+                snížením (počítá ji úloha watch-price-drops z historie cen). */}
+            <Text
+              style={{
+                fontFamily: brand.sans,
+                fontSize: "11px",
+                lineHeight: "14px",
+                color: brand.muted,
+                margin: "0 0 4px",
+              }}
+            >
+              nejnižší cena za 30 dní před snížením
+            </Text>
             <Text
               style={{
                 fontFamily: brand.serif,
@@ -146,12 +166,13 @@ function PriceDropEmailComponent({
         </ButtonRow>
       ) : null}
 
+      {/* Dřív tu stálo „lze kdykoli vypnout v nastavení účtu" — takové
+          nastavení účet nemá. Odmítnutí je odkaz pod podpisem. */}
       <P small>
-        Tuto zprávu dostáváte, protože jste si objekt prohlíželi nebo
-        uložili mezi oblíbené. Podobná upozornění lze kdykoli vypnout
-        v nastavení účtu.
+        Tuto zprávu dostáváte, protože máte objekt uložený mezi oblíbenými.
       </P>
       <Signature />
+      <OptOutLine url={unsubscribe_url} />
     </EmailLayout>
   )
 }

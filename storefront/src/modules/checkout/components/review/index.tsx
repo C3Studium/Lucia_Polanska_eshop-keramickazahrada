@@ -2,21 +2,27 @@
 
 import { AnimatePresence, motion } from "framer-motion"
 import { useSearchParams } from "next/navigation"
-import { useId, useState } from "react"
+import { useState } from "react"
 
-import { initiatePaymentSession, mergeCartMetadata } from "@lib/data/cart"
+import { initiatePaymentSession, recordCheckoutConsent } from "@lib/data/cart"
 import {
   buildComgateSessionPayload,
   extractComgateRedirectUrl,
+  type ComgatePaymentMethod,
 } from "@lib/util/comgate"
 import { convertToLocale } from "@lib/util/money"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
-import { isMadeToOrderLine } from "@lib/util/commission"
+import { isMadeToOrderLine, type ProductionLeadTime } from "@lib/util/commission"
 import { readCommissionBrief } from "@lib/util/made-to-order"
 import CheckoutCommissionBriefs from "../commission-briefs"
 
+import CheckoutConsent from "../legal-consent"
+import { ORDER_BUTTON_LABEL } from "../legal-consent/labels"
 import PaymentButton from "../payment-button"
+import PreContractInfo, {
+  chargeSplit,
+  describePayment,
+} from "../pre-contract-info"
 import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 import OrderRecap from "./recap"
 import {
@@ -29,30 +35,36 @@ import {
 } from "./motion"
 import styles from "./style.module.scss"
 
-import { TERMS_VERSION } from "@lib/constants"
-
 const COMMISSION_GATE_HINT =
   "Tohle je výroba na míru — než objednávku zaplatíte, napište prosím nebo nahrajte fotku, co si představujete (uloží se samo). Bez toho nevíme, co máme vyrobit."
 const CONSENT_GATE_HINT =
-  "Než budete pokračovat, potvrďte prosím souhlas s podmínkami."
+  "Než objednávku odešlete, potvrďte prosím souhlas s obchodními podmínkami."
+const MADE_TO_ORDER_GATE_HINT =
+  "Potvrďte prosím ještě, že berete na vědomí, že zboží na zakázku nelze vrátit do 14 dnů."
 
 const Review = ({
   cart,
   countryCode,
   productionMode,
   vacationNotice,
+  comgateMethods = [],
+  leadTimes = [],
 }: {
   cart: any
   countryCode: string
   productionMode?: ProductionPaymentMode | null
   /** Hotová věta o dovolené (jen informace, platbu neblokuje) — nebo nic. */
   vacationNotice?: string | null
+  /** Nabídka ComGate — z ní se volba `?method=` přeloží na název metody. */
+  comgateMethods?: ComgatePaymentMethod[]
+  /** Výrobní lhůty zakázkových položek pro předsmluvní souhrn. */
+  leadTimes?: ProductionLeadTime[]
 }) => {
   const searchParams = useSearchParams()
   const [accepted, setAccepted] = useState(false)
+  const [madeToOrderAccepted, setMadeToOrderAccepted] = useState(false)
   const [isPaying, setIsPaying] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const consentId = useId()
 
   const isOpen = searchParams.get("step") === "review"
   const comgateMethod = searchParams.get("method")
@@ -81,24 +93,29 @@ const Review = ({
     briefHasContent(line.brief)
   )
 
+  /* Zakázka v košíku → druhé, povinné zaškrtnutí: poučení, že zboží na
+     zakázku nelze vrátit do 14 dnů (§ 1837 písm. d) OZ). */
+  const hasMadeToOrder =
+    commissionLines.length > 0 || Boolean(productionMode?.has_made_to_order)
+  const madeToOrderOk = !hasMadeToOrder || madeToOrderAccepted
+  const consentReady = accepted && madeToOrderOk
+
   /* Kolik se zaplatí TEĎ. U zakázky to NENÍ cena košíku — je to zvolená záloha
      (default), půlka, celek nebo vlastní částka ze slideru; zbytek se doplatí
      po dokončení. Tlačítko i rekapitulace proto musí ukazovat tuhle částku, ne
-     cart.total (jinak tlačítko lže „Zaplatit 4450", i když brána vezme jen zálohu).
-     Běžný košík bez zakázky platí celek = cart.total.
+     cart.total (jinak by věta u tlačítka lhala o částce, i když brána vezme
+     jen zálohu). Běžný košík bez zakázky platí celek = cart.total.
 
      Volba částky se dělá v kroku Platba (widget je přesunutý tam) a ukládá se na
      košík; `selectProductionPaymentMode` košík revaliduje, takže sem už přijde
      `productionMode` s aktuální volbou při přechodu na Přehled — čteme ji rovnou. */
-  const chargeNowForMode = (mode: ProductionPaymentMode) =>
-    mode.mode === "full"
-      ? mode.full_amount
-      : mode.mode === "custom"
-        ? mode.custom?.amount ?? mode.deposit_amount
-        : mode.deposit_amount
-  const chargeNow = productionMode?.has_made_to_order
-    ? chargeNowForMode(productionMode)
-    : cart?.total ?? 0
+  const { now: chargeNow, later: outstanding } = chargeSplit(
+    productionMode,
+    cart?.total ?? 0
+  )
+
+  const money = (amount: number) =>
+    convertToLocale({ amount, currency_code: cart?.currency_code ?? "czk" })
 
   const paidByGiftcard =
     cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0
@@ -108,28 +125,37 @@ const Review = ({
     (cart.shipping_methods?.length ?? 0) > 0 &&
     (cart.payment_collection || paidByGiftcard || comgateMethod)
 
-  const payLabel = `Zaplatit ${convertToLocale({
-    amount: chargeNow,
-    currency_code: cart?.currency_code ?? "czk",
-  })}`
+  /* Čím se platí — ComGate cesta ještě nemá platební relaci (zakládá se až
+     tlačítkem), takže se metoda čte z `?method=`; ostatní z relace na košíku
+     (tatáž, podle které `PaymentButton` volí svou variantu). */
+  const payment = describePayment({
+    comgateOptionId: comgateMethod,
+    comgateMethods,
+    providerId: cart?.payment_collection?.payment_sessions?.[0]?.provider_id,
+    paidByGiftcard: Boolean(paidByGiftcard),
+  })
+
+  const comgateNote =
+    outstanding > 0
+      ? `Teď zaplatíte zálohu ${money(chargeNow)} online (${payment?.label ?? "ComGate"}, platební brána ComGate). Zbytek ${money(outstanding)} doplatíte po dokončení zakázky.`
+      : `Zaplatíte ${money(chargeNow)} hned online (${payment?.label ?? "ComGate"}, platební brána ComGate).`
 
   /**
    * Consent is written to the cart *before* the payment session is created — so the record
    * exists no matter what happens at the gateway, and so updating the cart can never invalidate
-   * a session that is already in flight.
+   * a session that is already in flight. The server action merges against a FRESH cart (a stale
+   * `cart.metadata` spread here could revert the production-payment amount the customer just
+   * chose) and takes the document versions from the legal registry.
    */
   const recordConsent = async () => {
-    // Merge server-side against a FRESH cart — spreading the component's stale
-    // `cart.metadata` here could revert the production-payment amount the
-    // customer just chose, right before it is charged.
-    await mergeCartMetadata({
-      terms_accepted_at: new Date().toISOString(),
-      terms_version: TERMS_VERSION,
+    await recordCheckoutConsent({
+      clientAcceptedAt: new Date().toISOString(),
+      madeToOrderAck: hasMadeToOrder && madeToOrderAccepted,
     })
   }
 
   const payWithComgate = async () => {
-    if (isPaying || !accepted || !comgateMethod || !allCommissionsComplete) {
+    if (isPaying || !consentReady || !comgateMethod || !allCommissionsComplete) {
       return
     }
 
@@ -165,6 +191,14 @@ const Review = ({
     }
   }
 
+  const gateHint = !allCommissionsComplete
+    ? null
+    : !accepted
+      ? CONSENT_GATE_HINT
+      : !madeToOrderOk
+        ? MADE_TO_ORDER_GATE_HINT
+        : null
+
   return (
     <div className={styles.root}>
       <div className={styles.header}>
@@ -191,7 +225,14 @@ const Review = ({
             exit="exit"
           >
             <motion.div variants={rowVariants} initial="hidden" animate="visible">
-              <OrderRecap cart={cart} />
+              <OrderRecap
+                cart={cart}
+                deposit={
+                  productionMode?.has_made_to_order
+                    ? { now: chargeNow, later: outstanding }
+                    : null
+                }
+              />
             </motion.div>
 
             {/* The brief, one per commissioned line: what they want, and pictures of it.
@@ -209,43 +250,28 @@ const Review = ({
               </motion.div>
             )}
 
-            {/* „Kolik zaplatit teď" se volí v kroku Platba (widget je přesunutý
-                tam) a shrnuje v pravém souhrnu — v Přehledu už je jen tlačítko
-                s výslednou částkou. */}
+            {/* Předsmluvní informace (§ 1820, § 1826 OZ): platba, dodací
+                lhůta, odstoupení / jeho vyloučení u zakázky, prodávající,
+                dokumenty. Zboží a ceny jsou v rekapitulaci výš. */}
+            <motion.div variants={rowVariants} initial="hidden" animate="visible">
+              <PreContractInfo cart={cart} payment={payment} leadTimes={leadTimes} />
+            </motion.div>
 
-            <motion.div
-              className={styles.consent}
-              variants={rowVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              {/* The input is wrapped so it is not a *sibling* of the label: a global
-                  `input ~ label` floating-label utility in globals.scss otherwise shrinks
-                  this label to 10px — and this sentence is the consent record. */}
-              <span className={styles.consentBoxWrap}>
-                <input
-                  id={consentId}
-                  type="checkbox"
-                  className={styles.consentBox}
-                  checked={accepted}
-                  onChange={(event) => {
-                    setAccepted(event.target.checked)
-                    setError(null)
-                  }}
-                  data-testid="terms-checkbox"
-                />
-              </span>
-              <label htmlFor={consentId} className={styles.consentLabel}>
-                Souhlasím s{" "}
-                <LocalizedClientLink href="/smluvni-podminky">
-                  obchodními podmínkami
-                </LocalizedClientLink>{" "}
-                a beru na vědomí{" "}
-                <LocalizedClientLink href="/ochrana-osobnich-udaju">
-                  zpracování osobních údajů
-                </LocalizedClientLink>
-                .
-              </label>
+            <motion.div variants={rowVariants} initial="hidden" animate="visible">
+              <CheckoutConsent
+                variant="review"
+                accepted={accepted}
+                onAcceptedChange={(value) => {
+                  setAccepted(value)
+                  setError(null)
+                }}
+                madeToOrder={hasMadeToOrder}
+                madeToOrderAccepted={madeToOrderAccepted}
+                onMadeToOrderAcceptedChange={(value) => {
+                  setMadeToOrderAccepted(value)
+                  setError(null)
+                }}
+              />
             </motion.div>
 
             <AnimatePresence>
@@ -282,27 +308,29 @@ const Review = ({
                     type="button"
                     className={styles.payButton}
                     onClick={payWithComgate}
-                    disabled={!accepted || !allCommissionsComplete || isPaying}
+                    disabled={!consentReady || !allCommissionsComplete || isPaying}
                     data-testid="submit-order-button"
                   >
-                    {isPaying ? "Přesměrováváme k platbě…" : payLabel}
+                    {isPaying ? "Přesměrováváme k platbě…" : ORDER_BUTTON_LABEL}
                   </button>
-                  {allCommissionsComplete && !accepted ? (
-                    <p className={styles.gateHint}>{CONSENT_GATE_HINT}</p>
-                  ) : null}
+                  <p className={styles.payNote} data-testid="submit-order-note">
+                    {comgateNote}
+                  </p>
+                  {gateHint ? <p className={styles.gateHint}>{gateHint}</p> : null}
                 </>
-              ) : accepted && allCommissionsComplete ? (
+              ) : consentReady && allCommissionsComplete ? (
                 <PaymentButton
                   cart={cart}
                   data-testid="submit-order-button"
                   countryCode={countryCode}
+                  amountLabel={money(chargeNow)}
                   /* The consent record must exist for EVERY payment path —
                      the ComGate flow writes it itself, the direct ones (osobní
                      odběr, dobírka) get it here, before placing the order. */
                   onBeforePlaceAction={recordConsent}
                 />
-              ) : allCommissionsComplete ? (
-                <p className={styles.gateHint}>{CONSENT_GATE_HINT}</p>
+              ) : gateHint ? (
+                <p className={styles.gateHint}>{gateHint}</p>
               ) : null}
             </motion.div>
           </motion.div>

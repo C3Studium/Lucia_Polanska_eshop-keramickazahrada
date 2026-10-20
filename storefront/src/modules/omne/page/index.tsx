@@ -67,14 +67,21 @@ export default function AboutPageExperience({ copy }: { copy?: CopyBlocks }) {
                 aria-hidden="true"
             />
 
-            <AboutMe block={copy?.["o-mne.galerie"]} />
+            <AboutMe
+                block={copy?.["o-mne.galerie"]}
+                texts={copy?.["o-mne.uvod"]}
+                story={copy?.["o-mne.pribeh"]}
+            />
             <div
                 ref={backgroundTriggerRef}
                 className="aboutPage__phaseTrigger"
                 aria-hidden="true"
             />
             {/* Vyroba-gallery variant carrying the old AboutInfo copy (no icons). */}
-            <AboutStory block={copy?.["o-mne.galerie"]} />
+            <AboutStory
+                block={copy?.["o-mne.galerie"]}
+                texts={copy?.["o-mne.pribeh"]}
+            />
             {/* <AboutInfo />
             <ProcessAbout /> */}
             <AboutCta copy={copy} />

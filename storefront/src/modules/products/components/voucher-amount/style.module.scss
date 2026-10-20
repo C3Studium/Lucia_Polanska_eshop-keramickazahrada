@@ -1,0 +1,73 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+/* Pole „Hodnota poukazu" — stojí na místě ceny, tak drží její rytmus. */
+
+.root {
+  display: grid;
+  margin: clamp(.4rem, .9vh, .7rem) 0;
+  gap: .35rem;
+}
+
+.label {
+  color: rgb(var(--ink-05-rgb) / .7);
+  font: 400 clamp(.8125rem, 1vw, .95rem)/1.3 "Sansation-Regular", sans-serif;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.field {
+  display: flex;
+  max-width: 16rem;
+  align-items: center;
+  border-bottom: 1px solid var(--ink-05);
+  gap: .5rem;
+}
+
+/* Velké číslo jako cena. 16px+ i na telefonu, ať iOS nezoomuje. */
+.input {
+  width: 100%;
+  min-height: 44px;
+  padding: .25rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-05);
+  font: 400 clamp(1.5rem, 2.4vw, 2.25rem)/1.1 "Sentient-Regular", serif;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.input::-webkit-outer-spin-button,
+.input::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.input:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 4px;
+}
+
+.input:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+.unit {
+  color: var(--ink-05);
+  font: 400 clamp(1.1rem, 1.6vw, 1.5rem)/1 "Sentient-Regular", serif;
+}
+
+.hint,
+.error {
+  max-width: 48ch;
+  margin: 0;
+  font: 400 clamp(.85rem, 1vw, .95rem)/1.45 "Sansation-Regular", sans-serif;
+}
+
+.hint {
+  color: rgb(var(--ink-05-rgb) / .7);
+}
+
+.error {
+  color: var(--clay-06);
+}

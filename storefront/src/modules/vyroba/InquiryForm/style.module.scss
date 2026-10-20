@@ -1,0 +1,685 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+
+/*
+ * Poptávka zakázky — poslední sekce stránky Výroba.
+ *
+ * Řeč stránky: šalvějový podklad a vlasová meta linka jako u „Výsledku"
+ * (`vyroba/cta`), formulář na krémovém listu jako kontaktní dialog
+ * (`layout/ContactDialog`) — podtržená pole, verzálkové popisky, serifový
+ * nadpis s kurzívním akcentem. Tóny textu na krémové (měřeno jako u dialogu):
+ *   --inq-ink        ink-06    15.0:1   text a hodnoty
+ *   --inq-secondary  olive-04   8.3:1   popisky
+ *   --inq-minimum    grey-02    6.5:1   placeholdery, drobné písmo
+ *   --inq-error      clay-06   ~7:1     chyby
+ * Nic pod 12 px; vstupy nejmíň 16 px (Safari jinak při fokusu přibližuje).
+ */
+
+.section {
+  --inq-page-ink: var(--black-03);
+
+  position: relative;
+  padding: clamp(2.5rem, 7vh, 6rem) 4.5% clamp(3.5rem, 9vh, 7.5rem);
+  color: var(--inq-page-ink);
+  background:
+    radial-gradient(circle at 18% 22%, rgb(var(--cream-06-rgb) / .14), transparent 34%),
+    var(--sage-01);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.75rem, 1.4vw, 1.5rem);
+  color: rgb(var(--black-03-rgb) / .62);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+
+  i {
+    flex: 1;
+    height: 1px;
+    background: rgb(var(--black-03-rgb) / .22);
+  }
+}
+
+.layout {
+  display: grid;
+  margin-top: clamp(2rem, 5vh, 4rem);
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  align-items: start;
+  gap: clamp(2.5rem, 5vw, 6rem);
+}
+
+/* ─── Úvod a postup ─────────────────────────────────────────────────────── */
+
+.intro {
+  position: sticky;
+  top: clamp(5.5rem, 12vh, 8rem);
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0 0 clamp(0.875rem, 1.8vh, 1.375rem);
+  /* .78 na šalvěji ≈ 4.9:1 — drobné verzálky ještě v AA. */
+  color: rgb(var(--black-03-rgb) / .78);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  font-family: "Sentient-Regular", serif;
+  font-size: clamp(2.5rem, 3.9vw, 5rem);
+  font-weight: 400;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+
+  em {
+    display: block;
+    margin: 0.08em 0 0 clamp(1.5rem, 3vw, 3.5rem);
+    color: var(--olive-10);
+    font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+    font-size: 0.92em;
+    font-weight: 300;
+  }
+}
+
+.lede {
+  max-width: 34rem;
+  margin: clamp(1.25rem, 2.6vh, 2rem) 0 0;
+  color: rgb(var(--black-03-rgb) / .78);
+  font-size: clamp(1rem, 1.05vw, 1.125rem);
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+.steps {
+  display: grid;
+  margin: clamp(1.75rem, 3.6vh, 2.75rem) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid rgb(var(--black-03-rgb) / .2);
+
+  li {
+    display: grid;
+    padding: clamp(0.75rem, 1.6vh, 1.125rem) 0;
+    border-bottom: 1px solid rgb(var(--black-03-rgb) / .2);
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+
+  h3 {
+    margin: 0;
+    font-family: "Sentient-Regular", serif;
+    font-size: clamp(1.125rem, 1.3vw, 1.375rem);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  p {
+    margin: 0.25rem 0 0;
+    color: rgb(var(--black-03-rgb) / .78);
+    font-size: 0.9375rem;
+    font-weight: 300;
+    line-height: 1.5;
+  }
+}
+
+.stepIndex {
+  padding-top: 0.2rem;
+  color: rgb(var(--black-03-rgb) / .62);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Poučení o § 1837 písm. d) — čitelné, ne poznámka pod čarou: akcentová
+   linka vlevo jako `Note` v e-mailech. */
+.notice {
+  margin: clamp(1.5rem, 3vh, 2.25rem) 0 0;
+  padding: 0.25rem 0 0.25rem 1rem;
+  border-left: 2px solid var(--clay-06);
+
+  p {
+    margin: 0;
+    color: var(--inq-page-ink);
+    font-size: 0.9375rem;
+    line-height: 1.55;
+  }
+
+  strong {
+    font-weight: 700;
+  }
+}
+
+.contact {
+  margin: clamp(1.25rem, 2.6vh, 2rem) 0 0;
+  color: rgb(var(--black-03-rgb) / .78);
+  font-size: 0.9375rem;
+
+  a {
+    color: var(--inq-page-ink);
+    text-underline-offset: 0.1875rem;
+  }
+}
+
+/* ─── List s formulářem ─────────────────────────────────────────────────── */
+
+.card {
+  --inq-ink: var(--ink-06);
+  --inq-secondary: var(--olive-04);
+  --inq-minimum: var(--grey-02);
+  --inq-accent: var(--olive-07);
+  --inq-error: var(--clay-06);
+
+  position: relative;
+  min-width: 0;
+  padding: clamp(1.75rem, 4.4vh, 3.75rem) clamp(1.25rem, 3.6vw, 4rem);
+  border: 1px solid rgb(var(--white-rgb) / .46);
+  border-radius: 1.125rem;
+  background:
+    radial-gradient(ellipse at 8% 0%, rgb(var(--white-rgb) / .96) 0%, rgb(var(--white-rgb) / .45) 28%, transparent 55%),
+    linear-gradient(135deg, var(--white) 0%, var(--cream-10) 42%, var(--cream-05) 72%, var(--cream-06) 100%);
+  box-shadow:
+    inset 2px 2px 0 rgb(var(--white-rgb) / .86),
+    0 22px 45px -34px rgb(var(--ink-02-rgb) / .55);
+  color: var(--inq-ink);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 3.2vh, 2.25rem);
+}
+
+.cardEyebrow {
+  margin: 0;
+  color: var(--inq-secondary);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cardTitle {
+  margin: calc(-1 * clamp(0.75rem, 2vh, 1.5rem)) 0 0;
+  font-family: "Sentient-Regular", serif;
+  font-size: clamp(1.75rem, 2.3vw, 2.5rem);
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.group {
+  display: flex;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  flex-direction: column;
+  border: 0;
+  gap: clamp(1.125rem, 2.4vh, 1.75rem);
+
+  legend {
+    margin-bottom: clamp(0.875rem, 2vh, 1.25rem);
+    padding: 0;
+    color: var(--inq-secondary);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.125rem, 2.4vh, 1.75rem) clamp(1.25rem, 2.2vw, 2.125rem);
+
+  /* Třetí pole (termín / telefon) přes celou šířku. */
+  > .field:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+}
+
+.field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  border-bottom: 1px solid rgb(var(--ink-06-rgb) / .28);
+  gap: clamp(0.375rem, 0.9vh, 0.625rem);
+  transition:
+    border-color 0.3s ease,
+    background-color 0.3s ease;
+
+  > label {
+    color: var(--inq-secondary);
+    font-size: 0.8125rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  > label i {
+    margin-left: 0.3125rem;
+    color: var(--inq-minimum);
+    font-style: normal;
+    letter-spacing: 0.04em;
+    text-transform: none;
+  }
+
+  &:focus-within {
+    border-color: var(--inq-accent);
+    background: linear-gradient(180deg, transparent, rgb(var(--cream-06-rgb) / .2));
+  }
+
+  &[data-invalid] {
+    border-color: var(--inq-error);
+  }
+}
+
+.input {
+  all: unset;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0 0 clamp(0.5rem, 1.3vh, 0.875rem);
+  box-sizing: border-box;
+  color: var(--inq-ink);
+  cursor: text;
+  font-family: inherit;
+  font-size: clamp(1rem, 1.2vw, 1.125rem);
+  font-weight: 300;
+  line-height: 1.4;
+
+  &::placeholder {
+    color: var(--inq-minimum);
+    opacity: 1;
+  }
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 0.25rem;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+}
+
+.message .input {
+  min-height: clamp(8.5rem, 18vh, 12rem);
+  overflow: auto;
+  resize: vertical;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+/* Předvolba vedle podtrženého vstupu — stejný posun jako v kontaktu
+   (vstup nese text nahoře a podložení pod linkou). */
+.phoneRow select {
+  transform: translateY(-6px);
+}
+
+.error {
+  margin: 0 0 0.5rem;
+  color: var(--inq-error);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.hint {
+  margin: 0;
+  color: var(--inq-minimum);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+/* ─── Fotky ─────────────────────────────────────────────────────────────── */
+
+.photos {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.photosLabel {
+  color: var(--inq-secondary);
+  font-size: 0.8125rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+
+  i {
+    margin-left: 0.3125rem;
+    color: var(--inq-minimum);
+    font-style: normal;
+    letter-spacing: 0.04em;
+    text-transform: none;
+  }
+}
+
+.thumbs {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+  list-style: none;
+  gap: 0.5rem;
+}
+
+.thumb {
+  position: relative;
+  width: clamp(4.5rem, 6vw, 6.25rem);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid rgb(var(--ink-06-rgb) / .2);
+  border-radius: 0.375rem;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  button {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    display: grid;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(var(--ink-06-rgb) / .78);
+    color: var(--cream-10);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.dropzone {
+  display: flex;
+  width: 100%;
+  min-height: clamp(6.5rem, 13vh, 8.5rem);
+  padding: 1rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border: 1.5px dashed rgb(var(--ink-06-rgb) / .34);
+  border-radius: 0.5rem;
+  background: rgb(var(--white-rgb) / .34);
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+
+  &[data-dragging] {
+    border-color: var(--inq-accent);
+    background: rgb(var(--white-rgb) / .6);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+}
+
+@include fine-pointer {
+  .dropzone:hover:not(:disabled) {
+    border-color: var(--inq-accent);
+    background: rgb(var(--white-rgb) / .55);
+  }
+}
+
+.dropIcon {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid var(--inq-accent);
+  border-radius: 50%;
+  color: var(--inq-accent);
+  font-size: 1.375rem;
+  line-height: 1;
+}
+
+.dropText {
+  color: var(--inq-accent);
+  font-size: 1rem;
+}
+
+.dropHint {
+  color: var(--inq-minimum);
+  font-size: 0.8125rem;
+}
+
+.photoStatus {
+  margin: 0;
+  color: var(--inq-error);
+  font-size: 0.875rem;
+  line-height: 1.4;
+
+  &:empty {
+    display: none;
+  }
+}
+
+/* ─── Souhlas, stav, odeslání ───────────────────────────────────────────── */
+
+/* Honeypot: robot vyplňující všechno ho najde, člověk nikdy. */
+.honeypot {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.consent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: clamp(1rem, 2.2vh, 1.5rem);
+  border-top: 1px solid rgb(var(--ink-06-rgb) / .16);
+
+  a {
+    color: var(--inq-ink);
+    text-underline-offset: 0.1875rem;
+  }
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+
+  input {
+    flex: 0 0 auto;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0.125rem 0 0;
+    accent-color: var(--inq-accent);
+    cursor: pointer;
+  }
+
+  label {
+    color: var(--inq-ink);
+    font-size: 1rem;
+    line-height: 1.45;
+    cursor: pointer;
+  }
+
+  label i {
+    color: var(--inq-minimum);
+    font-size: 0.875rem;
+    font-style: normal;
+  }
+}
+
+.consent[data-invalid] .check input {
+  outline: 2px solid var(--inq-error);
+  outline-offset: 2px;
+}
+
+/* Error under the checkbox lines up with the label, not the box. */
+.consent .error {
+  margin: 0 0 0 2rem;
+}
+
+.fine {
+  margin: 0;
+  color: var(--inq-minimum);
+  font-size: 0.875rem;
+  line-height: 1.5;
+
+  a {
+    color: var(--inq-ink);
+    text-underline-offset: 0.1875rem;
+  }
+}
+
+.consent .fine {
+  margin-left: 2rem;
+}
+
+.status {
+  margin: 0;
+  padding: clamp(0.5rem, 1.3vh, 0.875rem) clamp(0.875rem, 1.3vw, 1.125rem);
+  border: 1px solid rgb(var(--clay-06-rgb) / .34);
+  border-radius: 0.75rem;
+  background: rgb(var(--blush-02-rgb) / .72);
+  color: var(--clay-06);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+
+  a {
+    color: inherit;
+    text-underline-offset: 0.1875rem;
+  }
+}
+
+.footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: clamp(1.25rem, 2vw, 1.75rem);
+
+  > p {
+    max-width: 22rem;
+    margin: 0;
+    color: var(--inq-minimum);
+    font-size: 0.875rem;
+    line-height: 1.45;
+  }
+}
+
+/* WebButton nese vlastní výšku a proměnné na jedné třídě — dvě třídy ji
+   přebijí deterministicky (stejný tah jako `.panel .submitButton` v dialogu). */
+.card .submit {
+  --web-button-label-size: clamp(0.9375rem, 1.05vw, 1rem);
+  --web-button-label-padding: clamp(0.375rem, 0.9vh, 0.625rem) clamp(0.875rem, 1.2vw, 1.1875rem);
+
+  flex-shrink: 0;
+  height: clamp(2.75rem, 4.4vh, 3.25rem);
+}
+
+.success {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(0.75rem, 1.7vh, 1.125rem);
+  outline: none;
+
+  h3 {
+    margin: 0;
+    font-family: "Sentient-Regular", serif;
+    font-size: clamp(1.75rem, 2.4vw, 2.5rem);
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+
+  > p:not(.cardEyebrow):not(.fine) {
+    max-width: 46ch;
+    margin: 0;
+    color: var(--inq-secondary);
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  strong {
+    color: var(--inq-ink);
+    font-weight: 700;
+  }
+}
+
+/* ─── Užší okna ─────────────────────────────────────────────────────────── */
+
+@include below-px(980px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Pod sebou nemá sticky úvod co držet — jen by přejížděl formulář. */
+  .intro {
+    position: static;
+  }
+
+  .title {
+    font-size: clamp(2.5rem, 7vw, 3.75rem);
+  }
+}
+
+@include below-px(720px) {
+  .section {
+    padding: 28px 20px 48px;
+  }
+
+  .meta span:last-child {
+    display: none;
+  }
+
+  .card {
+    padding: 28px 18px 32px;
+    border-radius: 1rem;
+  }
+
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+
+    > .field:nth-child(3) {
+      grid-column: auto;
+    }
+  }
+
+  .footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .card .submit {
+    align-self: flex-end;
+  }
+
+  /* Menší písmo vstupu = menší nesouměrnost předvolby (jako v kontaktu). */
+  .phoneRow select {
+    transform: translateY(-2px);
+  }
+}

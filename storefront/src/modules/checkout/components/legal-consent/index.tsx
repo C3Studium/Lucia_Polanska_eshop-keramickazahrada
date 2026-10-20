@@ -1,0 +1,171 @@
+"use client"
+
+import { useId, type ReactNode } from "react"
+
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+
+import { LEGAL_LINKS } from "./labels"
+
+import styles from "./style.module.scss"
+
+/**
+ * Souhlas před odesláním objednávky — jeden pro pokladnu (krok Přehled)
+ * i pro rychlý nákup (krok Platba).
+ *
+ * - Souhlas s OP a poučením o odstoupení: zaškrtávátko, výchozí NEZAŠKRTNUTÉ
+ *   (§ 1817 OZ — žádné předvyplněné souhlasy).
+ * - U zakázkové výroby druhé, povinné zaškrtávátko: poučení, že zboží na
+ *   zakázku nelze vrátit do 14 dnů (§ 1837 písm. d) OZ). Výjimka platí jen
+ *   tehdy, když o ní zákazník ví PŘEDEM (§ 1820 odst. 1 písm. j) OZ).
+ * - Osobní údaje: jen informační věta, ne zaškrtávátko — zpracování pro
+ *   vyřízení objednávky stojí na plnění smlouvy, ne na souhlasu.
+ *
+ * Co se ke kterému zaškrtnutí uloží, řeší `recordCheckoutConsent` — tahle
+ * komponenta jen drží stav, který jí předá rodič.
+ */
+
+/** Odkazy otevírá v nové záložce — rozdělaný Přehled ani zaškrtnutí se neztratí. */
+const DocLink = ({ href, children }: { href: string; children: ReactNode }) => (
+  <LocalizedClientLink href={href} target="_blank" rel="noopener">
+    {children}
+  </LocalizedClientLink>
+)
+
+const TermsText = () => (
+  <>
+    Seznámil(a) jsem se s{" "}
+    <DocLink href={LEGAL_LINKS.terms}>obchodními podmínkami</DocLink>{" "}
+    a{" "}
+    <DocLink href={LEGAL_LINKS.withdrawal}>
+      poučením o odstoupení od smlouvy
+    </DocLink>{" "}
+    a souhlasím s nimi.
+  </>
+)
+
+const MadeToOrderText = () => (
+  <>
+    Beru na vědomí, že zboží vyrobené na zakázku nelze vrátit ve 14denní lhůtě
+    (§ 1837 písm. d) OZ).
+  </>
+)
+
+const PrivacyText = () => (
+  <>
+    Osobní údaje z objednávky zpracujeme, abychom ji mohli vyřídit a splnit
+    povinnosti, které nám s ní ukládá zákon. Podrobnosti najdete v{" "}
+    <DocLink href={LEGAL_LINKS.privacy}>
+      zásadách ochrany osobních údajů
+    </DocLink>
+    .
+  </>
+)
+
+type CheckoutConsentProps = {
+  /** `review` = velké zaškrtávátko pokladny, `express` = styl rychlého nákupu. */
+  variant: "review" | "express"
+  accepted: boolean
+  onAcceptedChange: (accepted: boolean) => void
+  /** Košík obsahuje zakázkovou výrobu → druhé, povinné zaškrtávátko. */
+  madeToOrder: boolean
+  madeToOrderAccepted: boolean
+  onMadeToOrderAcceptedChange: (accepted: boolean) => void
+  /** Express: třída řádku (`label` se zaškrtávátkem), kterou už má jeho styl. */
+  rowClassName?: string
+}
+
+export default function CheckoutConsent({
+  variant,
+  accepted,
+  onAcceptedChange,
+  madeToOrder,
+  madeToOrderAccepted,
+  onMadeToOrderAcceptedChange,
+  rowClassName,
+}: CheckoutConsentProps) {
+  const termsId = useId()
+  const madeToOrderId = useId()
+
+  if (variant === "express") {
+    return (
+      <div className={styles.express}>
+        <label className={rowClassName}>
+          <input
+            type="checkbox"
+            checked={accepted}
+            onChange={(event) => onAcceptedChange(event.target.checked)}
+            data-testid="express-terms-checkbox"
+          />{" "}
+          <span>
+            <TermsText />
+          </span>
+        </label>
+        {madeToOrder && (
+          <label className={rowClassName}>
+            <input
+              type="checkbox"
+              checked={madeToOrderAccepted}
+              onChange={(event) =>
+                onMadeToOrderAcceptedChange(event.target.checked)
+              }
+              data-testid="express-made-to-order-checkbox"
+            />{" "}
+            <span>
+              <MadeToOrderText />
+            </span>
+          </label>
+        )}
+        <p className={styles.privacyCompact}>
+          <PrivacyText />
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className={styles.review}>
+      <div className={styles.consent}>
+        {/* Input je v obalu, aby nebyl SOUROZENEC štítku: globální
+            `input ~ label` (plovoucí popisky v globals.scss) by jinak štítek
+            zmenšil na 10px — a tahle věta je záznam souhlasu. */}
+        <span className={styles.consentBoxWrap}>
+          <input
+            id={termsId}
+            type="checkbox"
+            className={styles.consentBox}
+            checked={accepted}
+            onChange={(event) => onAcceptedChange(event.target.checked)}
+            data-testid="terms-checkbox"
+          />
+        </span>
+        <label htmlFor={termsId} className={styles.consentLabel}>
+          <TermsText />
+        </label>
+      </div>
+
+      {madeToOrder && (
+        <div className={styles.consent}>
+          <span className={styles.consentBoxWrap}>
+            <input
+              id={madeToOrderId}
+              type="checkbox"
+              className={styles.consentBox}
+              checked={madeToOrderAccepted}
+              onChange={(event) =>
+                onMadeToOrderAcceptedChange(event.target.checked)
+              }
+              data-testid="made-to-order-checkbox"
+            />
+          </span>
+          <label htmlFor={madeToOrderId} className={styles.consentLabel}>
+            <MadeToOrderText />
+          </label>
+        </div>
+      )}
+
+      <p className={styles.privacy}>
+        <PrivacyText />
+      </p>
+    </div>
+  )
+}

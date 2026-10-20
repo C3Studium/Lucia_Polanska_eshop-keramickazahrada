@@ -257,6 +257,21 @@
   }
 }
 
+/* „Vytisknout formulář" (dokud neexistuje PDF) je tlačítko, ne odkaz — tentýž
+   tvar pilulky bez výchozího vzhledu tlačítka. */
+.printButton {
+  background: transparent;
+  font-family: inherit;
+  line-height: inherit;
+  cursor: pointer;
+}
+
+@media print {
+  .download {
+    display: none;
+  }
+}
+
 /*
  * Hover behind fine-pointer, focus-visible not. A touch device reports a hover it cannot undo:
  * tapping the pill leaves it inverted — ink ground, cream label — until something else is

@@ -18,7 +18,10 @@ export default function DotazyMain ({
     hero,
     cmsQuestions,
     cmsCategories,
+    countryCode,
 }: {
+    /** Prefix země pro odkazy v pevné právní sekci FAQ. */
+    countryCode?: string
     /** `dotazy.galerie` — fotky shaderu i u kontaktní výzvy. */
     block?: CopyBlock
     /** `dotazy.otazky` — znění otázek a odpovědí + texty kolem seznamu. */
@@ -226,6 +229,7 @@ export default function DotazyMain ({
                 texts={texts}
                 cmsQuestions={cmsQuestions}
                 cmsCategories={cmsCategories}
+                countryCode={countryCode}
             />
         </section>
     )

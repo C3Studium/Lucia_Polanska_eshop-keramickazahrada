@@ -2,13 +2,16 @@
 
 import { editable, editableLink } from "@c3studium/valecms/edit"
 import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import { itemValue } from "@lib/util/site-copy"
 import type { CopyBlock, CopyBlocks } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
 import CollectionCategoryLink from "@modules/layout/Navbar/productsButton/CategoryLink"
 import { useContactDialog } from "@modules/layout/ContactDialog"
 import type { MerchantIdentity } from "@lib/data/merchant"
 import { subscribeToNewsletter } from "@lib/data/newsletter"
 import { openCookiePreferences } from "@lib/util/cookie-consent"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { paymentIcons } from "constants/icons"
 import { motion } from "framer-motion"
 import Image from "next/image"
@@ -17,6 +20,7 @@ import { type CSSProperties, useLayoutEffect, useRef, useState } from "react"
 import { palette } from "styles/palette.generated"
 
 import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
+import { formatPdfSize, type FooterDownloads as FooterDownloadsData } from "./legal-downloads"
 type FooterTone = "light" | "dark"
 
 const DEFAULT_SURFACE = palette.sage01
@@ -42,8 +46,11 @@ const discoverLinks = [
   { label: "Kontakt", action: "contact" as const },
 ]
 
+// Reklamační řád = pravidla (práva z vadného plnění, lhůty); reklamační
+// protokol = formulář a návod, jak reklamaci poslat. Dvě různé věci, dva odkazy.
 const helpLinks = [
   { label: "Odstoupení od smlouvy", href: "/odstoupeni-od-smlouvy" },
+  { label: "Reklamační řád", href: "/reklamacni-rad" },
   { label: "Reklamační protokol", href: "/reklamacni-protokol" },
   { label: "Doprava a platba", href: "/doprava-a-platba" },
 ]
@@ -99,6 +106,7 @@ const reveal = {
 export default function Footer({
   merchant,
   copy,
+  downloads,
 }: {
   merchant: MerchantIdentity
   /**
@@ -109,6 +117,12 @@ export default function Footer({
    * do kterého jde síť přidat, takže pevná dvojice ani prop k ní už nejsou potřeba.
    */
   copy?: CopyBlocks
+  /**
+   * „Ke stažení" — spočítané na serveru (`./data.ts`, `getFooterDownloads()`):
+   * zveřejněná PDF platných znění ze sloučeného registru a soubory ze Studia
+   * pro patičku. Bez propu se skupina nevykreslí.
+   */
+  downloads?: FooterDownloadsData
 }) {
   /* Patička visí pod každou stránkou a hýbe se jen při odhalení; bez tohohle by se po
      zapnutí režimu editace nepřekreslila a `editable()` by zůstalo prázdné. Viz hook. */
@@ -134,6 +148,29 @@ export default function Footer({
   const statement =
     footerCopy?.bodyText?.trim() ||
     "Keramika pro zahradu i domov. Všechno vzniká rukama v píseckém ateliéru."
+  /*
+   * Názvy skupin odkazů, nadpis „Ke stažení" a řádek s copyrightem — vlastní
+   * blok `global.paticka-odkazy`, položky klíčované popiskem.
+   *
+   * Dřív to byly `accent.3`–`accent.5` bloku `global.paticka`. Jenže CMS
+   * z `accent` prázdné položky vyhazuje, takže se název skupiny dal nastavit,
+   * jen když bylo vyplněných všech šest položek v přesném pořadí — a vymazaná
+   * třetí posunula „Informace" do obočí. `items` bloku `global.paticka` volné
+   * nejsou: MerchantBlock níž čte `items[0..4]` pozicí (popisky údajů
+   * obchodníka). Proto nový blok.
+   *
+   * Odkazy samy zůstávají v kódu: vedou na routy aplikace a na právní stránky.
+   */
+  const linksCopy = copy?.["global.paticka-odkazy"]
+  const linkText = (label: string, fallback: string) =>
+    itemValue(linksCopy, label)?.trim() || fallback
+  const groupTitles = {
+    informace: linkText("skupina.informace", "Informace"),
+    objevovat: linkText("skupina.objevovat", "Objevovat"),
+    pomoc: linkText("skupina.pomoc", "Pomoc"),
+  }
+  /* Rok drží kód (počítá se), z CMS jde jen věta za ním. */
+  const copyright = linkText("copyright", "Keramická zahrada. Všechna práva vyhrazena.")
 
   /*
    * Sociální sítě jako seznam, ne dva zapsané odkazy.
@@ -332,9 +369,22 @@ export default function Footer({
             </section>
 
             <nav className="footer__navigation" aria-label="Navigace v patičce">
-              <FooterLinkGroup title="Informace" links={importantLinks} />
-              <FooterLinkGroup title="Objevovat" links={discoverLinks} />
-              <FooterLinkGroup title="Pomoc" links={helpLinks} />
+              <FooterLinkGroup
+                title={groupTitles.informace}
+                titleEdit={editableItem(linksCopy, "skupina.informace")}
+                links={importantLinks}
+              />
+              <FooterLinkGroup
+                title={groupTitles.objevovat}
+                titleEdit={editableItem(linksCopy, "skupina.objevovat")}
+                links={discoverLinks}
+              />
+              <FooterLinkGroup
+                title={groupTitles.pomoc}
+                titleEdit={editableItem(linksCopy, "skupina.pomoc")}
+                links={helpLinks}
+              />
+              <FooterDownloads downloads={downloads} block={linksCopy} />
             </nav>
           </div>
         </div>
@@ -363,7 +413,11 @@ export default function Footer({
           </div>
 
           <div className="footer__legal">
-            <p>© {currentYear} Keramická zahrada. Všechna práva vyhrazena.</p>
+            {/* Věta ve vlastním (nestylovaném) spanu — rok před ní je údaj, ne text. */}
+            <p>
+              © {currentYear}{" "}
+              <span {...editableItem(linksCopy, "copyright")}>{copyright}</span>
+            </p>
             <p>
               Design &amp; vývoj{" "}
               <a
@@ -388,16 +442,21 @@ type FooterEntry =
 
 function FooterLinkGroup({
   title,
+  titleEdit,
   links,
 }: {
   title: string
+  /** Atributy překryvu z `editable` (název skupiny z bloku `global.paticka`). */
+  titleEdit?: Record<string, string | undefined>
   links: readonly FooterEntry[]
 }) {
   const { open } = useContactDialog()
 
   return (
     <div className="footer__linkGroup">
-      <p className="footer__groupTitle">{title}</p>
+      <p className="footer__groupTitle" {...titleEdit}>
+        {title}
+      </p>
       <div>
         {links.map((link) =>
           link.action ? (
@@ -415,6 +474,80 @@ function FooterLinkGroup({
             <FooterLink key={link.label} href={link.href} label={link.label} />
           )
         )}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Ke stažení: aktuální znění právních dokumentů jako soubory — to, co si
+ * zákazník uloží nebo vytiskne — a za nimi další soubory ze Studia („Kde se
+ * nabízí: Patička webu"). Jen ZVEŘEJNĚNÁ PDF (nahraná do R2
+ * `pnpm legal:upload`, absolutní https URL v manifestu) — pracovní znění
+ * s `[[DOPLNIT]]` ne, viz `legal-downloads.ts`. Dokud není nic, skupina se
+ * nevykreslí vůbec.
+ *
+ * Obyčejné `<a>`, ne lokalizovaný odkaz: soubory leží mimo `/[countryCode]`
+ * (R2, knihovna médií), prefix země by z nich udělal 404.
+ */
+function FooterDownloads({
+  downloads,
+  block,
+}: {
+  downloads?: FooterDownloadsData
+  /** Blok `global.paticka-odkazy` — nadpis skupiny (`stazeni`, `stazeni.pdf`). */
+  block?: CopyBlock
+}) {
+  const legal = downloads?.legal ?? []
+  const files = downloads?.files ?? []
+
+  if (!legal.length && !files.length) {
+    return null
+  }
+
+  // „(PDF)" jen když jsou to opravdu jen PDF — soubor ze Studia může být obrázek.
+  const onlyPdf = files.every((file) => file.mime === "application/pdf")
+
+  return (
+    <div className="footer__linkGroup footer__linkGroup--downloads">
+      {/* Dvě znění nadpisu, protože „(PDF)" rozhoduje kód podle souborů. */}
+      <p
+        className="footer__groupTitle"
+        {...editableItem(block, onlyPdf ? "stazeni.pdf" : "stazeni")}
+      >
+        {onlyPdf
+          ? itemValue(block, "stazeni.pdf")?.trim() || "Ke stažení (PDF)"
+          : itemValue(block, "stazeni")?.trim() || "Ke stažení"}
+      </p>
+      <div>
+        {legal.map((download) => (
+          <a
+            key={download.slug}
+            href={download.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer__downloadLink"
+          >
+            {download.label}
+            <span className="footer__downloadMeta">PDF · {formatPdfSize(download.bytes)}</span>
+          </a>
+        ))}
+        {files.map((file, index) => (
+          <a
+            key={`${file.url}-${index}`}
+            href={file.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer__downloadLink"
+            title={file.description || undefined}
+          >
+            {file.label}
+            <span className="footer__downloadMeta">
+              {file.mime === "application/pdf" ? "PDF" : file.mime.startsWith("image/") ? "Obrázek" : "Soubor"}
+              {file.bytes ? ` · ${formatPdfSize(file.bytes)}` : ""}
+            </span>
+          </a>
+        ))}
       </div>
     </div>
   )
@@ -483,11 +616,17 @@ function Newsletter({ block }: { block?: CopyBlock }) {
     setStatus(result.ok ? "done" : "error")
   }
 
+  /*
+   * Věty po odeslání — položky `odeslano` a `chyba` bloku `global.newsletter`
+   * (klíčované popiskem; `accent` téhož bloku čte formulář pozicí a zůstává,
+   * jak je). Věta po odeslání má říkat, že se odběr ještě potvrzuje
+   * v e-mailu — tak double opt-in funguje.
+   */
   if (status === "done") {
     return (
-      <p className="newsletter__success" role="status">
-        Děkujeme! Teď už jen potvrďte odběr v e-mailu, který jsme vám právě
-        poslali.
+      <p className="newsletter__success" role="status" {...editableItem(block, "odeslano")}>
+        {itemValue(block, "odeslano")?.trim() ||
+          "Děkujeme! Teď už jen potvrďte odběr v e-mailu, který jsme vám právě poslali."}
       </p>
     )
   }
@@ -508,8 +647,12 @@ function Newsletter({ block }: { block?: CopyBlock }) {
           required
         />
         {/* Obal, ne tlačítko: `PremiumActionButton` si vykresluje vlastní vnitřek a
-            datové atributy by skončily na prvku, který se při animaci přepisuje. */}
-        <span {...editable(block, "accent.2")}>
+            datové atributy by skončily na prvku, který se při animaci přepisuje.
+            `editableLink` (jen text), ne `editable`: vnitřek tlačítka nese název
+            dvakrát kvůli animaci a šipku navíc („OdebíratOdebírat↗") a úprava
+            v místě by do `accent.2` uložila právě tohle. Popup s polem pro název
+            píše jen hodnotu. Změřeno 15. 10. 2026. */}
+        <span {...editableLink(block, { text: "accent.2" })}>
           <PremiumActionButton
             type="submit"
             text={block?.accent?.[2]?.trim() || "Odebírat"}
@@ -519,13 +662,23 @@ function Newsletter({ block }: { block?: CopyBlock }) {
         </span>
       </div>
       {status === "error" ? (
-        <p className="newsletter__error" role="alert">
-          Nepovedlo se to uložit, zkuste to prosím znovu.
+        <p className="newsletter__error" role="alert" {...editableItem(block, "chyba")}>
+          {itemValue(block, "chyba")?.trim() || "Nepovedlo se to uložit, zkuste to prosím znovu."}
         </p>
       ) : null}
-      <p {...editable(block, "accent.3")}>
-        {block?.accent?.[3]?.trim() ||
-          "Odesláním souhlasíte s tím, že váš e-mail použijeme jen pro zasílání novinek. Odběr ještě potvrdíte kliknutím v e-mailu."}
+      {/* Věta ze CMS (`accent.3`) zůstává editovatelná ve vlastním `<span>`;
+          odkaz na Zásady je kód vedle ní, aby informace o zpracování
+          (čl. 13 GDPR) u formuláře nezmizela s úpravou textu ve Studiu. */}
+      <p>
+        <span {...editable(block, "accent.3")}>
+          {block?.accent?.[3]?.trim() ||
+            "Odesláním souhlasíte s tím, že váš e-mail použijeme jen pro zasílání novinek. Odběr ještě potvrdíte kliknutím v e-mailu."}
+        </span>{" "}
+        Jak s ním zacházíme, popisují{" "}
+        <LocalizedClientLink href="/ochrana-osobnich-udaju#novinky-e-mailem">
+          Zásady ochrany osobních údajů
+        </LocalizedClientLink>
+        .
       </p>
     </form>
   )
@@ -546,8 +699,9 @@ function MerchantBlock({
   /*
    * Z CMS jdou POPISKY, ne hodnoty.
    *
-   * Jméno, sídlo, IČO, e-mail a telefon nesou `getMerchantIdentity()` a proměnné prostředí,
-   * a čtou je i obchodní podmínky, checkout, potvrzení objednávky a reklamační protokol.
+   * Jméno, sídlo, IČO, e-mail a telefon nese `getMerchantIdentity()` z právních údajů
+   * v administraci obchodu („Právní údaje"), a čtou je i obchodní podmínky, checkout,
+   * potvrzení objednávky a reklamační protokol.
    * Kdyby se přepisovaly tady, mohla by patička tvrdit něco jiného než doklad, který ze
    * stejných údajů vzniká — a to je rozpor, který se pozná až u reklamace.
    */
@@ -563,8 +717,9 @@ function MerchantBlock({
    * `getMerchantIdentity()`.
    *
    * POZOR: tytéž údaje čtou i obchodní podmínky, ochrana údajů, odstoupení od smlouvy,
-   * doprava a platba, checkout a reklamační protokol — ty berou dál `getMerchantIdentity()`.
-   * Změna tady se tedy projeví v patičce, ne v dokladech.
+   * doprava a platba, checkout a reklamační protokol — ty berou právní údaje z administrace.
+   * Změna tady se tedy projeví v patičce, ne v dokladech; skutečnou změnu kontaktu
+   * udělejte v administraci obchodu.
    */
   const textAt = (index: number, fallback: string) =>
     labels[index]?.value?.trim() || fallback

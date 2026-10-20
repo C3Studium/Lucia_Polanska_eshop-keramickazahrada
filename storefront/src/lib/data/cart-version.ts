@@ -70,6 +70,12 @@ const NEPRENASET = [
   "balikovna_point_subtype",
   "terms_accepted_at",
   "terms_version",
+  // Souhlasy z posledního kroku pokladny (`checkout/components/legal-consent`)
+  // — dávají se znovu, ve verzi dokumentů platné při novém nákupu.
+  "withdrawal_info_version",
+  "privacy_version",
+  "made_to_order_ack_at",
+  "made_to_order_ack_version",
 ]
 
 const adresaProKopii = (adresa: any) =>
@@ -203,16 +209,18 @@ export async function carryCartToCurrentVersion(): Promise<VysledekPrevodu> {
 
   for (const radek of jednotlive) {
     try {
-      await sdk.store.cart.createLineItem(
-        novy.id,
-        {
+      // Stejná cesta jako `addToCart` — vlastní cena (poukaz s vlastní
+      // částkou, personalizované rozměry) se počítá z metadat řádku. Přes
+      // standardní `createLineItem` by poukaz spadl na katalogovou cenu.
+      await sdk.client.fetch(`/store/carts/${novy.id}/line-items-custom`, {
+        method: "POST",
+        body: {
           variant_id: radek.variant_id,
           quantity: radek.quantity,
           metadata: radek.metadata ?? undefined,
         },
-        {},
-        headers
-      )
+        headers,
+      })
       preneseno += 1
     } catch (chyba) {
       // Typicky doprodáno. Zboží, které nelze koupit, se přenést nedá.

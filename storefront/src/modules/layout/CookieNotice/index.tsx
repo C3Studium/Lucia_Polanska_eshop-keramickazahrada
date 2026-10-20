@@ -1,17 +1,17 @@
 "use client"
 
 import { AnimatePresence, motion } from "framer-motion"
-import { useCallback, useEffect, useRef, useState } from "react"
+import Link from "next/link"
+import { useParams, usePathname } from "next/navigation"
+import { useCallback, useEffect, useId, useRef, useState } from "react"
 
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { forgetLastPaymentMethod } from "@lib/util/payment-preference"
 import {
   ACCEPT_ALL,
-  CONSENT_OPEN_EVENT,
   currentChoice,
   DENY_ALL,
-  ESSENTIAL_ONLY,
   readConsent,
+  registerPreferencesHost,
   saveConsent,
   type ConsentChoice,
 } from "@lib/util/cookie-consent"
@@ -21,30 +21,54 @@ import { noticeVariants } from "./motion"
 import styles from "./style.module.scss"
 
 import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
+
 /**
- * The consent gate.
+ * Odkaz na stránku Cookies i tam, kde v adrese není kód země (kořenová 404) — middleware
+ * pak sám přesměruje na správný region.
+ */
+export function useCookiesPageHref(): string {
+  const params = useParams<{ countryCode?: string }>()
+  const countryCode = typeof params?.countryCode === "string" ? params.countryCode : ""
+
+  return countryCode ? `/${countryCode}/cookies` : "/cookies"
+}
+
+/**
+ * Lišta souhlasu s cookies.
  *
- * It was an informational notice with a single „Rozumím" — true while the shop set nothing but
- * cart, session and region cookies, but not a lawful basis for anything else, and the cookies page
- * already describes analytics and third-party categories. So it is now a real decision: four
- * answers on the banner, per-category switches behind „Upravit", and nothing optional runs until
- * one of them is given.
+ * Připojená JEDNOU v kořenovém layoutu (`app/layout.tsx`), takže je na každé stránce webu —
+ * v obchodě, v pokladně i v rychlém nákupu — a „Nastavení cookies" z patičky ji otevře
+ * odkudkoli. Vynechává jen Studio (redakce webu), kde žádná patička není.
  *
- * The three accept/reject actions each map to a distinct stored state — „Zamítnout" grants nothing,
- * „Přijmout jen důležité" grants the preference cookies that remember the visitor's own choices,
- * „Přijmout vše" grants everything. They are the same size and weight on purpose: a reject that is
- * quieter than the accept is the dark pattern the regulation is aimed at.
+ * Tři rovnocenné odpovědi (14. 10. 2026, LEGAL_AUDIT.md § 8): „Odmítnout vše", „Nastavení",
+ * „Přijmout vše". Stejná velikost, stejné písmo, stejný vzhled — odmítnutí, které je méně
+ * vidět než souhlas, je přesně ten temný vzor, na který míří § 89 odst. 3 zákona 127/2005 Sb.
+ * a pokyny EDPB. Dřívější „Přijmout jen důležité" zmizelo: tvářilo se jako odmítnutí, ale
+ * zapínalo preferenční cookies.
  *
  * There is no close button. Dismissing the banner without answering would leave the visitor in the
  * deny-by-default state while implying a choice was made; the banner is non-blocking instead — it
  * sits in a corner, the page behind it works, and it waits.
  */
 export default function CookieNotice() {
+  const pathname = usePathname() || "/"
+
+  // Studio je aplikace pro redakci, ne stránka obchodu: nemá patičku, nic v něm neměříme.
+  if (pathname === "/studio" || pathname.startsWith("/studio/")) {
+    return null
+  }
+
+  return <CookieConsentGate />
+}
+
+function CookieConsentGate() {
   const [visible, setVisible] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [choice, setChoice] = useState<ConsentChoice>(DENY_ALL)
   const reduceMotion = useSiteReducedMotion()
   const returnFocusRef = useRef<HTMLElement | null>(null)
+  const cookiesHref = useCookiesPageHref()
+  const textId = useId()
 
   // Read after mount: the server cannot know what this visitor has already decided.
   useEffect(() => {
@@ -52,24 +76,23 @@ export default function CookieNotice() {
     setVisible(readConsent() === null)
   }, [])
 
-  // The footer link and the cookies page reopen the settings through this event — consent has to be
-  // as easy to take back as it was to give, and that means from outside a banner that is long gone.
-  useEffect(() => {
-    const open = () => {
-      returnFocusRef.current =
-        document.activeElement instanceof HTMLElement ? document.activeElement : null
-      setChoice(currentChoice())
-      setDialogOpen(true)
-    }
-
-    window.addEventListener(CONSENT_OPEN_EVENT, open)
-
-    return () => window.removeEventListener(CONSENT_OPEN_EVENT, open)
-  }, [])
+  // The footer link and the cookies page reopen the settings through `openCookiePreferences()` —
+  // consent has to be as easy to take back as it was to give, and that means from outside a banner
+  // that is long gone.
+  useEffect(
+    () =>
+      registerPreferencesHost(() => {
+        returnFocusRef.current =
+          document.activeElement instanceof HTMLElement ? document.activeElement : null
+        setChoice(currentChoice())
+        setDialogOpen(true)
+      }),
+    []
+  )
 
   /* Hand the focus back to whatever opened the dialog, so a keyboard visitor resumes where they
      were instead of at the top of the page. The `isConnected` guard covers the trigger that is no
-     longer in the document — the banner's own „Upravit" after the banner has been answered. */
+     longer in the document — the banner's own „Nastavení" after the banner has been answered. */
   const releaseFocus = useCallback(() => {
     const trigger = returnFocusRef.current
 
@@ -82,6 +105,8 @@ export default function CookieNotice() {
 
   const persist = useCallback(
     (next: ConsentChoice) => {
+      // Uloží souhlas a vyšle `kz:cookie-consent` — analytika (`modules/analytics`) na ni
+      // reaguje sama: načte, nebo vypne Google Analytics a smaže jeho cookies.
       saveConsent(next)
 
       // Withdrawing a category has to remove what it stored, not merely stop adding to it.
@@ -106,6 +131,7 @@ export default function CookieNotice() {
 
   const openDialog = (event: React.MouseEvent<HTMLButtonElement>) => {
     returnFocusRef.current = event.currentTarget
+    setChoice(currentChoice())
     setDialogOpen(true)
   }
 
@@ -115,49 +141,47 @@ export default function CookieNotice() {
         {visible && (
           <motion.aside
             className={styles.root}
-            aria-label="Nastavení cookies"
+            /* Jméno oblasti pro odečítače; nadpis by se v DOM ocitl před <h1> stránky. */
+            aria-label="Souhlas s cookies"
+            aria-describedby={textId}
+            /* Karta se dá posouvat sama (overflow-y), Lenis jí kolečko nesmí brát. */
+            data-lenis-prevent
             variants={noticeVariants}
             initial={reduceMotion ? "visible" : "hidden"}
             animate="visible"
             exit="exit"
           >
-            <p className={styles.text}>
+            <p id={textId} className={styles.text}>
               Nezbytné cookies
-              <span className={styles.detail}>
-                {" "}
-                — košík, přihlášení a volba země —
-              </span>{" "}
-              běží vždy, bez nich obchod nefunguje. O preferenčních,
-              analytických a marketingových rozhodujete vy.{" "}
-              <LocalizedClientLink href="/cookies" className={styles.link}>
+              <span className={styles.detail}> — košík, přihlášení, objednávka —</span>{" "}
+              běží vždy, bez nich obchod nefunguje. Ostatní (zapamatování vašich
+              voleb, měření návštěvnosti, mapa Google) zapneme jen s vaším
+              souhlasem. Rozhodnutí můžete kdykoli změnit v patičce webu.{" "}
+              <Link href={cookiesHref} className={styles.link}>
                 Více o cookies
-              </LocalizedClientLink>
+              </Link>
             </p>
+            {/* Pořadí v DOM = pořadí na obrazovce = pořadí Tabu (WCAG 2.4.3). Na telefonu
+                „Nastavení" přes celou šířku nahoře, pod ním odmítnutí a souhlas vedle sebe. */}
             <div className={styles.actions}>
               <button
                 type="button"
-                className={styles.buttonGhost}
+                className={`${styles.button} ${styles.settings}`}
                 onClick={openDialog}
+                aria-haspopup="dialog"
               >
-                Upravit
+                Nastavení
               </button>
               <button
                 type="button"
-                className={styles.buttonSecondary}
+                className={styles.button}
                 onClick={() => persist(DENY_ALL)}
               >
-                Zamítnout
+                Odmítnout vše
               </button>
               <button
                 type="button"
-                className={styles.buttonSecondary}
-                onClick={() => persist(ESSENTIAL_ONLY)}
-              >
-                Přijmout jen důležité
-              </button>
-              <button
-                type="button"
-                className={styles.buttonPrimary}
+                className={styles.button}
                 onClick={() => persist(ACCEPT_ALL)}
               >
                 Přijmout vše
@@ -171,6 +195,7 @@ export default function CookieNotice() {
         {dialogOpen && (
           <PreferencesDialog
             initial={choice}
+            cookiesHref={cookiesHref}
             onSave={persist}
             onClose={closeDialog}
           />

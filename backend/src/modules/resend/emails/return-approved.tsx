@@ -152,10 +152,12 @@ function ReturnApprovedEmailComponent({
         {nothingToReturn
           ? "Nic posílat nemusíte. Pokud jste už něco zaplatili, vrátíme to stejnou cestou, jakou k nám platba přišla; jinak je tím vše vyřízené."
           : (NEXT_STEP[outcome] ?? NEXT_STEP.refund)}
-        {/* 12. 10. 2026, Matěj: u České pošty reklamuje příjemce, ne my —
-            dřívější „reklamujeme u dopravce my" už neplatí. */}
+        {/* 15. 10. 2026 (právní audit §4.1): za vadu při převzetí odpovídá
+            prodávající (§ 2161, § 2159 odst. 2 OZ) — škodu u dopravce řešíme
+            my, zákazník nic dalšího podávat nemusí. Ruší rozhodnutí z 12. 10.,
+            podle kterého reklamoval u České pošty příjemce. */}
         {carrierDamage
-          ? " Poškození zásilky hlásí České poště příjemce — postup jsme vám poslali s potvrzením reklamace."
+          ? " Poškození při přepravě řešíme s dopravcem my — vy nic dalšího podávat nemusíte."
           : ""}
       </Note>
 

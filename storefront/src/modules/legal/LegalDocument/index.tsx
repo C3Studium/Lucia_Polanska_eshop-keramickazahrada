@@ -1,60 +1,204 @@
 "use client"
 
-import { editable, editableMirror } from "@c3studium/valecms/edit"
-import { useEditRerender } from "@lib/hooks/use-edit-rerender"
-import type { CopyBlock } from "@lib/util/site-copy"
+import type { LegalFacts } from "@lib/legal/facts"
+import { renderInline } from "@lib/legal/inline"
+import type { LegalBlock, LegalDocumentVersion, LegalSection } from "@lib/legal/types"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import WebButton from "@modules/common/components/Buttons/webButton"
+import LegalDownloads, {
+  type LegalDownloadItem,
+  type LegalExtraFile,
+} from "@modules/legal/Downloads"
 import { motion, useInView } from "framer-motion"
 import type { ReactNode } from "react"
-import { useEffect, useRef, useState } from "react"
+import { Fragment, useCallback, useEffect, useRef, useState } from "react"
 import styles from "./style.module.scss"
 
-export type LegalSectionData = {
-  id: string
+/*
+ * Právní dokument ze sloučeného registru (`@lib/legal/registry`).
+ *
+ * Znění píše Lucie ve Studiu jako celý dokument jedné verze (typ „Právní
+ * dokumenty" — kapitoly s kotvami, bloky, datum platnosti), vydané znění se
+ * bere z otisku v repu. Dřív tu znění kapitol přepisoval blok `<stránka>.text`
+ * z ValeCMS podle pořadí kapitol (a hero `accent[4]` přepisoval i „Platné
+ * od") — to už neplatí a vrátit se to nemá: znění se váže k objednávce (verze
+ * OP v `order.metadata`) a generuje se z něj PDF, takže název, datum
+ * účinnosti i text musí pocházet z jedné verze. Proto tu nejsou žádné
+ * `editable()` bloky ani hero texty z CMS; upravuje se dokument ve Studiu.
+ *
+ * Komponenta je klientská jen kvůli animacím a sledování aktivní kapitoly.
+ * Registr sem neimportuje — stránka (`LegalPage`, server) spočítá verze,
+ * upozornění, PDF a fakty a pošle hotová data, aby se do prohlížeče netahaly
+ * texty všech dokumentů.
+ */
+
+/** Popisky hero, které nejsou součástí znění dokumentu (vizuální kód stránky). */
+export type LegalPresentation = {
+  /** Kód v rohu, např. „01" nebo „GDPR · 02". */
+  code: string
+  /** Štítek nad hero, např. „Pravidla nákupu". */
+  eyebrow: string
+  /** Kurzivní doplněk pod nadpisem, např. „Bez drobného písma.". */
+  accent: string
+}
+
+export type LegalNotice = {
+  tone: "upcoming" | "archive" | "future"
+  text: string
+  link?: { href: string; label: string }
+}
+
+export type LegalVersionLink = {
+  href: string
   title: string
-  paragraphs?: string[]
-  bullets?: string[]
+  description?: string
+}
+
+export type LegalPdfLink = {
+  href: string
+  fileName: string
+  bytes: number
 }
 
 type LegalDocumentProps = {
-  code: string
-  eyebrow: string
-  title: string
-  accent: string
-  description: string
-  updated?: string
-  /** Znění zabudované v kódu — záloha pro výpadek CMS. */
-  sections: LegalSectionData[]
+  doc: LegalDocumentVersion
   /**
-   * Blok `<stránka>.text` z CMS. Nese nadpisy, odstavce a odrážky kapitol
-   * v pořadí, v jakém stojí v `sections`.
+   * Hodnoty `{{údajů}}` — u vydané verze otisk z manifestu PDF, jinak živé
+   * z administrace obchodu (`registry.factsFor` na serveru).
    */
-  block?: CopyBlock
+  facts: LegalFacts
+  presentation: LegalPresentation
+  /** „Platné od 15. 10. 2026" — spočítané na serveru z verze. */
+  effectiveLabel: string
+  /** Prefix země pro interní odkazy v textu (`/cz/...`). */
+  countryCode: string
+  notices?: LegalNotice[]
+  pdf?: LegalPdfLink | null
+  /** Další znění téhož dokumentu (archivní / připravované). */
+  versions?: LegalVersionLink[]
+  /** „Další soubory ke stažení" ze Studia (typ `soubor`) — ne oficiální PDF dokumentu. */
+  files?: LegalExtraFile[]
   /**
-   * Dokumenty ke stažení pod poslední kapitolou.
-   *
-   * Slot, ne komponenta vykreslená za `<LegalDocument>`: ta vrací `<main>`,
-   * takže seznam za ní by skončil mimo hlavní obsah stránky — pro odečítač
-   * obrazovky i pro osnovu dokumentu je to jiné místo, než kam patří.
+   * Obsah, který k textu kapitoly přidává stránka (např. živý ceník dopravy).
+   * Klíč = `id` kapitoly; vykreslí se na konci jejího těla.
    */
-  downloads?: ReactNode
   supplements?: Record<string, ReactNode>
+}
+
+type InlineRenderer = (text: string) => ReactNode[]
+
+function Blocks({ blocks, inline }: { blocks: LegalBlock[]; inline: InlineRenderer }) {
+  return (
+    <>
+      {blocks.map((block, index) => (
+        <Block key={index} block={block} inline={inline} />
+      ))}
+    </>
+  )
+}
+
+function Block({ block, inline }: { block: LegalBlock; inline: InlineRenderer }) {
+  switch (block.type) {
+    case "p":
+      return <p>{inline(block.text)}</p>
+    case "ul":
+      return (
+        <ul>
+          {block.items.map((item, index) => (
+            <li key={index}>{inline(item)}</li>
+          ))}
+        </ul>
+      )
+    case "ol":
+      return (
+        <ol>
+          {block.items.map((item, index) => (
+            <li key={index}>{inline(item)}</li>
+          ))}
+        </ol>
+      )
+    case "table":
+      return (
+        /* Široká tabulka se na telefonu posouvá do strany sama, ne celá
+           stránka; region s popiskem a tabIndex, aby šla posunout i
+           klávesnicí a odečítač věděl, co posouvá. */
+        <div
+          className={styles.tableScroll}
+          role="region"
+          aria-label={block.caption ?? "Tabulka"}
+          tabIndex={0}
+        >
+          <table className={styles.table}>
+            {block.caption ? <caption>{inline(block.caption)}</caption> : null}
+            <thead>
+              <tr>
+                {block.head.map((cell, index) => (
+                  <th key={index} scope="col">
+                    {inline(cell)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {block.rows.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {row.map((cell, cellIndex) =>
+                    cellIndex === 0 ? (
+                      <th key={cellIndex} scope="row">
+                        {inline(cell)}
+                      </th>
+                    ) : (
+                      <td key={cellIndex}>{inline(cell)}</td>
+                    )
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+    case "box":
+      return (
+        <div className={styles.box} role="note">
+          {block.title ? <h3 className={styles.boxTitle}>{inline(block.title)}</h3> : null}
+          <Blocks blocks={block.blocks} inline={inline} />
+        </div>
+      )
+    case "form":
+      return (
+        <div className={styles.form}>
+          {block.title ? <h3 className={styles.formTitle}>{inline(block.title)}</h3> : null}
+          <dl className={styles.formFields}>
+            {block.fields.map((field, index) => (
+              <div key={index} className={styles.formRow}>
+                <dt>{inline(field.label)}</dt>
+                {field.value ? (
+                  <dd>{inline(field.value)}</dd>
+                ) : (
+                  /* Prázdné místo k ručnímu vyplnění po vytištění. */
+                  <dd className={styles.formBlank}>
+                    <span className={styles.visuallyHidden}>(vyplňte)</span>
+                  </dd>
+                )}
+              </div>
+            ))}
+          </dl>
+          {block.note ? <p className={styles.formNote}>{inline(block.note)}</p> : null}
+        </div>
+      )
+  }
 }
 
 function Chapter({
   section,
   index,
   supplement,
-  editTitle,
-  editBody,
+  inline,
 }: {
-  section: LegalSectionData
+  section: LegalSection
   index: number
   supplement?: ReactNode
-  /** Atributy překryvu pro nadpis kapitoly a její text. Mimo náhled prázdné. */
-  editTitle?: Record<string, string | undefined>
-  editBody?: Record<string, string | undefined>
+  inline: InlineRenderer
 }) {
   const ref = useRef<HTMLElement>(null)
   const isInView = useInView(ref, { once: true, margin: "0px 0px -12% 0px" })
@@ -66,11 +210,7 @@ function Chapter({
       className={styles.chapter}
       aria-labelledby={`${section.id}-title`}
       initial={false}
-      animate={
-        isInView
-          ? { opacity: 1, y: 0 }
-          : { opacity: 0.28, y: 24 }
-      }
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0.28, y: 24 }}
       transition={transition}
     >
       <div className={styles.chapterRule} aria-hidden="true">
@@ -83,100 +223,44 @@ function Chapter({
 
       <div className={styles.chapterHeading}>
         <span>{String(index + 1).padStart(2, "0")}</span>
-        <h2 id={`${section.id}-title`} {...editTitle}>{section.title}</h2>
+        <h2 id={`${section.id}-title`}>{section.title}</h2>
       </div>
 
-      {/* Překryv sedí na celém těle kapitoly, ne na jednotlivých odstavcích:
-          v CMS je to jedno pole, kde odstavce dělí prázdný řádek. Anotovat
-          každý `<p>` zvlášť by nabízelo úpravu něčeho, co samostatně
-          uloženo není. */}
-      <div className={styles.chapterBody} {...editBody}>
-        {section.paragraphs?.filter(Boolean).map((paragraph, paragraphIndex) => (
-          <p key={paragraphIndex}>{paragraph}</p>
-        ))}
-
-        {!!section.bullets?.filter(Boolean).length && (
-          <ul>
-            {section.bullets.filter(Boolean).map((bullet, bulletIndex) => (
-              <li key={bulletIndex}>{bullet}</li>
-            ))}
-          </ul>
-        )}
-
-        {supplement}
+      <div className={styles.chapterBody}>
+        <Blocks blocks={section.blocks} inline={inline} />
+        {/* Doplněk přichází ze serverové stránky (RSC); vlastní klíč, jinak
+            ho React ve vývoji hlásí jako prvek seznamu bez `key`. */}
+        {supplement ? <Fragment key={`${section.id}-supplement`}>{supplement}</Fragment> : null}
       </div>
     </motion.section>
   )
 }
 
 export default function LegalDocument({
-  code,
-  eyebrow,
-  title,
-  accent,
-  description,
-  updated = "Aktuální znění",
-  sections: fallbackSections,
-  downloads,
-  block,
+  doc,
+  facts,
+  presentation,
+  effectiveLabel,
+  countryCode,
+  notices = [],
+  pdf = null,
+  versions = [],
+  files = [],
   supplements,
 }: LegalDocumentProps) {
-  /* Stránka se po zapnutí režimu editace sama nepřekreslí — viz hook. */
-  useEditRerender()
-
-  /*
-   * Okolní texty stránky z CMS, s hodnotami z kódu jako zálohou.
-   *
-   * Jsou v témže bloku jako kapitoly (`<stránka>.text`), ne ve druhém: redaktor otevře
-   * jeden dokument a má v něm celou stránku. Fungují tím pro všech šest právních stránek
-   * naráz — komponent je jeden.
-   */
-  /* `accent` má ve schématu strop ŠESTI položek — víc by Studio odmítlo uložit.
-     Slova „kapitol" a „Obsah" proto zůstávají v kódu; jsou to obecné popisky
-     rozhraní, ne texty stránky. */
-  const eyebrowText = block?.accent?.[0]?.trim() || eyebrow
-  const codeText = block?.accent?.[1]?.trim() || code
-  const ownerText = block?.accent?.[2]?.trim() || "Keramická zahrada · Písek"
-  const documentLabel = block?.accent?.[3]?.trim() || "Dokument"
-  const updatedText = block?.accent?.[4]?.trim() || updated
-  const ctaText = block?.accent?.[5]?.trim() || "Číst dokument"
+  const sections = doc.sections
   const chaptersWord = "kapitol"
   const indexHeading = "Obsah"
-  const titleText = block?.title?.trim() || title
-  const accentText = block?.headline?.trim() || accent
-  const descriptionText = block?.bodyText?.trim() || description
 
-  /*
-   * Znění z CMS, struktura z kódu.
-   *
-   * `id` se z bloku NEČTE, i když v něm (jako `lead`) je: visí na něm kotva
-   * v adrese, boční navigace a `aria-labelledby`. Odkaz, který si někdo
-   * uložil nebo poslal v e-mailu, nesmí přestat platit tím, že redaktor
-   * přepsal nadpis kapitoly.
-   *
-   * Sekce, kterou blok nemá, si nechá znění z kódu — dokument se tak nikdy
-   * nezkrátí ani nezprázdní, ať je v CMS cokoliv. U právního textu je to
-   * podstatnější než jinde: chybějící odstavec obchodních podmínek není
-   * kosmetická vada.
-   */
-  const sections = fallbackSections.map((section, index) => {
-    const item = block?.items?.[index]
-    if (!item) return section
-    const paragraphs = (item.value ?? "")
-      .split(/\n{2,}/)
-      .map((p) => p.trim())
-      .filter(Boolean)
-    const bullets = (item.note ?? "")
-      .split(/\n+/)
-      .map((b) => b.trim())
-      .filter(Boolean)
-    return {
-      ...section,
-      title: item.label?.trim() || section.title,
-      paragraphs: paragraphs.length ? paragraphs : section.paragraphs,
-      bullets: bullets.length ? bullets : section.bullets,
-    }
-  })
+  const inline = useCallback<InlineRenderer>(
+    (text) =>
+      renderInline(text, {
+        hrefFor: (path) => `/${countryCode}${path}`,
+        placeholderClassName: styles.placeholder,
+        facts,
+      }),
+    [countryCode, facts]
+  )
 
   const [activeId, setActiveId] = useState(sections[0]?.id ?? "")
 
@@ -212,29 +296,50 @@ export default function LegalDocument({
     history.replaceState(null, "", `#${id}`)
   }
 
+  /* PDF z manifestu (`pnpm legal:build`), dokud neexistuje, aspoň tisk
+     stránky — odkaz na soubor, který není, je horší než žádný. */
+  const downloads: LegalDownloadItem[] = [
+    pdf
+      ? {
+          kind: "pdf",
+          href: pdf.href,
+          title: `${doc.title} (PDF)`,
+          description: effectiveLabel,
+          bytes: pdf.bytes,
+        }
+      : {
+          kind: "print",
+          title: `Vytisknout ${doc.title.toLocaleLowerCase("cs")}`,
+          description: "Nebo uložit jako PDF přes tisk v prohlížeči",
+        },
+    ...versions.map<LegalDownloadItem>((version) => ({
+      kind: "link",
+      href: version.href,
+      title: version.title,
+      description: version.description,
+    })),
+  ]
+
   return (
     <main className={styles.page} aria-labelledby="legal-document-title">
       <header className={styles.hero}>
         <div className={styles.heroMeta}>
-          <span {...editable(block, "accent.0")}>{eyebrowText}</span>
-          <span {...editable(block, "accent.1")}>{codeText}</span>
+          <span>{presentation.eyebrow}</span>
+          <span>{presentation.code}</span>
         </div>
 
         <div className={styles.heroGrid}>
           <div className={styles.heroTitle}>
-            <p {...editable(block, "accent.2")}>{ownerText}</p>
-            <h1 id="legal-document-title" {...editable(block, "title")}>
-              {titleText}
-            </h1>
-            <em {...editable(block, "headline")}>{accentText}</em>
+            <p>Keramická zahrada · Písek</p>
+            <h1 id="legal-document-title">{doc.title}</h1>
+            <em>{presentation.accent}</em>
           </div>
 
           <div className={styles.heroIntro}>
-            <span {...editable(block, "accent.3")}>{documentLabel}</span>
-            <p {...editable(block, "body")}>{descriptionText}</p>
+            <span>Dokument</span>
+            {doc.summary ? <p>{inline(doc.summary)}</p> : null}
             <div>
-              <small {...editable(block, "accent.4")}>{updatedText}</small>
-              {/* Počet kapitol se počítá; slovo za ním je v kódu (strop accent). */}
+              <small>{effectiveLabel}</small>
               <small>
                 {sections.length} {chaptersWord}
               </small>
@@ -243,15 +348,11 @@ export default function LegalDocument({
         </div>
 
         <div className={styles.continue}>
-          {/* Obal, ne `WebButton`: ten si vykresluje vlastní vnitřek a datové atributy
-              by skončily na prvku, který se při animaci přepisuje. */}
-          <span {...editable(block, "accent.5")}>
-            <WebButton
-              Kind="Button"
-              title={ctaText}
-              onClickAction={() => goToChapter(sections[0]?.id)}
-            />
-          </span>
+          <WebButton
+            Kind="Button"
+            title="Číst dokument"
+            onClickAction={() => goToChapter(sections[0]?.id)}
+          />
         </div>
       </header>
 
@@ -262,11 +363,6 @@ export default function LegalDocument({
             seznamem a odroluje stránku místo něj. */}
         <aside className={styles.index} aria-label="Obsah dokumentu" data-lenis-prevent>
           <div className={styles.indexHeading}>
-            {/* Názvy položek pod tím jsou tentýž text jako nadpisy kapitol — po uložení
-                `section.title` z CMS, během psaní v editoru je dorovnává `editableMirror`
-                na témže poli, kterým je anotovaný `<h2>` kapitoly. Přejmenovaná kapitola
-                se tedy v rejstříku přejmenuje sama, a to hned.
-                Kotva zůstává: visí na `id` z kódu, aby uložený odkaz nepřestal platit. */}
             <span>{indexHeading}</span>
             <span>{String(sections.length).padStart(2, "0")}</span>
           </div>
@@ -282,7 +378,7 @@ export default function LegalDocument({
                     onClick={() => goToChapter(section.id)}
                   >
                     <span>{String(index + 1).padStart(2, "0")}</span>
-                    <strong {...editableMirror(block, `items.${index}.label`)}>{section.title}</strong>
+                    <strong>{section.title}</strong>
                     <i aria-hidden="true" />
                   </button>
                 </li>
@@ -293,9 +389,28 @@ export default function LegalDocument({
 
         <article className={styles.content}>
           <div className={styles.contentHeader}>
-            <span>{code}</span>
-            <span>České znění</span>
+            <span>{presentation.code}</span>
+            <span>České znění · {effectiveLabel}</span>
           </div>
+
+          {notices.map((notice, index) => (
+            <div
+              key={index}
+              className={styles.notice}
+              data-tone={notice.tone}
+              role="note"
+            >
+              <p>
+                {notice.text}
+                {notice.link ? (
+                  <>
+                    {" "}
+                    <a href={notice.link.href}>{notice.link.label}</a>
+                  </>
+                ) : null}
+              </p>
+            </div>
+          ))}
 
           {sections.map((section, index) => (
             <Chapter
@@ -303,12 +418,11 @@ export default function LegalDocument({
               section={section}
               index={index}
               supplement={supplements?.[section.id]}
-              editTitle={editable(block, `items.${index}.label`)}
-              editBody={editable(block, `items.${index}.value`)}
+              inline={inline}
             />
           ))}
 
-          {downloads}
+          <LegalDownloads items={downloads} files={files} />
 
           <div className={styles.documentEnd} aria-hidden="true">
             <span />
@@ -319,7 +433,7 @@ export default function LegalDocument({
 
         <aside className={styles.status} aria-hidden="true">
           <span>Dokument</span>
-          <strong>{code}</strong>
+          <strong>{presentation.code}</strong>
           <i />
           <small>Keramická zahrada</small>
         </aside>
@@ -327,7 +441,6 @@ export default function LegalDocument({
     </main>
   )
 }
-
 
 /* Hoisted from JSX: these motion objects are static, so allocating them per
    render only gave framer-motion new references to re-diff. Values are unchanged. */

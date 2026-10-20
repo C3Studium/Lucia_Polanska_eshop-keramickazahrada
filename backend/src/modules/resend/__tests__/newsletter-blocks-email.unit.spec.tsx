@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { bundlePublishedEmail } from "../emails/bundle-published"
 import { PromotionalEmail } from "../emails/promotional"
 import type { EmailNewsletterBlock } from "../emails/newsletter-blocks"
+import { withEmailLegalFacts } from "../components/email-ui"
 
 /**
  * The composed newsletter's legal anatomy, asserted on the real rendered
@@ -87,6 +88,19 @@ describe("block-composed newsletter e-mail", () => {
     expect(html).toContain("Lucie Polanská")
     expect(html).toContain("Putim 229, 397 01 Písek")
     expect(html).toContain("IČO 03441482")
+  })
+
+  it("takes the sender from the live legal facts, never leaving a part out", () => {
+    const html = renderToStaticMarkup(
+      withEmailLegalFacts(
+        PromotionalEmail({ subject: "Novinky", blocks, unsubscribeLink: UNSUBSCRIBE }),
+        // Nová adresa sídla; IČO výslovně nevyplněné → záloha, identifikace
+        // odesílatele obchodního sdělení musí být celá.
+        { "seller.address": "Nová 1, 397 01 Písek", "seller.ico": null }
+      ) as React.ReactElement
+    )
+    expect(html).toContain("Odesílatel: Lucie Polanská, se sídlem Nová 1, 397 01 Písek, IČO 03441482.")
+    expect(html).toContain("Prodávající: Lucie Polanská · Nová 1, 397 01 Písek")
   })
 
   it("renders every block type, in order", () => {

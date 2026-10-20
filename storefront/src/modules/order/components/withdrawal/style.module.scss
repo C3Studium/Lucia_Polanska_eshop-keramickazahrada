@@ -1,0 +1,489 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+/* Odstoupení od smlouvy online (§ 1830a) — stejný jazyk jako formulář
+   reklamace (`refund-request`): krémové karty, olivová pro vybrané, hlína pro
+   to, co nejde. Dvoustupňový tok: formulář → kontrola → potvrzení. */
+
+.flow {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  width: 100%;
+  max-width: 36rem;
+  margin: 0 auto;
+  text-align: left;
+  color: var(--ink-05);
+}
+
+.stepLabel {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / 0.55);
+  font: 400 0.75rem / 1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.lead {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / 0.8);
+  font: 300 1rem / 1.55 "Sansation-Light", sans-serif;
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.legend {
+  margin: 0;
+  padding: 0 0 0.3rem;
+  color: rgb(var(--ink-05-rgb) / 0.62);
+  font: 400 clamp(0.72rem, 0.9vw, 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+
+  i {
+    font-style: normal;
+    opacity: 0.7;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+}
+
+.static {
+  margin: 0;
+  font: 300 0.98rem / 1.5 "Sansation-Light", sans-serif;
+  overflow-wrap: anywhere;
+}
+
+/* Údaje objednávky — dvě kolony popisek/hodnota, na úzkém telefonu pod sebou. */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0;
+
+  div { min-width: 0; }
+
+  dt {
+    color: rgb(var(--ink-05-rgb) / 0.55);
+    font: 400 0.72rem / 1.3 "Sansation-Regular", sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0.15rem 0 0;
+    font: 300 0.98rem / 1.45 "Sansation-Light", sans-serif;
+    overflow-wrap: anywhere;
+  }
+}
+
+.factWide {
+  grid-column: 1 / -1;
+}
+
+@include below-px(520px) {
+  .facts { grid-template-columns: 1fr; }
+}
+
+.input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.25);
+  border-radius: 0.625rem;
+  background: rgb(var(--cream-06-rgb) / 0.55);
+  color: var(--ink-05);
+  font: 300 1rem / 1.5 "Sansation-Light", sans-serif;
+  resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: var(--olive-07);
+  }
+
+  &:disabled { opacity: 0.6; }
+}
+
+/* ── Zboží ──────────────────────────────────────────────────────────────── */
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  padding: 0.45rem 0.75rem 0.45rem 0.35rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.18);
+  border-radius: 0.75rem;
+  background: rgb(var(--cream-06-rgb) / 0.5);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+
+  &[data-checked] {
+    border-color: var(--olive-07);
+    background: rgb(var(--olive-07-rgb) / 0.08);
+  }
+
+  /* Zakázka na míru — zamčená, s důvodem (§ 1837 písm. d). */
+  &[data-locked] {
+    border-style: dashed;
+    background: rgb(var(--clay-06-rgb) / 0.05);
+  }
+}
+
+.itemMain {
+  flex: 1 1 14rem;
+  display: grid;
+  grid-template-columns: 44px 3.25rem 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  min-height: 44px;
+  cursor: pointer;
+
+  input {
+    width: 1.1rem;
+    height: 1.1rem;
+    margin: 0;
+    justify-self: center;
+    accent-color: var(--olive-07);
+    cursor: pointer;
+
+    &:disabled { cursor: not-allowed; }
+  }
+}
+
+.item[data-locked] .itemMain { cursor: not-allowed; }
+
+.itemThumb {
+  width: 3.25rem;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 0.5rem;
+}
+
+.itemBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.itemTitle {
+  font: 400 clamp(0.92rem, 1.1vw, 1rem) / 1.3 "Sansation-Regular", sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.itemMeta {
+  color: rgb(var(--ink-05-rgb) / 0.6);
+  font: 300 0.8rem / 1.4 "Sansation-Light", sans-serif;
+}
+
+.itemLocked {
+  margin-top: 0.15rem;
+  color: var(--clay-06);
+  font: 300 0.8rem / 1.4 "Sansation-Light", sans-serif;
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: auto;
+
+  button {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border: 1px solid rgb(var(--ink-05-rgb) / 0.25);
+    border-radius: 50%;
+    background: rgb(var(--cream-06-rgb) / 0.75);
+    color: var(--ink-05);
+    cursor: pointer;
+    font: 400 1.15rem / 1 "Sansation-Regular", sans-serif;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.35;
+    }
+  }
+
+  input {
+    width: 3rem;
+    height: 44px;
+    padding: 0;
+    border: 1px solid rgb(var(--ink-05-rgb) / 0.25);
+    border-radius: 0.625rem;
+    background: rgb(var(--cream-06-rgb) / 0.75);
+    color: var(--ink-05);
+    font: 400 1rem / 1 "Sansation-Regular", sans-serif;
+    text-align: center;
+    -moz-appearance: textfield;
+    appearance: textfield;
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      margin: 0;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--olive-07);
+    }
+
+    &:disabled { opacity: 0.5; }
+  }
+}
+
+.stepperOf {
+  margin-left: 0.15rem;
+  color: rgb(var(--ink-05-rgb) / 0.55);
+  font: 300 0.8rem / 1 "Sansation-Light", sans-serif;
+  white-space: nowrap;
+}
+
+@include below-px(480px) {
+  .stepper { margin-left: calc(44px + 0.5rem); }
+}
+
+@include fine-pointer {
+  .item:not([data-locked]):hover { border-color: rgb(var(--ink-05-rgb) / 0.4); }
+  .item[data-checked]:hover { border-color: var(--olive-07); }
+  .stepper button:hover:not(:disabled) { border-color: var(--ink-05); }
+}
+
+/* ── Kontrola a potvrzení — prohlášení jako list papíru ─────────────────── */
+.statement {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.22);
+  border-radius: 0.9rem;
+  background: rgb(var(--white-rgb) / 0.55);
+}
+
+.statementTitle {
+  margin: 0;
+  font: 400 clamp(1.05rem, 1.4vw, 1.25rem) / 1.3 "Sansation-Regular", sans-serif;
+}
+
+.statementItems {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+
+  li { margin: 0.15rem 0; }
+}
+
+.excludedNote {
+  margin: 0;
+  color: var(--clay-06);
+  font: 300 0.88rem / 1.45 "Sansation-Light", sans-serif;
+}
+
+.done {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--olive-07);
+  border-radius: 0.9rem;
+  background: rgb(var(--olive-07-rgb) / 0.08);
+  font: 300 0.98rem / 1.5 "Sansation-Light", sans-serif;
+
+  p { margin: 0; }
+
+  strong {
+    font-family: "Sansation-Regular", sans-serif;
+    font-weight: 400;
+  }
+}
+
+.doneTitle {
+  font: 400 clamp(1.05rem, 1.4vw, 1.25rem) / 1.3 "Sansation-Regular", sans-serif;
+}
+
+.nextSteps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding-left: 1.2rem;
+  font: 300 0.95rem / 1.5 "Sansation-Light", sans-serif;
+
+  strong {
+    font-family: "Sansation-Regular", sans-serif;
+    font-weight: 400;
+  }
+}
+
+/* ── Texty, chyby, tlačítka ──────────────────────────────────────────────── */
+.hint {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / 0.65);
+  font: 300 0.88rem / 1.45 "Sansation-Light", sans-serif;
+
+  a {
+    color: var(--ink-05);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}
+
+.warn {
+  margin: 0;
+  color: var(--clay-06);
+  font: 300 0.88rem / 1.45 "Sansation-Light", sans-serif;
+}
+
+.error {
+  margin: 0;
+  color: var(--clay-06);
+  font: 400 0.95rem / 1.5 "Sansation-Regular", sans-serif;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.submit,
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 1.75rem;
+  border: 1px solid var(--ink-05);
+  border-radius: 999px;
+  cursor: pointer;
+  font: 400 1rem / 1 "Sansation-Regular", sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+}
+
+.submit {
+  background: var(--ink-05);
+  color: var(--cream-06);
+
+  &:hover:not(:disabled) {
+    background: transparent;
+    color: var(--ink-05);
+  }
+}
+
+.ghost {
+  background: transparent;
+  color: var(--ink-05);
+
+  &:hover:not(:disabled) {
+    background: rgb(var(--ink-05-rgb) / 0.06);
+  }
+}
+
+@include below-px(480px) {
+  .actions { flex-direction: column-reverse; }
+  .submit, .ghost { width: 100%; }
+}
+
+.legal {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / 0.6);
+  font: 300 0.88rem / 1.5 "Sansation-Light", sans-serif;
+
+  a {
+    color: var(--ink-05);
+    text-decoration: underline;
+  }
+}
+
+/* ── Vstup (tlačítko „Odstoupit od smlouvy" / vysvětlení) ───────────────── */
+.entry,
+.entryCompact {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  text-align: left;
+  color: var(--ink-05);
+}
+
+.entry {
+  padding: 1rem 1.1rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.18);
+  border-radius: 0.9rem;
+  background: rgb(var(--cream-06-rgb) / 0.5);
+
+  &[data-state="blocked"] {
+    border-style: dashed;
+  }
+}
+
+.entryEyebrow {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / 0.55);
+  font: 400 0.75rem / 1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.entryLead {
+  margin: 0;
+  font: 300 0.95rem / 1.5 "Sansation-Light", sans-serif;
+}
+
+.entryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 1.5rem;
+  border: 1px solid var(--ink-05);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-05);
+  font: 400 0.95rem / 1 "Sansation-Regular", sans-serif;
+  text-decoration: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
+
+  &:hover {
+    background: var(--ink-05);
+    color: var(--cream-06);
+  }
+}
+
+.entryLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin: 0;
+  font: 300 0.9rem / 1.4 "Sansation-Light", sans-serif;
+
+  a {
+    color: var(--ink-05);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    overflow-wrap: anywhere;
+  }
+}

@@ -4,6 +4,7 @@ import Overview from "@modules/account/components/overview"
 import { redirect } from "next/navigation"
 import { retrieveCustomer } from "@lib/data/customer"
 import { listOrders } from "@lib/data/orders"
+import { getPageCopy } from "@lib/data/site-copy"
 
 export const metadata: Metadata = {
   title: "Můj účet",
@@ -30,12 +31,17 @@ export default async function OverviewTemplate({
     redirect(`/${countryCode}/account`)
   }
 
-  let orders = (await listOrders().catch(() => null)) || null
+  // Texty přehledu z CMS (blok `ucet.prehled`); výpadek CMS = texty z kódu.
+  const [fetchedOrders, copy] = await Promise.all([
+    listOrders().catch(() => null),
+    getPageCopy("ucet"),
+  ])
+  let orders = fetchedOrders || null
 
   // If orders API failed but customer has orders, use customer orders
   if (!orders && (customer as any)?.orders && (customer as any).orders.length > 0) {
     orders = (customer as any).orders
   }
 
-  return <Overview customer={customer} orders={orders} />
+  return <Overview customer={customer} orders={orders} copy={copy["ucet.prehled"]} />
 }

@@ -43,7 +43,7 @@ export const REFUND_ACCOUNT_INVALID =
 export const REFUND_ACCOUNT_CHECKSUM =
   "Číslo účtu nesedí (kontrolní součet) — zkontrolujte prosím překlep v číslicích."
 export const REFUND_ACCOUNT_REQUIRED =
-  "Objednávku jste neplatili kartou, takže peníze vracíme převodem — vyplňte prosím číslo účtu."
+  "Objednávku jste neplatili online přes ComGate, takže peníze vracíme převodem — vyplňte prosím číslo účtu."
 
 const PREFIX_WEIGHTS = [10, 5, 8, 4, 2, 1]
 const NUMBER_WEIGHTS = [6, 3, 7, 9, 10, 5, 8, 4, 2, 1]

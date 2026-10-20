@@ -15,6 +15,7 @@ import LoginTemplate from "@modules/account/templates/login-template"
  * lets the request through and only the server's `retrieveCustomer()` finds out otherwise.
  */
 export default async function LoginDefault() {
-  const copy = await getPageCopy("global")
-  return <LoginTemplate block={copy["global.prihlaseni"]} />
+  // Stejné bloky jako `page.tsx` vedle — hero globální, věty formuláře z účtu.
+  const [global, ucet] = await Promise.all([getPageCopy("global"), getPageCopy("ucet")])
+  return <LoginTemplate block={global["global.prihlaseni"]} form={ucet["ucet.formular"]} />
 }

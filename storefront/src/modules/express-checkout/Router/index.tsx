@@ -21,6 +21,9 @@ import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 
 import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 import { productLines } from "@lib/util/packaging"
+import { editable } from "@c3studium/valecms/edit"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import type { CopyBlock } from "@lib/util/site-copy"
 type ActiveStep = "selection" | "delivery" | "payment"
 
 const STEP_ORDER: ActiveStep[] = ["selection", "delivery", "payment"]
@@ -41,6 +44,12 @@ type RouterProps = {
   prefillAddress?: ExpressPrefillAddress | null
   /** Zakázka: volba zálohy (kolik zaplatit hned) pro krok platby. */
   productionMode?: ProductionPaymentMode | null
+  /**
+   * Blok `kosik.rychly-nakup` — úvod nad krokovníkem: lišta (`accent.0`, kód
+   * země za ní drží kód), nadpis (`title` + `headline`) a věta (`body`).
+   * Kroky, jejich názvy a souhrny jsou ovládání, ne text — zůstávají v kódu.
+   */
+  block?: CopyBlock
 }
 
 /**
@@ -63,7 +72,17 @@ export const Router = ({
   packetaShippingMethodId,
   prefillAddress,
   productionMode,
+  block,
 }: RouterProps) => {
+  /* Úvod se po zapnutí editace sám nepřekreslí, dokud se nic neděje. Viz hook. */
+  useEditRerender()
+  const introLine = block?.accent?.[0]?.trim() || "Rychlý nákup"
+  const introTitle = block?.title?.trim() || "Rychlý nákup."
+  const introAccent = block?.headline?.trim() || "Bez zbytečného klikání."
+  const introText =
+    block?.bodyText?.trim() ||
+    "Vyberete provedení, doručení a bezpečně zaplatíte. Tři kroky a je to."
+
   const router = useRouter()
   const searchParams = useSearchParams()
   /* Reduced motion: steps swap as instant crossfades instead of sliding. */
@@ -184,23 +203,29 @@ export const Router = ({
         animate="visible"
         variants={variants}
       >
+        {/* Text lišty a nadpisu ve vlastních spanech — kód země za lištou
+            je údaj a nadpis má dvě pole; `editable` píše vždy celé pole.
+            Lišta je flex s mezerou (`gap`), takže text i s kódem země drží
+            jeden obal — jinak by se mezi ně vklínila mezera flexu. */}
         <motion.div
           className={styles.introLine}
           variants={variants2}
         >
-          Rychlý nákup · {countryCode.toUpperCase()}
+          <span>
+            <span {...editable(block, "accent.0")}>{introLine}</span> · {countryCode.toUpperCase()}
+          </span>
         </motion.div>
         <motion.h1
           variants={variants3}
         >
-          Rychlý nákup.
-          <em>Bez zbytečného klikání.</em>
+          <span {...editable(block, "title")}>{introTitle}</span>
+          <em {...editable(block, "headline")}>{introAccent}</em>
         </motion.h1>
         <motion.p
           variants={variants4}
+          {...editable(block, "body")}
         >
-          Vyberete provedení, doručení a bezpečně zaplatíte. Tři kroky
-          a je to.
+          {introText}
         </motion.p>
       </motion.header>
 

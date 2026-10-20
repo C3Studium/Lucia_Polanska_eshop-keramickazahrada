@@ -17,18 +17,22 @@ import CarrierDamageNotice, {
   CLAIM_FORM_KEY,
 } from "@modules/order/components/carrier-damage"
 import { getSiteDocument } from "@lib/data/documents"
+import { orderTermsRef } from "@lib/legal/order-terms"
 import CommissionConversation from "@modules/order/components/commission-conversation"
 import BalancePayPanel from "@modules/order/components/balance-pay"
 import ClaimsSummary from "@modules/order/components/claim-status/summary"
+import { withdrawalHref } from "@modules/order/components/withdrawal/entry"
 import { withdrawBlockText, type OrderClaims } from "@lib/util/claims"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import PremiumActionLink from "@modules/common/components/premium-action-link"
+import CmsText from "@modules/common/components/cms-text"
+import type { CopyBlocks } from "@lib/util/site-copy"
 import Thumbnail from "@modules/products/components/thumbnail"
 import s from "./styles/oder-complete.module.scss"
 import { pickupPointLabel } from "@lib/util/pickup-point"
 import { isPackagingLine, productLines, withPackagingUnderProducts } from "@lib/util/packaging"
 import PackagingLine, { PackagingNote, packagingFor } from "@modules/common/components/packaging-line"
-import { packagingSubtotal } from "@lib/util/packaging"
+import { dobirkaFeeSubtotal, packagingSubtotal } from "@lib/util/packaging"
 
 type OrderCompletedTemplateProps = {
   order: HttpTypes.StoreOrder
@@ -49,6 +53,13 @@ type OrderCompletedTemplateProps = {
    * stejným tokenem). `null` → sekce se nevykreslí, tlačítka zůstanou jako dřív.
    */
   claims?: OrderClaims | null
+  /**
+   * Bloky stránky `kosik`: `kosik.objednavka-hotova` (poděkování nahoře)
+   * a `kosik.objednavka-pomoc` (nadpis okénka s kontaktem). Jen tyhle dva
+   * kusy — věta o potvrzení e-mailem nese adresu zákazníka, kontakty jsou
+   * údaje obchodu a odstoupení, podmínky a reklamace jsou vázané na zákon.
+   */
+  copy?: CopyBlocks
 }
 
 const formatDate = (date: string | Date) =>
@@ -68,12 +79,18 @@ export default async function OrderCompletedTemplate({
   commissionBalance = null,
   selfServiceToken = null,
   claims = null,
+  copy,
 }: OrderCompletedTemplateProps) {
+  const thanks = copy?.["kosik.objednavka-hotova"]
+  const help = copy?.["kosik.objednavka-pomoc"]
   const money = (amount?: number | null) =>
     convertToLocale({
       amount: amount ?? 0,
       currency_code: order.currency_code,
     })
+  // Rozpad mezisoučtu v Souhrnu (výrobky / balné / doběrečné).
+  const packaging = packagingSubtotal(order.items)
+  const dobirkaFee = dobirkaFeeSubtotal(order.items)
 
   // Balné (lib/util/packaging.ts) hned pod svým výrobkem.
   const items = withPackagingUnderProducts(
@@ -92,6 +109,8 @@ export default async function OrderCompletedTemplate({
   const pickupPoint = pickupPointLabel(
     order.metadata as Record<string, unknown> | undefined
   )
+  // Serverová komponenta → registr dokumentů smí přímo (do prohlížeče nejde).
+  const terms = await orderTermsRef(order)
   /* Stav objednávky ze serveru (reklamace, odesláno, výroba zakázky…) —
      `fulfillment_status` Medusy sám neví o Denní práci ani o reklamacích
      a navíc ho načtení objednávky nevrací, takže tu stálo napořád „Přijato". */
@@ -153,14 +172,17 @@ export default async function OrderCompletedTemplate({
       : paymentStatus
 
   /*
-   * „Zrušit objednávku" = odstoupení od smlouvy do 14 dnů (§1829). Server říká,
-   * zda to ještě jde: u zakázky ne (§1837), po lhůtě ne, s otevřenou žádostí ne.
-   * Místo tlačítka pak stojí jedna věta s důvodem — reklamace zůstává. Když se
-   * `claims` nenačetly, tlačítko necháme; pravidla pohlídá stránka formuláře.
+   * „Odstoupit od smlouvy" (§ 1829, tlačítko § 1830a OZ) — od 14. 10. 2026
+   * místo dřívějšího „Zrušit objednávku": před odesláním i po něm je to táž
+   * cesta (dvoustupňová stránka `/order/:id/odstoupeni`). Dostupné po celou
+   * lhůtu, i když už k objednávce běží jiná žádost (reklamace odstoupení
+   * neblokuje). Server říká, zda to jde: u zakázky ne (§ 1837 písm. d), po
+   * lhůtě ne, u běžícího odstoupení ne — pak místo tlačítka věta s důvodem.
+   * Když se `claims` nenačetly, tlačítko necháme; pravidla pohlídá stránka.
    */
   const hasClaims = Boolean(claims && claims.requests.length > 0)
-  const cancelBlocked = claims ? claims.all_made_to_order || !claims.can_withdraw : false
-  const cancelBlockedText = claims ? withdrawBlockText(claims) : null
+  const withdrawBlocked = claims ? claims.all_made_to_order || !claims.can_withdraw : false
+  const withdrawBlockedText = claims ? withdrawBlockText(claims) : null
 
   return (
     <main className={s.root}>
@@ -177,11 +199,19 @@ export default async function OrderCompletedTemplate({
         </header>
 
         <section className={s.hero}>
+          {/* `kosik.objednavka-hotova`: obočí (`accent.0`), nadpis (`title`)
+              a jeho zvýrazněný konec (`headline`). */}
           <div className={s.heroCopy}>
-            <p className={s.eyebrow}>Objednávka je uložená</p>
+            <CmsText as="p" className={s.eyebrow} doc={thanks?.id} field="accent.0">
+              {thanks?.accent?.[0]?.trim() || "Objednávka je uložená"}
+            </CmsText>
             <h1 className={s.title}>
-              <span>Děkujeme!</span>
-              <em>Teď se do toho pustím.</em>
+              <CmsText doc={thanks?.id} field="title">
+                {thanks?.title?.trim() || "Děkujeme!"}
+              </CmsText>
+              <CmsText as="em" doc={thanks?.id} field="headline">
+                {thanks?.headline?.trim() || "Teď se do toho pustím."}
+              </CmsText>
             </h1>
           </div>
 
@@ -190,6 +220,24 @@ export default async function OrderCompletedTemplate({
               Potvrzení jsme poslali na <strong>{order.email}</strong>. Jakmile
               se něco pohne, ozveme se vám znovu.
             </p>
+            {/* Znění OP, podle kterého se objednávka uzavřela (OP čl. III
+                a IV, § 1827 OZ) — stejné jako v účtu u objednávky. */}
+            {terms && (
+              <p className={s.heroTerms} data-testid="order-terms">
+                Obchodní podmínky:{" "}
+                <LocalizedClientLink href={terms.href}>
+                  znění od {terms.validFrom}
+                </LocalizedClientLink>
+                {terms.pdfUrl && (
+                  <>
+                    {" · "}
+                    <a href={terms.pdfUrl} target="_blank" rel="noopener noreferrer">
+                      PDF
+                    </a>
+                  </>
+                )}
+              </p>
+            )}
             <span>Reference · {orderNumber}</span>
           </div>
         </section>
@@ -201,10 +249,10 @@ export default async function OrderCompletedTemplate({
         <OrderProgressPanel progress={progress} fallbackLabel={progressFallback} />
 
         {/* Co se dá s objednávkou ještě udělat — vedle stavu „Přijato": úprava
-            (jen než ji zabalíme), zrušení (odstoupení od smlouvy) a reklamace /
-            vrácení. Každé otevře příslušnou stránku s podepsaným tokenem; ta si
-            ho ověří a pravidla pohlídá sama (reklamace zvlášť, úprava jen včas).
-            Dřív šly tyhle stránky otevřít jen z e-mailu — teď jsou i tady. */}
+            (jen než ji zabalíme), odstoupení od smlouvy (i zrušení před
+            odesláním) a reklamace / vrácení. Každé otevře příslušnou stránku
+            s podepsaným tokenem; ta si ho ověří a pravidla pohlídá sama
+            (reklamace zvlášť, úprava jen včas). */}
         {selfServiceToken && (
           <section className={s.selfService} aria-label="Co s objednávkou">
             <p className={s.selfServiceLead}>
@@ -217,16 +265,17 @@ export default async function OrderCompletedTemplate({
               >
                 Upravit objednávku
               </LocalizedClientLink>
-              {/* S existující žádostí nesou „Zrušit / Reklamace" sekci
-                  „Reklamace a vrácení" níž (stav + odkaz) — tady by se tloukly. */}
-              {!hasClaims && !cancelBlocked && (
+              {/* § 1830a — po celou lhůtu, i vedle běžící reklamace. */}
+              {!withdrawBlocked && (
                 <LocalizedClientLink
                   className={s.selfServiceBtn}
-                  href={`/order/${order.id}/refund?token=${selfServiceToken}&kind=odstoupeni`}
+                  href={withdrawalHref(order.id, selfServiceToken)}
                 >
-                  Zrušit objednávku
+                  Odstoupit od smlouvy
                 </LocalizedClientLink>
               )}
+              {/* S existující žádostí nese reklamaci sekce „Reklamace
+                  a vrácení" níž (stav + odkaz) — tady by se tloukly. */}
               {!hasClaims && (
                 <LocalizedClientLink
                   className={`${s.selfServiceBtn} ${s.selfServiceBtnGhost}`}
@@ -236,11 +285,23 @@ export default async function OrderCompletedTemplate({
                 </LocalizedClientLink>
               )}
             </div>
-            {!hasClaims && cancelBlocked && cancelBlockedText && (
+            {!withdrawBlocked && (
               <p className={s.selfServiceNote}>
-                <strong>Zrušení objednávky:</strong> {cancelBlockedText}
+                Rozmysleli jste si to? Od smlouvy můžete odstoupit bez udání
+                důvodu{" "}
+                {claims?.withdrawal?.deadline_text
+                  ? `do ${claims.withdrawal.deadline_text} (14 dnů od převzetí zboží)`
+                  : claims?.withdrawal?.takeover_basis === "in_transit"
+                    ? "— lhůta 14 dnů poběží od převzetí zboží"
+                    : "— i před odesláním; lhůta 14 dnů poběží od převzetí zboží"}
+                .
+              </p>
+            )}
+            {withdrawBlocked && withdrawBlockedText && (
+              <p className={s.selfServiceNote}>
+                <strong>Odstoupení od smlouvy:</strong> {withdrawBlockedText}
                 {claims?.all_made_to_order
-                  ? " Reklamovat zboží můžete, nebo nám napište a domluvíme se."
+                  ? " Napište nám, kdybyste se chtěli domluvit."
                   : ""}
               </p>
             )}
@@ -471,17 +532,26 @@ export default async function OrderCompletedTemplate({
                     <span>Mezisoučet</span>
                     <strong>{money(order.item_total)}</strong>
                   </div>
-                  {/* Rozpad mezisoučtu: výrobky a balné, odsazeně. */}
-                  {packagingSubtotal(order.items) !== null && (
+                  {/* Rozpad mezisoučtu: výrobky, balné a doběrečné, odsazeně.
+                      Doběrečné do „Výrobky" nepatří — vlastní řádek. */}
+                  {(packaging !== null || dobirkaFee !== null) && (
                     <>
                     <div style={{ paddingLeft: ".9rem", opacity: .78, fontSize: ".9em" }}>
                       <span>Výrobky</span>
-                      <strong style={{ fontWeight: 300 }}>{money(order.item_total - (packagingSubtotal(order.items) ?? 0))}</strong>
+                      <strong style={{ fontWeight: 300 }}>{money(order.item_total - (packaging ?? 0) - (dobirkaFee ?? 0))}</strong>
                     </div>
-                    <div style={{ paddingLeft: ".9rem", opacity: .78, fontSize: ".9em" }}>
-                      <span>Balné</span>
-                      <strong style={{ fontWeight: 300 }}>{money(packagingSubtotal(order.items) ?? 0)}</strong>
-                    </div>
+                    {packaging !== null && (
+                      <div style={{ paddingLeft: ".9rem", opacity: .78, fontSize: ".9em" }}>
+                        <span>Balné</span>
+                        <strong style={{ fontWeight: 300 }}>{money(packaging)}</strong>
+                      </div>
+                    )}
+                    {dobirkaFee !== null && (
+                      <div style={{ paddingLeft: ".9rem", opacity: .78, fontSize: ".9em" }}>
+                        <span>Doběrečné</span>
+                        <strong style={{ fontWeight: 300 }}>{money(dobirkaFee)}</strong>
+                      </div>
+                    )}
                     </>
                   )}
                   {order.discount_total > 0 && (
@@ -555,9 +625,15 @@ export default async function OrderCompletedTemplate({
         </div>
 
         <section className={s.support}>
+          {/* `kosik.objednavka-pomoc`: obočí (`accent.0`) a nadpis (`title`).
+              E-mail a telefon pod tím jsou údaje obchodu, ne redakční text. */}
           <div>
-            <p>Potřebujete s něčím pomoct?</p>
-            <h2>Ozvěte se.</h2>
+            <CmsText as="p" doc={help?.id} field="accent.0">
+              {help?.accent?.[0]?.trim() || "Potřebujete s něčím pomoct?"}
+            </CmsText>
+            <CmsText as="h2" doc={help?.id} field="title">
+              {help?.title?.trim() || "Ozvěte se."}
+            </CmsText>
           </div>
           <p>
             Napište na{" "}

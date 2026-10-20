@@ -11,6 +11,7 @@ import { HttpTypes } from "@medusajs/types"
 // Button from @medusajs/ui replaced with local ClickButton
 import React, { useState } from "react"
 import ErrorMessage from "../error-message"
+import { ORDER_BUTTON_LABEL } from "../legal-consent/labels"
 import styles from "./style.module.scss"
 import { useFormStatus } from "react-dom"
 
@@ -23,13 +24,22 @@ type PaymentButtonProps = {
   /** Runs right before the order is placed — the consent record, for paths
       that never touch the gateway. */
   onBeforePlaceAction?: () => Promise<void>
+  /** Kolik se teď platí, už naformátované („1 290 Kč"). U zakázky záloha. */
+  amountLabel?: string
 }
 
+/*
+ * Tlačítko má na všech cestách TENTÝŽ název „Objednávka zavazující k platbě"
+ * (§ 1826a odst. 2 OZ). Čím a kdy se platí, říká věta pod ním — dřív to bylo
+ * v názvu („Potvrdit — zaplatíte při převzetí"), a to zákonný požadavek
+ * nesplňuje.
+ */
 const PaymentButton: React.FC<PaymentButtonProps> = ({
   cart,
   countryCode,
   "data-testid": dataTestId,
   onBeforePlaceAction,
+  amountLabel,
 }) => {
   const notReady =
     !cart ||
@@ -38,13 +48,14 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
     !cart.email ||
     (cart.shipping_methods?.length ?? 0) < 1
 
+  const amount = amountLabel ? ` ${amountLabel}` : ""
   const paymentSession = cart.payment_collection?.payment_sessions?.[0]
   switch (true) {
     case isManual(paymentSession?.provider_id):
       return (
         <DirectPlaceOrderButton
           notReady={notReady}
-          label="Potvrdit objednávku"
+          note={`Testovací platba${amount ? ` —${amount}` : ""}. Objednávka se založí bez skutečné platby.`}
           onBeforePlaceAction={onBeforePlaceAction}
           data-testid={dataTestId}
         />
@@ -56,7 +67,7 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
       return (
         <DirectPlaceOrderButton
           notReady={notReady}
-          label="Potvrdit — zaplatíte při vyzvednutí"
+          note={`Zaplatíte${amount} při vyzvednutí v ateliéru.`}
           onBeforePlaceAction={onBeforePlaceAction}
           data-testid={dataTestId}
         />
@@ -65,7 +76,7 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
       return (
         <DirectPlaceOrderButton
           notReady={notReady}
-          label="Potvrdit — zaplatíte při převzetí"
+          note={`Zaplatíte${amount} doručovateli při převzetí zásilky (dobírka).`}
           onBeforePlaceAction={onBeforePlaceAction}
           data-testid={dataTestId}
         />
@@ -75,9 +86,12 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
         <ComgatePaymentButton
           notReady={notReady}
           cart={cart}
+          note={`Zaplatíte${amount} hned online přes platební bránu ComGate.`}
+          onBeforePlaceAction={onBeforePlaceAction}
           data-testid={dataTestId}/>
       )
     default:
+      // Nic neodesílá — jen zamčené místo, dokud není zvolená platba.
       return (
         <div className={styles.root}>
             <ClickButton text="Nejdřív vyberte platbu" disabled={true} />
@@ -88,12 +102,13 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
 
 const DirectPlaceOrderButton = ({
   notReady,
-  label,
+  note,
   onBeforePlaceAction,
   "data-testid": dataTestId,
 }: {
   notReady: boolean
-  label: string
+  /** Věta pod tlačítkem: jak a kolik se platí. */
+  note: string
   onBeforePlaceAction?: () => Promise<void>
   "data-testid"?: string
 }) => {
@@ -119,11 +134,14 @@ const DirectPlaceOrderButton = ({
     <div className={styles.root} style={styleObj}>
       <ClickButton
         className={styles.button}
-        text={submitting ? "Odesíláme…" : label}
+        text={submitting ? "Odesíláme…" : ORDER_BUTTON_LABEL}
         onClickAction={handlePayment}
         disabled={notReady || submitting}
         data-testid={dataTestId ?? "submit-order-button"}
       />
+      <p className={styles.note} data-testid="submit-order-note">
+        {note}
+      </p>
       <div className={styles.errorWrap}>
         <ErrorMessage
           error={errorMessage}
@@ -137,13 +155,19 @@ const DirectPlaceOrderButton = ({
 const ComgatePaymentButton = ({
   cart,
   notReady,
+  note,
+  onBeforePlaceAction,
   "data-testid": dataTestId,
 }: {
   cart: HttpTypes.StoreCart
   notReady: boolean
+  note: string
+  /** Záznam souhlasu — musí existovat dřív, než brána převezme platbu. */
+  onBeforePlaceAction?: () => Promise<void>
   "data-testid"?: string
 }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [redirecting, setRedirecting] = useState(false)
   const session = cart.payment_collection?.payment_sessions?.find(
     (s) => s.status === "pending"
   )
@@ -156,11 +180,26 @@ const ComgatePaymentButton = ({
       ? session.data.redirectUrl
       : undefined
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
+    if (redirecting) return
     if (!redirectUrl) {
       setErrorMessage(
         "Platební bránu se nepovedlo otevřít. Zkuste to prosím znovu, nebo nám napište na info@keramickazahrada.cz."
       )
+      return
+    }
+    setRedirecting(true)
+    setErrorMessage(null)
+    try {
+      /* Záznam souhlasu PŘED přesměrováním — dřív tahle cesta (relace
+         z dřívějška, bez `?method=`) souhlas k objednávce nezapsala vůbec.
+         Metadata košíku platební relaci nezneplatní. */
+      await onBeforePlaceAction?.()
+    } catch (err) {
+      setErrorMessage(
+        err instanceof Error ? err.message : "Objednávku se nepodařilo odeslat."
+      )
+      setRedirecting(false)
       return
     }
     // The gateway takes over from here; it returns the customer to the
@@ -172,11 +211,14 @@ const ComgatePaymentButton = ({
     <div className={styles.root} style={styleObj}>
       <ClickButton
         className={`${styles.button} ${styles.comgate}`}
-        text="Zaplatit přes Comgate"
+        text={redirecting ? "Přesměrováváme k platbě…" : ORDER_BUTTON_LABEL}
         onClickAction={handlePayment}
-        disabled={notReady || !redirectUrl}
+        disabled={notReady || !redirectUrl || redirecting}
         data-testid={dataTestId}
       />
+      <p className={styles.note} data-testid="submit-order-note">
+        {note}
+      </p>
       <div className={styles.errorWrap}>
         <ErrorMessage
           error={errorMessage}

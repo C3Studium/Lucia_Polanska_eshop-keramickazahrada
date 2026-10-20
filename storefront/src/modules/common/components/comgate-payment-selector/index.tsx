@@ -23,8 +23,8 @@ type SelectorMethod = ComgatePaymentMethod & {
 /**
  * A payment method that is not ComGate's — today only „Zaplatíte při vyzvednutí", which the
  * checkout offers when the delivery is Osobní odběr. It sat in a second list *below* this
- * component, which put the confirm button between the two: the customer read „Potvrdit
- * objednávku a zaplatit" and only then met a further option. Rendered here it is simply the
+ * component, which put the confirm button between the two: the customer read the confirm
+ * label and only then met a further option. Rendered here it is simply the
  * last tile of the one grid, and the button stays where a button belongs — after the choices.
  */
 export type ExtraPaymentOption = {
@@ -39,6 +39,20 @@ type ComgatePaymentSelectorProps = {
   selectedOptionId: string
   onSelect: (optionId: string) => void | Promise<void>
   onConfirm: () => void | Promise<void>
+  /**
+   * Název potvrzovacího tlačítka. Selector sdílí krok Platba v pokladně (tam
+   * tlačítko jen přejde na Přehled → „Pokračovat ke shrnutí") a rychlý nákup
+   * (tam objednávku odesílá a spouští platbu → „Objednávka zavazující
+   * k platbě", § 1826a OZ). Výchozí je to první: nikdy netvrdit, že se
+   * objednává, když se neobjednává.
+   */
+  confirmLabel?: string
+  /** Text tlačítka během `isSubmitting`. */
+  busyLabel?: string
+  /** Zamkne jen potvrzovací tlačítko (např. dokud chybí souhlas) — výběr metody zůstává. */
+  confirmDisabled?: boolean
+  /** Věta hned pod potvrzovacím tlačítkem (kolik a jak se platí, proč je zamčené). */
+  confirmHint?: ReactNode
   extraOptions?: ExtraPaymentOption[]
   onSelectExtra?: (optionId: string) => void | Promise<void>
   disabled?: boolean
@@ -247,6 +261,10 @@ export default function ComgatePaymentSelector({
   selectedOptionId,
   onSelect,
   onConfirm,
+  confirmLabel = "Pokračovat ke shrnutí",
+  busyLabel = "Chvilku…",
+  confirmDisabled = false,
+  confirmHint,
   extraOptions = [],
   onSelectExtra,
   disabled = false,
@@ -388,17 +406,16 @@ export default function ComgatePaymentSelector({
               </button>
             </div>
             <PremiumActionButton
-              text={
-                isSubmitting
-                  ? "Otevíráme platební bránu…"
-                  : "Potvrdit objednávku a zaplatit"
-              }
+              text={isSubmitting ? busyLabel : confirmLabel}
               onClickAction={onConfirm}
-              disabled={disabled || isSubmitting}
+              disabled={disabled || isSubmitting || confirmDisabled}
               active={isSubmitting}
               className={styles.confirm}
               data-testid="confirm-comgate-payment-button"
             />
+            {confirmHint ? (
+              <div className={styles.confirmHint}>{confirmHint}</div>
+            ) : null}
           </motion.div>
         ) : (
           <motion.div

@@ -1,7 +1,9 @@
 "use client"
 
 import { editable } from "@c3studium/valecms/edit"
-import { button } from "@lib/util/site-copy"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import { button, itemValue } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
 import type { CopyBlocks } from "@lib/util/site-copy"
 import Image from "next/image"
 import {
@@ -14,7 +16,15 @@ import {
 
 import WebButton from "@modules/common/components/Buttons/webButton"
 
-const titleWords = ["Teď", "je řada"]
+/*
+ * Nadpis se animuje po znacích a ve dvou „slovech" — první slovo, pak zbytek
+ * řádku. Z CMS přijde jako jeden řetězec (`o-mne.cta` → `title`), takže se
+ * dělí na první mezeře; výchozí „Teď je řada" tak dá přesně původní dvojici.
+ */
+const splitTitle = (title: string) => {
+    const space = title.indexOf(" ")
+    return space < 0 ? [title] : [title.slice(0, space), title.slice(space + 1)]
+}
 const motionEase = [.22, 1, .36, 1] as const
 
 const ruleAnim: Variants = {
@@ -124,8 +134,31 @@ function TitleCharacter({ character, index }: { character: string; index: number
 }
 
 export default function AboutCta({ copy }: { copy?: CopyBlocks }) {
+    /* Sekce se hýbe jen z motion hodnot — bez tohohle by po zapnutí editace
+       zůstaly anotace prázdné. Viz hook. */
+    useEditRerender()
+
     // Vede dovnitř webu — z CMS se bere jen název, cíl `/store` drží kód.
     const cta = button(copy, "o-mne.vyrobky")
+
+    /*
+     * Texty závěru z bloku `o-mne.cta`. Lišta nahoře a obočí nad nadpisem jsou
+     * položky klíčované popiskem (`lista.vlevo`, `lista.vpravo`, `oboci`) —
+     * ne pozice v `accent`, ze kterého CMS prázdné položky vyhazuje a zbytek
+     * by se posunul. Nadpis je `title` + zvýrazněný konec v `headline` — dva
+     * prvky, dvě pole. Popisky u fotek zůstávají v kódu: vizuál je celý
+     * `aria-hidden`, je to ozdoba kompozice, ne text.
+     */
+    const block = copy?.["o-mne.cta"]
+    const metaLeft = itemValue(block, "lista.vlevo")?.trim() || "04 · Pokračování"
+    const metaRight = itemValue(block, "lista.vpravo")?.trim() || "Ručně, v píseckém ateliéru"
+    const eyebrow = itemValue(block, "oboci")?.trim() || "Z ateliéru k vám domů"
+    const title = block?.title?.trim() || "Teď je řada"
+    const titleAccent = block?.headline?.trim() || "na vás."
+    const lede =
+        block?.bodyText?.trim() ||
+        "Podívejte se na keramiku pro zahradu i domov. Všechno vzniká pomalu a jen v malém počtu."
+    const titleWords = splitTitle(title)
 
     const pointerX = useMotionValue(0)
     const pointerY = useMotionValue(0)
@@ -162,9 +195,9 @@ export default function AboutCta({ copy }: { copy?: CopyBlocks }) {
             viewport={viewport}
         >
             <header className="aboutCta__meta">
-                <span>04 · Pokračování</span>
+                <span {...editableItem(block, "lista.vlevo")}>{metaLeft}</span>
                 <motion.i variants={ruleAnim} />
-                <span>Ručně, v píseckém ateliéru</span>
+                <span {...editableItem(block, "lista.vpravo")}>{metaRight}</span>
             </header>
 
             <div className="aboutCta__composition">
@@ -210,11 +243,15 @@ export default function AboutCta({ copy }: { copy?: CopyBlocks }) {
                     <motion.p
                         className="aboutCta__eyebrow"
                         variants={eyebrowAnim}
+                        {...editableItem(block, "oboci")}
                     >
-                        Z ateliéru k vám domů
+                        {eyebrow}
                     </motion.p>
 
-                    <h2 id="about-cta-title" aria-label="Teď je řada na vás.">
+                    {/* `title` bez anotace v místě: znaky jsou rozsypané do spanů
+                        bez mezer mezi slovy, editor by z nich přečetl „Teďje řada".
+                        Upravuje se ve formuláři bloku. */}
+                    <h2 id="about-cta-title" aria-label={`${title} ${titleAccent}`}>
                         <span className="aboutCta__line" aria-hidden="true">
                             {titleWords.map((word, wordIndex) => {
                                 const characterOffset = titleWords
@@ -238,8 +275,9 @@ export default function AboutCta({ copy }: { copy?: CopyBlocks }) {
                             <motion.span
                                 variants={accentAnim}
                                 aria-hidden="true"
+                                {...editable(block, "headline")}
                             >
-                                na vás.
+                                {titleAccent}
                             </motion.span>
                         </span>
                     </h2>
@@ -248,10 +286,7 @@ export default function AboutCta({ copy }: { copy?: CopyBlocks }) {
                         className="aboutCta__action"
                         variants={supportingAnim}
                     >
-                        <p>
-                            Podívejte se na keramiku pro zahradu i domov. Všechno
-                            vzniká pomalu a jen v malém počtu.
-                        </p>
+                        <p {...editable(block, "body")}>{lede}</p>
                         <span {...editable(cta, "label")}>
                             <WebButton
                                 Kind="Link"

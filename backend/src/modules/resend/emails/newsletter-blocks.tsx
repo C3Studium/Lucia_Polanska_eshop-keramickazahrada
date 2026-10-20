@@ -10,6 +10,7 @@ import {
   Eyebrow,
   P,
   Signature,
+  useSellerFacts,
 } from "../components/email-ui"
 
 /**
@@ -27,17 +28,35 @@ import {
  * campaign e-mail to carry: a working per-recipient unsubscribe link, the
  * sender's identification (name, sídlo, IČO), and the reason the recipient
  * is getting it. All three render unconditionally below the content — a
- * composition cannot opt out of them. The identity values mirror
- * `storefront/src/lib/data/merchant.ts`: same env variables, same registered
- * fallbacks, so the e-mail and the storefront never disagree about who is
- * writing.
+ * composition cannot opt out of them. The identity comes from the shop's
+ * legal facts („Právní údaje" in the admin — the same values the storefront
+ * puts into the terms), so the e-mail and the storefront never disagree
+ * about who is writing; `NEWSLETTER_SENDER` is only the fallback.
  */
 
+/** Záloha identity odesílatele, když právní údaje nejsou k mání nebo chybí. */
 export const NEWSLETTER_SENDER = {
   name: "Lucie Polanská",
   address: process.env.SIDLO_ADRESA || "Putim 229, 397 01 Písek",
   registrationNumber: process.env.IDENTIFIKACNI_CISLO || "03441482",
 } as const
+
+/**
+ * „Odesílatel: …, se sídlem …, IČO …" — identifikace odesílatele obchodního
+ * sdělení (zák. č. 480/2004 Sb.). Z právních údajů (Resend provider je
+ * dodá kontextem); tady se nic vynechat nesmí, takže nevyplněný údaj spadne
+ * na `NEWSLETTER_SENDER`. Sdílí ho newsletter, akční e-mail i nový balíček.
+ */
+export const NewsletterSenderLine = () => {
+  const seller = useSellerFacts()
+  return (
+    <>
+      Odesílatel: {seller.name || NEWSLETTER_SENDER.name}, se sídlem{" "}
+      {seller.address || NEWSLETTER_SENDER.address}, IČO{" "}
+      {seller.ico || NEWSLETTER_SENDER.registrationNumber}.
+    </>
+  )
+}
 
 /** One formatted stretch of paragraph text — mirrors `NewsletterRun`. */
 export type EmailNewsletterRun = {
@@ -591,8 +610,7 @@ export function NewsletterBlocksEmail({
           </P>
         )}
         <P small style={{ margin: "8px 0 0" }}>
-          Odesílatel: {NEWSLETTER_SENDER.name}, se sídlem{" "}
-          {NEWSLETTER_SENDER.address}, IČO {NEWSLETTER_SENDER.registrationNumber}.
+          <NewsletterSenderLine />
         </P>
       </Section>
       <Signature />

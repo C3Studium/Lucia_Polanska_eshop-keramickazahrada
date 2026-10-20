@@ -8,9 +8,13 @@ import Help from "@modules/order/components/help"
 import CarrierDamageNotice from "@modules/order/components/carrier-damage"
 import { isCarrierShippingMethod } from "@lib/util/carrier"
 import RefundRequest from "@modules/order/components/refund-request"
+import WithdrawalEntry, {
+  withdrawalHref,
+} from "@modules/order/components/withdrawal/entry"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import type { OrderClaims } from "@lib/util/claims"
 import type { OrderEditMode } from "@lib/data/order-edit"
+import type { OrderTermsRef } from "@lib/legal/order-terms"
 import { ORDER_ITEM_EDITING_ENABLED } from "@modules/order/components/order-edit/shared"
 import Items from "@modules/order/components/items"
 import OrderDetails from "@modules/order/components/order-details"
@@ -51,6 +55,8 @@ type OrderDetailsTemplateProps = {
   edit?: { mode: OrderEditMode; pending: boolean } | null
   /** Stav objednávky ze serveru (`/progress`); null → překlad stavu Medusy. */
   statusLabel?: string | null
+  /** Znění OP k objednávce (spočítá stránka ze serverového registru). */
+  terms?: OrderTermsRef | null
 }
 
 const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
@@ -62,6 +68,7 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
   claims = null,
   edit = null,
   statusLabel = null,
+  terms = null,
 }) => {
   return (
     <AccountPageReveal
@@ -86,7 +93,7 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
       <AccountSectionReveal
         className={s.accountOrderDetailsIntro}
       >
-        <OrderDetails order={order} showStatus statusLabel={statusLabel} />
+        <OrderDetails order={order} showStatus statusLabel={statusLabel} terms={terms} />
       </AccountSectionReveal>
 
       <AccountSectionReveal
@@ -160,15 +167,25 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
         <section
           className={`${s.accountOrderDetailsSection} ${s.accountOrderDetailsClaims}`}
         >
-          <span>05 · reklamace a vrácení</span>
+          <span>05 · odstoupení, reklamace a vrácení</span>
           {selfServiceToken && claims ? (
             <>
+              {/* § 1830a OZ — tlačítko „Odstoupit od smlouvy" po celou lhůtu
+                  (od objednání do 14 dnů po převzetí), jinak vysvětlení proč
+                  ne. Vlastní dvoustupňová stránka; formulář reklamace pod tím
+                  zůstává beze změny. */}
+              <WithdrawalEntry
+                orderId={order.id}
+                token={selfServiceToken}
+                claims={claims}
+              />
               <RefundRequest
                 orderId={order.id}
                 token={selfServiceToken}
                 claims={claims}
                 currencyCode={order.currency_code}
                 claimForm={claimForm}
+                withdrawalElsewhere
               />
               {claims.requests.length > 0 && (
                 <LocalizedClientLink
@@ -181,7 +198,12 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
             </>
           ) : (
             <p className={s.accountOrderClaimsFallback}>
-              Reklamaci nebo vrácení podáte z odkazu v e-mailu s potvrzením
+              Od smlouvy můžete odstoupit{" "}
+              {/* Stránka si za přihlášeného vlastníka token vyzvedne sama. */}
+              <LocalizedClientLink href={withdrawalHref(order.id)}>
+                online tady
+              </LocalizedClientLink>
+              . Reklamaci nebo vrácení podáte z odkazu v e-mailu s potvrzením
               objednávky, nebo nám napište na{" "}
               <a href="mailto:info@keramickazahrada.cz">
                 info@keramickazahrada.cz

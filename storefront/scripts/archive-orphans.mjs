@@ -1,7 +1,8 @@
 // Bloky, které web nečte, do archivu.
 //
-//   node --import @c3studium/valecms/register.mjs scripts/archive-orphans.mjs
-//   node --import @c3studium/valecms/register.mjs scripts/archive-orphans.mjs --write
+// Spouštět ze složky storefront.
+//   node --import ./scripts/lib/ts-register.mjs scripts/archive-orphans.mjs
+//   node --import ./scripts/lib/ts-register.mjs scripts/archive-orphans.mjs --write
 //
 // ---------------------------------------------------------------------------
 // Proč vůbec

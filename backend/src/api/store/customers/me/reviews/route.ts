@@ -26,6 +26,8 @@ export async function GET(
       "last_name",
       "status",
       "product_id",
+      // Štítek „Ověřený nákup" u vlastních recenzí v účtu (§ 5 ZOS).
+      "verified_purchase",
       "created_at",
       "updated_at",
     ],

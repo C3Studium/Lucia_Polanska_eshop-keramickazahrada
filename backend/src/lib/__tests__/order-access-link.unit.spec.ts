@@ -1,6 +1,7 @@
 import {
   orderEditUrl,
   orderRefundUrl,
+  orderWithdrawalUrl,
   signOrderAccessToken,
   verifyOrderAccessToken,
 } from "../order-access-link"
@@ -73,9 +74,18 @@ describe("order access token", () => {
     )
   })
 
+  it("URL odstoupení (§ 1830a) míří na /odstoupeni s tokenem té objednávky", () => {
+    expect(orderWithdrawalUrl("order_1")).toBe(
+      `https://keramickazahrada.cz/cz/order/order_1/odstoupeni?token=${signOrderAccessToken(
+        "order_1"
+      )}`
+    )
+  })
+
   it("bez nastaveného storefrontu vrátí prázdno (nerozesílá půlpečené odkazy)", () => {
     delete process.env.STOREFRONT_PUBLIC_URL
     expect(orderEditUrl("order_1")).toBe("")
     expect(orderRefundUrl("order_1")).toBe("")
+    expect(orderWithdrawalUrl("order_1")).toBe("")
   })
 })

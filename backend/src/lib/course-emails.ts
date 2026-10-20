@@ -1,6 +1,26 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { formatMoney, sendCustomerEmail } from "./customer-email"
 import { courseReservationLink } from "./course-reservation-link"
+import { storefrontBase } from "./storefront-url"
+import {
+  findVersion,
+  formatVersionDate,
+  LEGAL_MANIFEST,
+  legalPdfFor,
+  termsVersionUrl,
+  type LegalManifest,
+} from "./legal"
+import {
+  checkAttachmentUrls,
+  orderDocumentVersion,
+  type EmailAttachmentRef,
+} from "./legal/order-legal"
+import {
+  COURSE_NO_WITHDRAWAL_NOTICE,
+  courseCancellationTerms,
+} from "../modules/course/legal"
+import { getLegalFacts } from "./merchant-settings"
 import {
   courseCancelledKey,
   courseExpiredKey,
@@ -59,10 +79,79 @@ const baseData = (reservation: any, term: any) => ({
 })
 
 /**
+ * Obchodní podmínky, kapitola Kurzy — `app/[countryCode]/(main)/smluvni-podminky`,
+ * kotva `#kurzy` (píše ji WS-A). Prázdné, když storefront není nastavený.
+ */
+export const courseTermsLink = (): string => {
+  const base = storefrontBase()
+  return base ? `${base}/smluvni-podminky#kurzy` : ""
+}
+
+export type CourseTermsInfo = {
+  /** Verze OP, podle které se rezervace uzavřela (`YYYY-MM-DD`), nebo `null`. */
+  version: string | null
+  /** „15. 10. 2026", prázdné bez verze. */
+  version_label: string
+  /** Stránka té verze OP na webu (`/smluvni-podminky/<verze>`), prázdné bez storefrontu. */
+  page_url: string
+  /** Zveřejněné PDF té verze (absolutní https, ne pracovní znění), jinak `null`. */
+  pdf_url: string | null
+  /** Příloha e-mailu — jen u zveřejněného PDF. */
+  attachment: EmailAttachmentRef | null
+  /**
+   * Zná manifest backendu tuhle verzi? `false` = vydaná ve Studiu po
+   * posledním `pnpm legal:build` — e-mail ji jmenuje bez PDF, jen pro log.
+   */
+  in_manifest: boolean
+}
+
+/**
+ * Obchodní podmínky k rezervaci kurzu: verze ze souhlasu
+ * (`consents.terms_version`) — i taková, kterou manifest nezná (zákazník
+ * souhlasil s ní; e-mail ji pak jmenuje datem a odkazem, bez PDF). U
+ * rezervace bez souhlasu (ruční, starší) verze platná v den rezervace —
+ * stejné pravidlo jako u objednávky (`orderDocumentVersion`). PDF se
+ * přikládá jen zveřejněné: absolutní https URL a ne pracovní znění
+ * s `[[DOPLNIT]]`.
+ */
+export const courseTermsInfo = (
+  reservation: any,
+  manifest: LegalManifest = LEGAL_MANIFEST
+): CourseTermsInfo => {
+  const consents = reservation?.consents ?? null
+  const version = orderDocumentVersion(
+    "obchodni-podminky",
+    consents?.terms_version,
+    consents?.accepted_at ?? reservation?.created_at ?? null,
+    manifest
+  )
+  const known = Boolean(version && findVersion("obchodni-podminky", version, manifest))
+  const pdf = version && known ? legalPdfFor("obchodni-podminky", version, manifest) : null
+  const published = Boolean(pdf && !pdf.draft && /^https:\/\//i.test(pdf.url))
+  return {
+    version,
+    version_label: version ? formatVersionDate(version) : "",
+    page_url: version ? termsVersionUrl(version, manifest) : "",
+    pdf_url: published ? pdf!.url : null,
+    attachment: published ? { filename: pdf!.filename, url: pdf!.url } : null,
+    in_manifest: known,
+  }
+}
+
+/**
  * The reservation confirmation — `variant: "paid"` after the ComGate webhook,
  * `variant: "on_site"` immediately for pay-on-site bookings. One template,
  * two voices; the paid variant doubles as the payment receipt, which is why
  * there is no separate course-payment-received template.
+ *
+ * Nese i poučení o výjimce z odstoupení (§ 1837 písm. j) OZ), storno
+ * podmínky a PDF obchodních podmínek té verze, se kterou zákazník
+ * rezervoval — potvrzení smlouvy o službě v textové podobě (§ 1827 odst. 2
+ * OZ). Storno podmínky jsou právní údaj `course.cancellation` z administrace
+ * (tentýž text, který zákazník viděl a potvrdil v okně rezervace); dokud
+ * není vyplněný — nebo nastavení nejde přečíst —, šablona odkáže na OP
+ * čl. X. PDF jen zveřejněné a ke stažení (HEAD, jako u objednávky) — jinak
+ * e-mail odejde s odkazem.
  */
 export const sendCourseReservationConfirmedEmail = async (
   container: MedusaContainer,
@@ -78,8 +167,32 @@ export const sendCourseReservationConfirmedEmail = async (
      */
     keyOverride?: string
   }
-): Promise<boolean> =>
-  sendCustomerEmail(container, {
+): Promise<boolean> => {
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+  const terms = courseTermsInfo(reservation)
+  if (terms.version && !terms.in_manifest) {
+    logger.warn(
+      `[kurzy] Obchodní podmínky verze ${terms.version} (souhlas u rezervace ${reservation.id}) ` +
+        `v manifestu backendu nejsou — potvrzení je uvede bez PDF, jen s odkazem na web. ` +
+        `Spusťte pnpm legal:build (a legal:upload) a nasaďte backend.`
+    )
+  }
+  // Nikdy nevyhodí — bez nastavení jsou údaje výchozí a storno `null`.
+  const { facts } = await getLegalFacts(container)
+
+  let attachments: EmailAttachmentRef[] = []
+  if (terms.attachment) {
+    const { reachable, failed } = await checkAttachmentUrls([terms.attachment])
+    attachments = reachable
+    for (const miss of failed) {
+      logger.warn(
+        `[kurzy] PDF ${miss.filename} (${miss.url}) není ke stažení (${miss.reason}) — ` +
+          `potvrzení rezervace ${reservation.id} půjde s odkazem místo přílohy.`
+      )
+    }
+  }
+
+  return sendCustomerEmail(container, {
     template: "course-reservation-confirmed",
     to: reservation.email,
     key: options.keyOverride ?? `course-confirm:${options.variant}:${reservation.id}`,
@@ -87,8 +200,18 @@ export const sendCourseReservationConfirmedEmail = async (
       ...baseData(reservation, term),
       variant: options.variant,
       invoicePdfUrl: options.invoicePdfUrl || "",
+      noWithdrawalNotice: COURSE_NO_WITHDRAWAL_NOTICE,
+      // Nevyplněné storno do dat nejde jako text — šablona pak odkáže na OP čl. X.
+      cancellationTerms: courseCancellationTerms(facts),
+      termsLink: courseTermsLink(),
+      termsVersionLabel: terms.version_label,
+      termsVersionUrl: terms.page_url,
+      termsPdfUrl: terms.pdf_url ?? "",
+      termsAttached: attachments.length > 0,
     },
+    ...(attachments.length ? { attachments } : {}),
   })
+}
 
 /**
  * Sent to every affected booking when the owner cancels a whole term.

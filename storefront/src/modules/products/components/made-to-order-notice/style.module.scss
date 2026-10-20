@@ -1,0 +1,39 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+/* Štítek „Na zakázku — nelze vrátit do 14 dnů" u ceny a věta u tlačítka.
+   Tlumená hlína jako u ostatních upozornění v obchodě — informace, ne poplach. */
+
+.badge {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  margin: clamp(.25rem, .56vh, .5rem) 0 0;
+  padding: .3em .75em;
+  border: 1px solid rgb(var(--clay-06-rgb) / .38);
+  border-radius: 999px;
+  background: rgb(var(--clay-06-rgb) / .08);
+  color: var(--clay-06);
+  font: 400 clamp(.8125rem, 1vw, .95rem)/1.3 "Sansation-Regular", sans-serif;
+  letter-spacing: .02em;
+  text-decoration: none;
+}
+
+.badge:hover,
+.badge:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.notice {
+  max-width: 52ch;
+  margin: clamp(.4rem, .9vh, .7rem) 0 0;
+  color: rgb(var(--ink-05-rgb) / .78);
+  font: 400 clamp(.85rem, 1vw, .95rem)/1.5 "Sansation-Regular", sans-serif;
+}
+
+.notice a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

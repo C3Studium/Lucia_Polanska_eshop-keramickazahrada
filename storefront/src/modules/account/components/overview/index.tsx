@@ -4,6 +4,10 @@ import { HttpTypes } from "@medusajs/types"
 import { motion } from "framer-motion"
 
 import PremiumActionLink from "@modules/common/components/premium-action-link"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import { itemText } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
 import OrderCard from "../order-card"
 import {
   AccountPageReveal,
@@ -18,9 +22,32 @@ import s from "./style.module.scss"
 type OverviewProps = {
   customer: HttpTypes.StoreCustomer | null
   orders: HttpTypes.StoreOrder[] | null
+  /** Blok `ucet.prehled` — texty přehledu (viz OVERVIEW_DEFAULTS). */
+  copy?: CopyBlock
 }
 
-const Overview = ({ customer, orders }: OverviewProps) => {
+/**
+ * Redakční texty přehledu účtu — výchozí znění položek bloku `ucet.prehled`.
+ * Jméno, e-mail, procenta, počty a co v profilu chybí jsou údaje; čísla
+ * oddílů a tlačítka zůstávají v kódu.
+ */
+const OVERVIEW_DEFAULTS = {
+  oboci: "Váš účet",
+  pozdrav: "Dobrý den,",
+  prihlasen: "Jste přihlášeni",
+  "profil.popisek": "Vyplněný profil",
+  "profil.hotovo": "Máte vyplněné všechno, co potřebujeme.",
+  "adresy.text": "Uložené adresy vám příště ušetří vyplňování.",
+  "objednavky.nadpis": "Nedávné objednávky",
+  "objednavky.prazdne": "Zatím jste u nás nic neobjednali.",
+} as const
+
+const Overview = ({ customer, orders, copy }: OverviewProps) => {
+  /* Přehled se po zapnutí editace sám nepřekreslí. Viz hook. */
+  useEditRerender()
+  const text = (label: keyof typeof OVERVIEW_DEFAULTS) =>
+    itemText(copy, label, OVERVIEW_DEFAULTS[label])
+  const edit = (label: keyof typeof OVERVIEW_DEFAULTS) => editableItem(copy, label)
   const { percentage, incompleteSteps } = getProfileCompletion(customer)
   const addressCount = customer?.addresses?.length || 0
   const recentOrders = orders?.slice(0, 3) || []
@@ -34,14 +61,17 @@ const Overview = ({ customer, orders }: OverviewProps) => {
       data-testid="overview-page"
     >
       <AccountSectionReveal className={s.accountOverviewHero}>
-        <p className={s.accountOverviewEyebrow}>Váš účet</p>
+        <p className={s.accountOverviewEyebrow} {...edit("oboci")}>
+          {text("oboci")}
+        </p>
         <div className={s.accountOverviewHeading}>
+          {/* Pozdrav v holém spanu jen kvůli anotaci — jméno je údaj. */}
           <h1 data-testid="welcome-message" data-value={customer?.first_name}>
-            Dobrý den,
+            <span {...edit("pozdrav")}>{text("pozdrav")}</span>
             <em>{displayName}.</em>
           </h1>
           <div className={s.accountOverviewIntro}>
-            <span>Jste přihlášeni</span>
+            <span {...edit("prihlasen")}>{text("prihlasen")}</span>
             <p data-testid="customer-email" data-value={customer?.email}>
               {customer?.email}
             </p>
@@ -60,7 +90,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
               {percentage}
               <small>%</small>
             </strong>
-            <p>Vyplněný profil</p>
+            <p {...edit("profil.popisek")}>{text("profil.popisek")}</p>
           </div>
           <div className={s.accountOverviewProgress} aria-hidden="true">
             <motion.i
@@ -74,7 +104,9 @@ const Overview = ({ customer, orders }: OverviewProps) => {
               Ještě chybí: {incompleteSteps.map((step) => step.label).join(", ")}.
             </p>
           ) : (
-            <p className={s.accountOverviewNote}>Máte vyplněné všechno, co potřebujeme.</p>
+            <p className={s.accountOverviewNote} {...edit("profil.hotovo")}>
+              {text("profil.hotovo")}
+            </p>
           )}
           <PremiumActionLink
             href="/account/profile"
@@ -91,8 +123,8 @@ const Overview = ({ customer, orders }: OverviewProps) => {
             </strong>
             <p>{addressCount === 1 ? "Uložená adresa" : "Uložené adresy"}</p>
           </div>
-          <p className={s.accountOverviewNote}>
-            Uložené adresy vám příště ušetří vyplňování.
+          <p className={s.accountOverviewNote} {...edit("adresy.text")}>
+            {text("adresy.text")}
           </p>
           <PremiumActionLink
             href="/account/addresses"
@@ -106,7 +138,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
         <div className={s.accountOverviewSectionHead}>
           <div>
             <span className={s.accountOverviewIndex}>03 · poslední objednávky</span>
-            <h2>Nedávné objednávky</h2>
+            <h2 {...edit("objednavky.nadpis")}>{text("objednavky.nadpis")}</h2>
           </div>
           <span>{String(orders?.length || 0).padStart(2, "0")} celkem</span>
         </div>
@@ -132,8 +164,8 @@ const Overview = ({ customer, orders }: OverviewProps) => {
           </motion.div>
         ) : (
           <div className={s.accountOverviewEmpty}>
-            <p data-testid="no-orders-message">
-              Zatím jste u nás nic neobjednali.
+            <p data-testid="no-orders-message" {...edit("objednavky.prazdne")}>
+              {text("objednavky.prazdne")}
             </p>
             <PremiumActionLink
               href="/store"

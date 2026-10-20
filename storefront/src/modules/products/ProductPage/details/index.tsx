@@ -5,6 +5,10 @@ import { HttpTypes } from "@medusajs/types";
 import InfoDesc from "./components/info";
 import Desc from "./components/desc";
 import Shipment from "./components/delivery";
+import LocalizedClientLink from "@modules/common/components/localized-client-link";
+import { editableItem } from "@modules/common/components/cms-text";
+import { itemValue } from "@lib/util/site-copy";
+import type { CopyBlock } from "@lib/util/site-copy";
 
 const disclosureVariants = {
     closed: { height: 0, opacity: 0, y: -6 },
@@ -16,7 +20,14 @@ const disclosureIconVariants = {
     open: { rotate: 45, scale: 1.04 },
 };
 
-export default function Details({ product }: { product: HttpTypes.StoreProduct }) {
+export default function Details({
+    product,
+    texts,
+}: {
+    product: HttpTypes.StoreProduct
+    /** Blok `global.produkt` — odstavec o doručení (`doprava.*`). */
+    texts?: CopyBlock
+}) {
     const [open, setOpen] = useState<number[]>([]);
 
     const toggleOpen = (idx: number) => {
@@ -50,14 +61,30 @@ export default function Details({ product }: { product: HttpTypes.StoreProduct }
         }
     ];
 
+    /* Dopravci podle Dopravy a platby (lib/legal/documents/doprava-a-platba) —
+       jen Česká pošta a osobní odběr. Vrácení je zákonné právo (§ 1829 OZ),
+       ne vstřícnost, a výjimka pro zakázku (§ 1837 písm. d) OZ) se musí říct.
+       Proto jde do CMS (`global.produkt`, položky `doprava.*`) jen první
+       odstavec — jak se balí a posílá. Vrácení a cena dopravy zůstávají
+       v kódu: jedno je poučení o právu, druhé slib o ceně před objednáním. */
     const shipping = [
         {
-            title: "Jak to k vám dorazí",
-            content: "Keramiku pečlivě zabalíme a pošleme Českou poštou nebo Zásilkovnou — buď k vám domů, nebo na výdejní místo, které si vyberete.",
+            title: itemValue(texts, "doprava.nadpis")?.trim() || "Jak to k vám dorazí",
+            content:
+                itemValue(texts, "doprava.text")?.trim() ||
+                "Keramiku pečlivě zabalíme a pošleme Českou poštou — na výdejní místo nebo do boxu Balíkovny, které si vyberete, nebo k vám domů (křehké kusy jako křehký balík). Vyzvednout si ji můžete i osobně v ateliéru.",
+            editTitle: editableItem(texts, "doprava.nadpis"),
+            editContent: editableItem(texts, "doprava.text"),
         },
         {
-            title: "Když něco nesedne",
-            content: "Nesedí barva nebo tvar? Napište nám a domluvíme se. Uděláme, co půjde, abyste měli doma to, co jste si představovali.",
+            title: "Vrácení zboží",
+            content: (
+                <>
+                    Do 14 dnů od převzetí můžete zboží vrátit bez udání důvodu —{" "}
+                    <LocalizedClientLink href="/odstoupeni-od-smlouvy">poučení o odstoupení</LocalizedClientLink>.
+                    Neplatí to pro zboží vyrobené na zakázku.
+                </>
+            ),
         },
         {
             title: "Cena dopravy",

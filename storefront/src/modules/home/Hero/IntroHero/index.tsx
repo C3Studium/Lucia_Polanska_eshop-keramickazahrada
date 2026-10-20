@@ -6,7 +6,7 @@ import { easeReveal } from "@lib/motion-tokens";
 import { useStateContext } from "@lib/context/StateContext";
 import { galleryUrl, paragraphs } from "@lib/util/site-copy";
 import type { CopyBlock, CopyButton } from "@lib/util/site-copy";
-import { editable, editableSet } from "@c3studium/valecms/edit";
+import { editable, editableDoc, editableSet } from "@c3studium/valecms/edit";
 import WebButton from "@modules/common/components/Buttons/webButton";
 import HeroImageShader from "./HeroImageShader";
 import HeroNotices from "./HeroNotices";
@@ -422,7 +422,11 @@ export default function IntroHero({
                 </motion.h1>
 
                 <motion.p className="Hero__Intro__Signature" style={headlineStyle}>
-                    <span {...editable(block, "title")}>
+                    {/* Podpis je jeden řádek „— {title} {headline}", takže úprava
+                        v místě s `editable(block, "title")` uložila do `title` i pomlčku
+                        a příjmení (změřeno 15. 10. 2026). Klik proto otevře formulář
+                        bloku, kde jsou obě pole zvlášť. */}
+                    <span {...editableDoc(block, "siteCopy")}>
                         <MaskedLine text={`— ${signature}`} delay={0.35 + headlineLines.length * 0.14} />
                     </span>
                 </motion.p>

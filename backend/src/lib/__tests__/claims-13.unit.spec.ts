@@ -579,8 +579,10 @@ describe("poškozený kus (§13.7)", () => {
     expect(photosRequiredFor("damaged")).toBe(true)
     expect(photosRequiredFor(null)).toBe(false)
     expect(damageCauseSentence("damaged")).toMatch(/Poškozený kus/)
-    // 12. 10. 2026, Matěj: u ČP reklamuje příjemce, ne prodávající.
-    expect(damageCauseSentence("carrier")).toMatch(/České pošty uplatňuje příjemce/)
+    // 14. 10. 2026 (právní audit §4.1): za poškození odpovídá prodávající
+    // a škodu u dopravce řeší sám — žádná lhůta pošty pro zákazníka.
+    expect(damageCauseSentence("carrier")).toMatch(/odpovídá prodávající/)
+    expect(damageCauseSentence("carrier")).not.toMatch(/pracovních dnů/)
     expect(damageCauseSentence(null)).toBeNull()
     expect(photosRequiredMessage("damaged")).toMatch(/poškozeného kusu/)
   })

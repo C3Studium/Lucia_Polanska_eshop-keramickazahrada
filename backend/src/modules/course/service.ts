@@ -22,6 +22,8 @@ export type ReserveSeatsInput = {
   source: "web" | "manual"
   customer_id?: string | null
   note?: string | null
+  /** Souhlasy z webové rezervace (`CourseReservationConsents`); ruční rezervace žádné. */
+  consents?: Record<string, unknown> | null
 }
 
 export default class CourseModuleService extends MedusaService({
@@ -131,6 +133,7 @@ export default class CourseModuleService extends MedusaService({
         status: "active",
         source: input.source,
         note: input.note || null,
+        consents: input.consents ?? null,
       } as never,
       context
     )

@@ -105,6 +105,16 @@
   }
 }
 
+/* Jak recenze vznikají a co znamená „Ověřený nákup" (§ 5 ZOS). Přes obě
+   stopy hlavičky, pod nadpisem a hvězdami. */
+.policy {
+  grid-column: 1 / -1;
+  max-width: 72ch;
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / .58);
+  font: 300 clamp(0.8125rem, 1.02vw, 0.925rem) / 1.5 "Sansation-Light", sans-serif;
+}
+
 .headerCopy > span {
   display: block;
   margin-bottom: 0.9375rem;

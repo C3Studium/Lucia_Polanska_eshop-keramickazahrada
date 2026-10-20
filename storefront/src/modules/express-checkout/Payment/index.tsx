@@ -1,10 +1,20 @@
 "use client"
 
-import { isComgate, TERMS_VERSION } from "@lib/constants"
-import { initiatePaymentSession } from "@lib/data/cart"
-import { setExpressCartMetadata } from "@lib/data/express-cart"
+import { isComgate } from "@lib/constants"
+import {
+  initiatePaymentSession,
+  listProductionLeadTimes,
+  recordCheckoutConsent,
+} from "@lib/data/cart"
 import { selectProductionPaymentMode } from "@lib/data/made-to-order-actions"
+import { isMadeToOrderLine, type ProductionLeadTime } from "@lib/util/commission"
 import type { ProductionPaymentMode } from "@lib/util/made-to-order"
+import CheckoutConsent from "@modules/checkout/components/legal-consent"
+import { ORDER_BUTTON_LABEL } from "@modules/checkout/components/legal-consent/labels"
+import PreContractInfo, {
+  chargeSplit,
+  describePayment,
+} from "@modules/checkout/components/pre-contract-info"
 import ProductionPaymentModeChoice from "@modules/checkout/components/production-payment-mode"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import {
@@ -93,6 +103,45 @@ export const Payment = ({
   /* §1826 ObčZ wants an affirmative act, not an implied sentence — the same
      checkbox contract as the main checkout, recorded before payment. */
   const [accepted, setAccepted] = useState(false)
+  /* Zakázka → druhé povinné zaškrtnutí (§ 1837 písm. d) OZ), jako v pokladně. */
+  const [madeToOrderAccepted, setMadeToOrderAccepted] = useState(false)
+  const hasMadeToOrder =
+    (cart.items ?? []).some((item) => isMadeToOrderLine(item as any)) ||
+    Boolean(productionMode?.has_made_to_order)
+  const consentReady = accepted && (!hasMadeToOrder || madeToOrderAccepted)
+
+  /* Výrobní lhůta zakázky do předsmluvního souhrnu — veřejný profil výroby,
+     dotažený serverovou akcí (stránka rychlého nákupu ho nepředává). */
+  const [leadTimes, setLeadTimes] = useState<ProductionLeadTime[]>([])
+  const madeToOrderKey = (cart.items ?? [])
+    .filter((item) => isMadeToOrderLine(item as any))
+    .map((item) => `${item.id}:${item.variant_id}`)
+    .join("|")
+  useEffect(() => {
+    if (!madeToOrderKey) {
+      setLeadTimes([])
+      return
+    }
+    let cancelled = false
+    listProductionLeadTimes(
+      (cart.items ?? [])
+        .filter((item) => isMadeToOrderLine(item as any))
+        .map((item) => ({
+          id: item.id,
+          product_id: item.product_id,
+          variant_id: item.variant_id,
+          title: item.product_title ?? item.title,
+        }))
+    )
+      .then((result) => {
+        if (!cancelled) setLeadTimes(result)
+      })
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [madeToOrderKey])
 
   const comgateAvailable = paymentMethods.some((method) => isComgate(method.id))
 
@@ -100,10 +149,35 @@ export const Payment = ({
   const ready =
     !!shippingAddress && !!cart.email && !!cart.shipping_methods?.length
 
+  const money = (amount: number) =>
+    convertToLocale({ amount, currency_code: cart.currency_code })
+  const charge = chargeSplit(productionMode, cart.total || 0)
+  const payment = describePayment({
+    comgateOptionId: selected && isComgate(selected) ? selected : null,
+    comgateMethods,
+  })
+  const shippingMethod = cart.shipping_methods?.at(-1)
+  const deliveryLabel = shippingMethod
+    ? `${shippingMethod.name} · ${money(
+        Number(shippingMethod.total ?? shippingMethod.amount ?? 0)
+      )}`
+    : null
+  const confirmNote = !accepted
+    ? "Než objednávku odešlete, potvrďte prosím souhlas s obchodními podmínkami."
+    : !consentReady
+      ? "Potvrďte prosím ještě, že berete na vědomí, že zboží na zakázku nelze vrátit do 14 dnů."
+      : charge.later > 0
+        ? `Teď zaplatíte zálohu ${money(charge.now)} online (${payment?.label ?? "ComGate"}, platební brána ComGate). Zbytek ${money(charge.later)} doplatíte po dokončení zakázky.`
+        : `Zaplatíte ${money(charge.now)} hned online (${payment?.label ?? "ComGate"}, platební brána ComGate).`
+
   const pay = async (optionId: string) => {
     if (!ready || isSubmitting || !isComgate(optionId)) return
-    if (!accepted) {
-      setError("Potvrďte prosím souhlas s obchodními podmínkami.")
+    if (!consentReady) {
+      setError(
+        accepted
+          ? "Potvrďte prosím poučení u zboží vyrobeného na zakázku."
+          : "Potvrďte prosím souhlas s obchodními podmínkami."
+      )
       return
     }
 
@@ -112,12 +186,14 @@ export const Payment = ({
     setError(null)
 
     try {
-      // The consent record must exist before the gateway takes over. Just the
-      // patch — the action merges server-side against a fresh cart, so a stale
-      // `cart.metadata` from this prop can never overwrite newer keys.
-      await setExpressCartMetadata(cart.id, {
-        terms_accepted_at: new Date().toISOString(),
-        terms_version: TERMS_VERSION,
+      // The consent record must exist before the gateway takes over. The
+      // action merges server-side against a fresh cart (a stale `cart.metadata`
+      // from this prop can never overwrite newer keys) and takes the document
+      // versions from the legal registry — same as the main checkout.
+      await recordCheckoutConsent({
+        cartId: cart.id,
+        clientAcceptedAt: new Date().toISOString(),
+        madeToOrderAck: hasMadeToOrder && madeToOrderAccepted,
       })
       const shippingName = String(
         cart.shipping_methods?.at(-1)?.name || ""
@@ -241,6 +317,17 @@ export const Payment = ({
               })}
             </strong>
           </span>
+          {/* Zakázka: brána vezme jen zálohu — „Celkem" to samo neřekne. */}
+          {charge.madeToOrder && (
+            <span data-testid="express-deposit">
+              <small>
+                {charge.later > 0
+                  ? `Teď zaplatíte zálohu · zbytek ${money(charge.later)} po dokončení`
+                  : "Teď zaplatíte celou částku"}
+              </small>
+              <strong>{money(charge.now)}</strong>
+            </span>
+          )}
         </div>
       </div>
 
@@ -260,28 +347,31 @@ export const Payment = ({
           <span className={styles.eyebrow}>Jak zaplatíte</span>
           <span>Šifrovaně a bezpečně</span>
         </div>
-        <label className={styles.paymentConsent}>
-          <input
-            type="checkbox"
-            checked={accepted}
-            onChange={(event) => {
-              setAccepted(event.target.checked)
-              if (event.target.checked) setError(null)
-            }}
-            data-testid="express-terms-checkbox"
-          />{" "}
-          <span>
-            Souhlasím s{" "}
-            <LocalizedClientLink href="/smluvni-podminky" target="_blank">
-              obchodními podmínkami
-            </LocalizedClientLink>{" "}
-            a beru na vědomí{" "}
-            <LocalizedClientLink href="/ochrana-osobnich-udaju" target="_blank">
-              zpracování osobních údajů
-            </LocalizedClientLink>
-            .
-          </span>
-        </label>
+        {/* Předsmluvní informace (§ 1820, § 1826 OZ) před tlačítkem — rychlý
+            nákup nemá krok Přehled, tak stojí tady. Zboží a ceny jsou
+            v miniatuře objednávky výš. */}
+        <PreContractInfo
+          cart={cart}
+          payment={payment}
+          leadTimes={leadTimes}
+          delivery={deliveryLabel}
+          compact
+        />
+        <CheckoutConsent
+          variant="express"
+          rowClassName={styles.paymentConsent}
+          accepted={accepted}
+          onAcceptedChange={(value) => {
+            setAccepted(value)
+            if (value) setError(null)
+          }}
+          madeToOrder={hasMadeToOrder}
+          madeToOrderAccepted={madeToOrderAccepted}
+          onMadeToOrderAcceptedChange={(value) => {
+            setMadeToOrderAccepted(value)
+            if (value) setError(null)
+          }}
+        />
         <div aria-busy={isSubmitting}>
           {!comgateAvailable && (
             <p className={styles.paymentUnavailable} role="alert">
@@ -297,7 +387,14 @@ export const Payment = ({
               selectedOptionId={selected}
               onSelect={selectMethod}
               onConfirm={() => pay(selected)}
-              disabled={!ready || isSubmitting || !accepted}
+              /* Tady tlačítko objednávku ODESÍLÁ a spouští platbu — zákonný
+                 název (§ 1826a OZ); částka a způsob platby jsou ve větě pod ním.
+                 Metodu jde vybrat i před souhlasem, zamčené je jen tlačítko. */
+              confirmLabel={ORDER_BUTTON_LABEL}
+              busyLabel="Přesměrováváme k platbě…"
+              confirmDisabled={!consentReady}
+              confirmHint={<p data-testid="express-submit-note">{confirmNote}</p>}
+              disabled={!ready || isSubmitting}
               isSubmitting={isSubmitting}
             />
           )}

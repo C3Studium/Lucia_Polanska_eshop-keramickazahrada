@@ -1,6 +1,7 @@
 import { isDobirkaFeeLine } from "../dobirka-fee"
 import { lineQuantityOf } from "../order-quantity"
 import { isPackagingLine } from "../packaging"
+import { isMadeToOrderItem } from "./made-to-order"
 import { MONEY_EPSILON, round2, toNumber } from "./refund-rules"
 
 /**
@@ -51,6 +52,10 @@ export type ClaimSourceItem = {
   variant_id?: string | null
   product_id?: string | null
   metadata?: Record<string, unknown> | null
+  product?: {
+    metadata?: Record<string, unknown> | null
+    categories?: Array<{ handle?: string | null } | null> | null
+  } | null
 }
 
 /**
@@ -130,8 +135,10 @@ export const ITEMS_QUANTITY_TOO_HIGH =
   "U některé položky je zadaný vyšší počet kusů, než bylo objednáno."
 export const ITEMS_QUANTITY_INVALID =
   "Počet kusů musí být celé číslo, aspoň 1."
+export const ITEMS_MADE_TO_ORDER_RETURN =
+  "Zboží vyrobené na zakázku podle vašeho zadání vrátit nelze (§ 1837 písm. d) občanského zákoníku) — odškrtněte ho prosím. Má-li vadu, uplatněte reklamaci."
 export const PHOTOS_REQUIRED_FOR_CARRIER_DAMAGE =
-  "U poškození přepravou prosím přiložte aspoň jednu fotku poškozené zásilky nebo zboží — bez ní poškození nedokážeme posoudit (a Česká pošta fotky k reklamaci chce taky)."
+  "U poškození přepravou prosím přiložte aspoň jednu fotku poškozené zásilky nebo zboží — bez ní poškození nedokážeme posoudit."
 export const PHOTOS_REQUIRED_FOR_DAMAGED_ITEM =
   "U poškozeného kusu prosím přiložte aspoň jednu fotku poškození — bez ní nemůžeme vadu posoudit."
 
@@ -147,8 +154,11 @@ export const photosRequiredMessage = (cause: unknown): string =>
  * - `vraceni` → aspoň jedna položka (12. 10. 2026, Matěj: zákazník u vrácení
  *   nic nepíše, jen vybere, CO vrací — bez výběru by nebylo jasné co; dřív
  *   bylo volitelné a prázdné znamenalo „vše");
- * - `odstoupeni` → výběr se ignoruje, odstupuje se od celé smlouvy → null;
- * - id musí patřit objednávce, množství celé, 1 ≤ q ≤ objednané.
+ * - `odstoupeni` → tady null; výběr a vyjmutí zakázky řeší
+ *   `resolveWithdrawalItems` (withdrawal.ts, 14. 10. 2026 — odstoupení může
+ *   být i částečné);
+ * - id musí patřit objednávce, množství celé, 1 ≤ q ≤ objednané;
+ * - `vraceni` → zakázková položka (§ 1837 písm. d) neprojde.
  *
  * `selection` null/undefined = volající BEZ výběru položek (záložní routa
  * číslo + e-mail s volným textem `items`, staré formuláře) — pravidlo „aspoň
@@ -205,6 +215,9 @@ export const resolveClaimLineItems = (
     const ordered = lineQuantityOf(source)
     if (ordered > 0 && quantity > ordered) {
       return { ok: false, message: ITEMS_QUANTITY_TOO_HIGH }
+    }
+    if (kind === "vraceni" && isMadeToOrderItem(source)) {
+      return { ok: false, message: ITEMS_MADE_TO_ORDER_RETURN }
     }
     const unit = perUnitOf(source)
     lineItems.push({

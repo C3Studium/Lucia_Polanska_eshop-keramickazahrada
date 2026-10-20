@@ -1,8 +1,8 @@
 // Tlačítka webu do CMS.
 //
-// Spuštění:
-//   node --import @c3studium/valecms/register.mjs scripts/seed-buttons.mjs
-//   node --import @c3studium/valecms/register.mjs scripts/seed-buttons.mjs --write
+// Spuštění (ze složky storefront):
+//   node --import ./scripts/lib/ts-register.mjs scripts/seed-buttons.mjs
+//   node --import ./scripts/lib/ts-register.mjs scripts/seed-buttons.mjs --write
 //
 // Založí typ `tlacitko` záznamy pro tlačítka, která na webu stojí, se
 // současnými názvy a adresami. Od té chvíle je mění redaktor ve Studiu; kód

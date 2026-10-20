@@ -398,6 +398,13 @@
   font: 300 0.8125rem/1.42 "Sansation-Light", sans-serif;
 }
 
+/* Odkaz na Zásady ochrany osobních údajů v téže větě. */
+.newsletter__container > p a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
 /* The error is set in ink, not a red the footer palette does not have —
    the quiet voice extends to failure. */
 p.newsletter__error {
@@ -533,6 +540,44 @@ p.newsletter__error {
 
 .footer__dialogLink:hover {
   opacity: 0.56;
+}
+
+/* Ke stažení (PDF): čtvrtá skupina přes celou šířku navigace — ve třetím sloupci by se pět
+   dlouhých názvů lámalo po slovech. Odkazy v řádku se zalamují, na dotyku zůstávají pod sebou. */
+.footer__linkGroup--downloads {
+  grid-column: 1 / -1;
+}
+
+.footer__linkGroup--downloads > div {
+  flex-flow: row wrap;
+  gap: 0.5625rem 1.75rem;
+
+  @include touch {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+.footer__downloadLink {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  color: var(--footer-ink);
+  font: 400 clamp(0.9375rem, 1vw, 1.125rem)/1.2 "Sansation-Regular", sans-serif;
+  text-decoration: none;
+  transition: opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.footer__downloadLink:hover {
+  opacity: 0.56;
+}
+
+.footer__downloadMeta {
+  color: var(--footer-muted);
+  font-size: 0.75em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .footer__bottom {

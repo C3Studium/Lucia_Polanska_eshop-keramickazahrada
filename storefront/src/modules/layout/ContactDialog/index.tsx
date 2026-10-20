@@ -1,5 +1,6 @@
 "use client"
 
+import { useStudioSurface } from "@c3studium/valecms/edit"
 import { AnimatePresence } from "framer-motion"
 import { usePathname } from "next/navigation"
 import {
@@ -15,6 +16,7 @@ import {
 import { createPortal } from "react-dom"
 
 import type { MerchantIdentity } from "@lib/data/merchant"
+import type { CopyBlock } from "@lib/util/site-copy"
 import ContactDialogPanel, {
   type Inquiry,
   type OrderChangeRequest,
@@ -44,9 +46,12 @@ const ContactDialogContext = createContext<ContactDialogContextValue | null>(nul
  */
 export function ContactDialogProvider({
   merchant,
+  copy,
   children,
 }: {
   merchant: MerchantIdentity
+  /** Blok `global.kontaktni-okno` — redakční texty okna (viz panel). */
+  copy?: CopyBlock
   children: ReactNode
 }) {
   const [topic, setTopic] = useState<Inquiry | null>(null)
@@ -90,16 +95,25 @@ export function ContactDialogProvider({
     [open, openOrderChange, close, topic]
   )
 
+  /*
+   * Povrch „Kontaktní okno" ve Studiu (`valecms.config.ts`, `surfaces`):
+   * když ho editor vybere, okno se v rámu otevře samo a texty v něm jdou
+   * upravit klikáním. Mimo rám Studia je to vždycky `false` — návštěvník
+   * nevidí nic jiného než dřív.
+   */
+  const studioOpen = useStudioSurface("kontaktni-okno")
+
   return (
     <ContactDialogContext.Provider value={value}>
       {children}
       {typeof document !== "undefined" &&
         createPortal(
           <AnimatePresence>
-            {topic !== null && (
+            {(topic !== null || studioOpen) && (
               <ContactDialogPanel
                 merchant={merchant}
-                initialTopic={topic}
+                copy={copy}
+                initialTopic={topic ?? "Obecný dotaz"}
                 orderChange={orderChange}
                 onClose={close}
               />

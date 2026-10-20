@@ -12,19 +12,21 @@ import { heroBeat, heroReveal } from "@lib/motion-tokens"
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent } from "react";
-import { shaderImages } from "@lib/util/site-copy";
+import { itemValue, shaderImages } from "@lib/util/site-copy";
+import { editableItem } from "@modules/common/components/cms-text";
 import type { CopyBlock } from "@lib/util/site-copy";
 import {
     growEase,
-    storySteps,
+    storyStepsFrom,
     StoryCopyVisual,
     StoryImageVisual,
-    STORY_OFFSET,
 } from "@modules/omne/story";
+import { editable } from "@c3studium/valecms/edit";
 import AboutHeroShader, { aboutImages } from "./AboutHeroShader";
 import { palette } from "styles/palette.generated";
 
 import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
 /*
  * ─── Předání do příběhu, zrcadlově k výrobě ─────────────────────────────────
  *
@@ -97,7 +99,22 @@ const veilAt = (t: number): string => {
     )}, ${alpha.toFixed(4)})`
 }
 
-export default function AboutMe ({ block }: { block?: CopyBlock }) {
+export default function AboutMe ({
+    block,
+    texts,
+    story,
+}: {
+    /** Blok `o-mne.galerie` — fotky shaderu a portrétu. */
+    block?: CopyBlock
+    /** Blok `o-mne.uvod` — texty hero. */
+    texts?: CopyBlock
+    /** Blok `o-mne.pribeh` — náhled 1. kapitoly musí nést tytéž texty jako scéna. */
+    story?: CopyBlock
+}) {
+    /* Texty hero se po zapnutí editace samy nepřekreslí (pohyb jede z motion
+       hodnot, ne ze stavu) — bez tohohle by anotace zůstaly prázdné. Viz hook. */
+    useEditRerender()
+
     // Shader/cursor reduced-motion fallback is intentionally disabled for now.
     // const reduceMotion = useSiteReducedMotion()
     const pointerX = useMotionValue(0)
@@ -117,13 +134,28 @@ export default function AboutMe ({ block }: { block?: CopyBlock }) {
 
     /* Fotka 1. kapitoly příběhu (o-mne.galerie, za dvojicí shaderu) — tentýž
        snímek, který pak stojí ve scéně; konec růstu je tak jeden obraz, ne
-       střih. */
-    const storyPhoto = block?.gallery?.[STORY_OFFSET]
-    const previewStep = {
-        ...storySteps[0],
-        src: storyPhoto?.url ?? storySteps[0].src,
-        alt: storyPhoto?.alt?.trim() || storySteps[0].alt,
-    }
+       střih. A tytéž texty (o-mne.pribeh) — stejná čtečka jako scéna, aby se
+       náhled a kapitola nerozešly po první úpravě ve Studiu. */
+    const previewStep = storyStepsFrom(story, block)[0]
+
+    /*
+     * Texty hero z bloku `o-mne.uvod`. Krátké popisky jsou položky klíčované
+     * popiskem (`oboci`, `lista.vlevo`, `lista.vpravo`, `pozdrav`, `portret`,
+     * `kapitola`), ne pozice v `accent`: CMS z `accent` prázdné položky
+     * vyhazuje, takže vymazaný první popisek by posunul všechny za ním o místo.
+     * Jméno je rozdělené jako podpis — `title` nahoře, `headline` ručně psaným
+     * písmem pod ním.
+     */
+    const text = (label: string, fallback: string) =>
+        itemValue(texts, label)?.trim() || fallback
+    const eyebrow = text("oboci", "O mně · keramická zahrada")
+    const metaLeft = text("lista.vlevo", "Ručně tvořeno")
+    const metaRight = text("lista.vpravo", "Písek · od roku 2014")
+    const greeting = text("pozdrav", "Těší mě")
+    const portraitCaption = text("portret", "Ateliér · Písek")
+    const chapterName = text("kapitola", "Můj příběh")
+    const nameLead = texts?.title?.trim() || "Jmenuji se"
+    const nameSignature = texts?.headline?.trim() || "Lucie Polanská"
     /* A druhá fotka bloku je portrét, který kreslí shader — tím růst začíná,
        aby i první šev byl jeden obraz. Táž cesta, jakou ji bere hero (viz
        `shaderImages` níž), včetně zálohy z kódu. */
@@ -353,8 +385,9 @@ export default function AboutMe ({ block }: { block?: CopyBlock }) {
                             initial="hidden"
                             animate="show"
                             custom={heroBeat.eyebrow}
+                            {...editableItem(texts, "oboci")}
                         >
-                            O mně · keramická zahrada
+                            {eyebrow}
                         </motion.p>
                         <motion.div
                             className="Text__content"
@@ -375,9 +408,9 @@ export default function AboutMe ({ block }: { block?: CopyBlock }) {
                                     animate="show"
                                     custom={heroBeat.heading}
                                 >
-                                    <span>Ručně tvořeno</span>
+                                    <span {...editableItem(texts, "lista.vlevo")}>{metaLeft}</span>
                                     <i />
-                                    <span>Písek · od roku 2014</span>
+                                    <span {...editableItem(texts, "lista.vpravo")}>{metaRight}</span>
                                 </motion.div>
                                 <h1>
                                     <motion.span
@@ -385,8 +418,9 @@ export default function AboutMe ({ block }: { block?: CopyBlock }) {
                                         initial="hidden"
                                         animate="show"
                                         custom={heroBeat.heading}
+                                        {...editable(texts, "title")}
                                     >
-                                        Jmenuji se
+                                        {nameLead}
                                     </motion.span>
                                     <motion.span
                                         className="handwritten"
@@ -394,8 +428,9 @@ export default function AboutMe ({ block }: { block?: CopyBlock }) {
                                         initial="hidden"
                                         animate="show"
                                         custom={heroBeat.lede}
+                                        {...editable(texts, "headline")}
                                     >
-                                        Lucie Polanská
+                                        {nameSignature}
                                     </motion.span>
                                 </h1>
                             </div>
@@ -414,8 +449,8 @@ export default function AboutMe ({ block }: { block?: CopyBlock }) {
                                         <Image src="/assets/icons/wawing_hand.png" alt="" width={78} height={78}/>
                                     </motion.span>
                                 </span>
-                                <p>
-                                    Těší mě
+                                <p {...editableItem(texts, "pozdrav")}>
+                                    {greeting}
                                 </p>
                                 <span className="greetings__line" aria-hidden="true" />
                             </motion.div>
@@ -427,18 +462,18 @@ export default function AboutMe ({ block }: { block?: CopyBlock }) {
                             transition={transition4}
                             style={handoff ? { opacity: portraitOpacity } : undefined}
                         >
-                            <span className="portrait__caption">
-                                Ateliér · Písek
+                            <span className="portrait__caption" {...editableItem(texts, "portret")}>
+                                {portraitCaption}
                             </span>
                         </motion.div>
                         <motion.div
                             className="about__chapterTransition"
-                            aria-label="Začátek kapitoly Můj příběh"
+                            aria-label={`Začátek kapitoly ${chapterName}`}
                             style={handoff ? { opacity: chapterOpacity } : undefined}
                         >
                             <span>01</span>
                             <i aria-hidden="true" />
-                            <span>Můj příběh</span>
+                            <span {...editableItem(texts, "kapitola")}>{chapterName}</span>
                         </motion.div>
 
                         <motion.figure

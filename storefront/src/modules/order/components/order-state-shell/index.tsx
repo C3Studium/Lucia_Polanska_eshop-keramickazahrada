@@ -1,4 +1,5 @@
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import CmsText from "@modules/common/components/cms-text"
 import type { ReactNode } from "react"
 import s from "./style.module.scss"
 
@@ -23,6 +24,16 @@ type OrderStateShellProps = {
     label: string
   }
   children?: ReactNode
+  /**
+   * Odkud texty přišly, pro „Upravit kontent" — `id` bloku z CMS a cesty
+   * k polím, která tu stojí (`{ title: "title", description: "body" }`).
+   * Bez nich se nic neanotuje; vykreslený DOM je v obou případech stejný
+   * (viz CmsText). Mimo náhled Studia je `editDoc` null vždycky.
+   */
+  editDoc?: string | null
+  editFields?: Partial<
+    Record<"eyebrow" | "kicker" | "title" | "accent" | "description", string>
+  >
 }
 
 export default function OrderStateShell({
@@ -35,11 +46,13 @@ export default function OrderStateShell({
   primary,
   secondary,
   children,
+  editDoc = null,
+  editFields = {},
 }: OrderStateShellProps) {
   return (
     <main className={s.root} data-status={status}>
       <div className={s.header}>
-        <span>{eyebrow}</span>
+        <CmsText doc={editDoc} field={editFields.eyebrow}>{eyebrow}</CmsText>
         <span>Keramická zahrada</span>
       </div>
 
@@ -68,19 +81,29 @@ export default function OrderStateShell({
         )}
 
         <div className={s.copy}>
-          <p className={s.kicker}>
+          <CmsText as="p" className={s.kicker} doc={editDoc} field={kicker ? editFields.kicker : undefined}>
             {kicker ??
               (status === "pending"
                 ? "Objednávku právě dokončujeme"
                 : status === "success"
                   ? "Objednávku máme"
                   : "Objednávka se nedokončila")}
-          </p>
+          </CmsText>
+          {/* Nadpis a jeho zvýrazněný konec jsou dvě pole — proto `title`
+              v nestylovaném spanu, když se anotuje. Bez anotace jako dřív. */}
           <h1>
-            {title}
-            {accent && <em>{accent}</em>}
+            {editDoc && editFields.title ? (
+              <CmsText doc={editDoc} field={editFields.title}>{title}</CmsText>
+            ) : (
+              title
+            )}
+            {accent && (
+              <CmsText as="em" doc={editDoc} field={editFields.accent}>{accent}</CmsText>
+            )}
           </h1>
-          <p className={s.description}>{description}</p>
+          <CmsText as="p" className={s.description} doc={editDoc} field={editFields.description}>
+            {description}
+          </CmsText>
 
           {(primary || secondary) && (
             <div className={s.actions}>

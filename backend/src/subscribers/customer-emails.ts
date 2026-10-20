@@ -11,6 +11,7 @@ import {
 import { balancePaymentUrl } from "../lib/balance-payment-link"
 import { captureCoveredByBalanceMail } from "../lib/balance-settlement"
 import { isAutoCancelledClaim } from "../lib/claims/auto-cancel"
+import { withdrawalUrlFor } from "../lib/claims/withdrawal-link"
 import { refundHistoryOf, toNumber } from "../lib/claims/refund-rules"
 import { lineQuantityOf } from "../lib/order-quantity"
 import { isServiceLine } from "../lib/packaging-lines"
@@ -19,7 +20,7 @@ import {
   commissionPaymentsText,
   splitCommissionPayments,
 } from "../lib/commission-breakdown"
-import { getMerchantSettings } from "../lib/merchant-settings"
+import { getLegalFacts, getMerchantSettings } from "../lib/merchant-settings"
 import { cpCarrierName, cpTrackingUrl } from "../lib/parcel-tracking/carrier"
 import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
@@ -419,13 +420,17 @@ const onShipmentCreated = async ({
   // podá + odešle naráz). „Připraveno k vyzvednutí" se posílá dřív, při přechodu
   // do „K odeslání" (viz onMerchantStageChanged). Tady už zákazník zboží má →
   // „Objekty jsou u vás".
+  // Odkaz „Odstoupit od smlouvy" (§ 1830a OZ) — host bez účtu ho jinde nemá.
+  // Prázdný u čisté zakázky (§ 1837 písm. d) a zrušené objednávky.
+  const withdrawalUrl = await withdrawalUrlFor(container, order.id)
+
   if (isPickupOrder(order)) {
     await sendCustomerEmail(container, {
       template: "order-delivered",
       to: order.email,
       key: `ship:${fulfillment.id}`,
       orderId: order.id,
-      data: { ...common(order) },
+      data: { ...common(order), withdrawalUrl },
     })
     return
   }
@@ -449,6 +454,7 @@ const onShipmentCreated = async ({
         number: label?.tracking_number,
         url: label?.tracking_url,
       }),
+      withdrawalUrl,
     },
   })
 }
@@ -476,7 +482,11 @@ const onDeliveryCreated = async ({
     to: order.email,
     key: `deliver:${fulfillment.id}`,
     orderId: order.id,
-    data: { ...common(order) },
+    // Převzetím začíná 14denní lhůta — odkaz „Odstoupit od smlouvy" (§ 1830a).
+    data: {
+      ...common(order),
+      withdrawalUrl: await withdrawalUrlFor(container, order.id),
+    },
   })
 }
 
@@ -975,6 +985,8 @@ const onMerchantStageChanged = async ({
       data: {
         ...common(order),
         ...shipmentTracking(order),
+        // Odkaz „Odstoupit od smlouvy" (§ 1830a OZ), stejně jako na shipment.created.
+        withdrawalUrl: await withdrawalUrlFor(container, order.id),
       },
     })
     return
@@ -984,6 +996,11 @@ const onMerchantStageChanged = async ({
   // přijít). Posílá se právě tady, ve chvíli, kdy je objednávka připravená —
   // ne až při vyzvednutí. (Při vyzvednutí jde „máte u sebe", viz onShipmentCreated.)
   if (isPickupOrder(order)) {
+    // Ateliér je na adrese sídla — tak to říkají i obchodní podmínky a stránka
+    // Doprava („vyzvednout osobně v ateliéru na adrese {{seller.address}}"),
+    // proto právní údaj z administrace. Bez něj zůstává dosavadní adresa:
+    // e-mail „přijďte si" bez adresy by byl k ničemu.
+    const { facts } = await getLegalFacts(container)
     await sendCustomerEmail(container, {
       template: "order-ready-pickup",
       to: order.email,
@@ -992,7 +1009,7 @@ const onMerchantStageChanged = async ({
       data: {
         ...common(order),
         pickupLocation: "Ateliér Keramická zahrada",
-        pickupAddress: "Putim 229, 397 01 Písek",
+        pickupAddress: facts["seller.address"] || "Putim 229, 397 01 Písek",
         readyDate: new Date().toLocaleDateString("cs-CZ"),
       },
     })

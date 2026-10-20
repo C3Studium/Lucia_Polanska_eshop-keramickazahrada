@@ -16,10 +16,26 @@ import {
   type CourseQuote,
   type CourseTerm,
 } from "@lib/data/courses"
+import { FALLBACK_FACTS, type LegalFacts } from "@lib/legal/facts"
+import { renderInline } from "@lib/legal/inline"
 import { pragueDayKey } from "@lib/util/course-calendar"
+import {
+  COURSE_BUTTON_LABEL,
+  LEGAL_LINKS,
+} from "@modules/checkout/components/legal-consent/labels"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import PhoneInput from "@modules/common/components/phone-input"
+import { editable, surfaceRoot } from "@c3studium/valecms/edit"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import { fillPlaceholders, itemText } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
 
+import {
+  REZERVACE_OKNO_DEFAULTS,
+  WAITLIST_RULE,
+  type RezervaceOknoLabel,
+} from "../copy"
 import {
   czk,
   formatDuration,
@@ -107,12 +123,27 @@ type Props = {
   open: boolean
   onCloseAction: () => void
   initialTerms: CourseTerm[]
+  /**
+   * Právní údaje z administrace obchodu (storno podmínky, e-mail) — načte je
+   * serverová stránka (`getLegalFacts()`). Bez nich záloha z kódu.
+   */
+  legalFacts?: LegalFacts
+  /**
+   * Blok `kurzy.rezervace` — nadpis okna je tatáž věta jako nadpis sekce
+   * s termíny (`title` + zvýrazněný `headline`), jedno místo pro obě.
+   */
+  heading?: CopyBlock
+  /** Blok `kurzy.rezervace-okno` — texty okna, viz `../copy.ts`. */
+  block?: CopyBlock
 }
 
 export default function RezervaceModal({
   open,
   onCloseAction,
   initialTerms,
+  legalFacts = FALLBACK_FACTS,
+  heading,
+  block,
 }: Props) {
   if (typeof document === "undefined") {
     return null
@@ -123,6 +154,9 @@ export default function RezervaceModal({
         <RezervaceModalPanel
           initialTerms={initialTerms}
           onClose={onCloseAction}
+          legalFacts={legalFacts}
+          heading={heading}
+          block={block}
         />
       ) : null}
     </AnimatePresence>,
@@ -133,10 +167,27 @@ export default function RezervaceModal({
 function RezervaceModalPanel({
   initialTerms,
   onClose,
+  legalFacts,
+  heading,
+  block,
 }: {
   initialTerms: CourseTerm[]
   onClose: () => void
+  legalFacts: LegalFacts
+  heading?: CopyBlock
+  block?: CopyBlock
 }) {
+  /* Okno se po zapnutí editace samo nepřekreslí, dokud v něm člověk nic
+     nevybere — bez tohohle by anotace zůstaly prázdné. Viz hook. */
+  useEditRerender()
+  /** Text okna z CMS podle popisku, nebo výchozí z `../copy.ts`. */
+  const text = (label: RezervaceOknoLabel) =>
+    itemText(block, label, REZERVACE_OKNO_DEFAULTS[label])
+  const edit = (label: RezervaceOknoLabel, field: "value" | "note" = "value") =>
+    editableItem(block, label, field)
+  const titleLead = heading?.title?.trim() || "Vyberte si termín."
+  const titleAccent = heading?.headline?.trim() || "Místo je vaše."
+  const soldOutText = text("termin.obsazeno")
   const reduceMotion = useSiteReducedMotion()
   const panelRef = useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -274,6 +325,14 @@ function RezervaceModalPanel({
   const [paymentMethod, setPaymentMethod] = useState<"online" | "on_site">(
     draft?.paymentMethod ?? "online"
   )
+  /* Podmínky rezervace — vždy NEZAŠKRTNUTÉ a záměrně mimo `ModalDraft`:
+     souhlas se dává pokaždé znovu, ne obnovou rozepsaného formuláře.
+     OP a výjimka z odstoupení (§ 1837 písm. j) OZ — kurz s pevným termínem)
+     jsou povinné, fotky nepovinné. */
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [exceptionAck, setExceptionAck] = useState(false)
+  const [photoConsent, setPhotoConsent] = useState(false)
+  const legalReady = termsAccepted && exceptionAck
   const [website, setWebsite] = useState("")
 
   const [quote, setQuote] = useState<CourseQuote | null>(null)
@@ -351,7 +410,7 @@ function RezervaceModalPanel({
   }, [step, selected])
 
   /* Back from ComGate via bfcache: the page resumes exactly as it was left —
-     mid-submit. Unfreeze the button so „Rezervovat a zaplatit" works again. */
+     mid-submit. Unfreeze the button so „Rezervace zavazující k platbě" works again. */
   useEffect(() => {
     const handlePageShow = (event: PageTransitionEvent) => {
       if (event.persisted) {
@@ -497,6 +556,14 @@ function RezervaceModalPanel({
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!selected || submitting || !detailsValid) return
+    if (!legalReady) {
+      setStepError({
+        step: "platba",
+        message:
+          "Před rezervací prosím potvrďte souhlas s obchodními podmínkami a storno podmínky kurzu.",
+      })
+      return
+    }
 
     setStepError(null)
     setSubmitting(true)
@@ -508,6 +575,10 @@ function RezervaceModalPanel({
       party_size: partySize,
       payment_method: paymentMethod,
       website,
+      terms_accepted: termsAccepted,
+      exception_ack: exceptionAck,
+      photo_consent: photoConsent,
+      client_accepted_at: new Date().toISOString(),
     })
 
     if (!result.ok) {
@@ -604,6 +675,8 @@ function RezervaceModalPanel({
     <motion.div
       className="kurzyModal"
       data-lenis-prevent
+      /* Ve Studiu (povrch „rezervace-okno") se výběr uzavře do okna. Mimo Studio `{}`. */
+      {...surfaceRoot("rezervace-okno")}
       variants={reduceMotion ? reducedOverlayVariants : overlayVariants}
       initial="hidden"
       animate="visible"
@@ -653,10 +726,15 @@ function RezervaceModalPanel({
 
         <header className="kurzyModal__head">
           <div>
-            <span className="kurzyModal__eyebrow">Kurzy · Rezervace</span>
+            <span className="kurzyModal__eyebrow" {...edit("oboci")}>
+              {text("oboci")}
+            </span>
+            {/* Nadpis z bloku `kurzy.rezervace` — týž jako nad termíny na
+                stránce. Začátek v holém spanu jen kvůli anotaci: `editable`
+                píše celé pole a zvýrazněný konec je pole jiné. */}
             <h2 id="kurzy-modal-title">
-              Vyberte si termín.
-              <em>Místo je vaše.</em>
+              <span {...editable(heading, "title")}>{titleLead}</span>
+              <em {...editable(heading, "headline")}>{titleAccent}</em>
             </h2>
           </div>
           <button
@@ -676,10 +754,19 @@ function RezervaceModalPanel({
             animate={{ opacity: 1, y: "0vh" }}
             role="status"
           >
-            <span className="kurzyModal__summaryEyebrow">Rezervace přijata</span>
+            <span className="kurzyModal__summaryEyebrow" {...edit("souhrn.oboci")}>
+              {text("souhrn.oboci")}
+            </span>
             <h3>
-              Těšíme se na vás.
-              <em>Místo máte rezervované.</em>
+              <span {...edit("souhrn.nadpis")}>{text("souhrn.nadpis")}</span>
+              <em {...edit("souhrn.nadpis", "note")}>
+                {itemText(
+                  block,
+                  "souhrn.nadpis",
+                  REZERVACE_OKNO_DEFAULTS["souhrn.nadpis#note"],
+                  "note"
+                )}
+              </em>
             </h3>
             <dl>
               <div>
@@ -705,12 +792,9 @@ function RezervaceModalPanel({
                 </div>
               ) : null}
             </dl>
-            <p>
-              Co bude dál: potvrzení jsme právě poslali na {email.trim()}. Před
-              kurzem vám ještě přijde připomínka — a zaplatíte až na místě,
-              hotově nebo kartou. Kdyby vám termín nakonec nevyšel, rezervaci
-              zrušíte přímo z e-mailu.
-            </p>
+            {/* Věta se zástupcem `{email}` — v místě se needituje (editor by
+                uložil adresu místo zástupce), mění se ve formuláři bloku. */}
+            <p>{fillPlaceholders(text("souhrn.text"), { email: email.trim() })}</p>
             {confirmed.reservationId && confirmed.token ? (
               <LocalizedClientLink
                 href={`/kurzy/rezervace/${confirmed.reservationId}?token=${confirmed.token}`}
@@ -793,9 +877,8 @@ function RezervaceModalPanel({
                       ) : null}
 
                       {terms.length === 0 ? (
-                        <p className="kurzyModal__hint">
-                          Právě nejsou vypsané žádné termíny. Napište mi a dám
-                          vám vědět, jakmile vypíšu další.
+                        <p className="kurzyModal__hint" {...edit("prazdne")}>
+                          {text("prazdne")}
                         </p>
                       ) : (
                         <>
@@ -839,13 +922,16 @@ function RezervaceModalPanel({
                                       term={term}
                                       active={term.id === selectedId}
                                       onSelect={() => selectTerm(term)}
+                                      soldOutText={soldOutText}
                                     />
                                   ))}
                                 </div>
                               ) : (
-                                <p className="kurzyModal__hint">
-                                  Vyberte v kalendáři označený den a jeho
-                                  termíny se ukážou tady.
+                                <p
+                                  className="kurzyModal__hint"
+                                  {...edit("kalendar.napoveda")}
+                                >
+                                  {text("kalendar.napoveda")}
                                 </p>
                               )}
                             </>
@@ -861,6 +947,7 @@ function RezervaceModalPanel({
                                   term={term}
                                   active={term.id === selectedId}
                                   onSelect={() => selectTerm(term)}
+                                  soldOutText={soldOutText}
                                 />
                               ))}
                             </div>
@@ -873,22 +960,26 @@ function RezervaceModalPanel({
                                   className="kurzyModal__waitlistDone"
                                   role="status"
                                 >
-                                  <strong>
-                                    Dáme vědět, až se uvolní místo.
+                                  <strong {...edit("cekacka.hotovo.nadpis")}>
+                                    {text("cekacka.hotovo.nadpis")}
                                   </strong>
+                                  {/* Zástupci → jen ve formuláři. Pravidlo
+                                      čekací listiny za větou drží kód. */}
                                   <p>
-                                    Jakmile se na termínu uvolní místo pro{" "}
-                                    {peopleLabel(wlDone.partySize)}, pošleme vám
-                                    zprávu na {wlDone.email}. Místo se přitom
-                                    nedrží — patří tomu, kdo dřív dokončí
-                                    rezervaci.
+                                    {fillPlaceholders(text("cekacka.hotovo.text"), {
+                                      osoby: peopleLabel(wlDone.partySize),
+                                      email: wlDone.email,
+                                    })}{" "}
+                                    {WAITLIST_RULE}
                                   </p>
                                 </div>
                               ) : (
                                 <form onSubmit={submitWaitlist} noValidate>
-                                  <p className="kurzyModal__waitlistIntro">
-                                    Termín je plně obsazený. Nechte nám kontakt
-                                    a napíšeme vám, jakmile se místo uvolní.
+                                  <p
+                                    className="kurzyModal__waitlistIntro"
+                                    {...edit("cekacka.uvod")}
+                                  >
+                                    {text("cekacka.uvod")}
                                   </p>
                                   <div className="kurzyModal__fields">
                                     <label>
@@ -982,7 +1073,8 @@ function RezervaceModalPanel({
                                     className="kurzyModal__primary"
                                     disabled={wlSubmitting}
                                   >
-                                    {wlSubmitting ? "Odesílám…" : "Dejte mi vědět"}
+                                    {/* Bez anotace v místě — tlačítko nese i šipku. */}
+                                    {wlSubmitting ? "Odesílám…" : text("cekacka.tlacitko")}
                                     <i aria-hidden="true">↗</i>
                                   </button>
                                 </form>
@@ -1242,6 +1334,93 @@ function RezervaceModalPanel({
                         </label>
                       </fieldset>
 
+                      {/* Podmínky PŘED rezervací: kurz je služba v pevném
+                          termínu, takže 14denní odstoupení neplatí — ale jen
+                          když o tom zákazník ví předem (§ 1837 písm. j),
+                          § 1820 OZ). Storno podmínky jsou právní údaj
+                          z administrace obchodu (`course.cancellation`). */}
+                      <fieldset className="kurzyModal__legal">
+                        <legend>Podmínky rezervace</legend>
+                        <p className="kurzyModal__storno" data-testid="course-storno">
+                          <strong>Storno podmínky:</strong>{" "}
+                          {renderInline("{{course.cancellation}}", { facts: legalFacts })}
+                        </p>
+                        <label className="kurzyModal__check">
+                          <input
+                            type="checkbox"
+                            checked={termsAccepted}
+                            onChange={(event) => {
+                              setTermsAccepted(event.target.checked)
+                              setStepError(null)
+                            }}
+                            data-testid="course-terms-checkbox"
+                          />
+                          <span>
+                            Souhlasím s{" "}
+                            <LocalizedClientLink
+                              href={LEGAL_LINKS.termsCourses}
+                              target="_blank"
+                              rel="noopener"
+                            >
+                              obchodními podmínkami
+                            </LocalizedClientLink>
+                            .
+                          </span>
+                        </label>
+                        <label className="kurzyModal__check">
+                          <input
+                            type="checkbox"
+                            checked={exceptionAck}
+                            onChange={(event) => {
+                              setExceptionAck(event.target.checked)
+                              setStepError(null)
+                            }}
+                            data-testid="course-exception-checkbox"
+                          />
+                          <span>
+                            Beru na vědomí, že u kurzu s pevným termínem nelze
+                            odstoupit do 14 dnů (§ 1837 písm. j) OZ); platí{" "}
+                            <LocalizedClientLink
+                              href={LEGAL_LINKS.termsCourses}
+                              target="_blank"
+                              rel="noopener"
+                            >
+                              storno podmínky
+                            </LocalizedClientLink>
+                            .
+                          </span>
+                        </label>
+                        <label className="kurzyModal__check">
+                          <input
+                            type="checkbox"
+                            checked={photoConsent}
+                            onChange={(event) => setPhotoConsent(event.target.checked)}
+                            data-testid="course-photo-checkbox"
+                          />
+                          <span>
+                            Souhlasím s pořízením fotografií z kurzu a jejich
+                            zveřejněním na webu a sociálních sítích (za dítě
+                            souhlasí zákonný zástupce).
+                            <small>
+                              Nepovinné. Souhlas můžete kdykoli odvolat e-mailem
+                              na {renderInline("{{seller.email}}", { facts: legalFacts })}.
+                            </small>
+                          </span>
+                        </label>
+                        <p className="kurzyModal__consent">
+                          Údaje z rezervace zpracujeme kvůli jejímu vyřízení —
+                          podrobnosti v{" "}
+                          <LocalizedClientLink
+                            href={LEGAL_LINKS.privacy}
+                            target="_blank"
+                            rel="noopener"
+                          >
+                            zásadách ochrany osobních údajů
+                          </LocalizedClientLink>
+                          .
+                        </p>
+                      </fieldset>
+
                       {/* Honeypot — humans never see it. */}
                       <input
                         type="text"
@@ -1261,19 +1440,27 @@ function RezervaceModalPanel({
                       ) : null}
 
                       <div className="kurzyModal__stepActions">
+                        {/* Zákonný název tlačítka (§ 1826a odst. 2 OZ) — jak
+                            a kolik se platí, říká věta pod ním. */}
                         <button
                           type="submit"
                           className="kurzyModal__primary"
-                          disabled={submitting}
+                          disabled={submitting || !legalReady}
+                          data-testid="course-submit-button"
                         >
-                          {submitting
-                            ? "Odesílám…"
-                            : paymentMethod === "online"
-                              ? "Rezervovat a zaplatit"
-                              : "Rezervovat místo"}
+                          {submitting ? "Odesílám…" : COURSE_BUTTON_LABEL}
                           <i aria-hidden="true">↗</i>
                         </button>
                       </div>
+                      <p className="kurzyModal__payNote" aria-live="polite">
+                        {!legalReady
+                          ? "Nejdřív prosím potvrďte obchodní podmínky a storno podmínky."
+                          : !quote || quoteLoading
+                            ? "Počítáme cenu…"
+                            : paymentMethod === "online"
+                              ? `Zaplatíte ${czk(quote.total)} hned online přes platební bránu ComGate.`
+                              : `Zaplatíte ${czk(quote.total)} na místě před začátkem kurzu.`}
+                      </p>
                     </form>
                   )}
                 </motion.section>
@@ -1290,10 +1477,17 @@ function TermCard({
   term,
   active,
   onSelect,
+  soldOutText,
 }: {
   term: CourseTerm
   active: boolean
   onSelect: () => void
+  /**
+   * Věta u obsazeného termínu (`termin.obsazeno`). Karta je tlačítko, které
+   * termín vybírá, takže se v místě neanotuje — klik v editoru by zároveň
+   * vybral termín. Upravuje se ve formuláři bloku.
+   */
+  soldOutText: string
 }) {
   return (
     <button
@@ -1322,9 +1516,7 @@ function TermCard({
       <span
         className={`kurzyModal__termSeats${term.sold_out ? " is-full" : ""}`}
       >
-        {term.sold_out
-          ? "obsazeno · dáme vědět, až se uvolní"
-          : seatsLabel(term.seats_left)}
+        {term.sold_out ? soldOutText : seatsLabel(term.seats_left)}
       </span>
     </button>
   )

@@ -1,7 +1,10 @@
 "use client"
 
+import { editable } from "@c3studium/valecms/edit"
 import { listStoreCatalogue } from "@lib/data/products"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import type { CopyBlock } from "@lib/util/site-copy"
 import type { HttpTypes } from "@medusajs/types"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
@@ -32,6 +35,16 @@ type EComProps = {
   initialFilterLabel?: string
   /** Režim výběru do úpravy objednávky — viz `ShopPickMode`. */
   pick?: ShopPickMode
+  /**
+   * Blok `obchod.vyber` — úvod nad katalogem. Režim výběru (`pick`) má vlastní
+   * úvod z úpravy objednávky a tenhle blok nečte.
+   */
+  block?: CopyBlock
+  /**
+   * Blok `obchod.katalog` — nadpis filtrů, prázdný výsledek, chyba načtení
+   * a záložní texty karet. Režim výběru ho nedostává (texty z kódu).
+   */
+  texts?: CopyBlock
 }
 
 const PRODUCT_LIMIT = 16
@@ -122,7 +135,26 @@ export default function ECom({
   initialFilters,
   initialFilterLabel,
   pick,
+  block,
+  texts,
 }: EComProps) {
+  /* Úvod katalogu se po zapnutí editace sám nepřekreslí, dokud se nic
+     nenačítá — bez tohohle by anotace zůstaly prázdné. Viz hook. */
+  useEditRerender()
+
+  /*
+   * Úvod nad katalogem z bloku `obchod.vyber`: obočí (`accent.0`), nadpis
+   * na dva řádky (`title` + zvýrazněný `headline`) a odstavec vedle.
+   * Vysvětlení řazení („Doporučené") a filtry zůstávají v kódu — popisují
+   * logiku katalogu a musí s ní souhlasit slovo od slova.
+   */
+  const introEyebrow = block?.accent?.[0]?.trim() || "Co je právě k mání"
+  const introTitle = block?.title?.trim() || "Vyberte si něco,"
+  const introAccent = block?.headline?.trim() || "co vám zůstane."
+  const introText =
+    block?.bodyText?.trim() ||
+    "Keramika na běžné používání, jednotlivé kusy i malé série. Drobné odchylky nejsou vada — podle nich poznáte, že to dělal člověk."
+
   /* V režimu výběru jen povolené produkty. Konstantní po celý život
      komponenty (stránka mini obchodu je pokaždé nová), ale jde do závislostí
      dotazů, ať to nikdo nemusí hlídat. */
@@ -555,19 +587,18 @@ export default function ECom({
           </header>
         ) : (
           <header className={styles.introduction}>
+            {/* Obočí a nadpis v holých spanech: `editable` píše celé pole,
+                a odstavec `p` nese ještě rozsah filtru, h2 i zvýraznění. */}
             <p>
-              Co je právě k mání
+              <span {...editable(block, "accent.0")}>{introEyebrow}</span>
               <span className={styles.filterScope}>{filterScope}</span>
             </p>
             <h2>
-              Vyberte si něco,
+              <span {...editable(block, "title")}>{introTitle}</span>
               <br />
-              <em>co vám zůstane.</em>
+              <em {...editable(block, "headline")}>{introAccent}</em>
             </h2>
-            <span>
-              Keramika na běžné používání, jednotlivé kusy i malé série. Drobné
-              odchylky nejsou vada — podle nich poznáte, že to dělal člověk.
-            </span>
+            <span {...editable(block, "body")}>{introText}</span>
           </header>
         )}
 
@@ -581,6 +612,7 @@ export default function ECom({
             onClose={closeFilters}
             onReset={resetFilters}
             categoriesOnly={Boolean(pick)}
+            copy={texts}
           />
 
           <div className={styles.results}>
@@ -608,6 +640,7 @@ export default function ECom({
               onReset={resetFilters}
               productHref={pick?.productHref}
               hideCardActions={Boolean(pick)}
+              copy={texts}
             />
           </div>
         </div>

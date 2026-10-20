@@ -1,6 +1,7 @@
 // Sanity → ValeCMS. Jeden příkaz, opakovatelně.
 //
-//   node --import @c3studium/valecms/register.mjs scripts/migrate-sanity-to-cms.mjs
+// Spouštět ze složky storefront.
+//   node --import ./scripts/lib/ts-register.mjs scripts/migrate-sanity-to-cms.mjs
 //     … nasucho, nic nezapíše; s --write doopravdy.
 //
 // `--import` zapne hook, kterým knihovna rozřeší `valecms.config` a

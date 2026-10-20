@@ -74,6 +74,8 @@ export const CLAIM_DETAIL_ORDER_FIELDS = [
   ...LINE_QUANTITY_FIELDS,
   "items.detail.raw_fulfilled_quantity",
   "items.product.metadata",
+  // Zakázka i podle kategorie Zakázková výroba (made-to-order.ts, 14. 10. 2026).
+  "items.product.categories.handle",
   "customer.first_name",
   "customer.last_name",
   "shipping_address.first_name",

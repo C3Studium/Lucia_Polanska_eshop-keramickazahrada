@@ -1,41 +1,40 @@
-import { getMerchantIdentity } from "@lib/data/merchant"
+"use client"
 
 import styles from "./download.module.scss"
 
 /**
- * TODO(matej): drop the official reklamační protokol PDF into `public/dokumenty/` and set this
- * to its path (e.g. "/dokumenty/reklamacni-protokol.pdf"). The download button then replaces
- * the placeholder automatically — nothing else needs changing.
+ * Formulář ke stažení přímo u kapitoly „Reklamační formulář".
  *
- * It stays `null` until the real document exists: a download button that 404s is worse than
- * saying plainly that the form is on its way (D-S6).
+ * PDF generuje `pnpm legal:build` z registru (celý protokol včetně
+ * formuláře) a jeho adresu nese `pdf-manifest.json`. Dokud pro platné znění
+ * PDF neexistuje, nabízí se tisk stránky — dřívější věta „Formulář ještě
+ * dokončujeme" je pryč, formulář je teď součástí dokumentu.
  */
-const PROTOCOL_PDF_PATH: string | null = null
-
-export default function ProtocolDownload() {
-  const merchant = getMerchantIdentity()
-
-  if (!PROTOCOL_PDF_PATH) {
-    return (
-      <div className={styles.placeholder}>
-        <p className={styles.eyebrow}>Protokol ke stažení</p>
-        <p>
-          Formulář ještě dokončujeme. Než ho sem doplníme, vyřídíme reklamaci
-          stejně rychle e-mailem — napište nám na{" "}
-          <a href={`mailto:${merchant.email}`}>{merchant.email}</a> číslo objednávky,
-          popis vady a fotky. Ozveme se vám s dalším postupem.
-        </p>
-      </div>
-    )
-  }
-
+export default function ProtocolDownload({ pdfHref }: { pdfHref: string | null }) {
   return (
     <div className={styles.download}>
       <p className={styles.eyebrow}>Protokol ke stažení</p>
-      <a className={styles.button} href={PROTOCOL_PDF_PATH} download>
-        Stáhnout reklamační protokol (PDF)
-        <span aria-hidden="true">↓</span>
-      </a>
+      {pdfHref ? (
+        <a
+          className={styles.button}
+          href={pdfHref}
+          download
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Stáhnout reklamační protokol (PDF)
+          <span aria-hidden="true">↓</span>
+        </a>
+      ) : (
+        <button
+          type="button"
+          className={`${styles.button} ${styles.printButton}`}
+          onClick={() => window.print()}
+        >
+          Vytisknout formulář
+          <span aria-hidden="true">↗</span>
+        </button>
+      )}
     </div>
   )
 }

@@ -1,4 +1,6 @@
+import { Link } from "@react-email/components"
 import {
+  brand,
   ButtonRow,
   EmailButton,
   EmailH1,
@@ -11,6 +13,13 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import {
+  COURSE_NO_WITHDRAWAL_NOTICE,
+  COURSE_TERMS_ARTICLE,
+  hasCourseCancellationTerms,
+} from "../../course/legal"
+
+const linkStyle = { color: brand.ink, textDecoration: "underline" } as const
 
 interface CourseReservationConfirmedEmailProps {
   customerName?: string
@@ -28,6 +37,26 @@ interface CourseReservationConfirmedEmailProps {
   reservationLink?: string
   /** Our copy of the iDoklad invoice PDF — empty when not (yet) issued. */
   invoicePdfUrl?: string
+  /** Poučení o výjimce z odstoupení (§ 1837 písm. j) OZ) — `modules/course/legal.ts`. */
+  noWithdrawalNotice?: string
+  /**
+   * Storno podmínky kurzů — právní údaj `course.cancellation` z administrace
+   * (`courseCancellationTerms`). Prázdné nebo se `[[DOPLNIT` = ještě
+   * nedoplněné: šablona je necituje a odkáže na OP čl. X.
+   */
+  cancellationTerms?: string
+  /** Obchodní podmínky, kapitola Kurzy (`…/smluvni-podminky#kurzy`). */
+  termsLink?: string
+  /** Znění OP, se kterým zákazník rezervoval („15. 10. 2026"). */
+  termsVersionLabel?: string
+  /** Stránka toho znění na webu (`…/smluvni-podminky/<verze>`) — když PDF není. */
+  termsVersionUrl?: string
+  /** Zveřejněné PDF toho znění — prázdné, když není (pracovní / nenahrané). */
+  termsPdfUrl?: string
+  /** PDF obchodních podmínek jde s e-mailem jako příloha. */
+  termsAttached?: boolean
+  /** Resend přílohu odmítl a e-mail odešel bez ní (doplní provider). */
+  attachments_failed?: boolean
 }
 
 function CourseReservationConfirmedEmailComponent({
@@ -41,8 +70,23 @@ function CourseReservationConfirmedEmailComponent({
   variant = "on_site",
   reservationLink = "",
   invoicePdfUrl = "",
+  // Výchozí poučení = konstanta: i notifikace uložená před zavedením poučení
+  // (bez toho klíče v `data`) se při opakovaném odeslání vykreslí s ním.
+  // Storno bez údaje = odkaz na OP čl. X, jako u nevyplněných podmínek.
+  noWithdrawalNotice = COURSE_NO_WITHDRAWAL_NOTICE,
+  cancellationTerms = "",
+  termsLink = "",
+  termsVersionLabel = "",
+  termsVersionUrl = "",
+  termsPdfUrl = "",
+  termsAttached = false,
+  attachments_failed = false,
 }: CourseReservationConfirmedEmailProps) {
   const paid = variant === "paid"
+  // Zástupný text `[[DOPLNIT …]]` zákazník nikdy neuvidí.
+  const termsReady = hasCourseCancellationTerms(cancellationTerms)
+  const attached = termsAttached && !attachments_failed
+  const versionSuffix = termsVersionLabel ? ` (znění od ${termsVersionLabel})` : ""
   return (
     <EmailLayout
       preview={`Rezervace kurzu ${courseTitle} — ${courseDate}.`}
@@ -105,6 +149,73 @@ function CourseReservationConfirmedEmailComponent({
         </>
       )}
 
+      {/* Potvrzení smlouvy v textové podobě (§ 1827 odst. 2 OZ): poučení,
+          že od kurzu v pevném termínu nelze odstoupit do 14 dnů (§ 1837
+          písm. j) OZ), a storno podmínky, které platí místo toho. Dokud
+          nejsou doplněné, odkaz na jejich místo v OP — ne zástupný text. */}
+      <P>
+        <strong>Storno podmínky.</strong> {noWithdrawalNotice}
+      </P>
+      {termsReady ? (
+        <>
+          <P>{cancellationTerms}</P>
+          {termsLink ? (
+            <P small>
+              Celé znění najdete v{" "}
+              <Link href={termsLink} style={linkStyle}>
+                obchodních podmínkách (kapitola Kurzy)
+              </Link>
+              .
+            </P>
+          ) : null}
+        </>
+      ) : (
+        <P>
+          Storno podmínky kurzů jsou v obchodních podmínkách, {COURSE_TERMS_ARTICLE}
+          {termsLink ? (
+            <>
+              {" — "}
+              <Link href={termsLink} style={linkStyle}>
+                zobrazit na webu
+              </Link>
+            </>
+          ) : null}
+          .
+        </P>
+      )}
+      {/* Obchodní podmínky té verze, se kterou zákazník rezervoval — PDF
+          v příloze, nebo aspoň odkaz, když příloha neprošla. Bez PDF (pracovní
+          znění, nebo verze vydaná ve Studiu, kterou backend ještě nezná)
+          aspoň datum znění a jeho stránka — nikdy jiné znění místo něj. */}
+      {attached ? (
+        <P small>
+          Obchodní podmínky{versionSuffix}, podle kterých rezervace platí,
+          máte v příloze tohoto e-mailu (PDF).
+        </P>
+      ) : termsPdfUrl ? (
+        <P small>
+          Obchodní podmínky{versionSuffix}, podle kterých rezervace platí, si
+          můžete{" "}
+          <Link href={termsPdfUrl} style={linkStyle}>
+            stáhnout jako PDF
+          </Link>
+          .
+        </P>
+      ) : termsVersionLabel ? (
+        <P small>
+          Rezervace platí podle obchodních podmínek ve znění od {termsVersionLabel}
+          {termsVersionUrl ? (
+            <>
+              {" — "}
+              <Link href={termsVersionUrl} style={linkStyle}>
+                zobrazit na webu
+              </Link>
+            </>
+          ) : null}
+          .
+        </P>
+      ) : null}
+
       {reservationLink || invoicePdfUrl ? (
         <ButtonRow>
           {reservationLink ? (
@@ -142,6 +253,7 @@ const mockCourseReservationConfirmed: CourseReservationConfirmedEmailProps = {
   variant: "paid",
   reservationLink: "https://keramickazahrada.cz/cz/kurzy/rezervace/res_123?token=abc",
   invoicePdfUrl: "https://keramickazahrada.cz/faktura-20260042.pdf",
+  termsLink: "https://keramickazahrada.cz/cz/smluvni-podminky#kurzy",
 }
 
 export default () => (

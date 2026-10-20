@@ -13,7 +13,7 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
-import { NEWSLETTER_SENDER } from "./newsletter-blocks"
+import { NewsletterSenderLine } from "./newsletter-blocks"
 
 type BundlePublishedEmailProps = {
   bundle: {
@@ -236,9 +236,7 @@ function BundlePublishedEmailComponent({ bundle, customer, unsubscribeLink }: Bu
             .
           </P>
           <P small style={{ margin: "8px 0 0" }}>
-            Odesílatel: {NEWSLETTER_SENDER.name}, se sídlem{" "}
-            {NEWSLETTER_SENDER.address}, IČO{" "}
-            {NEWSLETTER_SENDER.registrationNumber}.
+            <NewsletterSenderLine />
           </P>
         </Section>
       ) : null}

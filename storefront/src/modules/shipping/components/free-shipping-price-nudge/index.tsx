@@ -8,10 +8,36 @@ import {
   StorePrice,
 } from "@medusajs/types"
 import PremiumActionLink from "@modules/common/components/premium-action-link"
+import { itemText } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
+import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
 import { AnimatePresence, motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import styles from "./style.module.scss"
 import { palette } from "styles/palette.generated"
+
+/**
+ * Texty upozornění na dopravu zdarma — položky `doprava.*` bloku `global.kosik`
+ * (poskytuje hlavní layout). Kolik zbývá a jestli je hranice splněná, počítá
+ * kód z ceníku dopravy; z CMS jsou jen slova kolem.
+ */
+const NUDGE_DEFAULTS = {
+  "doprava.stitek": "Doprava zdarma",
+  "doprava.nadpis": "Ještě kousek.",
+  /** Za větou následuje částka (z kódu). */
+  "doprava.text": "Do dopravy zdarma vám zbývá",
+  "doprava.splneno.nadpis": "Dopravu platíme my.",
+  "doprava.splneno.text": "Máte nakoupeno tolik, že dopravu platíme my.",
+  "doprava.kosik": "Otevřít košík",
+  "doprava.obchod": "Nakupovat dál",
+  "doprava.radek": "K dopravě zdarma zbývá",
+  "doprava.radek-splneno": "Doprava zdarma je připravená",
+} as const
+
+type NudgeLabel = keyof typeof NUDGE_DEFAULTS
+const nudgeText = (copy: CopyBlock | undefined, label: NudgeLabel) =>
+  itemText(copy, label, NUDGE_DEFAULTS[label])
 
 type FreeShippingPrice = StorePrice & {
   target_reached: boolean
@@ -131,6 +157,8 @@ function FreeShippingInline({
   cart: StoreCart
   price: FreeShippingPrice
 }) {
+  const copy = useCopyBlock("global.kosik")
+  const label: NudgeLabel = price.target_reached ? "doprava.radek-splneno" : "doprava.radek"
   return (
     <motion.aside
       className={styles.root}
@@ -140,11 +168,7 @@ function FreeShippingInline({
       aria-live="polite"
     >
       <div className={styles.inlineHeader}>
-        <span>
-          {price.target_reached
-            ? "Doprava zdarma je připravená"
-            : "K dopravě zdarma zbývá"}
-        </span>
+        <span {...editableItem(copy, label)}>{nudgeText(copy, label)}</span>
         {!price.target_reached && (
           <strong>
             {convertToLocale({
@@ -170,6 +194,8 @@ function FreeShippingPopup({
   price: FreeShippingPrice
 }) {
   const [isClosed, setIsClosed] = useState(false)
+  const copy = useCopyBlock("global.kosik")
+  const reached = price.target_reached
 
   useEffect(() => {
     if (!price.target_reached) return
@@ -189,7 +215,9 @@ function FreeShippingPopup({
           aria-live="polite"
         >
           <div className={styles.popupTop}>
-            <span className={styles.popupIndex}>Doprava zdarma</span>
+            <span className={styles.popupIndex} {...editableItem(copy, "doprava.stitek")}>
+              {nudgeText(copy, "doprava.stitek")}
+            </span>
             <motion.button
               type="button"
               className={styles.close}
@@ -215,13 +243,23 @@ function FreeShippingPopup({
               aria-hidden="true"
             />
             <div>
-              <h2>
-                {price.target_reached ? "Dopravu platíme my." : "Ještě kousek."}
+              <h2 {...editableItem(copy, reached ? "doprava.splneno.nadpis" : "doprava.nadpis")}>
+                {nudgeText(copy, reached ? "doprava.splneno.nadpis" : "doprava.nadpis")}
               </h2>
+              {/* Věta s částkou: z CMS slova, částka z kódu — proto věta ve
+                  vlastním spanu (anotace), mezera a `strong` za ní. */}
               <p>
-                {price.target_reached
-                  ? "Máte nakoupeno tolik, že dopravu platíme my."
-                  : "Do dopravy zdarma vám zbývá "}
+                {reached ? (
+                  <span {...editableItem(copy, "doprava.splneno.text")}>
+                    {nudgeText(copy, "doprava.splneno.text")}
+                  </span>
+                ) : (
+                  <>
+                    <span {...editableItem(copy, "doprava.text")}>
+                      {nudgeText(copy, "doprava.text")}
+                    </span>{" "}
+                  </>
+                )}
                 {!price.target_reached && (
                   <strong>
                     {convertToLocale({
@@ -242,13 +280,13 @@ function FreeShippingPopup({
           <div className={styles.popupActions}>
             <PremiumActionLink
               href="/cart"
-              text="Otevřít košík"
+              text={nudgeText(copy, "doprava.kosik")}
               className={styles.cartLink}
             />
             {!price.target_reached && (
               <PremiumActionLink
                 href="/store"
-                text="Nakupovat dál"
+                text={nudgeText(copy, "doprava.obchod")}
                 className={styles.storeLink}
               />
             )}

@@ -1,0 +1,30 @@
+@use "../../../../../../../styles/system/_shortcuts.scss" as *;
+
+/* Věta pod cenou (referenční cena § 12a, „Cena kusu s uvedenou vadou").
+   Písmo a barvu dává `.product__details__cta__price__main > p` v product
+   style.scss; tady jen to, že věta má vlastní řádek pod cenou a procentem —
+   řada je `flex-wrap` zarovnaná doprava, bez plné šířky by se věta vecpala
+   vedle ceny. */
+.line {
+  flex-basis: 100%;
+  text-align: right;
+}
+
+/* Srovnávací cena se NEPŘEŠKRTÁVÁ: je to údaj, ne „původní cena". */
+.amount {
+  white-space: nowrap;
+}
+
+.note {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+
+/* Odkaz na poučení o odstoupení ve větě u kusu s vadou. */
+.note a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}

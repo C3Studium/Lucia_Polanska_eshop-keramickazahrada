@@ -149,6 +149,63 @@ export const outstandingFor = (
     )
   )
 
+/**
+ * Doplatek zakázky podle kolekce z pokladny (`prepare-made-to-order-payment`
+ * zapisuje `made_to_order`, `original_cart_total`, `production_lines`):
+ * celá cena košíku − to, co se v pokladně účtovalo. Stejný výpočet jako
+ * `balance` v `initialize-merchant-order`, jen bez produkční objednávky —
+ * `null`, když objednávka zakázku z pokladny nemá.
+ */
+export const checkoutBalanceFromCollections = (
+  collections: any[] | null | undefined
+): number | null => {
+  const collection = (collections ?? []).find(
+    (candidate) =>
+      candidate?.metadata?.made_to_order &&
+      Array.isArray(candidate.metadata.production_lines) &&
+      candidate.metadata.production_lines.length > 0
+  )
+  if (!collection) {
+    return null
+  }
+  const original = toNumber(collection.metadata.original_cart_total)
+  if (!(original > 0)) {
+    return null
+  }
+  const charged = toNumber(collection.amount ?? collection.metadata.checkout_payment_amount)
+  return roundMoney(Math.max(0, original - charged))
+}
+
+/**
+ * Kolik objednávka dluží v okamžiku potvrzovacího e-mailu.
+ *
+ * Potvrzení i `initialize-merchant-order` visí na `order.placed` a běží
+ * souběžně: e-mail se často skládá dřív, než subscriber založí produkční
+ * objednávku a zálohu (změřeno v sandboxu — zakázka 2 479 Kč, zaplacená
+ * záloha 679 Kč, e-mail bez „Zbývá doplatit"). Proto:
+ * - bez produkční objednávky → doplatek z kolekce pokladny (běžná objednávka
+ *   ji nemá → 0);
+ * - produkční objednávka bez zálohy (subscriber je v půlce) → taky z kolekce,
+ *   jinak by `outstandingFor` bez zaplacené zálohy vrátil CELOU cenu;
+ * - jinak z modulu (`outstandingFor`) — zahrne i příplatek a doplatky.
+ */
+export const resolveOrderOutstanding = (input: {
+  productionOrder: any | null | undefined
+  requests: any[] | null | undefined
+  collections: any[] | null | undefined
+}): number => {
+  const fromCheckout = checkoutBalanceFromCollections(input.collections)
+  if (!input.productionOrder) {
+    return fromCheckout ?? 0
+  }
+  const requests = input.requests ?? []
+  const hasDeposit = requests.some((request) => request?.type === "deposit")
+  if (!hasDeposit && fromCheckout !== null) {
+    return fromCheckout
+  }
+  return outstandingFor(input.productionOrder, requests)
+}
+
 export type BalanceLinkResult = {
   /** `null` when nothing is owed. */
   payment_url: string | null

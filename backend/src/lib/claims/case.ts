@@ -434,7 +434,9 @@ export const planClaimCase = (input: ClaimCaseInput): ClaimCasePlan => {
     refund_deposit: refundable && Boolean(production) && depositLeft > MONEY_EPSILON,
     resolve: status === "approved" || status === "received",
     // §3: až po vyřízení, nebo když nezbývá nic zachyceného; u čisté zakázky
-    // objednávku ruší „Zrušit zakázku" (zálohu lze i ponechat).
+    // objednávku ruší „Zrušit zakázku" (zálohu lze i ponechat). Zakázka jen
+    // podle kategorie (bez výrobního příkazu, 14. 10. 2026) „Zrušit zakázku"
+    // nemá — tu ruší běžné „Zrušit objednávku".
     cancel_order:
       isWithdrawalKind(kind) &&
       decided &&
@@ -442,7 +444,7 @@ export const planClaimCase = (input: ClaimCaseInput): ClaimCasePlan => {
       status !== "cancelled" &&
       (status === "resolved" || money.remaining <= MONEY_EPSILON) &&
       !orderCancelled &&
-      !pureCommission,
+      !(pureCommission && production),
     // §12.4: po rozhodnutí (i po vyřízení — refundace zálohy žádost uzavře dřív,
     // než se zakázka zruší); zálohu musí mít buď vrácenou, nebo zvolit „nevracet".
     cancel_production:

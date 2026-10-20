@@ -2,6 +2,7 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { getMerchantIdentity } from "@lib/data/merchant"
+import { getPageCopy } from "@lib/data/site-copy"
 import { retrieveOrder } from "@lib/data/orders"
 import PaymentPending from "@modules/cart/components/payment-pending"
 
@@ -23,7 +24,9 @@ export default async function PaymentPendingPage(props: Props) {
 
   // The ComGate return URL carries the cart id; an order may or may not exist for it yet.
   const order = await retrieveOrder(id).catch(() => null)
-  const merchant = getMerchantIdentity()
+  const merchant = await getMerchantIdentity()
+  // Texty čekání na banku z bloku `kosik.platba-ceka`; výpadek CMS = texty z kódu.
+  const copy = await getPageCopy("kosik")
 
   return (
     <PaymentPending
@@ -31,6 +34,7 @@ export default async function PaymentPendingPage(props: Props) {
       orderNumber={order?.display_id ? `#${order.display_id}` : undefined}
       supportEmail={merchant.email}
       supportPhone={merchant.phone}
+      block={copy["kosik.platba-ceka"]}
     />
   )
 }

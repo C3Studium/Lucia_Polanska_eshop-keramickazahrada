@@ -26,8 +26,16 @@ export type StoredConsent = ConsentChoice & {
 
 export const CONSENT_COOKIE = "kz-cookie-consent"
 
-/** Bump when the categories change; a stored decision from an older set is re-asked, not guessed. */
-export const CONSENT_VERSION = 1
+/**
+ * Bump when the categories change; a stored decision from an older set is re-asked, not guessed.
+ *
+ * 2 (14. 10. 2026): kategorie teď říkají konkrétně, co pod nimi běží — analytické = Google
+ * Analytics 4, marketingové = mapa Google bez kliknutí a reklamní signály Google. Souhlas daný
+ * pod verzí 1 („anonymní statistiky", „obsah ze sociálních sítí") se na tohle nevztahoval,
+ * a lišta tehdy navíc nabízela „Přijmout jen důležité", které zapínalo preferenční cookies.
+ * Proto se ptáme všech znovu.
+ */
+export const CONSENT_VERSION = 2
 
 /** Six months, matching the retention stated on /cookies. */
 export const CONSENT_MAX_AGE_SECONDS = 60 * 60 * 24 * 182
@@ -38,21 +46,14 @@ export const CONSENT_CHANGE_EVENT = "kz:cookie-consent"
 /** Fired on `window` to reopen the settings dialog — see {@link openCookiePreferences}. */
 export const CONSENT_OPEN_EVENT = "kz:cookie-preferences"
 
-/** "Zamítnout" — nothing beyond what the shop cannot work without. */
+/** „Odmítnout vše" — nothing beyond what the shop cannot work without. */
 export const DENY_ALL: ConsentChoice = {
   preferences: false,
   analytics: false,
   marketing: false,
 }
 
-/** "Přijmout jen důležité" — the shop may remember the visitor's own choices, nothing is measured. */
-export const ESSENTIAL_ONLY: ConsentChoice = {
-  preferences: true,
-  analytics: false,
-  marketing: false,
-}
-
-/** "Přijmout vše". */
+/** „Přijmout vše". */
 export const ACCEPT_ALL: ConsentChoice = {
   preferences: true,
   analytics: true,
@@ -60,20 +61,20 @@ export const ACCEPT_ALL: ConsentChoice = {
 }
 
 /**
- * The stored decision, or `null` when the visitor has not decided (or decided under an older set of
- * categories, or the browser refuses cookies — all three mean "ask").
+ * Hodnota cookie → rozhodnutí. Čistá funkce (bez `document`), aby šla otestovat
+ * (`modules/analytics/consent-mode.test.mjs`).
+ *
+ * `null` = „zeptat se": nic uloženého, rozhodnutí ze starší sady kategorií, poškozená hodnota.
+ * Cokoli jiného než doslovné `true` se čte jako „ne" — souhlas se nedomýšlí.
  */
-export function readConsent(): StoredConsent | null {
-  if (typeof document === "undefined") return null
-
-  const raw = readCookie(CONSENT_COOKIE)
-
+export function parseConsent(raw: string | null | undefined): StoredConsent | null {
   if (!raw) return null
 
   try {
-    const parsed = JSON.parse(decodeURIComponent(raw)) as Partial<StoredConsent>
+    const parsed = JSON.parse(decodeURIComponent(raw)) as Partial<StoredConsent> | null
 
-    if (parsed?.version !== CONSENT_VERSION) return null
+    if (!parsed || typeof parsed !== "object") return null
+    if (parsed.version !== CONSENT_VERSION) return null
 
     return {
       version: CONSENT_VERSION,
@@ -87,6 +88,29 @@ export function readConsent(): StoredConsent | null {
     // A malformed cookie is not a decision.
     return null
   }
+}
+
+/** Rozhodnutí → hodnota cookie (protějšek {@link parseConsent}). */
+export function serializeConsent(stored: StoredConsent): string {
+  return encodeURIComponent(
+    JSON.stringify({
+      preferences: stored.preferences === true,
+      analytics: stored.analytics === true,
+      marketing: stored.marketing === true,
+      version: stored.version,
+      decidedAt: stored.decidedAt,
+    })
+  )
+}
+
+/**
+ * The stored decision, or `null` when the visitor has not decided (or decided under an older set of
+ * categories, or the browser refuses cookies — all three mean "ask").
+ */
+export function readConsent(): StoredConsent | null {
+  if (typeof document === "undefined") return null
+
+  return parseConsent(readCookie(CONSENT_COOKIE))
 }
 
 /** The current choice, with the deny-by-default applied when nothing is stored. */
@@ -125,9 +149,11 @@ export function saveConsent(choice: ConsentChoice): StoredConsent {
     const secure = window.location.protocol === "https:" ? "; Secure" : ""
 
     document.cookie =
-      `${CONSENT_COOKIE}=${encodeURIComponent(JSON.stringify(stored))}` +
+      `${CONSENT_COOKIE}=${serializeConsent(stored)}` +
       `; Path=/; Max-Age=${CONSENT_MAX_AGE_SECONDS}; SameSite=Lax${secure}`
 
+    // Na tuhle událost čeká analytika (`modules/analytics`) — souhlas i jeho odvolání se
+    // projeví hned, bez znovunačtení stránky.
     window.dispatchEvent(
       new CustomEvent<StoredConsent>(CONSENT_CHANGE_EVENT, { detail: stored })
     )
@@ -136,6 +162,15 @@ export function saveConsent(choice: ConsentChoice): StoredConsent {
   return stored
 }
 
+/*
+ * Kdo umí otevřít nastavení. Lišta (`modules/layout/CookieNotice`) je připojená jednou
+ * v kořenovém layoutu, takže na každé stránce s patičkou — i v pokladně a v rychlém nákupu.
+ * Kdyby ale tlačítko „Nastavení cookies" stisklo dřív, než se lišta připojí, žádost se
+ * neztratí: počká a lišta ji vyřídí hned po připojení.
+ */
+let preferencesHosts = 0
+let pendingOpen = false
+
 /**
  * Reopen the settings dialog from anywhere — the footer link, the cookies page. GDPR requires
  * consent to be as easy to withdraw as it was to give, so this has to exist outside the banner.
@@ -143,7 +178,32 @@ export function saveConsent(choice: ConsentChoice): StoredConsent {
 export function openCookiePreferences(): void {
   if (typeof window === "undefined") return
 
+  if (preferencesHosts === 0) {
+    pendingOpen = true
+  }
+
   window.dispatchEvent(new Event(CONSENT_OPEN_EVENT))
+}
+
+/**
+ * Připojí toho, kdo dialog nastavení skutečně otevírá (lišta). Vrací odpojení.
+ * Pokud už na otevření někdo čekal, `open` se zavolá hned.
+ */
+export function registerPreferencesHost(open: () => void): () => void {
+  if (typeof window === "undefined") return () => {}
+
+  window.addEventListener(CONSENT_OPEN_EVENT, open)
+  preferencesHosts += 1
+
+  if (pendingOpen) {
+    pendingOpen = false
+    open()
+  }
+
+  return () => {
+    window.removeEventListener(CONSENT_OPEN_EVENT, open)
+    preferencesHosts = Math.max(0, preferencesHosts - 1)
+  }
 }
 
 /** Subscribe to decision changes; returns the unsubscribe. */

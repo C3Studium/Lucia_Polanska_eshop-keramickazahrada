@@ -30,6 +30,13 @@
   font-weight: 400;
 }
 
+/* Odkazy na znění OP a jeho PDF (řádek „Obchodní podmínky"). */
+.accountOrderConfirmation a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: .2em;
+}
+
 .accountOrderMetaGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

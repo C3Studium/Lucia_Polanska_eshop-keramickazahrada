@@ -8,7 +8,7 @@ import {
   readerFor,
   stringValue,
 } from "@c3studium/valecms/server/site"
-import { BUTTON_PREFIX } from "@lib/util/site-copy"
+import { BUTTON_PREFIX, itemFieldPath, itemValue, paragraphs } from "@lib/util/site-copy"
 import type { CopyBlocks, CopyButton, CopyFile, CopyPage, FaqCategory, FaqQuestion } from "@lib/util/site-copy"
 
 /**
@@ -312,4 +312,88 @@ export const getFiles = async (page: string): Promise<CopyFile[]> => {
     console.error(`[cms] Soubory pro "${page}" se nepodařilo načíst.`, error)
     return []
   }
+}
+
+/* ------------------------------------------------------------------- 404 -- */
+
+/**
+ * Texty stránky „Stránka nenalezena" — blok `global.nenalezeno`.
+ *
+ * `not-found.tsx` je v aplikaci pětkrát (kořen, hlavní web, košík, pokladna,
+ * rychlý nákup) a každý má jiné rozvržení, ale tatáž slova. Proto jedna
+ * čtečka se zálohami tady, ne pět kopií vět v pěti souborech: nadpis
+ * (`title`), věta (`body`) a dva odkazy jako položky klíčované popiskem —
+ * domů (`odkaz.domu`) a z košíku do obchodu (`odkaz.obchod`). Položky, ne
+ * pozice v `accent`: CMS z něj prázdné vyhazuje a odkazy by si vyměnily text.
+ * `doc` je `id` bloku a `fields` cesty k polím pro anotace (mimo náhled null).
+ */
+export const getNotFoundCopy = async () => {
+  const block = (await getPageCopy("global"))["global.nenalezeno"]
+  return {
+    doc: block?.id ?? null,
+    title: block?.title?.trim() || "Stránka nenalezena",
+    message:
+      block?.bodyText?.trim() ||
+      "Tuhle stránku jsme nenašli. Možná se přesunula, nebo tu nikdy nebyla.",
+    home: itemValue(block, "odkaz.domu")?.trim() || "Zpět na úvodní stránku",
+    store: itemValue(block, "odkaz.obchod")?.trim() || "Zpět do obchodu",
+    fields: {
+      home: itemFieldPath(block, "odkaz.domu"),
+      store: itemFieldPath(block, "odkaz.obchod"),
+    },
+  }
+}
+
+/* ------------------------------------------------------------------- SEO -- */
+
+/*
+ * Značka, kterou ke každému titulku přidá kořenový layout (`template`
+ * „%s | Keramická zahrada"). Ve Studiu ji někdo napíše na konec, někdo na
+ * začátek („Keramická zahrada | Obchod") — oboje by se zdvojilo, takže se
+ * z textu z CMS uřízne z kterékoli strany, s kterýmkoli běžným oddělovačem.
+ */
+const BRAND = "Keramická zahrada"
+const BRAND_SEP = "[|·–—-]"
+const BRAND_LEADING = new RegExp(`^\\s*${BRAND}\\s*${BRAND_SEP}\\s*`, "iu")
+const BRAND_TRAILING = new RegExp(`\\s*${BRAND_SEP}\\s*${BRAND}\\s*$`, "iu")
+const BRAND_ONLY = new RegExp(`^\\s*${BRAND}\\s*$`, "iu")
+
+/**
+ * Titulek a popis stránky pro vyhledávače — z bloku `<stránka>.seo`.
+ *
+ * `title` bloku je titulek stránky, první odstavec `body` popis pod ním ve
+ * výsledcích hledání. Prázdný blok (nebo výpadek CMS) = hodnoty z kódu, které
+ * stránka předá jako `fallback` — tytéž, které tu dřív stály natvrdo.
+ *
+ * Kořenový layout k titulku sám připojí „| Keramická zahrada" (`template`).
+ * Kdo značku ve Studiu napíše taky (na začátek nebo na konec), dostal by ji
+ * dvakrát, takže se z textu z CMS uřízne (BRAND_LEADING / BRAND_TRAILING).
+ * Titulek, který je JEN značka, jde jako `absolute` — jinak by z něj bylo
+ * „Keramická zahrada | Keramická zahrada". Úvodní stránka je značka sama
+ * a jde jako `absolute` vždycky — tam se píše celý titulek.
+ *
+ * Volá se z `generateMetadata`, tedy zvlášť od vykreslení stránky — jedno
+ * čtení CMS navíc na požadavek. Za to je SEO text tam, kde ho Lucie upraví,
+ * a ne v kódu.
+ */
+export const getPageSeo = async (
+  page: Exclude<CopyPage, "global">,
+  fallback: { title: string; description: string; absolute?: boolean }
+): Promise<{ title: string | { absolute: string }; description: string }> => {
+  const block = (await getPageCopy(page))[`${page}.seo`]
+
+  const cmsTitle = block?.title?.trim() || ""
+  const description =
+    paragraphs(block)[0]?.trim() || block?.bodyText?.trim() || fallback.description
+
+  if (fallback.absolute) {
+    return { title: { absolute: cmsTitle || fallback.title }, description }
+  }
+  if (BRAND_ONLY.test(cmsTitle)) {
+    return { title: { absolute: BRAND }, description }
+  }
+
+  const title =
+    cmsTitle.replace(BRAND_LEADING, "").replace(BRAND_TRAILING, "").trim() || fallback.title
+  return { title, description }
 }

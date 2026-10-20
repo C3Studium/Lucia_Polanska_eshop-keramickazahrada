@@ -52,6 +52,9 @@ type Review = {
   first_name?: string | null;
   last_name?: string | null;
   customer_id?: string | null;
+  /** Server ověřil, že recenzent výrobek koupil (objednávka účtu nebo
+      ověřeného e-mailu). Jen podle toho se štítek ukazuje i v e-shopu. */
+  verified_purchase?: boolean | null;
   product_id: string;
   product?: { title?: string | null; thumbnail?: string | null } | null;
 };
@@ -213,7 +216,13 @@ const RecenzeInner = () => {
     queryKey: ["reviews", active.status],
     queryFn: () =>
       sdk.client.fetch("/admin/reviews", {
-        query: { status: active.status, limit: 50, order: "-created_at" },
+        query: {
+          status: active.status,
+          limit: 50,
+          order: "-created_at",
+          // `+` přidá pole k výchozím z middlewaru, nic z nich neubere.
+          fields: "+verified_purchase",
+        },
       }),
     refetchOnWindowFocus: true,
   });
@@ -285,9 +294,16 @@ const RecenzeInner = () => {
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <Stars rating={review.rating} />
-                  {review.customer_id && (
+                  {/* Dřív stačilo přihlášení (`customer_id`) — jenže recenze
+                      bez přihlášení nejde napsat vůbec, takže štítek měla
+                      každá. Teď jen ověřený nákup, stejně jako v e-shopu. */}
+                  {review.verified_purchase ? (
                     <Badge size="2xsmall" color="green">
                       Ověřený nákup
+                    </Badge>
+                  ) : (
+                    <Badge size="2xsmall" color="grey">
+                      Nákup neověřen
                     </Badge>
                   )}
                 </div>

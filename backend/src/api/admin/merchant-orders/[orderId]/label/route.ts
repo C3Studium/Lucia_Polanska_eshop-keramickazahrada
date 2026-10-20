@@ -109,6 +109,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       "fulfillments.id",
       "fulfillments.canceled_at",
       "fulfillments.data",
+      "fulfillments.requires_shipping",
       "fulfillments.labels.url",
       "fulfillments.labels.tracking_number",
     ],
@@ -239,9 +240,14 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
 
-  const fulfillment = (order.fulfillments || []).find(
-    (item: any) => !item?.canceled_at
+  // Plnění se štítkem, jinak první se zbožím — plnění bez dopravy (balné
+  // z nativní stránky) štítek nemá. Viz POST níž.
+  const liveFulfillments = (order.fulfillments || []).filter(
+    (item: any) => !item?.canceled_at && item?.requires_shipping !== false
   )
+  const fulfillment =
+    liveFulfillments.find((item: any) => typeof item?.data?.label_pdf_base64 === "string") ??
+    liveFulfillments[0]
 
   if (!fulfillment) {
     res.status(200).json(
@@ -456,13 +462,19 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
       "fulfillments.canceled_at",
       "fulfillments.shipped_at",
       "fulfillments.data",
+      "fulfillments.requires_shipping",
     ],
     filters: { id: req.params.orderId },
   })
   const afterOrder = afterOrders[0] as any
-  const fulfillment = (afterOrder?.fulfillments || []).find(
-    (item: any) => !item?.canceled_at
+  // Štítek nese plnění se zbožím. Plnění bez dopravy (balné z nativní stránky)
+  // žádný štítek nemá — kdyby se vzalo, hlásilo by „štítek nevznikl".
+  const liveFulfillments = (afterOrder?.fulfillments || []).filter(
+    (item: any) => !item?.canceled_at && item?.requires_shipping !== false
   )
+  const fulfillment =
+    liveFulfillments.find((item: any) => typeof item?.data?.label_pdf_base64 === "string") ??
+    liveFulfillments[0]
   const pdfBase64 =
     typeof fulfillment?.data?.label_pdf_base64 === "string" &&
     fulfillment.data.label_pdf_base64

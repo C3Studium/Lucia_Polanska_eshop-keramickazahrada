@@ -6,16 +6,30 @@ import { StoreProductReview } from "../../../../types/global"
 // import { Button } from "@medusajs/ui"
 import { useState, useEffect } from "react"
 import ProductReviewsForm from "./form"
+import { REVIEW_POLICY_TEXT } from "./copy"
 import styles from "./style.module.scss"
+
+/** Recenze z backendu nesou i `verified_purchase` (server ho počítá podle
+    objednávek); sdílený typ v `types/global` ho zatím nemá. */
+type ReviewWithVerification = StoreProductReview & {
+  verified_purchase?: boolean | null
+}
 
 import { motion } from "framer-motion"
 import { withCount } from "@lib/util/plurals"
+import type { CopyBlock } from "@lib/util/site-copy"
 
 type ProductReviewsProps = {
   productId: string
   initialReviews: StoreProductReview[]
   initialRating: number
   initialCount: number
+  /**
+   * Blok `global.produkt` — jde jen do pozvánky k recenzi ve formuláři
+   * (`recenze.*`). Text o ověřování recenzí (`REVIEW_POLICY_TEXT`) a počty
+   * zůstávají v kódu.
+   */
+  texts?: CopyBlock
 }
 
 /*
@@ -106,6 +120,7 @@ export default function ProductReviews({
   initialReviews,
   initialRating,
   initialCount,
+  texts,
 }: ProductReviewsProps) {
   const pageSize = 4
   const [visibleCount, setVisibleCount] = useState(pageSize)
@@ -237,7 +252,12 @@ export default function ProductReviews({
       >
         <div className={styles.reviewMeta}>
           <span>{String(index + 1).padStart(2, "0")} · zkušenost</span>
-          <span>ověřený nákup</span>
+          {/* Dřív tu „ověřený nákup" stálo u KAŽDÉ recenze, i když se nic
+              neověřovalo (§ 5 ZOS — klamavé). Teď jen u recenze, kde server
+              našel objednávku výrobku (`verified_purchase`). */}
+          {(review as ReviewWithVerification).verified_purchase === true && (
+            <span>Ověřený nákup</span>
+          )}
         </div>
         <div className={styles.reviewHeader}>
           {review?.title ? <strong>{review.title}</strong> : null}
@@ -275,7 +295,7 @@ export default function ProductReviews({
         data-scroll-section
         data-scroll-label="Recenze"
       >
-        <ProductReviewsForm productId={productId} previewMode={false} />
+        <ProductReviewsForm productId={productId} previewMode={false} texts={texts} />
       </div>
     )
   }
@@ -314,6 +334,7 @@ export default function ProductReviews({
               {withCount(displayedCount, "recenze", "recenze", "recenzí")}
             </span>
           </div>
+          <p className={styles.policy}>{REVIEW_POLICY_TEXT}</p>
         </div>
 
         <div className={styles.reviewsGrid}>
@@ -347,7 +368,7 @@ export default function ProductReviews({
         )}
       </div>
 
-      <ProductReviewsForm productId={productId} previewMode={false} />
+      <ProductReviewsForm productId={productId} previewMode={false} texts={texts} />
     </div>
   )
 }

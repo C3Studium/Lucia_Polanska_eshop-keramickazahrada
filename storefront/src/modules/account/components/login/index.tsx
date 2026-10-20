@@ -10,15 +10,36 @@ import { motion } from "framer-motion"
 
 import s from "./login.module.scss"
 import { heroBeat, heroReveal } from "@lib/motion-tokens"
+import { itemText } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
 
 
 type Props = {
   setCurrentView: (view: LOGIN_VIEW) => void
   redirectTo?: string
+  /** Blok `ucet.formular` — položky `prihlaseni.*` (viz LOGIN_DEFAULTS). */
+  copy?: CopyBlock
 }
 
-const Login = ({ setCurrentView, redirectTo }: Props) => {
+/**
+ * Věty formuláře přihlášení — výchozí texty položek `prihlaseni.*` bloku
+ * `ucet.formular`. Popisky polí a chybové hlášky zůstávají v kódu.
+ */
+const LOGIN_DEFAULTS = {
+  "prihlaseni.nadpis": "Vítejte zpět",
+  "prihlaseni.text": "Vaše objednávky, adresy i uložené kousky na jednom místě.",
+  "prihlaseni.tlacitko": "Přihlásit se",
+  "prihlaseni.bez-uctu": "Ještě nemáte účet?",
+  "prihlaseni.zalozit": "Založte si účet",
+  "prihlaseni.zapomenute": "Zapomněli jste heslo?",
+} as const
+
+const Login = ({ setCurrentView, redirectTo, copy }: Props) => {
   const [message, formAction] = useActionState(login, null)
+  const text = (label: keyof typeof LOGIN_DEFAULTS) =>
+    itemText(copy, label, LOGIN_DEFAULTS[label])
+  const edit = (label: keyof typeof LOGIN_DEFAULTS) => editableItem(copy, label)
 
   return (
     <div className={s.root} data-testid="login-page">
@@ -28,8 +49,9 @@ const Login = ({ setCurrentView, redirectTo }: Props) => {
         initial="hidden"
         animate="show"
         custom={heroBeat.eyebrow}
+        {...edit("prihlaseni.nadpis")}
       >
-        Vítejte zpět
+        {text("prihlaseni.nadpis")}
       </motion.h1>
       <motion.p
         className={s.desc}
@@ -37,8 +59,9 @@ const Login = ({ setCurrentView, redirectTo }: Props) => {
         initial="hidden"
         animate="show"
         custom={heroBeat.heading}
+        {...edit("prihlaseni.text")}
       >
-        Vaše objednávky, adresy i uložené kousky na jednom místě.
+        {text("prihlaseni.text")}
       </motion.p>
       <motion.form
         className={s.form}
@@ -75,26 +98,31 @@ const Login = ({ setCurrentView, redirectTo }: Props) => {
         <ErrorMessage error={message} data-testid="login-error-message" />
         <PremiumActionButton
           type="submit"
-          text="Přihlásit se"
+          text={text("prihlaseni.tlacitko")}
           className={s.submit}
           data-testid="sign-in-button"
         />
       </motion.form>
       <span className={s.note}>
-        Ještě nemáte účet?{" "}
+        <span {...edit("prihlaseni.bez-uctu")}>{text("prihlaseni.bez-uctu")}</span>{" "}
         <button
           onClick={() => setCurrentView(LOGIN_VIEW.REGISTER)}
           className={s.underline}
           data-testid="register-button"
+          {...edit("prihlaseni.zalozit")}
         >
-          Založte si účet
+          {text("prihlaseni.zalozit")}
         </button>
         .
       </span>
       <div className={s.forgotWrap}>
         {/* Was a <button> wrapping a link — two nested controls, announced as neither. */}
-        <LocalizedClientLink href="/forgot-password" className={s.underline}>
-          Zapomněli jste heslo?
+        <LocalizedClientLink
+          href="/forgot-password"
+          className={s.underline}
+          {...edit("prihlaseni.zapomenute")}
+        >
+          {text("prihlaseni.zapomenute")}
         </LocalizedClientLink>
       </div>
     </div>

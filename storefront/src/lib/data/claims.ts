@@ -2,6 +2,7 @@
 
 import { sdk } from "@lib/config"
 import type {
+  ClaimConfirmation,
   ClaimDamageCause,
   ClaimItemInput,
   ClaimKind,
@@ -48,12 +49,15 @@ export type SubmitClaimInput = {
   /** Fotky vady (base64, max 6) — jen u reklamace. */
   photos?: CommissionUpload[]
   /**
-   * Vybrané položky (§11.1): u `reklamace` i `vraceni` povinné (≥ 1), u
-   * `odstoupeni` se neposílají. Server ověří, že id patří objednávce a
-   * `quantity ≤ objednané`. U balíčku (§13.5) může položka nést `components`
-   * — jen zaškrtnuté komponenty; bez nich = celý balíček.
+   * Vybrané položky (§11.1): u `reklamace` i `vraceni` povinné (≥ 1); u
+   * `odstoupeni` zboží, od jehož koupě se odstupuje (zakázku server vyjme
+   * sám). Server ověří, že id patří objednávce a `quantity ≤ objednané`.
+   * U balíčku (§13.5) může položka nést `components` — jen zaškrtnuté
+   * komponenty; bez nich = celý balíček.
    */
   items?: ClaimItemInput[]
+  /** Odstoupení: jméno z formuláře (předvyplněné, lze opravit). */
+  customer_name?: string
   /**
    * `"carrier"` = poškozeno přepravou (§11.3), `"damaged"` = poškozený kus
    * (§13.7) → server u obou vyžaduje ≥ 1 fotku. Vada/nefunkčnost = neposílá se.
@@ -75,6 +79,13 @@ export type SubmitClaimResult = {
    * a objednávku zrušil. Storefront pak neříká „posoudíme", ale „zrušeno".
    */
   auto_cancelled?: boolean
+  /** Okamžik odeslání podle serveru (ISO). */
+  submitted_at?: string
+  /**
+   * Obsah potvrzení s datem a časem odeslání — totéž, co odešlo e-mailem
+   * (§ 1830a OZ). Starší backend ho neposílá.
+   */
+  confirmation?: ClaimConfirmation
 }
 
 export async function submitClaim(
@@ -99,6 +110,9 @@ export async function submitClaim(
           ...(input.damage_cause ? { damage_cause: input.damage_cause } : {}),
           ...(input.refund_account !== undefined
             ? { refund_account: input.refund_account.trim() }
+            : {}),
+          ...(input.customer_name?.trim()
+            ? { customer_name: input.customer_name.trim() }
             : {}),
         },
       }

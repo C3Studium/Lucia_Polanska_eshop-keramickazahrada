@@ -149,7 +149,8 @@ describe("resolveClaimLineItems — pravidla výběru (§11.1)", () => {
     }
   })
 
-  it("odstoupení: výběr se ignoruje — celá smlouva", () => {
+  // Výběr u odstoupení řeší resolveWithdrawalItems (claims-withdrawal.unit.spec).
+  it("odstoupení: tady null — výběr zboží řeší resolveWithdrawalItems", () => {
     expect(
       resolveClaimLineItems(order as any, "odstoupeni", [{ id: "li_misa", quantity: 1 }])
     ).toEqual({ ok: true, line_items: null })
@@ -247,7 +248,7 @@ describe("checkClaimRules — položky a poškození přepravou v intake", () =>
     if (!tooMany.ok) expect(tooMany.message).toMatch(/vyšší počet kusů/)
   })
 
-  it("poškozeno přepravou fotku nevyžaduje (zákazník reklamuje na poště — 12. 10. 2026)", () => {
+  it("poškozeno přepravou fotku nevyžaduje (fotky vítány, nejsou podmínkou — 14. 10. 2026)", () => {
     const base = {
       line_items: [{ id: "li_misa", quantity: 1 }],
       damage_cause: "carrier",
@@ -371,8 +372,12 @@ describe("carrierDamageDescription — e-mail majitelce (§11.3)", () => {
     expect(text).toContain("DR1234567890X")
     expect(text).toContain(CP_CLAIM_FORM_URL)
     expect(text).toMatch(/2 pracovních dnů/)
-    // 12. 10. 2026, Matěj: u ČP reklamuje příjemce, majitelka to jen ví.
-    expect(text).toMatch(/podává příjemce/)
+    // 14. 10. 2026 (právní audit §4.1): škodu u ČP řeší majitelka; zákazníkova
+    // reklamace na lhůtě pošty nezávisí, součinnost je jen prosba.
+    expect(text).toMatch(/řešíte vy/)
+    expect(text).toMatch(/nepodmiňuje/)
+    expect(text).toMatch(/prosbu, ne podmínku/)
+    expect(text).not.toMatch(/podává příjemce/)
     expect(text).toContain("Mísa · 1 ks · 1 305 Kč")
     expect(text).toContain("https://cdn/1.jpg")
     expect(text).toContain("Rozbitá mísa")
@@ -386,6 +391,6 @@ describe("carrierDamageDescription — e-mail majitelce (§11.3)", () => {
       reason: "x",
     })
     expect(text).toMatch(/nepodařilo dohledat/)
-    expect(text).toMatch(/Fotky se nepodařilo uložit/)
+    expect(text).toMatch(/fotky nepřiložil/)
   })
 })

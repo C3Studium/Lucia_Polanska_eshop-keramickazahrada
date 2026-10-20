@@ -16,7 +16,15 @@ import {
 import { retrieveCustomer } from "./customer"
 import { getRegion } from "./regions"
 import { toCzechErrorMessage } from "@lib/util/error-messages"
-import { isMadeToOrderLine } from "@lib/util/commission"
+import {
+  isMadeToOrderLine,
+  productionLeadTimeLabel,
+  type ProductionLeadTime,
+} from "@lib/util/commission"
+import { getProductionProfile } from "./made-to-order"
+import type { ProductionProfile } from "@lib/util/made-to-order"
+import { consentMetadataPatch } from "@modules/checkout/components/legal-consent/consent-metadata"
+import { getPublishedLegalRegistry } from "./legal-registry"
 import {
   normalizujDic,
   normalizujIco,
@@ -627,6 +635,90 @@ export async function mergeCartMetadata(
     { metadata: { ...((fresh?.metadata as Record<string, unknown>) ?? {}), ...patch } },
     id
   )
+}
+
+/**
+ * Zapíše souhlas s obchodními podmínkami (a u zakázky poučení o vyloučení
+ * odstoupení) na košík — těsně před odesláním objednávky / založením platby,
+ * na každé platební cestě (ComGate, dobírka, odběr, testovací, express).
+ *
+ * Verze dokumentů se berou z registru TADY, na serveru — viz
+ * `consent-metadata.ts`. Jestli košík zakázku obsahuje, rozhoduje taky server
+ * z čerstvého košíku, ne prohlížeč: zakázka bez potvrzeného poučení se
+ * nezapíše jako souhlas a objednávka se neodešle.
+ */
+export async function recordCheckoutConsent(input: {
+  cartId?: string
+  /** Kdy zákazník zaškrtl souhlas (ISO z prohlížeče). */
+  clientAcceptedAt?: string
+  /** Zaškrtl zákazník poučení u zakázkové výroby? */
+  madeToOrderAck: boolean
+}): Promise<void> {
+  const id = input.cartId || (await getCartId())
+  if (!id) {
+    throw new Error("Košík se nepodařilo najít.")
+  }
+  const fresh = await retrieveCart(id)
+  if (!fresh) {
+    throw new Error("Košík se nepodařilo najít.")
+  }
+
+  const hasMadeToOrderLine = ((fresh.items ?? []) as any[]).some(isMadeToOrderLine)
+  if (hasMadeToOrderLine && !input.madeToOrderAck) {
+    throw new Error(
+      "U zboží vyrobeného na zakázku prosím potvrďte, že ho nelze vrátit ve 14denní lhůtě."
+    )
+  }
+
+  const patch = consentMetadataPatch({
+    // Verze z publikovaného sloučeného registru (repo + Studio, bez konceptů).
+    registry: await getPublishedLegalRegistry(),
+    now: new Date(),
+    clientAcceptedAt: input.clientAcceptedAt,
+    // I potvrzení, které prohlížeč poslal navíc (zakázku poznal z profilu
+    // výroby), je důkaz poučení — neškodí ho uložit.
+    madeToOrder: hasMadeToOrderLine || input.madeToOrderAck,
+  })
+
+  await updateCart(
+    {
+      metadata: {
+        ...((fresh.metadata as Record<string, unknown>) ?? {}),
+        ...patch,
+      },
+    },
+    id
+  )
+}
+
+/**
+ * Výrobní lhůta zakázkových položek pro předsmluvní souhrn („hotovo zhruba za
+ * 14–42 dní"). Čte veřejný profil výroby produktu (týž, co ukazuje stránka
+ * produktu) — přepis lhůty u varianty má přednost. `label: null` = profil
+ * lhůtu nemá (nebo produkt profil nemá, zakázka je jen kategorií).
+ */
+export async function listProductionLeadTimes(
+  lines: { id: string; product_id?: string | null; variant_id?: string | null; title?: string | null }[]
+): Promise<ProductionLeadTime[]> {
+  const productIds = Array.from(
+    new Set(lines.map((line) => line.product_id).filter((id): id is string => Boolean(id)))
+  ).slice(0, 20)
+
+  const profiles = new Map<string, ProductionProfile | null>()
+  await Promise.all(
+    productIds.map(async (productId) => {
+      profiles.set(productId, await getProductionProfile(productId).catch(() => null))
+    })
+  )
+
+  return lines.map((line) => ({
+    line_id: line.id,
+    title: line.title ?? "",
+    label: productionLeadTimeLabel(
+      line.product_id ? profiles.get(line.product_id) ?? null : null,
+      line.variant_id
+    ),
+  }))
 }
 
 /**

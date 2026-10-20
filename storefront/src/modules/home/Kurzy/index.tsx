@@ -1,8 +1,10 @@
 "use client"
 
+import { useStudioSurface } from "@c3studium/valecms/edit"
 import { useCallback, useRef, useState } from "react"
 
 import type { CourseTerm } from "@lib/data/courses"
+import type { LegalFacts } from "@lib/legal/facts"
 import Rezervace from "@modules/kurzy/Rezervace"
 import RezervaceModal from "@modules/kurzy/RezervaceModal"
 
@@ -18,10 +20,13 @@ import type { CopyBlocks } from "@lib/util/site-copy"
 export default function Kurzy({
   copy,
   terms,
+  legalFacts,
 }: {
   /** Bloky stránky `kurzy` z CMS; termíny níž jsou z Medusy. */
   copy: CopyBlocks
   terms: CourseTerm[]
+  /** Právní údaje (storno podmínky, e-mail) pro rezervaci — `getLegalFacts()` na serveru. */
+  legalFacts?: LegalFacts
 }) {
   const [modalOpen, setModalOpen] = useState(false)
   const triggerRef = useRef<HTMLElement | null>(null)
@@ -39,6 +44,13 @@ export default function Kurzy({
     triggerRef.current?.focus()
   }, [])
 
+  /*
+   * Povrch „Rezervace kurzu — okno" ve Studiu (`valecms.config.ts`,
+   * `surfaces`): okno se v rámu otevře samo, texty v něm jdou upravit
+   * klikáním. Mimo rám Studia vždycky `false`.
+   */
+  const studioOpen = useStudioSurface("rezervace-okno")
+
   return (
     <main className="kurzy">
       <Intro
@@ -51,11 +63,17 @@ export default function Kurzy({
         terms={terms}
         onReserveAction={openModal}
         block={copy["kurzy.rezervace"]}
+        okno={copy["kurzy.rezervace-okno"]}
       />
+      {/* Nadpis okna je týž blok jako nadpis sekce s termíny; ostatní texty
+          okna mají vlastní blok `kurzy.rezervace-okno`. */}
       <RezervaceModal
-        open={modalOpen}
+        open={modalOpen || studioOpen}
         onCloseAction={closeModal}
         initialTerms={terms}
+        legalFacts={legalFacts}
+        heading={copy["kurzy.rezervace"]}
+        block={copy["kurzy.rezervace-okno"]}
       />
     </main>
   )

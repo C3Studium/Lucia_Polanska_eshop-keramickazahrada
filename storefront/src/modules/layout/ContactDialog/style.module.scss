@@ -614,6 +614,143 @@
   border: 0;
 }
 
+/*
+ * Mapa Google až na kliknutí (map-embed.tsx). Do té doby statická plocha na místě mapy —
+ * bez obrázku zvenku, jen CSS mřížka připomínající mapu, aby se nestáhlo nic z cizího serveru.
+ *
+ * Sedí absolutně přes celý rámeček stejně jako iframe, takže výšku dál určuje okolní
+ * rozvržení (na tabletu ji dává kontaktní karta vedle). Je to kontejner na výšku: když je
+ * plochy málo, odpadne špendlík a poznámka, tlačítko a odkaz zůstanou vždycky.
+ *
+ * Krém #f6f1e6 na --ink-06 je přes 12:1; tlačítko má inkoust na krému (14.8:1) a 48px výšku
+ * jako ostatní akce webu.
+ */
+.mapPlaceholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0.75rem, 2vh, 1.75rem) clamp(0.875rem, 1.6vw, 1.5rem);
+  background:
+    linear-gradient(rgb(var(--white-rgb) / .06) 1px, transparent 1px) 0 0 / 2.5rem 2.5rem,
+    linear-gradient(90deg, rgb(var(--white-rgb) / .06) 1px, transparent 1px) 0 0 / 2.5rem 2.5rem,
+    radial-gradient(circle at 50% 42%, rgb(var(--white-rgb) / .1), transparent 62%),
+    var(--ink-06);
+  color: var(--cream-07);
+  container-type: size;
+  gap: clamp(0.5rem, 1.1vh, 0.75rem);
+  overflow: hidden;
+  text-align: center;
+}
+
+/* Špendlík nakreslený CSS: kapka otočená o 45° s tečkou uprostřed. */
+.mapPin {
+  position: relative;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: 0 0 auto;
+  border-radius: 50% 50% 50% 0;
+  background: var(--cream-07);
+  transform: rotate(-45deg);
+}
+
+.mapPin::after {
+  position: absolute;
+  inset: 0.5rem;
+  border-radius: 50%;
+  background: var(--ink-06);
+  content: "";
+}
+
+.mapAddress {
+  max-width: 28ch;
+  margin: 0;
+  font-size: clamp(0.875rem, 1.1vw, 1rem);
+  line-height: 1.35;
+}
+
+.mapButton {
+  min-height: clamp(3rem, 5vh, 3.5rem);
+  max-width: 100%;
+  padding: 0.5rem clamp(1rem, 1.4vw, 1.5rem);
+  border: 1px solid var(--cream-07);
+  border-radius: 999px;
+  background: var(--cream-07);
+  color: var(--ink-05);
+  cursor: pointer;
+  font: 400 clamp(0.9375rem, 1.1vw, 1.0625rem)/1.25 "Sansation-Regular", sans-serif;
+  transition:
+    background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+
+  &:hover {
+    background: transparent;
+    color: var(--cream-07);
+  }
+
+  &:hover .mapButtonNote {
+    color: inherit;
+  }
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+}
+
+.mapButtonNote {
+  color: var(--olive-04);
+  font-size: 0.875em;
+}
+
+.mapLink {
+  color: var(--cream-07);
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+}
+
+.mapNote {
+  max-width: 34ch;
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  opacity: 0.82;
+}
+
+@container (max-height: 15rem) {
+  .mapPin,
+  .mapNote {
+    display: none;
+  }
+}
+
+@container (max-height: 10rem) {
+  .mapAddress {
+    display: none;
+  }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  margin: -1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 .details {
   margin: clamp(0.5rem, 1.1vh, 0.75rem) clamp(0.5rem, 0.8vw, 0.75rem);
   display: grid;

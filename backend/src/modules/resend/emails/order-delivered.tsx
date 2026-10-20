@@ -1,4 +1,6 @@
+import { Link } from "@react-email/components"
 import {
+  brand,
   ButtonRow,
   EmailButton,
   EmailH1,
@@ -11,11 +13,10 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
-import { CarrierDamageClaim } from "../components/carrier-damage"
 import { storeLink } from "../../../lib/storefront-url"
 
 interface OrderDeliveredEmailProps {
-  /** Storefront page with the claim block and the downloadable document. */
+  /** Storefront page with the claim block (reklamace z e-mailu). */
   claimUrl?: string;
   customerName?: string;
   orderNumber?: string;
@@ -28,17 +29,29 @@ interface OrderDeliveredEmailProps {
    * courier-delivery send site via this flag.
    */
   shippedByCarrier?: boolean;
+  /**
+   * Podepsaný odkaz na „Odstoupit od smlouvy" (`/order/:id/odstoupeni`,
+   * § 1830a OZ) — převzetím začíná 14denní lhůta. Prázdný u čisté zakázky
+   * (§ 1837 písm. d) → odstavec se nevykreslí.
+   */
+  withdrawalUrl?: string;
 }
 
 /**
  * Sent when a personal-pickup order's shipment is created — the objects have
  * been handed over, the order is complete. No address talk: nothing was posted.
+ *
+ * Poškozená zásilka (14. 10. 2026, právní audit §4.1): zákazník hlásí
+ * poškození NÁM (fotky vítány, obal schovat); s dopravcem to řeší prodávající.
+ * Dřívější `CarrierDamageClaim` („reklamaci u České pošty podává příjemce,
+ * jen dva pracovní dny") z lhůty dopravce dělal podmínku reklamace.
  */
 function OrderDeliveredEmailComponent({
   customerName,
   orderNumber = "",
   claimUrl,
   shippedByCarrier = false,
+  withdrawalUrl = "",
 }: OrderDeliveredEmailProps) {
   const shopUrl = storeLink()
   return (
@@ -73,10 +86,38 @@ function OrderDeliveredEmailComponent({
           <EmailButton href={shopUrl}>Prohlédnout další kousky</EmailButton>
         </ButtonRow>
       ) : null}
-      {/* Carrier deliveries only: the two working days for a ČP damage claim
-          run from today. A personal pickup has no parcel to claim about. */}
+      {/* Carrier deliveries only. Poškození hlásí zákazník nám — žádná lhůta
+          dopravce, žádný formulář pošty jako podmínka. */}
       {shippedByCarrier ? (
-        <CarrierDamageClaim orderNumber={orderNumber} claimUrl={claimUrl} />
+        <>
+          <P>
+            <strong>Dorazila zásilka poškozená?</strong> Napište nám prosím
+            {orderNumber ? ` (objednávka ${orderNumber})` : ""} a pošlete fotky
+            obalu i zboží — poškozený kus vyměníme nebo vrátíme peníze
+            a s dopravcem si to vyřešíme sami. Obal si prosím schovejte, dokud
+            se vám neozveme.
+          </P>
+          {claimUrl ? (
+            <P>
+              Reklamaci můžete podat i online:{" "}
+              <Link href={claimUrl} style={{ color: brand.clay }}>
+                {claimUrl}
+              </Link>
+            </P>
+          ) : null}
+        </>
+      ) : null}
+
+      {/* § 1830a OZ — odstoupení online i pro hosta bez účtu. */}
+      {withdrawalUrl ? (
+        <P small>
+          Od kupní smlouvy můžete odstoupit bez udání důvodu do 14 dnů od
+          převzetí zboží, online přes tlačítko{" "}
+          <Link href={withdrawalUrl} style={{ color: brand.clay }}>
+            Odstoupit od smlouvy
+          </Link>
+          .
+        </P>
       ) : null}
 
       <Signature />
@@ -93,7 +134,8 @@ const mockOrderDelivered: OrderDeliveredEmailProps = {
   customerName: "Jana Nováková",
   orderNumber: "#12345",
   shippedByCarrier: true,
-  claimUrl: "https://keramickazahrada.cz/cz/reklamacni-protokol",
+  claimUrl: "https://keramickazahrada.cz/cz/order/order_12345/refund?token=abc",
+  withdrawalUrl: "https://keramickazahrada.cz/cz/order/order_12345/odstoupeni?token=abc",
 };
 
 export default () => <OrderDeliveredEmailComponent {...mockOrderDelivered} />;

@@ -59,6 +59,10 @@ import { CoursePaymentExpiredEmail } from "./emails/course-payment-expired";
 import { CourseReminderEmail } from "./emails/course-reminder";
 import { CourseWaitlistSpotEmail } from "./emails/course-waitlist-spot";
 import { CourseReservationCancelledEmail } from "./emails/course-reservation-cancelled";
+import { CommissionInquiryReceivedEmail } from "./emails/commission-inquiry-received";
+import { withEmailLegalFacts } from "./components/email-ui";
+import { loadEmailLegalFacts } from "./live-legal-facts";
+import type { LiveLegalFacts } from "../../lib/legal";
 import {
 
   novyStav,
@@ -137,6 +141,9 @@ enum Templates {
   COURSE_WAITLIST_SPOT = "course-waitlist-spot",
   // …and the single-reservation cancellation notice (refund story included).
   COURSE_RESERVATION_CANCELLED = "course-reservation-cancelled",
+  // Poptávka zakázky ze stránky Výroba — potvrzení zákazníkovi
+  // (api/store/commission-inquiries).
+  COMMISSION_INQUIRY_RECEIVED = "commission-inquiry-received",
   // TODO(emails): the remaining templates in ./emails/ are designed but have
   // no trigger to hang off yet. Register them here (both enums + the map +
   // a subject) once the underlying feature exists:
@@ -212,6 +219,7 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.COURSE_REMINDER]: CourseReminderEmail,
   [Templates.COURSE_WAITLIST_SPOT]: CourseWaitlistSpotEmail,
   [Templates.COURSE_RESERVATION_CANCELLED]: CourseReservationCancelledEmail,
+  [Templates.COMMISSION_INQUIRY_RECEIVED]: CommissionInquiryReceivedEmail,
 }
 
 export enum EmailTemplates {
@@ -269,6 +277,7 @@ export enum EmailTemplates {
   COURSE_REMINDER = "course-reminder",
   COURSE_WAITLIST_SPOT = "course-waitlist-spot",
   COURSE_RESERVATION_CANCELLED = "course-reservation-cancelled",
+  COMMISSION_INQUIRY_RECEIVED = "commission-inquiry-received",
 }
 
 /**
@@ -306,6 +315,95 @@ export const describeResendError = (error: unknown): string => {
   return JSON.stringify(error)
 }
 
+/** Příloha e-mailu jako odkaz na hostovaný soubor (Resend si ho stáhne sám). */
+export type EmailAttachmentRef = { filename: string; url: string }
+
+/** Strop příloh na jeden e-mail — víc nikdy nepotřebujeme, víc je chyba volajícího. */
+export const MAX_EMAIL_ATTACHMENTS = 5
+
+/** Klíče v `data`, které jsou přepravní metadata, ne obsah šablony. */
+const TRANSPORT_KEYS = ["__resendTags", "__attachments"] as const
+
+/**
+ * Přílohy z `data.__attachments` — pole `{ filename, url }`.
+ *
+ * Proč v `data`, a ne jako volba volání: notifikační modul ukládá jen `data`
+ * a opakované odeslání (`/prehled/emaily`) skládá e-mail znovu z něj. Příloha
+ * mimo `data` by se při opakování ztratila. Proto se posílá ODKAZ (Resend
+ * `attachments[].path`), ne obsah souboru — řádek notifikace zůstane malý.
+ *
+ * Přijme jen: https URL, název souboru `.pdf` bez cesty, nejvýš
+ * `MAX_EMAIL_ATTACHMENTS`. Cokoli jiného se tiše vynechá (a nikdy neskončí
+ * v šabloně).
+ */
+export const attachmentsFromData = (data: unknown): EmailAttachmentRef[] => {
+  const raw =
+    data && typeof data === "object"
+      ? (data as Record<string, unknown>).__attachments
+      : undefined
+  if (!Array.isArray(raw)) {
+    return []
+  }
+  const valid: EmailAttachmentRef[] = []
+  for (const item of raw) {
+    const filename = typeof item?.filename === "string" ? item.filename.trim() : ""
+    const url = typeof item?.url === "string" ? item.url.trim() : ""
+    if (!/^[^\\/:*?"<>|\u0000-\u001f]{1,120}\.pdf$/i.test(filename)) {
+      continue
+    }
+    let parsed: URL | null = null
+    try {
+      parsed = new URL(url)
+    } catch {
+      parsed = null
+    }
+    if (!parsed || parsed.protocol !== "https:") {
+      continue
+    }
+    valid.push({ filename, url: parsed.toString() })
+    if (valid.length >= MAX_EMAIL_ATTACHMENTS) {
+      break
+    }
+  }
+  return valid
+}
+
+/** `data` pro šablonu — bez přepravních klíčů (`__resendTags`, `__attachments`). */
+export const templateDataOf = (data: unknown): unknown => {
+  if (
+    !data ||
+    typeof data !== "object" ||
+    !TRANSPORT_KEYS.some((key) => key in (data as Record<string, unknown>))
+  ) {
+    return data
+  }
+  const rest = { ...(data as Record<string, unknown>) }
+  for (const key of TRANSPORT_KEYS) {
+    delete rest[key]
+  }
+  return rest
+}
+
+/**
+ * Má smysl zkusit e-mail znovu bez příloh? Jen když Resend e-mail odmítl
+ * (vrácená chyba API) — ne u kvóty, rate limitu nebo klíče, kde by druhý
+ * pokus dopadl stejně, a ne u chyby sítě, kterou řeší opakování notifikace.
+ */
+export const shouldRetryWithoutAttachments = (error: unknown): boolean => {
+  if (!error || typeof error !== "object" || error instanceof Error) {
+    return false
+  }
+  const name = String((error as { name?: unknown }).name ?? "").toLowerCase()
+  return ![
+    "rate_limit_exceeded",
+    "daily_quota_exceeded",
+    "monthly_quota_exceeded",
+    "missing_api_key",
+    "invalid_api_key",
+    "restricted_api_key",
+  ].includes(name)
+}
+
 type ResendOptions = {
   api_key: string
   from: string
@@ -332,6 +430,12 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
   private logger: Logger
   /** Denní počítadlo odeslaných zpráv — viz `lib/email-quota.ts`. */
   private kvotaStav: StavKvoty = novyStav(new Date())
+  /**
+   * Právní údaje pro patičku (identita prodávající, kontakt) z nastavení
+   * obchodu — `live-legal-facts.ts`. Nikdy nevyhodí; `null` = patička vezme
+   * manifest. Pole, ne import natvrdo, ať ho test může podstrčit.
+   */
+  protected loadLegalFacts: () => Promise<LiveLegalFacts | null> = loadEmailLegalFacts
 
   constructor(
     { logger }: InjectedDependencies, 
@@ -474,6 +578,8 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Na kurzu se uvolnilo místo"
       case Templates.COURSE_RESERVATION_CANCELLED:
         return "Vaše rezervace kurzu byla zrušena"
+      case Templates.COMMISSION_INQUIRY_RECEIVED:
+        return "Poptávku jsme přijali"
       // WIP: Add more cases for other templates as needed
       default:
         return "Zpráva z Keramické zahrady"
@@ -587,18 +693,20 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
             typeof (tag as { value?: unknown }).value === "string"
         )
       : []
-    let templateData = notification.data
-    if (
-      notification.data &&
-      typeof notification.data === "object" &&
-      "__resendTags" in (notification.data as Record<string, unknown>)
-    ) {
-      const { __resendTags: _resendTags, ...rest } = notification.data as Record<
-        string,
-        unknown
-      >
-      templateData = rest
-    }
+
+    // Optional per-send attachments (`data.__attachments`, hosted URLs) — the
+    // order confirmation carries the PDF of the terms it was concluded under
+    // (§ 1827 odst. 2 OZ). Transport metadata like the tags: lifted out here,
+    // never part of the template's props.
+    const attachments = attachmentsFromData(notification.data)
+    const templateData = templateDataOf(notification.data)
+
+    // Živé právní údaje do patičky — čtou se při každém odeslání (i při
+    // opakování z /prehled/emaily), takže e-mail ukáže to, co je teď
+    // v administraci. Vykreslení zůstává synchronní: údaje jdou do šablony
+    // kontextem (`withEmailLegalFacts`), ne přes `data`.
+    const legalFacts =
+      typeof template === "string" ? null : await this.loadLegalFacts().catch(() => null)
 
     const commonOptions = {
       from: this.options.from,
@@ -613,18 +721,25 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       ...(resendTags.length ? { tags: resendTags } : {}),
     }
 
-    let emailOptions: CreateEmailOptions
-    if (typeof template === "string") {
-      emailOptions = {
-        ...commonOptions,
-        html: template,
-      }
-    } else {
-      emailOptions = {
-        ...commonOptions,
-        react: template(templateData),
-      }
+    const buildEmailOptions = (
+      data: unknown,
+      withAttachments: boolean
+    ): CreateEmailOptions => {
+      const files =
+        withAttachments && attachments.length
+          ? {
+              attachments: attachments.map(({ filename, url }) => ({
+                filename,
+                path: url,
+              })),
+            }
+          : {}
+      return typeof template === "string"
+        ? { ...commonOptions, ...files, html: template }
+        : { ...commonOptions, ...files, react: withEmailLegalFacts(template(data), legalFacts) }
     }
+
+    const emailOptions = buildEmailOptions(templateData, true)
 
     /*
      * Strop se kontroluje až tady, po vykreslení: kdyby šablona spadla, má
@@ -667,6 +782,33 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       // connection) instead of returning an `error`, and those used to escape
       // this method unlabelled.
       error = thrown
+    }
+
+    /*
+     * Příloha nesmí shodit celý e-mail. Když Resend zprávu s přílohami
+     * odmítne (např. soubor nejde stáhnout), odejde ještě jednou bez nich —
+     * šablona dostane `attachments_failed: true` a místo „v příloze" ukáže
+     * odkazy. Potvrzení objednávky bez PDF je lepší než žádné potvrzení.
+     */
+    if ((error || !data) && attachments.length && shouldRetryWithoutAttachments(error)) {
+      this.logger.warn(
+        `[resend] E-mail "${notification.template}" na ${notification.to} s přílohami ` +
+          `(${attachments.map((attachment) => attachment.filename).join(", ")}) neprošel: ` +
+          `${describeResendError(error)} — posílám ho znovu bez příloh, s odkazy.`
+      )
+      const retryData = {
+        ...((templateData as Record<string, unknown> | undefined) ?? {}),
+        attachments_failed: true,
+      }
+      try {
+        const response = await this.resendClient.emails.send(
+          buildEmailOptions(retryData, false)
+        )
+        data = response.data
+        error = response.error
+      } catch (thrown) {
+        error = thrown
+      }
     }
 
     if (error || !data) {

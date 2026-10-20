@@ -7,6 +7,24 @@ import {
   isPurchasable,
   type Availability,
 } from "@lib/util/availability"
+import { itemText } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
+
+/**
+ * Texty nákupu z bloku `global.produkt` (položky `nakup.*`). V kódu zůstává:
+ * slovník dostupnosti (Skladem / Poslední kus / Na objednávku — sdílený
+ * s kartami), věta o dobírce (pravidlo platby), režim výběru do úpravy
+ * objednávky a chybové hlášky.
+ */
+const BUY_DEFAULTS = {
+  "nakup.vyber": "Vyberte provedení",
+  "nakup.pridat": "Přidat do košíku",
+  "nakup.pridavame": "Přidáváme…",
+  "nakup.pridano": "Přidáno do košíku",
+  "nakup.v-kosiku": "Máte to v košíku.",
+  "nakup.balne": "Každý kus balíme zvlášť proti poškození — balné uvidíte v košíku.",
+} as const
 
 /** Add-to-cart is the moment the sale is made or lost; each state has to be visible. */
 export type AddToCartState =
@@ -51,6 +69,8 @@ type CTAProps = {
    * pod tlačítkem (u výměny kolik kusů se vymění).
    */
   pick?: { label: string; blocked: boolean; blockedText?: string; note?: string }
+  /** Blok `global.produkt` — texty nákupu (viz BUY_DEFAULTS). */
+  texts?: CopyBlock
 }
 
 export default function CTA({
@@ -73,15 +93,20 @@ export default function CTA({
   showBuyNow = false,
   buyNowEligible = false,
   pick,
+  texts,
 }: CTAProps) {
+  const text = (label: keyof typeof BUY_DEFAULTS) => itemText(texts, label, BUY_DEFAULTS[label])
   // A stepper only makes sense where more than one can be bought.
   const showStepper =
     Boolean(onQuantityChange) &&
     isPurchasable(availability) &&
     maxQuantity > 1 &&
     !pick?.blocked
+  /* Název tlačítka se mění se stavem, takže se v místě neupravuje (editor by
+     uložil jen ten, který je zrovna vidět) — jen ve formuláři bloku. Režim
+     výběru do úpravy objednávky a vyprodané provedení drží kód. */
   const label = !selectedVariant
-    ? "Vyberte provedení"
+    ? text("nakup.vyber")
     : pick?.blocked
       ? "Tohle provedení nejde"
       : !inStock || !isValidVariant
@@ -91,10 +116,10 @@ export default function CTA({
             ? "Hotovo — vracíme vás na úpravu…"
             : pick.label
           : addState.kind === "added"
-            ? "Přidáno do košíku"
+            ? text("nakup.pridano")
             : addState.kind === "adding"
-              ? "Přidáváme…"
-              : "Přidat do košíku"
+              ? text("nakup.pridavame")
+              : text("nakup.pridat")
 
   return (
     <div className="product__details__cta__buy">
@@ -174,8 +199,12 @@ export default function CTA({
         </p>
       )}
       {addState.kind === "added" && (
-        <p className="product__details__cta__confirm" role="status">
-          {pick ? "Je to v návrhu úpravy." : "Máte to v košíku."}
+        <p
+          className="product__details__cta__confirm"
+          role="status"
+          {...(pick ? {} : editableItem(texts, "nakup.v-kosiku"))}
+        >
+          {pick ? "Je to v návrhu úpravy." : text("nakup.v-kosiku")}
         </p>
       )}
       {pick?.blocked && (
@@ -209,8 +238,12 @@ export default function CTA({
       {/* Balné (Matěj 12. 10.): bez částky, jen proč — každý kus má vlastní
           balení proti poškození, v košíku je pak jako položka pod výrobkem. */}
       {!pick && (
-        <p className="product__details__cta__codNote" data-testid="product-packaging-note">
-          Každý kus balíme zvlášť proti poškození — balné uvidíte v košíku.
+        <p
+          className="product__details__cta__codNote"
+          data-testid="product-packaging-note"
+          {...editableItem(texts, "nakup.balne")}
+        >
+          {text("nakup.balne")}
         </p>
       )}
     </div>

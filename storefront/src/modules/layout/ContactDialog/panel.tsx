@@ -1,5 +1,6 @@
 "use client"
 
+import { surfaceRoot } from "@c3studium/valecms/edit"
 import WebButton from "@modules/common/components/Buttons/webButton"
 import MouseAnim from "@modules/common/components/MouseAnim"
 import PhoneInput from "@modules/common/components/phone-input"
@@ -8,6 +9,9 @@ import { AnimatePresence, motion } from "framer-motion"
 import { useEffect, useId, useRef, useState, type FormEvent } from "react"
 
 import type { MerchantIdentity } from "@lib/data/merchant"
+import { itemValue } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
 import {
   backdropVariants,
   closeButtonWidth,
@@ -23,6 +27,7 @@ import {
   statusVariants,
   visualPanelVariants,
 } from "./motion"
+import MapEmbed from "./map-embed"
 import styles from "./style.module.scss"
 
 export const inquiryOptions = [
@@ -63,7 +68,64 @@ type ContactDialogPanelProps = {
   /** Režim „Změna objednávky"; `null`/chybí = běžný kontaktní formulář. */
   orderChange?: OrderChangeRequest | null
   onClose: () => void
+  /** Blok `global.kontaktni-okno` — viz `dialogText`. */
+  copy?: CopyBlock
 }
+
+/*
+ * Redakční texty okna z bloku `global.kontaktni-okno`, položky klíčované
+ * popiskem (jako `global.prihlaseni`). Nový klíč, ne `global.kontakt`: ten
+ * blok přišel migrací ze Sanity (`contactTitle` v `title`, nadpis newsletteru
+ * v `headline`, zbytek rozsypaný do `items`) a jeho první přečtení by na
+ * živém webu vyměnilo dnešní texty okna za staré — a seed by do něj kvůli
+ * vyplněným polím už nic nedoplnil.
+ *
+ * Témata se párují pozicí s `inquiryOptions`: CMS mění jen to, co je na
+ * tlačítku napsané. Do zprávy (`Téma: …`) i do `initialTopic` jde dál hodnota
+ * z kódu, aby nic, co se na téma ptá, nezáviselo na znění ve Studiu.
+ *
+ * Ve druhém kole přibyly popisky a vzory polí běžného formuláře (`pole.*`,
+ * `pole.*.vzor` = text v prázdném poli), tlačítko `odeslat` a nápověda
+ * `posunout`.
+ *
+ * V kódu zůstává: souhlas se zpracováním údajů pod formulářem, „(povinné)" /
+ * „(nepovinné)" u polí (říká, co formulář vyžaduje — musí sedět s `required`),
+ * chybové hlášky, stav „Odesíláme…" a celý režim „Změna objednávky" kromě
+ * nadpisů. Věty po odeslání nesou adresu obchodu — v CMS se píše zástupce
+ * `{email}`.
+ */
+const TOPIC_LABELS = ["tema.obecny", "tema.zakazka", "tema.objednavka", "tema.kurzy"] as const
+
+const DIALOG_DEFAULTS: Record<string, string> = {
+  "hlavicka.stitek": "Kontakt · Ateliér",
+  "hlavicka.odpoved": "Ozvu se do dvou pracovních dnů",
+  "nadpis.oboci": "Napište přímo do ateliéru",
+  nadpis: "Napište mi.",
+  "nadpis.zmena": "Co potřebujete změnit?",
+  "nadpis.zvyrazneni": "Ozvu se osobně.",
+  "temata.otazka": "S čím vám můžu pomoct?",
+  "odeslano.nadpis": "Zpráva odešla.",
+  "odeslano.text":
+    "Děkuju — ozvu se vám do dvou pracovních dnů. Když stojím u pece, může to výjimečně trvat o kousek déle. Kopii zprávy jsem vám neposílala; kdybyste si nebyli jistí, napište mi kdykoliv na {email}.",
+  "zmena-odeslano.nadpis": "Žádost o změnu odešla.",
+  "zmena-odeslano.text":
+    "Děkuju — změnu s vámi domluvím osobně: zavolám vám, nebo odepíšu e-mailem, zpravidla do dvou pracovních dnů. Objednávka zatím zůstává, jak byla. Kdybyste mezitím potřebovali cokoli doplnit, napište mi na {email}.",
+  faq: "Nejprve se podívat do FAQ",
+  "pole.jmeno": "Jméno",
+  "pole.jmeno.vzor": "Vaše jméno",
+  "pole.email": "E-mail",
+  "pole.email.vzor": "vas@email.cz",
+  "pole.telefon": "Telefon",
+  "pole.telefon.vzor": "603 123 456",
+  "pole.zprava": "Vaše zpráva",
+  "pole.zprava.vzor": "Napište, co potřebujete — otázku, představu, cokoliv…",
+  odeslat: "Odeslat zprávu",
+  posunout: "Posuňte pro zbytek formuláře",
+}
+
+/** Text okna z CMS podle popisku, nebo výchozí z kódu. */
+const dialogText = (copy: CopyBlock | undefined, label: string, fallback = DIALOG_DEFAULTS[label]) =>
+  itemValue(copy, label)?.trim() || fallback
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -126,7 +188,10 @@ export default function ContactDialogPanel({
   initialTopic,
   orderChange = null,
   onClose,
+  copy,
 }: ContactDialogPanelProps) {
+  const text = (label: string) => dialogText(copy, label)
+  const edit = (label: string) => editableItem(copy, label)
   const [inquiry, setInquiry] = useState<Inquiry>(initialTopic)
   const [hoveredInquiry, setHoveredInquiry] = useState<Inquiry | null>(null)
   const [closeHovered, setCloseHovered] = useState(false)
@@ -258,6 +323,9 @@ export default function ContactDialogPanel({
       /* body{overflow:hidden} below only blocks *user* scrolling; Lenis scrolls programmatically
          and ignored it, so the page moved behind the dialog. */
       data-lenis-prevent
+      /* Ve Studiu (povrch „kontaktni-okno") se výběr uzavře do okna — klik
+         nechytí patičku pod ním. Mimo Studio `{}`. */
+      {...surfaceRoot("kontaktni-okno")}
       variants={overlayVariants}
       initial="hidden"
       animate="visible"
@@ -287,13 +355,17 @@ export default function ContactDialogPanel({
       >
         <header className={styles.panelHeader}>
           <div className={styles.panelMeta}>
-            <span>
+            <span {...(orderChange ? {} : edit("hlavicka.stitek"))}>
               {orderChange
                 ? `Změna objednávky #${orderChange.displayId}`
-                : "Kontakt · Ateliér"}
+                : text("hlavicka.stitek")}
             </span>
+            {/* Věta ve vlastním spanu — řádek je `inline-flex`, takže span je
+                tentýž flex prvek, jakým byl holý text, a tečku (`i`) editor
+                nepřepíše. */}
             <span className={styles.availability}>
-              <i aria-hidden="true" /> Ozvu se do dvou pracovních dnů
+              <i aria-hidden="true" />{" "}
+              <span {...edit("hlavicka.odpoved")}>{text("hlavicka.odpoved")}</span>
             </span>
           </div>
           <motion.button
@@ -337,14 +409,21 @@ export default function ContactDialogPanel({
             exit="hidden"
           >
             <motion.div className={styles.title} variants={itemVariants}>
-              <span className={styles.eyebrow}>
+              <span
+                className={styles.eyebrow}
+                {...(orderChange ? {} : edit("nadpis.oboci"))}
+              >
                 {orderChange
                   ? `Změna objednávky #${orderChange.displayId}`
-                  : "Napište přímo do ateliéru"}
+                  : text("nadpis.oboci")}
               </span>
+              {/* Nadpis v holém spanu jen kvůli anotaci — zvýrazněný konec
+                  je jiná položka bloku. */}
               <h2 id={`${fieldId}-title`}>
-                {orderChange ? "Co potřebujete změnit?" : "Napište mi."}
-                <em>Ozvu se osobně.</em>
+                <span {...edit(orderChange ? "nadpis.zmena" : "nadpis")}>
+                  {orderChange ? text("nadpis.zmena") : text("nadpis")}
+                </span>
+                <em {...edit("nadpis.zvyrazneni")}>{text("nadpis.zvyrazneni")}</em>
               </h2>
             </motion.div>
 
@@ -353,6 +432,7 @@ export default function ContactDialogPanel({
                 email={merchant.email}
                 onClose={onClose}
                 orderChange={Boolean(orderChange)}
+                copy={copy}
               />
             ) : orderChange ? (
               /* Změna objednávky (12. 10. 2026, Matěj): bez témat, jména
@@ -449,10 +529,12 @@ export default function ContactDialogPanel({
                 noValidate={false}
               >
                 <fieldset className={styles.topics}>
-                  <legend>S čím vám můžu pomoct?</legend>
+                  <legend {...edit("temata.otazka")}>{text("temata.otazka")}</legend>
                   <div onMouseLeave={() => setHoveredInquiry(null)}>
-                    {inquiryOptions.map((option) => {
+                    {inquiryOptions.map((option, index) => {
                       const highlighted = (hoveredInquiry ?? inquiry) === option
+                      // Napsané z CMS, hodnota tématu z kódu (viz TOPIC_LABELS).
+                      const topicLabel = dialogText(copy, TOPIC_LABELS[index], option)
 
                       return (
                         <button
@@ -472,57 +554,69 @@ export default function ContactDialogPanel({
                               transition={transition}
                             />
                           )}
-                          <span className={styles.topicLabel}>{option}</span>
+                          <span
+                            className={styles.topicLabel}
+                            {...edit(TOPIC_LABELS[index])}
+                          >
+                            {topicLabel}
+                          </span>
                         </button>
                       )
                     })}
                   </div>
                 </fieldset>
 
+                {/* Popisky z CMS v holém spanu (anotace), „(povinné)" za nimi
+                    z kódu. Vzor v prázdném poli (`placeholder`) se upravuje
+                    jen ve formuláři bloku — v místě na něj nejde kliknout. */}
                 <div className={styles.fieldGrid}>
                   <Field
                     id={`${fieldId}-name`}
                     name="name"
-                    label="Jméno"
+                    label={text("pole.jmeno")}
+                    labelEdit={edit("pole.jmeno")}
                     type="text"
                     autoComplete="name"
-                    placeholder="Vaše jméno"
+                    placeholder={text("pole.jmeno.vzor")}
                     required
                   />
                   <Field
                     id={`${fieldId}-email`}
                     name="email"
-                    label="E-mail"
+                    label={text("pole.email")}
+                    labelEdit={edit("pole.email")}
                     type="email"
                     autoComplete="email"
-                    placeholder="vas@email.cz"
+                    placeholder={text("pole.email.vzor")}
                     required
                   />
                   {/* Předvolba jede rozbaleníkem PhoneInputu (výchozí podle země
                       v adrese), takže placeholder „+420" ztratil práci. */}
                   <div className={styles.field}>
                     <label htmlFor={`${fieldId}-phone`}>
-                      Telefon <i>(nepovinné)</i>
+                      <span {...edit("pole.telefon")}>{text("pole.telefon")}</span>{" "}
+                      <i>(nepovinné)</i>
                     </label>
                     <PhoneInput
                       id={`${fieldId}-phone`}
                       name="phone"
                       className={styles.phoneRow}
                       inputClassName={styles.input}
-                      placeholder="603 123 456"
+                      placeholder={text("pole.telefon.vzor")}
                     />
                   </div>
                 </div>
 
                 <div className={`${styles.field} ${styles.message}`}>
                   <label htmlFor={`${fieldId}-message`}>
-                    Vaše zpráva <i>(povinné)</i>
+                    <span {...edit("pole.zprava")}>{text("pole.zprava")}</span>{" "}
+                    <i>(povinné)</i>
                   </label>
                   <textarea
                     id={`${fieldId}-message`}
                     className={styles.input}
                     name="message"
-                    placeholder="Napište, co potřebujete — otázku, představu, cokoliv…"
+                    placeholder={text("pole.zprava.vzor")}
                     required
                   />
                 </div>
@@ -565,7 +659,7 @@ export default function ContactDialogPanel({
                     title={
                       submitState.kind === "submitting"
                         ? "Odesíláme…"
-                        : "Odeslat zprávu"
+                        : text("odeslat")
                     }
                     type="submit"
                     disabled={submitState.kind === "submitting"}
@@ -594,7 +688,7 @@ export default function ContactDialogPanel({
               >
                 <span className={styles.scrollCueInner}>
                   <MouseAnim />
-                  <span>Posuňte pro zbytek formuláře</span>
+                  <span {...edit("posunout")}>{text("posunout")}</span>
                 </span>
               </motion.div>
             )}
@@ -607,20 +701,12 @@ export default function ContactDialogPanel({
             animate="visible"
             exit="exit"
           >
-            {/* Google's classic key-less embed over the atelier address — the
-                interactive widget SDKs all want an API key and a billing
-                account for what is, here, one pin on one map. */}
-            <div className={styles.mapFrame}>
-              <iframe
-                src={`https://maps.google.com/maps?q=${encodeURIComponent(
-                  merchant.address
-                )}&z=14&hl=cs&output=embed`}
-                title="Mapa — ateliér Lucie Polanské, Putim"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                allowFullScreen
-              />
-            </div>
+            {/* Mapa Google až po kliknutí, nebo rovnou s marketingovým
+                souhlasem — viz `./map-embed.tsx`. */}
+            <MapEmbed
+              address={merchant.address}
+              title="Mapa — ateliér Lucie Polanské, Putim"
+            />
 
             <motion.div
               className={styles.details}
@@ -640,8 +726,12 @@ export default function ContactDialogPanel({
                 <span>Adresa</span>
                 <p>{merchant.address}</p>
               </div>
+              {/* Odkaz vede dovnitř webu — z CMS jde jen jeho text, cíl drží kód.
+                  Bez anotace v místě: každý span v odkazu se při najetí posune
+                  (`.faqLink span`), takže text nejde obalit, a celý odkaz by
+                  editor uložil i se šipkou. Upravuje se ve formuláři bloku. */}
               <LocalizedClientLink href="/dotazy" className={styles.faqLink}>
-                Nejprve se podívat do FAQ <span aria-hidden="true">↗</span>
+                {text("faq")} <span aria-hidden="true">↗</span>
               </LocalizedClientLink>
             </motion.div>
           </motion.aside>
@@ -655,6 +745,8 @@ type FieldProps = {
   id: string
   name: string
   label: string
+  /** Atributy anotace popisku (`editableItem`); mimo náhled Studia `{}`. */
+  labelEdit?: Record<string, string | undefined>
   type: string
   autoComplete: string
   placeholder: string
@@ -662,11 +754,13 @@ type FieldProps = {
   hint?: string
 }
 
-function Field({ id, name, label, hint, required, ...input }: FieldProps) {
+function Field({ id, name, label, labelEdit, hint, required, ...input }: FieldProps) {
   return (
     <div className={styles.field}>
+      {/* Popisek ve vlastním spanu: anotace píše celé pole a „(povinné)"
+          za ním do bloku nepatří. */}
       <label htmlFor={id}>
-        {label} <i>{hint ? `(${hint})` : "(povinné)"}</i>
+        <span {...labelEdit}>{label}</span> <i>{hint ? `(${hint})` : "(povinné)"}</i>
       </label>
       <input id={id} name={name} className={styles.input} required={required} {...input} />
     </div>
@@ -677,29 +771,28 @@ function SentMessage({
   email,
   onClose,
   orderChange = false,
+  copy,
 }: {
   email: string
   onClose: () => void
   /** Žádost o změnu objednávky — slib zavolat / odepsat místo obecné věty. */
   orderChange?: boolean
+  /** Blok `global.kontaktni-okno` (`odeslano.*`, `zmena-odeslano.*`). */
+  copy?: CopyBlock
 }) {
+  const prefix = orderChange ? "zmena-odeslano" : "odeslano"
+  /* `{email}` je zástupce adresy obchodu. Věta se proto v místě neanotuje —
+     editor by uložil adresu místo zástupce; upravuje se ve formuláři. */
+  /* Náhrada funkcí, ne řetězcem: v řetězci by `$&`, `$1`… v adrese
+     `replace` vyložil jako odkaz na shodu a větu rozbil. */
+  const text = dialogText(copy, `${prefix}.text`).replace(/\{email\}/g, () => email)
+
   return (
     <div className={styles.successPanel} role="status">
-      <h3>{orderChange ? "Žádost o změnu odešla." : "Zpráva odešla."}</h3>
-      {orderChange ? (
-        <p>
-          Děkuju — změnu s vámi domluvím osobně: zavolám vám, nebo odepíšu
-          e-mailem, zpravidla do dvou pracovních dnů. Objednávka zatím zůstává,
-          jak byla. Kdybyste mezitím potřebovali cokoli doplnit, napište mi na{" "}
-          {email}.
-        </p>
-      ) : (
-        <p>
-          Děkuju — ozvu se vám do dvou pracovních dnů. Když stojím u pece, může to
-          výjimečně trvat o kousek déle. Kopii zprávy jsem vám neposílala; kdybyste si
-          nebyli jistí, napište mi kdykoliv na {email}.
-        </p>
-      )}
+      <h3 {...editableItem(copy, `${prefix}.nadpis`)}>
+        {dialogText(copy, `${prefix}.nadpis`)}
+      </h3>
+      <p>{text}</p>
       <WebButton
         Kind="Button"
         title="Zavřít"

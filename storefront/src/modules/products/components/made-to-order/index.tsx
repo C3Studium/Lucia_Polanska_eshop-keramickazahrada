@@ -8,6 +8,7 @@ import {
   type ProductionProfile,
 } from "@lib/util/made-to-order"
 import { convertToLocale } from "@lib/util/money"
+import { MADE_TO_ORDER_NO_RETURN } from "@modules/products/components/made-to-order-notice"
 
 import styles from "./style.module.scss"
 
@@ -62,6 +63,12 @@ export default function MadeToOrderPanel({
 
       <p className={styles.lead}>
         Popis a fotky k zakázce přiložíte v košíku.
+      </p>
+
+      {/* Poučení o vyloučení odstoupení PŘED objednávkou (§ 1820 odst. 1
+          písm. j) OZ) — v pokladně ho zákazník ještě potvrdí zaškrtnutím. */}
+      <p className={styles.lead} data-testid="made-to-order-no-return">
+        {MADE_TO_ORDER_NO_RETURN}
       </p>
     </section>
   )

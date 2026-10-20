@@ -3,6 +3,15 @@
 import ProductOptions from "./Options/ProductOptions"
 import MadeToOrderPanel from "@modules/products/components/made-to-order"
 import {
+  MadeToOrderAddNotice,
+  MadeToOrderBadge,
+} from "@modules/products/components/made-to-order-notice"
+import VoucherAmountField, {
+  checkVoucherAmount,
+  isCustomAmountVoucher,
+  voucherConfig,
+} from "@modules/products/components/voucher-amount"
+import {
   madeToOrderMetadata,
   type ProductionProfile,
 } from "@lib/util/made-to-order"
@@ -21,6 +30,10 @@ import type { AddToCartState } from "./Cta/Add"
 import { BundleProduct } from "@lib/data/products"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import { HttpTypes } from "@medusajs/types"
+import type { CopyBlock } from "@lib/util/site-copy"
+import { itemText } from "@lib/util/site-copy"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import { editableItem } from "@modules/common/components/cms-text"
 import Details from "@modules/products/ProductPage/details"
 import RestockForm from "@modules/products/ProductPage/restock"
 import BundleActions from "@modules/products/components/bundle-actions"
@@ -47,6 +60,8 @@ type ProductTemplateProps = {
   productionProfile?: ProductionProfile | null
   /** Režim výběru do úpravy objednávky — viz `ProductPickMode`. */
   pick?: ProductPickMode
+  /** Blok `global.produkt` — jde dál do detailů, galerie a hlídání naskladnění. */
+  texts?: CopyBlock
 }
 
 /**
@@ -99,7 +114,11 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   isBundlePreview = false,
   productionProfile,
   pick,
+  texts,
 }) => {
+  /* Bez výběru provedení se panel nákupu po zapnutí editace sám nepřekreslí
+     a texty z `global.produkt` by zůstaly bez anotací. Viz hook. */
+  useEditRerender()
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [addState, setAddState] = useState<AddToCartState>({ kind: "idle" })
   const [quantity, setQuantity] = useState(1)
@@ -170,6 +189,22 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
       ? productMeta.clearance_damage.trim()
       : ""
 
+  /* Zakázka → štítek u ceny a věta u tlačítka (§ 1820 odst. 1 písm. j) OZ):
+     o vyloučení odstoupení musí zákazník vědět předem. Platí pro profil výroby
+     i pro kategorii zakázek (a pro zrcadlo profilu v metadatech, kdyby se
+     profil nenačetl). Ve výběru do úpravy objednávky ne — zakázka tam není. */
+  const showMadeToOrderNotice =
+    !pick &&
+    (isMadeToOrder || isCommissionCategory || Boolean(productMeta?.made_to_order))
+
+  /* Dárkový poukaz s vlastní částkou: pole místo ceny, částka jde do košíku
+     jako `metadata.voucher_amount` a backend z ní udělá cenu řádku. */
+  const isVoucher = !pick && !bundle && isCustomAmountVoucher(productMeta)
+  const voucherCfg = useMemo(() => voucherConfig(productMeta), [productMeta])
+  const [voucherAmount, setVoucherAmount] = useState("")
+  const [voucherTouched, setVoucherTouched] = useState(false)
+  const currencyCode = region?.currency_code ?? "czk"
+
   const availability = useMemo(
     () => variantAvailability(selectedVariant),
     [selectedVariant]
@@ -215,6 +250,15 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   const handleAddToCart = async () => {
     if (!selectedVariant?.id || isAdding) return
 
+    // Poukaz bez platné částky do košíku nejde — chybu ukáže pole samo.
+    const voucherCheck = isVoucher
+      ? checkVoucherAmount(voucherAmount, voucherCfg, currencyCode)
+      : null
+    if (voucherCheck && !voucherCheck.ok) {
+      setVoucherTouched(true)
+      return
+    }
+
     window.clearTimeout(resetTimer.current)
     setAddState({ kind: "adding" })
 
@@ -226,6 +270,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
         quantity,
         countryCode,
         ...(isMadeToOrder ? { metadata: madeToOrderMetadata("") } : {}),
+        ...(voucherCheck?.ok ? { metadata: { voucher_amount: voucherCheck.amount } } : {}),
       })
 
       if (!result?.success) {
@@ -344,7 +389,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
               )}
 
               <div className="product__detailsSlot">
-                <Details product={product} />
+                <Details product={product} texts={texts} />
               </div>
             </motion.div>
           </aside>
@@ -361,7 +406,11 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
               transition={transition2}
             >
               <div className="product__purchaseHeader">
-                <span>Vaše volba</span>
+                {/* Popisky z bloku `global.produkt` (`volba.*`); stav dostupnosti
+                    vedle je sdílený slovník, ten drží kód. */}
+                <span {...editableItem(texts, "volba.stitek")}>
+                  {itemText(texts, "volba.stitek", "Vaše volba")}
+                </span>
                 {/* The shared availability vocabulary (spec §12); bundles are
                     stock-blind on the storefront, so they keep the older
                     two-state copy instead of mislabelling themselves. */}
@@ -375,7 +424,9 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
               </div>
 
               <div className="product__selection">
-                <small>Vaše provedení</small>
+                <small {...editableItem(texts, "volba.provedeni")}>
+                  {itemText(texts, "volba.provedeni", "Vaše provedení")}
+                </small>
                 <span>
                   {bundle
                     ? `${bundle.items.length} kusy dohromady`
@@ -455,18 +506,35 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                         currencyCode={region?.currency_code ?? "czk"}
                       />
                     )}
-                    <ProductPrice
-                      product={product}
-                      variant={selectedVariant}
-                      countryCode={countryCode}
-                    />
+                    {isVoucher ? (
+                      <VoucherAmountField
+                        config={voucherCfg}
+                        currencyCode={currencyCode}
+                        value={voucherAmount}
+                        onChange={(value) => {
+                          setVoucherAmount(value)
+                          if (addState.kind === "error") setAddState({ kind: "idle" })
+                        }}
+                        showError={voucherTouched}
+                        disabled={isAdding}
+                      />
+                    ) : (
+                      <ProductPrice
+                        product={product}
+                        variant={selectedVariant}
+                        countryCode={countryCode}
+                      />
+                    )}
+                    {showMadeToOrderNotice && <MadeToOrderBadge />}
                     <CTA
                       inStock={inStock}
                       selectedVariant={selectedVariant}
                       isAdding={isAdding}
                       addState={addState}
                       availability={availability}
-                      backorderNote={isMadeToOrder ? null : backorderWaitNote(product)}
+                      backorderNote={
+                        isMadeToOrder || isVoucher ? null : backorderWaitNote(product)
+                      }
                       // Dobírka výchozí; ne u zakázky (profil i kategorie) a do zahraničí.
                       codAllowed={
                         productAllowsDobirka(product) &&
@@ -499,17 +567,30 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                          flow has no brief and no deposit slider. Auth + saved
                          address are only a hint here: the prebuilt PDP is
                          anonymous, so the button re-checks them in the browser. */
-                      showBuyNow={Boolean(!isMadeToOrder && !isCommissionCategory)}
+                      /* Poukaz s vlastní částkou taky ne: „Koupit ihned" vkládá
+                         variantu bez částky (rychlý nákup pole nemá). */
+                      showBuyNow={Boolean(
+                        !isMadeToOrder && !isCommissionCategory && !isVoucher
+                      )}
                       buyNowEligible={Boolean(isAuthenticated && hasSavedAddress)}
+                      texts={texts}
                     />
+                    {showMadeToOrderNotice && <MadeToOrderAddNotice />}
                   </div>
                 </>
               )}
 
+              {/* Tři značky pod nákupem — položky `znacky.*` bloku `global.produkt`. */}
               <div className="product__serviceNotes">
-                <span>Zabalíme pečlivě</span>
-                <span>Ručně vytvořeno</span>
-                <span>Ateliér · Písek</span>
+                <span {...editableItem(texts, "znacky.baleni")}>
+                  {itemText(texts, "znacky.baleni", "Zabalíme pečlivě")}
+                </span>
+                <span {...editableItem(texts, "znacky.rucne")}>
+                  {itemText(texts, "znacky.rucne", "Ručně vytvořeno")}
+                </span>
+                <span {...editableItem(texts, "znacky.atelier")}>
+                  {itemText(texts, "znacky.atelier", "Ateliér · Písek")}
+                </span>
               </div>
 
               {/* Hlídání naskladnění do výběru nepatří — tam jde jen to, co je k mání. */}
@@ -520,6 +601,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                     title: selectedVariant.title || undefined,
                   }}
                   product={{ title: product.title || undefined }}
+                  texts={texts}
                 />
               )}
             </motion.div>
@@ -532,6 +614,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
             region={region}
             countryCode={countryCode}
             bundle={bundle}
+            texts={texts}
           />
         </div>
       </div>

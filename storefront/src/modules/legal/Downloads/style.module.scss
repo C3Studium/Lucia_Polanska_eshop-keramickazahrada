@@ -176,6 +176,34 @@
   }
 }
 
+/* „Další soubory ke stažení" ze Studia — pod oficiálním PDF, oddělené vlastním
+   nadpisem a větou, že závazné je znění nahoře. Mezery stejné jako nadpis
+   bloku (svisle vh, viz hlavička souboru). */
+.extra {
+  margin-top: clamp(1.5rem, 3vh, 2.5rem);
+}
+
+.extraTitle {
+  margin: 0;
+  font-size: clamp(1rem, 1.4vw, 1.2rem);
+  font-weight: 500;
+}
+
+.extraNote {
+  margin: 0.375rem 0 clamp(0.875rem, 1.8vh, 1.5rem);
+  font-size: clamp(0.82rem, 1.05vw, 1rem);
+  opacity: 0.6;
+}
+
+/* „Vytisknout" je tlačítko (window.print), ne odkaz — stejný řádek, bez
+   výchozího vzhledu tlačítka. */
+.button {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 .kind {
   flex: none;
   padding: 0.3125rem var(--dl-kind-pad-x);
@@ -247,6 +275,13 @@
    Velikost souboru tak zůstává tam, kde se čte — v pravém sloupci proti sobě,
    ne pod názvem — a řádek je na 768 o 29 px nižší než na telefonu, přestože
    tablet má víc místa; ušetřenou výšku spotřebuje seznam, ne jedna položka. */
+/* Na papíře nemá „Ke stažení" co dělat. */
+@media print {
+  .downloads {
+    display: none;
+  }
+}
+
 @include below(ph) {
   .item {
     flex-wrap: wrap;

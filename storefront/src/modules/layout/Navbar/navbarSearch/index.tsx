@@ -1,5 +1,6 @@
 "use client"
 
+import { surfaceRoot, useStudioSurface } from "@c3studium/valecms/edit"
 import { listStoreCatalogue } from "@lib/data/products"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Thumbnail from "@modules/products/components/thumbnail"
@@ -8,6 +9,21 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDragScroll } from "./useDragScroll"
 import styles from "./style.module.scss"
 import { alpha, palette } from "styles/palette.generated"
+import { itemText } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
+import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
+
+/**
+ * Texty hledání v menu — blok `global.hledani` (poskytuje hlavní layout).
+ * Počty výsledků, názvy filtrů (cenová pásma odpovídají filtrům obchodu)
+ * a hláška při chybě načítání zůstávají v kódu.
+ */
+const SEARCH_DEFAULTS = {
+  prochazet: "Procházet podle",
+  nic: "Nic jsme nenašli",
+  prazdne: "Zkuste jiný název, kategorii nebo kolekci.",
+  "prazdne.tlacitko": "Zobrazit všechno",
+} as const
 
 const ease = [0.22, 1, 0.36, 1] as const
 const revealEase = [0.76, 0, 0.24, 1] as const
@@ -307,6 +323,9 @@ function SearchContent({
   query,
   entranceComplete,
 }: SearchContentProps) {
+  const copy = useCopyBlock("global.hledani")
+  const text = (label: keyof typeof SEARCH_DEFAULTS) =>
+    itemText(copy, label, SEARCH_DEFAULTS[label])
   const normalizedQuery = normalizeSearchValue(query)
   const railRef = useDragScroll<HTMLDivElement>()
   const [activeFacets, setActiveFacets] = useState<string[]>([])
@@ -392,7 +411,7 @@ function SearchContent({
       ? `${products.length} ${
           products.length === 1 ? "nalezený výrobek" : "nalezených výrobků"
         }`
-      : "Nic jsme nenašli"
+      : text("nic")
     : `${catalogueProducts.length} ${
         catalogueProducts.length === 1
           ? "výrobek v nabídce"
@@ -414,7 +433,9 @@ function SearchContent({
       >
         {helpers.length > 0 && (
           <>
-            <span className={styles.helperLabel}>Procházet podle</span>
+            <span className={styles.helperLabel} {...editableItem(copy, "prochazet")}>
+              {text("prochazet")}
+            </span>
             <motion.div className={styles.suggestions}>
               {helpers.map((helper, index) => (
                 <motion.button
@@ -548,9 +569,10 @@ function SearchContent({
               animate={riseTo}
               exit={fadeOnly}
             >
-              <span>Zkuste jiný název, kategorii nebo kolekci.</span>
+              <span {...editableItem(copy, "prazdne")}>{text("prazdne")}</span>
+              {/* Bez úpravy v místě — tlačítko nese i šipku. */}
               <button type="button" onClick={() => onQueryChange("")}>
-                Zobrazit všechno <i>→</i>
+                {text("prazdne.tlacitko")} <i>→</i>
               </button>
             </motion.div>
           )}
@@ -562,11 +584,18 @@ function SearchContent({
 
 export default function NavbarSearch({
   countryCode,
-  isOpen,
+  isOpen: openedByVisitor,
   onClose,
   onQueryChange,
   query,
 }: NavbarSearchProps) {
+  /*
+   * Povrch „Hledání v menu" ve Studiu (`valecms.config.ts`, `surfaces`):
+   * hledání se v rámu otevře samo, texty v něm jdou upravit klikáním. Mimo
+   * rám Studia vždycky `false`, takže `isOpen` je pro návštěvníka totéž co dřív.
+   */
+  const studioOpen = useStudioSurface("hledani")
+  const isOpen = openedByVisitor || studioOpen
   const [products, setProducts] = useState<NavbarProductHit[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [loadError, setLoadError] = useState(false)
@@ -674,6 +703,7 @@ export default function NavbarSearch({
              so preventDefault() in the rail cannot stop it and the page drifts behind the open
              overlay. This attribute is the only thing Lenis honours as an opt-out. */
           data-lenis-prevent
+          {...surfaceRoot("hledani")}
           initial={fadeOnly}
           animate={fadeIn}
           exit={fadeOnly}

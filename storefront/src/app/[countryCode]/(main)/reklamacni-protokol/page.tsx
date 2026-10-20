@@ -1,99 +1,37 @@
-import { Metadata } from "next"
+import type { Metadata } from "next"
 
-import { getMerchantIdentity } from "@lib/data/merchant"
-import { getFiles, getPageCopy } from "@lib/data/site-copy"
-import LegalDownloads from "@modules/legal/Downloads"
-import LegalDocument, {
-  type LegalSectionData,
-} from "@modules/legal/LegalDocument"
+import { getLegalRegistry } from "@lib/data/legal-registry"
+import { isPublishedPdfUrl } from "@lib/legal/pdf-published"
+import LegalPage, { legalMetadata } from "@modules/legal/LegalPage"
 
 import ProtocolDownload from "./download"
 
-const merchant = getMerchantIdentity()
+/*
+ * Reklamační protokol — návod a formulář k tisku, znění ze sloučeného registru
+ * (Studio + repo; vydané znění jen z repa).
+ * U kapitoly „Reklamační formulář" je tlačítko: PDF z manifestu, jakmile ho
+ * `pnpm legal:build` vygeneruje, do té doby tisk stránky.
+ */
+export const revalidate = 3600
 
-export const metadata: Metadata = {
-  title: "Reklamační protokol",
-  description:
-    "Formulář pro uplatnění reklamace zboží z Keramické zahrady — postup krok za krokem a protokol ke stažení.",
+export function generateMetadata(): Promise<Metadata> {
+  return legalMetadata("reklamacni-protokol")
 }
 
-const sections: LegalSectionData[] = [
-  {
-    id: "kdy-reklamovat",
-    title: "Kdy zboží reklamovat",
-    paragraphs: [
-      "Reklamaci uplatňujete, pokud má zboží vadu — dorazilo poškozené, neodpovídá objednávce nebo se vada projeví během záruční doby. U zboží zakoupeného jako spotřebitel máte na uplatnění práv z vadného plnění dva roky od převzetí.",
-      "Ruční výroba s sebou nese drobné odchylky v odstínu glazury, struktuře povrchu a rozměrech. Nejde o vadu — je to vlastnost každého originálu. Reklamace se týká skutečných vad: prasklin, odštěpků, odlupující se glazury nebo poškození při přepravě.",
-    ],
-  },
-  {
-    /*
-     * Transport damage is the one case where the claim is not ours to settle, and the
-     * customer has two working days to act. It is therefore stated plainly and placed
-     * before the general procedure — a rule discovered on day three is a rule that cost
-     * somebody a pot.
-     *
-     * TODO: add the document — the prefilled claim form, once it exists, is linked from
-     * here and from the block on the order pages.
-     */
-    id: "poskozeni-pri-preprave",
-    title: "Poškození při přepravě",
-    paragraphs: [
-      "Zásilku si prosím prohlédněte hned při převzetí, ještě než ji podepíšete. Je-li obal promáčklý, protržený nebo něčím prosakuje, rozbalte ji přímo před doručovatelem. U keramiky to platí dvojnásob — rozbije se tiše a zvenku bývá krabice v pořádku.",
-      "Reklamaci poškození způsobeného přepravou uplatňuje u dopravce příjemce zásilky, tedy vy. Jako odesílatel ji za vás podat nemůžeme. Podle podmínek České pošty je nutné poškození nahlásit při převzetí, nejpozději do dvou pracovních dnů od doručení — po této lhůtě už reklamaci nepřijme.",
-      "Reklamaci podáte na kterékoli pobočce České pošty nebo online — postup a formuláře najdete na ceskaposta.cz v části Reklamace a stížnosti (ceskaposta.cz/rady-a-tipy/jine/reklamace-a-stiznosti). Přiložte fotografie obalu i obsahu a doklad o ceně zboží. Česká pošta má na vyřízení 15 dnů.",
-      "Pokud zásilku převezmete bez výhrad a poškození nahlásíte až po uvedené lhůtě, dopravce reklamaci zamítne a zboží zůstává vaše — náhradu v takovém případě nemůžeme poskytnout. Proto prosíme: raději otevřít před doručovatelem.",
-      "Dejte nám prosím vědět i tak. O poškozené zásilce chceme vědět, i když ji řeší dopravce, a rádi vám s postupem poradíme.",
-    ],
-  },
-  {
-    id: "postup",
-    title: "Jak reklamaci uplatnit",
-    paragraphs: ["Stačí tři kroky:"],
-    bullets: [
-      "Připravte si číslo objednávky, popis vady a fotografie — na fotografii bývá vada zřejmá na první pohled.",
-      `Napište nám na ${merchant.email}. Máte-li vyplněný reklamační protokol, přiložte ho; bez něj to jde také.`,
-      `Ozveme se vám s dalším postupem. Zboží posílejte až po naší odpovědi, na adresu ${merchant.address}.`,
-    ],
-  },
-  {
-    id: "lhuty",
-    title: "Lhůty a vyřízení",
-    paragraphs: [
-      "Reklamaci vyřídíme nejpozději do 30 dnů od jejího uplatnění. O přijetí i o výsledku vás vyrozumíme e-mailem.",
-      "Za okamžik uplatnění reklamace se považuje chvíle, kdy jsme od vás obdrželi reklamované zboží.",
-      "Náklady na dopravu při oprávněné reklamaci hradíme my.",
-    ],
-  },
-  {
-    id: "kontakt",
-    title: "Na koho se obrátit",
-    paragraphs: [
-      `${merchant.name}, se sídlem ${merchant.address}, IČO ${merchant.registrationNumber}`,
-      `E-mail: ${merchant.email}`,
-      `Telefon: ${merchant.phone}`,
-    ],
-  },
-]
-
-export default async function Page() {
-  // Znění kapitol z CMS; `sections` níž zůstávají zálohou pro výpadek.
-  const [copy, files] = await Promise.all([
-    getPageCopy("reklamacni-protokol"),
-    getFiles("reklamacni-protokol"),
-  ])
+export default async function Page(props: { params: Promise<{ countryCode: string }> }) {
+  const { countryCode } = await props.params
+  const registry = await getLegalRegistry()
+  const doc = registry.currentVersion("reklamacni-protokol")
+  const entry = doc ? registry.pdfEntry("reklamacni-protokol", doc.version) : null
+  // Jen zveřejněné PDF (viz `lib/legal/pdf-published`), jinak tisk stránky.
+  const pdf = entry && isPublishedPdfUrl(entry.url) ? entry : null
 
   return (
-    <LegalDocument
-      code="06"
-      eyebrow="Reklamace · postup"
-      title="Reklamační protokol"
-      accent="Když něco není v pořádku."
-      description="Jak reklamaci podat a co k ní potřebujete. Napište nám dřív, než zboží pošlete — často se domluvíme rychleji."
-      sections={sections}
-      block={copy["reklamacni-protokol.text"]}
-      downloads={<LegalDownloads files={files} />}
-      supplements={{ postup: <ProtocolDownload /> }}
+    <LegalPage
+      slug="reklamacni-protokol"
+      countryCode={countryCode}
+      presentation={{ code: "06", eyebrow: "Reklamace · postup", accent: "Když něco není v pořádku." }}
+      supplements={{ formular: <ProtocolDownload pdfHref={pdf?.url ?? null} /> }}
     />
   )
 }

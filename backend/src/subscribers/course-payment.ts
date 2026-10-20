@@ -1,6 +1,7 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { COURSE_MODULE } from "../modules/course"
+import { photoConsentLine } from "../modules/course/legal"
 import type CourseModuleService from "../modules/course/service"
 import { formatCourseDate, sendCourseReservationConfirmedEmail } from "../lib/course-emails"
 import { ensureInvoiceForCourseReservation } from "../lib/course-invoice"
@@ -211,6 +212,7 @@ export default async function coursePaymentCapturedHandler({
           reservation.email ? ` <${reservation.email}>` : ""
         }${reservation.phone ? `, tel. ${reservation.phone}` : ""}`,
         `Zaplaceno předem kartou.`,
+        photoConsentLine(reservation.consents),
       ].join("\n"),
       audience: "owner",
       email: true,

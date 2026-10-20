@@ -31,7 +31,7 @@ interface ReturnResolvedEmailProps {
   resolvedAt?: string;
   /** Vrácená částka celkem (formátovaná) — jen když se peníze vracely. */
   refundAmount?: string;
-  /** „na kartu přes ComGate — na účtu do 3–5 pracovních dnů" / „ručně". */
+  /** „stejnou cestou, jakou jste platili (přes ComGate) — na účtu do 3–5 pracovních dnů" / „ručně". */
   refundMethod?: string;
   /** Košík vrácení (§13.2) — řádek za řádek („název · N ks · částka"). */
   refundLines?: string;

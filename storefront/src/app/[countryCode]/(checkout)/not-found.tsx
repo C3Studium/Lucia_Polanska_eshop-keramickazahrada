@@ -1,3 +1,5 @@
+import { getNotFoundCopy } from "@lib/data/site-copy"
+import CmsText from "@modules/common/components/cms-text"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import styles from "./styles/notfound.module.scss"
 import { Metadata } from "next"
@@ -7,14 +9,21 @@ export const metadata: Metadata = {
   description: "Tuhle stránku jsme nenašli.",
 }
 
+// Texty z bloku `global.nenalezeno` (viz getNotFoundCopy); výpadek CMS = tyhle z kódu.
 export default async function NotFound() {
+  const copy = await getNotFoundCopy()
+
   return (
     <div className={styles.root}>
-      <h1 className={styles.heading}>Stránka nenalezena</h1>
-      <p className={styles.message}>
-        Tuhle stránku jsme nenašli. Možná se přesunula, nebo tu nikdy nebyla.
-      </p>
-      <LocalizedClientLink href="/">Zpět na úvodní stránku</LocalizedClientLink>
+      <CmsText as="h1" className={styles.heading} doc={copy.doc} field="title">
+        {copy.title}
+      </CmsText>
+      <CmsText as="p" className={styles.message} doc={copy.doc} field="body">
+        {copy.message}
+      </CmsText>
+      <LocalizedClientLink href="/">
+        <CmsText doc={copy.doc} field={copy.fields.home}>{copy.home}</CmsText>
+      </LocalizedClientLink>
     </div>
   );
 }

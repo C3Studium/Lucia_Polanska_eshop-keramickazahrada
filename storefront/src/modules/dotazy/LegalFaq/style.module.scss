@@ -1,0 +1,158 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+
+/*
+ * Právní otázky pod FAQ z CMS. Tentýž jazyk jako seznam nad nimi (FAQ/styles.scss):
+ * vlasové linky, světlé písmo, kulatý přepínač — jen nativní <details> místo animace.
+ */
+
+.legalFaq {
+  margin-top: clamp(3rem, 8vh, 6.5rem);
+  padding-top: clamp(2rem, 5vh, 3.5rem);
+  border-top: 1px solid rgb(var(--ink-06-rgb) / .36);
+}
+
+.head {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 48rem;
+  margin-bottom: clamp(1.5rem, 4vh, 2.75rem);
+
+  h2 {
+    margin: 0;
+    font-family: "Sentient-Regular", serif;
+    font-size: clamp(2rem, 3.6vw, 4rem);
+    font-weight: 400;
+    line-height: 0.95;
+    letter-spacing: -0.045em;
+  }
+
+  p {
+    margin: 0;
+    color: rgb(var(--ink-06-rgb) / .76);
+    font-size: clamp(1rem, 1.1vw, 1.1875rem);
+    font-weight: 300;
+    line-height: 1.45;
+  }
+
+  a {
+    color: inherit;
+    text-underline-offset: 0.2em;
+  }
+}
+
+.groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(2rem, 5vw, 5.625rem);
+  row-gap: clamp(1.75rem, 4vh, 3rem);
+
+  @media (max-width: 899.98px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.group {
+  h3 {
+    margin: 0 0 0.5rem;
+    color: rgb(var(--ink-06-rgb) / .58);
+    font-size: clamp(0.75rem, 0.95vw, 0.875rem);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+}
+
+.item {
+  border-bottom: 1px solid rgb(var(--ink-06-rgb) / .3);
+
+  &:first-of-type {
+    border-top: 1px solid rgb(var(--ink-06-rgb) / .36);
+  }
+
+  summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 1.75rem;
+    align-items: center;
+    gap: 0.75rem;
+    /* Dotykový cíl: 44px je fyzická míra, zbytek roste s výškou okna. */
+    min-height: max(44px, clamp(3.5rem, 6vh, 4.75rem));
+    padding: 0.75rem 0.25rem;
+    color: var(--blackText);
+    font-size: clamp(1rem, 1.15vw, 1.25rem);
+    font-weight: 300;
+    line-height: 1.25;
+    list-style: none;
+    cursor: pointer;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--olive-07);
+      outline-offset: 2px;
+    }
+
+    i {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 1.75rem;
+      aspect-ratio: 1;
+      border: 1px solid rgb(var(--ink-06-rgb) / .28);
+      border-radius: 50%;
+      transition: transform 0.45s cubic-bezier(0.76, 0, 0.24, 1), background-color 0.3s ease, color 0.3s ease;
+
+      &::before,
+      &::after {
+        content: "";
+        position: absolute;
+        width: 0.625rem;
+        height: 1px;
+        background: currentColor;
+      }
+
+      &::after {
+        transform: rotate(90deg);
+      }
+    }
+  }
+
+  &[open] summary i {
+    color: var(--cream-10);
+    background: var(--olive-07);
+    transform: rotate(45deg);
+  }
+}
+
+.answer {
+  padding: 0 2.5rem 1.25rem 0.25rem;
+
+  p {
+    max-width: 44rem;
+    margin: 0 0 0.75em;
+    color: rgb(var(--ink-06-rgb) / .76);
+    font-size: clamp(0.9375rem, 1.05vw, 1.125rem);
+    font-weight: 300;
+    line-height: 1.48;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  a {
+    color: inherit;
+    font-weight: 400;
+    text-underline-offset: 0.2em;
+  }
+}
+
+/* `[[DOPLNIT: …]]` — chybějící údaj, viz lib/legal/facts.ts. Záměrně křiklavé. */
+.placeholder {
+  padding: 0.05em 0.3em;
+  border-radius: 0.2em;
+  background: #ffe45c;
+  color: #2b2400;
+  font-weight: 600;
+}

@@ -1,11 +1,16 @@
 import { Metadata } from "next"
 
+import { getPageCopy } from "@lib/data/site-copy"
+import { itemFieldPath, itemNote, itemValue } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
 import OrderStateShell from "@modules/order/components/order-state-shell"
 
 /**
  * Where the links from newsletter e-mails land: the backend's
  * `GET /newsletter/confirm` and `GET /newsletter/unsubscribe` do their work
- * and 302 here with `?stav=…` (mirroring how the balance-payment flow
+ * and 302 here with `?stav=…` — and so does `GET /email-optout` (odmítnutí
+ * proseb o recenzi, poklesu ceny a připomenutí košíku, `?stav=odhlaseno-
+ * upozorneni&druh=…`) (mirroring how the balance-payment flow
  * returns to the order page). One page for both flows, so every state of
  * "vztah s newsletterem" answers in the same voice.
  *
@@ -45,6 +50,16 @@ const COPY: Record<string, StatusCopy> = {
     description:
       "Žádné další zprávy z ateliéru už vám chodit nebudou. Kdybyste si to rozmysleli, formulář v patičce e-shopu na vás počká.",
   },
+  // Odmítnutí e-mailů z oprávněného zájmu (backend `GET /email-optout`):
+  // prosby o hodnocení, upozornění na nižší cenu, připomenutí košíku. Popis
+  // doplní `druh` z adresy (OPTOUT_KIND_LABEL).
+  "odhlaseno-upozorneni": {
+    status: "success",
+    kicker: "Odhlášení proběhlo",
+    title: "Tyhle e-maily",
+    accent: "už nepřijdou.",
+    description: "Hotovo — tyhle e-maily vám už posílat nebudeme.",
+  },
   "jiz-odhlaseno": {
     status: "pending",
     kicker: "Tady se nic nestalo",
@@ -80,17 +95,72 @@ const DEFAULT_COPY: StatusCopy = {
     "K odběru novinek se přihlásíte formulářem v patičce e-shopu. Přijde vám e-mail s potvrzovacím odkazem — a teprve po jeho kliknutí se ozýváme.",
 }
 
-type Props = {
-  searchParams: Promise<{ stav?: string }>
+/**
+ * Druhy z backendu (`lib/email-optout-link.ts`, `EMAIL_OPTOUT_KIND_LABEL`) —
+ * co přesně zákazník odmítl. Neznámý druh = obecná věta, nic se nevypisuje
+ * z adresy doslova.
+ */
+const OPTOUT_KIND_LABEL: Record<string, string> = {
+  review_request: "prosby o hodnocení nákupu",
+  price_drop: "upozornění na nižší cenu výrobků v oblíbených",
+  abandoned_cart: "připomenutí nedokončeného nákupu",
 }
 
+type Props = {
+  searchParams: Promise<{ stav?: string; druh?: string }>
+}
+
+/*
+ * Texty stavů z CMS — blok `newsletter.stavy`, položky klíčované popiskem
+ * jako u `global.prihlaseni`: `<stav>.stitek` (řádek nad nadpisem),
+ * `<stav>.nadpis` (nadpis v `value`, zvýrazněný konec v `note`) a `<stav>.text`
+ * (odstavec). Výchozí stránka bez `?stav` je `vychozi`. Stav, který blok
+ * nemá, si nechá texty z kódu.
+ *
+ * Co v CMS není: odstavec u odmítnutí upozornění (`odhlaseno-upozorneni`).
+ * Říká, které e-maily přestanou chodit a že potvrzení objednávek chodit dál
+ * budou — je to odpověď na námitku proti zpracování, ne redakční text.
+ * `status` (barva a značka) a skladba stránky jsou logika, ne slova.
+ */
+const fromCms = (block: CopyBlock | undefined, key: string, base: StatusCopy): StatusCopy => ({
+  ...base,
+  kicker: itemValue(block, `${key}.stitek`)?.trim() || base.kicker,
+  title: itemValue(block, `${key}.nadpis`)?.trim() || base.title,
+  accent: itemNote(block, `${key}.nadpis`)?.trim() || base.accent,
+  description:
+    key === "odhlaseno-upozorneni"
+      ? base.description
+      : itemValue(block, `${key}.text`)?.trim() || base.description,
+})
+
 export default async function NewsletterStatusPage(props: Props) {
-  const { stav } = await props.searchParams
-  const copy = (stav && COPY[stav]) || DEFAULT_COPY
+  const { stav, druh } = await props.searchParams
+  // Jen vlastní klíče — hodnota z adresy nesmí sáhnout na zděděné vlastnosti
+  // objektu (`?stav=constructor`).
+  const own = (record: object, key?: string): key is string =>
+    Boolean(key) && Object.prototype.hasOwnProperty.call(record, key as string)
+  const block = (await getPageCopy("newsletter"))["newsletter.stavy"]
+  const stateKey = own(COPY, stav) ? stav : "vychozi"
+  const base = fromCms(block, stateKey, own(COPY, stav) ? COPY[stav] : DEFAULT_COPY)
+  const optOut = stav === "odhlaseno-upozorneni"
+  const kindLabel = own(OPTOUT_KIND_LABEL, druh) ? OPTOUT_KIND_LABEL[druh] : undefined
+  const copy: StatusCopy =
+    optOut && kindLabel
+      ? {
+          ...base,
+          description: `Hotovo — tyhle e-maily (${kindLabel}) vám už posílat nebudeme. Potvrzení objednávek a zprávy o jejich stavu vám chodit dál budou.`,
+        }
+      : optOut
+        ? {
+            ...base,
+            description:
+              "Hotovo — tyhle e-maily vám už posílat nebudeme. Potvrzení objednávek a zprávy o jejich stavu vám chodit dál budou.",
+          }
+        : base
 
   return (
     <OrderStateShell
-      eyebrow="Newsletter"
+      eyebrow={optOut ? "E-maily" : "Newsletter"}
       kicker={copy.kicker}
       title={copy.title}
       accent={copy.accent}
@@ -98,6 +168,13 @@ export default async function NewsletterStatusPage(props: Props) {
       status={copy.status}
       primary={{ href: "/store", label: "Prohlédnout objekty" }}
       secondary={{ href: "/", label: "Na úvodní stránku" }}
+      editDoc={block?.id ?? null}
+      editFields={{
+        kicker: itemFieldPath(block, `${stateKey}.stitek`),
+        title: itemFieldPath(block, `${stateKey}.nadpis`),
+        accent: itemFieldPath(block, `${stateKey}.nadpis`, "note"),
+        description: optOut ? undefined : itemFieldPath(block, `${stateKey}.text`),
+      }}
     />
   )
 }
