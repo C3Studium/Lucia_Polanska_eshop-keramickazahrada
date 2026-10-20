@@ -3,6 +3,30 @@
 Větev `legal/compliance-2026`, podle `LEGAL_AUDIT.md` (14. 10. 2026). Odkazy na paragrafy:
 OZ = zákon č. 89/2012 Sb., ZOS = zákon č. 634/1992 Sb.
 
+## Nasazení 2. kolo (19.–20. 10. 2026)
+
+Podle `docs/legal/audit/LEGAL_AUDIT-2-kolo-2026-10-18.md`, větev `legal/deploy-2026-10`,
+průběh krok za krokem v `docs/legal/01-deploy-log.md`.
+
+- **Segment vypnutý** (19. 10. 21:42): `SEGMENT_WRITE_KEY` smazán z Railway Backend, backend
+  znovu nasazený; nasazený `main` do té doby posílal do USA e-mail a jméno zákazníka.
+- **Záloha produkční DB** před migracemi (`pg_dump`, ověřená), pak **sloučení PR #15**
+  (merge commit `b8133456`, 20. 10. ráno) → nasazení backendu i storefrontu, 5 migrací.
+- Skripty: historie cen (792 cen), balné u odeslané #39, poukaz s vlastní částkou 100–10 000 Kč
+  (popis bez poštovného 60 Kč, gmailu a pokynu k převodu).
+- Proměnné `BACKEND_PUBLIC_URL` (odkaz na odhlášení v e-mailech) a `CMS_CRON_SECRET` (shodný na
+  obou službách).
+- Studio: 4 pracovní znění obnovená z repa, 37 nových bloků textů, dvě FAQ odpovědi opravené
+  i v redakci (#22).
+- Produkty: skryté testovací kusy (kytka s vadou „TEST“ a produkt „TEST“), `no_promo` u 6
+  poukazů, upozornění na mráz u 2 nádob, text kartičky do balíku.
+- **Opraveno navíc:** Zásady na produkci ukazovaly zástupný text `[[DOPLNIT: Twilio Segment…]]`
+  — po vypnutí Segmentu odstraněn. Skripty `settle-service-lines` a `legal-voucher-product`
+  nešly přes `medusa exec` spustit ostře (CLI odmítá volbu `--apply`) — berou teď `apply`.
+- **Nevydáno:** OP, Odstoupení a Zásady zůstávají pracovní — chybí údaje od Lucie (seznam
+  v `OPEN_QUESTIONS.md`, oddíl „Stav po nasazení“). Datum účinnosti zůstává `2026-10-15`.
+- Otázky pro advokáta: `docs/legal/ADVOKAT.md`.
+
 ## Obsah do Studia, údaje do administrace (15. 10. 2026 odpoledne)
 
 Podrobně `docs/cms/00-plan.md`. Mění bod „Jádro“ níž: text dokumentů se smí upravovat ve

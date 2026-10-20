@@ -109,10 +109,11 @@ PlatímPak na Doprava a platba, `/reklamacni-rad` a `/smluvni-podminky/2015-01-0
 | sandbox | `node run-all.mjs start --fresh --storefront` (čistá DB, všechny migrace) | OK |
 | sandbox | `node e2e.mjs` | **9/9 OK** (cookies, běžný výrobek, zakázka se zálohou, poukaz s vlastní částkou, kurz, dobírka, Koupit ihned, online odstoupení § 1830a, reklamace) |
 
-Nález ze sandboxu (není nový, sloučení neblokuje): potvrzovací e-mail objednávky **zakázky**
-ukazuje celkovou cenu, ale ne zaplacenou zálohu a zbývající doplatek — souběh subscriberů na
-`order.placed` (`resolveBalanceStep` hledá production_order dřív, než ho
-`initialize-merchant-order` založí). Řešení viz krok 6 / CHANGELOG.
+Poznámka v reportu sandboxu „NÁLEZ: potvrzení objednávky zakázky neuvádí zálohu ani doplatek“
+je **přenesená ze staršího běhu** (`_notes` v `e2e-results.json`, časy z 15./16. 10.). Opraveno už
+commitem `84744aae` (16. 10.): `resolveBalanceStep` bere doplatek z kolekce pokladny, dokud
+produkční objednávka nevznikne; přesně tento souběh pokrývá `order-balance.unit.spec.ts`
+(6 testů, prošly). 19. 10. jsem ho zprvu mylně uvedl jako otevřený.
 
 ## Krok 1 — PR a sloučení
 

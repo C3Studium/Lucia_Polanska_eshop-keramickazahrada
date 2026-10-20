@@ -1,4 +1,105 @@
-Předmět: E-shop Keramická zahrada – potřebuji od Vás pár údajů a rozhodnutí před spuštěním
+Předmět: E-shop: prosím o odpovědi dnes do 14:00, ať zítra 21. 10. spustíme
+
+Dobrý den, paní Polanská,
+
+nové obchodní podmínky, reklamační řád, poučení o odstoupení od smlouvy a zásady ochrany osobních údajů jsou připravené a otestované. Chci je spustit zítra, ve středu 21. 10. Chybí už jen údaje, které znáte jen Vy. Pokud mi odpovědi na otázky 1 až 11 pošlete dnes do 14:00, stihneme to. Klidně mi je i zavolejte, zapíšu si je.
+
+Stačí krátce odpovědět u čísla otázky. Kde je návrh, stačí napsat „souhlasím“.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NUTNÉ KE SPUŠTĚNÍ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Od kdy mají nové podmínky platit? Navrhuji středu 21. 10. 2026.
+
+2. Které číslo účtu platí? Ve starých textech jsou tři: 2500675505/2010, 2701281289/2010 (eura) a 7010757121/2010. Máte zvláštní účet pro eura?
+
+3. Jste plátce DPH? E-shop i faktury dnes počítají s tím, že nejste.
+
+4. Kolik procent ceny chcete brát jako zálohu u zakázky? Obvykle 30 až 50 %.
+
+5. Které výrobky jsou opravdu na míru?
+Vrácení do 14 dnů lze vyloučit jen u výrobku vyrobeného podle přání konkrétního zákazníka, například se jménem, číslem domu nebo vlastním motivem. Nestačí, že ho vyrábíte až po objednání. Jako zakázka je teď nastavený jen „Pán lesa Dub“. Napište prosím, které z těchto jsou na míru (nebo „všechny kromě…“):
+– Keramická plastika Slunce – Sluneční žena Červenec
+– Keramická plastika slunce – Sluneční žena Hlubina
+– Keramická plastika slunce – Sluneční žena Naděje
+– Keramická plastika slunce – Paní Třešeň
+– Keramická plastika slunce – Paní Jabloň
+– Keramická plastika domovní znamení – Pán lesa Dub zelený
+– Domovní znamení – Pán lesa lípa a smrk
+– Keramické domovní znamení číslo – Strom dub 2
+– Keramické domovní znamení číslo – Strom dub 6
+– Domovní znamení NA ZAKÁZKU
+– Keramický kachel na fasádu
+– Keramický hrnek s věnováním
+– Kočičák Viktor do zahrady
+– Domovní číslice na zakázku
+– Keramické domovní číslo na zakázku – bez figurky
+– Keramické domovní č.p. na zakázku – bez figurky
+– Domovní číslo na zakázku s pomněnkou
+– Domovní čísla na zakázku s jednou figurkou – čiči světlá
+– Domovní čísla na zakázku s jednou figurkou – čiči tmavá
+– Domovní čísla na zakázku s jednou figurkou – haf
+– Keramická domovní čísla na zakázku – Sovy
+– Domovní čísla na zakázku – 2 figurky
+– Domovní čísla na zakázku – 3 figurky
+– Domovní čísla na zakázku – se jménem a rybou
+– Keramická domovní čísla na zakázku se jménem a 1 figurkou
+– Keramická domovní čísla na zakázku se jménem – 3 figurky
+
+6. Domovní znamení NA ZAKÁZKU má cenu 6 000 Kč a zároveň „cena dohodou“. Co z toho?
+a) pevná cena za běžný rozsah, příplatek podle domluvy,
+b) bez ceny, s tlačítkem „Poptat“, které vede na poptávkový formulář.
+
+7. Storno kurzů. Dnes zákazník zruší na webu nejpozději 48 hodin předem a dostane zpět celou částku, později nic. Nechat to tak, nebo zavést například:
+– 7 a více dní předem: vrácení 100 %,
+– 2 až 6 dní předem: 50 %, nebo přesun na jiný termín,
+– méně než 48 hodin: bez vrácení, ale může přijít náhradník.
+
+8. Od kolika let mohou na kurz děti? A do kdy si musí účastník vyzvednout výrobek po výpalu?
+
+9. Dárkové poukazy: jak dlouho platí (navrhuji 1 rok)? Když zákazník nakoupí za méně, zbytek propadá, nebo mu zůstane? A jak se poukaz dnes uplatňuje (kód v poznámce, v dílně, e-mailem)?
+
+10. Poukaz za „1 Kč“ předělám tak, že zákazník rovnou napíše částku od 100 do 10 000 Kč po 100 Kč. Souhlasíte? Posíláte poukazy poštou, e-mailem, nebo obojí, a platí ještě poštovné 60 Kč?
+
+11. Kolik zhruba stojí zákazníka poslat zboží zpět? Stačí odhad, třeba „150 až 250 Kč, křehký balík“.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MŮŽE PŘIJÍT POZDĚJI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12. Tři zvonková tlačítka mají v názvu „SLEVA“, ale prodávají se za běžnou cenu. Mám a) nastavit skutečnou akční cenu (kolik %?), b) slovo SLEVA z názvu odstranit, nebo c) jsou to kusy s vadou (jakou)?
+
+13. Jak dlouho obvykle trvá výroba zakázky? Například „3 až 6 týdnů od zaplacení zálohy“.
+
+14. Používáte k newsletteru ještě jiný nástroj než e-shop? Předáváte faktury účetní (stačí ano/ne)?
+
+15. Používáte ještě Zásilkovnu? Chcete měřit návštěvnost přes Google Analytics (jen se souhlasem v liště cookies)?
+
+16. Pravidla zakázek (bod 11) a doby uchování údajů (bod 25) z minulého e-mailu: platí, nebo je chcete upravit?
+
+17. Máte svého advokáta? Pošlu mu podklady a tři konkrétní otázky.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CO SE PRO VÁS MĚNÍ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+– Poškozenou zásilku reklamujete u České pošty Vy, do 2 pracovních dnů od doručení. Zákazník Vám pošle fotky, administrace Vás upozorní.
+– K pítkům a nádobám na vodu prosím přikládejte kartičku o zimě (text Vám pošlu). Bez ní nemůžeme odmítnout reklamaci nádoby, ve které zamrzla voda.
+– Testovací kus „kytka – TEST“ jsem z webu skryl.
+– Nová verze webu už běží. Údaje si můžete zkontrolovat a upravit i sama v administraci v sekci „Právní údaje“.
+
+Děkuji a kdyby bylo cokoli nejasné, zavolejte mi.
+
+S pozdravem
+Matěj Forejt
+
+
+---
+
+## Předchozí, úplná verze (16. 10. 2026)
+
+Novější e-mail výše je zkrácený na to, bez čeho nejde spustit. Body 11 a 25 z této verze na něj
+odkazují.
+
+Předmět (16. 10.): E-shop Keramická zahrada – potřebuji od Vás pár údajů a rozhodnutí před spuštěním
 
 Dobrý den, paní Polanská,
 
