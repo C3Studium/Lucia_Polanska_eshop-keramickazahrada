@@ -61,6 +61,25 @@ Doprava a platba.
 **Otázka:** Splňuje to § 1811 odst. 2 písm. c) OZ a § 12 zákona o ochraně spotřebitele (cena
 včetně všech daní a poplatků), nebo je nutné balné zahrnout přímo do ceny výrobku?
 
+### 4.–6. Zakázková výroba (LEGAL_AUDIT.md § 0, 20. 10. 2026)
+
+Zakázka z e-shopu je kupní smlouva uzavřená na dálku (§ 2086 OZ). Záloha nejvýš 50 % ceny
+výrobku (hlídá databáze). Zahájení výroby platí od e-mailu „Zakázka je ve výrobě“ s datem
+a časem (objektivní, zaznamenaná událost — § 1814 odst. 1 písm. j)). Před ním se při zrušení
+vrací vše; po něm se záloha nevrací jako paušální náhrada nákladů zahájené výroby a vše nad
+zálohu se vrací do 14 dnů, doplatek se nepožaduje, výrobek zůstává prodávající. Zákazník to
+před odesláním objednávky potvrzuje zaškrtnutím (čas se ukládá) a dostává PDF „Potvrzení
+zakázky“. Schválená fotografie před výpalem = ujednaná vlastnost (§ 2161 odst. 1 písm. a) OZ);
+nesoulad se zadáním zůstává vadou vždy.
+
+**A1.** Obstojí paušální nevratná záloha ≤ 50 % s osvobozením od zbytku ceny podle § 1813
+a § 1814 odst. 1 písm. l) OZ, nebo je nutné trvat na vyúčtování skutečných nákladů?
+
+**A2.** Stačí fikce schválení fotografie po 5 pracovních dnech s připomenutím?
+
+**A3.** Má zákazník při zrušení ze strany prodávající nárok na víc než vrácení platby
+(§ 1814 odst. 1 písm. c) OZ „přiměřená náhrada“)?
+
 ## Pro představu — co už je hotové
 
 Zakázková výroba s poučením o nevratnosti u kusu (§ 1837 písm. d)), kurzy s poučením

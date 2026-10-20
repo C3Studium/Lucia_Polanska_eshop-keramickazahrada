@@ -54,7 +54,8 @@ v e-mailu pro Lucii (artefakt „Spuštění do středy“, 20. 10.).
 | 4 | **Výše zálohy** (% z ceny) | OP čl. Výroba na zakázku, FAQ | Doporučeno 30–50 %. Systém dnes zálohu bere podle profilu výroby u produktu. |
 | 5 | Produkty s „NA ZAKÁZKU“ v názvu bez profilu výroby | Katalog | 27 produktů má „na zakázku“ v názvu, profil výroby (a tím poučení o vyloučení odstoupení, zálohu a povinné zadání) má jen 1. Ostatní se prodávají jako běžné zboží **s právem odstoupit**. Rozhodnout, které jsou skutečně na míru, a zapnout jim profil v administraci (Produkty → Výroba). |
 | 6 | „Domovní znamení NA ZAKÁZKU“ 6 000 Kč + „cena dohodou“ | Produkt v administraci | Buď pevná cena za standardní rozsah, nebo produkt bez ceny s odkazem na poptávku (nový formulář na stránce Výroba, kotva `/vyroba#poptavka`). |
-| 6a | Pravidla zakázky navržená v OP (potvrdit) | OP čl. IX | Fotografie před výpalem: bez odpovědi do 5 pracovních dnů = schváleno (z auditu); nezaplacený doplatek 30 dnů po výzvě → můžeme odstoupit a ponechat si skutečné náklady, nejvýš zálohu; dodatečné odstoupení při zpoždění výroby se zálohou vrácenou celou. |
+| 6b | **Zakázky podle § 0 auditu (20. 10.)** | OP čl. IX, pokladna, PDF Potvrzení zakázky | Pravidla Z1–Z12 (`LEGAL_AUDIT.md` § 0) nahradila dřívější návrh 6a: záloha ≤ 50 %, zahájení výroby platí od e-mailu, před ním vrácení všeho, po něm záloha propadá a zbytek se vrací, schválení fotky = ujednaná vlastnost, vady bez čísel. Lucie rozhodne: **výchozí zálohu v %** (profil má 25; max 50), zda se u produktů liší, a které produkty mají profil (#5). Advokát: A1–A3 v `ADVOKAT.md`. |
+| 6a | ~~Pravidla zakázky navržená v OP~~ **NAHRAZENO 6b** | OP čl. IX | Fotografie před výpalem: bez odpovědi do 5 pracovních dnů = schváleno (z auditu); nezaplacený doplatek 30 dnů po výzvě → můžeme odstoupit a ponechat si skutečné náklady, nejvýš zálohu; dodatečné odstoupení při zpoždění výroby se zálohou vrácenou celou. |
 
 ## Kurzy
 
