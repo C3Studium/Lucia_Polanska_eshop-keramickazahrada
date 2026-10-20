@@ -147,11 +147,78 @@ const Zone = ({
           </Text>
         )}
       </header>
-      <div className="grid gap-px bg-ui-border-base sm:grid-cols-2 lg:grid-cols-3">
+      {/*
+        `auto-fit` místo pevných tří sloupců: dlaždice se roztáhnou a vyplní
+        řádek. S `lg:grid-cols-3` zůstávalo po čtyřech dlaždicích prázdné
+        místo, kterým prosvítalo pozadí mřížky — na obrazovce to vypadalo
+        jako dvě šedé rozbité buňky.
+      */}
+      <div className="grid gap-px bg-ui-border-base grid-cols-[repeat(auto-fit,minmax(15rem,1fr))]">
         {tiles.map((tile) => (
           <TileCard key={tile.key} tile={tile} />
         ))}
       </div>
+    </section>
+  );
+};
+
+/** „1 věc / 2 věci / 5 věcí" — česky, protože „5 věci" vypadá jako chyba. */
+const veci = (count: number): string =>
+  count === 1 ? "1 věc" : count < 5 ? `${count} věci` : `${count} věcí`;
+
+/** Pozdrav podle denní doby — admin se otevírá ráno a večer stejně často. */
+const pozdrav = (now: Date): string => {
+  const hodina = now.getHours();
+  if (hodina < 10) return "Dobré ráno";
+  if (hodina < 18) return "Dobrý den";
+  return "Dobrý večer";
+};
+
+/**
+ * Štítek pro jednu věc, která hoří.
+ *
+ * Dlaždice o tomtéž dřív stála vedle „Vyprodáno 3" a byla stejně hlasitá.
+ * Štítek je menší než dlaždice schválně: je jich málo, nesou jedno číslo
+ * a jedno sloveso, a vedou tam, kde se s tím něco dělá.
+ */
+const Stitek = ({ tile }: { tile: Tile }) => (
+  <Link to={tile.to} className="outline-none focus-visible:shadow-borders-focus rounded-full">
+    <Badge
+      size="small"
+      color={tile.tone === "critical" ? "red" : tile.tone === "warning" ? "orange" : "grey"}
+    >
+      {tile.value} {tile.label.toLowerCase()}
+    </Badge>
+  </Link>
+);
+
+/**
+ * Obchod jako jeden řádek štítků (§4).
+ *
+ * Zásoby, recenze a akce jsou týdenní starost, ne ranní. Jako dlaždice
+ * křičely stejně hlasitě jako dnešní práce — a protože čísla u zásob bývají
+ * velká („Vyprodáno 126"), křičely dokonce víc. Řádek drží tutéž informaci
+ * i tytéž odkazy, jen jim bere velikost.
+ */
+const ObchodRadek = ({ tiles }: { tiles: Tile[] }) => {
+  if (!tiles.length) {
+    return null;
+  }
+  return (
+    <section className="flex flex-wrap items-center gap-2 px-6 py-4">
+      <Text size="small" className="text-ui-fg-subtle mr-1">
+        Obchod
+      </Text>
+      {tiles.map((tile) => (
+        <Link
+          key={tile.key}
+          to={tile.to}
+          className="text-ui-fg-subtle hover:text-ui-fg-base txt-small border-ui-border-base hover:bg-ui-bg-base-hover transition-fg rounded-md border px-2.5 py-1 outline-none focus-visible:shadow-borders-focus"
+        >
+          <span className="text-ui-fg-base font-medium">{tile.value}</span>{" "}
+          {tile.label.toLowerCase()}
+        </Link>
+      ))}
     </section>
   );
 };
@@ -532,6 +599,23 @@ const PrehledInner = () => {
     data.today.shipping === 0 &&
     data.next_up.length === 0;
 
+  /*
+   * Kolik věcí dnes čeká — číslo do úvodní věty.
+   *
+   * Sčítá se jen to, co je dnes práce: poruchy a objednávky, které někdo
+   * musí posunout. Zásoby a recenze v tom schválně nejsou — „93 dochází na
+   * skladě" by z klidného dne udělalo stovku úkolů, a přitom to není nic,
+   * co se má udělat dnes.
+   */
+  const celkem =
+    data.attention.payment_problems +
+    data.attention.failed_emails +
+    data.attention.carrier_failures +
+    data.attention.overdue_production +
+    data.today.new_orders +
+    data.today.working +
+    data.today.shipping;
+
   return (
     <div className="flex flex-col gap-y-3">
       {/* Úplně nahoře a jen když opravdu je co řešit — viz komentáře
@@ -543,12 +627,34 @@ const PrehledInner = () => {
         <WorkTabs active="prehled" />
       <VitrinaCard />
 
+        {/*
+          Jedna věta místo nadpisu „Přehled" (§4).
+
+          Nadpis stránky říkal, kde jsem — to už je vidět ze záložky. Tahle
+          věta říká, co mě čeká, a jmenuje jen to, co hoří. Zbytek čísel je
+          níž; sem patří jen součet a výjimky.
+        */}
         <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-2 pt-6">
-          <div>
-            <Heading>Přehled</Heading>
-            <Text size="small" className="text-ui-fg-subtle mt-2">
-              {formatDate(data.generated_at)} — co je dnes potřeba udělat.
-            </Text>
+          <div className="min-w-0">
+            <Heading>
+              {pozdrav(new Date())}.{" "}
+              {celkem === 0
+                ? "Dnes nic nehoří."
+                : `Dnes vás čeká ${veci(celkem)}.`}
+            </Heading>
+            {attention.length > 0 ? (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {attention.map((tile) => (
+                  <Stitek key={tile.key} tile={tile} />
+                ))}
+              </div>
+            ) : (
+              <Text size="small" className="text-ui-fg-subtle mt-2">
+                {celkem === 0
+                  ? "Nové objednávky se tu objeví samy."
+                  : "Nic se nepokazilo — všechno níž je běžná práce."}
+              </Text>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {/* The way onto the live site with the admin bar switched on —
@@ -566,54 +672,52 @@ const PrehledInner = () => {
           </div>
         </header>
 
-        {/* Three groups in the order the day runs: what is broken, what is
-            moving, what the shop needs. Each says what it is for — „Obchod"
-            alone told nobody anything. */}
-        <Zone
-          title="Vyžaduje pozornost"
-          description="Něco se nepovedlo a čeká to na vás."
-          tiles={attention}
-        />
+        {/*
+          Pořadí dne (§4): co hoří (štítky v hlavičce) → na čem jsem na tahu
+          (Na řadě) → kolik toho je (Dnešní práce) → obchod (řádek štítků).
+
+          „Na řadě" bývalo úplně dole, pod čtrnácti dlaždicemi. Přitom je to
+          ta odpověď na „co mám dělat teď", kvůli které stránka vznikla —
+          konkrétní objednávky s konkrétním dalším krokem, ne čísla.
+          Zóna „Vyžaduje pozornost" zmizela do štítků nahoře, zóna „Obchod"
+          do řádku dole; zůstala jedna zóna dlaždic, a ta má smysl.
+        */}
+        <section className="divide-y">
+          <header className="px-6 pb-4 pt-6">
+            <Heading level="h2">Na řadě</Heading>
+            <Text size="small" className="text-ui-fg-subtle mt-2">
+              Nejdéle čekající objednávky, u kterých je na tahu někdo z vás.
+            </Text>
+          </header>
+
+          {data.next_up.length === 0 ? (
+            <div className="flex min-h-32 flex-col items-center justify-center gap-y-2 px-6 py-8 text-center">
+              <Text size="small" className="text-ui-fg-subtle max-w-md">
+                {allClear
+                  ? "Všechno zvládnuto — nic nečeká. 🎉"
+                  : "Žádná objednávka nečeká na vás."}
+              </Text>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {/*
+                The same card component the queues use, so an order looks and
+                behaves identically wherever she meets it.
+              */}
+              {data.next_up.map((order) => (
+                <OrderRow key={order.order_id} order={order} stage={order.stage} />
+              ))}
+            </div>
+          )}
+        </section>
+
         <Zone
           title="Dnešní práce"
-          description="Objednávky a zakázky, které dnes posunete dál."
+          description="Kolik toho je dohromady — klikem se dostanete na seznam."
           tiles={work}
         />
-        <Zone
-          title="Obchod"
-          description="Zásoby, recenze a akce — nic z toho nehoří."
-          tiles={shop}
-        />
-      </Container>
 
-      <Container className="divide-y p-0">
-        <header className="px-6 pb-4 pt-6">
-          <Heading level="h2">Na řadě</Heading>
-          <Text size="small" className="text-ui-fg-subtle mt-2">
-            Nejdéle čekající objednávky, u kterých je na tahu někdo z vás.
-          </Text>
-        </header>
-
-        {data.next_up.length === 0 ? (
-          <div className="flex min-h-48 flex-col items-center justify-center gap-y-2 px-6 py-10 text-center">
-            <Heading level="h2">
-              {allClear ? "Dnes nic nehoří. Všechno zvládnuto 🎉" : "Nic nečeká"}
-            </Heading>
-            <Text size="small" className="text-ui-fg-subtle max-w-md">
-              Nové objednávky se tu objeví samy.
-            </Text>
-          </div>
-        ) : (
-          <div className="divide-y">
-            {/*
-              The same card component the queues use, so an order looks and
-              behaves identically wherever she meets it.
-            */}
-            {data.next_up.map((order) => (
-              <OrderRow key={order.order_id} order={order} stage={order.stage} />
-            ))}
-          </div>
-        )}
+        <ObchodRadek tiles={shop} />
       </Container>
     </div>
   );
