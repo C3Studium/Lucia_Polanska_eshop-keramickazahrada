@@ -181,7 +181,13 @@ export default async function initializeMerchantOrder({
     agreed_total: originalTotal,
     original_total: originalTotal,
     currency_code: String(order.currency_code || "czk").toLowerCase(),
-    customer_note: [...specifications, ...customerNotes].join("\n\n") || null,
+    // Zadání přichází dvakrát — ze snímku pokladny (`production_lines[].specification`)
+    // i z metadat řádku; stejný text se do poznámky (a do PDF Potvrzení zakázky)
+    // nesmí dostat dvakrát.
+    customer_note:
+      [...new Set([...specifications, ...customerNotes].map((text) => text.trim()).filter(Boolean))].join(
+        "\n\n"
+      ) || null,
   })
 
   /*
