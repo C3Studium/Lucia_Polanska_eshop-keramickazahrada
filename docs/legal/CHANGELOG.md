@@ -3,6 +3,47 @@
 Větev `legal/compliance-2026`, podle `LEGAL_AUDIT.md` (14. 10. 2026). Odkazy na paragrafy:
 OZ = zákon č. 89/2012 Sb., ZOS = zákon č. 634/1992 Sb.
 
+## Zakázky podle § 0 auditu (20. 10. 2026, větev `legal/deploy-2026-10`)
+
+Pravidla Z1–Z12 z `LEGAL_AUDIT.md` § 0 mají přednost před dřívějším návrhem OP čl. IX.
+
+- **Z2 strop zálohy 50 %** — DB checky (`Migration20261020120000`), validace profilu i přebití u
+  provedení (česká hláška), pokladna sevře smluvní procento na 50. `production_order.deposit_percentage`
+  nově = SMLUVNÍ záloha z profilu (dřív podíl zaplacený v pokladně, u plné platby 100 %), nový
+  `deposit_amount` = smluvní záloha v penězích; pokladna si do `production_lines[]` ukládá
+  `contract_deposit_*` dřív, než je přepíše posuvník.
+- **Z3 zahájení výroby = e-mail** — „Začít výrobu“ pošle synchronně `production-started`
+  („Vaše zakázka je ve výrobě“: datum a čas, věta o nevratné záloze, lhůta); čas a ID zprávy
+  v `production_start_notified_at` / `production_start_email_id`; když e-mail neodejde, fáze se
+  vrátí a majitelka vidí chybu. Starý `order-processing` už zákazníkovi nechodí.
+- **Z4/Z5/Z7 zrušení** — čistý plán `lib/made-to-order/cancellation.ts`; zákazník ruší v účtu nebo
+  z potvrzení objednávky (`GET/POST /store/made-to-order/:id/cancellation|cancel`, vlastník nebo
+  podepsaný token): před e-mailem Z3 vše zpět, po něm záloha propadá a zbytek se vrací. Žádost
+  nového druhu `zruseni_zakazky` vyřídí server sám (refund ComGate/převod, dobropis, protokol
+  `ZAK-…`), zákazník dostane `commission-cancelled`, majitelka zvonek. Zrušení majitelkou
+  zapisuje `cancelled_by: seller`; v Reklamacích u „zálohu nevracet“ je upozornění Z7.
+- **Z6 doplatek** — úloha `watch-production-deadlines`: 30 dnů po výzvě a po prokazatelné
+  připomínce zruší jako po zahájení výroby (záloha propadá) a dá vědět oběma stranám; bez
+  připomínky jen upozorní majitelku.
+- **Z8/Z9/Z12 texty** — OP čl. IX přepsaný (zahájení e-mailem, záloha, zrušení z obou stran,
+  doplatek, schválení podoby = ujednaná vlastnost § 2161 odst. 1 písm. a) s připomenutím,
+  výrobní lhůta od zahájení + nový kus bez příplatku, vady bez čísel, Potvrzení zakázky);
+  FAQ, stránka Výroba a zdroj Reklamačního řádu sladěny (vydá se s novou verzí).
+- **Z10 pokladna** — checkbox „Beru na vědomí, že výrobek vyrobený podle mého zadání nelze
+  vrátit ve 14denní lhůtě a že záloha se po zahájení výroby nevrací.“, předsmluvní informace
+  o záloze (% i Kč, teď platíte X), lhůtě od zahájení a zrušení; štítek „Na zakázku · záloha
+  N % · výroba do N dnů · nelze vrátit do 14 dnů“ u ceny, na kartě a v košíku; blok „Jak zakázka
+  probíhá“ na produktu.
+- **Z11 Potvrzení zakázky (PDF)** — generátor pdf-lib podle `potvrzeni-zakazky.html`
+  (`lib/potvrzeni-zakazky/*`), deterministické bajty, neměnné uložení v R2
+  (`orders/<order_id>/potvrzeni-zakazky.pdf`, jiný obsah = nová verze vedle), příloha
+  potvrzovacího e-mailu vedle OP; u objednávky se zakázkou potvrzení čeká na event
+  `made-to-order.production-order-created` (konec závodu s `order.placed`). Odkaz v účtu
+  i v administraci; `{{vat.note}}` z faktu `vat.status` (dnes prázdný → věta o DPH chybí).
+- **Účet** — panel zakázky: stav (čeká / ve výrobě od), smluvní záloha, PDF, „Zrušit zakázku“
+  jednokrokově před zahájením, dvoukrokově s částkou po něm.
+- Sandbox: scénář `z` v `backend/sandbox/e2e.mjs` (dvě objednávky — zrušení před a po zahájení).
+
 ## Nasazení 2. kolo (19.–20. 10. 2026)
 
 Podle `docs/legal/audit/LEGAL_AUDIT-2-kolo-2026-10-18.md`, větev `legal/deploy-2026-10`,

@@ -83,6 +83,7 @@ CO SE PRO VÁS MĚNÍ
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 – Poškozenou zásilku reklamujete u České pošty Vy, do 2 pracovních dnů od doručení. Zákazník Vám pošle fotky, administrace Vás upozorní.
 – K pítkům a nádobám na vodu prosím přikládejte kartičku o zimě (text Vám pošlu). Bez ní nemůžeme odmítnout reklamaci nádoby, ve které zamrzla voda.
+– U zakázek platí nová pravidla: záloha je nejvýš 50 % ceny; tlačítko „Začít výrobu“ v administraci pošle zákazníkovi e-mail s datem a časem a teprve od něj je výroba zahájená (bez e-mailu to systém nedovolí); zruší-li zákazník zakázku před tím e-mailem, systém mu sám vrátí vše, po něm si záloha zůstane u Vás a vrátí se jen zbytek. Ke každé zakázce zákazník dostane PDF „Potvrzení zakázky“.
 – Testovací kus „kytka – TEST“ jsem z webu skryl.
 – Nová verze webu už běží. Údaje si můžete zkontrolovat a upravit i sama v administraci v sekci „Právní údaje“.
 
