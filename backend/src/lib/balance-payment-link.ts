@@ -66,7 +66,15 @@ export const verifyBalanceToken = (
  * so the store variant of this route can never open from an e-mail. The
  * top-level alias (`src/api/made-to-order/.../pay-balance`) has no such guard.
  */
-export const balancePaymentUrl = (orderId: string): string | null => {
+export const balancePaymentUrl = (
+  orderId: string,
+  /**
+   * Zakázka, jejíž doplatek odkaz platí (od 20. 10. 2026 má objednávka zakázek
+   * víc, každá vlastní doplatek). Bez ní routa vezme jedinou zakázku s
+   * otevřeným doplatkem — staré odkazy v e-mailech tak dál fungují.
+   */
+  productionOrderId?: string | null
+): string | null => {
   const base = (
     process.env.BACKEND_PUBLIC_URL ||
     process.env.MEDUSA_BACKEND_URL ||
@@ -77,7 +85,14 @@ export const balancePaymentUrl = (orderId: string): string | null => {
     return null
   }
 
-  return `${base}/made-to-order/${orderId}/pay-balance?token=${signBalanceToken(
-    orderId
-  )}`
+  return `${base}/made-to-order/${orderId}/pay-balance${balancePaymentQuery(orderId, productionOrderId)}`
 }
+
+/** `?token=…[&production_order_id=…]` — sdílené s fallbackem na host requestu v routě `balance`. */
+export const balancePaymentQuery = (
+  orderId: string,
+  productionOrderId?: string | null
+): string =>
+  `?token=${signBalanceToken(orderId)}${
+    productionOrderId ? `&production_order_id=${encodeURIComponent(productionOrderId)}` : ""
+  }`

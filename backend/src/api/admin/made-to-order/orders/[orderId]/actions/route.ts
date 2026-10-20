@@ -5,6 +5,7 @@ import {
   confirmOrderEditRequestWorkflow,
   createOrderPaymentCollectionWorkflow,
   createPaymentSessionsWorkflow,
+  deleteOrderPaymentCollections,
   orderEditUpdateItemQuantityWorkflow,
   requestOrderEditRequestWorkflow,
 } from "@medusajs/medusa/core-flows"
@@ -26,9 +27,16 @@ import {
 import { formatMoney } from "../../../../../../lib/ship-gate"
 import {
   ensureBalanceCollection,
+  findOpenBalanceCollection,
   stageAfterBalancePaid,
 } from "../../../../../../lib/balance-payment"
-import { assertNoMoneyLeft } from "../../../../../../lib/claims/money"
+import { assertNoMoneyLeft, loadOrderMoney } from "../../../../../../lib/claims/money"
+import {
+  commissionOfOrder,
+  listCommissionsOfOrder,
+} from "../../../../../../lib/made-to-order/orders-of"
+import { startProduction } from "../../../../../../lib/made-to-order/start-production"
+import { isServiceLine } from "../../../../../../lib/packaging-lines"
 import {
   LINE_QUANTITY_FIELDS,
   lineQuantityOf,
@@ -52,6 +60,11 @@ type ProductionAction =
 
 type ActionBody = {
   action: ProductionAction
+  /**
+   * Která zakázka objednávky (od 20. 10. 2026 jedna na položku, § 0c). Bez ní
+   * projde jen objednávka s jedinou zakázkou — u víc zakázek 400.
+   */
+  production_order_id?: string | null
   agreed_total?: number
   /** adjust_surcharge: příplatek v Kč (hlavní jednotka). Navyšuje doplatek. */
   surcharge?: number
@@ -280,10 +293,12 @@ export const POST = async (
     MADE_TO_ORDER_MODULE
   )
   const eventBus = req.scope.resolve<IEventBusModuleService>(Modules.EVENT_BUS)
-  const productionOrders = await madeToOrder.listProductionOrders({
-    order_id: req.params.orderId,
-  })
-  let productionOrder: any = productionOrders[0]
+  // Zakázka = položka (§ 0c): akce patří JEDNÉ zakázce objednávky.
+  let productionOrder: any = await commissionOfOrder(
+    req.scope,
+    req.params.orderId,
+    body.production_order_id ?? null
+  )
   if (!productionOrder) {
     throw new MedusaError(
       MedusaError.Types.NOT_FOUND,
@@ -375,7 +390,7 @@ export const POST = async (
         )
       )
       if (owed > 0.005) {
-        await ensureBalanceCollection(req.scope, order, owed)
+        await ensureBalanceCollection(req.scope, order, owed, productionOrder.id)
       }
     } catch (error) {
       req.scope
@@ -439,21 +454,32 @@ export const POST = async (
   }
 
   if (body.action === "start_production") {
-    requireStage(productionOrder.stage, ["confirmed"])
-    productionOrder = await madeToOrder.updateProductionOrders({
-      id: productionOrder.id,
-      stage: "in_production",
-      production_started_at: now,
+    // Z3 (LEGAL_AUDIT.md § 0): zahájení výroby platí od e-mailu „Zakázka je ve
+    // výrobě" — posílá se SYNCHRONNĚ v lib/made-to-order/start-production;
+    // když neodejde, fáze se vrátí a akce skončí chybou. Už oznámená zakázka
+    // (opakované kliknutí) e-mail nedostane podruhé.
+    if (!productionOrder.production_start_notified_at) {
+      requireStage(productionOrder.stage, ["confirmed"])
+    }
+    const started = await startProduction(req.scope, {
+      productionOrder,
+      orderId: req.params.orderId,
     })
+    productionOrder = started.production_order
     await setMerchantStage(req, req.params.orderId, "working")
-    // Začátek výroby → e-mail „Výroba začíná" (dřív nechodilo nic, 14. 10. 2026).
-    await eventBus.emit({
-      name: "made-to-order.production-started",
-      data: {
-        order_id: req.params.orderId,
-        production_order_id: productionOrder.id,
-      },
-    })
+    // Event zůstává pro majitelku / další odběratele; zákaznický e-mail už na
+    // něm NEVISÍ (šel by podruhé a bez záruky doručení).
+    if (started.email_sent) {
+      await eventBus.emit({
+        name: "made-to-order.production-started",
+        data: {
+          order_id: req.params.orderId,
+          production_order_id: productionOrder.id,
+          production_start_notified_at:
+            productionOrder.production_start_notified_at ?? now.toISOString(),
+        },
+      })
+    }
   }
 
   if (body.action === "complete_production") {
@@ -600,8 +626,8 @@ export const POST = async (
           sent_at: now,
         })
       } else {
-        // Jediná otevřená kolekce doplatku, srovnaná na dluh (lib/balance-payment).
-        const collection = await ensureBalanceCollection(req.scope, order, outstanding)
+        // Jediná otevřená kolekce doplatku TÉTO zakázky, srovnaná na dluh (lib/balance-payment).
+        const collection = await ensureBalanceCollection(req.scope, order, outstanding, productionOrder.id)
 
         const idempotencyKey = `balance:${productionOrder.id}:${outstanding}`
         const previous = payments.find(
@@ -761,6 +787,7 @@ export const POST = async (
     }
     const result = await settleBalanceOffline(req.scope, {
       order_id: req.params.orderId,
+      production_order_id: productionOrder.id,
       method: body.method,
       amount: body.amount ?? null,
       note: body.note ?? null,
@@ -798,12 +825,53 @@ export const POST = async (
      * nezruší napůl.
      */
     await assertNoMoneyLeft(req.scope, req.params.orderId)
+    // Kolik se zákazníkovi vrátilo: pojistka výš prošla, takže zbývá 0 a
+    // vráceno = všechno zachycené (Z7: ruší prodávající → vrací se vše).
+    const moneyBefore = await loadOrderMoney(req.scope, req.params.orderId).catch(() => null)
     // Výrobní strana (fáze `cancelled`, nezaplacené žádosti o platbu, event)
     // sdílená s „Zrušit zakázku" v Reklamace a zrušení (lib/production-cancel).
+    // Zrušení z tohoto tlačítka = rozhodnutí majitelky (`seller`, Z7); fáze
+    // před/po zahájení podle odeslaného e-mailu Z3.
     productionOrder = await cancelProductionStage(req.scope, {
       productionOrder,
       orderId: req.params.orderId,
+      cancellation: {
+        cancelled_by: "seller",
+        cancellation_refund_amount: moneyBefore ? moneyBefore.state.refunded : null,
+      },
     })
+    /*
+     * Zakázka = položka (§ 0c): když v objednávce zbývá jiná živá zakázka
+     * nebo běžné zboží, objednávka se NEruší — zruší se jen tato zakázka,
+     * její otevřená kolekce doplatku zmizí (jinak by držela zbytek na bráně
+     * odeslání) a řádek odebere majitelka úpravou / Reklamace a zrušení.
+     */
+    const siblings = (await listCommissionsOfOrder(req.scope, req.params.orderId)).filter(
+      (candidate) => candidate.id !== productionOrder.id && candidate.stage !== "cancelled"
+    )
+    const orderForLines = await loadOrder(req)
+    const otherGoods = ((orderForLines.items ?? []) as any[]).filter(
+      (item) =>
+        item &&
+        !isServiceLine(item) &&
+        item.id !== productionOrder.line_item_id &&
+        (productionOrder.line_item_id || !(item.metadata as any)?.made_to_order)
+    )
+    if (siblings.length || otherGoods.length) {
+      const openBalance = findOpenBalanceCollection(orderForLines, productionOrder.id)
+      if (openBalance?.id && openBalance.metadata?.production_order_id === productionOrder.id) {
+        await deleteOrderPaymentCollections(req.scope)
+          .run({ input: { id: openBalance.id } as never })
+          .catch(() => undefined)
+      }
+      res.status(200).json({
+        production_order: productionOrder,
+        message:
+          "Zakázka zrušena. Objednávka zůstává — má další položky; zakázkový řádek odeberte úpravou objednávky nebo v Reklamace a zrušení.",
+      })
+      return
+    }
+
     await setMerchantStage(req, req.params.orderId, "cancelled")
 
     /*

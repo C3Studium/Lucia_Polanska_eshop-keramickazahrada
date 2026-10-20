@@ -37,3 +37,50 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+/* „Jak zakázka probíhá" — čtyři kroky pod tlačítkem, na inkoustové ploše
+   nákupního sloupce (jako panel „Vyrábí se na zakázku"). Informace, ne poplach:
+   tlumený krém, číslovaný seznam, nic interaktivního kromě odkazu na OP. */
+.steps {
+  margin: clamp(.9rem, 1.6vh, 1.25rem) 0 0;
+  padding: clamp(.875rem, 1.2vw, 1.125rem) clamp(1rem, 1.35vw, 1.25rem);
+  border: 1px solid rgb(var(--cream-06-rgb) / .22);
+  border-radius: clamp(.75rem, .95vw, .875rem);
+  background: rgb(var(--cream-06-rgb) / .04);
+  color: var(--clay-37);
+}
+
+.stepsTitle {
+  margin: 0 0 clamp(.5rem, .9vh, .7rem);
+  color: var(--cream-06);
+  font: 400 .8125rem/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.stepsList {
+  display: grid;
+  gap: clamp(.4rem, .8vh, .6rem);
+  margin: 0;
+  padding: 0 0 0 1.25em;
+  font: 400 clamp(.8125rem, 1vw, .9375rem)/1.5 "Sansation-Regular", sans-serif;
+
+  li {
+    padding-left: .2em;
+  }
+  strong {
+    color: var(--cream-06);
+    font-weight: 400;
+  }
+}
+
+.stepsTerms {
+  margin: clamp(.6rem, 1vh, .8rem) 0 0;
+  font: 400 clamp(.8125rem, 1vw, .9rem)/1.5 "Sansation-Regular", sans-serif;
+
+  a {
+    color: var(--cream-06);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}

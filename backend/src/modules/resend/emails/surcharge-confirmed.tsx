@@ -24,6 +24,8 @@ interface SurchargeConfirmedEmailProps {
   /** Poznámka majitelky — na čem jste se domluvili (volitelná). */
   reason?: string;
   orderLink?: string;
+  /** Název položky zakázky — u objednávky s víc zakázkami říká, které se příplatek týká. */
+  productTitle?: string | null;
 }
 
 /**
@@ -40,6 +42,7 @@ function SurchargeConfirmedEmailComponent({
   newBalance,
   reason,
   orderLink = "",
+  productTitle,
 }: SurchargeConfirmedEmailProps) {
   return (
     <EmailLayout preview={`Potvrzení příplatku k objednávce ${orderNumber}.`}>
@@ -49,7 +52,8 @@ function SurchargeConfirmedEmailComponent({
       <Greeting name={customerName} />
       <P>
         potvrzujeme, že k vaší zakázce
-        {orderNumber ? ` ${orderNumber}` : ""} přibyl příplatek, na kterém jsme
+        {orderNumber ? ` ${orderNumber}` : ""}
+        {productTitle ? ` (${productTitle})` : ""} přibyl příplatek, na kterém jsme
         se společně domluvili — telefonicky, e-mailem nebo zprávou. Tímto e-mailem
         vám ho jen písemně potvrzujeme, ať to máte černé na bílém.
       </P>
@@ -57,6 +61,7 @@ function SurchargeConfirmedEmailComponent({
       {reason ? <Note tone="olive">{reason}</Note> : null}
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
+      {productTitle ? <LedgerRow label="Výrobek" value={productTitle} /> : null}
       {surchargeAmount ? (
         <LedgerRow label="Příplatek" value={surchargeAmount} />
       ) : null}

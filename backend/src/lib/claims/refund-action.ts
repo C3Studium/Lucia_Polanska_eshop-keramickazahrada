@@ -31,9 +31,11 @@ import { lineItemsTotal } from "./line-items"
 import { goodsShipped, loadOrderMoney } from "./money"
 import { buildClaimOrderItems } from "./order-items"
 import {
+  commissionIdFromRequestLines,
   commissionPaidRemaining,
   depositRefundable,
   loadClaimProduction,
+  requireSingleCommission,
   type LoadedClaimProduction,
 } from "./production"
 import {
@@ -117,6 +119,8 @@ import type MadeToOrderModuleService from "../../modules/made-to-order/service"
  */
 
 export type RefundClaimBody = {
+  /** Zakázka, jejíž zálohu `scope: "deposit"` vrací (objednávka s víc zakázkami, § 0c). */
+  production_order_id?: string | null
   /** Staré tělo (§12.3): ruční částka → ruční řádek košíku. */
   amount?: number
   note?: string | null
@@ -215,10 +219,20 @@ const creditNoteOfResult = (
   reason: result.reason ?? null,
 })
 
+export type RefundClaimOptions = {
+  /**
+   * `false` = e-mail zákazníkovi NEposílat — volající pošle vlastní (zrušení
+   * zakázky zákazníkem, `commission-cancelled`, LEGAL_AUDIT.md § 0 Z4–Z6);
+   * protokol a dobropis vznikají i tak.
+   */
+  sendEmail?: boolean
+}
+
 export const refundClaim = async (
   scope: MedusaContainer,
   requestId: string,
-  body: RefundClaimBody = {}
+  body: RefundClaimBody = {},
+  options: RefundClaimOptions = {}
 ): Promise<RefundClaimResult> => {
   const service = claimService(scope)
   const request = await retrieveClaim(scope, requestId)
@@ -257,8 +271,23 @@ export const refundClaim = async (
       : null
 
   // Zakázka: strop zakázkové položky (zaplaceno) a záloha. Vždy — košík může
-  // obsahovat zakázkový řádek bez ohledu na rozsah.
-  const production: LoadedClaimProduction | null = await loadClaimProduction(scope, order.id)
+  // obsahovat zakázkový řádek bez ohledu na rozsah. Od 20. 10. 2026 (§ 0c) má
+  // objednávka zakázek víc: pro strop stačí součet (agregát), vrácení ZÁLOHY
+  // chce jednu konkrétní — z těla, nebo podle řádku vybraného v žádosti.
+  let production: LoadedClaimProduction | null = await loadClaimProduction(
+    scope,
+    order.id,
+    body.production_order_id ?? null
+  )
+  if (production?.aggregate && body.scope === "deposit") {
+    const fromLines = commissionIdFromRequestLines(
+      request,
+      production.all.map((item) => item.productionOrder)
+    )
+    production = fromLines
+      ? await loadClaimProduction(scope, order.id, fromLines)
+      : requireSingleCommission(production, "vrácení zálohy")
+  }
   const baseItems = buildClaimOrderItems({
     order,
     requests: money.requests,
@@ -637,7 +666,9 @@ export const refundClaim = async (
 
   // 6) JEDEN e-mail: potvrzení o vyřízení, nebo „vracíme peníze" za dílčí částku.
   const refundLines = refundLinesText(lines, currency)
-  if (resolveNow) {
+  if (options.sendEmail === false) {
+    // Volající má vlastní e-mail (zrušení zakázky) — tady nic.
+  } else if (resolveNow) {
     await sendResolvedEmail(scope, updated, {
       protocolUrl: protocol.url,
       currency,

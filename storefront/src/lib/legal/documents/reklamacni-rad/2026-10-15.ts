@@ -47,7 +47,7 @@ const reklamacniRad: LegalDocumentVersion = {
             "odpovídá popisu, druhu, množství, jakosti a dalším vlastnostem, které jsme ujednali nebo které jsme u výrobku uvedli, i v reklamě,",
             "hodí se k účelu, ke kterému jsme ho nabízeli nebo ke kterému se zboží tohoto druhu obvykle používá, a k účelu, který jste nám sdělili a se kterým jsme souhlasili,",
             "je dodáno s příslušenstvím a pokyny k užívání, pokud k němu patří,",
-            "u zboží na zakázku odpovídá předloze, kterou jste schválili (fotografie před konečným výpalem).",
+            "u zboží na zakázku odpovídá vašemu zadání a podobě, kterou jste schválili na fotografii před konečným výpalem (ujednaná vlastnost, § 2161 odst. 1 písm. a) OZ).",
           ],
         },
         {
@@ -68,7 +68,7 @@ const reklamacniRad: LegalDocumentVersion = {
           type: "ul",
           items: [
             "drobné rozdíly v odstínu a kresbě glazury, ve struktuře povrchu a v tvaru proti fotografii,",
-            "rozměr v toleranci uvedené u výrobku (například „tolerance –3 cm“); u zboží na zakázku odchylka rozměru nejvýše o 5 % na kteroukoli stranu, není-li sjednáno jinak,",
+            "rozměr v toleranci uvedené u výrobku (například „tolerance –3 cm“); u zboží na zakázku drobná odchylka rozměru daná ruční výrobou,",
             "opotřebení způsobené obvyklým užíváním,",
             "poškození, které vzniklo po převzetí nesprávným zacházením nebo užíváním v rozporu s pokyny — například prasklina pítka nebo jiné nádoby na vodu, ve které v zimě zamrzla voda, pokud jsme vás na nebezpečí mrazu upozornili u výrobku a na kartičce přiložené k zásilce,",
             "vada, pro kterou jsme kus prodali za nižší cenu (kolekce „Poškozené“ — vada je popsaná a vyfocená u výrobku, § 2167 OZ); za jiné vady takového kusu odpovídáme.",
@@ -76,7 +76,7 @@ const reklamacniRad: LegalDocumentVersion = {
         },
         {
           type: "p",
-          text: "U zboží na zakázku není vadou ani to, že se vám schválená podoba nakonec nelíbí. Vadou je rozpor se schválenou předlohou (jiný motiv, text nebo rozměr mimo toleranci) nebo poškození výrobku.",
+          text: "U zboží na zakázku není vadou ani to, že se vám schválená podoba nakonec nelíbí. Vadou je prasklina, odštěpek, odlupující se glazura, jiný motiv, text nebo rozměr než ve schválené podobě a poškození při přepravě; nesoulad se zadáním (jiné číslo, jméno, motiv) je vadou vždy. Podrobně [obchodní podmínky, čl. IX](/smluvni-podminky#vyroba-na-zakazku).",
         },
       ],
     },

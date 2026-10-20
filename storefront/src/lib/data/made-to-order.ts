@@ -1,11 +1,15 @@
 import { sdk } from "@lib/config"
 
-import { getCacheOptions } from "./cookies"
-import type {
-  CommissionNote,
-  ProductionPaymentMode,
-  ProductionPaymentModeKind,
-  ProductionProfile,
+import { getAuthHeaders, getCacheOptions } from "./cookies"
+import {
+  commissionsOf,
+  type CommissionBalance,
+  type CommissionCancellation,
+  type CommissionCancelResult,
+  type CommissionNote,
+  type ProductionPaymentMode,
+  type ProductionPaymentModeKind,
+  type ProductionProfile,
 } from "@lib/util/made-to-order"
 
 /**
@@ -13,7 +17,14 @@ import type {
  * `@lib/util/made-to-order` so client components can use them without pulling `server-only`.
  */
 
-export type { CommissionNote, ProductionPaymentMode, ProductionProfile }
+export type {
+  CommissionBalance,
+  CommissionCancellation,
+  CommissionCancelResult,
+  CommissionNote,
+  ProductionPaymentMode,
+  ProductionProfile,
+}
 
 /** `{ production_profile: null }` for an ordinary product — the caller renders nothing. */
 export const getProductionProfile = async (
@@ -65,22 +76,13 @@ export const setProductionPaymentMode = async (
  * `url_paid`). That path only knows the session id, so this resolves it to the
  * order the customer should land on. `null` when it cannot be mapped.
  */
-export type CommissionBalance = {
-  is_commission: boolean
-  stage?: string
-  currency_code?: string
-  deposit_paid?: number
-  balance_paid?: number
-  outstanding?: number
-  /** Podepsaný odkaz na doplacení (funguje i bez přihlášení); null = není co platit. */
-  pay_url?: string | null
-}
-
 /**
  * Stav doplatku zakázky — kolik je zaplaceno zálohou, kolik zbývá, odkaz na
  * doplacení. Pro Souhrn na potvrzení objednávky, aby u zakázky ukázal „jen
  * záloha" + tlačítko doplatit (doplatek žije v modulu zakázky, ne v objednávce).
- * `null` / `is_commission:false` = běžná objednávka.
+ * Od auditu § 0 nese i smluvní zálohu, čas e-mailu „Zakázka je ve výrobě" (Z3),
+ * fázi zrušení a odkaz na PDF Potvrzení zakázky (Z11) — tvar `CommissionBalance`
+ * v `@lib/util/made-to-order`. `null` / `is_commission:false` = běžná objednávka.
  */
 export const getCommissionBalance = async (
   orderId: string
@@ -90,6 +92,74 @@ export const getCommissionBalance = async (
       cache: "no-store",
     })
     .catch(() => null)
+
+/**
+ * Autorizace zrušení zakázky — stejně jako u `balance`: přihlášený zákazník
+ * posílá JWT, host z e-mailového odkazu podepsaný `?token=` (týž token jako
+ * reklamace, `getOrderAccessToken` / `lib/data/claims.ts`). Obojí se přibalí,
+ * když je; backend rozhodne, co mu stačí.
+ */
+const commissionAuth = async (
+  token?: string | null,
+  /**
+   * Která zakázka objednávky (Z-A „zakázka = položka"). Bez něj backend bere
+   * první / jedinou — tak fungují starší odkazy i zpětně složená zakázka.
+   */
+  productionOrderId?: string | null
+) => {
+  const query: Record<string, string> = {}
+  if (token) query.token = token
+  if (productionOrderId) query.production_order_id = productionOrderId
+  return {
+    headers: { ...(await getAuthHeaders()) },
+    ...(Object.keys(query).length ? { query } : {}),
+  }
+}
+
+/**
+ * Co by zrušení zakázky znamenalo TEĎ (Z4/Z5): fáze podle e-mailu o zahájení
+ * výroby, kolik se vrátí a kolik zůstane ateliéru. Částky počítá backend —
+ * storefront je jen opíše. `null` = není zakázka nebo se nepovedlo načíst →
+ * tlačítko se nenabídne.
+ */
+export const getCommissionCancellation = async (
+  orderId: string,
+  token?: string | null,
+  productionOrderId?: string | null
+): Promise<CommissionCancellation | null> =>
+  sdk.client
+    .fetch<CommissionCancellation>(
+      `/store/made-to-order/${orderId}/cancellation`,
+      { cache: "no-store", ...(await commissionAuth(token, productionOrderId)) }
+    )
+    .catch(() => null)
+
+/**
+ * Zrušení zakázky zákazníkem. Backend sám určí fázi (před / po e-mailu Z3),
+ * spočítá refund a při 409 (už zrušeno) vrátí českou hlášku — ta se pošle
+ * zákazníkovi tak, jak je. Vyhazuje, aby ji server action mohla přeložit.
+ * `productionOrderId` ruší JEDNU zakázku objednávky, ostatní běží dál.
+ */
+export const cancelCommission = async (
+  orderId: string,
+  input: { reason?: string; productionOrderId?: string | null } = {},
+  token?: string | null
+): Promise<CommissionCancelResult> =>
+  sdk.client.fetch<CommissionCancelResult>(
+    `/store/made-to-order/${orderId}/cancel`,
+    {
+      method: "POST",
+      body: {
+        confirm: true,
+        ...(input.productionOrderId
+          ? { production_order_id: input.productionOrderId }
+          : {}),
+        ...(input.reason?.trim() ? { reason: input.reason.trim() } : {}),
+      },
+      cache: "no-store",
+      ...(await commissionAuth(token)),
+    }
+  )
 
 /**
  * Dorovnání doplatku po návratu z ComGate — „dokončovací" krok, který doplatku
@@ -156,25 +226,61 @@ export const uploadCommissionMedia = async (
  * zakázka nobody has written on yet, which still deserves somewhere to write.
  */
 export const listCommissionNotes = async (
-  orderId: string
+  orderId: string,
+  /** Vlákno JEDNÉ zakázky (Z-A); bez něj vlákno objednávky jako dřív. */
+  productionOrderId?: string | null
 ): Promise<CommissionNote[] | null> =>
   sdk.client
     .fetch<{ notes: CommissionNote[] }>(
       `/store/made-to-order/${orderId}/notes`,
-      { cache: "no-store" }
+      {
+        cache: "no-store",
+        ...(productionOrderId
+          ? { query: { production_order_id: productionOrderId } }
+          : {}),
+      }
     )
     .then(({ notes }) => notes ?? [])
     .catch(() => null)
 
+/**
+ * Vlákna PER ZAKÁZKA (Z-A) pro objednávku s víc zakázkami: id
+ * `production_order` → zápisy. `null`, když zakázka je jedna (nebo žádná) —
+ * pak stačí vlákno objednávky (`listCommissionNotes(orderId)`), jako dřív.
+ * Zakázka bez id (starý tvar) vlákno per zakázka mít nemůže.
+ */
+export const listCommissionNotesByCommission = async (
+  orderId: string,
+  balance: CommissionBalance | null
+): Promise<Record<string, CommissionNote[]> | null> => {
+  const commissions = commissionsOf(balance)
+  if (commissions.length < 2) return null
+  const entries = await Promise.all(
+    commissions
+      .map((commission) => commission.production_order_id)
+      .filter((id): id is string => Boolean(id))
+      .map(async (id) => [id, (await listCommissionNotes(orderId, id)) ?? []] as const)
+  )
+  return Object.fromEntries(entries)
+}
+
 /** Adds to the diary after the order exists — the brief keeps growing as the piece does. */
 export const addCommissionNote = async (
   orderId: string,
-  entry: { text?: string; image_urls?: string[] }
+  entry: { text?: string; image_urls?: string[] },
+  productionOrderId?: string | null
 ): Promise<CommissionNote[] | null> =>
   sdk.client
     .fetch<{ notes: CommissionNote[] }>(
       `/store/made-to-order/${orderId}/notes`,
-      { method: "POST", body: entry, cache: "no-store" }
+      {
+        method: "POST",
+        body: {
+          ...entry,
+          ...(productionOrderId ? { production_order_id: productionOrderId } : {}),
+        },
+        cache: "no-store",
+      }
     )
     .then(({ notes }) => notes ?? [])
     .catch(() => null)

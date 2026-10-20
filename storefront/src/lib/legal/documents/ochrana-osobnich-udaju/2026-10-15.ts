@@ -214,10 +214,6 @@ const ochranaOsobnichUdaju: LegalDocumentVersion = {
         },
         {
           type: "p",
-          text: "[[DOPLNIT: Twilio Segment — backend při každé objednávce posílá do služby Segment (USA) údaje o objednávce (číslo, částka, položky, interní ID zákazníka; e-mail a jméno už ne), pokud je nastaven klíč SEGMENT_WRITE_KEY; buď vypnout, nebo uvést jako příjemce včetně předání do USA]]",
-        },
-        {
-          type: "p",
           text: "Údaje můžeme předat také orgánům veřejné moci, pokud nám to ukládá zákon.",
         },
       ],

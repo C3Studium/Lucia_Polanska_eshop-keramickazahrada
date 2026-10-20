@@ -1,4 +1,10 @@
-import { isClaimKind, isEditRefundKind, isFinalStatus, resolutionLabel } from "./constants"
+import {
+  isClaimKind,
+  isCommissionCancelKind,
+  isEditRefundKind,
+  isFinalStatus,
+  resolutionLabel,
+} from "./constants"
 import { lineItemsTotal } from "./line-items"
 import {
   canRefund,
@@ -163,6 +169,9 @@ export const classifyClaimCase = (
   flags: ClaimFlags
 ): ClaimCase => {
   if (isEditRefundKind(request.kind)) return "edit_refund"
+  // Zrušení zakázky zákazníkem / nezaplaceným doplatkem (Z4–Z6) — vždy
+  // zakázkový případ, i u smíšené objednávky jde jen o zakázkovou část.
+  if (isCommissionCancelKind(request.kind)) return "commission_cancel"
   if (!isWithdrawalKind(request.kind)) return "claim"
   if (flags.is_mixed) return "mixed_cancel"
   if (flags.is_commission) return "commission_cancel"
@@ -450,7 +459,7 @@ export const planClaimCase = (input: ClaimCaseInput): ClaimCasePlan => {
     cancel_production:
       Boolean(production) &&
       production?.stage !== "cancelled" &&
-      isClaimKind(kind) &&
+      (isClaimKind(kind) || isCommissionCancelKind(kind)) &&
       (status === "approved" || status === "received" || status === "resolved"),
     cancel_request: open,
   }

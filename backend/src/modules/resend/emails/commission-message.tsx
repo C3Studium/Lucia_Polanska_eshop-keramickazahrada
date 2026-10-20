@@ -20,6 +20,8 @@ interface CommissionMessageEmailProps {
   message?: string;
   /** Přiložená fotka (URL), když ji ateliér poslal. */
   photoUrl?: string;
+  /** Název položky zakázky — u objednávky s víc zakázkami říká, ke které zpráva patří. */
+  productTitle?: string | null;
 }
 
 /**
@@ -33,6 +35,7 @@ function CommissionMessageEmailComponent({
   orderLink = "",
   message,
   photoUrl,
+  productTitle,
 }: CommissionMessageEmailProps) {
   return (
     <EmailLayout preview={`Nová zpráva k vaší zakázce ${orderNumber}.`}>
@@ -42,7 +45,8 @@ function CommissionMessageEmailComponent({
       <Greeting name={customerName} />
       <P>
         máme pro vás vzkaz k vaší zakázce
-        {orderNumber ? ` ${orderNumber}` : ""}:
+        {orderNumber ? ` ${orderNumber}` : ""}
+        {productTitle ? ` (${productTitle})` : ""}:
       </P>
 
       {message && message.trim() ? (

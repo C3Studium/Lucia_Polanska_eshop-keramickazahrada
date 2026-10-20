@@ -3,7 +3,9 @@ import { getOrderClaims } from "@lib/data/claims"
 import { fallbackStageLabel, getOrderProgress } from "@lib/data/order-progress"
 import {
   getCommissionBalance,
+  getCommissionCancellation,
   listCommissionNotes,
+  listCommissionNotesByCommission,
   reconcileOrderBalance,
 } from "@lib/data/made-to-order"
 import OrderCompletedTemplate from "@modules/order/templates/order-completed-template"
@@ -57,6 +59,15 @@ export default async function OrderConfirmedPage(props: Props) {
   // Stav doplatku zakázky (zaplaceno zálohou / zbývá / odkaz na doplacení) —
   // Souhrn z toho pozná „jen záloha" a nabídne tlačítko doplatit.
   const commissionBalance = order ? await getCommissionBalance(params.id) : null
+  // Zrušení zakázky (audit § 0, Z4/Z5) — jen u zakázky, tokenem hosta.
+  const commissionCancellation = commissionBalance?.is_commission
+    ? await getCommissionCancellation(params.id, selfServiceToken)
+    : null
+  // Z-A: u víc zakázek vlákno konverzace per zakázka (jinak null → vlákno objednávky).
+  const commissionNotesById = await listCommissionNotesByCommission(
+    params.id,
+    commissionBalance
+  )
   // Reklamace a vrácení k objednávce (+ zda jde ještě odstoupit) — stejným
   // tokenem. `null` = nepovedlo se načíst → sekce se nevykreslí a tlačítka
   // zůstanou jako dřív (pravidla pohlídá stránka formuláře).
@@ -104,6 +115,8 @@ export default async function OrderConfirmedPage(props: Props) {
         progressFallback={fallbackStageLabel(order)}
         commissionNotes={commissionNotes}
         commissionBalance={commissionBalance}
+        commissionCancellation={commissionCancellation}
+        commissionNotesById={commissionNotesById}
         selfServiceToken={selfServiceToken}
         claims={claims}
       />

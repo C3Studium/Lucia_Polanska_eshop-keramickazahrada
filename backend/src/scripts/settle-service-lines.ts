@@ -17,7 +17,12 @@ import { settleServiceLines } from "../lib/service-lines-settle"
  * žádné plnění u dopravce, žádný e-mail.
  *
  *   npx medusa exec ./src/scripts/settle-service-lines.ts            # nasucho
- *   npx medusa exec ./src/scripts/settle-service-lines.ts --apply
+ *   npx medusa exec ./src/scripts/settle-service-lines.ts apply
+ *
+ * Pozor: `medusa exec` předává skriptu jen poziční argumenty — volbu typu
+ * `--apply` odmítne („Unknown argument: apply“, ověřeno na produkci 20. 10.).
+ * Proto se píše bez pomlček (`apply`, `id=…`); tvar s `--` funguje jen
+ * v testech a v sandboxu, kde se skript volá přímo.
  *
  * Bere jen objednávky, u kterých je VŠECHNO zboží odeslané (nic s dopravou
  * nezbývá) a nejsou zrušené. Rozpracované objednávky nechá být — ty dorovná
@@ -26,7 +31,7 @@ import { settleServiceLines } from "../lib/service-lines-settle"
 export default async function settleServiceLinesScript({ container, args = [] }: ExecArgs) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
-  const apply = args.includes("--apply")
+  const apply = args.includes("apply") || args.includes("--apply")
 
   const PAGE = 100
   let offset = 0
@@ -71,6 +76,6 @@ export default async function settleServiceLinesScript({ container, args = [] }:
   logger.info(
     apply
       ? `[balné] Hotovo: ${settled} z ${candidates} odeslaných objednávek dorovnáno.`
-      : `[balné] Nasucho: ${candidates} odeslaných objednávek má nezapsané balné. Spusťte znovu s --apply.`
+      : `[balné] Nasucho: ${candidates} odeslaných objednávek má nezapsané balné. Spusťte znovu s argumentem apply.`
   )
 }

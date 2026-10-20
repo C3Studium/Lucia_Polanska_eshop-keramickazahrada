@@ -17,6 +17,13 @@ type Props = {
   orderId: string
   /** Vlákno načtené serverem při načtení stránky (co napsal zákazník + co ateliér zpřístupnil). */
   notes: CommissionNote[]
+  /**
+   * Vlákno JEDNÉ zakázky objednávky (Z-A „zakázka = položka"). Bez něj vlákno
+   * objednávky jako dřív — u jedné zakázky je to totéž.
+   */
+  productionOrderId?: string | null
+  /** Název zakázky do tlačítka i titulku okna, když je zakázek víc. */
+  title?: string | null
   /** Doplňková třída, pro odsazení v konkrétním místě stránky. */
   className?: string
 }
@@ -25,7 +32,8 @@ type Props = {
  * Konverzace s ateliérem k zakázce — jako POPUP a jeden znovupoužitelný
  * komponent pro VŠECHNY stránky objednávky (potvrzení, detail v účtu, úprava,
  * reklamace). Tlačítko otevře okno s celým vláknem a polem na odpověď; stačí ho
- * na stránku vložit s `orderId` a `notes`.
+ * na stránku vložit s `orderId` a `notes`. U objednávky s víc zakázkami je
+ * jedno tlačítko na zakázku (`productionOrderId` + `title`).
  *
  * Při otevření se vlákno natáhne znovu (`refreshCommissionNotes`), aby tam byly
  * i odpovědi ateliéru, které přišly po načtení stránky — jinak by se ukázal jen
@@ -35,6 +43,8 @@ type Props = {
 export default function CommissionConversation({
   orderId,
   notes,
+  productionOrderId = null,
+  title = null,
   className,
 }: Props) {
   const [open, setOpen] = useState(false)
@@ -44,12 +54,13 @@ export default function CommissionConversation({
   const openConversation = () => {
     setOpen(true)
     startRefresh(async () => {
-      const fresh = await refreshCommissionNotes(orderId)
+      const fresh = await refreshCommissionNotes(orderId, productionOrderId)
       if (fresh) setThread(fresh)
     })
   }
 
   const count = thread.length
+  const heading = title ? `Konverzace s ateliérem · ${title}` : "Konverzace s ateliérem"
 
   return (
     <>
@@ -58,6 +69,7 @@ export default function CommissionConversation({
         className={className ? `${s.trigger} ${className}` : s.trigger}
         onClick={openConversation}
         data-testid="commission-conversation-open"
+        data-production-order-id={productionOrderId ?? undefined}
       >
         <span className={s.icon} aria-hidden="true">
           <svg
@@ -74,7 +86,7 @@ export default function CommissionConversation({
           </svg>
         </span>
         <span className={s.copy}>
-          <span className={s.title}>Konverzace s ateliérem</span>
+          <span className={s.title}>{heading}</span>
           <span className={s.sub}>
             {count > 0
               ? "Napište mi — čtu to u rozdělané práce."
@@ -94,7 +106,7 @@ export default function CommissionConversation({
         size="large"
         data-testid="commission-conversation-modal"
       >
-        <Modal.Title>Konverzace s ateliérem</Modal.Title>
+        <Modal.Title>{heading}</Modal.Title>
         <Modal.Body>
           <CommissionBrief
             variant="order"
@@ -106,6 +118,7 @@ export default function CommissionConversation({
               addOrderCommissionNote(orderId, {
                 note: input.note,
                 newPhotos: input.newPhotos,
+                productionOrderId,
               })
             }
           />

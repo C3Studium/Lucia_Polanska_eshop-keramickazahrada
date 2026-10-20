@@ -1,0 +1,74 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+/* Seznam zakázek objednávky — mezery mezi kartami stejné, jako mají karty
+   v pravém sloupci stránky objednávky (panel, doplatek, konverzace). */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.commission {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Souhrn nad seznamem — tatáž krémová karta, jen bez linky vlevo, ať se
+   pozná, že shrnuje, a nestojí v řadě jako další zakázka. */
+.summary {
+  --cl-accent: var(--clay-04);
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: clamp(1rem, 2.2vh, 1.5rem) clamp(1.1rem, 1.6vw, 1.6rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.18);
+  border-radius: 6px;
+  background: rgb(var(--clay-17-rgb) / 0.12);
+  color: var(--blackText);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--cl-accent);
+  font: 400 clamp(0.7rem, 0.9vw, 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.count {
+  margin: 0;
+  font: 400 clamp(1rem, 1.2vw, 1.12rem) / 1.3 "Sansation-Regular", sans-serif;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  font-family: "Sansation-Light", sans-serif;
+  font-size: clamp(0.9rem, 1.1vw, 1.02rem);
+
+  dt {
+    opacity: 0.72;
+  }
+  dd {
+    margin: 0;
+    font-family: "Sansation-Regular", sans-serif;
+    text-align: right;
+  }
+}
+
+.hint {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / 0.7);
+  font: 300 clamp(0.8rem, 0.95vw, 0.9rem) / 1.45 "Sansation-Light", sans-serif;
+}

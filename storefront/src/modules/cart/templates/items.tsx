@@ -5,6 +5,7 @@ import { HttpTypes } from "@medusajs/types"
 import { Item } from "@modules/cart/components/item"
 import PackagingLine, { packagingFor } from "@modules/common/components/packaging-line"
 import { isPackagingLine, withPackagingUnderProducts } from "@lib/util/packaging"
+import type { ProductionLeadTime } from "@lib/util/commission"
 import SkeletonLineItem from "@modules/skeletons/components/skeleton-line-item"
 import { useEditRerender } from "@lib/hooks/use-edit-rerender"
 import { itemText } from "@lib/util/site-copy"
@@ -16,9 +17,11 @@ type ItemsTemplateProps = {
   cart?: HttpTypes.StoreCart
   /** Blok `kosik.vypis` — nadpis výpisu (`polozky.nadpis`) a popisek u počtu (`polozky.oboci`). */
   copy?: CopyBlock
+  /** Záloha % a lhůta zakázkových položek z profilu výroby (pro štítek u položky). */
+  madeToOrderTerms?: ProductionLeadTime[]
 }
 
-const ItemsTemplate = ({ cart, copy }: ItemsTemplateProps) => {
+const ItemsTemplate = ({ cart, copy, madeToOrderTerms = [] }: ItemsTemplateProps) => {
   useEditRerender()
   const items = cart?.items
 
@@ -65,6 +68,9 @@ const ItemsTemplate = ({ cart, copy }: ItemsTemplateProps) => {
                       item={item}
                       packaging={packagingFor(items, item)}
                       currencyCode={cart?.currency_code}
+                      madeToOrderTerms={
+                        madeToOrderTerms.find((lead) => lead.line_id === item.id) ?? null
+                      }
                     />
                   )
                 })

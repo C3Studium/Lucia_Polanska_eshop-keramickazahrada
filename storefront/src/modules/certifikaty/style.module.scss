@@ -1,0 +1,108 @@
+@use "../../styles/system/_shortcuts.scss" as *;
+
+/* Stránka /certifikaty — klidná textová stránka ve stylu právních dokumentů:
+   jeden sloupec ke čtení, seznam protokolů jako karty s datem a odkazem na PDF. */
+
+.page {
+  width: min(100% - 2 * clamp(1rem, 4vw, 2.5rem), 52rem);
+  margin: 0 auto;
+  padding: clamp(2.5rem, 6vh, 4.5rem) 0 clamp(3rem, 8vh, 6rem);
+  color: var(--ink-05);
+  font-family: "Sansation-Regular", sans-serif;
+}
+
+.header {
+  display: grid;
+  gap: clamp(.6rem, 1.2vh, .9rem);
+  margin-bottom: clamp(1.75rem, 3.5vh, 2.5rem);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--clay-06);
+  font-size: .8125rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  font: 400 clamp(1.75rem, 3.4vw, 2.6rem)/1.15 "Sansation-Regular", sans-serif;
+  text-wrap: balance;
+}
+
+.subtitle {
+  margin: 0 0 .6rem;
+  font: 400 clamp(1.15rem, 1.8vw, 1.4rem)/1.25 "Sansation-Regular", sans-serif;
+}
+
+.lead,
+.notes p,
+.notes li,
+.empty p,
+.scope {
+  max-width: 66ch;
+  margin: 0;
+  font-size: clamp(.95rem, 1.05vw, 1.05rem);
+  line-height: 1.55;
+}
+
+.list {
+  display: grid;
+  gap: clamp(.75rem, 1.4vh, 1rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  gap: .4rem;
+  padding: clamp(.9rem, 1.4vw, 1.2rem) clamp(1rem, 1.6vw, 1.4rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .14);
+  border-radius: clamp(.75rem, .95vw, .875rem);
+}
+
+.itemHead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem 1rem;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.glaze {
+  font-size: clamp(1.05rem, 1.3vw, 1.2rem);
+}
+
+.meta {
+  color: rgb(var(--ink-05-rgb) / .7);
+  font-size: .9rem;
+}
+
+.link,
+.notes a,
+.empty a {
+  color: var(--clay-06);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.empty {
+  padding: clamp(.9rem, 1.4vw, 1.2rem) clamp(1rem, 1.6vw, 1.4rem);
+  border: 1px dashed rgb(var(--ink-05-rgb) / .3);
+  border-radius: clamp(.75rem, .95vw, .875rem);
+}
+
+.notes {
+  display: grid;
+  gap: .75rem;
+  margin-top: clamp(2rem, 4vh, 3rem);
+}
+
+.notes ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: .4rem;
+}

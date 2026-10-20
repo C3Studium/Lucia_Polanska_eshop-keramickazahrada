@@ -26,6 +26,7 @@ import { ceskaChyba, ceskyText } from "../lib/ceska-chyba";
  */
 
 export type ProductionOrderSummary = {
+  /** Id ZAKÁZKY (production_order) — od 20. 10. 2026 jedna na položku (§ 0c). */
   id: string;
   order_id: string;
   display_id: number | string | null;
@@ -40,6 +41,21 @@ export type ProductionOrderSummary = {
   balance_requested_at?: string | null;
   /** Osobní odběr v ateliéru — jen tady má smysl „Zaplaceno na místě". */
   is_personal_pickup?: boolean;
+  /** Položka zakázky (§ 0c). Legacy zakázka (celá objednávka) má `line_item_id` null a název chybí. */
+  line_item_id?: string | null;
+  line_title?: string | null;
+  /** Cena samotné položky (bez dopravy/balného, které nese první zakázka objednávky). */
+  item_total?: number;
+  /** Kolik zakázek má objednávka — hlášky pak říkají, že se ruší položka, ne objednávka. */
+  commissions_in_order?: number;
+};
+
+/** „#123 — Domovní číslo" / „#123": jak zakázku pojmenovat v titulcích a hláškách. */
+const commissionLabel = (order: ProductionOrderSummary): string => {
+  const number = order.display_id ? `#${order.display_id}` : "";
+  return order.line_title
+    ? [number, order.line_title].filter(Boolean).join(" — ")
+    : number;
 };
 
 type Action =
@@ -61,14 +77,19 @@ const offlineMethodLabels: Record<OfflineMethod, string> = {
   bank_transfer: "Převodem na účet",
 };
 
-const useAction = (orderId: string) => {
+/**
+ * Akce JEDNÉ zakázky: tělo vždy nese `production_order_id` (= `order.id`),
+ * protože objednávka může mít zakázek víc a server bez něj u víc zakázek
+ * odmítne (§ 0c). U jediné zakázky je to neškodné navíc.
+ */
+const useAction = (order: Pick<ProductionOrderSummary, "id" | "order_id">) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (body: Record<string, unknown>) =>
-      sdk.client.fetch(`/admin/made-to-order/orders/${orderId}/actions`, {
+      sdk.client.fetch(`/admin/made-to-order/orders/${order.order_id}/actions`, {
         method: "POST",
-        body,
+        body: { ...body, production_order_id: order.id },
       }),
     onSuccess: async () => {
       // A commission move changes the queue, the order's stage and the
@@ -77,6 +98,9 @@ const useAction = (orderId: string) => {
         queryClient.invalidateQueries({ queryKey: ["production-orders"] }),
         queryClient.invalidateQueries({ queryKey: ["merchant-orders"] }),
         queryClient.invalidateQueries({ queryKey: ["operations-summary"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["made-to-order-order", order.order_id],
+        }),
       ]);
     },
     onError: (error) => {
@@ -100,7 +124,7 @@ const ConfirmSpecification = ({
   const [price, setPrice] = useState(String(order.agreed_total || ""));
   const [deadline, setDeadline] = useState("");
   const [note, setNote] = useState("");
-  const action = useAction(order.order_id);
+  const action = useAction(order);
 
   const parsed = Number(price);
   const isValid = Number.isFinite(parsed) && parsed > 0;
@@ -232,7 +256,7 @@ const AnnounceDelay = ({ order }: { order: ProductionOrderSummary }) => {
   const [open, setOpen] = useState(false);
   const [deadline, setDeadline] = useState("");
   const [reason, setReason] = useState("");
-  const action = useAction(order.order_id);
+  const action = useAction(order);
 
   if (!open) {
     return (
@@ -506,7 +530,7 @@ const ConfirmedAction = ({
   successMessage: string;
 }) => {
   const [open, setOpen] = useState(false);
-  const mutation = useAction(order.order_id);
+  const mutation = useAction(order);
 
   return (
     <Prompt open={open} onOpenChange={setOpen}>
@@ -548,7 +572,7 @@ export const ProductionOrderActions = ({
 }: {
   order: ProductionOrderSummary;
 }) => {
-  const mutation = useAction(order.order_id);
+  const mutation = useAction(order);
 
   return (
     <div className="flex flex-wrap items-center gap-2 lg:justify-end">

@@ -41,6 +41,18 @@ const formatAmount = (amount: number, currencyCode: string) =>
     .replace(/czk/i, "")
     .trim()
 
+/**
+ * Cena balení výrobku v Kč — totéž čtení jako `packagingPriceCzkOf`
+ * v backendu (`lib/packaging.ts`), podle kterého server balné účtuje:
+ * nevyplněná nebo nesmyslná = 0.
+ */
+const packagingPriceCzk = (product: HttpTypes.StoreProduct): number => {
+  const raw = (product.metadata as Record<string, unknown> | null | undefined)?.packaging_price
+  if (raw === null || raw === undefined || raw === "") return 0
+  const parsed = typeof raw === "number" ? raw : Number(raw)
+  return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed * 100) / 100 : 0
+}
+
 export default function ProductPrice({
   product,
   variant,
@@ -75,6 +87,7 @@ export default function ProductPrice({
 
   const showReference = isSale && percent != null && lowest != null
   const saleStyled = showReference
+  const packaging = packagingPriceCzk(product)
 
   return (
     <div className="product__details__cta__price">
@@ -126,6 +139,34 @@ export default function ProductPrice({
               <LocalizedClientLink href="/odstoupeni-od-smlouvy">vrátit</LocalizedClientLink>;
               vadu, kvůli které je levnější, ale reklamovat nelze.
             </span>
+          </p>
+        )}
+
+        {/* Balné u ceny (§ 1811 odst. 2 OZ, § 12 ZOS — cena včetně všech
+            poplatků): ne až v košíku. Částka je ta, kterou server účtuje
+            jako položku „Balné" pod výrobkem; v cizí měně ji přepočítá
+            kurzem ČNB, proto se tu uvádí v Kč. */}
+        {hasPrice && (
+          <p className={styles.line} data-testid="product-packaging-price">
+            {packaging > 0 ? (
+              <>
+                + balné{" "}
+                <span className={styles.amount} data-value={packaging}>
+                  {currencyCode.toLowerCase() === "czk"
+                    ? formatAmount(packaging, "czk")
+                    : `${packaging.toLocaleString("cs-CZ")} Kč`}
+                </span>{" "}
+                za kus
+                <span className={styles.note}>
+                  Cena balení je u každého výrobku jiná a účtuje se zvlášť
+                  {currencyCode.toLowerCase() === "czk"
+                    ? "."
+                    : " — v eurech ji přepočteme kurzem ČNB."}
+                </span>
+              </>
+            ) : (
+              "Balné u tohoto výrobku neúčtujeme."
+            )}
           </p>
         )}
       </div>

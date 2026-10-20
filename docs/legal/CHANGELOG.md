@@ -3,6 +3,109 @@
 Větev `legal/compliance-2026`, podle `LEGAL_AUDIT.md` (14. 10. 2026). Odkazy na paragrafy:
 OZ = zákon č. 89/2012 Sb., ZOS = zákon č. 634/1992 Sb.
 
+## Zakázka = položka objednávky (LEGAL_AUDIT § 0c Z-A — 20. 10. 2026 odpoledne)
+
+- Migrace `Migration20261020180000`: `production_order.line_item_id` (+ `line_title`,
+  `line_quantity`, `line_total`, `order_extras_paid`), unikát `(order_id, line_item_id)` místo
+  `order_id`; `production_note.production_order_id`. Staré zakázky (NULL) = celá objednávka,
+  chovají se jako dřív.
+- `initialize-merchant-order` zakládá zakázku pro KAŽDÝ zakázkový řádek (vlastní smluvní záloha,
+  diář, žádost o zálohu), event `made-to-order.production-orders-created { order_id,
+  production_order_ids }`; potvrzení objednávky nese PDF Potvrzení zakázky pro každou
+  (`orders/<order_id>/potvrzeni-zakazky-<line_item_id>.pdf`), obsah per položka.
+- Store API: `balance` → `commissions[]` + `totals` (dosavadní pole = první zakázka), `cancellation`
+  / `cancel` / `pay-balance` / `notes` s `production_order_id`; zrušení jedné ze dvou zakázek
+  neruší objednávku. Admin GET → `production_orders[]`; akce berou `production_order_id`.
+- E-maily (zahájení, dokončení, doplatek, zrušení, příplatek, zpráva) per zakázka s názvem položky.
+- Storefront: checkbox s názvem u každé zakázkové položky (čas i v metadatech řádku), předsmluvní
+  řádek per položka + součet, seznam zakázek v účtu a v potvrzení (každá vlastní panel, zrušení,
+  doplatek, konverzace), stav zakázek v seznamu objednávek, přepínač zadání mezi zakázkami.
+- **Otevřené:** admin widget „Výroba na zakázku“ ukazuje první zakázku objednávky (data pro
+  všechny už posílá); e2e scénář pro dvě zakázky v jedné objednávce (sandbox má jediný
+  zakázkový produkt) — pokryto unit testy initialize.
+
+## Povinnosti mimo OP a typy produktů (LEGAL_AUDIT § 0b, § 0c Z-B — 20. 10. 2026 odpoledne)
+
+- **N1 nezávadnost glazur**: stránka `/certifikaty` (seznam protokolů v `lib/certificates.ts`,
+  zatím prázdný — protokoly má Lucie), FAQ skupina „Nezávadnost a bezpečnost“, odkaz
+  u výrobku s tvrzením; skript `backend/src/scripts/food-claims.ts` (list / strip / restore)
+  pro 31 produktů s tvrzením „zdravotně nezávadné“. Tvrzení zatím ponechána (OPEN_QUESTIONS N1).
+- **N2 GPSR**: komponenta `safety-notice` na stránce výrobku — kotvení na fasádu, mráz,
+  ostré střepy, podle kategorie.
+- **N3 elektro**: kategorie Bezdrátové zvonky má 2 produkty (zvonek BZ8-113, krabička) → otázka
+  pro Lucii; 8 popisů tlačítek bez mrtvého odkazu na starý e-shop.
+- **N5**: OP čl. I už uvádí zápis v živnostenském rejstříku; úřad (MÚ Písek) čeká na potvrzení.
+- **Z-B OP pro každý typ produktu**: čl. VI — kus s vadou (bez přeškrtnuté ceny, popsaná vada
+  se nereklamuje, vrácení lze) a nový odstavec **Balíčky** (odstoupení i od části, poměrná část
+  ceny, vada jednoho kusu); čl. VII — **Zboží na objednávku** (platba předem, lhůta u výrobku /
+  30 dnů, vrácení při nedodání, jde vrátit do 14 dnů) a **Hlídání dostupnosti** (jen upozornění);
+  čl. VIII — odkaz na částečné vrácení balíčku. Poukaz, kurz, zakázka beze změny.
+
+## Zakázky podle § 0 auditu (20. 10. 2026, větev `legal/deploy-2026-10`)
+
+Pravidla Z1–Z12 z `LEGAL_AUDIT.md` § 0 mají přednost před dřívějším návrhem OP čl. IX.
+
+- **Z2 strop zálohy 50 %** — DB checky (`Migration20261020120000`), validace profilu i přebití u
+  provedení (česká hláška), pokladna sevře smluvní procento na 50. `production_order.deposit_percentage`
+  nově = SMLUVNÍ záloha z profilu (dřív podíl zaplacený v pokladně, u plné platby 100 %), nový
+  `deposit_amount` = smluvní záloha v penězích; pokladna si do `production_lines[]` ukládá
+  `contract_deposit_*` dřív, než je přepíše posuvník.
+- **Z3 zahájení výroby = e-mail** — „Začít výrobu“ pošle synchronně `production-started`
+  („Vaše zakázka je ve výrobě“: datum a čas, věta o nevratné záloze, lhůta); čas a ID zprávy
+  v `production_start_notified_at` / `production_start_email_id`; když e-mail neodejde, fáze se
+  vrátí a majitelka vidí chybu. Starý `order-processing` už zákazníkovi nechodí.
+- **Z4/Z5/Z7 zrušení** — čistý plán `lib/made-to-order/cancellation.ts`; zákazník ruší v účtu nebo
+  z potvrzení objednávky (`GET/POST /store/made-to-order/:id/cancellation|cancel`, vlastník nebo
+  podepsaný token): před e-mailem Z3 vše zpět, po něm záloha propadá a zbytek se vrací. Žádost
+  nového druhu `zruseni_zakazky` vyřídí server sám (refund ComGate/převod, dobropis, protokol
+  `ZAK-…`), zákazník dostane `commission-cancelled`, majitelka zvonek. Zrušení majitelkou
+  zapisuje `cancelled_by: seller`; v Reklamacích u „zálohu nevracet“ je upozornění Z7.
+- **Z6 doplatek** — úloha `watch-production-deadlines`: 30 dnů po výzvě a po prokazatelné
+  připomínce zruší jako po zahájení výroby (záloha propadá) a dá vědět oběma stranám; bez
+  připomínky jen upozorní majitelku.
+- **Z8/Z9/Z12 texty** — OP čl. IX přepsaný (zahájení e-mailem, záloha, zrušení z obou stran,
+  doplatek, schválení podoby = ujednaná vlastnost § 2161 odst. 1 písm. a) s připomenutím,
+  výrobní lhůta od zahájení + nový kus bez příplatku, vady bez čísel, Potvrzení zakázky);
+  FAQ, stránka Výroba a zdroj Reklamačního řádu sladěny (vydá se s novou verzí).
+- **Z10 pokladna** — checkbox „Beru na vědomí, že výrobek vyrobený podle mého zadání nelze
+  vrátit ve 14denní lhůtě a že záloha se po zahájení výroby nevrací.“, předsmluvní informace
+  o záloze (% i Kč, teď platíte X), lhůtě od zahájení a zrušení; štítek „Na zakázku · záloha
+  N % · výroba do N dnů · nelze vrátit do 14 dnů“ u ceny, na kartě a v košíku; blok „Jak zakázka
+  probíhá“ na produktu.
+- **Z11 Potvrzení zakázky (PDF)** — generátor pdf-lib podle `potvrzeni-zakazky.html`
+  (`lib/potvrzeni-zakazky/*`), deterministické bajty, neměnné uložení v R2
+  (`orders/<order_id>/potvrzeni-zakazky.pdf`, jiný obsah = nová verze vedle), příloha
+  potvrzovacího e-mailu vedle OP; u objednávky se zakázkou potvrzení čeká na event
+  `made-to-order.production-order-created` (konec závodu s `order.placed`). Odkaz v účtu
+  i v administraci; `{{vat.note}}` z faktu `vat.status` (dnes prázdný → věta o DPH chybí).
+- **Účet** — panel zakázky: stav (čeká / ve výrobě od), smluvní záloha, PDF, „Zrušit zakázku“
+  jednokrokově před zahájením, dvoukrokově s částkou po něm.
+- Sandbox: scénář `z` v `backend/sandbox/e2e.mjs` (dvě objednávky — zrušení před a po zahájení).
+
+## Nasazení 2. kolo (19.–20. 10. 2026)
+
+Podle `docs/legal/audit/LEGAL_AUDIT-2-kolo-2026-10-18.md`, větev `legal/deploy-2026-10`,
+průběh krok za krokem v `docs/legal/01-deploy-log.md`.
+
+- **Segment vypnutý** (19. 10. 21:42): `SEGMENT_WRITE_KEY` smazán z Railway Backend, backend
+  znovu nasazený; nasazený `main` do té doby posílal do USA e-mail a jméno zákazníka.
+- **Záloha produkční DB** před migracemi (`pg_dump`, ověřená), pak **sloučení PR #15**
+  (merge commit `b8133456`, 20. 10. ráno) → nasazení backendu i storefrontu, 5 migrací.
+- Skripty: historie cen (792 cen), balné u odeslané #39, poukaz s vlastní částkou 100–10 000 Kč
+  (popis bez poštovného 60 Kč, gmailu a pokynu k převodu).
+- Proměnné `BACKEND_PUBLIC_URL` (odkaz na odhlášení v e-mailech) a `CMS_CRON_SECRET` (shodný na
+  obou službách).
+- Studio: 4 pracovní znění obnovená z repa, 37 nových bloků textů, dvě FAQ odpovědi opravené
+  i v redakci (#22).
+- Produkty: skryté testovací kusy (kytka s vadou „TEST“ a produkt „TEST“), `no_promo` u 6
+  poukazů, upozornění na mráz u 2 nádob, text kartičky do balíku.
+- **Opraveno navíc:** Zásady na produkci ukazovaly zástupný text `[[DOPLNIT: Twilio Segment…]]`
+  — po vypnutí Segmentu odstraněn. Skripty `settle-service-lines` a `legal-voucher-product`
+  nešly přes `medusa exec` spustit ostře (CLI odmítá volbu `--apply`) — berou teď `apply`.
+- **Nevydáno:** OP, Odstoupení a Zásady zůstávají pracovní — chybí údaje od Lucie (seznam
+  v `OPEN_QUESTIONS.md`, oddíl „Stav po nasazení“). Datum účinnosti zůstává `2026-10-15`.
+- Otázky pro advokáta: `docs/legal/ADVOKAT.md`.
+
 ## Obsah do Studia, údaje do administrace (15. 10. 2026 odpoledne)
 
 Podrobně `docs/cms/00-plan.md`. Mění bod „Jádro“ níž: text dokumentů se smí upravovat ve

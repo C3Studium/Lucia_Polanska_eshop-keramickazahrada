@@ -125,11 +125,31 @@ function LegalSection({
     .filter(Boolean)
     .join("\n")
   const madeToOrder = legal.made_to_order_items ?? []
+  // Potvrzení zakázky (Z11) — jen u objednávky se zakázkou, a jen když šlo v
+  // příloze. Od 20. 10. 2026 jedno na KAŽDOU zakázku objednávky (seznam);
+  // staré notifikace mají jen `commission_confirmation`.
+  const confirmations =
+    legal.commission_confirmations?.length
+      ? legal.commission_confirmations
+      : legal.commission_confirmation
+        ? [legal.commission_confirmation]
+        : []
+  const confirmationAttached =
+    confirmations.some((item) => Boolean(item?.attached)) && !attachmentsFailed
 
   const attachedNames = [
+    confirmationAttached
+      ? confirmations.length > 1
+        ? "potvrzení zakázek"
+        : "potvrzení zakázky"
+      : null,
     termsAttached ? "obchodní podmínky platné pro tuto smlouvu" : null,
     withdrawalAttached ? "poučení o odstoupení od smlouvy s formulářem" : null,
-  ].filter(Boolean)
+  ].filter((name): name is string => Boolean(name))
+  const attachedList =
+    attachedNames.length > 1
+      ? `${attachedNames.slice(0, -1).join(", ")} a ${attachedNames[attachedNames.length - 1]}`
+      : attachedNames[0] ?? ""
 
   return (
     <Section
@@ -143,7 +163,7 @@ function LegalSection({
       <P>
         Tímto e-mailem potvrzujeme vaši objednávku a uzavření kupní smlouvy.
         {attachedNames.length
-          ? ` V příloze posíláme ${attachedNames.join(" a ")} (PDF) — uschovejte si je.`
+          ? ` V příloze posíláme ${attachedList} (PDF) — uschovejte si je.`
           : legal.terms
             ? ` Smlouva se řídí obchodními podmínkami ve znění platném od ${legal.terms.version_label}; najdete je na odkazu níže.`
             : ""}
@@ -157,6 +177,26 @@ function LegalSection({
       ) : null}
 
       <Section style={{ margin: "16px 0 0" }}>
+        {confirmations.map((confirmation, index) => {
+          const attached = Boolean(confirmation?.attached) && !attachmentsFailed
+          return (
+            <P key={confirmation.url ?? index} small style={{ margin: "0 0 6px" }}>
+              <strong style={{ color: brand.ink }}>
+                Potvrzení zakázky{confirmations.length > 1 ? ` ${index + 1}/${confirmations.length}` : ""}
+              </strong>{" "}
+              · smlouva na výrobek podle vašeho zadání
+              {attached ? " — v příloze (PDF)" : ""}
+              {!attached && confirmation.url ? (
+                <>
+                  {" — "}
+                  <Link href={confirmation.url} style={linkStyle}>
+                    stáhnout PDF
+                  </Link>
+                </>
+              ) : null}
+            </P>
+          )
+        })}
         {legal.terms ? (
           <LegalDocumentLine
             label="Obchodní podmínky"

@@ -21,10 +21,12 @@ import OrderDetails from "@modules/order/components/order-details"
 import OrderSummary from "@modules/order/components/order-summary"
 import PaymentDetails from "@modules/order/components/payment-details"
 import ShippingDetails from "@modules/order/components/shipping-details"
-import CommissionConversation from "@modules/order/components/commission-conversation"
-import BalancePayPanel from "@modules/order/components/balance-pay"
+import CommissionList from "@modules/order/components/commission-list"
 import type { CommissionNote } from "@lib/util/made-to-order"
-import type { CommissionBalance } from "@lib/data/made-to-order"
+import type {
+  CommissionBalance,
+  CommissionCancellation,
+} from "@lib/data/made-to-order"
 import {
   AccountPageReveal,
   AccountSectionReveal,
@@ -40,6 +42,13 @@ type OrderDetailsTemplateProps = {
   commissionNotes?: CommissionNote[] | null
   /** Stav doplatku zakázky → panel „Doplatit", když něco zbývá. */
   commissionBalance?: CommissionBalance | null
+  /**
+   * Co by zrušení zakázky znamenalo teď (`/cancellation`). `undefined` →
+   * panel si to dotáhne sám; `null` → zrušení se nenabídne.
+   */
+  commissionCancellation?: CommissionCancellation | null
+  /** Vlákna per zakázka (Z-A) u objednávky s víc zakázkami; jinak `null`. */
+  commissionNotesById?: Record<string, CommissionNote[]> | null
   /**
    * Podepsaný token pro reklamaci / vrácení (stejný formulář jako z e-mailu
    * a z potvrzení — druh + „co požadujete" + fotky). `null` → formulář se
@@ -64,6 +73,8 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
   claimForm = null,
   commissionNotes = null,
   commissionBalance = null,
+  commissionCancellation,
+  commissionNotesById = null,
   selfServiceToken = null,
   claims = null,
   edit = null,
@@ -146,16 +157,18 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
               </LocalizedClientLink>
             </div>
           )}
-          {/* Doplatek zakázky — „Doplatit", když ještě něco zbývá. */}
-          <BalancePayPanel balance={commissionBalance} />
-          {/* Konverzace s ateliérem — jen u zakázky; stejný popup komponent jako
-              na potvrzení i na stránkách úpravy/reklamace. */}
-          {commissionNotes && (
-            <CommissionConversation
-              orderId={order.id}
-              notes={commissionNotes}
-            />
-          )}
+          {/* Zakázky (audit § 0, Z-A): pro každou zakázku panel (stav podle
+              e-mailu o zahájení výroby, smluvní záloha, PDF potvrzení, „Zrušit
+              zakázku" Z4/Z5), její doplatek a konverzace s ateliérem; u víc
+              zakázek souhrn nahoře. Jen u zakázky. */}
+          <CommissionList
+            orderId={order.id}
+            balance={commissionBalance}
+            cancellation={commissionCancellation}
+            token={selfServiceToken}
+            notes={commissionNotes}
+            notesById={commissionNotesById}
+          />
         </aside>
       </AccountSectionReveal>
 

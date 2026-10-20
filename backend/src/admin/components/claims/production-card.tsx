@@ -93,6 +93,24 @@ const KeepDepositPanel = ({
         objednávky se zakázková položka z objednávky odebere a zbytek zůstává.
         Rozhodnutí se zapíše do žádosti.
       </Text>
+      {/* Z7 (LEGAL_AUDIT § 0): ruší-li prodávající, náleží zákazníkovi vše.
+          Ponechat lze podle OP jen smluvní zálohu, a jen při zrušení
+          zákazníkem PO odeslaném e-mailu „Zakázka je ve výrobě" (Z3/Z5). */}
+      <Text size="small" className="text-ui-fg-error">
+        Pozor: podle obchodních podmínek (čl. Výroba na zakázku) při zrušení ze
+        strany prodávající náleží zákazníkovi vše. Zálohu si lze ponechat jen při
+        zrušení zákazníkem po zahájení výroby
+        {production.production_start_notified_at
+          ? ` (e-mail o zahájení odeslán ${new Date(
+              production.production_start_notified_at
+            ).toLocaleString("cs-CZ")})`
+          : " — a e-mail o zahájení výroby zatím neodešel, výroba tedy nezačala"}
+        , a to nejvýš smluvní zálohu
+        {typeof production.deposit_contract === "number"
+          ? ` ${formatCzk(production.deposit_contract)}`
+          : ""}
+        .
+      </Text>
       <div className="flex flex-col gap-y-1">
         <Label size="xsmall" htmlFor={`keep-deposit-note-${request.id}`}>
           Důvod (volitelné, do poznámky k vyřízení)
@@ -228,6 +246,43 @@ export const ProductionCard = ({
         )}
         {asNumber(production.surcharge) > 0 && (
           <Row label="Příplatek" value={formatCzk(asNumber(production.surcharge))} />
+        )}
+        {/* Smluvní záloha (Z2/Z5) ≠ zaplaceno v pokladně: jen tahle část se
+            po zahájení výroby (Z3) nevrací. */}
+        {typeof production.deposit_contract === "number" && (
+          <Row
+            label="Smluvní záloha"
+            value={`${formatCzk(production.deposit_contract)}${
+              production.deposit_percentage ? ` (${production.deposit_percentage} %)` : ""
+            }`}
+          />
+        )}
+        <Row
+          label="Zahájení výroby (e-mail)"
+          value={
+            production.production_start_notified_at
+              ? new Date(production.production_start_notified_at).toLocaleString("cs-CZ")
+              : "neodeslán — výroba nezačala"
+          }
+        />
+        {production.cancelled_by && (
+          <Row
+            label="Zrušení"
+            value={`${
+              production.cancelled_by === "customer" ? "zrušil zákazník" : "zrušila prodávající"
+            }${
+              production.cancellation_phase === "after_production"
+                ? ", po zahájení výroby"
+                : production.cancellation_phase === "before_production"
+                  ? ", před zahájením výroby"
+                  : ""
+            }${
+              typeof production.cancellation_refund_amount === "number"
+                ? `, vráceno ${formatCzk(production.cancellation_refund_amount)}`
+                : ""
+            }`}
+            strong
+          />
         )}
         <Row label="Záloha zaplacena" value={formatCzk(depositPaid)} />
         {asNumber(production.balance_paid) > 0 && (

@@ -23,7 +23,7 @@ const BUY_DEFAULTS = {
   "nakup.pridavame": "Přidáváme…",
   "nakup.pridano": "Přidáno do košíku",
   "nakup.v-kosiku": "Máte to v košíku.",
-  "nakup.balne": "Každý kus balíme zvlášť proti poškození — balné uvidíte v košíku.",
+  "nakup.balne": "Každý kus balíme zvlášť proti poškození.",
 } as const
 
 /** Add-to-cart is the moment the sale is made or lost; each state has to be visible. */

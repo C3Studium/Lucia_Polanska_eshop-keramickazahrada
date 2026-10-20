@@ -2,6 +2,7 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/framework/utils"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
+import { validateProductionProfile } from "../../../../../lib/made-to-order/profile-validation"
 
 /**
  * Zrcadlo „je to zakázka" do product.metadata.made_to_order.
@@ -58,36 +59,15 @@ type ProfileInput = {
   variants?: VariantProfileInput[]
 }
 
+/**
+ * Strop zálohy 50 % (LEGAL_AUDIT.md § 0, Z2 — § 1813, § 1814 odst. 1 písm. l)
+ * OZ) u profilu i přebití provedení; pravidla jsou čistá v
+ * `lib/made-to-order/profile-validation` (test), tady jen česká chyba.
+ */
 const validateProfile = (input: ProfileInput) => {
-  const deposit = input.default_deposit_percentage
-  if (deposit !== undefined && (!Number.isFinite(deposit) || deposit < 1 || deposit > 100)) {
-    throw new MedusaError(
-      MedusaError.Types.INVALID_DATA,
-      "Výše zálohy musí být mezi 1 a 100 %."
-    )
-  }
-  const min = input.production_time_min_days
-  const max = input.production_time_max_days
-  if (min !== undefined && (!Number.isInteger(min) || min < 0)) {
-    throw new MedusaError(MedusaError.Types.INVALID_DATA, "Minimální doba výroby není platná.")
-  }
-  if (max !== undefined && (!Number.isInteger(max) || max < 0)) {
-    throw new MedusaError(MedusaError.Types.INVALID_DATA, "Maximální doba výroby není platná.")
-  }
-  if (min !== undefined && max !== undefined && min > max) {
-    throw new MedusaError(
-      MedusaError.Types.INVALID_DATA,
-      "Minimální doba výroby nesmí být delší než maximální."
-    )
-  }
-  for (const variant of input.variants || []) {
-    const override = variant.deposit_percentage_override
-    if (override != null && (!Number.isFinite(override) || override < 1 || override > 100)) {
-      throw new MedusaError(
-        MedusaError.Types.INVALID_DATA,
-        "Záloha u provedení musí být mezi 1 a 100 %."
-      )
-    }
+  const verdict = validateProductionProfile(input)
+  if (verdict.ok === false) {
+    throw new MedusaError(MedusaError.Types.INVALID_DATA, verdict.message)
   }
 }
 

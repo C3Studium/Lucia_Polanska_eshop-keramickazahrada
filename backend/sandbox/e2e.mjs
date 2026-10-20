@@ -26,7 +26,7 @@ import path from "node:path"
 import { createRequire } from "node:module"
 
 import { ARTIFACTS_DIR, BACKEND_URL, MAIL_DIR, MAIL_URL, SANDBOX_DIR, STOREFRONT_DIR, STOREFRONT_URL } from "./lib/config.mjs"
-import { adminApi, httpJson, notificationsSince, seedState, storeApi } from "./lib/api.mjs"
+import { adminApi, httpJson, notificationsSince, rawRequest, seedState, storeApi } from "./lib/api.mjs"
 import { sql } from "./db.mjs"
 
 const require = createRequire(path.join(STOREFRONT_DIR, "package.json"))
@@ -1013,6 +1013,231 @@ scenarios.complaint = async () => {
 /* Report                                                              */
 /* ------------------------------------------------------------------ */
 
+/* ---------------- 5 · Zakázky podle LEGAL_AUDIT § 0 (Z3, Z4, Z5, Z11) ---------------- */
+
+/** Objednávka zakázky se zálohou přes maketu ComGate — zkrácený průchod z 1b. */
+async function placeCommissionOrder(nameBase) {
+  const email = `e2e-${nameBase}+${Date.now()}@sandbox.test`
+  const { ctx, page } = await newContext()
+  const shots = []
+  await addToCart(page, "sandbox-kvetinac-na-zakazku")
+  await fillAddress(page, { email })
+  await chooseDelivery(page, "Osobní odběr v ateliéru")
+  await page.getByTestId("production-payment-mode").waitFor({ timeout: 60000 })
+  await chooseComgateCard(page)
+  const note = page.locator('[data-testid="commission-note-input"]:visible').first()
+  await note.fill(`Květináč 30 cm, modrá glazura, motiv ryby (e2e ${nameBase}).`)
+  await note.blur()
+  await page.getByTestId("commission-status").filter({ hasText: /Uložen/ }).first().waitFor({ timeout: 60000 }).catch(() => {})
+  await page.waitForLoadState("networkidle").catch(() => {})
+  await sleep(1500)
+  const mtoLabel = (await page.locator("label").filter({ hasText: /záloha se po zahájení výroby nevrací/ }).first().innerText().catch(() => "")).trim()
+  const preContract = (await page.getByTestId("pre-contract-info").innerText().catch(() => "")).trim()
+  await page.getByTestId("terms-checkbox").check()
+  await page.getByTestId("made-to-order-checkbox").check()
+  shots.push(await shot(page, `${nameBase}-review`))
+  await page.getByTestId("submit-order-button").click()
+  const pay = await payInComgateMock(page, nameBase)
+  shots.push(pay.gateShot, pay.confirmedShot)
+  return { ctx, page, email, pay, shots, mto_label: mtoLabel, pre_contract: preContract }
+}
+
+async function productionOrderOf(orderId) {
+  const admin = await adminApi()
+  const { production_order } = await admin.get(`/admin/made-to-order/orders/${orderId}`)
+  if (!production_order) return null
+  const p = production_order
+  return {
+    id: p.id,
+    stage: p.stage,
+    deposit_percentage: p.deposit_percentage,
+    deposit_amount: p.deposit_amount,
+    production_started_at: p.production_started_at,
+    production_start_notified_at: p.production_start_notified_at,
+    production_start_email_id: p.production_start_email_id,
+    cancelled_at: p.cancelled_at,
+    cancelled_by: p.cancelled_by,
+    cancellation_phase: p.cancellation_phase,
+    cancellation_refund_amount: p.cancellation_refund_amount,
+    deposit_refunded: p.deposit_refunded,
+    confirmation_pdf_url: p.confirmation_pdf_url,
+    confirmation_pdf_sha256: p.confirmation_pdf_sha256,
+    confirmation_sent_at: p.confirmation_sent_at,
+    confirmation_terms_version: p.confirmation_terms_version,
+  }
+}
+
+async function comgateRefundsFor(transId) {
+  const { data: state } = await httpJson("GET", `${MAIL_URL}/comgate/_list`)
+  return (state.refunds || []).filter((r) => r.transId === transId).map((r) => ({ at: r.at, amount_minor: Number(r.amount) }))
+}
+
+/**
+ * Příloha „Potvrzení zakázky“ u potvrzení objednávky. Resend posílá přílohy
+ * jen z https URL (modules/resend/service.ts) a sandboxové úložiště dává
+ * http://localhost — maketa proto přílohu nevidí. Ověřuje se tedy to, co jde
+ * ověřit i tady: odkaz v datech notifikace, stažitelné PDF a zmínka
+ * v e-mailu. V produkci (R2, https) jde příloha s e-mailem.
+ */
+async function confirmationAttachmentOf(mails, productionOrder) {
+  const placed = mails.find((m) => m.template === "order-placed")
+  const ref = (placed?.data_attachments || []).find((a) => /^Potvrzeni-zakazky-/.test(a.filename || ""))
+  let file = null
+  if (ref?.url) {
+    const { status, text } = await rawRequest("GET", ref.url)
+    file = { status, is_pdf: text.startsWith("%PDF"), bytes: Buffer.byteLength(text, "utf8") }
+  }
+  return {
+    placed_found: Boolean(placed),
+    subject: placed?.subject,
+    mail_attachments: placed?.attachments || [],
+    data_attachment: ref || null,
+    file,
+    url_https: ref ? /^https:/.test(ref.url) : false,
+    html_mentions_confirmation: placed?.mail_file ? /Potvrzení zakázky/.test(mailHtml(placed.mail_file)) : false,
+    sha256_on_production_order: productionOrder?.confirmation_pdf_sha256 || null,
+  }
+}
+
+/** Panel zakázky na stránce potvrzení (token hosta) — klik „Zrušit zakázku“ (1 nebo 2 kroky). */
+async function cancelInPanel(page, nameBase, { twoStep }) {
+  await page.reload()
+  await page.getByTestId("commission-panel").waitFor({ timeout: 60000 })
+  const before = {
+    status: (await page.getByTestId("commission-status").innerText().catch(() => "")).trim(),
+    pdf_link: await page.getByTestId("commission-confirmation-pdf").getAttribute("href").catch(() => null),
+    panel_text: (await page.getByTestId("commission-panel").innerText().catch(() => "")).trim(),
+  }
+  const shotBefore = await shot(page, `${nameBase}-panel-before-cancel`)
+  await page.getByTestId("commission-cancel").first().click()
+  let confirmText = null
+  if (twoStep) {
+    await page.getByTestId("commission-cancel-confirm-text").waitFor({ timeout: 30000 })
+    confirmText = (await page.getByTestId("commission-cancel-confirm-text").innerText()).trim()
+    await page.getByTestId("commission-cancel-confirm").click()
+  }
+  await page.getByTestId("commission-cancelled").waitFor({ timeout: 90000 })
+  const after = (await page.getByTestId("commission-cancelled").innerText()).trim()
+  const shotAfter = await shot(page, `${nameBase}-panel-cancelled`)
+  return { before, confirm_text: confirmText, after, shots: [shotBefore, shotAfter] }
+}
+
+scenarios.z = async () => {
+  const shots = []
+  const out = {}
+  // ── 1. zakázka: potvrzení s PDF, zrušení PŘED zahájením → vše zpět ──
+  const since1 = new Date().toISOString()
+  const o1 = await placeCommissionOrder("z1")
+  shots.push(...o1.shots)
+  try {
+    const mails1 = await mailsFor(since1, { settleMs: 15000 })
+    const po1 = await productionOrderOf(o1.pay.orderId)
+    const conf1 = await confirmationAttachmentOf(mails1, po1)
+    const cancel1 = await cancelInPanel(o1.page, "z1", { twoStep: false })
+    shots.push(...cancel1.shots)
+    const po1after = await productionOrderOf(o1.pay.orderId)
+    const mails1b = await mailsFor(since1, { settleMs: 8000 })
+    const refunds1 = await comgateRefundsFor(o1.pay.transId)
+    const order1 = await orderDetails(o1.pay.orderId)
+    out.before_production = {
+      email: o1.email,
+      mto_label: o1.mto_label,
+      pre_contract: o1.pre_contract,
+      payment: { transId: o1.pay.transId, amount: o1.pay.amount },
+      confirmation_mail: conf1,
+      production_order_after_placed: po1,
+      panel: cancel1,
+      production_order_after_cancel: po1after,
+      comgate_refunds: refunds1,
+      order_after: { status: order1.status, payment_status: order1.payment_status },
+      mails: mails1b.map((m) => ({ template: m.template, subject: m.subject, to: m.to, attachments: m.attachments.map((a) => a.filename) })),
+    }
+  } finally {
+    await o1.ctx.close()
+  }
+
+  // ── 2. zakázka: Začít výrobu → e-mail Z3 → zrušení PO zahájení → záloha propadá ──
+  const since2 = new Date().toISOString()
+  const o2 = await placeCommissionOrder("z2")
+  shots.push(...o2.shots)
+  try {
+    await mailsFor(since2, { settleMs: 15000 })
+    const admin = await adminApi()
+    const actions = []
+    for (const action of ["confirm_specification", "start_production"]) {
+      try {
+        await admin.post(`/admin/made-to-order/orders/${o2.pay.orderId}/actions`, { action })
+        actions.push({ action, ok: true })
+      } catch (e) {
+        actions.push({ action, ok: false, error: String(e.message).slice(0, 300) })
+      }
+    }
+    const mails2 = await mailsFor(since2, { settleMs: 10000 })
+    const started = mails2.find((m) => m.template === "production-started")
+    const startedText = started ? htmlText(mailHtml(started.mail_file)).slice(0, 700) : null
+    const po2 = await productionOrderOf(o2.pay.orderId)
+    const cancel2 = await cancelInPanel(o2.page, "z2", { twoStep: true })
+    shots.push(...cancel2.shots)
+    const po2after = await productionOrderOf(o2.pay.orderId)
+    const mails2b = await mailsFor(since2, { settleMs: 8000 })
+    const refunds2 = await comgateRefundsFor(o2.pay.transId)
+    const order2 = await orderDetails(o2.pay.orderId)
+    out.after_production = {
+      email: o2.email,
+      payment: { transId: o2.pay.transId, amount: o2.pay.amount },
+      admin_actions: actions,
+      production_started_mail: started ? { subject: started.subject, to: started.to, text: startedText } : null,
+      production_order_after_start: po2,
+      panel: cancel2,
+      production_order_after_cancel: po2after,
+      comgate_refunds: refunds2,
+      order_after: { status: order2.status, payment_status: order2.payment_status },
+      mails: mails2b.map((m) => ({ template: m.template, subject: m.subject, to: m.to, attachments: m.attachments.map((a) => a.filename) })),
+    }
+  } finally {
+    await o2.ctx.close()
+  }
+
+  const b = out.before_production
+  const a = out.after_production
+  const toMinor = (amount) => Math.round(Number(String(amount).replace(/[^\d.,]/g, "").replace(",", ".")) * 100)
+  const paidMinor1 = toMinor(b.payment.amount)
+  const paidMinor2 = toMinor(a.payment.amount)
+  const depositMinor2 = Math.round(Number(a.production_order_after_cancel?.deposit_amount ?? 0) * 100)
+  return {
+    ok:
+      Boolean(b.confirmation_mail.data_attachment) &&
+      b.confirmation_mail.file?.status === 200 &&
+      b.confirmation_mail.file?.is_pdf === true &&
+      b.confirmation_mail.html_mentions_confirmation === true &&
+      Boolean(b.production_order_after_placed?.confirmation_sent_at) &&
+      b.production_order_after_placed?.deposit_percentage === 25 &&
+      Boolean(b.production_order_after_placed?.confirmation_pdf_url) &&
+      b.production_order_after_cancel?.stage === "cancelled" &&
+      b.production_order_after_cancel?.cancelled_by === "customer" &&
+      b.production_order_after_cancel?.cancellation_phase === "before_production" &&
+      // Z4: před zahájením se vrací vše, co bylo zaplaceno.
+      b.comgate_refunds.length === 1 &&
+      b.comgate_refunds[0].amount_minor === paidMinor1 &&
+      Math.round(Number(b.production_order_after_cancel?.cancellation_refund_amount) * 100) === paidMinor1 &&
+      b.mails.some((m) => m.template === "commission-cancelled") &&
+      Boolean(a.production_started_mail) &&
+      Boolean(a.production_order_after_start?.production_start_notified_at) &&
+      Boolean(a.production_order_after_start?.production_start_email_id) &&
+      a.production_order_after_cancel?.cancellation_phase === "after_production" &&
+      // Z5: po zahájení propadá smluvní záloha, všechno nad ni (tady balné) se vrací.
+      depositMinor2 > 0 &&
+      Math.round(Number(a.production_order_after_cancel?.cancellation_refund_amount) * 100) === paidMinor2 - depositMinor2 &&
+      a.comgate_refunds.length === 1 &&
+      a.comgate_refunds[0].amount_minor === paidMinor2 - depositMinor2 &&
+      a.mails.some((m) => m.template === "commission-cancelled"),
+    paid_minor: { before: paidMinor1, after: paidMinor2, deposit_after: depositMinor2 },
+    ...out,
+    screenshots: shots.filter(Boolean),
+  }
+}
+
+
 const TITLES = {
   cookies: "4 · Lišta cookies při první návštěvě",
   a: "1a · Běžný výrobek → ComGate (maketa)",
@@ -1023,6 +1248,7 @@ const TITLES = {
   f: "1f · Koupit ihned (express checkout)",
   withdrawal: "2 · Online odstoupení od smlouvy (§ 1830a) — objednávka z 1a",
   complaint: "3 · Reklamace a potvrzení o přijetí",
+  z: "5 · Zakázky podle § 0 — PDF potvrzení, zrušení před/po zahájení výroby",
 }
 
 function mailTable(mails = []) {
@@ -1122,7 +1348,7 @@ async function main() {
     writeReport(results)
     return
   }
-  const order = ["cookies", "a", "b", "c", "d", "e", "f", "withdrawal", "complaint"]
+  const order = ["cookies", "a", "b", "c", "d", "e", "f", "withdrawal", "complaint", "z"]
   const wanted = args.length ? args : order
   browser = await chromium.launch({ headless: true })
   try {

@@ -11,7 +11,10 @@ import {
 import { transitionMerchantOrderWorkflow } from "../../workflows/transition-merchant-order"
 import { findOpenBalanceCollection } from "../balance-payment"
 import { formatMoney } from "../customer-email"
-import { cancelProductionStage } from "../production-cancel"
+import {
+  cancelProductionStage,
+  type ProductionCancellationRecord,
+} from "../production-cancel"
 import {
   claimService,
   decisionOutcome,
@@ -22,16 +25,20 @@ import {
 } from "./admin"
 import { cancelOrderNatively } from "./cancel-order-action"
 import { DEPOSIT_KEPT_NOTE_PREFIX } from "./case"
-import { isClaimKind } from "./constants"
+import { isClaimKind, isCommissionCancelKind } from "./constants"
 import { isMadeToOrderItem } from "./context"
 import { loadClaimDetailOrder } from "./detail"
 import { claimLineItemsOf } from "./line-items"
 import { loadOrderRequests } from "./money"
 import { buildClaimOrderItems } from "./order-items"
+import { isPackagingLine, isServiceLine, packagingVariantOf } from "../packaging-lines"
 import {
+  commissionIdFromRequestLines,
   commissionPaidRemaining,
   depositRefundable,
   loadClaimProduction,
+  loadClaimProductions,
+  requireSingleCommission,
 } from "./production"
 import { MONEY_EPSILON, moneyState } from "./refund-rules"
 
@@ -71,9 +78,30 @@ import { MONEY_EPSILON, moneyState } from "./refund-rules"
  */
 
 export type CancelProductionBody = {
+  /**
+   * Která zakázka objednávky se ruší (od 20. 10. 2026 jedna na položku, § 0c).
+   * Bez ní: zakázka podle vybraného řádku žádosti (`line_items`), jinak jediná
+   * zakázka objednávky; u víc zakázek bez vodítka chyba.
+   */
+  production_order_id?: string | null
   /** „Zálohu nevracet" — výslovná volba majitelky, zapíše se do `resolution_note`. */
   keep_deposit?: boolean
   note?: string | null
+  /**
+   * Záznam o zrušení na zakázce (LEGAL_AUDIT.md § 0): kdo, v jaké fázi
+   * (před/po e-mailu Z3), kolik se vrátilo. Z admin routy se neposílá —
+   * tam je to vždy rozhodnutí majitelky (`seller`, Z7) a částka z refundací;
+   * server (zrušení zákazníkem / nezaplacený doplatek) ho předá sám.
+   */
+  cancellation?: ProductionCancellationRecord | null
+}
+
+export type CancelProductionOptions = {
+  /**
+   * `false` = potvrzení o vyřízení zákazníkovi NEposílat — volající pošle
+   * vlastní e-mail (`commission-cancelled`, Z4–Z6) a odkaz na protokol dá do něj.
+   */
+  sendEmail?: boolean
 }
 
 export type CancelProductionResult = {
@@ -134,11 +162,14 @@ export const cancelProductionForClaim = async (
   scope: MedusaContainer,
   requestId: string,
   body: CancelProductionBody = {},
-  actor: string | null = null
+  actor: string | null = null,
+  options: CancelProductionOptions = {}
 ): Promise<CancelProductionResult> => {
   const request = await retrieveClaim(scope, requestId)
 
-  if (!isClaimKind(request.kind)) {
+  // Zrušení zakázky zákazníkem (`zruseni_zakazky`, Z4–Z6) zakládá server a
+  // volá sem — druh je tedy přípustný vedle žádostí podaných zákazníkem.
+  if (!isClaimKind(request.kind) && !isCommissionCancelKind(request.kind)) {
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
       "Zakázku lze zrušit jen ze žádosti o odstoupení, vrácení zboží nebo reklamaci."
@@ -164,13 +195,25 @@ export const cancelProductionForClaim = async (
       "Objednávka k této žádosti nebyla nalezena."
     )
   }
-  const production = await loadClaimProduction(scope, order.id)
-  if (!production) {
+  const productions = await loadClaimProductions(scope, order.id)
+  if (!productions.length) {
     throw new MedusaError(
       MedusaError.Types.NOT_FOUND,
       "K této objednávce není zakázková výroba — není co rušit."
     )
   }
+  // Která zakázka: výslovně z těla, jinak podle řádku vybraného v žádosti,
+  // jinak jediná zakázka objednávky (víc zakázek bez vodítka = chyba volajícího).
+  const targetId =
+    body.production_order_id ??
+    commissionIdFromRequestLines(
+      request,
+      productions.map((item) => item.productionOrder)
+    )
+  const production = requireSingleCommission(
+    (await loadClaimProduction(scope, order.id, targetId))!,
+    "zrušení zakázky"
+  )
   if (production.block.stage === "cancelled") {
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Zakázka už je zrušená.")
   }
@@ -204,17 +247,46 @@ export const cancelProductionForClaim = async (
   const resolutionNote = [depositText, userNote].filter(Boolean).join(" — ")
 
   const items = ((order.items ?? []) as any[]).filter(Boolean)
-  const madeToOrderIds = items
-    .filter((item) => isMadeToOrderItem(item))
-    .map((item) => item.id as string)
-  const hasRegularItems = items.some((item) => !isMadeToOrderItem(item))
+  const goods = items.filter((item) => !isServiceLine(item))
+  const ownLineId: string | null = production.productionOrder.line_item_id ?? null
+  const ownLine = ownLineId ? goods.find((item) => item.id === ownLineId) ?? null : null
+  /*
+   * Zakázka = položka (§ 0c): z objednávky jde pryč JEN řádek této zakázky
+   * (a jeho balné); ostatní řádky — běžné zboží i další zakázky — zůstávají.
+   * Legacy zakázka (bez řádku) = celá objednávka: všechny zakázkové řádky,
+   * jak dřív. Objednávka se nativně ruší/dokončuje, jen když po zrušení nic
+   * jiného nezbývá.
+   */
+  const removeIds: string[] = ownLineId
+    ? [
+        ...(ownLine ? [ownLineId] : []),
+        ...(ownLine?.variant_id
+          ? items
+              .filter((item) => isPackagingLine(item) && packagingVariantOf(item) === ownLine.variant_id)
+              .slice(0, 1)
+              .map((item) => item.id as string)
+          : []),
+      ]
+    : goods.filter((item) => isMadeToOrderItem(item)).map((item) => item.id as string)
+  const hasRegularItems = ownLineId
+    ? goods.some((item) => item.id !== ownLineId)
+    : goods.some((item) => !isMadeToOrderItem(item))
 
   const messages: string[] = []
 
-  // 1) výrobní strana
+  // 1) výrobní strana — se záznamem KDO a V JAKÉ FÁZI zrušil (LEGAL_AUDIT § 0).
+  //    Bez výslovného záznamu = rozhodnutí majitelky (`seller`, Z7); vráceno =
+  //    co z objednávky odešlo zpět (u smíšené jen záloha — zbytek jsou běžné
+  //    položky). Fázi doplní `cancelProductionStage` podle e-mailu Z3.
   await cancelProductionStage(scope, {
     productionOrder: production.productionOrder,
     orderId: order.id,
+    cancellation: body.cancellation ?? {
+      cancelled_by: "seller",
+      cancellation_refund_amount: hasRegularItems
+        ? production.block.deposit_refunded
+        : state.refunded,
+    },
   })
   messages.push(
     `Zakázka zrušena, výrobní příkaz uzavřen (${
@@ -267,14 +339,14 @@ export const cancelProductionForClaim = async (
       messages.push(result.message)
     }
   } else {
-    if (madeToOrderIds.length) {
+    if (removeIds.length) {
       try {
-        await removeOrderLines(scope, order, madeToOrderIds, actor)
-        itemsRemoved = madeToOrderIds.length
+        await removeOrderLines(scope, order, removeIds, actor)
+        itemsRemoved = removeIds.length
         messages.push(
           `Zakázková položka odebrána z objednávky úpravou (${itemsRemoved} ${
             itemsRemoved === 1 ? "řádek" : "řádky"
-          }), běžné položky zůstávají.`
+          }), ostatní položky zůstávají.`
         )
       } catch (error) {
         messages.push(
@@ -284,11 +356,12 @@ export const cancelProductionForClaim = async (
         )
       }
     } else {
-      messages.push("Objednávka zůstává — běžné položky jedou dál.")
+      messages.push("Objednávka zůstává — ostatní položky jedou dál.")
     }
-    // Otevřená výzva k doplatku zrušené zakázky by držela běžné zboží na
-    // bráně odeslání („čeká nezaplacená platba").
-    const openBalance = findOpenBalanceCollection(order)
+    // Otevřená výzva k doplatku zrušené zakázky by držela ostatní zboží na
+    // bráně odeslání („čeká nezaplacená platba"). Jen kolekce TÉTO zakázky —
+    // další zakázky objednávky mají vlastní.
+    const openBalance = findOpenBalanceCollection(order, production.productionOrder.id)
     if (openBalance?.id) {
       await deleteOrderPaymentCollections(scope)
         .run({ input: { id: openBalance.id } as never })
@@ -346,12 +419,17 @@ export const cancelProductionForClaim = async (
       confirmation: true,
       refunds: protocolRefundsOf(updated, currency),
     })
-    await sendResolvedEmail(scope, updated, {
-      protocolUrl: protocol.url,
-      currency,
-      note: resolutionNote,
-    })
-    messages.push("Žádost je vyřízená, zákazník dostal potvrzení.")
+    if (options.sendEmail !== false) {
+      await sendResolvedEmail(scope, updated, {
+        protocolUrl: protocol.url,
+        currency,
+        note: resolutionNote,
+      })
+      messages.push("Žádost je vyřízená, zákazník dostal potvrzení.")
+    } else {
+      messages.push("Žádost je vyřízená.")
+    }
+    updated.protocol_url = protocol.url ?? updated.protocol_url
   } else if (!resolveNow) {
     messages.push(
       "Žádost zůstává otevřená — zbývá vyřídit běžné položky (vrátit peníze za vybrané položky, nebo „Vyřízeno“)."

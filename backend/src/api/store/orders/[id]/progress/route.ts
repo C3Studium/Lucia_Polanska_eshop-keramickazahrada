@@ -18,6 +18,10 @@ import { listOrderClaims } from "../../../../../lib/claims/context"
 import { customerOrderStatus } from "../../../../../lib/order-customer-status"
 import { isPersonalPickupOrder } from "../../../../../lib/personal-pickup"
 import { toNumber } from "../../../../../lib/claims/refund-rules"
+import {
+  listCommissionsOfOrder,
+  paymentRequestsByCommission,
+} from "../../../../../lib/made-to-order/orders-of"
 
 /**
  * „Kde je moje objednávka?" — the two things a customer can ask that the
@@ -103,17 +107,30 @@ export const GET = async (
   const madeToOrder = req.scope.resolve<MadeToOrderModuleService>(
     MADE_TO_ORDER_MODULE
   )
-  const [productionOrder] = (await madeToOrder.listProductionOrders({
-    order_id: orderId,
-  } as never)) as any[]
+  // Od 20. 10. 2026 (zakázka = položka) má objednávka zakázek víc — stav
+  // objednávky se počítá přes všechny (dluh = součet, fáze podle první živé).
+  const productionOrders = await listCommissionsOfOrder(req.scope, orderId)
+  const productionOrder =
+    productionOrders.find((candidate) => candidate.stage !== "cancelled") ?? productionOrders[0] ?? null
 
   let outstanding = 0
   // The making-of, entries she chose to share. Newest first, capped — a
   // customer page, not an archive.
-  let making: { text: string | null; image_url: string | null; at: string }[] =
-    []
+  let making: {
+    text: string | null
+    image_url: string | null
+    at: string
+    production_order_id: string | null
+  }[] = []
+  let commissions: Array<{
+    production_order_id: string
+    title: string | null
+    stage: string
+    outstanding: number
+    payment_url: string | null
+  }> = []
 
-  if (productionOrder) {
+  if (productionOrders.length) {
     const visibleNotes = (await madeToOrder
       .listProductionNotes(
         { order_id: orderId, visible_to_customer: true } as never,
@@ -124,11 +141,20 @@ export const GET = async (
       text: note.text ?? null,
       image_url: note.image_url ?? null,
       at: note.created_at,
+      production_order_id: note.production_order_id ?? null,
     }))
-    const requests = (await madeToOrder.listProductionPaymentRequests({
-      production_order_id: productionOrder.id,
-    } as never)) as any[]
-    outstanding = outstandingFor(productionOrder, requests)
+    const requestsByCommission = await paymentRequestsByCommission(req.scope, productionOrders)
+    commissions = productionOrders.map((candidate) => {
+      const owed = outstandingFor(candidate, requestsByCommission.get(candidate.id) ?? [])
+      return {
+        production_order_id: candidate.id,
+        title: typeof candidate.line_title === "string" ? candidate.line_title : null,
+        stage: String(candidate.stage),
+        outstanding: owed,
+        payment_url: owed > 0 ? balancePaymentUrl(orderId, candidate.id) : null,
+      }
+    })
+    outstanding = Math.round(commissions.reduce((sum, item) => sum + item.outstanding, 0) * 100) / 100
   }
 
   const stage = merchantOrder?.stage ?? null
@@ -167,14 +193,17 @@ export const GET = async (
     /** Entries from the diary she explicitly shared — photos of the making. */
     making,
     // Signed link, built by the backend. The storefront cannot construct one,
-    // which is why it is returned here rather than left to the client.
+    // which is why it is returned here rather than left to the client. U víc
+    // zakázek s dluhem odkaz první dlužící; každá má svůj v `commissions[]`.
     balance: outstanding > 0
       ? {
           outstanding,
           currency_code: String(productionOrder?.currency_code || order.currency_code || "czk"),
-          payment_url: balancePaymentUrl(orderId),
+          payment_url:
+            commissions.find((item) => item.payment_url)?.payment_url ?? balancePaymentUrl(orderId),
         }
       : null,
+    commissions,
   }
 
   res.status(200).json(body)

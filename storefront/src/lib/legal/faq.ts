@@ -148,7 +148,7 @@ export const LEGAL_FAQ: LegalFaqGroup[] = [
         question: "Jak probíhá objednávka zakázky?",
         answer: [
           "Zakázkový výrobek objednáte v obchodě a v pokladně popíšete, co si přejete — text, číslo, motiv, případně přiložíte fotky. Nemáte vybraný konkrétní výrobek? Napište mi přes formulář na stránce [Výroba](/vyroba).",
-          "Zadání vám potvrdím a pustím se do práce. Před konečným výpalem vám pošlu fotku ke schválení. Až bude hotovo, doplatíte zbytek ceny a zakázku pošlu nebo předám.",
+          "Zadání vám potvrdím. V den, kdy začnu vyrábět, vám přijde e-mail „Zakázka je ve výrobě“ — od něj běží výrobní lhůta uvedená u výrobku. Před konečným výpalem vám pošlu fotku ke schválení (máte 5 pracovních dnů). Až bude hotovo, doplatíte zbytek ceny a zakázku do 2 pracovních dnů pošlu nebo předám. Shrnutí smlouvy dostanete jako PDF „Potvrzení zakázky“ spolu s potvrzením objednávky.",
         ],
       },
       {
@@ -156,7 +156,7 @@ export const LEGAL_FAQ: LegalFaqGroup[] = [
         question: "Kolik se u zakázky platí předem?",
         answer: [
           "Při objednávce zaplatíte zálohu {{mto.deposit}} ceny, nejvýš polovinu. Platí se předem online — i když si zakázku vyzvednete osobně. Zbytek a dopravu doplatíte, až je hotovo.",
-          "Zrušíte-li zakázku dřív, než začnu vyrábět, vrátím zálohu celou. Potom si ponechám jen to, co jsem do té doby skutečně vynaložila (materiál, práce, výpal). [Podrobnosti v obchodních podmínkách](/smluvni-podminky#vyroba-na-zakazku).",
+          "Zrušíte-li zakázku dřív, než vám přijde e-mail „Zakázka je ve výrobě“, vrátím vám všechno. Po něm se záloha nevrací — pokrývá materiál, návrh a práci, které už jsou v kusu, který nikomu jinému neprodám; všechno zaplacené nad zálohu vrátím do 14 dnů. [Podrobnosti v obchodních podmínkách](/smluvni-podminky#vyroba-na-zakazku).",
         ],
       },
       {
@@ -171,7 +171,7 @@ export const LEGAL_FAQ: LegalFaqGroup[] = [
         id: "faq-zakazka-vada",
         question: "Co když má zakázka vadu?",
         answer: [
-          "„Nelíbí se mi to“ vada není — proto podobu schvalujete na fotce ještě před výpalem. Vadou je rozpor se schváleným návrhem (jiný motiv nebo text, rozměr větší či menší o víc než 5 %) nebo poškození. Reklamovat ji můžete 2 roky jako každé jiné zboží.",
+          "„Nelíbí se mi to“ vada není — proto podobu schvalujete na fotce ještě před výpalem. Vadou je prasklina, odštěpek, odlupující se glazura, jiný motiv, text nebo rozměr než ve schválené podobě, nebo poškození při přepravě; jiné číslo či text, než jste zadali, je vadou vždy. Reklamovat ji můžete 2 roky jako každé jiné zboží.",
           "Drobné odchylky v odstínu glazury a struktuře povrchu patří k ruční výrobě a vadou nejsou.",
         ],
       },
@@ -231,6 +231,27 @@ export const LEGAL_FAQ: LegalFaqGroup[] = [
         question: "Můžu poukaz vrátit?",
         answer: [
           "Ano, do 14 dnů od chvíle, kdy jste ho dostali — dokud ho nikdo neuplatnil, ani zčásti. Po uplatnění už vrátit nejde. [Podmínky poukazů](/smluvni-podminky#darkove-poukazy).",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-bezpecnost",
+    title: "Nezávadnost a bezpečnost",
+    items: [
+      {
+        id: "faq-bezpecnost-potraviny",
+        question: "Je keramika zdravotně nezávadná a vhodná pro styk s potravinami?",
+        answer: [
+          "Glazury, u kterých to u výrobku uvádím, mám ověřené protokolem o nezávadnosti (limity pro olovo a kadmium podle nařízení (ES) č. 1935/2004 a vyhlášky č. 38/2001 Sb.). Protokoly najdete na stránce [Certifikáty](/certifikaty) — u každého je datum a název glazury, které se týká.",
+          "Výrobek, u kterého nezávadnost uvedená není (dekorace, výrobky z kurzů), pro jídlo a pití nepoužívejte.",
+        ],
+      },
+      {
+        id: "faq-bezpecnost-montaz",
+        question: "Jak bezpečně zavěsit plastiku nebo domovní číslo na fasádu?",
+        answer: [
+          "Keramika je těžká a křehká. Kotvěte ji do nosného podkladu hmoždinkami a vruty odpovídajícími zdivu a hmotnosti kusu a nezavěšujte ji nad místa, kde by pád mohl někoho zranit. Rozbitý kus má ostré hrany — střepy ukliďte opatrně a mimo dosah dětí.",
         ],
       },
     ],

@@ -55,15 +55,22 @@ export const consentMetadataPatch = ({
   now,
   clientAcceptedAt,
   madeToOrder,
+  madeToOrderAckAt,
 }: {
   /** Publikovaný sloučený registr (`getPublishedLegalRegistry()`). */
   registry: Pick<LegalRegistry, "currentTermsVersion" | "currentVersion">
   now: Date
   clientAcceptedAt?: string | null
   madeToOrder: boolean
+  /**
+   * Čas POSLEDNÍHO zaškrtnutí poučení Z10 (u víc zakázek má každá své, Z-A).
+   * Bez něj platí čas souhlasu s OP jako dřív.
+   */
+  madeToOrderAckAt?: string | null
 }): Record<ConsentMetadataKey, string> => {
   const termsVersion = registry.currentTermsVersion(now)
   const acceptedAt = validIso(clientAcceptedAt) ?? now.toISOString()
+  const ackAt = validIso(madeToOrderAckAt) ?? acceptedAt
 
   return {
     terms_version: termsVersion,
@@ -72,7 +79,10 @@ export const consentMetadataPatch = ({
     privacy_version: versionOf(registry, "ochrana-osobnich-udaju", now),
     // Pravidla zakázky jsou v OP (čl. Výroba na zakázku) — poučení se tedy
     // váže k verzi OP, se kterou zákazník nakupuje.
-    made_to_order_ack_at: madeToOrder ? acceptedAt : "",
+    made_to_order_ack_at: madeToOrder ? ackAt : "",
     made_to_order_ack_version: madeToOrder ? termsVersion : "",
   }
 }
+
+/** Čas z prohlížeče jako ISO, nebo null — pro zápis `ack_at` k řádku košíku. */
+export const validAckIso = validIso

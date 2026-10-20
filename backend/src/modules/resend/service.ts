@@ -32,6 +32,8 @@ import { OrderReadyEmail } from "./emails/order-ready";
 import { OrderEditedEmail } from "./emails/order-edited";
 import { CommissionCompletedEmail } from "./emails/commission-completed";
 import { CommissionConfirmedEmail } from "./emails/commission-confirmed";
+import { ProductionStartedEmail } from "./emails/production-started";
+import { CommissionCancelledEmail } from "./emails/commission-cancelled";
 import { OrderRefundedEmail } from "./emails/order-refunded";
 import { OrderReviewEmail } from "./emails/order-review";
 import { OrderReadyPickupEmail } from "./emails/order-ready-pickup";
@@ -103,6 +105,10 @@ enum Templates {
   COMMISSION_COMPLETED = "commission-completed",
   // „Zadání je potvrzené" — potvrzení zadání zakázky (před začátkem výroby).
   COMMISSION_CONFIRMED = "commission-confirmed",
+  // „Zakázka je ve výrobě" (Z3) — synchronně při „Začít výrobu"; od něj platí
+  // nevratnost zálohy. „Zakázka zrušena" (Z4–Z7) — jediný e-mail za zrušení.
+  PRODUCTION_STARTED = "production-started",
+  COMMISSION_CANCELLED = "commission-cancelled",
   ORDER_REFUNDED = "order-refunded",
   ORDER_REVIEW = "order-review",
   ORDER_READY_PICKUP = "order-ready-pickup",
@@ -192,6 +198,8 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.ORDER_EDITED]: OrderEditedEmail,
   [Templates.COMMISSION_COMPLETED]: CommissionCompletedEmail,
   [Templates.COMMISSION_CONFIRMED]: CommissionConfirmedEmail,
+  [Templates.PRODUCTION_STARTED]: ProductionStartedEmail,
+  [Templates.COMMISSION_CANCELLED]: CommissionCancelledEmail,
   [Templates.ORDER_REFUNDED]: OrderRefundedEmail,
   [Templates.ORDER_REVIEW]: OrderReviewEmail,
   [Templates.ORDER_READY_PICKUP]: OrderReadyPickupEmail,
@@ -250,6 +258,10 @@ export enum EmailTemplates {
   COMMISSION_COMPLETED = "commission-completed",
   // „Zadání je potvrzené" — potvrzení zadání zakázky (před začátkem výroby).
   COMMISSION_CONFIRMED = "commission-confirmed",
+  // „Zakázka je ve výrobě" (Z3) — synchronně při „Začít výrobu"; od něj platí
+  // nevratnost zálohy. „Zakázka zrušena" (Z4–Z7) — jediný e-mail za zrušení.
+  PRODUCTION_STARTED = "production-started",
+  COMMISSION_CANCELLED = "commission-cancelled",
   ORDER_REFUNDED = "order-refunded",
   ORDER_REVIEW = "order-review",
   ORDER_READY_PICKUP = "order-ready-pickup",
@@ -515,6 +527,11 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Objednávka zrušena"
       case Templates.ORDER_PROCESSING:
         return "Vaše zakázka je ve výrobě"
+      case Templates.PRODUCTION_STARTED:
+        // Z3: zahájení výroby platí od tohoto e-mailu — předmět říká přímo, co se stalo.
+        return "Vaše zakázka je ve výrobě"
+      case Templates.COMMISSION_CANCELLED:
+        return "Zakázka zrušena"
       case Templates.COMMISSION_CONFIRMED:
         return "Zadání vaší zakázky je potvrzené"
       case Templates.ORDER_PREPARING:

@@ -1,6 +1,7 @@
 import s from "./styles/orders-template.module.scss"
 
 import { HttpTypes } from "@medusajs/types"
+import type { Commission } from "@lib/util/made-to-order"
 import { itemFieldPath, itemText } from "@lib/util/site-copy"
 import type { CopyBlock } from "@lib/util/site-copy"
 import CmsText from "@modules/common/components/cms-text"
@@ -21,9 +22,15 @@ type ProfileTemplateProps = {
    * čte OrderOverview). Počet objednávek je údaj, zůstává v kódu.
    */
   copy?: CopyBlock
+  /** Zakázky objednávek (id objednávky → zakázky) pro stručný stav v kartě (Z-A). */
+  commissionsByOrder?: Record<string, Commission[]>
 }
 
-export const OrdersTemplate = ({ orders, copy }: ProfileTemplateProps) => {
+export const OrdersTemplate = ({
+  orders,
+  copy,
+  commissionsByOrder,
+}: ProfileTemplateProps) => {
   const doc = copy?.id ?? null
   const lead = itemText(copy, "nadpis", "Vaše")
   return (
@@ -56,7 +63,11 @@ export const OrdersTemplate = ({ orders, copy }: ProfileTemplateProps) => {
         </CmsText>
       </AccountSectionReveal>
       <AccountSectionReveal className={s.body}>
-        <OrderOverview orders={orders} copy={copy} />
+        <OrderOverview
+          orders={orders}
+          copy={copy}
+          commissionsByOrder={commissionsByOrder}
+        />
         {/* Order transfer is intentionally disabled for now.
         <Divider />
         <TransferRequestForm />

@@ -5,7 +5,12 @@ import { CLAIM_FORM_KEY } from "@modules/order/components/carrier-damage"
 import { getSiteDocument } from "@lib/data/documents"
 import { getOrderEditContext } from "@lib/data/order-edit"
 import { ORDER_ITEM_EDITING_ENABLED } from "@modules/order/components/order-edit/shared"
-import { getCommissionBalance, listCommissionNotes } from "@lib/data/made-to-order"
+import {
+  getCommissionBalance,
+  getCommissionCancellation,
+  listCommissionNotes,
+  listCommissionNotesByCommission,
+} from "@lib/data/made-to-order"
 import { getOrderProgress } from "@lib/data/order-progress"
 import { orderTermsRef } from "@lib/legal/order-terms"
 import { Metadata } from "next"
@@ -68,6 +73,16 @@ export default async function OrderDetailPage(props: Props) {
   const claims = selfServiceToken
     ? await getOrderClaims(order.id, selfServiceToken)
     : null
+  // Zrušení zakázky (audit § 0, Z4/Z5) — fázi a částky říká backend; jen u
+  // zakázky, jinak se neptáme.
+  const commissionCancellation = commissionBalance?.is_commission
+    ? await getCommissionCancellation(order.id, selfServiceToken)
+    : null
+  // Z-A: u víc zakázek vlákno konverzace per zakázka (jinak null → vlákno objednávky).
+  const commissionNotesById = await listCommissionNotesByCommission(
+    order.id,
+    commissionBalance
+  )
   // Stav objednávky ze serveru (reklamace, odesláno, výroba zakázky…) —
   // samotný `fulfillment_status` o Denní práci ani reklamacích neví.
   const progress = await getOrderProgress(order.id, selfServiceToken)
@@ -81,6 +96,8 @@ export default async function OrderDetailPage(props: Props) {
       claimForm={claimForm}
       commissionNotes={commissionNotes}
       commissionBalance={commissionBalance}
+      commissionCancellation={commissionCancellation}
+      commissionNotesById={commissionNotesById}
       selfServiceToken={selfServiceToken}
       claims={claims}
       edit={edit}

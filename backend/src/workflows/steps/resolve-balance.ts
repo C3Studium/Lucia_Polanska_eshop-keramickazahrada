@@ -12,9 +12,11 @@ import { resolveOrderOutstanding } from "../../lib/balance-payment"
  * e-mails.
  *
  * Běží na `order.placed` souběžně s `initialize-merchant-order`, takže
- * produkční objednávka se zálohou tu ještě nemusí být — doplatek se pak
+ * produkční objednávky se zálohou tu ještě nemusí být — doplatek se pak
  * vezme z kolekce pokladny (`payment_collections` z dotazu workflow), viz
- * `resolveOrderOutstanding`. Bez čekání: běžná objednávka nic navíc nedělá.
+ * `resolveOrderOutstanding`. Od 20. 10. 2026 (zakázka = položka) se dluh
+ * sčítá přes všechny zakázky objednávky. Bez čekání: běžná objednávka nic
+ * navíc nedělá.
  */
 export const resolveBalanceStep = createStep(
   "resolve-order-balance",
@@ -27,24 +29,24 @@ export const resolveBalanceStep = createStep(
     )
     const order = orders?.[0] ?? null
 
-    const [productionOrder] = (await service.listProductionOrders({
+    const productionOrders = (await service.listProductionOrders({
       order_id,
     } as never)) as any[]
 
-    const requests = productionOrder
+    const requests = productionOrders.length
       ? ((await service.listProductionPaymentRequests({
-          production_order_id: productionOrder.id,
+          production_order_id: productionOrders.map((productionOrder) => productionOrder.id),
         } as never)) as any[])
       : []
 
     return new StepResponse({
       outstanding: resolveOrderOutstanding({
-        productionOrder,
+        productionOrders,
         requests,
         collections: order?.payment_collections,
       }),
       currency_code: String(
-        productionOrder?.currency_code || order?.currency_code || "czk"
+        productionOrders[0]?.currency_code || order?.currency_code || "czk"
       ).toLowerCase(),
     })
   }

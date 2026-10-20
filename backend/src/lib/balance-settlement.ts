@@ -11,6 +11,7 @@ import {
 import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
 import { markBalanceRequestPaid, outstandingFor } from "./balance-payment"
+import { commissionOfOrder } from "./made-to-order/orders-of"
 import { toNumber } from "./order-quantity"
 import { epsilonFor } from "./ship-gate"
 
@@ -221,6 +222,8 @@ export const captureCoveredByBalanceMail = (
 
 export type SettleBalanceOfflineInput = {
   order_id: string
+  /** Která zakázka objednávky (jedna na položku, § 0c); bez ní jen objednávka s jedinou zakázkou. */
+  production_order_id?: string | null
   method: OfflineSettlementMethod
   /** Nepovinná; když je, musí se rovnat dluhu (jen celý doplatek). */
   amount?: number | null
@@ -307,9 +310,12 @@ export const settleBalanceOffline = async (
     throw new MedusaError(MedusaError.Types.NOT_FOUND, "Objednávka nebyla nalezena.")
   }
 
-  const [productionOrder] = (await madeToOrder.listProductionOrders({
-    order_id: input.order_id,
-  } as never)) as any[]
+  // Zakázka = položka (§ 0c): doplatek na místě patří JEDNÉ zakázce.
+  const productionOrder = await commissionOfOrder(
+    container,
+    input.order_id,
+    input.production_order_id ?? null
+  )
   if (!productionOrder) {
     throw new MedusaError(
       MedusaError.Types.NOT_FOUND,

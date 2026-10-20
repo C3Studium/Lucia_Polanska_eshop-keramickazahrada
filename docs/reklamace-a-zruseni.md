@@ -355,6 +355,20 @@ u reklamace výběr „Co se stalo": *Vada nebo nefunkčnost* · *Poškozený ku
 „Poškozený kus" (oranžová) vedle „Poškozeno přepravou" (červená); protokol
 „Příčina: poškození".
 
+### 13.x Zrušení zakázky zákazníkem (20. 10. 2026, LEGAL_AUDIT § 0)
+
+Druh žádosti `zruseni_zakazky` je **jen serverový** (`isClaimKind` ho nezná, formulářem se nepodá).
+Zakládá ho `lib/made-to-order/customer-cancel.ts` z `POST /store/made-to-order/:orderId/cancel`
+(vlastník nebo podepsaný token) a z úlohy Z6 (doplatek nezaplacený 30 dnů po výzvě + připomínce).
+Rozhoduje čistý `cancellationPlan` (`lib/made-to-order/cancellation.ts`): před e-mailem „Zakázka je
+ve výrobě“ (`production_start_notified_at` null) se vrací vše; po něm propadá smluvní záloha
+(`production_order.deposit_amount`, ≤ 50 %) a vrací se zbytek. Tok: žádost `approved` + refund
+`refundClaim` (bez e-mailu) → `deposit_refunded` → `cancelProductionForClaim` (čistá zakázka
+s ponechanou zálohou se nativně DOKONČÍ, ne zruší — pojistka §13.6) → vyřízeno + protokol `ZAK-…`
+→ jeden e-mail `commission-cancelled` + zvonek majitelce. Zápis na zakázce: `cancelled_by`,
+`cancellation_phase`, `cancellation_refund_amount`. Když ComGate refund odmítne, žádost zůstává
+`approved` pro majitelku a přijde urgentní upozornění.
+
 ## 14. Kam peníze odejdou a za co (11. 10. 2026)
 
 Zadání (Matěj): vrácení peněz musí opravdu proběhnout. U reklamace se vrací jen za výrobky, jinak celá objednávka. Nezaplacená objednávka nemá co vracet.

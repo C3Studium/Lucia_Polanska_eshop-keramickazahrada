@@ -2,6 +2,10 @@
 
 import { useId, type ReactNode } from "react"
 
+import {
+  madeToOrderAckText,
+  type MadeToOrderAckItem,
+} from "@lib/util/made-to-order"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import { LEGAL_LINKS } from "./labels"
@@ -14,9 +18,13 @@ import styles from "./style.module.scss"
  *
  * - Souhlas s OP a poučením o odstoupení: zaškrtávátko, výchozí NEZAŠKRTNUTÉ
  *   (§ 1817 OZ — žádné předvyplněné souhlasy).
- * - U zakázkové výroby druhé, povinné zaškrtávátko: poučení, že zboží na
- *   zakázku nelze vrátit do 14 dnů (§ 1837 písm. d) OZ). Výjimka platí jen
- *   tehdy, když o ní zákazník ví PŘEDEM (§ 1820 odst. 1 písm. j) OZ).
+ * - U zakázkové výroby druhé, povinné zaškrtávátko: poučení, že výrobek
+ *   podle zadání nelze vrátit do 14 dnů (§ 1837 písm. d) OZ) A že záloha se
+ *   po zahájení výroby nevrací (audit § 0, Z5/Z10). Výjimka platí jen tehdy,
+ *   když o ní zákazník ví PŘEDEM (§ 1820 odst. 1 písm. j) OZ).
+ *   Od Z-A „zakázka = položka": JEDNO zaškrtnutí NA KAŽDOU zakázkovou položku
+ *   (s názvem výrobku v textu), všechna povinná. S jednou položkou vypadá
+ *   jako dřív.
  * - Osobní údaje: jen informační věta, ne zaškrtávátko — zpracování pro
  *   vyřízení objednávky stojí na plnění smlouvy, ne na souhlasu.
  *
@@ -43,10 +51,21 @@ const TermsText = () => (
   </>
 )
 
-const MadeToOrderText = () => (
+/*
+ * Znění je PŘESNĚ to z auditu § 0 (Z10) a z PDF Potvrzení zakázky, bod 08 —
+ * `MADE_TO_ORDER_ACK_TEXT`; u víc zakázek doplněné o název výrobku
+ * (`madeToOrderAckText`). Nevratnost zálohy po zahájení výroby je sankce,
+ * která nesmí být jen v OP (§ 1753 OZ, ÚS I. ÚS 3512/11) — proto ji zákazník
+ * zaškrtává výslovně. Odkaz na článek OP je mimo text zaškrtnutí, aby se
+ * uložené znění shodovalo s PDF.
+ */
+const MadeToOrderText = ({ title }: { title: string | null }) => (
   <>
-    Beru na vědomí, že zboží vyrobené na zakázku nelze vrátit ve 14denní lhůtě
-    (§ 1837 písm. d) OZ).
+    {madeToOrderAckText(title)}{" "}
+    <DocLink href={LEGAL_LINKS.termsMadeToOrder}>
+      Pravidla zakázky v obchodních podmínkách
+    </DocLink>
+    .
   </>
 )
 
@@ -66,10 +85,14 @@ type CheckoutConsentProps = {
   variant: "review" | "express"
   accepted: boolean
   onAcceptedChange: (accepted: boolean) => void
-  /** Košík obsahuje zakázkovou výrobu → druhé, povinné zaškrtávátko. */
-  madeToOrder: boolean
-  madeToOrderAccepted: boolean
-  onMadeToOrderAcceptedChange: (accepted: boolean) => void
+  /**
+   * Zakázkové položky košíku (`madeToOrderAckItems`) — každá dostane vlastní
+   * povinné zaškrtávátko. Prázdné = košík bez zakázky.
+   */
+  madeToOrderItems: MadeToOrderAckItem[]
+  /** Id položky → čas zaškrtnutí (ISO). Chybějící klíč = nezaškrtnuto. */
+  madeToOrderAcks: Record<string, string | undefined>
+  onMadeToOrderAckChange: (itemId: string, accepted: boolean) => void
   /** Express: třída řádku (`label` se zaškrtávátkem), kterou už má jeho styl. */
   rowClassName?: string
 }
@@ -78,13 +101,15 @@ export default function CheckoutConsent({
   variant,
   accepted,
   onAcceptedChange,
-  madeToOrder,
-  madeToOrderAccepted,
-  onMadeToOrderAcceptedChange,
+  madeToOrderItems,
+  madeToOrderAcks,
+  onMadeToOrderAckChange,
   rowClassName,
 }: CheckoutConsentProps) {
   const termsId = useId()
   const madeToOrderId = useId()
+  // Stabilní id na položku — `useId` jde volat jen pevný počet krát.
+  const ackId = (itemId: string) => `${madeToOrderId}-${itemId}`
 
   if (variant === "express") {
     return (
@@ -100,21 +125,22 @@ export default function CheckoutConsent({
             <TermsText />
           </span>
         </label>
-        {madeToOrder && (
-          <label className={rowClassName}>
+        {madeToOrderItems.map((item) => (
+          <label key={item.id} className={rowClassName}>
             <input
               type="checkbox"
-              checked={madeToOrderAccepted}
+              checked={Boolean(madeToOrderAcks[item.id])}
               onChange={(event) =>
-                onMadeToOrderAcceptedChange(event.target.checked)
+                onMadeToOrderAckChange(item.id, event.target.checked)
               }
               data-testid="express-made-to-order-checkbox"
+              data-line-id={item.id}
             />{" "}
             <span>
-              <MadeToOrderText />
+              <MadeToOrderText title={item.title} />
             </span>
           </label>
-        )}
+        ))}
         <p className={styles.privacyCompact}>
           <PrivacyText />
         </p>
@@ -143,25 +169,26 @@ export default function CheckoutConsent({
         </label>
       </div>
 
-      {madeToOrder && (
-        <div className={styles.consent}>
+      {madeToOrderItems.map((item) => (
+        <div key={item.id} className={styles.consent}>
           <span className={styles.consentBoxWrap}>
             <input
-              id={madeToOrderId}
+              id={ackId(item.id)}
               type="checkbox"
               className={styles.consentBox}
-              checked={madeToOrderAccepted}
+              checked={Boolean(madeToOrderAcks[item.id])}
               onChange={(event) =>
-                onMadeToOrderAcceptedChange(event.target.checked)
+                onMadeToOrderAckChange(item.id, event.target.checked)
               }
               data-testid="made-to-order-checkbox"
+              data-line-id={item.id}
             />
           </span>
-          <label htmlFor={madeToOrderId} className={styles.consentLabel}>
-            <MadeToOrderText />
+          <label htmlFor={ackId(item.id)} className={styles.consentLabel}>
+            <MadeToOrderText title={item.title} />
           </label>
         </div>
-      )}
+      ))}
 
       <p className={styles.privacy}>
         <PrivacyText />

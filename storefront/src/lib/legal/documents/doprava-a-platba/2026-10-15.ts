@@ -66,7 +66,7 @@ const dopravaAPlatba: LegalDocumentVersion = {
       blocks: [
         {
           type: "p",
-          text: "Keramiku balíme do několika vrstev a pevné krabice. Ke každému výrobku se proto připočítává balné — jeho výši vidíte v košíku přímo pod výrobkem. Balné se účtuje i při osobním odběru.",
+          text: "Keramiku balíme do několika vrstev a pevné krabice. Ke každému výrobku se proto připočítává balné. Cena balení je u každého výrobku jiná a účtuje se zvlášť — uvádíme ji přímo u ceny výrobku a v košíku je jako samostatná položka pod výrobkem. Balné se účtuje i při osobním odběru.",
         },
       ],
     },

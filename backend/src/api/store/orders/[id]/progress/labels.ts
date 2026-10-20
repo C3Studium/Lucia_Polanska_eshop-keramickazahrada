@@ -14,13 +14,26 @@ export type CustomerOrderProgress = {
   made_to_order: boolean
   /** „Slíbeno do" — the completion date she committed to, when set. */
   promised_at: string | Date | null
-  /** Diary entries she explicitly shared — the making, newest first. */
-  making: { text: string | null; image_url: string | null; at: string }[]
+  /** Diary entries she explicitly shared — the making, newest first (per zakázka od 20. 10. 2026). */
+  making: {
+    text: string | null
+    image_url: string | null
+    at: string
+    production_order_id?: string | null
+  }[]
   balance: {
     outstanding: number
     currency_code: string
     payment_url: string | null
   } | null
+  /** Zakázky objednávky (zakázka = položka, § 0c) — dluh a odkaz na doplatek každé zvlášť. */
+  commissions?: Array<{
+    production_order_id: string
+    title: string | null
+    stage: string
+    outstanding: number
+    payment_url: string | null
+  }>
 }
 
 /**

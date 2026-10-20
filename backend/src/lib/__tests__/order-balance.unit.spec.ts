@@ -27,7 +27,7 @@ describe("doplatek v potvrzení objednávky", () => {
     expect(checkoutBalanceFromCollections([checkoutCollection])).toBe(1800)
     expect(
       resolveOrderOutstanding({
-        productionOrder: null,
+        productionOrders: [],
         requests: [],
         collections: [checkoutCollection],
       })
@@ -42,10 +42,10 @@ describe("doplatek v potvrzení objednávky", () => {
     }
     expect(checkoutBalanceFromCollections([ordinary])).toBeNull()
     expect(
-      resolveOrderOutstanding({ productionOrder: null, requests: [], collections: [ordinary] })
+      resolveOrderOutstanding({ productionOrders: [], requests: [], collections: [ordinary] })
     ).toBe(0)
     expect(
-      resolveOrderOutstanding({ productionOrder: null, requests: [], collections: undefined })
+      resolveOrderOutstanding({ productionOrders: [], requests: [], collections: undefined })
     ).toBe(0)
   })
 
@@ -56,7 +56,7 @@ describe("doplatek v potvrzení objednávky", () => {
       metadata: { ...checkoutCollection.metadata, checkout_payment_amount: 2479 },
     }
     expect(
-      resolveOrderOutstanding({ productionOrder: null, requests: [], collections: [full] })
+      resolveOrderOutstanding({ productionOrders: [], requests: [], collections: [full] })
     ).toBe(0)
   })
 
@@ -75,7 +75,7 @@ describe("doplatek v potvrzení objednávky", () => {
     }
     expect(
       resolveOrderOutstanding({
-        productionOrder,
+        productionOrders: [productionOrder],
         requests: [],
         collections: [checkoutCollection],
       })
@@ -90,10 +90,10 @@ describe("doplatek v potvrzení objednávky", () => {
       original_total: 2479,
       surcharge: 200,
     }
-    const requests = [{ type: "deposit", status: "paid", amount: 679 }]
+    const requests = [{ type: "deposit", status: "paid", amount: 679, production_order_id: "prod_1" }]
     expect(
       resolveOrderOutstanding({
-        productionOrder,
+        productionOrders: [productionOrder],
         requests,
         collections: [checkoutCollection],
       })

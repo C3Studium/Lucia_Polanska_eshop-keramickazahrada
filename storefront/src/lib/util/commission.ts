@@ -73,18 +73,48 @@ export type ProductionLeadTime = {
   line_id: string
   title: string
   label: string | null
+  /**
+   * Smluvní podmínky zakázky z profilu (audit § 0): záloha v % (Z2, přepis u
+   * provedení má přednost) a nejdelší lhůta ve dnech od zahájení výroby (Z9).
+   * `null` = profil to nemá → pokladna údaj vynechá, nic nevymýšlí.
+   */
+  deposit_percentage?: number | null
+  production_time_max_days?: number | null
 }
 
 type LeadTimeProfile = {
   production_time_min_days?: number | null
   production_time_max_days?: number | null
+  default_deposit_percentage?: number | null
   variants?:
     | {
         variant_id: string
+        deposit_percentage_override?: number | null
         production_time_min_days_override?: number | null
         production_time_max_days_override?: number | null
       }[]
     | null
+}
+
+/**
+ * Záloha % a nejdelší lhůta pro provedení — totéž, co ukazuje stránka produktu
+ * (`depositPercentageFor`, `productionMaxDaysFor` v `@lib/util/made-to-order`),
+ * jen nad volnějším tvarem profilu, který sem přijde ze store API.
+ */
+export const productionTermsFor = (
+  profile: LeadTimeProfile | null | undefined,
+  variantId?: string | null
+): Pick<ProductionLeadTime, "deposit_percentage" | "production_time_max_days"> => {
+  if (!profile) return { deposit_percentage: null, production_time_max_days: null }
+  const override = profile.variants?.find((rule) => rule.variant_id === variantId)
+  const deposit =
+    override?.deposit_percentage_override ?? profile.default_deposit_percentage ?? null
+  const max =
+    override?.production_time_max_days_override ?? profile.production_time_max_days ?? null
+  return {
+    deposit_percentage: typeof deposit === "number" && deposit > 0 ? deposit : null,
+    production_time_max_days: typeof max === "number" && max > 0 ? max : null,
+  }
 }
 
 /**

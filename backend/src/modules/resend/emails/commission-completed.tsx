@@ -25,6 +25,8 @@ interface CommissionCompletedEmailProps {
   balanceDue?: string | null;
   /** Nejnovější sdílená fotka hotového kousku, když ji ateliér přidal. */
   makingPhotoUrl?: string | null;
+  /** Název položky zakázky — u objednávky s víc zakázkami říká, který kus je hotový. */
+  productTitle?: string | null;
 }
 
 /**
@@ -41,6 +43,7 @@ function CommissionCompletedEmailComponent({
   fullyPaid = true,
   balanceDue,
   makingPhotoUrl,
+  productTitle,
 }: CommissionCompletedEmailProps) {
   const orderUrl = orderLink || storeLink()
   return (
@@ -51,7 +54,8 @@ function CommissionCompletedEmailComponent({
       <Greeting name={customerName} />
       <P>
         máme skvělou zprávu — vaše zakázka
-        {orderNumber ? ` ${orderNumber}` : ""} je hotová. Každý kousek vznikal
+        {orderNumber ? ` ${orderNumber}` : ""}
+        {productTitle ? ` (${productTitle})` : ""} je hotová. Každý kousek vznikal
         rukama, a tenhle je teď na světě.
       </P>
 

@@ -9,7 +9,8 @@
 import { formatCzk } from "./workbench";
 
 /** `uprava` = vrácení rozdílu po zákaznické úpravě objednávky (zakládá server). */
-export type ReturnKind = "reklamace" | "vraceni" | "odstoupeni" | "uprava";
+/** `zruseni_zakazky` = zrušení zakázky zákazníkem / nezaplaceným doplatkem (server-only, LEGAL_AUDIT § 0). */
+export type ReturnKind = "reklamace" | "vraceni" | "odstoupeni" | "uprava" | "zruseni_zakazky";
 
 export type ReturnStatus =
   | "pending"
@@ -391,6 +392,14 @@ export type ClaimProduction = {
   /** Server posílá `true`, nebo (starší tvar) vrácenou částku. */
   deposit_refunded?: boolean | number | null;
   balance_request_status?: string | null;
+  /** Smluvní záloha (LEGAL_AUDIT § 0, Z2/Z5) — nevratná část po zahájení výroby. */
+  deposit_contract?: number | null;
+  deposit_percentage?: number | null;
+  /** Z3: kdy odešel e-mail „Zakázka je ve výrobě"; null = výroba nezačala. */
+  production_start_notified_at?: string | null;
+  cancelled_by?: "customer" | "seller" | string | null;
+  cancellation_phase?: "before_production" | "after_production" | string | null;
+  cancellation_refund_amount?: number | null;
 };
 
 export type ClaimFlags = {
@@ -450,7 +459,11 @@ export const isReturnStatus = (value: unknown): value is ReturnStatus =>
   typeof value === "string" && (RETURN_STATUSES as string[]).includes(value);
 
 export const isReturnKind = (value: unknown): value is ReturnKind =>
-  value === "reklamace" || value === "vraceni" || value === "odstoupeni" || value === "uprava";
+  value === "reklamace" ||
+  value === "vraceni" ||
+  value === "odstoupeni" ||
+  value === "uprava" ||
+  value === "zruseni_zakazky";
 
 /** Finální stavy — z nich se nikam nejde (§3 kontraktu). */
 export const isFinalStatus = (status: ReturnStatus) =>
@@ -463,6 +476,7 @@ export const KIND_META: Record<ReturnKind, { label: string; color: BadgeColor }>
   vraceni: { label: "Vrácení", color: "blue" },
   odstoupeni: { label: "Odstoupení §1829", color: "purple" },
   uprava: { label: "Rozdíl z úpravy", color: "green" },
+  zruseni_zakazky: { label: "Zrušení zakázky", color: "red" },
 };
 
 export const STATUS_META: Record<ReturnStatus, { label: string; color: BadgeColor }> = {

@@ -76,6 +76,21 @@
   font-size: calc(var(--account-zoom, 1) * clamp(1rem, 0.92vw, 1.19rem));
 }
 
+/* Z-A: stav zakázek pod třemi údaji, přes celou šířku `dl` (čtvrtý sloupec by
+   mřížku rozbil). Pod 45rem je `dl` `display: contents` — řádek se pak řadí
+   mezi ostatní děti karty sám. */
+.meta .commissions {
+  grid-column: 1 / -1;
+  padding: .5rem 0 0;
+  border-left: 0;
+}
+
+.commissionLine {
+  display: block;
+  color: var(--ink-05);
+  font: 400 calc(var(--account-zoom, 1) * clamp(.875rem, 0.8vw, 1.06rem)) / 1.4 "Sansation-Regular", sans-serif;
+}
+
 .products {
   display: grid;
   gap: .75rem;

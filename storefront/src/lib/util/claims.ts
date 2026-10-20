@@ -12,7 +12,8 @@
  * server sám (docs/uprava-objednavky-plan.md §3c.6), formulářem se nepodává
  * (`isClaimKind` ho proto nezná). Zboží se u něj nevrací.
  */
-export type ClaimKind = "reklamace" | "vraceni" | "odstoupeni" | "uprava"
+/** `zruseni_zakazky` zakládá server při „Zrušit zakázku“ v účtu (LEGAL_AUDIT § 0, Z4/Z5) — formulářem se nepodává, zboží se nevrací. */
+export type ClaimKind = "reklamace" | "vraceni" | "odstoupeni" | "uprava" | "zruseni_zakazky"
 
 export type ClaimStatus =
   | "pending"
@@ -339,7 +340,10 @@ export const isFinalClaimStatus = (status: ClaimStatus) =>
  */
 export const findOpenClaim = (claims: OrderClaims | null | undefined) =>
   claims?.requests.find(
-    (request) => !isFinalClaimStatus(request.status) && request.kind !== "uprava"
+    (request) =>
+      !isFinalClaimStatus(request.status) &&
+      request.kind !== "uprava" &&
+      request.kind !== "zruseni_zakazky"
   ) ?? null
 
 /** Běží u objednávky jakákoli žádost (i vrácení rozdílu po úpravě)? */
@@ -351,6 +355,7 @@ export const CLAIM_KIND_LABEL: Record<ClaimKind, string> = {
   vraceni: "Vrácení zboží",
   odstoupeni: "Odstoupení od smlouvy",
   uprava: "Vrácení rozdílu po úpravě objednávky",
+  zruseni_zakazky: "Zrušení zakázky",
 }
 
 export const CLAIM_STATUS_LABEL: Record<ClaimStatus, string> = {
@@ -495,7 +500,8 @@ export const claimItemsTotal = (claim: OrderClaim): number | null => {
  * zboží zpět nepotřebují — viz pravidla refundace v kontraktu §3).
  */
 export const claimExpectsGoods = (claim: OrderClaim) =>
-  claim.kind !== "uprava" && (
+  claim.kind !== "uprava" &&
+  claim.kind !== "zruseni_zakazky" && (
   claim.kind !== "reklamace" ||
   claim.resolution === "repair" ||
   claim.resolution === "replace")

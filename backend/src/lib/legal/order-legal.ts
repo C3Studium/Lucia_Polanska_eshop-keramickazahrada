@@ -75,6 +75,44 @@ export type OrderLegalEmailData = {
   made_to_order_items: string[]
   /** Celá objednávka je zakázka (bez balného a doběrečného). */
   all_made_to_order: boolean
+  /**
+   * PDF „Potvrzení zakázky" (LEGAL_AUDIT § 0, Z11) — jen u objednávky se
+   * zakázkou; `attached` doplní workflow po ověření, že je soubor ke stažení.
+   * Chybí u běžných objednávek a u starých notifikací.
+   */
+  commission_confirmation?: CommissionConfirmationRef | null
+  /**
+   * Od 20. 10. 2026 (zakázka = položka) má objednávka Potvrzení zakázky NA
+   * KAŽDOU zakázku; `commission_confirmation` zůstává první z nich pro starší
+   * čtenáře (uložené notifikace).
+   */
+  commission_confirmations?: CommissionConfirmationRef[]
+}
+
+export type CommissionConfirmationRef = EmailAttachmentRef & { attached: boolean }
+
+/** Doplní Potvrzení zakázky do dat e-mailu (po ověření dostupnosti přílohy). */
+export const withCommissionConfirmation = (
+  legal: OrderLegalEmailData,
+  attachment: EmailAttachmentRef | null | undefined,
+  reachable: EmailAttachmentRef[]
+): OrderLegalEmailData => withCommissionConfirmations(legal, attachment ? [attachment] : [], reachable)
+
+/** Totéž pro víc zakázek objednávky — každá příloha zvlášť označená, zda dorazila. */
+export const withCommissionConfirmations = (
+  legal: OrderLegalEmailData,
+  attachments: EmailAttachmentRef[] | null | undefined,
+  reachable: EmailAttachmentRef[]
+): OrderLegalEmailData => {
+  const refs = (attachments ?? []).map((attachment) => ({
+    ...attachment,
+    attached: reachable.some((item) => item.url === attachment.url),
+  }))
+  return {
+    ...legal,
+    commission_confirmation: refs[0] ?? null,
+    commission_confirmations: refs,
+  }
 }
 
 type OrderItemLike = MadeToOrderSource & {

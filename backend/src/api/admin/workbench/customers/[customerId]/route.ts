@@ -80,9 +80,13 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const stageByOrder = new Map(
     (states as any[]).map((state) => [state.order_id, state.stage])
   )
-  const productionByOrder = new Map(
-    (productions as any[]).map((production) => [production.order_id, production])
-  )
+  // Od 20. 10. 2026 má objednávka zakázek víc (jedna na položku) — dluh se sčítá.
+  const productionsByOrder = new Map<string, any[]>()
+  for (const production of productions as any[]) {
+    const list = productionsByOrder.get(production.order_id) ?? []
+    list.push(production)
+    productionsByOrder.set(production.order_id, list)
+  }
   const productionIds = (productions as any[]).map((p) => p.id)
   const requests = productionIds.length
     ? ((await madeToOrder.listProductionPaymentRequests({
@@ -107,20 +111,22 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         ? (customer.metadata as any).poznamka
         : null,
     orders: orders.map((order) => {
-      const production = productionByOrder.get(order.id)
+      const commissions = productionsByOrder.get(order.id) ?? []
       return {
         id: order.id,
         display_id: order.display_id,
         created_at: order.created_at,
         total: Number(order.total) || 0,
         stage: stageByOrder.get(order.id) ?? null,
-        made_to_order: Boolean(production),
-        outstanding: production
-          ? outstandingFor(
-              production,
-              requestsByProduction.get(production.id) ?? []
-            )
-          : 0,
+        made_to_order: commissions.length > 0,
+        outstanding:
+          Math.round(
+            commissions.reduce(
+              (sum, production) =>
+                sum + outstandingFor(production, requestsByProduction.get(production.id) ?? []),
+              0
+            ) * 100
+          ) / 100,
       }
     }),
   })

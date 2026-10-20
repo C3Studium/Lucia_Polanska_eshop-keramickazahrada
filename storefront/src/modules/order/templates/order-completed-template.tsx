@@ -11,15 +11,17 @@ import type { OrderProgress } from "@lib/data/order-progress"
 import { HttpTypes } from "@medusajs/types"
 import LineItemOptions from "@modules/common/components/line-item-options"
 import type { CommissionNote } from "@lib/util/made-to-order"
-import type { CommissionBalance } from "@lib/data/made-to-order"
+import type {
+  CommissionBalance,
+  CommissionCancellation,
+} from "@lib/data/made-to-order"
+import CommissionList from "@modules/order/components/commission-list"
 import { isCarrierShippingMethod } from "@lib/util/carrier"
 import CarrierDamageNotice, {
   CLAIM_FORM_KEY,
 } from "@modules/order/components/carrier-damage"
 import { getSiteDocument } from "@lib/data/documents"
 import { orderTermsRef } from "@lib/legal/order-terms"
-import CommissionConversation from "@modules/order/components/commission-conversation"
-import BalancePayPanel from "@modules/order/components/balance-pay"
 import ClaimsSummary from "@modules/order/components/claim-status/summary"
 import { withdrawalHref } from "@modules/order/components/withdrawal/entry"
 import { withdrawBlockText, type OrderClaims } from "@lib/util/claims"
@@ -43,6 +45,10 @@ type OrderCompletedTemplateProps = {
   commissionNotes?: CommissionNote[] | null
   /** Stav doplatku zakázky (zaplaceno zálohou / zbývá / odkaz na doplacení). */
   commissionBalance?: CommissionBalance | null
+  /** Zrušení zakázky (`/cancellation`) — host z e-mailu ho dostane tímtéž tokenem. */
+  commissionCancellation?: CommissionCancellation | null
+  /** Vlákna per zakázka (Z-A) u objednávky s víc zakázkami; jinak `null`. */
+  commissionNotesById?: Record<string, CommissionNote[]> | null
   /**
    * Podepsaný token pro self-service odkazy (úprava / zrušení / reklamace).
    * `null` → tlačítka se nevykreslí (nešlo ho získat).
@@ -77,6 +83,8 @@ export default async function OrderCompletedTemplate({
   progressFallback = "Přijato",
   commissionNotes = null,
   commissionBalance = null,
+  commissionCancellation,
+  commissionNotesById = null,
   selfServiceToken = null,
   claims = null,
   copy,
@@ -607,20 +615,21 @@ export default async function OrderCompletedTemplate({
               </div>
             </div>
 
-            {/* Konverzace s ateliérem — co zákazník napsal a vyfotil a místo,
-                kam dopsat další, jako POPUP pod souhrnem (jeden znovupoužitelný
-                komponent napříč stránkami objednávky). Jen u zakázky; běžná
+            {/* Zakázky (audit § 0, Z-A „zakázka = položka"): pro každou
+                zakázkový panel (stav podle e-mailu o zahájení, smluvní záloha,
+                PDF potvrzení, „Zrušit zakázku" — i pro hosta z e-mailu přes
+                token), její doplatek (self-service odkaz → ComGate → zpět sem,
+                kde se platba srovná — reconcileOrderBalance) a konverzace s
+                ateliérem jako popup. U víc zakázek nad tím souhrn. Běžná
                 objednávka má v railu jen souhrn. */}
-            {commissionNotes && (
-              <CommissionConversation orderId={order.id} notes={commissionNotes} />
-            )}
-
-            {/* Doplatek zakázky — doplatit zbytek rovnou odsud, nemusí čekat na
-                e-mail. Self-service odkaz nese podepsaný token (funguje i bez
-                přihlášení) → ComGate → zpět na tohle potvrzení, kde se platba
-                srovná (reconcileOrderBalance). Panel se sám skryje, když není
-                co doplácet nebo nejde o zakázku. */}
-            <BalancePayPanel balance={commissionBalance} variant="full" />
+            <CommissionList
+              orderId={order.id}
+              balance={commissionBalance}
+              cancellation={commissionCancellation}
+              token={selfServiceToken}
+              notes={commissionNotes}
+              notesById={commissionNotesById}
+            />
           </aside>
         </div>
 

@@ -11,7 +11,9 @@ import type { CopyBlocks } from "@lib/util/site-copy"
 
 import s from "./index.module.scss"
 import { productLines } from "@lib/util/packaging"
+import { isMadeToOrderLine } from "@lib/util/commission"
 import { listCartShippingMethods } from "@lib/data/fulfillment"
+import { listProductionLeadTimes } from "@lib/data/cart"
 import { shippingFromOptions } from "../shipping-from"
 
 /* Zakázkový blok (volba zálohy „Kolik chcete zaplatit hned?" i brief s fotkami)
@@ -58,6 +60,21 @@ const CartTemplate = async ({
         )
       : null
 
+  /* Štítek zakázky u položky (audit § 0): záloha % a lhůta z profilu výroby —
+     týž údaj jako na stránce produktu a v pokladně. Bez profilu zůstane krátký
+     štítek „Na zakázku · nelze vrátit do 14 dnů". */
+  const madeToOrderLines = ((cart?.items ?? []) as any[]).filter(isMadeToOrderLine)
+  const madeToOrderTerms = madeToOrderLines.length
+    ? await listProductionLeadTimes(
+        madeToOrderLines.map((item) => ({
+          id: item.id,
+          product_id: item.product_id,
+          variant_id: item.variant_id,
+          title: item.product_title ?? item.title,
+        }))
+      ).catch(() => [])
+    : []
+
   return (
     <>
     <div className={s.root}>
@@ -83,7 +100,11 @@ const CartTemplate = async ({
                   <Divider />
                 </>
               )}
-              <ItemsTemplate cart={cart} copy={copy?.["kosik.vypis"]} />
+              <ItemsTemplate
+                cart={cart}
+                copy={copy?.["kosik.vypis"]}
+                madeToOrderTerms={madeToOrderTerms}
+              />
               </div>
               <div className={s.right}>
                 <div className={s.sticky}>

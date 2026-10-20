@@ -120,14 +120,17 @@ starý storefront by dostal 400.
    (verified_purchase + doplnění u starých recenzí), nový modul email-optout
    `Migration20261015120000` (tabulka `email_opt_out` — odmítnutí proseb o recenzi, poklesu
    ceny a připomenutí košíku; modul je registrovaný v `medusa-config.js`, bez migrace by job
-   recenzí i poklesu cen padal na chybějící tabulku). Odkaz v e-mailech potřebuje
+   recenzí i poklesu cen padal na chybějící tabulku); **20. 10.: made-to-order
+   `Migration20261020120000`** (zakázky podle § 0: strop zálohy 50 % jako DB check — před ní
+   ověřit `select count(*) from production_order where deposit_percentage > 50` = 0, na produkci
+   ověřeno 20. 10. ráno; sloupce pro e-mail Z3, fázi zrušení a PDF potvrzení). Odkaz v e-mailech potřebuje
    `BACKEND_PUBLIC_URL` (nebo `MEDUSA_BACKEND_URL`), jinak se řádek s odkazem nevykreslí.
 2. Backend jednou: `npx medusa exec ./src/scripts/backfill-price-history.ts`.
-   A jednou `npx medusa exec ./src/scripts/settle-service-lines.ts` (nasucho), pak s `--apply`
+   A jednou `npx medusa exec ./src/scripts/settle-service-lines.ts` (nasucho), pak s `apply` (bez pomlček — `medusa exec` volby typu `--apply` odmítá)
    — dorovná balné u objednávek odeslaných před opravou štítků z 16. 10. (záhlaví „Částečně
    splněno“ → „Odesláno“); jen zápis v modulu objednávek, žádné podání u ČP, žádný e-mail.
 3. Produkt poukazu „1 Kč“: `npx medusa exec ./src/scripts/legal-voucher-product.ts`
-   (suchý běh), pak s `--apply`; popis upravit ručně (OPEN_QUESTIONS #13).
+   (suchý běh), pak s `apply`; popis upravit ručně (OPEN_QUESTIONS #13).
 4. Storefront: volitelně `NEXT_PUBLIC_GA_MEASUREMENT_ID` (OPEN_QUESTIONS #18, #24).
 4b. **Storefront na Railway musí mít proměnné CMS** (zjištěno 16. 10.: produkční storefront
    žádné `SUPABASE_*` ani `CMS_*` nemá — web dnes CMS vůbec nečte a Studio na produkci by

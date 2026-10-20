@@ -5,6 +5,10 @@ import type {
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import { z } from "@medusajs/framework/zod"
 import { notifyMerchant } from "../../../../../lib/notify"
+import {
+  commissionIdFromRequest,
+  listCommissionsOfOrder,
+} from "../../../../../lib/made-to-order/orders-of"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
 
@@ -25,6 +29,7 @@ import type MadeToOrderModuleService from "../../../../../modules/made-to-order/
 
 const PostTweakSchema = z.object({
   message: z.string().trim().min(5).max(1000),
+  production_order_id: z.string().optional().nullable(),
 })
 
 export const POST = async (
@@ -62,11 +67,22 @@ export const POST = async (
   const madeToOrder = req.scope.resolve<MadeToOrderModuleService>(
     MADE_TO_ORDER_MODULE
   )
-  const [production] = (await madeToOrder.listProductionOrders({
-    order_id: orderId,
-  } as never)) as any[]
-  if (!production) {
+  // Zakázka = položka (§ 0c): prosba patří jedné zakázce (`production_order_id`
+  // v těle); bez ní u jediné zakázky té, u víc zakázek celé objednávce (zápis
+  // bez zakázky vidí všechny její diáře).
+  const commissions = await listCommissionsOfOrder(req.scope, orderId)
+  if (!commissions.length) {
     res.status(404).json({ message: "Objednávka nebyla nalezena." })
+    return
+  }
+  const requestedId = commissionIdFromRequest(req)
+  const production = requestedId
+    ? commissions.find((commission) => commission.id === requestedId) ?? null
+    : commissions.length === 1
+      ? commissions[0]
+      : null
+  if (requestedId && !production) {
+    res.status(404).json({ message: "Zakázka nebyla nalezena." })
     return
   }
 
@@ -90,6 +106,7 @@ export const POST = async (
 
   await madeToOrder.createProductionNotes({
     order_id: orderId,
+    production_order_id: production?.id ?? null,
     text: `Zákazník prosí o úpravu: ${parsed.data.message}`,
     image_url: null,
     visible_to_customer: false,

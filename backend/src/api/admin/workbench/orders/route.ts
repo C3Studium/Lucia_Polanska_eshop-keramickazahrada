@@ -166,12 +166,14 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const stageByOrder = new Map(
     (states as any[]).map((state) => [state.order_id, state])
   )
-  const productionByOrder = new Map(
-    (productionOrders as any[]).map((production) => [
-      production.order_id,
-      production,
-    ])
-  )
+  // Od 20. 10. 2026 má objednávka zakázek víc (jedna na položku, § 0c) — řádek
+  // objednávky sčítá dluh přes všechny a fázi bere z první živé.
+  const productionsByOrder = new Map<string, any[]>()
+  for (const production of productionOrders as any[]) {
+    const list = productionsByOrder.get(production.order_id) ?? []
+    list.push(production)
+    productionsByOrder.set(production.order_id, list)
+  }
 
   const productionIds = (productionOrders as any[]).map(
     (production) => production.id
@@ -222,13 +224,16 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           )
       )
 
-      const production = productionByOrder.get(order.id)
-      const outstanding = production
-        ? outstandingFor(
-            production,
-            requestsByProduction.get(production.id) ?? []
-          )
-        : 0
+      const commissions = productionsByOrder.get(order.id) ?? []
+      const production =
+        commissions.find((candidate) => candidate.stage !== "cancelled") ?? commissions[0]
+      const outstanding = round(
+        commissions.reduce(
+          (sum, candidate) =>
+            sum + outstandingFor(candidate, requestsByProduction.get(candidate.id) ?? []),
+          0
+        )
+      )
 
       const fulfillments = order.fulfillments ?? []
       const state = stageByOrder.get(order.id)
@@ -261,6 +266,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         stage_changed_at: state?.stage_changed_at ?? null,
         made_to_order: Boolean(production),
         production_stage: production?.stage ?? null,
+        commissions_count: commissions.length,
         outstanding,
         is_personal_pickup: isPickup,
         shipped: fulfillments.some((f: any) => f?.shipped_at),
@@ -303,13 +309,18 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     list.push(request)
     allRequestsByProduction.set(request.production_order_id, list)
   }
-  const dluziCount = allProduction.filter(
-    (production) =>
-      outstandingFor(
-        production,
-        allRequestsByProduction.get(production.id) ?? []
-      ) > 0
-  ).length
+  // Počet OBJEDNÁVEK, které dluží (ne zakázek — objednávka jich má od 20. 10. 2026 víc).
+  const dluziCount = new Set(
+    allProduction
+      .filter(
+        (production) =>
+          outstandingFor(
+            production,
+            allRequestsByProduction.get(production.id) ?? []
+          ) > 0
+      )
+      .map((production) => production.order_id)
+  ).size
 
   // The „Vše" badge counts the whole shop regardless of the active filter.
   const allOrdersResult = (await query.graph({

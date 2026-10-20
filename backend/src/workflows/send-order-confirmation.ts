@@ -13,6 +13,8 @@ import {
   checkAttachmentUrls,
   markAttached,
   orderLegalInfo,
+  withCommissionConfirmations,
+  type EmailAttachmentRef,
 } from "../lib/legal/order-legal";
 import { getLegalFacts } from "../lib/merchant-settings";
 import {
@@ -25,6 +27,15 @@ import { sendNotificationStep } from "./steps/send-notification";
 
 type WorkflowInput = {
   id: string
+  /**
+   * PDF „Potvrzení zakázky" (Z11) k objednávce se zakázkou — přidá se k OP
+   * a poučení do přílohy; posílá ho subscriber `commission-confirmation`.
+   * Chybí/null u běžné objednávky i když PDF selhalo (potvrzení jde bez něj).
+   * Starý tvar (jedna zakázka na objednávku); nové volání posílá seznam níž.
+   */
+  commission_confirmation?: EmailAttachmentRef | null
+  /** Od 20. 10. 2026 (zakázka = položka): jedno PDF na každou zakázku objednávky. */
+  commission_confirmations?: EmailAttachmentRef[] | null
 }
 
 /**
@@ -40,15 +51,22 @@ type WorkflowInput = {
  */
 const resolveOrderLegalStep = createStep(
   "resolve-order-legal-documents",
-  async ({ orders }: { orders: any[] }, { container }) => {
+  async (
+    { orders, commissions }: { orders: any[]; commissions: EmailAttachmentRef[] },
+    { container }
+  ) => {
     const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
     const order = orders?.[0]
     const live = await getLegalFacts(container)
-    const { legal, attachments } = orderLegalInfo(
+    const { legal, attachments: legalAttachments } = orderLegalInfo(
       order,
       LEGAL_MANIFEST,
       live.source === "settings" ? live.facts : null
     )
+    // Potvrzení zakázky první (jedno na každou zakázku objednávky) — je to
+    // smlouva k téhle objednávce; OP a poučení za nimi.
+    const commissionAttachments = (commissions ?? []).filter((item) => Boolean(item?.url))
+    const attachments = [...commissionAttachments, ...legalAttachments]
     const { reachable, failed } = await checkAttachmentUrls(attachments)
 
     for (const miss of failed) {
@@ -84,16 +102,27 @@ const resolveOrderLegalStep = createStep(
       )
     }
 
+    const withCommission = withCommissionConfirmations(
+      markAttached(legal, reachable),
+      commissionAttachments,
+      reachable
+    )
     return new StepResponse({
-      legal: markAttached(legal, reachable),
+      legal: withCommission,
       attachments: reachable,
+      commission_attached: Boolean(withCommission.commission_confirmation?.attached),
+      // Které PDF Potvrzení zakázky opravdu šly v příloze — podle toho
+      // subscriber zapíše `confirmation_sent_at` jen těm zakázkám.
+      commission_attached_urls: (withCommission.commission_confirmations ?? [])
+        .filter((item) => item.attached)
+        .map((item) => item.url),
     })
   }
 )
 
 export const sendOrderConfirmationWorkflow = createWorkflow(
   "send-order-confirmation",
-  ({ id }: WorkflowInput) => {
+  ({ id, commission_confirmation, commission_confirmations }: WorkflowInput) => {
     const { data: orders } = useQueryGraphStep({
       entity: "order",
       fields: [
@@ -158,7 +187,21 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
     // from the checkout's payment collection in `orders`.
     const balance = resolveBalanceStep({ order_id: id, orders })
 
-    const legalDocuments = resolveOrderLegalStep({ orders })
+    // Starý jednotlivý tvar i nový seznam → jeden seznam příloh (uvnitř
+    // `transform`, protože vstupy jsou tu jen placeholdery, ne hodnoty).
+    const commissions = transform(
+      { commission_confirmation, commission_confirmations },
+      ({ commission_confirmation, commission_confirmations }) =>
+        [
+          ...(commission_confirmations ?? []),
+          ...(commission_confirmation ? [commission_confirmation] : []),
+        ] as EmailAttachmentRef[]
+    )
+
+    const legalDocuments = resolveOrderLegalStep({
+      orders,
+      commissions,
+    })
 
     const notificationData = transform(
       { id, orders, balance, legalDocuments },
@@ -228,6 +271,17 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
 
     const notification = sendNotificationStep(notificationData)
 
-    return new WorkflowResponse(notification)
+    // `commission_attached`: šlo Potvrzení zakázky opravdu v příloze? Podle
+    // toho subscriber zapíše `confirmation_sent_at`.
+    const result = transform(
+      { notification, legalDocuments },
+      ({ notification, legalDocuments }) => ({
+        notification,
+        commission_attached: Boolean(legalDocuments.commission_attached),
+        commission_attached_urls: legalDocuments.commission_attached_urls ?? [],
+      })
+    )
+
+    return new WorkflowResponse(result)
   }
 )
