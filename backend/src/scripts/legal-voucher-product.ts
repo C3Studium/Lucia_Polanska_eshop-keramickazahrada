@@ -19,9 +19,14 @@ import { VOUCHER_DEFAULTS, VOUCHER_FLAG } from "../lib/voucher"
  * Výchozí běh je NAČISTO (nic nezapíše):
  *   npx medusa exec ./src/scripts/legal-voucher-product.ts
  * Zápis:
- *   npx medusa exec ./src/scripts/legal-voucher-product.ts --apply [--id=prod_…] [--min=100] [--max=10000] [--step=100]
+ *   npx medusa exec ./src/scripts/legal-voucher-product.ts apply [id=prod_…] [min=100] [max=10000] [step=100]
  *
- * Najde-li víc kandidátů, zapíše jen s `--id=…`.
+ * Najde-li víc kandidátů, zapíše jen s `id=…`.
+ *
+ * Pozor: `medusa exec` předává skriptu jen poziční argumenty — volbu typu
+ * `--apply` odmítne („Unknown argument: apply“, ověřeno na produkci 20. 10.).
+ * Proto se píše bez pomlček (`apply`, `id=…`); tvar s `--` funguje jen
+ * v testech a v sandboxu, kde se skript volá přímo.
  */
 
 const TITLE_PATTERN = /d[áa]rkov[ýy]\s+poukaz/i
@@ -33,8 +38,10 @@ const DESCRIPTION_FLAGS: { pattern: RegExp; why: string }[] = [
 ]
 
 const argValue = (args: string[], name: string): string | null => {
-  const hit = args.find((arg) => arg.startsWith(`--${name}=`))
-  return hit ? hit.slice(name.length + 3).trim() : null
+  const hit = args
+    .map((arg) => arg.replace(/^--/, ""))
+    .find((arg) => arg.startsWith(`${name}=`))
+  return hit ? hit.slice(name.length + 1).trim() : null
 }
 
 const intArg = (args: string[], name: string, fallback: number): number => {
@@ -57,7 +64,7 @@ const descriptionLines = (description: string | null | undefined): string[] =>
 export default async function legalVoucherProduct({ container, args = [] }: ExecArgs) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
-  const apply = args.includes("--apply")
+  const apply = args.includes("apply") || args.includes("--apply")
   const pickId = argValue(args, "id")
 
   const { data } = await query.graph({
@@ -138,7 +145,7 @@ export default async function legalVoucherProduct({ container, args = [] }: Exec
 
   if (!apply) {
     logger.info(
-      "\n[poukaz] Načisto — nic se nezapsalo. Zápis: přidejte --apply (u víc kandidátů i --id=prod_…)."
+      "\n[poukaz] Načisto — nic se nezapsalo. Zápis: přidejte apply (u víc kandidátů i id=prod_…)."
     )
     return
   }

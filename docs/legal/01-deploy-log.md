@@ -122,3 +122,81 @@ ukazuje celkovou cenu, ale ne zaplacenou zálohu a zbývající doplatek — sou
   („Merge Without Review“) — sloučení do `main` tady znamená okamžité nasazení do produkce.
   Neobcházeno. **Čeká na Matěje:** sloučit PR #15 tlačítkem „Create a merge commit“ (ne squash),
   nebo Claudovi povolit sloučení. Tím se spustí nasazení backendu (s migracemi) i storefrontu.
+
+**Sloučeno 20. 10. 2026 ráno** — Matěj sloučil PR #15 tlačítkem na GitHubu (merge commit
+`b8133456`, 30 commitů zachovaných).
+
+## Krok 2 — nasazení (20. 10. 2026)
+
+Časy v UTC (+2 h = Praha).
+
+- 06:22 Railway spustil nasazení Backendu i Storefrontu z `b8133456`; 06:26 obě **SUCCESS**.
+- Migrace (log backendu, `db:migrate --all-or-nothing` při startu): 06:25:56 „Migrations
+  completed“ — `Migration20261014120000` (kurzy), `…14200000` (reklamace), `…14153217`
+  (historie cen), `…14153743` (recenze), `…15120000` (email-optout) + starší
+  `Migration20250801UpdateReviewStatusEnum` modulu recenzí, která na produkci dosud chyběla.
+  06:26:05 „Server is ready“.
+- Kontrola v DB (`psql` v kontejneru PostgresNew, jen čtení): `price_history_entry` ano,
+  `email_opt_out` ano, `review.verified_purchase` ano; jediná recenze na produkci označena
+  jako ověřený nákup (1/1, migrace ji ověřila podle objednávek).
+- Skripty v kontejneru Backend (`railway ssh`, `npx medusa exec`):
+  - `settle-service-lines.ts` nasucho: „#39: k zapsání 1 řádek vyskladněný, 1 odeslaný“.
+    **Past:** `medusa exec` odmítá volbu `--apply` („Unknown argument: apply“) a ani
+    `-- --apply` se skriptu nepředá — skripty přes CLI ostře spustit nešlo. Ostrý běh přes
+    jednorázový obal `/tmp/settle-apply.js` (zavolá zkompilovaný skript s `--apply`, po běhu
+    smazán): 06:27:53 „#39: zapsáno — vyskladněno 1, odesláno 1. Hotovo: 1 z 1“.
+    Skripty opravené (commit na této větvi): berou i `apply` / `id=…` bez pomlček.
+  - `backfill-price-history.ts`: 06:27:14 „pozorováno 792 cen, 792 nových záznamů, 0 snížených“.
+  - `legal-voucher-product.ts` nasucho: 1 kandidát „Dárkový poukaz na nákup keramiky“
+    (`prod_01M088T787RQR8MWN2M0W3HK5H`), nastaví `voucher_custom_amount=true`, 100–10 000 Kč
+    po 100 (výchozí hodnoty kódu; Lucie je potvrzuje v e-mailu, bod 10). Ostře přes obal
+    s `--apply --id=…`: 06:28:15 „metadata poukazu nastavena“.
+  - Popis poukazu (admin API): nahrazen odstavec „…převeďte na předepsaný účet, poštovné pro
+    ČR 60,-…“ větou „Částku poukazu zadáte přímo tady u výrobku, od 100 do 10 000 Kč. Zaplatíte
+    ji v pokladně stejně jako jakýkoli jiný nákup.“; `lucie.polanska@gmail.com` →
+    `info@keramickazahrada.cz`; telefon doplněn o „+“. Zbytek textu (platnost 1 rok, zaslání
+    poštou/e-mailem) je Luciin a zůstal. Původní text uložen ve scratchpadu.
+- Proměnné: `BACKEND_PUBLIC_URL` a `CMS_CRON_SECRET` (nastavené 19. 10.) platí od tohoto
+  nasazení. CMS proměnné Storefrontu byly už před tím. GA se nenastavuje (Fakta: nevyplněno).
+- Log skriptu potvrzuje vypnutý Segment: „[segment] SEGMENT_WRITE_KEY is not set — analytics
+  events will be dropped.“
+- Právní stránky v produkci (`legal-prod.mjs`, 06:29): OP s „Objednávka zavazující k platbě“,
+  § 1832, ČOI, bez ODR, bez PlatímPak, bez prázdného tlačítka; `/smluvni-podminky/2015-01-01`
+  200 + noindex; `/reklamacni-rad` 200; `[[DOPLNIT` jen u chybějících faktů (OP 11×,
+  Zásady 5×, Odstoupení 1×, Doprava 1×).
+- **Nalezeno a opraveno:** Zásady obsahovaly zástupný text `[[DOPLNIT: Twilio Segment …]]`
+  (čekal na rozhodnutí vypnout/uvést). Segment je vypnutý → blok z pracovního znění Zásad
+  odstraněn (repo) a přenesen do Studia (`seed-legal --refresh`); v produkci ověřeno, že text
+  zmizel. Kdyby se Segment někdy znovu zapnul, musí se nejdřív doplnit do Zásad.
+
+### Studio
+
+- 06:31 `seed-legal --refresh` nasucho: 4 k přepsání (cookies, doprava, OP, zásady — ve Studiu
+  neupravené), 4 beze změny (3 vydané 🔒 + odstoupení shodné). Pak `--write
+  --i-know-this-is-production`: 4 přepsáno. Ve Studiu je všech 8 znění.
+- `seed-texts` nasucho: 37 nových, 2 doplněné, 3 beze změny, 0 konceptů. `--write`: totéž.
+  Kontrolní suchý běh: 0 nových, 0 doplněných, 42 beze změny.
+- FAQ (#22) ve Studiu přepsané zněním, které už web ukazuje z kódu (`lib/legal/faq.ts`), a
+  publikované:
+  - „Jak postupovat, když zásilka dorazí poškozená?“ — bylo „…ozvěte se nám do 48 hodin…“;
+  - „Mohu produkt vrátit nebo vyměnit?“ — bylo „Nepoužitý výrobek…“.
+- Texty o kurzech ve Studiu (bloky `kurzy.*`, dotazy o kurzech) prověřené: neuvádějí storno
+  lhůty ani částky, jen „rezervaci zrušíte přímo z e-mailu“ — s OP v souladu, beze změny.
+
+## Krok 3 — data produktů (20. 10. 2026, admin API)
+
+Provedeno (nezávisí na Faktech):
+
+| Změna | Produkt | Výsledek |
+| --- | --- | --- |
+| skryto (stav koncept) | Keramická kytka bílá, modrý střed — poškozený (vada „TEST“) | published → draft |
+| skryto (stav koncept) | „TEST“ (`/products/test`, balíček bez ceny) | published → draft, stránka ukazuje „nenalezena“ |
+| `no_promo` | 6× Dárkový poukaz na nákup keramiky (vlastní částka + 500/1000/1500/2000/3000) | `metadata.no_promo = true` ověřeno; metadata poukazu zůstala |
+| upozornění na mráz | Keramické napajedlo s žabkou na kameni | doplněna věta (viz `karticka-mrazuvzdornost.md`) |
+| upozornění na mráz | Keramické pítko pro ptáky a hmyz - List velký 44cm - VYPRODANÉ | doplněna věta |
+
+**Zastaveno — chybí Fakta** (celý blok „Fakta od zadavatele“ je nevyplněný):
+
+- profil výroby u 26 produktů „na zakázku“ (seznam v e-mailu Lucii) a výše zálohy;
+- „Domovní znamení NA ZAKÁZKU“ (pevná cena / poptávka);
+- 3 produkty „- SLEVA“ (akční cena / odstranit SLEVA / kus s vadou).
