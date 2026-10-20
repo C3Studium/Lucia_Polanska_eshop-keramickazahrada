@@ -274,6 +274,22 @@ const RestockCell = ({
   );
 };
 
+/**
+ * Řádek provedení — a při jediném provedení prostě „Cena a sklad".
+ *
+ * ## Proč dva režimy jedné komponenty
+ *
+ * Změřeno v živé databázi 20. 10. 2026: všech 267 produktů má právě jedno
+ * provedení, 266 z nich se jmenuje „Standardní" a jediná volba, kterou
+ * katalog zná, je „Provedení". Tabulka o šesti sloupcích tedy obsluhovala
+ * jeden řádek, který se vždy jmenuje stejně — a stála na detailu produktu
+ * na třetím místě odshora.
+ *
+ * Provedení se neruší; jen přestávají být první, co je na kusu vidět.
+ * Při jednom je to cena a sklad, při druhém se tabulka vrátí. Logika
+ * (ukládání, ceny v cizích měnách, naskladnění, fotky) je v obou režimech
+ * tatáž, proto jedna komponenta a ne dvě.
+ */
 const VariantRow = ({
   productId,
   variant,
@@ -281,6 +297,7 @@ const VariantRow = ({
   canDelete,
   expert,
   invalidate,
+  solo = false,
 }: {
   productId: string;
   variant: NativeVariant;
@@ -288,6 +305,8 @@ const VariantRow = ({
   canDelete: boolean;
   expert: boolean;
   invalidate: () => Promise<unknown>;
+  /** Jediné provedení produktu — vykreslí se jako údaje kusu, ne jako řádek tabulky. */
+  solo?: boolean;
 }) => {
   const save = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
@@ -347,32 +366,73 @@ const VariantRow = ({
 
   const state = stock?.stock_state ? stockMeta[stock.stock_state] : null;
 
+  /*
+   * Jedno pole ve dvou rozvrženích.
+   *
+   * U jediného provedení je mřížka dvousloupcová (popisek | hodnota), takže
+   * pole vydá DVĚ buňky. V tabulce je sloupec jeden a popisek se schovává do
+   * něj — na širokém displeji ho nese hlavička sloupce, na úzkém se ukáže
+   * nad hodnotou.
+   */
+  const Pole = ({
+    label,
+    className,
+    children,
+  }: {
+    label: string;
+    className?: string;
+    children: React.ReactNode;
+  }) =>
+    solo ? (
+      <>
+        <div className="pt-1.5">
+          <FieldLabel>{label}</FieldLabel>
+        </div>
+        <div className={className}>{children}</div>
+      </>
+    ) : (
+      <div className={className}>
+        <div className="mb-1 lg:hidden">
+          <FieldLabel>{label}</FieldLabel>
+        </div>
+        {children}
+      </div>
+    );
+
   return (
-    <div className="px-6 py-4">
-    <div className="grid items-center gap-x-3 gap-y-2 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_120px_150px_170px_auto]">
-      <div className="min-w-0">
-        <InlineText
-          value={variant.title ?? ""}
-          required
-          placeholder="Název varianty"
-          onSave={(next) => save.mutateAsync({ title: next })}
-        />
-        {expert && <CopyId value={variant.id} />}
-      </div>
-      <div className="min-w-0">
-        <div className="mb-1 lg:hidden">
-          <FieldLabel>Kód</FieldLabel>
+    <div className={solo ? "px-6 pb-2" : "px-6 py-4"}>
+    <div
+      className={
+        solo
+          ? "grid items-start gap-x-4 gap-y-2.5 sm:grid-cols-[6rem_minmax(0,1fr)]"
+          : "grid items-center gap-x-3 gap-y-2 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_120px_150px_170px_auto]"
+      }
+    >
+      {/* Název provedení: při jediném je to vždy „Standardní" a nikoho
+          nezajímá. Objeví se, jakmile je provedení víc. */}
+      {!solo && (
+        <div className="min-w-0">
+          <InlineText
+            value={variant.title ?? ""}
+            required
+            placeholder="Název varianty"
+            onSave={(next) => save.mutateAsync({ title: next })}
+          />
+          {expert && <CopyId value={variant.id} />}
         </div>
-        <InlineText
-          value={variant.sku ?? ""}
-          placeholder="kód (nepovinný)"
-          onSave={(next) => save.mutateAsync({ sku: next || null })}
-        />
-      </div>
-      <div>
-        <div className="mb-1 lg:hidden">
-          <FieldLabel>Cena</FieldLabel>
-        </div>
+      )}
+      {/* Kód je pro ni technický údaj — u jediného provedení jen v expertním
+          režimu, aby nezabíral místo vedle ceny. */}
+      {(!solo || expert) && (
+        <Pole label="Kód" className="min-w-0">
+          <InlineText
+            value={variant.sku ?? ""}
+            placeholder="kód (nepovinný)"
+            onSave={(next) => save.mutateAsync({ sku: next || null })}
+          />
+        </Pole>
+      )}
+      <Pole label="Cena">
         <InlineNumber
           value={czkPrice(variant)}
           unit="Kč"
@@ -399,12 +459,9 @@ const VariantRow = ({
             })
           }
         />
-      </div>
-      <div>
+      </Pole>
+      <Pole label="Skladem">
         <div className="flex items-center gap-2">
-          <span className="lg:hidden">
-            <FieldLabel>Skladem</FieldLabel>
-          </span>
           <Text size="small" className="tabular-nums">
             {stock?.available ?? "—"}
           </Text>
@@ -412,6 +469,14 @@ const VariantRow = ({
             <Badge size="2xsmall" color={state.color}>
               {state.label}
             </Badge>
+          )}
+          {/* U jediného provedení stojí naskladnění hned u stavu — je to
+              úkon nad tímhle číslem, ne vlastní sloupec. */}
+          {solo && (
+            <RestockCell
+              inventoryItemId={stock?.inventory_item_id ?? null}
+              onDone={invalidate}
+            />
           )}
         </div>
         {(Number(stock?.reserved) > 0 ||
@@ -429,16 +494,15 @@ const VariantRow = ({
               .join(" · ")}
           </Text>
         )}
-      </div>
-      <div>
-        <div className="mb-1 lg:hidden">
-          <FieldLabel>Naskladnit</FieldLabel>
-        </div>
-        <RestockCell
-          inventoryItemId={stock?.inventory_item_id ?? null}
-          onDone={invalidate}
-        />
-      </div>
+      </Pole>
+      {!solo && (
+        <Pole label="Naskladnit">
+          <RestockCell
+            inventoryItemId={stock?.inventory_item_id ?? null}
+            onDone={invalidate}
+          />
+        </Pole>
+      )}
       <div className="flex justify-end">
         {canDelete && (
           <Prompt>
@@ -474,7 +538,13 @@ const VariantRow = ({
     </div>
 
     {/* Mini-produkt varianty: fotky a poznámka patří k řádku nahoře — jemné
-        pozadí je drží pohromadě, aby se sekce nerozpadala do volných řádků. */}
+        pozadí je drží pohromadě, aby se sekce nerozpadala do volných řádků.
+
+        U jediného provedení se tenhle blok ukáže, jen když v něm něco je:
+        fotky kusu patří do oddílu „Fotky" o kus výš a druhá, skoro prázdná
+        galerie pod cenou byla hlavně matoucí. Co už nahrané je, se ale
+        skrývat nesmí. */}
+    {(!solo || photos.length > 0 || note) && (
     <div className="bg-ui-bg-subtle mt-3 flex flex-col gap-2 rounded-lg px-3 py-2.5">
       <div className="flex flex-wrap items-center gap-2">
         {photos.map((url, index) => (
@@ -545,6 +615,7 @@ const VariantRow = ({
         </div>
       </div>
     </div>
+    )}
     </div>
   );
 };
@@ -553,13 +624,22 @@ const AddVariantRow = ({
   productId,
   optionTitle,
   invalidate,
+  solo = false,
 }: {
   productId: string;
   optionTitle: string | undefined;
   invalidate: () => Promise<unknown>;
+  /** Produkt má zatím jediné provedení — formulář se schová za tlačítko. */
+  solo?: boolean;
 }) => {
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
+  /*
+   * U jediného provedení je přidávání výjimka, ne běžný úkon: 267 produktů
+   * z 267 ho nikdy nepotřebovalo. Dvě prázdná pole pod cenou proto nestojí
+   * otevřená — nabídne se tlačítko a věta, co to znamená.
+   */
+  const [open, setOpen] = useState(!solo);
 
   const add = useMutation({
     mutationFn: () => {
@@ -586,12 +666,26 @@ const AddVariantRow = ({
       toast.error(ceskaChyba(error, "Přidání se nepodařilo.")),
   });
 
+  if (!open) {
+    return (
+      <div className="mx-6 my-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <Button size="small" variant="secondary" onClick={() => setOpen(true)}>
+          <Plus /> Přidat provedení
+        </Button>
+        <Text size="xsmall" className="text-ui-fg-muted">
+          Když se kus dělá ve víc velikostech nebo barvách — každé má pak
+          vlastní cenu a sklad.
+        </Text>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-6 my-3 flex flex-wrap items-center gap-2 rounded-lg border border-dashed p-2">
       <Input
         size="small"
         className="min-w-40 flex-1"
-        placeholder="Nová varianta (např. Modrá)"
+        placeholder="Nové provedení (např. Modrá)"
         value={title}
         onChange={(event) => setTitle(event.target.value)}
       />
@@ -1566,21 +1660,31 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
 
           <section className="py-5">
             <div className="px-6">
-              <Heading level="h2">Varianty a ceny</Heading>
+              <Heading level="h2">
+                {variants.length === 1 ? "Cena a sklad" : "Provedení a ceny"}
+              </Heading>
               <Text size="small" className="text-ui-fg-subtle mt-1">
-                Název, kód, cena i naskladnění — všechno rovnou tady, ukládá se
-                při opuštění pole.
+                {variants.length === 1
+                  ? "Ukládá se při opuštění pole — žádné tlačítko navíc."
+                  : "Název, kód, cena i naskladnění — všechno rovnou tady, ukládá se při opuštění pole."}
               </Text>
             </div>
-            <div className="mt-4 hidden gap-2 px-6 pb-1 lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_120px_150px_170px_auto]">
-              <FieldLabel>Název</FieldLabel>
-              <FieldLabel>Kód</FieldLabel>
-              <FieldLabel>Cena</FieldLabel>
-              <FieldLabel>Skladem</FieldLabel>
-              <FieldLabel>Naskladnit</FieldLabel>
-              <span />
-            </div>
-            <div className="divide-y border-t">
+            {/* Hlavička sloupců dává smysl jen nad tabulkou. */}
+            {variants.length > 1 && (
+              <div className="mt-4 hidden gap-2 px-6 pb-1 lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_120px_150px_170px_auto]">
+                <FieldLabel>Název</FieldLabel>
+                <FieldLabel>Kód</FieldLabel>
+                <FieldLabel>Cena</FieldLabel>
+                <FieldLabel>Skladem</FieldLabel>
+                <FieldLabel>Naskladnit</FieldLabel>
+                <span />
+              </div>
+            )}
+            <div
+              className={
+                variants.length > 1 ? "divide-y border-t" : "mt-4 border-t pt-4"
+              }
+            >
               {variants.map((variant) => (
                 <VariantRow
                   key={variant.id}
@@ -1590,6 +1694,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                   canDelete={variants.length > 1}
                   expert={expert}
                   invalidate={invalidate}
+                  solo={variants.length === 1}
                 />
               ))}
             </div>
@@ -1597,6 +1702,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               productId={product.id}
               optionTitle={product.options?.[0]?.title}
               invalidate={invalidate}
+              solo={variants.length === 1}
             />
           </section>
 
