@@ -171,6 +171,8 @@ describe("confirmationFieldsFor", () => {
       paid: "600,00",
       deposit: "600,00",
       balance: "1 979,00",
+      per_item: false,
+      note: null,
     })
     expect(fields.deposit).toEqual({ method: "online přes platební bránu ComGate", paid_at: "20. 10. 2026 14:04" })
     expect(fields.mto).toEqual({ deposit: "25", lead_time_min: "14", lead_time_max: "42" })

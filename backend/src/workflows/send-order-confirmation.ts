@@ -13,7 +13,7 @@ import {
   checkAttachmentUrls,
   markAttached,
   orderLegalInfo,
-  withCommissionConfirmation,
+  withCommissionConfirmations,
   type EmailAttachmentRef,
 } from "../lib/legal/order-legal";
 import { getLegalFacts } from "../lib/merchant-settings";
@@ -31,8 +31,11 @@ type WorkflowInput = {
    * PDF „Potvrzení zakázky" (Z11) k objednávce se zakázkou — přidá se k OP
    * a poučení do přílohy; posílá ho subscriber `commission-confirmation`.
    * Chybí/null u běžné objednávky i když PDF selhalo (potvrzení jde bez něj).
+   * Starý tvar (jedna zakázka na objednávku); nové volání posílá seznam níž.
    */
   commission_confirmation?: EmailAttachmentRef | null
+  /** Od 20. 10. 2026 (zakázka = položka): jedno PDF na každou zakázku objednávky. */
+  commission_confirmations?: EmailAttachmentRef[] | null
 }
 
 /**
@@ -49,7 +52,7 @@ type WorkflowInput = {
 const resolveOrderLegalStep = createStep(
   "resolve-order-legal-documents",
   async (
-    { orders, commission }: { orders: any[]; commission?: EmailAttachmentRef | null },
+    { orders, commissions }: { orders: any[]; commissions: EmailAttachmentRef[] },
     { container }
   ) => {
     const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
@@ -60,8 +63,10 @@ const resolveOrderLegalStep = createStep(
       LEGAL_MANIFEST,
       live.source === "settings" ? live.facts : null
     )
-    // Potvrzení zakázky první — je to smlouva k téhle objednávce; OP a poučení za ním.
-    const attachments = commission?.url ? [commission, ...legalAttachments] : legalAttachments
+    // Potvrzení zakázky první (jedno na každou zakázku objednávky) — je to
+    // smlouva k téhle objednávce; OP a poučení za nimi.
+    const commissionAttachments = (commissions ?? []).filter((item) => Boolean(item?.url))
+    const attachments = [...commissionAttachments, ...legalAttachments]
     const { reachable, failed } = await checkAttachmentUrls(attachments)
 
     for (const miss of failed) {
@@ -97,22 +102,27 @@ const resolveOrderLegalStep = createStep(
       )
     }
 
-    const withCommission = withCommissionConfirmation(
+    const withCommission = withCommissionConfirmations(
       markAttached(legal, reachable),
-      commission ?? null,
+      commissionAttachments,
       reachable
     )
     return new StepResponse({
       legal: withCommission,
       attachments: reachable,
       commission_attached: Boolean(withCommission.commission_confirmation?.attached),
+      // Které PDF Potvrzení zakázky opravdu šly v příloze — podle toho
+      // subscriber zapíše `confirmation_sent_at` jen těm zakázkám.
+      commission_attached_urls: (withCommission.commission_confirmations ?? [])
+        .filter((item) => item.attached)
+        .map((item) => item.url),
     })
   }
 )
 
 export const sendOrderConfirmationWorkflow = createWorkflow(
   "send-order-confirmation",
-  ({ id, commission_confirmation }: WorkflowInput) => {
+  ({ id, commission_confirmation, commission_confirmations }: WorkflowInput) => {
     const { data: orders } = useQueryGraphStep({
       entity: "order",
       fields: [
@@ -177,9 +187,20 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
     // from the checkout's payment collection in `orders`.
     const balance = resolveBalanceStep({ order_id: id, orders })
 
+    // Starý jednotlivý tvar i nový seznam → jeden seznam příloh (uvnitř
+    // `transform`, protože vstupy jsou tu jen placeholdery, ne hodnoty).
+    const commissions = transform(
+      { commission_confirmation, commission_confirmations },
+      ({ commission_confirmation, commission_confirmations }) =>
+        [
+          ...(commission_confirmations ?? []),
+          ...(commission_confirmation ? [commission_confirmation] : []),
+        ] as EmailAttachmentRef[]
+    )
+
     const legalDocuments = resolveOrderLegalStep({
       orders,
-      commission: commission_confirmation,
+      commissions,
     })
 
     const notificationData = transform(
@@ -257,6 +278,7 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
       ({ notification, legalDocuments }) => ({
         notification,
         commission_attached: Boolean(legalDocuments.commission_attached),
+        commission_attached_urls: legalDocuments.commission_attached_urls ?? [],
       })
     )
 

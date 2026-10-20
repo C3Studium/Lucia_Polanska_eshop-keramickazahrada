@@ -7,6 +7,7 @@ import {
   type LegalManifest,
 } from "../legal"
 import { orderDocumentVersion } from "../legal/order-legal"
+import { commissionMoney } from "../made-to-order/commission-money"
 import { isServiceLine } from "../packaging-lines"
 
 /**
@@ -79,6 +80,14 @@ export type CommissionConfirmationInput = {
     paid: string
     deposit: string
     balance: string
+    /**
+     * Objednávka má víc položek (další zakázka nebo běžné zboží) → Celkem /
+     * Zaplaceno / Zbývá platí PRO TUTO POLOŽKU; doprava a balné jsou jen
+     * informace (platí se jednou s objednávkou) a `other` se netiskne.
+     */
+    per_item: boolean
+    /** Věta pod tabulkou u `per_item` („Objednávka obsahuje další položky; doprava … se platí jednou s objednávkou."), jinak null. */
+    note: string | null
   }
   deposit: {
     method: string
@@ -159,6 +168,13 @@ export type ConfirmationOrderLike = {
 export type ConfirmationProductionOrderLike = {
   id?: string
   created_at?: string | Date | null
+  /** Řádek objednávky (zakázka = položka, od 20. 10. 2026); null/chybí = legacy zakázka za celou objednávku. */
+  line_item_id?: string | null
+  line_title?: string | null
+  line_quantity?: unknown
+  line_total?: unknown
+  order_extras_paid?: unknown
+  surcharge?: unknown
   deposit_percentage?: unknown
   deposit_amount?: unknown
   original_total?: unknown
@@ -358,8 +374,31 @@ export const confirmationFieldsFor = ({
   const items = (order.items ?? []).filter((item): item is NonNullable<typeof item> => Boolean(item))
   const goods = items.filter((item) => !isServiceLine(item))
   const services = items.filter((item) => isServiceLine(item))
-  const commissionLines = goods.filter((item) => isMadeToOrderItem(item))
-  const otherLines = goods.filter((item) => !isMadeToOrderItem(item))
+  /*
+   * Zakázka = položka (LEGAL_AUDIT § 0c, Z-A): zakázka s `line_item_id` potvrzuje
+   * JEDEN řádek objednávky; všechno ostatní (další zakázky i běžné zboží) jsou
+   * „další položky". Legacy zakázka (bez řádku) = celá objednávka jako dřív:
+   * všechny zakázkové řádky dohromady, běžné zboží jako „další zboží".
+   */
+  const perCommission = Boolean(productionOrder?.line_item_id)
+  const ownLine = perCommission
+    ? goods.find((item) => item.id === productionOrder?.line_item_id) ?? null
+    : null
+  const commissionLines = perCommission
+    ? ownLine
+      ? [ownLine]
+      : []
+    : goods.filter((item) => isMadeToOrderItem(item))
+  const otherLines = perCommission
+    ? goods.filter((item) => item !== ownLine)
+    : goods.filter((item) => !isMadeToOrderItem(item))
+  // Víc položek v objednávce → ceny PRO TUTO POLOŽKU, doprava jen jako informace.
+  const perItem = perCommission && goods.length > 1
+  if (perCommission && !ownLine) {
+    warnings.push(
+      `Řádek objednávky ${productionOrder?.line_item_id} k zakázce v objednávce není (odebraný úpravou?) — PDF bere název a cenu ze snímku zakázky.`
+    )
+  }
 
   // ── Objednávka a OP ───────────────────────────────────────────────────────
   const termsVersionRaw = orderDocumentVersion(
@@ -407,6 +446,9 @@ export const confirmationFieldsFor = ({
     const quantity = toNumber(item.quantity)
     return { title, suffix: quantity > 1 ? `${suffix} · ${quantity} ks` : suffix }
   })
+  // Zakázka bez řádku v objednávce (odebraný úpravou) — snímek názvu a množství ze zakázky.
+  const snapshotQuantity = toNumber(productionOrder?.line_quantity)
+  const snapshotTitle = text(productionOrder?.line_title)
   const product =
     titled.length === 1
       ? { title: titled[0].title, variant_suffix: titled[0].suffix }
@@ -415,8 +457,12 @@ export const confirmationFieldsFor = ({
             title: titled.map((line) => `${line.title}${line.suffix}`).join("; "),
             variant_suffix: "",
           }
-        : { title: NEUVEDENO, variant_suffix: "" }
-  if (!titled.length) warnings.push(`Objednávka nemá žádný zakázkový řádek — PDF uvádí výrobek jako „neuvedeno".`)
+        : perCommission && snapshotTitle
+          ? { title: snapshotTitle, variant_suffix: snapshotQuantity > 1 ? ` · ${snapshotQuantity} ks` : "" }
+          : { title: NEUVEDENO, variant_suffix: "" }
+  if (!titled.length && product.title === NEUVEDENO) {
+    warnings.push(`Objednávka nemá žádný zakázkový řádek — PDF uvádí výrobek jako „neuvedeno".`)
+  }
 
   const specifications = commissionLines
     .map((item) => {
@@ -426,17 +472,22 @@ export const confirmationFieldsFor = ({
     .filter(Boolean)
   const brief = {
     text: text(productionOrder?.customer_note) || specifications.join("\n\n") || NEUVEDENO,
-    photos: briefPhotosOf(items, notes),
+    // Fotky zadání: u zakázky-položky jen její řádek a její diář (volající ho filtruje).
+    photos: briefPhotosOf(perCommission ? commissionLines : items, notes),
   }
 
   // ── Cena a platby ─────────────────────────────────────────────────────────
   const currencyCode = String(order.currency_code || productionOrder?.currency_code || "czk").toLowerCase()
   const currency = currencyCode === "czk" ? "Kč" : currencyCode.toUpperCase()
   const sum = (lines: typeof goods) => round2(lines.reduce((acc, item) => acc + toNumber(item.total), 0))
-  const itemTotal = sum(commissionLines)
+  // Cena položky: u zakázky-položky ze snímku `line_total` (řádek mohl zmizet úpravou), jinak z řádků.
+  const itemTotal =
+    perCommission && productionOrder?.line_total !== null && productionOrder?.line_total !== undefined
+      ? round2(toNumber(productionOrder.line_total))
+      : sum(commissionLines)
   const otherTotal = sum(otherLines)
   const shippingTotal = round2(toNumber(order.shipping_total) + sum(services))
-  const total = round2(toNumber(order.total))
+  const total = perItem ? itemTotal : round2(toNumber(order.total))
 
   const shippingNames = (order.shipping_methods ?? [])
     .map((method) => text(method?.name))
@@ -454,9 +505,17 @@ export const confirmationFieldsFor = ({
     (["authorized", "completed", "captured"].includes(String(checkoutCollection?.status || "").toLowerCase()) ||
       (Array.isArray(checkoutCollection?.payments) && checkoutCollection!.payments!.length > 0))
   const depositPaid = depositRequest?.status === "paid"
+  /*
+   * Zaplaceno při objednávce. U zakázky-položky ve víc-položkové objednávce
+   * jen to, co připadá NA TUTO POLOŽKU: záloha zakázky bez části, kterou první
+   * zakázka nese za objednávku (běžné zboží, poštovné) —
+   * `lib/made-to-order/commission-money`. Jinak celá pokladní platba, jak dřív.
+   */
   const paid = depositPaid
-    ? round2(toNumber(depositRequest?.amount))
-    : collectionPaid
+    ? perItem
+      ? commissionMoney(productionOrder ?? {}, productionOrder?.payment_requests ?? []).deposit_paid
+      : round2(toNumber(depositRequest?.amount))
+    : collectionPaid && !perItem
       ? round2(toNumber(checkoutCollection?.amount))
       : 0
   if (!depositPaid && !collectionPaid) {
@@ -485,12 +544,17 @@ export const confirmationFieldsFor = ({
   const price = {
     currency,
     item: formatCzechMoney(itemTotal),
-    other: otherLines.length ? formatCzechMoney(otherTotal) : null,
+    // U položky ve víc-položkové objednávce se „další zboží" netiskne — Celkem je jen tato položka.
+    other: !perItem && otherLines.length ? formatCzechMoney(otherTotal) : null,
     shipping: formatCzechMoney(shippingTotal),
     total: formatCzechMoney(total),
     paid: formatCzechMoney(paid),
     deposit: contractualDeposit === null ? NEUVEDENO : formatCzechMoney(contractualDeposit),
     balance: formatCzechMoney(balance),
+    per_item: perItem,
+    note: perItem
+      ? `Objednávka obsahuje další položky; doprava a balné ${formatCzechMoney(shippingTotal)} ${currency} se platí jednou s objednávkou.`
+      : null,
   }
   if (contractualDeposit === null) {
     warnings.push(`Produkční objednávka nemá smluvní zálohu (deposit_amount ani deposit_percentage) — PDF uvádí „neuvedeno".`)

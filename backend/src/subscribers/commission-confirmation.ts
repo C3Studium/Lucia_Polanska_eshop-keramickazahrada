@@ -1,29 +1,37 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
-import { buildCommissionConfirmation } from "../lib/potvrzeni-zakazky"
+import { buildOrderCommissionConfirmations } from "../lib/potvrzeni-zakazky"
+import { listCommissionsOfOrder } from "../lib/made-to-order/orders-of"
 import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
 import { sendOrderConfirmationWorkflow } from "../workflows/send-order-confirmation"
 
 /**
  * Potvrzení objednávky se zakázkou (LEGAL_AUDIT § 0, Z11): PDF „Potvrzení
- * zakázky" v příloze potvrzovacího e-mailu spolu s OP.
+ * zakázky" v příloze potvrzovacího e-mailu spolu s OP — od 20. 10. 2026
+ * (§ 0c, zakázka = položka) JEDNO PDF NA KAŽDOU zakázku objednávky
+ * (`Potvrzeni-zakazky-<číslo>-<n>.pdf`), všechna v JEDNOM potvrzení.
  *
  * Proč zvláštní subscriber: `order.placed` obsluhuje potvrzovací e-mail
- * i založení produkční objednávky souběžně (závod). U objednávky se zakázkou
- * proto `order-placed-email` potvrzení NEPOSÍLÁ a čeká se na event
- * `made-to-order.production-order-created`, který `initialize-merchant-order`
- * emituje NA KONCI — produkční objednávka se smluvní zálohou už existuje.
+ * i založení zakázek souběžně (závod). U objednávky se zakázkou proto
+ * `order-placed-email` potvrzení NEPOSÍLÁ a čeká se na event
+ * `made-to-order.production-orders-created`, který `initialize-merchant-order`
+ * emituje NA KONCI — všechny zakázky se smluvní zálohou už existují.
  *
  * Zákazník nesmí zůstat bez potvrzení objednávky: když PDF selže (generování,
- * upload), potvrzení se pošle stejně, jen bez té přílohy, a chyba jde do logu
- * jako error. Dedupe e-mailu zůstává jeden klíč na objednávku
- * (`order-placed:<id>` ve workflow) — dvě potvrzení nikdy neodejdou.
+ * upload) u některé zakázky, potvrzení se pošle stejně, jen bez té přílohy,
+ * a chyba jde do logu jako error. Dedupe e-mailu zůstává jeden klíč na
+ * objednávku (`order-placed:<id>` ve workflow) — dvě potvrzení nikdy neodejdou.
  */
 
-export const COMMISSION_CONFIRMATION_EVENT = "made-to-order.production-order-created"
+export const COMMISSION_CONFIRMATION_EVENT = "made-to-order.production-orders-created"
 
-type EventPayload = { order_id: string; production_order_id?: string }
+type EventPayload = {
+  order_id: string
+  production_order_ids?: string[]
+  /** Starý tvar eventu (jedna zakázka na objednávku) — kdyby ve frontě zůstal. */
+  production_order_id?: string
+}
 
 /**
  * Souhlasy ukládá pokladna do metadat košíku (kopie do objednávky je okamžitá),
@@ -49,10 +57,10 @@ export default async function commissionConfirmationHandler({
   if (!orderId) return
 
   const madeToOrder = container.resolve<MadeToOrderModuleService>(MADE_TO_ORDER_MODULE)
-  const [productionOrder] = (await madeToOrder.listProductionOrders({ order_id: orderId } as never)) as any[]
-  if (!productionOrder) {
-    logger.error(`[potvrzení zakázky] Event ${COMMISSION_CONFIRMATION_EVENT} pro ${orderId}, ale produkční objednávka neexistuje — potvrzení objednávky posílám bez PDF.`)
-  } else if (productionOrder.confirmation_sent_at) {
+  const commissions = await listCommissionsOfOrder(container, orderId)
+  if (!commissions.length) {
+    logger.error(`[potvrzení zakázky] Event ${COMMISSION_CONFIRMATION_EVENT} pro ${orderId}, ale žádná zakázka neexistuje — potvrzení objednávky posílám bez PDF.`)
+  } else if (commissions.every((commission) => commission.confirmation_sent_at)) {
     // Doručení eventu je „aspoň jednou" — potvrzení už odešlo.
     return
   }
@@ -76,28 +84,32 @@ export default async function commissionConfirmationHandler({
     await sleep(CONSENT_WAIT_MS)
   }
 
-  let attachment: { filename: string; url: string } | null = null
-  if (productionOrder) {
-    try {
-      const built = await buildCommissionConfirmation(container, orderId)
-      attachment = built.attachment
-    } catch (error) {
-      logger.error(
-        `[potvrzení zakázky] PDF k objednávce ${orderId} se nepodařilo vytvořit: ${
-          error instanceof Error ? error.message : String(error)
-        } — potvrzení objednávky odchází bez něj.`
-      )
-    }
+  const built = commissions.length
+    ? await buildOrderCommissionConfirmations(container, orderId)
+    : { results: [], failures: [] }
+  for (const failure of built.failures) {
+    logger.error(
+      `[potvrzení zakázky] PDF k objednávce ${orderId} (zakázka ${failure.production_order_id}) se nepodařilo vytvořit: ${
+        failure.error instanceof Error ? failure.error.message : String(failure.error)
+      } — potvrzení objednávky odchází bez něj.`
+    )
   }
 
   const { result } = await sendOrderConfirmationWorkflow(container).run({
-    input: { id: orderId, commission_confirmation: attachment },
+    input: {
+      id: orderId,
+      commission_confirmations: built.results.map((item) => item.attachment),
+    },
   })
 
-  if (productionOrder && attachment && (result as any)?.commission_attached) {
+  // `confirmation_sent_at` jen u zakázek, jejichž PDF opravdu šlo v příloze.
+  const attachedUrls = new Set<string>(((result as any)?.commission_attached_urls ?? []) as string[])
+  const sentAt = new Date()
+  for (const item of built.results) {
+    if (!attachedUrls.has(item.attachment.url)) continue
     await madeToOrder.updateProductionOrders({
-      id: productionOrder.id,
-      confirmation_sent_at: new Date(),
+      id: item.production_order_id,
+      confirmation_sent_at: sentAt,
     } as never)
   }
 }

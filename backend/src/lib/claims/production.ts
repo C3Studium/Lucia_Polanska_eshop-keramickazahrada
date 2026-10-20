@@ -1,8 +1,10 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
+import { MedusaError } from "@medusajs/framework/utils"
 import { outstandingFor } from "../balance-payment"
 import { MADE_TO_ORDER_MODULE } from "../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../modules/made-to-order/service"
 import { contractDepositAmountOf } from "../made-to-order/contract-deposit"
+import { listCommissionsOfOrder } from "../made-to-order/orders-of"
 import { MONEY_EPSILON, round2, toNumber } from "./refund-rules"
 
 /**
@@ -125,26 +127,161 @@ export type LoadedClaimProduction = {
   productionOrder: any
   paymentRequests: any[]
   block: ClaimProduction
+  /**
+   * Všechny zakázky objednávky (od 20. 10. 2026 jedna na položku, § 0c).
+   * `aggregate: true` = volající nejmenoval zakázku a objednávka má víc než
+   * jednu: `block` je SOUČET peněz přes všechny (strop refundací, stav
+   * zálohy), `productionOrder` je první z nich — zápis NA ni by byl omyl,
+   * proto ho musí volající u víc zakázek odmítnout (`requireSingleCommission`).
+   */
+  all: LoadedClaimProduction[]
+  aggregate: boolean
 }
 
-/** Zakázka k objednávce (modul made-to-order), nebo null u běžné objednávky. */
-export const loadClaimProduction = async (
+/** Všechny zakázky objednávky s žádostmi o platbu a blokem; prázdné u běžné objednávky. */
+export const loadClaimProductions = async (
   scope: MedusaContainer,
   orderId: string
-): Promise<LoadedClaimProduction | null> => {
+): Promise<LoadedClaimProduction[]> => {
   const madeToOrder = scope.resolve<MadeToOrderModuleService>(MADE_TO_ORDER_MODULE)
-  const [productionOrder] = (await madeToOrder.listProductionOrders({
-    order_id: orderId,
+  const commissions = await listCommissionsOfOrder(scope, orderId)
+  if (!commissions.length) return []
+  const requests = (await madeToOrder.listProductionPaymentRequests({
+    production_order_id: commissions.map((commission) => commission.id),
   } as never)) as any[]
-  if (!productionOrder) {
+  const loaded: LoadedClaimProduction[] = commissions.map((productionOrder) => {
+    const paymentRequests = requests.filter(
+      (request) => request?.production_order_id === productionOrder.id
+    )
+    return {
+      productionOrder,
+      paymentRequests,
+      block: productionBlockOf(productionOrder, paymentRequests),
+      all: [],
+      aggregate: false,
+    }
+  })
+  for (const item of loaded) item.all = loaded
+  return loaded
+}
+
+const latestIso = (values: Array<string | null>): string | null =>
+  values.filter((value): value is string => Boolean(value)).sort().pop() ?? null
+
+const earliestIso = (values: Array<string | null>): string | null =>
+  values.filter((value): value is string => Boolean(value)).sort()[0] ?? null
+
+/**
+ * ČISTÉ: součet bloků zakázek jedné objednávky (víc zakázek, volající
+ * nejmenoval žádnou). Peníze se sčítají; fáze je `cancelled` jen když jsou
+ * zrušené všechny; „zahájení výroby" = nejstarší e-mail Z3 (od něj je aspoň
+ * jedna záloha nevratná).
+ */
+export const aggregateProductionBlocks = (blocks: ClaimProduction[]): ClaimProduction => {
+  const sum = (pick: (block: ClaimProduction) => number) =>
+    round2(blocks.reduce((acc, block) => acc + pick(block), 0))
+  const allCancelled = blocks.length > 0 && blocks.every((block) => block.stage === "cancelled")
+  const active = blocks.filter((block) => block.stage !== "cancelled")
+  const cancelledBy = [...new Set(blocks.map((block) => block.cancelled_by).filter(Boolean))]
+  const phases = [...new Set(blocks.map((block) => block.cancellation_phase).filter(Boolean))]
+  const refunds = blocks
+    .map((block) => block.cancellation_refund_amount)
+    .filter((value): value is number => typeof value === "number")
+  return {
+    id: blocks.map((block) => block.id).join(","),
+    stage: allCancelled ? "cancelled" : (active[0]?.stage ?? blocks[0]?.stage ?? ""),
+    agreed_total: sum((block) => block.agreed_total),
+    surcharge: sum((block) => block.surcharge),
+    deposit_paid: sum((block) => block.deposit_paid),
+    balance_paid: sum((block) => block.balance_paid),
+    outstanding: sum((block) => block.outstanding),
+    deposit_contract: sum((block) => block.deposit_contract),
+    deposit_percentage: round2(
+      blocks.length ? blocks.reduce((acc, block) => acc + block.deposit_percentage, 0) / blocks.length : 0
+    ),
+    production_start_notified_at: earliestIso(blocks.map((block) => block.production_start_notified_at)),
+    deposit_refunded: sum((block) => block.deposit_refunded),
+    deposit_refunded_at: latestIso(blocks.map((block) => block.deposit_refunded_at)),
+    cancelled_at: allCancelled ? latestIso(blocks.map((block) => block.cancelled_at)) : null,
+    cancelled_by: allCancelled && cancelledBy.length === 1 ? cancelledBy[0] : null,
+    cancellation_phase: allCancelled && phases.length === 1 ? phases[0] : null,
+    cancellation_refund_amount: allCancelled && refunds.length ? round2(refunds.reduce((a, b) => a + b, 0)) : null,
+    balance_request_status:
+      blocks.map((block) => block.balance_request_status).find((status) => status && status !== "paid") ??
+      blocks[0]?.balance_request_status ??
+      null,
+  }
+}
+
+/**
+ * Zakázka k objednávce (modul made-to-order), nebo null u běžné objednávky.
+ *
+ * `productionOrderId` vybírá jednu z víc zakázek (§ 0c). Bez něj: jediná
+ * zakázka → ta; víc zakázek → SOUČET (`aggregate: true`) pro souhrny
+ * (detail žádosti, strop refundace položek, vlajky). Zápis na jednu konkrétní
+ * zakázku s agregátem nejde — viz `requireSingleCommission`.
+ */
+export const loadClaimProduction = async (
+  scope: MedusaContainer,
+  orderId: string,
+  productionOrderId?: string | null
+): Promise<LoadedClaimProduction | null> => {
+  const all = await loadClaimProductions(scope, orderId)
+  if (!all.length) {
     return null
   }
-  const paymentRequests = (await madeToOrder.listProductionPaymentRequests({
-    production_order_id: productionOrder.id,
-  } as never)) as any[]
-  return {
-    productionOrder,
-    paymentRequests,
-    block: productionBlockOf(productionOrder, paymentRequests),
+  if (productionOrderId) {
+    const found = all.find((item) => item.productionOrder.id === productionOrderId)
+    if (!found) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_FOUND,
+        "Zakázka k této objednávce nebyla nalezena."
+      )
+    }
+    return found
   }
+  if (all.length === 1) {
+    return all[0]
+  }
+  return {
+    productionOrder: all[0].productionOrder,
+    paymentRequests: all.flatMap((item) => item.paymentRequests),
+    block: aggregateProductionBlocks(all.map((item) => item.block)),
+    all,
+    aggregate: true,
+  }
+}
+
+/**
+ * Pro úkony NA JEDNÉ zakázce (vrácení zálohy, zrušení zakázky): agregát přes
+ * víc zakázek je chyba volajícího — musí říct, kterou (`production_order_id`).
+ */
+export const requireSingleCommission = (
+  production: LoadedClaimProduction,
+  what = "tuto akci"
+): LoadedClaimProduction => {
+  if (production.aggregate) {
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      `Objednávka má víc zakázek — pro ${what} uveďte production_order_id.`
+    )
+  }
+  return production
+}
+
+/**
+ * Zakázka, které patří žádost v Reklamace a zrušení: podle vybraného řádku
+ * objednávky (`line_items[].line_item_id` ↔ `production_order.line_item_id`),
+ * jinak jediná zakázka objednávky, jinak agregát.
+ */
+export const commissionIdFromRequestLines = (
+  request: { line_items?: unknown } | null | undefined,
+  commissions: Array<{ id: string; line_item_id?: string | null }>
+): string | null => {
+  const lines = Array.isArray(request?.line_items) ? (request!.line_items as any[]) : []
+  const lineIds = new Set(lines.map((line) => String(line?.line_item_id ?? "")).filter(Boolean))
+  const matched = commissions.filter(
+    (commission) => commission.line_item_id && lineIds.has(commission.line_item_id)
+  )
+  return matched.length === 1 ? matched[0].id : null
 }

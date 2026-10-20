@@ -6,7 +6,7 @@ import { formatMoney } from "../customer-email"
 import { cancelProductionStage } from "../production-cancel"
 import { retrieveClaim } from "./admin"
 import { loadOrderMoney } from "./money"
-import { loadClaimProduction } from "./production"
+import { loadClaimProductions } from "./production"
 import { MONEY_EPSILON } from "./refund-rules"
 
 /**
@@ -68,16 +68,23 @@ export const cancelOrderNatively = async (
       // reconcile subscriber ji dotáhne.
     })
 
-  // Zakázka k objednávce (je-li) — uzavřít výrobní příkaz. Best-effort: zrušená
-  // objednávka platí i bez toho, fronta zakázek by jen ukazovala starou fázi.
+  // Zakázky k objednávce (je-li jaká) — uzavřít výrobní příkazy. Od 20. 10. 2026
+  // jich může být víc (jedna na položku), zrušená objednávka ruší všechny.
+  // Best-effort: zrušená objednávka platí i bez toho, fronta zakázek by jen
+  // ukazovala starou fázi.
   try {
-    const production = await loadClaimProduction(scope, order.id)
-    if (production && production.block.stage !== "cancelled") {
+    const productions = await loadClaimProductions(scope, order.id)
+    let closed = 0
+    for (const production of productions) {
+      if (production.block.stage === "cancelled") continue
       await cancelProductionStage(scope, {
         productionOrder: production.productionOrder,
         orderId: order.id,
       })
-      message += " Zakázka k objednávce je zrušená."
+      closed += 1
+    }
+    if (closed) {
+      message += closed === 1 ? " Zakázka k objednávce je zrušená." : ` Zakázky k objednávce (${closed}) jsou zrušené.`
     }
   } catch (error) {
     message += ` Zakázku k objednávce se nepodařilo zrušit (${

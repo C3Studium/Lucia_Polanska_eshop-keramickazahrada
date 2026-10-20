@@ -117,7 +117,8 @@ const emailCustomerAboutFailure = async (
         request.provider_error_reason ||
         FAILURE_REASONS[status] ||
         FAILURE_REASONS.error,
-      retryLink: balancePaymentUrl(order.id) || orderLink(order),
+      // Odkaz na doplatek TÉTO zakázky (objednávka jich může mít víc).
+      retryLink: balancePaymentUrl(order.id, production.id) || orderLink(order),
     },
   })
 }

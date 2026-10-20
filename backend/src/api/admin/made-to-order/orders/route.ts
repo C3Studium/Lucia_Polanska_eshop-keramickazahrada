@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { outstandingFor } from "../../../../lib/balance-payment"
+import { commissionMoney } from "../../../../lib/made-to-order/commission-money"
 import { isPersonalPickupOrder } from "../../../../lib/personal-pickup"
 import { MADE_TO_ORDER_MODULE } from "../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../modules/made-to-order/service"
@@ -117,6 +118,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         ["draft", "pending", "sent"].includes(request?.status)
     )
 
+    const money = commissionMoney(production, requests)
+    const siblings = (productionOrders as any[]).filter(
+      (candidate) => candidate.order_id === production.order_id
+    ).length
+
     return {
       id: production.id,
       order_id: production.order_id,
@@ -125,6 +131,19 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       created_at: order?.created_at ?? production.created_at,
       stage: production.stage,
       currency_code: String(production.currency_code || "czk"),
+      // Zakázka = položka (§ 0c): řádek fronty = jedna zakázka, s názvem položky.
+      // Legacy zakázka (celá objednávka) má `line_item_id` null a název chybí.
+      line_item_id: production.line_item_id ?? null,
+      line_title: production.line_title ?? null,
+      line_quantity:
+        production.line_quantity === null || production.line_quantity === undefined
+          ? null
+          : toNumber(production.line_quantity),
+      item_total: money.item_total,
+      item_outstanding: money.item_outstanding,
+      carries_order_extras: money.carries_order_extras,
+      /** Kolik zakázek má objednávka na této stránce (orientace: „1 ze 2"). */
+      commissions_in_order: siblings,
 
       // The money picture, which is the whole point of this list.
       agreed_total: agreed,

@@ -648,8 +648,23 @@ export const generateCommissionConfirmationPdf = async (
       ...(input.price.other !== null
         ? [{ label: [r("Další zboží v objednávce")], amount: `${input.price.other}${NBSP}${cur}` }]
         : []),
-      { label: [r(`Doprava a balné (${input.shipping.method})`)], amount: `${input.price.shipping}${NBSP}${cur}` },
-      { label: [r("Celkem")], amount: `${input.price.total}${NBSP}${cur}`, total: true },
+      // Zakázka = položka: u objednávky s víc položkami je doprava jen informace
+      // (platí se jednou s objednávkou), Celkem je cena TÉTO položky.
+      {
+        label: [
+          r(
+            input.price.per_item
+              ? `Doprava a balné objednávky (${input.shipping.method}) — mimo tento součet`
+              : `Doprava a balné (${input.shipping.method})`
+          ),
+        ],
+        amount: `${input.price.shipping}${NBSP}${cur}`,
+      },
+      {
+        label: [r(input.price.per_item ? "Celkem za tuto položku" : "Celkem")],
+        amount: `${input.price.total}${NBSP}${cur}`,
+        total: true,
+      },
       {
         label: [
           r(`Zaplaceno při objednávce (${input.deposit.method}, ${input.deposit.paid_at}) — z toho záloha `),
@@ -665,7 +680,7 @@ export const generateCommissionConfirmationPdf = async (
   place(
     small([
       r(
-        `Ceny jsou konečné${input.vat.note}. Odkaz k doplatku vám pošleme e-mailem po schválení výrobku. Nezaplatíte-li ani po připomenutí do 30 dnů, platí, že jste zakázku zrušil(a) po zahájení výroby (bod 06, odst. 2).`
+        `${input.price.note ? `${input.price.note} ` : ""}Ceny jsou konečné${input.vat.note}. Odkaz k doplatku vám pošleme e-mailem po schválení výrobku. Nezaplatíte-li ani po připomenutí do 30 dnů, platí, že jste zakázku zrušil(a) po zahájení výroby (bod 06, odst. 2).`
       ),
     ])
   )

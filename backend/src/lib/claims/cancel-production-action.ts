@@ -31,10 +31,14 @@ import { loadClaimDetailOrder } from "./detail"
 import { claimLineItemsOf } from "./line-items"
 import { loadOrderRequests } from "./money"
 import { buildClaimOrderItems } from "./order-items"
+import { isPackagingLine, isServiceLine, packagingVariantOf } from "../packaging-lines"
 import {
+  commissionIdFromRequestLines,
   commissionPaidRemaining,
   depositRefundable,
   loadClaimProduction,
+  loadClaimProductions,
+  requireSingleCommission,
 } from "./production"
 import { MONEY_EPSILON, moneyState } from "./refund-rules"
 
@@ -74,6 +78,12 @@ import { MONEY_EPSILON, moneyState } from "./refund-rules"
  */
 
 export type CancelProductionBody = {
+  /**
+   * Která zakázka objednávky se ruší (od 20. 10. 2026 jedna na položku, § 0c).
+   * Bez ní: zakázka podle vybraného řádku žádosti (`line_items`), jinak jediná
+   * zakázka objednávky; u víc zakázek bez vodítka chyba.
+   */
+  production_order_id?: string | null
   /** „Zálohu nevracet" — výslovná volba majitelky, zapíše se do `resolution_note`. */
   keep_deposit?: boolean
   note?: string | null
@@ -185,13 +195,25 @@ export const cancelProductionForClaim = async (
       "Objednávka k této žádosti nebyla nalezena."
     )
   }
-  const production = await loadClaimProduction(scope, order.id)
-  if (!production) {
+  const productions = await loadClaimProductions(scope, order.id)
+  if (!productions.length) {
     throw new MedusaError(
       MedusaError.Types.NOT_FOUND,
       "K této objednávce není zakázková výroba — není co rušit."
     )
   }
+  // Která zakázka: výslovně z těla, jinak podle řádku vybraného v žádosti,
+  // jinak jediná zakázka objednávky (víc zakázek bez vodítka = chyba volajícího).
+  const targetId =
+    body.production_order_id ??
+    commissionIdFromRequestLines(
+      request,
+      productions.map((item) => item.productionOrder)
+    )
+  const production = requireSingleCommission(
+    (await loadClaimProduction(scope, order.id, targetId))!,
+    "zrušení zakázky"
+  )
   if (production.block.stage === "cancelled") {
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Zakázka už je zrušená.")
   }
@@ -225,10 +247,30 @@ export const cancelProductionForClaim = async (
   const resolutionNote = [depositText, userNote].filter(Boolean).join(" — ")
 
   const items = ((order.items ?? []) as any[]).filter(Boolean)
-  const madeToOrderIds = items
-    .filter((item) => isMadeToOrderItem(item))
-    .map((item) => item.id as string)
-  const hasRegularItems = items.some((item) => !isMadeToOrderItem(item))
+  const goods = items.filter((item) => !isServiceLine(item))
+  const ownLineId: string | null = production.productionOrder.line_item_id ?? null
+  const ownLine = ownLineId ? goods.find((item) => item.id === ownLineId) ?? null : null
+  /*
+   * Zakázka = položka (§ 0c): z objednávky jde pryč JEN řádek této zakázky
+   * (a jeho balné); ostatní řádky — běžné zboží i další zakázky — zůstávají.
+   * Legacy zakázka (bez řádku) = celá objednávka: všechny zakázkové řádky,
+   * jak dřív. Objednávka se nativně ruší/dokončuje, jen když po zrušení nic
+   * jiného nezbývá.
+   */
+  const removeIds: string[] = ownLineId
+    ? [
+        ...(ownLine ? [ownLineId] : []),
+        ...(ownLine?.variant_id
+          ? items
+              .filter((item) => isPackagingLine(item) && packagingVariantOf(item) === ownLine.variant_id)
+              .slice(0, 1)
+              .map((item) => item.id as string)
+          : []),
+      ]
+    : goods.filter((item) => isMadeToOrderItem(item)).map((item) => item.id as string)
+  const hasRegularItems = ownLineId
+    ? goods.some((item) => item.id !== ownLineId)
+    : goods.some((item) => !isMadeToOrderItem(item))
 
   const messages: string[] = []
 
@@ -297,14 +339,14 @@ export const cancelProductionForClaim = async (
       messages.push(result.message)
     }
   } else {
-    if (madeToOrderIds.length) {
+    if (removeIds.length) {
       try {
-        await removeOrderLines(scope, order, madeToOrderIds, actor)
-        itemsRemoved = madeToOrderIds.length
+        await removeOrderLines(scope, order, removeIds, actor)
+        itemsRemoved = removeIds.length
         messages.push(
           `Zakázková položka odebrána z objednávky úpravou (${itemsRemoved} ${
             itemsRemoved === 1 ? "řádek" : "řádky"
-          }), běžné položky zůstávají.`
+          }), ostatní položky zůstávají.`
         )
       } catch (error) {
         messages.push(
@@ -314,11 +356,12 @@ export const cancelProductionForClaim = async (
         )
       }
     } else {
-      messages.push("Objednávka zůstává — běžné položky jedou dál.")
+      messages.push("Objednávka zůstává — ostatní položky jedou dál.")
     }
-    // Otevřená výzva k doplatku zrušené zakázky by držela běžné zboží na
-    // bráně odeslání („čeká nezaplacená platba").
-    const openBalance = findOpenBalanceCollection(order)
+    // Otevřená výzva k doplatku zrušené zakázky by držela ostatní zboží na
+    // bráně odeslání („čeká nezaplacená platba"). Jen kolekce TÉTO zakázky —
+    // další zakázky objednávky mají vlastní.
+    const openBalance = findOpenBalanceCollection(order, production.productionOrder.id)
     if (openBalance?.id) {
       await deleteOrderPaymentCollections(scope)
         .run({ input: { id: openBalance.id } as never })

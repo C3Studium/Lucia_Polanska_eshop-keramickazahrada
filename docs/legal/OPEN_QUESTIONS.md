@@ -99,6 +99,14 @@ v e-mailu pro Lucii (artefakt „Spuštění do středy“, 20. 10.).
 | 17c | Mrazuvzdornost — **u výrobků hotovo 20. 10.** (2 nádoby doplněny, text kartičky `karticka-mrazuvzdornost.md`; tisk a přikládání je na Lucii) | Produkty, kartička k zásilce | OP vylučuje z vad prasklinu nádoby na vodu, ve které zamrzla voda, **jen pokud** byl zákazník upozorněn u výrobku i na kartičce v balíku. Doplnit upozornění k dotčeným produktům a na kartičku. |
 | 17d | Balné na stránce výrobku — **20. 10. rozhodnuto (Matěj): uvádět u ceny** („+ balné X,- za kus, cena balení je u každého výrobku jiná a účtuje se zvlášť“; u výrobku bez ceny balení „Balné u tohoto výrobku neúčtujeme“). OP a Doprava upravené. Advokát už jen potvrdí. Původně: | Produkt | Povinné balné se dnes ukazuje až v košíku. Advokát ať posoudí, zda stačí (§ 1811 odst. 2 OZ, cena včetně všech poplatků), nebo ho uvádět u ceny výrobku. |
 
+## Zakázka = položka (LEGAL_AUDIT § 0c Z-A, 20. 10. 2026)
+
+| # | Co | Stav |
+| --- | --- | --- |
+| ZA1 | Admin widget a Zakázky pro objednávku s víc zakázkami (karta per zakázka) | **zbývá** — backend už vrací `production_orders[]`; dnes widget ukazuje první (agent přerušen limitem) |
+| ZA2 | Sandbox scénář se dvěma zakázkovými položkami v jedné objednávce | zbývá (sandbox má jeden zakázkový produkt; přidat druhý do `seed.ts`) |
+| ZA3 | Stránky `/order/:id/edit` a `/refund` u objednávky s ≥2 zakázkami: konverzace bez `production_order_id` | zbývá (mimo zadané stránky) |
+
 ## Povinnosti mimo OP (LEGAL_AUDIT § 0b, 20. 10. 2026)
 
 | # | Otázka | Kde | Poznámka |

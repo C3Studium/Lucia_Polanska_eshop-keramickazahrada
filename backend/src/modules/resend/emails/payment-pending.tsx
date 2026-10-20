@@ -45,10 +45,13 @@ interface PaymentPendingEmailProps {
   depositInvoiceUrl?: string | null;
   /** Číslo zálohové faktury (do textu odkazu). */
   depositInvoiceNumber?: string | null;
+  /** Název položky zakázky — u objednávky s víc zakázkami říká, za který kus se doplácí. */
+  productTitle?: string | null;
 }
 
 function PaymentPendingEmailComponent({
   customerName,
+  productTitle,
   orderNumber = "",
   paymentAmount,
   paymentMethod = "Platební karta nebo převod",
@@ -81,6 +84,7 @@ function PaymentPendingEmailComponent({
       </P>
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
+      {productTitle ? <LedgerRow label="Výrobek" value={productTitle} /> : null}
       {depositPaid ? (
         <LedgerRow label="Zaplaceno zálohou" value={depositPaid} />
       ) : null}

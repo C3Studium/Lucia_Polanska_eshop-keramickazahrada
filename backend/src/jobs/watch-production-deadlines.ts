@@ -118,6 +118,8 @@ export default async function watchProductionDeadlines(
           try {
             const result = await cancelCommissionByCustomer(container, {
               orderId: production.order_id,
+              // Zakázka = položka: ruší se jen TATO zakázka objednávky.
+              productionOrderId: production.id,
               trigger: "unpaid_balance",
             })
             logger.info(

@@ -3,6 +3,27 @@
 Větev `legal/compliance-2026`, podle `LEGAL_AUDIT.md` (14. 10. 2026). Odkazy na paragrafy:
 OZ = zákon č. 89/2012 Sb., ZOS = zákon č. 634/1992 Sb.
 
+## Zakázka = položka objednávky (LEGAL_AUDIT § 0c Z-A — 20. 10. 2026 odpoledne)
+
+- Migrace `Migration20261020180000`: `production_order.line_item_id` (+ `line_title`,
+  `line_quantity`, `line_total`, `order_extras_paid`), unikát `(order_id, line_item_id)` místo
+  `order_id`; `production_note.production_order_id`. Staré zakázky (NULL) = celá objednávka,
+  chovají se jako dřív.
+- `initialize-merchant-order` zakládá zakázku pro KAŽDÝ zakázkový řádek (vlastní smluvní záloha,
+  diář, žádost o zálohu), event `made-to-order.production-orders-created { order_id,
+  production_order_ids }`; potvrzení objednávky nese PDF Potvrzení zakázky pro každou
+  (`orders/<order_id>/potvrzeni-zakazky-<line_item_id>.pdf`), obsah per položka.
+- Store API: `balance` → `commissions[]` + `totals` (dosavadní pole = první zakázka), `cancellation`
+  / `cancel` / `pay-balance` / `notes` s `production_order_id`; zrušení jedné ze dvou zakázek
+  neruší objednávku. Admin GET → `production_orders[]`; akce berou `production_order_id`.
+- E-maily (zahájení, dokončení, doplatek, zrušení, příplatek, zpráva) per zakázka s názvem položky.
+- Storefront: checkbox s názvem u každé zakázkové položky (čas i v metadatech řádku), předsmluvní
+  řádek per položka + součet, seznam zakázek v účtu a v potvrzení (každá vlastní panel, zrušení,
+  doplatek, konverzace), stav zakázek v seznamu objednávek, přepínač zadání mezi zakázkami.
+- **Otevřené:** admin widget „Výroba na zakázku“ ukazuje první zakázku objednávky (data pro
+  všechny už posílá); e2e scénář pro dvě zakázky v jedné objednávce (sandbox má jediný
+  zakázkový produkt) — pokryto unit testy initialize.
+
 ## Povinnosti mimo OP a typy produktů (LEGAL_AUDIT § 0b, § 0c Z-B — 20. 10. 2026 odpoledne)
 
 - **N1 nezávadnost glazur**: stránka `/certifikaty` (seznam protokolů v `lib/certificates.ts`,

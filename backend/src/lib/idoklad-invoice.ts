@@ -38,6 +38,7 @@ import {
 import { notifyMerchant } from "./notify"
 import { jeZkusebniRezim } from "./test-mode"
 import { epsilonFor, toAmount } from "./ship-gate"
+import { outstandingFor } from "./balance-payment"
 
 /**
  * Invoicing an order in iDoklad (FINISHINGTODOLIST §1).
@@ -493,22 +494,48 @@ export const ensureMadeToOrderInvoices = async (
     }
 
     const mto = container.resolve<MadeToOrderModuleService>(MADE_TO_ORDER_MODULE)
-    const [productionOrder] = await mto.listProductionOrders({
+    /*
+     * Od 20. 10. 2026 (LEGAL_AUDIT § 0c) má objednávka zakázek víc (jedna na
+     * položku). Faktury zůstávají DVĚ NA OBJEDNÁVKU (klíče v metadatech
+     * objednávky jsou jedny): záloha = součet zaplacených záloh všech zakázek
+     * (přijdou spolu z pokladny), doplatek = součet zaplacených doplatků —
+     * vystaví se, až když žádná živá zakázka nic nedluží (dřív by faktura na
+     * první doplatek „zamkla" klíč a druhý doplatek by zůstal bez dokladu).
+     */
+    const productionOrders = (await mto.listProductionOrders({
       order_id: orderId,
-    } as never)
-    if (!productionOrder) {
+    } as never)) as any[]
+    if (!productionOrders.length) {
       return { status: "skipped", reason: "Objednávka není zakázka." }
     }
     const requests = (await mto.listProductionPaymentRequests({
-      production_order_id: productionOrder.id,
+      production_order_id: productionOrders.map((productionOrder) => productionOrder.id),
     } as never)) as any[]
 
     const round2 = (value: number) => Math.round(value * 100) / 100
-    const paidDeposit = requests.find(
+    const paidDeposits = requests.filter(
       (r) => r.type === "deposit" && r.status === "paid"
     )
-    const paidBalance = requests.find(
+    const paidBalances = requests.filter(
       (r) => r.type === "balance" && r.status === "paid"
+    )
+    const sumAmounts = (rows: any[]) =>
+      round2(rows.reduce((sum, row) => sum + toAmount(row.amount), 0))
+    const paidDeposit = paidDeposits.length ? { amount: sumAmounts(paidDeposits) } : null
+    const liveCommissions = productionOrders.filter(
+      (productionOrder) => productionOrder.stage !== "cancelled"
+    )
+    const everyLiveSettled = liveCommissions.every(
+      (productionOrder) =>
+        outstandingFor(
+          productionOrder,
+          requests.filter((r) => r.production_order_id === productionOrder.id)
+        ) <= 0.005
+    )
+    const paidBalance =
+      paidBalances.length && everyLiveSettled ? { amount: sumAmounts(paidBalances) } : null
+    const surchargeTotal = round2(
+      productionOrders.reduce((sum, productionOrder) => sum + toAmount(productionOrder.surcharge), 0)
     )
 
     // Kontakt + výchozí agendu připravíme nejvýš jednou, a jen když opravdu
@@ -706,8 +733,8 @@ export const ensureMadeToOrderInvoices = async (
     }
     if (paidBalance) {
       // Příplatek je celý v doplatku (záloha se počítá z původní ceny) → na
-      // faktuře doplatku ho vyčleníme jako vlastní řádek.
-      const surcharge = round2(toAmount(productionOrder.surcharge))
+      // faktuře doplatku ho vyčleníme jako vlastní řádek (součet přes zakázky).
+      const surcharge = surchargeTotal
       // Faktura zůstává jednoduchá (Doplatek + Příplatek) — majitelka nechce
       // měnit doklady (14. 10. 2026). Jen e-mail k ní dostane rozpis plateb.
       const meta = (order.metadata ?? {}) as Record<string, unknown>
@@ -724,7 +751,7 @@ export const ensureMadeToOrderInvoices = async (
           undefined,
           surcharge,
           commissionPaymentsText(
-            splitCommissionPayments({ requests, surcharge: productionOrder.surcharge }),
+            splitCommissionPayments({ requests, surcharge: surchargeTotal }),
             (amount) => formatMoney(amount, order.currency_code),
             depositInvoiceNumber
           )

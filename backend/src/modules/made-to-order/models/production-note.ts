@@ -15,6 +15,12 @@ import { model } from "@medusajs/framework/utils"
 export const ProductionNote = model.define("production_note", {
   id: model.id().primaryKey(),
   order_id: model.text(),
+  /**
+   * Zakázka (řádek objednávky), ke které zápis patří — od 20. 10. 2026 má
+   * objednávka zakázek víc a každá vlastní diář. NULL = zápis z doby jedné
+   * zakázky na objednávku: patří ke všem zakázkám objednávky (= k té jediné).
+   */
+  production_order_id: model.text().index().nullable(),
   text: model.text().nullable(),
   // Jedno odeslání = JEDEN řádek = jedna zpráva. Víc fotek (až 6) z jednoho
   // odeslání jde do `images` (pole URL), ne po řádku. Dřív to bylo N řádků

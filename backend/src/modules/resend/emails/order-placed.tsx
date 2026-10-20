@@ -125,12 +125,24 @@ function LegalSection({
     .filter(Boolean)
     .join("\n")
   const madeToOrder = legal.made_to_order_items ?? []
-  // Potvrzení zakázky (Z11) — jen u objednávky se zakázkou, a jen když šlo v příloze.
-  const confirmation = legal.commission_confirmation ?? null
-  const confirmationAttached = Boolean(confirmation?.attached) && !attachmentsFailed
+  // Potvrzení zakázky (Z11) — jen u objednávky se zakázkou, a jen když šlo v
+  // příloze. Od 20. 10. 2026 jedno na KAŽDOU zakázku objednávky (seznam);
+  // staré notifikace mají jen `commission_confirmation`.
+  const confirmations =
+    legal.commission_confirmations?.length
+      ? legal.commission_confirmations
+      : legal.commission_confirmation
+        ? [legal.commission_confirmation]
+        : []
+  const confirmationAttached =
+    confirmations.some((item) => Boolean(item?.attached)) && !attachmentsFailed
 
   const attachedNames = [
-    confirmationAttached ? "potvrzení zakázky" : null,
+    confirmationAttached
+      ? confirmations.length > 1
+        ? "potvrzení zakázek"
+        : "potvrzení zakázky"
+      : null,
     termsAttached ? "obchodní podmínky platné pro tuto smlouvu" : null,
     withdrawalAttached ? "poučení o odstoupení od smlouvy s formulářem" : null,
   ].filter((name): name is string => Boolean(name))
@@ -165,21 +177,26 @@ function LegalSection({
       ) : null}
 
       <Section style={{ margin: "16px 0 0" }}>
-        {confirmation ? (
-          <P small style={{ margin: "0 0 6px" }}>
-            <strong style={{ color: brand.ink }}>Potvrzení zakázky</strong> · smlouva
-            na výrobek podle vašeho zadání
-            {confirmationAttached ? " — v příloze (PDF)" : ""}
-            {!confirmationAttached && confirmation.url ? (
-              <>
-                {" — "}
-                <Link href={confirmation.url} style={linkStyle}>
-                  stáhnout PDF
-                </Link>
-              </>
-            ) : null}
-          </P>
-        ) : null}
+        {confirmations.map((confirmation, index) => {
+          const attached = Boolean(confirmation?.attached) && !attachmentsFailed
+          return (
+            <P key={confirmation.url ?? index} small style={{ margin: "0 0 6px" }}>
+              <strong style={{ color: brand.ink }}>
+                Potvrzení zakázky{confirmations.length > 1 ? ` ${index + 1}/${confirmations.length}` : ""}
+              </strong>{" "}
+              · smlouva na výrobek podle vašeho zadání
+              {attached ? " — v příloze (PDF)" : ""}
+              {!attached && confirmation.url ? (
+                <>
+                  {" — "}
+                  <Link href={confirmation.url} style={linkStyle}>
+                    stáhnout PDF
+                  </Link>
+                </>
+              ) : null}
+            </P>
+          )
+        })}
         {legal.terms ? (
           <LegalDocumentLine
             label="Obchodní podmínky"

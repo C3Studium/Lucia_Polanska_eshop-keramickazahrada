@@ -41,19 +41,37 @@ const openCollectionStatus = (collection: any): boolean =>
   ["not_paid", "awaiting"].includes(String(collection?.status || "").toLowerCase()) &&
   toNumber(collection?.captured_amount) <= 0.005
 
+/** Metadata kolekce doplatku: které zakázce patří (od 20. 10. 2026, zakázka = položka). */
+export const BALANCE_COLLECTION_COMMISSION_KEY = "production_order_id"
+
 /**
- * Otevřená kolekce doplatku objednávky (nic nezachyceno). Přednost má ta se
- * značkou `made_to_order_balance`, pak kterákoli otevřená — starší objednávky
- * značku nemají, ale víc než jednu otevřenou kolekci mít nesmí (viz
- * `ensureBalanceCollection`). ČISTÁ funkce, testovaná.
+ * Otevřená kolekce doplatku objednávky (nic nezachyceno). Od 20. 10. 2026 má
+ * objednávka kolekci doplatku NA ZAKÁZKU (každá zakázka má vlastní doplatek
+ * a odkaz): přednost má kolekce se značkou a `production_order_id` té
+ * zakázky, pak značená bez zakázky (starší objednávky s jedinou zakázkou),
+ * pak kterákoli otevřená bez značky (nejstarší objednávky) — ta ale jen bez
+ * zadané zakázky, ať si dvě zakázky nepřetahují jednu kolekci. ČISTÁ,
+ * testovaná.
  */
-export const findOpenBalanceCollection = (order: any): any | null => {
+export const findOpenBalanceCollection = (
+  order: any,
+  productionOrderId?: string | null
+): any | null => {
   const open = ((order?.payment_collections || []) as any[]).filter(openCollectionStatus)
-  return (
-    open.find((collection) => Boolean(collection?.metadata?.[BALANCE_COLLECTION_FLAG])) ??
-    open[0] ??
-    null
-  )
+  const flagged = open.filter((collection) => Boolean(collection?.metadata?.[BALANCE_COLLECTION_FLAG]))
+  if (productionOrderId) {
+    const exact = flagged.find(
+      (collection) => collection?.metadata?.[BALANCE_COLLECTION_COMMISSION_KEY] === productionOrderId
+    )
+    if (exact) return exact
+  }
+  const untagged = flagged.find((collection) => !collection?.metadata?.[BALANCE_COLLECTION_COMMISSION_KEY])
+  if (untagged) return untagged
+  if (productionOrderId) {
+    // Cizí zakázka má svou kolekci — té se nedotýkat.
+    return open.find((collection) => !collection?.metadata?.[BALANCE_COLLECTION_FLAG]) ?? null
+  }
+  return open[0] ?? null
 }
 
 /**
@@ -71,18 +89,24 @@ export const findOpenBalanceCollection = (order: any): any | null => {
 export const ensureBalanceCollection = async (
   container: MedusaContainer,
   order: any,
-  outstanding: number
+  outstanding: number,
+  /** Zakázka, které doplatek patří (od 20. 10. 2026 kolekce per zakázka); bez něj jako dřív. */
+  productionOrderId?: string | null
 ): Promise<any> => {
   const paymentModule = container.resolve(Modules.PAYMENT) as any
-  const existing = findOpenBalanceCollection(order)
+  const existing = findOpenBalanceCollection(order, productionOrderId)
+  const tag = productionOrderId ? { [BALANCE_COLLECTION_COMMISSION_KEY]: productionOrderId } : {}
 
   if (existing) {
     const patch: Record<string, unknown> = {}
     if (Math.abs(toNumber(existing.amount) - outstanding) > 0.01) {
       patch.amount = outstanding
     }
-    if (!existing.metadata?.[BALANCE_COLLECTION_FLAG]) {
-      patch.metadata = { ...(existing.metadata ?? {}), [BALANCE_COLLECTION_FLAG]: true }
+    if (
+      !existing.metadata?.[BALANCE_COLLECTION_FLAG] ||
+      (productionOrderId && existing.metadata?.[BALANCE_COLLECTION_COMMISSION_KEY] !== productionOrderId)
+    ) {
+      patch.metadata = { ...(existing.metadata ?? {}), [BALANCE_COLLECTION_FLAG]: true, ...tag }
     }
     if (!Object.keys(patch).length) {
       return existing
@@ -100,7 +124,7 @@ export const ensureBalanceCollection = async (
   const created = result[0]
   const [flagged] = await paymentModule.updatePaymentCollections(
     { id: created.id },
-    { metadata: { ...(created.metadata ?? {}), [BALANCE_COLLECTION_FLAG]: true } }
+    { metadata: { ...(created.metadata ?? {}), [BALANCE_COLLECTION_FLAG]: true, ...tag } }
   )
   return flagged ?? created
 }
@@ -190,12 +214,15 @@ export const checkoutBalanceFromCollections = (
  * - jinak z modulu (`outstandingFor`) — zahrne i příplatek a doplatky.
  */
 export const resolveOrderOutstanding = (input: {
-  productionOrder: any | null | undefined
+  /** Všechny zakázky objednávky (od 20. 10. 2026 jedna na položku); prázdné = běžná objednávka. */
+  productionOrders: any[] | null | undefined
+  /** Žádosti o platbu všech těch zakázek dohromady. */
   requests: any[] | null | undefined
   collections: any[] | null | undefined
 }): number => {
   const fromCheckout = checkoutBalanceFromCollections(input.collections)
-  if (!input.productionOrder) {
+  const productionOrders = (input.productionOrders ?? []).filter(Boolean)
+  if (!productionOrders.length) {
     return fromCheckout ?? 0
   }
   const requests = input.requests ?? []
@@ -203,7 +230,19 @@ export const resolveOrderOutstanding = (input: {
   if (!hasDeposit && fromCheckout !== null) {
     return fromCheckout
   }
-  return outstandingFor(input.productionOrder, requests)
+  // Součet přes zakázky: každá dluží svůj zbytek, první k tomu dopravu a
+  // balné objednávky (`lib/made-to-order/commission-money`).
+  return roundMoney(
+    productionOrders.reduce(
+      (sum, productionOrder) =>
+        sum +
+        outstandingFor(
+          productionOrder,
+          requests.filter((request) => request?.production_order_id === productionOrder.id)
+        ),
+      0
+    )
+  )
 }
 
 export type BalanceLinkResult = {
@@ -264,9 +303,9 @@ export const ensureBalancePaymentLink = async (
     }
   }
 
-  // 2 — JEDINÁ otevřená kolekce doplatku, srovnaná na aktuální dluh (vznikla
-  // už při objednání; po příplatku se jen přepíše částka, žádná druhá).
-  const collection = await ensureBalanceCollection(container, order, outstanding)
+  // 2 — JEDINÁ otevřená kolekce doplatku TÉTO zakázky, srovnaná na aktuální
+  // dluh (vznikla už při objednání; po příplatku se jen přepíše částka).
+  const collection = await ensureBalanceCollection(container, order, outstanding, productionOrder.id)
 
   // 3 — the request row, keyed so a retry updates rather than duplicates.
   const idempotencyKey = `balance:${productionOrder.id}:${outstanding}`
@@ -503,23 +542,26 @@ export const reconcileOrderBalance = async (
   )
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
 
-  const [productionOrder] = (await madeToOrder.listProductionOrders({
+  // Od 20. 10. 2026 má objednávka zakázek víc (jedna na položku) a každá
+  // vlastní doplatek — dorovnává se KAŽDÁ otevřená žádost s relací. Výsledek
+  // za objednávku: zaplaceno > selhalo > čeká > nic.
+  const productionOrders = (await madeToOrder.listProductionOrders({
     order_id: orderId,
   } as never)) as any[]
-  if (!productionOrder) {
+  if (!productionOrders.length) {
     return { status: "none", request_id: null }
   }
 
   const requests = (await madeToOrder.listProductionPaymentRequests({
-    production_order_id: productionOrder.id,
+    production_order_id: productionOrders.map((productionOrder) => productionOrder.id),
   } as never)) as any[]
-  const request = requests.find(
+  const openRequests = requests.filter(
     (r) =>
       r.type === "balance" &&
       ["pending", "sent"].includes(r.status) &&
       r.payment_session_id
   )
-  if (!request) {
+  if (!openRequests.length) {
     // Diagnostika: proč se doplatek „neregistruje". Žádná otevřená žádost =
     // buď už zaplaceno (fajn), nebo žádost nevznikla / nemá relaci.
     const balances = requests.filter((r) => r.type === "balance")
@@ -531,6 +573,27 @@ export const reconcileOrderBalance = async (
     return { status: "none", request_id: null }
   }
 
+  const rank: Record<BalanceReconcileResult["status"], number> = { paid: 3, failed: 2, pending: 1, none: 0 }
+  let best: BalanceReconcileResult = { status: "none", request_id: null }
+  for (const request of openRequests) {
+    const productionOrder = productionOrders.find(
+      (candidate) => candidate.id === request.production_order_id
+    )
+    if (!productionOrder) continue
+    const result = await reconcileBalanceRequest(container, { orderId, productionOrder, request })
+    if (rank[result.status] > rank[best.status]) best = result
+  }
+  return best
+}
+
+const reconcileBalanceRequest = async (
+  container: MedusaContainer,
+  { orderId, productionOrder, request }: { orderId: string; productionOrder: any; request: any }
+): Promise<BalanceReconcileResult> => {
+  const madeToOrder = container.resolve<MadeToOrderModuleService>(
+    MADE_TO_ORDER_MODULE
+  )
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const paymentModule = container.resolve(Modules.PAYMENT)
   const [session] = await paymentModule.listPaymentSessions({
     id: request.payment_session_id,

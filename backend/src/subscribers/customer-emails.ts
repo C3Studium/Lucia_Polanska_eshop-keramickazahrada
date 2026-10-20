@@ -16,6 +16,9 @@ import { refundHistoryOf, toNumber } from "../lib/claims/refund-rules"
 import { lineQuantityOf } from "../lib/order-quantity"
 import { isServiceLine } from "../lib/packaging-lines"
 import { ensureMadeToOrderInvoices } from "../lib/idoklad-invoice"
+import { commissionImageOf, commissionTitleOf } from "../lib/made-to-order/commission-line"
+import { commissionMoney } from "../lib/made-to-order/commission-money"
+import { listCommissionsOfOrder } from "../lib/made-to-order/orders-of"
 import {
   commissionPaymentsText,
   splitCommissionPayments,
@@ -87,12 +90,31 @@ const common = (order: any) => ({
  * jenže viditelné jsou i zákazníkovy vlastní zprávy → vracela se zpátky jeho
  * fotka. Bereme náhled položky zakázky, jinak první položky.
  */
-const commissionProductImage = (order: any): string | null => {
-  const items = (order?.items || []) as any[]
-  const item =
-    items.find((i: any) => Boolean((i?.metadata as any)?.made_to_order)) ??
-    items[0]
-  return (item?.thumbnail as string) || null
+const commissionProductImage = (
+  order: any,
+  productionOrder?: { line_item_id?: string | null; line_title?: string | null } | null
+): string | null => commissionImageOf(order, productionOrder ?? null)
+
+/**
+ * Zakázka, které e-mail patří (zakázka = položka, § 0c): podle
+ * `production_order_id` z eventu; bez něj první živá zakázka objednávky
+ * (legacy eventy). Null u běžné objednávky.
+ */
+const commissionFor = async (
+  container: SubscriberArgs["container"],
+  orderId: string,
+  productionOrderId?: string | null
+): Promise<any | null> => {
+  try {
+    const commissions = await listCommissionsOfOrder(container, orderId)
+    if (!commissions.length) return null
+    if (productionOrderId) {
+      return commissions.find((commission) => commission.id === productionOrderId) ?? null
+    }
+    return commissions.find((commission) => commission.stage !== "cancelled") ?? commissions[0]
+  } catch {
+    return null
+  }
 }
 
 /**
@@ -151,12 +173,13 @@ const onPaymentCaptured = async ({
     const madeToOrder = container.resolve<MadeToOrderModuleService>(
       MADE_TO_ORDER_MODULE
     )
-    const [productionOrder] = (await madeToOrder.listProductionOrders({
+    // Všechny zakázky objednávky (jedna na položku) — doplatek kterékoli z nich.
+    const productionOrders = (await madeToOrder.listProductionOrders({
       order_id: orderRef.id,
     } as never)) as any[]
-    const balanceRequests = productionOrder
+    const balanceRequests = productionOrders.length
       ? ((await madeToOrder.listProductionPaymentRequests({
-          production_order_id: productionOrder.id,
+          production_order_id: productionOrders.map((productionOrder) => productionOrder.id),
         } as never)) as any[])
       : []
     if (captureCoveredByBalanceMail(payment, balanceRequests)) {
@@ -225,6 +248,9 @@ const onBalanceRequested = async ({
   if (!order || !request) {
     return
   }
+  // Zakázka, jejíž doplatek to je (zakázka = položka): název do e-mailu,
+  // vlastní podepsaný odkaz.
+  const production = await commissionFor(container, order.id, request.production_order_id)
 
   // Co už proběhlo: kolik je zaplaceno zálohou + zálohová (první) faktura. Ať
   // doplatkový e-mail ukáže „co a za co se platilo" a přiloží odkaz na fakturu.
@@ -260,12 +286,15 @@ const onBalanceRequested = async ({
       ...common(order),
       paymentAmount: formatMoney(request.amount, request.currency_code),
       paymentMethod: "Platební karta nebo převod",
-      // The link she generated, or the signed one that works from any inbox.
+      // The link she generated, or the signed one (per zakázka) that works from any inbox.
       paymentLink:
-        request.payment_url || balancePaymentUrl(order.id) || orderLink(order),
+        request.payment_url ||
+        balancePaymentUrl(order.id, request.production_order_id) ||
+        orderLink(order),
       estimatedConfirmationTime: "Platba se obvykle potvrdí do několika minut.",
-      // Obrázek objednaného produktu zakázky (ne fotka od zákazníka).
-      makingPhotoUrl: commissionProductImage(order),
+      // Název a obrázek objednaného produktu TÉTO zakázky (ne fotka od zákazníka).
+      productTitle: commissionTitleOf(order, production),
+      makingPhotoUrl: commissionProductImage(order, production),
       // Co už je zaplaceno (záloha) a první faktura — ať je jasné, co a za co.
       depositPaid:
         depositPaid > 0
@@ -299,11 +328,11 @@ const onBalancePaid = async ({
   // „Částka 3 775 Kč" neříkalo, že v ní je příplatek a že záloha už je
   // zaplacená. Fail-soft: bez rozpisu odejde e-mail s částkou jako dřív.
   let commissionPayments: ReturnType<typeof commissionPaymentsText> | null = null
+  let production: any | null = null
   try {
     const madeToOrder = container.resolve<MadeToOrderModuleService>(MADE_TO_ORDER_MODULE)
-    const [production] = (await madeToOrder.listProductionOrders({
-      order_id: order.id,
-    } as never)) as any[]
+    // Zakázka z eventu (zakázka = položka); staré eventy bez ní → první živá.
+    production = await commissionFor(container, order.id, (data as any).production_order_id)
     if (production) {
       const requests = (await madeToOrder.listProductionPaymentRequests({
         production_order_id: production.id,
@@ -327,7 +356,9 @@ const onBalancePaid = async ({
     data: {
       ...common(order),
       paymentAmount: formatMoney(data.amount, data.currency_code),
-      paymentMethod: "Doplatek",
+      paymentMethod: production
+        ? `Doplatek${commissionTitleOf(order, production) ? ` — ${commissionTitleOf(order, production)}` : ""}`
+        : "Doplatek",
       commissionPayments,
     },
   })
@@ -630,29 +661,23 @@ const onPaymentRefunded = async ({
  */
 const commissionFacts = async (
   container: SubscriberArgs["container"],
-  orderId: string,
+  production: any | null,
   currencyCode: string
 ) => {
   try {
-    const madeToOrder = container.resolve<MadeToOrderModuleService>(MADE_TO_ORDER_MODULE)
-    const [production] = (await madeToOrder.listProductionOrders({
-      order_id: orderId,
-    } as never)) as any[]
     if (!production) return null
+    const madeToOrder = container.resolve<MadeToOrderModuleService>(MADE_TO_ORDER_MODULE)
     const requests = (await madeToOrder.listProductionPaymentRequests({
       production_order_id: production.id,
     } as never)) as any[]
-    const paid = requests
-      .filter((request) => request.status === "paid")
-      .reduce((sum, request) => sum + toNumber(request.amount), 0)
-    const total =
-      toNumber(production.agreed_total ?? production.original_total) +
-      toNumber(production.surcharge)
-    const outstanding = Math.max(0, Math.round((total - paid) * 100) / 100)
+    // Peníze ZA POLOŽKU (zakázka = položka): bez dopravy/balného, které první
+    // zakázka nese za objednávku — ty zákazník uvidí v doplatku.
+    const money = commissionMoney(production, requests)
+    const total = money.item_total + money.surcharge
     return {
       totalPrice: total > 0 ? formatMoney(total, currencyCode) : null,
-      depositPaid: paid > 0 ? formatMoney(paid, currencyCode) : null,
-      balanceDue: outstanding > 0.005 ? formatMoney(outstanding, currencyCode) : null,
+      depositPaid: money.deposit_paid > 0 ? formatMoney(money.deposit_paid, currencyCode) : null,
+      balanceDue: money.item_outstanding > 0.005 ? formatMoney(money.item_outstanding, currencyCode) : null,
       estimatedCompletion: production.estimated_completion_at
         ? formatDate(production.estimated_completion_at)
         : null,
@@ -663,11 +688,8 @@ const commissionFacts = async (
 }
 
 /** Název položky zakázky (bez balného), pro řádek „Zakázka" v e-mailu. */
-const commissionTitle = (order: any): string | null => {
-  const items = ((order?.items || []) as any[]).filter((item) => !isServiceLine(item))
-  const item = items.find((i) => Boolean((i?.metadata as any)?.made_to_order)) ?? items[0]
-  return (item?.product_title as string) || (item?.title as string) || null
-}
+const commissionTitle = (order: any, production?: any | null): string | null =>
+  commissionTitleOf(order, production ?? null)
 
 /**
  * #6 „Zadání je potvrzené" — potvrzení zadání zakázky. Dřív sem šel
@@ -686,7 +708,8 @@ const onSpecificationConfirmed = async ({
   if (!order) {
     return
   }
-  const facts = await commissionFacts(container, order.id, order.currency_code)
+  const production = await commissionFor(container, order.id, data.production_order_id)
+  const facts = await commissionFacts(container, production, order.currency_code)
 
   await sendCustomerEmail(container, {
     template: "commission-confirmed",
@@ -696,8 +719,8 @@ const onSpecificationConfirmed = async ({
     data: {
       ...common(order),
       ...(facts ?? {}),
-      productTitle: commissionTitle(order),
-      productImageUrl: commissionProductImage(order),
+      productTitle: commissionTitle(order, production),
+      productImageUrl: commissionProductImage(order, production),
     },
   })
 }
@@ -735,6 +758,7 @@ const onSurchargeNotified = async ({
   if (!order) {
     return
   }
+  const production = await commissionFor(container, order.id, data.production_order_id)
   await sendCustomerEmail(container, {
     // Písemné potvrzení příplatku dohodnutého jinou cestou (telefon/e-mail) —
     // ne oznámení ceny z čista jasna. Viz `emails/surcharge-confirmed`.
@@ -746,6 +770,7 @@ const onSurchargeNotified = async ({
     orderId: order.id,
     data: {
       ...common(order),
+      productTitle: commissionTitle(order, production),
       surchargeAmount: formatMoney(data.surcharge, order.currency_code),
       newBalance: formatMoney(data.outstanding, order.currency_code),
       reason: data.reason?.trim() || undefined,
@@ -1044,6 +1069,7 @@ const onProductionCompleted = async ({
   const fullyPaid = data.fully_paid !== false
   const outstanding =
     typeof data.outstanding === "number" ? data.outstanding : 0
+  const production = await commissionFor(container, order.id, data.production_order_id)
 
   await sendCustomerEmail(container, {
     template: "commission-completed",
@@ -1057,8 +1083,9 @@ const onProductionCompleted = async ({
         !fullyPaid && outstanding > 0
           ? formatMoney(outstanding, order.currency_code)
           : null,
-      // Obrázek objednaného produktu zakázky (ne fotka od zákazníka).
-      makingPhotoUrl: commissionProductImage(order),
+      // Název a obrázek objednaného produktu TÉTO zakázky (ne fotka od zákazníka).
+      productTitle: commissionTitle(order, production),
+      makingPhotoUrl: commissionProductImage(order, production),
     },
   })
 }

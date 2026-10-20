@@ -3,6 +3,8 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { LEGAL_MANIFEST } from "./legal"
 import type { EmailAttachmentRef } from "./legal/order-legal"
 import { getLegalFacts } from "./merchant-settings"
+import { commissionLineOf } from "./made-to-order/commission-line"
+import { listCommissionsOfOrder, pickCommission } from "./made-to-order/orders-of"
 import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
 import {
@@ -46,9 +48,18 @@ export {
   type StoredConfirmation,
 } from "./potvrzeni-zakazky/store"
 
-/** Název přílohy v potvrzovacím e-mailu: `Potvrzeni-zakazky-<číslo>.pdf`. */
-export const confirmationAttachmentFilename = (displayId: unknown): string =>
-  `Potvrzeni-zakazky-${String(displayId ?? "").replace(/[^0-9A-Za-z_-]/g, "") || "objednavka"}.pdf`
+/**
+ * Název přílohy v potvrzovacím e-mailu: `Potvrzeni-zakazky-<číslo>.pdf`; u
+ * objednávky s víc zakázkami (zakázka = položka) `Potvrzeni-zakazky-<číslo>-<n>.pdf`.
+ */
+export const confirmationAttachmentFilename = (
+  displayId: unknown,
+  position?: { index: number; count: number } | null
+): string => {
+  const number = String(displayId ?? "").replace(/[^0-9A-Za-z_-]/g, "") || "objednavka"
+  const suffix = position && position.count > 1 ? `-${position.index + 1}` : ""
+  return `Potvrzeni-zakazky-${number}${suffix}.pdf`
+}
 
 const ORDER_FIELDS = [
   "id",
@@ -80,12 +91,20 @@ export type ConfirmationContext = {
   productionOrder: (ConfirmationProductionOrderLike & { id: string }) | null
   profile: ConfirmationProfileLike
   notes: ConfirmationNoteLike[]
+  /** Všechny zakázky objednávky (zakázka = položka) — pořadí určuje číslo přílohy. */
+  commissions: Array<ConfirmationProductionOrderLike & { id: string }>
 }
 
-/** Vše, co mapování potřebuje, z databáze — bez právních údajů (ty jdou zvlášť, nikdy nevyhodí). */
+/**
+ * Vše, co mapování potřebuje, z databáze — bez právních údajů (ty jdou
+ * zvlášť, nikdy nevyhodí). `productionOrderId` vybírá zakázku (od 20. 10. 2026
+ * má objednávka zakázek víc, PDF je per zakázka); bez něj jediná zakázka
+ * objednávky, u víc zakázek chyba (`commissionOfOrder`).
+ */
 export const loadConfirmationContext = async (
   container: MedusaContainer,
-  orderId: string
+  orderId: string,
+  productionOrderId?: string | null
 ): Promise<ConfirmationContext | null> => {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const madeToOrder = container.resolve<MadeToOrderModuleService>(MADE_TO_ORDER_MODULE)
@@ -98,18 +117,21 @@ export const loadConfirmationContext = async (
   const order = orders?.[0] as ConfirmationContext["order"] | undefined
   if (!order) return null
 
-  const [productionOrder] = (await madeToOrder.listProductionOrders({ order_id: orderId } as never)) as any[]
+  const commissions = (await listCommissionsOfOrder(container, orderId)) as any[]
+  const productionOrder = pickCommission(commissions, productionOrderId) as any
   if (productionOrder) {
     productionOrder.payment_requests = (await madeToOrder.listProductionPaymentRequests({
       production_order_id: productionOrder.id,
     } as never)) as any[]
   }
 
-  // Lhůta výroby: profil produktu zakázkového řádku, přebití u provedení vyhrává.
+  // Lhůta výroby: profil produktu řádku TÉTO zakázky (legacy: první zakázkový
+  // řádek objednávky), přebití u provedení vyhrává.
   let profile: ConfirmationProfileLike = null
-  const commissionItems = (order.items ?? []).filter(
-    (item) => item && (item.metadata as any)?.made_to_order
-  )
+  const ownLine = productionOrder ? commissionLineOf(order as any, productionOrder) : null
+  const commissionItems = ownLine
+    ? [ownLine]
+    : (order.items ?? []).filter((item) => item && (item.metadata as any)?.made_to_order)
   for (const item of commissionItems.length ? commissionItems : order.items ?? []) {
     if (!item?.product_id) continue
     const [productProfile] = (await madeToOrder.listProductProductionProfiles({
@@ -128,13 +150,17 @@ export const loadConfirmationContext = async (
     break
   }
 
-  const notes = (await madeToOrder
+  // Diář zákazníka: zápisy TÉTO zakázky + staré zápisy bez zakázky (patří všem).
+  const notes = ((await madeToOrder
     .listProductionNotes({ order_id: orderId, created_by: "customer" } as never, {
       order: { created_at: "ASC" },
     } as never)
-    .catch(() => [])) as ConfirmationNoteLike[]
+    .catch(() => [])) as Array<ConfirmationNoteLike & { production_order_id?: string | null }>).filter(
+    (note) =>
+      !productionOrder || !note.production_order_id || note.production_order_id === productionOrder.id
+  )
 
-  return { order, productionOrder: productionOrder ?? null, profile, notes }
+  return { order, productionOrder: productionOrder ?? null, profile, notes, commissions }
 }
 
 /** Hostitelé, odkud se fotky zadání smí stáhnout — naše úložiště a web (z prostředí). */
@@ -181,6 +207,7 @@ export const fetchConfirmationImage: ImageFetcher = async (url) => {
 }
 
 export type CommissionConfirmationResult = StoredConfirmation & {
+  production_order_id: string
   attachment: EmailAttachmentRef
   fields: CommissionConfirmationInput
   warnings: string[]
@@ -196,12 +223,12 @@ export type CommissionConfirmationResult = StoredConfirmation & {
 export const buildCommissionConfirmation = async (
   container: MedusaContainer,
   orderId: string,
-  options: { fetchImage?: ImageFetcher } = {}
+  options: { fetchImage?: ImageFetcher; productionOrderId?: string | null } = {}
 ): Promise<CommissionConfirmationResult> => {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const madeToOrder = container.resolve<MadeToOrderModuleService>(MADE_TO_ORDER_MODULE)
 
-  const context = await loadConfirmationContext(container, orderId)
+  const context = await loadConfirmationContext(container, orderId, options.productionOrderId)
   if (!context) throw new Error(`Objednávka ${orderId} neexistuje.`)
   if (!context.productionOrder) throw new Error(`Objednávka ${orderId} nemá produkční objednávku (zakázku).`)
 
@@ -222,11 +249,25 @@ export const buildCommissionConfirmation = async (
     fetchImage: options.fetchImage ?? fetchConfirmationImage,
   })
   const previous = context.productionOrder as any
-  const stored = await storeCommissionConfirmation(container, orderId, bytes, {
-    key: previous.confirmation_pdf_key,
-    url: previous.confirmation_pdf_url,
-    sha256: previous.confirmation_pdf_sha256,
-  })
+  // Klíč per zakázka (řádek objednávky); legacy zakázka bez řádku = klíč bez přípony, jak byl uložený.
+  const stored = await storeCommissionConfirmation(
+    container,
+    orderId,
+    bytes,
+    {
+      key: previous.confirmation_pdf_key,
+      url: previous.confirmation_pdf_url,
+      sha256: previous.confirmation_pdf_sha256,
+    },
+    previous.line_item_id ?? null
+  )
+  const position = {
+    index: Math.max(
+      0,
+      context.commissions.findIndex((commission) => commission.id === context.productionOrder?.id)
+    ),
+    count: context.commissions.length,
+  }
 
   const changed =
     stored.key !== previous.confirmation_pdf_key ||
@@ -248,10 +289,46 @@ export const buildCommissionConfirmation = async (
 
   return {
     ...stored,
-    attachment: { filename: confirmationAttachmentFilename(context.order.display_id), url: stored.url },
+    production_order_id: context.productionOrder.id,
+    attachment: {
+      filename: confirmationAttachmentFilename(context.order.display_id, position),
+      url: stored.url,
+    },
     fields,
     warnings,
   }
+}
+
+/**
+ * Potvrzení pro KAŽDOU zakázku objednávky (zakázka = položka, LEGAL_AUDIT § 0c).
+ * Jedna zakázka, které se PDF nepovede, nezastaví ostatní — vrací se, co
+ * vzniklo, a chyby zvlášť (volající je zaloguje a potvrzení objednávky pošle
+ * s tím, co je).
+ */
+export const buildOrderCommissionConfirmations = async (
+  container: MedusaContainer,
+  orderId: string,
+  options: { fetchImage?: ImageFetcher } = {}
+): Promise<{
+  results: CommissionConfirmationResult[]
+  failures: Array<{ production_order_id: string; error: unknown }>
+}> => {
+  const commissions = await listCommissionsOfOrder(container, orderId)
+  const results: CommissionConfirmationResult[] = []
+  const failures: Array<{ production_order_id: string; error: unknown }> = []
+  for (const commission of commissions) {
+    try {
+      results.push(
+        await buildCommissionConfirmation(container, orderId, {
+          ...options,
+          productionOrderId: commission.id,
+        })
+      )
+    } catch (error) {
+      failures.push({ production_order_id: commission.id, error })
+    }
+  }
+  return { results, failures }
 }
 
 /**
@@ -260,5 +337,7 @@ export const buildCommissionConfirmation = async (
  */
 export const regenerateCommissionConfirmation = (
   container: MedusaContainer,
-  orderId: string
-): Promise<CommissionConfirmationResult> => buildCommissionConfirmation(container, orderId)
+  orderId: string,
+  productionOrderId?: string | null
+): Promise<CommissionConfirmationResult> =>
+  buildCommissionConfirmation(container, orderId, { productionOrderId })

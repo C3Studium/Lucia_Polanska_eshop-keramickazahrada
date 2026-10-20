@@ -26,9 +26,13 @@ import { CLAIM_CHANNEL_ONLINE, COMMISSION_CANCEL_KIND } from "../claims/constant
 import { loadClaimDetailOrder } from "../claims/detail"
 import { realCustomerName } from "../claims/intake"
 import { goodsShipped, loadOrderRequests } from "../claims/money"
-import { commissionPaidRemaining, loadClaimProduction } from "../claims/production"
+import {
+  commissionPaidRemaining,
+  loadClaimProduction,
+  requireSingleCommission,
+} from "../claims/production"
 import { refundClaim } from "../claims/refund-action"
-import { MONEY_EPSILON, round2 } from "../claims/refund-rules"
+import { MONEY_EPSILON, round2, toNumber } from "../claims/refund-rules"
 import { formatPragueDateTime } from "../claims/withdrawal"
 import { MADE_TO_ORDER_MODULE } from "../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../modules/made-to-order/service"
@@ -37,6 +41,8 @@ import {
   cancellationPlan,
   type CancellationPlan,
 } from "./cancellation"
+import { commissionLineOf, commissionTitleOf } from "./commission-line"
+import { commissionMoney } from "./commission-money"
 
 /**
  * Zrušení zakázky ZÁKAZNÍKEM (LEGAL_AUDIT.md § 0, Z4/Z5) a kvůli NEZAPLACENÉMU
@@ -78,6 +84,11 @@ export type CustomerCancelTrigger = "customer" | "unpaid_balance"
 
 export type CustomerCancelInput = {
   orderId: string
+  /**
+   * Která zakázka objednávky se ruší (od 20. 10. 2026 má objednávka zakázek
+   * víc — § 0c). Bez ní projde jen objednávka s jedinou zakázkou.
+   */
+  productionOrderId?: string | null
   /** Důvod od zákazníka (nepovinný). */
   reason?: string | null
   trigger?: CustomerCancelTrigger
@@ -85,6 +96,9 @@ export type CustomerCancelInput = {
 
 export type CustomerCancelResult = {
   cancelled: true
+  production_order_id: string
+  /** Název položky zakázky — storefront ho ukáže v potvrzení zrušení. */
+  title: string | null
   phase: CancellationPlan["phase"]
   paid_total: number
   refund_amount: number
@@ -111,21 +125,39 @@ export const COMMISSION_CANCEL_REASON_CUSTOMER =
 export const COMMISSION_CANCEL_REASON_UNPAID =
   "Doplatek nezaplacen do 30 dnů od výzvy ani po připomenutí — zakázka zrušena podle obchodních podmínek (čl. Výroba na zakázku, zrušení po zahájení výroby)."
 
-/** Název položky zakázky (bez balného) — do e-mailu a upozornění. */
-const commissionTitle = (order: any): string | null => {
-  const items = ((order?.items || []) as any[]).filter((item) => !isServiceLine(item))
-  const item = items.find((i) => Boolean((i?.metadata as any)?.made_to_order)) ?? items[0]
-  return (item?.product_title as string) || (item?.title as string) || null
-}
+/**
+ * Běží už u objednávky žádost o zrušení TÉTO zakázky (ne zamítnutá /
+ * stornovaná)? Žádost nese řádek zakázky v `line_items` (zakázka = položka);
+ * stará žádost bez řádků platí pro celou objednávku (legacy).
+ */
+export const openCommissionCancelRequest = (
+  requests: any[],
+  lineItemId?: string | null
+): any | null =>
+  (requests ?? []).find((request) => {
+    if (request?.kind !== COMMISSION_CANCEL_KIND) return false
+    if (request?.status === "rejected" || request?.status === "cancelled") return false
+    const lines = Array.isArray(request?.line_items) ? (request.line_items as any[]) : []
+    if (!lines.length || !lineItemId) return true
+    return lines.some((line) => line?.line_item_id === lineItemId)
+  }) ?? null
 
-/** Běží už u objednávky žádost o zrušení zakázky (ne zamítnutá / stornovaná)? */
-export const openCommissionCancelRequest = (requests: any[]): any | null =>
-  (requests ?? []).find(
-    (request) =>
-      request?.kind === COMMISSION_CANCEL_KIND &&
-      request?.status !== "rejected" &&
-      request?.status !== "cancelled"
-  ) ?? null
+/**
+ * ČISTÉ: co se zákazníkovi vrací ZA TUTO zakázku. Zakázka nesoucí za objednávku
+ * dopravu/balné/běžné zboží (`lib/made-to-order/commission-money`) to vrací
+ * jen tehdy, když po zrušení v objednávce nic jiného nezbývá — jinak doprava
+ * patří zbylým položkám a běžné zboží se doručí.
+ */
+export const commissionRefundablePaid = (input: {
+  paidRemaining: number
+  extrasTotal: number
+  extrasOutstanding: number
+  lastItemInOrder: boolean
+}): number => {
+  if (input.lastItemInOrder) return Math.max(0, round2(input.paidRemaining))
+  const extrasPaid = Math.max(0, round2(input.extrasTotal - input.extrasOutstanding))
+  return Math.max(0, round2(input.paidRemaining - extrasPaid))
+}
 
 export const cancelCommissionByCustomer = async (
   container: MedusaContainer,
@@ -138,13 +170,15 @@ export const cancelCommissionByCustomer = async (
   const now = new Date()
 
   // 1) kontroly ------------------------------------------------------------------
-  const production = await loadClaimProduction(container, input.orderId)
-  if (!production) {
+  const loaded = await loadClaimProduction(container, input.orderId, input.productionOrderId)
+  if (!loaded) {
     throw new MedusaError(
       MedusaError.Types.NOT_FOUND,
       "K této objednávce není zakázková výroba — není co rušit."
     )
   }
+  // Ruší se JEDNA zakázka (položka) — u víc zakázek musí volající říct která.
+  const production = requireSingleCommission(loaded, "zrušení zakázky")
   const order = await loadClaimDetailOrder(container, input.orderId)
   if (!order) {
     throw new MedusaError(MedusaError.Types.NOT_FOUND, "Objednávka nebyla nalezena.")
@@ -162,8 +196,9 @@ export const cancelCommissionByCustomer = async (
       eligibility.blocked_reason ?? "Zakázku teď zrušit nejde."
     )
   }
+  const lineItemId: string | null = production.productionOrder.line_item_id ?? null
   const existing = await loadOrderRequests(container, order.id)
-  if (openCommissionCancelRequest(existing)) {
+  if (openCommissionCancelRequest(existing, lineItemId)) {
     throw new MedusaError(
       MedusaError.Types.CONFLICT,
       "Žádost o zrušení zakázky už evidujeme — ozveme se vám, jakmile bude vyřízená."
@@ -173,7 +208,23 @@ export const cancelCommissionByCustomer = async (
   // 2) plán Z4/Z5 ----------------------------------------------------------------
   const currency = String(order.currency_code ?? production.productionOrder.currency_code ?? "czk")
   const fmt = (value: number) => formatMoney(value, currency)
-  const paidTotal = commissionPaidRemaining(production.block)
+  /*
+   * Zaplaceno ZA TUTO zakázku: zakázka nesoucí dopravu/balné/běžné zboží za
+   * objednávku je vrací jen jako poslední položka objednávky — jinak doprava
+   * patří zbylým položkám a běžné zboží se doručí (§ 0c).
+   */
+  const ownLine = commissionLineOf(order, production.productionOrder)
+  const goods = ((order.items ?? []) as any[]).filter((item) => item && !isServiceLine(item))
+  const otherGoods = lineItemId
+    ? goods.filter((item) => item.id !== lineItemId)
+    : goods.filter((item) => !(item.metadata as any)?.made_to_order)
+  const money = commissionMoney(production.productionOrder, production.paymentRequests)
+  const paidTotal = commissionRefundablePaid({
+    paidRemaining: commissionPaidRemaining(production.block),
+    extrasTotal: money.extras_total,
+    extrasOutstanding: money.extras_outstanding,
+    lastItemInOrder: otherGoods.length === 0,
+  })
   const plan = cancellationPlan({
     productionStartNotifiedAt: production.block.production_start_notified_at,
     paidTotal,
@@ -206,6 +257,21 @@ export const cancelCommissionByCustomer = async (
     email: order.email ?? "",
     customer_name: realCustomerName(order) ?? undefined,
     kind: COMMISSION_CANCEL_KIND,
+    // Řádek zakázky = vazba žádosti na JEDNU zakázku objednávky (§ 0c); podle
+    // něj „Zrušit zakázku" i vrácení zálohy poznají, které zakázky se žádost týká.
+    line_items: lineItemId
+      ? [
+          {
+            line_item_id: lineItemId,
+            title: commissionTitleOf(order, production.productionOrder),
+            variant_title: ownLine?.variant_title ?? null,
+            thumbnail: ownLine?.thumbnail ?? null,
+            quantity: toNumber(production.productionOrder.line_quantity) || 1,
+            total: money.item_total,
+            currency_code: currency,
+          },
+        ]
+      : null,
     // Vrácení do 14 dnů (Z4/Z5) — lhůta, kterou hlídá job vrácení.
     resolve_by: new Date(now.getTime() + 14 * DAY_MS),
     submitted_at: now,
@@ -294,6 +360,7 @@ export const cancelCommissionByCustomer = async (
     container,
     request.id,
     {
+      production_order_id: production.productionOrder.id,
       keep_deposit: plan.deposit_kept > MONEY_EPSILON,
       note: phaseNote,
       cancellation: {
@@ -328,7 +395,7 @@ export const cancelCommissionByCustomer = async (
   }
 
   // 8) e-maily --------------------------------------------------------------------
-  const title = commissionTitle(order)
+  const title = commissionTitleOf(order, production.productionOrder)
   const emailSent = await sendCustomerEmail(container, {
     template: "commission-cancelled",
     to: order.email,
@@ -392,6 +459,8 @@ export const cancelCommissionByCustomer = async (
 
   return {
     cancelled: true,
+    production_order_id: production.productionOrder.id,
+    title,
     phase: plan.phase,
     paid_total: paidTotal,
     refund_amount: plan.refund_amount,

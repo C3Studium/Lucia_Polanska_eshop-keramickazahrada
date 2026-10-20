@@ -13,9 +13,9 @@ import {
   sendCustomerEmail,
 } from "../customer-email"
 import { formatPragueDateTime } from "../claims/withdrawal"
-import { isServiceLine } from "../packaging-lines"
 import { MADE_TO_ORDER_MODULE } from "../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../modules/made-to-order/service"
+import { commissionImageOf, commissionLineOf, commissionTitleOf } from "./commission-line"
 import { contractDepositAmountOf } from "./contract-deposit"
 
 /**
@@ -68,31 +68,26 @@ const ORDER_FIELDS = [
   "payment_collections.metadata",
 ]
 
-/** Název položky zakázky (bez balného) — řádek „Výrobek" v e-mailu. */
-const commissionTitle = (order: any): string | null => {
-  const items = ((order?.items || []) as any[]).filter((item) => !isServiceLine(item))
-  const item = items.find((i) => Boolean((i?.metadata as any)?.made_to_order)) ?? items[0]
-  return (item?.product_title as string) || (item?.title as string) || null
-}
-
-/** Obrázek objednaného produktu zakázky (ne fotka od zákazníka). */
-const commissionProductImage = (order: any): string | null => {
-  const items = ((order?.items || []) as any[]).filter((item) => !isServiceLine(item))
-  const item = items.find((i) => Boolean((i?.metadata as any)?.made_to_order)) ?? items[0]
-  return (item?.thumbnail as string) || null
-}
-
 /**
- * `production_time_max_days` prvního zakázkového řádku ze snímku pokladny
+ * `production_time_max_days` zakázkového řádku ze snímku pokladny
  * (`production_lines[]` v metadatech kolekce) — lhůta Z9 běží od zahájení.
+ * Řádek TÉTO zakázky podle varianty její položky (zakázka = položka, § 0c);
+ * legacy zakázka / nenalezeno → první řádek, jak dřív.
  */
-export const productionMaxDaysOf = (order: any): number | null => {
+export const productionMaxDaysOf = (
+  order: any,
+  productionOrder?: { line_item_id?: string | null; line_title?: string | null } | null
+): number | null => {
   const collection = ((order?.payment_collections ?? []) as any[]).find(
     (candidate) => candidate?.metadata?.made_to_order
   )
   const lines = collection?.metadata?.production_lines
   if (!Array.isArray(lines) || !lines.length) return null
-  const days = Number(lines[0]?.production_time_max_days)
+  const item = productionOrder?.line_item_id ? commissionLineOf(order, productionOrder) : null
+  const own = item?.variant_id
+    ? lines.find((line: any) => line?.variant_id === item.variant_id)
+    : null
+  const days = Number((own ?? lines[0])?.production_time_max_days)
   return Number.isFinite(days) && days > 0 ? Math.round(days) : null
 }
 
@@ -192,15 +187,16 @@ export const startProduction = async (
         customerName: customerName(order),
         orderNumber: orderNumber(order),
         orderLink: orderLink(order),
-        productTitle: commissionTitle(order),
-        productImageUrl: commissionProductImage(order),
+        // Název a obrázek TÉTO položky (zakázka = položka, § 0c).
+        productTitle: commissionTitleOf(order, productionOrder),
+        productImageUrl: commissionImageOf(order, productionOrder),
         // Pražský čas — okamžik, od kterého platí Z5.
         startedAtText: formatPragueDateTime(now),
         depositAmount: formatMoney(depositAmount, currency),
         depositPercentage: depositPercentage !== null ? String(depositPercentage) : null,
         estimatedCompletion: estimatedCompletionText(
           productionOrder,
-          productionMaxDaysOf(order),
+          productionMaxDaysOf(order, productionOrder),
           startedAt
         ),
       },

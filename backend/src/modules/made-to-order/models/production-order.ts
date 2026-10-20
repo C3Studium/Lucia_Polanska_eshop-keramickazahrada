@@ -3,7 +3,34 @@ import { ProductionPaymentRequest } from "./production-payment-request"
 
 export const ProductionOrder = model.define("production_order", {
   id: model.id().primaryKey(),
-  order_id: model.text().unique(),
+  /**
+   * Objednávka, ke které zakázka patří. Od 20. 10. 2026 (LEGAL_AUDIT § 0c,
+   * Z-A) NE unique: každý zakázkový řádek objednávky je vlastní zakázka.
+   * Unikát je `(order_id, line_item_id)` — v migraci, model ho neumí.
+   */
+  order_id: model.text().index(),
+  /**
+   * Řádek objednávky (`order_line_item.id`), který tato zakázka vyrábí.
+   * NULL = zakázka z doby před 20. 10. 2026 = celá objednávka (legacy):
+   * všechny helpery se u ní chovají jako dřív.
+   */
+  line_item_id: model.text().index().nullable(),
+  /** Název položky v okamžiku objednání (řádek se může úpravou odebrat, zakázka musí zůstat čitelná). */
+  line_title: model.text().nullable(),
+  line_quantity: model.bigNumber().nullable(),
+  /**
+   * Cena zakázkového řádku po slevě (= to, co zákazník za TUTO položku platí).
+   * `original_total` zakázky, která za objednávku NESE dopravu, balné a běžné
+   * zboží (první zakázka objednávky), je o ně vyšší; u ostatních se rovná.
+   * NULL u legacy řádků — tam je cena položky = `original_total`.
+   */
+  line_total: model.bigNumber().nullable(),
+  /**
+   * Kolik z „navíc" nad položku (běžné zboží, poštovné zaplacené v pokladně)
+   * nese záloha této zakázky — jen u zakázky nesoucí objednávku, jinak null/0.
+   * `deposit_paid − order_extras_paid` = záloha zaplacená za samotnou položku.
+   */
+  order_extras_paid: model.bigNumber().nullable(),
   stage: model
     .enum([
       "specification_pending",

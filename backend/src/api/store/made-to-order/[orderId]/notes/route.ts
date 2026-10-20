@@ -4,6 +4,11 @@ import { z } from "@medusajs/framework/zod"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
 import { notifyMerchant } from "../../../../../lib/notify"
+import {
+  commissionIdFromRequest,
+  listCommissionsOfOrder,
+  pickCommission,
+} from "../../../../../lib/made-to-order/orders-of"
 
 /**
  * The customer's half of a zakázka's diary.
@@ -21,6 +26,10 @@ import { notifyMerchant } from "../../../../../lib/notify"
  * A commission is a conversation, and this is where the customer speaks: what
  * they want, and pictures of it. They can keep adding after ordering, because
  * the thing they meant often only becomes sayable once they see it starting.
+ *
+ * Od 20. 10. 2026 (LEGAL_AUDIT.md § 0c) je diář PER ZAKÁZKA: `production_order_id`
+ * v query (GET) / těle (POST); bez něj projde jen objednávka s jedinou
+ * zakázkou. Staré zápisy bez zakázky patří ke všem zakázkám objednávky.
  */
 
 const CUSTOMER_AUTHOR = "customer"
@@ -29,6 +38,7 @@ const PostNoteSchema = z
   .object({
     text: z.string().max(2000).optional(),
     image_urls: z.array(z.string().url()).max(6).optional(),
+    production_order_id: z.string().optional().nullable(),
   })
   .refine(
     (body) => (body.text ?? "").trim() || (body.image_urls ?? []).length,
@@ -38,53 +48,59 @@ const PostNoteSchema = z
 const requireZakazka = async (
   req: MedusaRequest,
   orderId: string
-): Promise<MadeToOrderModuleService> => {
+): Promise<{ service: MadeToOrderModuleService; commission: any }> => {
   const service = req.scope.resolve<MadeToOrderModuleService>(
     MADE_TO_ORDER_MODULE
   )
+  const commissions = await listCommissionsOfOrder(req.scope, orderId)
+  const commission = pickCommission(commissions, commissionIdFromRequest(req))
 
-  const [productionOrder] = (await service.listProductionOrders({
-    order_id: orderId,
-  } as never)) as any[]
-
-  if (!productionOrder) {
+  if (!commission) {
     throw new MedusaError(
       MedusaError.Types.NOT_FOUND,
       "K této objednávce není vedena zakázka."
     )
   }
 
-  return service
+  return { service, commission }
+}
+
+/** Zápisy této zakázky + staré zápisy bez zakázky (patří všem), jen co zákazník smí vidět. */
+const customerNotesOf = async (
+  service: MadeToOrderModuleService,
+  orderId: string,
+  productionOrderId: string
+) => {
+  const notes = (await service.listProductionNotes(
+    { order_id: orderId } as never,
+    { order: { created_at: "DESC" }, take: 200 } as never
+  )) as any[]
+  return notes
+    .filter((note) => !note.production_order_id || note.production_order_id === productionOrderId)
+    // Hers is a working notebook; only what she opened up travels.
+    .filter((note) => note.created_by === CUSTOMER_AUTHOR || note.visible_to_customer)
+    .map((note) => ({
+      id: note.id,
+      production_order_id: note.production_order_id ?? null,
+      text: note.text,
+      // Jeden řádek = jedna zpráva se svými fotkami. `images` je nové pole;
+      // staré řádky (jedna fotka na řádek) spadnou na `image_url`.
+      images: Array.isArray(note.images)
+        ? note.images
+        : note.image_url
+          ? [note.image_url]
+          : [],
+      author: note.created_by === CUSTOMER_AUTHOR ? "customer" : "atelier",
+      created_at: note.created_at,
+    }))
 }
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const service = await requireZakazka(req, req.params.orderId)
-
-  const notes = (await service.listProductionNotes(
-    { order_id: req.params.orderId } as never,
-    { order: { created_at: "DESC" }, take: 200 } as never
-  )) as any[]
+  const { service, commission } = await requireZakazka(req, req.params.orderId)
 
   res.status(200).json({
-    notes: notes
-      // Hers is a working notebook; only what she opened up travels.
-      .filter(
-        (note) =>
-          note.created_by === CUSTOMER_AUTHOR || note.visible_to_customer
-      )
-      .map((note) => ({
-        id: note.id,
-        text: note.text,
-        // Jeden řádek = jedna zpráva se svými fotkami. `images` je nové pole;
-        // staré řádky (jedna fotka na řádek) spadnou na `image_url`.
-        images: Array.isArray(note.images)
-          ? note.images
-          : note.image_url
-            ? [note.image_url]
-            : [],
-        author: note.created_by === CUSTOMER_AUTHOR ? "customer" : "atelier",
-        created_at: note.created_at,
-      })),
+    production_order_id: commission.id,
+    notes: await customerNotesOf(service, req.params.orderId, commission.id),
   })
 }
 
@@ -97,7 +113,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     )
   }
 
-  const service = await requireZakazka(req, req.params.orderId)
+  const { service, commission } = await requireZakazka(req, req.params.orderId)
   const { text, image_urls = [] } = parsed.data
   const trimmed = (text ?? "").trim()
 
@@ -109,6 +125,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
    */
   const created = (await service.createProductionNotes({
     order_id: req.params.orderId,
+    production_order_id: commission.id,
     text: trimmed || null,
     images: image_urls.length > 0 ? image_urls : null,
     image_url: image_urls[0] ?? null,
@@ -133,9 +150,12 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     const preview = trimmed
       ? trimmed.slice(0, 180)
       : `${image_urls.length} ${image_urls.length === 1 ? "fotka" : "fotky"}`
+    const title = typeof commission.line_title === "string" && commission.line_title.trim()
+      ? ` (${commission.line_title.trim()})`
+      : ""
     await notifyMerchant(req.scope, {
       key: `mn:cust-msg:${createdList[0]?.id ?? req.params.orderId}`,
-      title: `Nová zpráva od zákazníka k zakázce #${displayId ?? "?"}`,
+      title: `Nová zpráva od zákazníka k zakázce #${displayId ?? "?"}${title}`,
       description: preview,
       audience: "owner",
       email: true,
@@ -145,29 +165,8 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     // Upozornění je doplněk — bez něj zápis platí dál.
   }
 
-  const notes = (await service.listProductionNotes(
-    { order_id: req.params.orderId } as never,
-    { order: { created_at: "DESC" }, take: 200 } as never
-  )) as any[]
-
   res.status(201).json({
-    notes: notes
-      .filter(
-        (note) =>
-          note.created_by === CUSTOMER_AUTHOR || note.visible_to_customer
-      )
-      .map((note) => ({
-        id: note.id,
-        text: note.text,
-        // Jeden řádek = jedna zpráva se svými fotkami. `images` je nové pole;
-        // staré řádky (jedna fotka na řádek) spadnou na `image_url`.
-        images: Array.isArray(note.images)
-          ? note.images
-          : note.image_url
-            ? [note.image_url]
-            : [],
-        author: note.created_by === CUSTOMER_AUTHOR ? "customer" : "atelier",
-        created_at: note.created_at,
-      })),
+    production_order_id: commission.id,
+    notes: await customerNotesOf(service, req.params.orderId, commission.id),
   })
 }
