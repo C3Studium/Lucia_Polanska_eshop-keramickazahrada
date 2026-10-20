@@ -21,20 +21,19 @@ Chybějící údaje (administrace → Právní údaje), bez kterých se OP/Odsto
 | Klíč | Otázka níže | Stav |
 | --- | --- | --- |
 | `bank.account` | #1 | **vyplněno 20. 10.** — 2500675505/2010 (CZK) a 2701281289/2010 (EUR), Fio; zdroj: iDoklad Lucie (Matěj) |
-| `vat.status` | #2 | chybí |
-| datum účinnosti (verze `2026-10-15` → den spuštění) | #3 | chybí — přejmenování verze jde až s ním |
-| `mto.deposit` | #4 | chybí |
-| `course.cancellation` | #7 | chybí |
+| `vat.status` | #2 | **vyplněno 20. 10.** „nejsme plátci DPH“ (Matěj) |
+| datum účinnosti (verze `2026-10-15` → den spuštění) | #3 | **rozhodnuto: 23. 10. 2026** (den předání, Matěj) — verze se přejmenuje v den vydání, dřív ne (budoucí verze by web vrátil k OP 2015) |
+| `mto.deposit` | #4 | **vyplněno 20. 10.** „25 %“ (max 50 %; Lucie může u produktu změnit) |
+| `course.cancellation` | #7 | **vyplněno 20. 10.**: zrušení nejpozději 24 h před začátkem = 100 % zpět, později individuálně telefonicky; v kódu `COURSE_SELF_SERVICE_CUTOFF_HOURS` 48 → 24 |
 | `course.minAge` | #8 | chybí |
 | `course.pickupDeadline` | #9 | chybí |
-| `voucher.validity` | #10 | chybí (popis produktu poukazu sám uvádí 1 rok — potvrdit) |
+| `voucher.validity` | #10 | **vyplněno 20. 10.** „1 rok od nákupu“ |
 | `voucher.remainder` | #11 | chybí |
 | `withdrawal.returnCostEstimate` | #17 | chybí |
-| `privacy.newsletterTool` | #14 | chybí (pravděpodobně Resend — potvrdit) |
+| `privacy.newsletterTool` | #14 | **vyplněno 20. 10.** Resend; newsletter zatím nevychází, přihlášení jen uloží adresu |
 | `privacy.hosting` | #15 | **vyplněno** (výchozí hodnota v kódu, ověřeno 16. 10.) |
 
-Rozhodnutí, která blokují úpravy produktů: které výrobky jsou na zakázku (#5), Domovní znamení
-(#6), „- SLEVA“ (#25). Doména PDF (#3b) — pokud se má měnit, před vydáním. Dotazy jsou
+Rozhodnutí 20. 10. (Matěj): profily výroby u produktů si nastaví Lucie sama (#5); lhůta výroby 21–49 dnů (nastaveno u profilu, výchozí pro nové); „- SLEVA“ odstraněno z názvů 3 tlačítek (#25 vyřešeno); balíček se vrací jen vcelku, reklamace jen vadného kusu (OP čl. VI); zboží na objednávku „výroba obvykle 3–10 dní“; platba na místě hotově nebo převodem (QR), terminál není; Zásilkovna se nepoužívá (ze soupisu cookies odstraněna); GA ne; zamítnuté recenze se archivují, negativní se zveřejňují; zahraniční služby platí zatím Matěj, po předání Lucie (účetní posoudí § 6h); advokát není — projít spolu podle ADVOKAT.md. **Zbývá od Lucie:** #8 min. věk, #9 vyzvednutí z kurzu, #11 zůstatek poukazu, #12 uplatnění poukazu, #17 odhad nákladů vrácení, #6 Domovní znamení, N1 certifikáty, N3 napětí tlačítek + elektro, #16 účetní, N5 úřad RŽP. Doména PDF (#3b) — pokud se má měnit, před vydáním. Dotazy jsou
 v e-mailu pro Lucii (artefakt „Spuštění do středy“, 20. 10.).
 
 ## Údaje o prodávající

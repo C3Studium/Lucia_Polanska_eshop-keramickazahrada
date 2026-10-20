@@ -22,7 +22,7 @@ export const consentCategories: readonly CategoryCopy[] = [
     key: null,
     title: "Nezbytné",
     description:
-      "Košík, přihlášení do účtu, průchod objednávkou a uložení této volby. Patří sem i mapa výdejních míst Zásilkovny a Balíkovny, když si vybíráte doručení, a platební brána ComGate při placení — ty si mohou na svých stránkách uložit vlastní cookies. Bez toho objednávku nedokončíte, proto to nejde vypnout.",
+      "Košík, přihlášení do účtu, průchod objednávkou a uložení této volby. Patří sem i mapa výdejních míst Balíkovny, když si vybíráte doručení, a platební brána ComGate při placení — ty si mohou na svých stránkách uložit vlastní cookies. Bez toho objednávku nedokončíte, proto to nejde vypnout.",
   },
   {
     key: "preferences",

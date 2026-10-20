@@ -482,6 +482,85 @@
     font-size: 0.9rem;
   }
 
+  /*
+   * Cenový žebříček (krok 1 nad kalendářem, krok 2 u počtu osob).
+   *
+   * Tři hladiny vedle sebe, na telefonu pod sebou — na úzkém displeji je
+   * čitelnější sloupec než tři zmáčknuté kartičky. Zvýrazněná je ta, ve
+   * které zákazník právě je; rozdíl nese rámeček a tučnost, ne jen barva,
+   * takže ho pozná i ten, kdo olivovou od inkoustu nerozezná.
+   */
+  &__ladder {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(.375rem, .8vh, .5rem);
+
+    ul {
+      display: grid;
+      /* Pod sebou na úzkém; vedle sebe, jakmile je na tři sloupce místo. */
+      grid-template-columns: 1fr;
+      gap: .375rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+
+      @include from-px(420) {
+        grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+      }
+    }
+
+    li {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: .25rem .5rem;
+      padding: .5rem .625rem;
+      border: 1px solid rgb(var(--ink-05-rgb) / .16);
+      border-radius: .5rem;
+      background: rgb(var(--cream-10-rgb) / .5);
+
+      @include from-px(420) {
+        flex-direction: column;
+        gap: .125rem;
+      }
+    }
+
+    li.is-active {
+      border-color: var(--kurzy-olive-text);
+      background: rgb(var(--cream-10-rgb) / .9);
+      box-shadow: inset 0 0 0 1px var(--kurzy-olive-text);
+    }
+
+    li > span {
+      color: rgb(var(--ink-05-rgb) / .7);
+      font-size: 0.8125rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    li > strong {
+      font-size: 1.125rem;
+      font-weight: 400;
+    }
+
+    li.is-active > strong {
+      font-weight: 600;
+    }
+
+    li > em {
+      color: rgb(var(--ink-05-rgb) / .6);
+      font-size: 0.8125rem;
+      font-style: normal;
+    }
+  }
+
+  &__ladderNote {
+    margin: 0;
+    color: rgb(var(--ink-05-rgb) / .7);
+    font-size: 0.875rem;
+    font-weight: 300;
+  }
+
   &__termSeats {
     color: var(--kurzy-olive-text);
     font-size: 0.8125rem;

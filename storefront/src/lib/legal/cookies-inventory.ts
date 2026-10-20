@@ -116,18 +116,8 @@ export const COOKIE_INVENTORY: CookieEntry[] = [
   },
 
   // ── Nezbytné — třetí strany (bez nich nejde vybrat doručení ani zaplatit) ─
-  {
-    name: "cookies Zásilkovny (widget.packeta.com)",
-    storage: "cookie",
-    category: "necessary",
-    purpose:
-      "Mapa výdejních míst Zásilkovny, ze které si v pokladně vybíráte, kam vám zásilku pošleme.",
-    provider: "Zásilkovna s.r.o. (Packeta)",
-    duration: "určuje Zásilkovna",
-    thirdParty: true,
-    note:
-      "Načte se jen v pokladně, když zvolíte doručení Zásilkovnou. Okno výběru patří Zásilkovně a může si ukládat vlastní cookies.",
-  },
+  // Zásilkovna: pokladna ji umí, ale není zapnutá a zapínat se nebude (Matěj 20. 10. 2026) —
+  // její widget se nenačítá, v soupisu proto není.
   {
     name: "cookies České pošty (b2c.cpost.cz)",
     storage: "cookie",

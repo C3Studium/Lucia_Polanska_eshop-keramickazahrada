@@ -41,8 +41,11 @@ import {
   formatDuration,
   formatPrague,
   peopleLabel,
+  priceTiers,
   seatsLabel,
+  sharedPriceTiers,
   TIER_LABEL,
+  type PriceTier,
 } from "../format"
 import KurzyCalendar from "./Calendar"
 
@@ -882,6 +885,24 @@ function RezervaceModalPanel({
                         </p>
                       ) : (
                         <>
+                          {/* Ceny dřív stály až na kartě termínu, tedy za
+                              kliknutím na den. „Kolik to stojí" je přitom
+                              otázka, která přijde první. */}
+                          {(() => {
+                            const spolecne = sharedPriceTiers(terms)
+                            return spolecne ? (
+                              <PriceLadder
+                                tiers={spolecne}
+                                note="Čím víc vás přijde, tím méně platí každý. Cena se spočítá podle počtu osob v dalším kroku."
+                              />
+                            ) : (
+                              <p className="kurzyModal__hint">
+                                Ceny se u jednotlivých termínů liší — najdete
+                                je u každého termínu.
+                              </p>
+                            )
+                          })()}
+
                           <div
                             className="kurzyModal__viewSwitch"
                             role="group"
@@ -1233,6 +1254,14 @@ function RezervaceModalPanel({
                         </div>
                       </div>
 
+                      {/* Týž žebříček jako na kroku 1, teď ale se zvýrazněnou
+                          hladinou — u stepperu je vidět, co udělá další
+                          člověk s cenou za osobu. */}
+                      <PriceLadder
+                        tiers={priceTiers(selected)}
+                        active={quote?.tier}
+                      />
+
                       <div className="kurzyModal__price" aria-live="polite">
                         <span>Cena celkem</span>
                         <strong>
@@ -1470,6 +1499,45 @@ function RezervaceModalPanel({
         )}
       </motion.section>
     </motion.div>
+  )
+}
+
+/**
+ * Cenový žebříček — „kolik to stojí" dřív, než si někdo vybere den.
+ *
+ * Na kroku 1 stojí nad kalendářem, protože to je první otázka. Na kroku 2
+ * stojí u počtu osob, kde odpovídá na druhou: vyplatí se přibrat někoho
+ * dalšího? `active` zvýrazní hladinu, do které právě spadám, takže je ten
+ * rozdíl vidět, ne jen spočitatelný.
+ */
+function PriceLadder({
+  tiers,
+  active,
+  note,
+}: {
+  tiers: PriceTier[]
+  /** Hladina, ve které zákazník právě je — na kroku 1 žádná. */
+  active?: PriceTier["key"]
+  note?: string
+}) {
+  if (tiers.length === 0) return null
+  return (
+    <div className="kurzyModal__ladder">
+      <ul>
+        {tiers.map((tier) => (
+          <li
+            key={tier.key}
+            className={tier.key === active ? "is-active" : undefined}
+            aria-current={tier.key === active ? "true" : undefined}
+          >
+            <span>{tier.label}</span>
+            <strong>{czk(tier.perPerson)}</strong>
+            <em>za osobu</em>
+          </li>
+        ))}
+      </ul>
+      {note ? <p className="kurzyModal__ladderNote">{note}</p> : null}
+    </div>
   )
 }
 

@@ -31,8 +31,12 @@ interface CourseReservationConfirmedEmailProps {
   courseDuration?: string
   partySize?: number
   totalAmount?: string
-  /** "paid" once the card payment arrived, "on_site" for pay-at-the-door. */
-  variant?: "paid" | "on_site"
+  /**
+   * "paid" once the card payment arrived, "on_site" for pay-at-the-door,
+   * "awaiting_payment" the moment an online reservation is created — before
+   * anybody knows how the card payment went.
+   */
+  variant?: "paid" | "on_site" | "awaiting_payment"
   /** Signed link to the reservation page. */
   reservationLink?: string
   /** Our copy of the iDoklad invoice PDF — empty when not (yet) issued. */
@@ -83,6 +87,9 @@ function CourseReservationConfirmedEmailComponent({
   attachments_failed = false,
 }: CourseReservationConfirmedEmailProps) {
   const paid = variant === "paid"
+  /* Rezervace založená, platba ještě nedoputovala. Není to chyba — zákazník
+     se z brány vrátí dřív, než dorazí ověřené oznámení. */
+  const awaiting = variant === "awaiting_payment"
   // Zástupný text `[[DOPLNIT …]]` zákazník nikdy neuvidí.
   const termsReady = hasCourseCancellationTerms(cancellationTerms)
   const attached = termsAttached && !attachments_failed
@@ -92,7 +99,15 @@ function CourseReservationConfirmedEmailComponent({
       preview={`Rezervace kurzu ${courseTitle} — ${courseDate}.`}
     >
       <Eyebrow>Kurzy</Eyebrow>
-      <EmailH1 accent={paid ? "a je zaplacená." : "máte rezervované."}>
+      <EmailH1
+        accent={
+          paid
+            ? "a je zaplacená."
+            : awaiting
+              ? "pro vás držíme."
+              : "máte rezervované."
+        }
+      >
         Místo u hlíny
       </EmailH1>
 
@@ -100,7 +115,9 @@ function CourseReservationConfirmedEmailComponent({
       <P>
         {paid
           ? "děkujeme — platba dorazila a vaše místo na kurzu je závazně rezervované. Tady je vše důležité na jednom místě:"
-          : "vaše místo na kurzu je rezervované. Tady je vše důležité na jednom místě:"}
+          : awaiting
+            ? "děkujeme za rezervaci. Místo pro vás držíme; jakmile dorazí platba, pošleme vám potvrzení s dokladem. Tady je vše důležité na jednom místě:"
+            : "vaše místo na kurzu je rezervované. Tady je vše důležité na jednom místě:"}
       </P>
 
       <LedgerRow label="Kurz" value={courseTitle} />
@@ -114,7 +131,7 @@ function CourseReservationConfirmedEmailComponent({
         value={`${partySize} ${partySize === 1 ? "osoba" : partySize < 5 ? "osoby" : "osob"}`}
       />
       <LedgerRow
-        label={paid ? "Zaplaceno" : "Cena (na místě)"}
+        label={paid ? "Zaplaceno" : awaiting ? "K zaplacení" : "Cena (na místě)"}
         value={totalAmount}
         strong
         tone="olive"
@@ -133,6 +150,19 @@ function CourseReservationConfirmedEmailComponent({
           <Note>
             Kdyby vám termín nakonec nevyšel, dejte nám prosím co nejdříve
             vědět — stačí odpovědět na tento e-mail a společně to vyřešíme.
+          </Note>
+        </>
+      ) : awaiting ? (
+        <>
+          <P>
+            Pokud jste platbu kartou už dokončili, je všechno v pořádku —
+            potvrzení s dokladem vám přijde hned, jak ji banka potvrdí.
+            Obvykle to jsou minuty.
+          </P>
+          <Note>
+            Kdyby platba neprošla nebo jste ji nestihli dokončit, můžete to
+            zkusit znovu na stránce rezervace níž. Místo pro vás držíme
+            24 hodin; potom ho nabídneme dalším zájemcům.
           </Note>
         </>
       ) : (

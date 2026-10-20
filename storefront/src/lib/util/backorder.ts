@@ -22,7 +22,7 @@
  * demand — because a customer cannot tell those apart and should not have to.
  */
 export const DEFAULT_BACKORDER_NOTE =
-  "Není skladem — výroba obvykle trvá 3–7 dní."
+  "Není skladem — výroba obvykle trvá 3–10 dní."
 
 /** The merchant's own sentence, when she wrote one on the product. */
 export const backorderNote = (

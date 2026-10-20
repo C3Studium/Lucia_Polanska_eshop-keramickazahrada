@@ -325,3 +325,18 @@ do produkce jde až sloučením PR #16 (obsahuje migraci `Migration2026102012000
   dobírka, Koupit ihned, odstoupení § 1830a, reklamace, scénář `z` (PDF potvrzení, zrušení
   před/po zahájení výroby, ComGate refundace 679 Kč / 79 Kč). Běželo proti kódu před opravou
   `customer_note` (jen text zadání, pokryto unit testem).
+
+## 20. 10. 2026 večer — odpovědi Matěje (PR #16 sloučen d7938e1f, nasazuje se)
+
+- Právní údaje (admin API, 17:25): `vat.status` „nejsme plátci DPH“, `mto.deposit` „25 %“,
+  `course.cancellation` (24 h, pak telefonicky), `voucher.validity` „1 rok od nákupu“,
+  `privacy.newsletterTool` (Resend, newsletter zatím nevychází). Na webu do minuty.
+- Produkty (admin API): „- SLEVA“ odstraněno z názvů 3 zvonkových tlačítek; profil výroby
+  „Pán lesa Dub“ lhůta 21–49 dnů.
+- Kód (tento commit): storno kurzů v kódu 48 → 24 h (`COURSE_SELF_SERVICE_CUTOFF_HOURS`),
+  výchozí lhůta profilu 21–49 dnů, zboží na objednávku „3–10 dní“, OP čl. V/X platba na místě
+  hotově nebo převodem (QR), OP čl. VI balíček jen vcelku (formulář nabízí komponenty jen
+  u reklamace), čl. VII 3–10 dnů, Zásilkovna ze soupisu cookies pryč.
+- Datum účinnosti: **23. 10. 2026** — verze dokumentů se přejmenuje a vydá v ten den (dřív ne,
+  budoucí verze by web vrátil k OP 2015). Zbývá od Lucie: min. věk, vyzvednutí z kurzu,
+  zůstatek a uplatnění poukazu, odhad nákladů vrácení (bez nich OP nevydám).

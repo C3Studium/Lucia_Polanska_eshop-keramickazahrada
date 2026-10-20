@@ -10,7 +10,7 @@ import {
 import CourseModuleService from "../service"
 
 /**
- * The customer self-service rules: the 48h cutoff both routes share, the
+ * The customer self-service rules: the 24h cutoff both routes share, the
  * edit eligibility (never under a landed card payment) and the values the
  * database and the mailer key on. Pinning the reason string matters because
  * the DB check constraint enumerates it — a drifted spelling would pass
@@ -27,18 +27,18 @@ const hoursFromNow = (hours: number): string =>
 
 describe("self-service cutoff", () => {
   it("is 48 hours, and the refusal names them", () => {
-    expect(COURSE_SELF_SERVICE_CUTOFF_HOURS).toBe(48)
-    expect(COURSE_SELF_SERVICE_TOO_LATE).toContain("48 hodin")
+    expect(COURSE_SELF_SERVICE_CUTOFF_HOURS).toBe(24)
+    expect(COURSE_SELF_SERVICE_TOO_LATE).toContain("24 hodin")
   })
 
-  it("allows changes while more than 48 hours remain", () => {
-    expect(isBeforeSelfServiceCutoff(hoursFromNow(49), NOW)).toBe(true)
+  it("allows changes while more than 24 hours remain", () => {
+    expect(isBeforeSelfServiceCutoff(hoursFromNow(25), NOW)).toBe(true)
     expect(isBeforeSelfServiceCutoff(hoursFromNow(24 * 14), NOW)).toBe(true)
   })
 
-  it("refuses at and inside the 48h window — and for past terms", () => {
-    expect(isBeforeSelfServiceCutoff(hoursFromNow(48), NOW)).toBe(false)
-    expect(isBeforeSelfServiceCutoff(hoursFromNow(47.5), NOW)).toBe(false)
+  it("refuses at and inside the 24h window — and for past terms", () => {
+    expect(isBeforeSelfServiceCutoff(hoursFromNow(24), NOW)).toBe(false)
+    expect(isBeforeSelfServiceCutoff(hoursFromNow(23.5), NOW)).toBe(false)
     expect(isBeforeSelfServiceCutoff(hoursFromNow(1), NOW)).toBe(false)
     expect(isBeforeSelfServiceCutoff(hoursFromNow(-3), NOW)).toBe(false)
   })
@@ -48,9 +48,9 @@ describe("self-service cutoff", () => {
     expect(selfServiceDeadline("not-a-date")).toBeNull()
   })
 
-  it("puts the deadline exactly 48 hours before the start", () => {
+  it("puts the deadline exactly 24 hours before the start", () => {
     const deadline = selfServiceDeadline(hoursFromNow(72))
-    expect(deadline?.toISOString()).toBe(hoursFromNow(24))
+    expect(deadline?.toISOString()).toBe(hoursFromNow(48))
   })
 })
 

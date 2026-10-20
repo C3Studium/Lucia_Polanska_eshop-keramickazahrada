@@ -376,9 +376,10 @@ export default function RefundRequest({
   const selectedItems: ClaimItemInput[] = orderItems
     .filter((item) => item.id in selected && !lockedForReturn(item))
     .map((item) => {
-      // Komponenty jen když zákazník nějakou zaškrtl — jinak jde celý balíček
-      // a server se chová jako u běžné položky (§13.5).
-      const picked = bundleComponents(item)
+      // Komponenty jen u REKLAMACE a jen když zákazník nějakou zaškrtl — jinak
+      // jde celý balíček a server se chová jako u běžné položky (§13.5).
+      // Odstoupit / vrátit lze podle OP čl. VI jen celý balíček (20. 10. 2026).
+      const picked = (kind === "reklamace" ? bundleComponents(item) : [])
         .filter((component) => (components[item.id]?.[component.product_id] ?? 0) > 0)
         .map((component) => ({
           product_id: component.product_id,
@@ -638,7 +639,7 @@ export default function RefundRequest({
                   {/* §13.5: balíček se po zaškrtnutí rozepíše na komponenty —
                       zákazník označí jen ty postižené. Nic zaškrtnuté = celý
                       balíček. */}
-                  {checked && bundleComponents(item).length > 0 && (
+                  {checked && kind === "reklamace" && bundleComponents(item).length > 0 && (
                     <fieldset className={styles.components}>
                       <legend className={styles.componentsLegend}>
                         Které části balíčku? <i>(nepovinné — nic = celý balíček)</i>

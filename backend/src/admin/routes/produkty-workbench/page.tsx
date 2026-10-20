@@ -32,7 +32,21 @@ import { ProductLightbox, Thumb } from "../../components/product-thumb";
 import { ProductSortingGuide } from "../../components/product-sorting-guide";
 import { VisibilityEye } from "../../components/visibility-eye";
 import { EmptyState } from "../../components/empty-state";
+import {
+  BulkAction,
+  BulkBar,
+  BulkNumber,
+  BulkSwitch,
+  sharedNumberOf,
+  triStateOf,
+} from "../../components/bulk-bar";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
+import {
+  toastWithUndo,
+  useLastUndo,
+  useUndoHotkey,
+  undoById,
+} from "../../lib/undo";
 import { ViewSwitcher, gridClassName, useViewMode } from "../../lib/view-mode";
 import {
   CatalogFilterBar,
@@ -668,38 +682,10 @@ const ProductsInner = () => {
   const expert = useExpertMode();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const bulkArchive = useMutation({
-    mutationFn: async () => {
-      for (const id of selected) {
-        await sdk.client.fetch(`/admin/workbench/products/${id}/flags`, {
-          method: "POST", body: { archived: true },
-        });
-      }
-    },
-    onSuccess: async () => {
-      const count = selected.size; setSelected(new Set());
-      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
-      await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
-      toast.success(`Archivováno ${count} — z obchodu pryč, historie zůstává.`);
-    },
-    onError: (e) => toast.error(ceskaChyba(e, "Archivace se nepodařila.")),
-  });
-  const bulkHide = useMutation({
-    mutationFn: async () => {
-      for (const id of selected) {
-        await sdk.client.fetch(`/admin/products/${id}`, {
-          method: "POST", body: { status: "draft" },
-        });
-      }
-    },
-    onSuccess: async () => {
-      const count = selected.size; setSelected(new Set());
-      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
-      await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
-      toast.success(`Skryto ${count} produktů — v obchodě nejsou, tady zůstávají.`);
-    },
-    onError: (e) => toast.error(ceskaChyba(e, "Skrytí se nepodařilo.")),
-  });
+  /* Hromadné akce a jejich vrácení žijí níž, pod `rows` — potřebují vědět,
+     jaká hodnota u kusu platila před zápisem, aby šla vrátit. */
+  useUndoHotkey();
+  const lastUndo = useLastUndo();
 
 
   /*
@@ -838,49 +824,229 @@ const ProductsInner = () => {
     });
   };
 
-  /* Hromadné nastavení z lišty výběru — zapíše se hned všem označeným. */
-  const [bulkPackaging, setBulkPackaging] = useState("");
-  const bulkFlags = useMutation({
-    mutationFn: async (body: Record<string, unknown>) => {
-      for (const id of selected) {
-        await sdk.client.fetch(`/admin/workbench/products/${id}/flags`, {
-          method: "POST",
-          body,
-        });
+  /*
+   * Lišta výběru (components/bulk-bar.tsx).
+   *
+   * Dřív tu byl druhý způsob ukládání: dvojice tlačítek „zapnout"/„vypnout"
+   * na každou vlastnost, které zapisovaly okamžitě — vedle rozpracovaných
+   * změn v řádku, které se potvrzují. Dva modely v jednom okně. Lišta teď
+   * zapisuje do týchž rozpracovaných změn jako řádek, takže potvrzení je
+   * jedno a vede přes `applyFlags`.
+   */
+  const selectedRows = rows.filter((row) => selected.has(row.id));
+
+  /** Nastaví vlastnost celému výběru na konkrétní hodnotu (ne přepnutí). */
+  const stageFlagForSelection = (key: FlagKey, value: boolean) => {
+    setPendingFlags((prev) => {
+      const next = { ...prev };
+      for (const row of selectedRows) {
+        const entry = { ...(next[row.id] ?? {}) };
+        if (savedFlag(row, key) === value) delete entry[key];
+        else entry[key] = value;
+        if (Object.keys(entry).length === 0) delete next[row.id];
+        else next[row.id] = entry;
       }
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
-      toast.success(`Nastaveno u ${selected.size} produktů.`);
-    },
-    onError: (e) => toast.error(ceskaChyba(e, "Nastavení se nepodařilo.")),
+      return next;
+    });
+  };
+
+  const stagePackagingForSelection = (value: number | null) => {
+    setPendingFlags((prev) => {
+      const next = { ...prev };
+      for (const row of selectedRows) {
+        const entry = { ...(next[row.id] ?? {}) };
+        if (savedPackaging(row) === value) delete entry.packaging_price;
+        else entry.packaging_price = value;
+        if (Object.keys(entry).length === 0) delete next[row.id];
+        else next[row.id] = entry;
+      }
+      return next;
+    });
+  };
+
+  /* Stav přepínače v liště čteme z rozpracovaných hodnot, ne z uložených —
+     lišta má ukazovat to, co je vidět v řádcích. */
+  const bulkState = (key: FlagKey) =>
+    triStateOf(selectedRows, (row) => effectiveFlag(row, key));
+  const bulkDirty = (key: FlagKey) =>
+    selectedRows.some((row) => pendingFlags[row.id]?.[key] !== undefined);
+  const bulkPackaging = sharedNumberOf(selectedRows, effectivePackaging);
+  const bulkPackagingDirty = selectedRows.some(
+    (row) => pendingFlags[row.id]?.packaging_price !== undefined
+  );
+
+  /** Vybrané kusy s rozpracovanou změnou — to je to, co Potvrdit odešle. */
+  const selectedPendingIds = selectedRows
+    .filter((row) => pendingFlags[row.id])
+    .map((row) => row.id);
+
+  const discardSelectedPending = () => {
+    setPendingFlags((prev) => {
+      const next = { ...prev };
+      for (const id of selectedPendingIds) delete next[id];
+      return next;
+    });
+  };
+
+  /*
+   * Archivace a skrytí zapisují rovnou — rozpracovat „archivovat" nedává
+   * smysl, kus buď v obchodě je, nebo není. Vratné ale být musí, a proto se
+   * před zápisem schová předchozí stav každého kusu.
+   *
+   * Cyklus po jednom kuse zůstává (dávkový endpoint pro produkty teprve
+   * vznikne, viz spec §12), takže se počítá s tím, že část projde a část
+   * ne: hotové se vrátit dají, neúspěšné zůstanou vybrané k opakování.
+   */
+  const zapisPoJednom = async <T,>(
+    ids: string[],
+    zapis: (id: string) => Promise<unknown>,
+    pamet: (id: string) => T | null
+  ) => {
+    const hotove: T[] = [];
+    const neuspesne: string[] = [];
+    for (const id of ids) {
+      const predchozi = pamet(id);
+      try {
+        await zapis(id);
+        if (predchozi !== null) hotove.push(predchozi);
+      } catch {
+        neuspesne.push(id);
+      }
+    }
+    return { hotove, neuspesne };
+  };
+
+  const poHromadneAkci = async (
+    neuspesne: string[],
+    hotovychPocet: number,
+    hlaska: string,
+    popisUndo: string,
+    vratit: () => Promise<unknown>
+  ) => {
+    await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+    await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
+    setSelected(new Set(neuspesne));
+    if (hotovychPocet > 0) {
+      toastWithUndo(hlaska, popisUndo, vratit);
+    }
+    if (neuspesne.length > 0) {
+      toast.error(
+        `U ${neuspesne.length} kusů se to nepodařilo — zůstaly vybrané, zkuste to znovu.`
+      );
+    }
+  };
+
+  const bulkArchive = useMutation({
+    mutationFn: () =>
+      zapisPoJednom(
+        [...selected],
+        (id) =>
+          sdk.client.fetch(`/admin/workbench/products/${id}/flags`, {
+            method: "POST",
+            body: { archived: true },
+          }),
+        (id) => id
+      ),
+    onSuccess: ({ hotove, neuspesne }) =>
+      poHromadneAkci(
+        neuspesne,
+        hotove.length,
+        `Archivováno ${hotove.length} — z obchodu pryč, historie zůstává.`,
+        `Archivace ${hotove.length} kusů`,
+        async () => {
+          for (const id of hotove) {
+            await sdk.client.fetch(`/admin/workbench/products/${id}/flags`, {
+              method: "POST",
+              body: { archived: false },
+            });
+          }
+          await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+          await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
+        }
+      ),
+    onError: (e) => toast.error(ceskaChyba(e, "Archivace se nepodařila.")),
   });
-  const bulkPackagingValue =
-    bulkPackaging.trim() === "" ? null : Number(bulkPackaging.replace(",", "."));
-  const bulkPackagingValid =
-    bulkPackagingValue === null ||
-    (Number.isFinite(bulkPackagingValue) && bulkPackagingValue >= 0);
+
+  const bulkHide = useMutation({
+    mutationFn: () =>
+      zapisPoJednom(
+        [...selected],
+        (id) =>
+          sdk.client.fetch(`/admin/products/${id}`, {
+            method: "POST",
+            body: { status: "draft" },
+          }),
+        (id) => {
+          const row = rows.find((item) => item.id === id);
+          return row ? { id, status: row.status } : null;
+        }
+      ),
+    onSuccess: ({ hotove, neuspesne }) =>
+      poHromadneAkci(
+        neuspesne,
+        hotove.length,
+        `Skryto ${hotove.length} produktů — v obchodě nejsou, tady zůstávají.`,
+        `Skrytí ${hotove.length} kusů`,
+        async () => {
+          for (const item of hotove) {
+            await sdk.client.fetch(`/admin/products/${item.id}`, {
+              method: "POST",
+              body: { status: item.status },
+            });
+          }
+          await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+          await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
+        }
+      ),
+    onError: (e) => toast.error(ceskaChyba(e, "Skrytí se nepodařilo.")),
+  });
 
   const applyFlags = useMutation({
     mutationFn: async (ids: string[]) => {
+      /* Co u kusu platilo před zápisem — jen u klíčů, kterých se změna
+         doopravdy týká. Vrácení pak nepřepíše nic, na co se nesáhlo. */
+      const pamet: { id: string; body: Record<string, unknown> }[] = [];
       for (const id of ids) {
         const draft = pendingFlags[id];
         if (!draft || Object.keys(draft).length === 0) continue;
+        const row = rows.find((item) => item.id === id);
+        if (row) {
+          const predchozi: Record<string, unknown> = {};
+          for (const key of Object.keys(draft)) {
+            predchozi[key] =
+              key === "packaging_price"
+                ? savedPackaging(row)
+                : savedFlag(row, key as FlagKey);
+          }
+          pamet.push({ id, body: predchozi });
+        }
         await sdk.client.fetch(`/admin/workbench/products/${id}/flags`, {
           method: "POST",
           body: draft,
         });
       }
+      return pamet;
     },
-    onSuccess: async (_, ids) => {
+    onSuccess: async (pamet, ids) => {
       setPendingFlags((prev) => {
         const next = { ...prev };
         for (const id of ids) delete next[id];
         return next;
       });
+      setSelected(new Set());
       await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
-      toast.success(
-        ids.length === 1 ? "Změna uložena." : `Uloženo změn: ${ids.length}.`
+      toastWithUndo(
+        ids.length === 1 ? "Změna uložena." : `Uloženo změn: ${ids.length}.`,
+        ids.length === 1 ? "Změna nastavení" : `Nastavení u ${ids.length} kusů`,
+        async () => {
+          for (const item of pamet) {
+            await sdk.client.fetch(`/admin/workbench/products/${item.id}/flags`, {
+              method: "POST",
+              body: item.body,
+            });
+          }
+          await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+        }
       );
     },
     onError: (e) =>
@@ -1355,6 +1521,18 @@ const ProductsInner = () => {
               </Button>
             </>
           )}
+          {/* Vrácení posledního hromadného úkonu. Totéž umí Ctrl+Z, ale
+              zkratku nikdo nehledá — tlačítko je tu pro ruku na myši. */}
+          {lastUndo && (
+            <Button
+              size="small"
+              variant="secondary"
+              title={`${lastUndo.label} — vrátit zpět (Ctrl+Z)`}
+              onClick={() => void undoById(lastUndo.id)}
+            >
+              Vrátit zpět
+            </Button>
+          )}
           <ViewSwitcher value={view} onChange={changeView} />
           <ExpertToggle />
           {/* Every kind starts in the one Nový produkt panel — the button just
@@ -1386,49 +1564,7 @@ const ProductsInner = () => {
         </div>
       </header>
 
-      {selected.size > 0 && (
-        <div className="bg-ui-bg-subtle flex flex-wrap items-center gap-2 px-6 py-3">
-          <Text size="small" weight="plus">Vybráno: {selected.size}</Text>
-          <Button size="small" variant="secondary" isLoading={bulkArchive.isPending}
-            onClick={() => bulkArchive.mutate()}>Archivovat</Button>
-          <Button size="small" variant="secondary" isLoading={bulkHide.isPending}
-            onClick={() => bulkHide.mutate()}>Skrýt z obchodu</Button>
-          <Button size="small" variant="transparent"
-            onClick={() => setSelected(new Set())}>Zrušit výběr</Button>
-          {active !== "oblibene" && active !== "archivovane" && (
-            <div className="border-ui-border-base flex w-full flex-wrap items-center gap-2 border-t pt-2">
-              <Text size="xsmall" className="text-ui-fg-subtle">Nastavit vybraným:</Text>
-              <Button size="small" variant="secondary" disabled={bulkFlags.isPending}
-                onClick={() => bulkFlags.mutate({ cod_allowed: true })}>Dobírka zapnout</Button>
-              <Button size="small" variant="secondary" disabled={bulkFlags.isPending}
-                onClick={() => bulkFlags.mutate({ cod_allowed: false })}>Dobírka vypnout</Button>
-              <Button size="small" variant="secondary" disabled={bulkFlags.isPending}
-                onClick={() => bulkFlags.mutate({ fragile: true })}>Křehké zapnout</Button>
-              <Button size="small" variant="secondary" disabled={bulkFlags.isPending}
-                onClick={() => bulkFlags.mutate({ fragile: false })}>Křehké vypnout</Button>
-              <span className="flex items-center gap-1.5">
-                <Text size="xsmall" className="text-ui-fg-subtle">Balení</Text>
-                <Input
-                  size="small"
-                  type="number"
-                  min={0}
-                  className="w-20"
-                  placeholder="0"
-                  value={bulkPackaging}
-                  onChange={(event) => setBulkPackaging(event.target.value)}
-                />
-                <Text size="xsmall" className="text-ui-fg-subtle">Kč</Text>
-                <Button size="small" variant="secondary"
-                  disabled={bulkFlags.isPending || !bulkPackagingValid}
-                  isLoading={bulkFlags.isPending}
-                  onClick={() => bulkFlags.mutate({ packaging_price: bulkPackagingValue })}>
-                  Nastavit
-                </Button>
-              </span>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Lišta výběru sedí dole u hrany okna, viz konec této komponenty. */}
       <div className="flex flex-wrap items-center gap-2 px-6 py-4">
         {tabs.map((tab) => {
           const isActive = tab.key === active;
@@ -1545,6 +1681,70 @@ const ProductsInner = () => {
             </div>
           )}
         </>
+      )}
+
+      {/*
+        Lišta vybraných kusů (spec §2). Je až tady, protože se drží u dolní
+        hrany okna — `sticky bottom` funguje jen tehdy, když je prvek na konci
+        obsahu, který roluje. Jeden ovladač na vlastnost místo dvojice
+        „zapnout"/„vypnout", a nic se neodešle bez Potvrdit.
+      */}
+      {selected.size > 0 && (
+        <BulkBar
+          count={selected.size}
+          onClear={() => setSelected(new Set())}
+          pendingCount={selectedPendingIds.length}
+          onConfirm={() => applyFlags.mutate(selectedPendingIds)}
+          onDiscard={discardSelectedPending}
+          isSaving={applyFlags.isPending}
+        >
+          {active !== "oblibene" && active !== "archivovane" && (
+            <>
+              <BulkSwitch
+                label="Dobírka"
+                title="Zákazník smí platit při převzetí — jen ČR a Česká pošta na adresu."
+                state={bulkState("cod_allowed")}
+                dirty={bulkDirty("cod_allowed")}
+                onSet={(next) => stageFlagForSelection("cod_allowed", next)}
+              />
+              <BulkSwitch
+                label="Křehké"
+                title="Celá zásilka s tímto kouskem pojede v křehkém režimu."
+                state={bulkState("fragile")}
+                dirty={bulkDirty("fragile")}
+                onSet={(next) => stageFlagForSelection("fragile", next)}
+              />
+              <BulkSwitch
+                label="Bez slev. kódů"
+                title="Slevové kódy se na vybrané kusy nevztahují."
+                state={bulkState("no_promo")}
+                dirty={bulkDirty("no_promo")}
+                onSet={(next) => stageFlagForSelection("no_promo", next)}
+              />
+              <BulkNumber
+                label="Balení"
+                unit="Kč"
+                value={bulkPackaging.kind === "same" ? bulkPackaging.value : null}
+                mixed={bulkPackaging.kind === "mixed"}
+                dirty={bulkPackagingDirty}
+                onSet={stagePackagingForSelection}
+              />
+            </>
+          )}
+          <BulkAction
+            onClick={() => bulkHide.mutate()}
+            isLoading={bulkHide.isPending}
+          >
+            Skrýt z obchodu
+          </BulkAction>
+          <BulkAction
+            destructive
+            onClick={() => bulkArchive.mutate()}
+            isLoading={bulkArchive.isPending}
+          >
+            Archivovat
+          </BulkAction>
+        </BulkBar>
       )}
     </Container>
   );

@@ -42,8 +42,8 @@ const toForm = (profile: any): ProfileForm => ({
     profile?.default_deposit_percentage ?? 25
   ),
   allow_full_prepayment: profile?.allow_full_prepayment !== false,
-  production_time_min_days: String(profile?.production_time_min_days ?? 14),
-  production_time_max_days: String(profile?.production_time_max_days ?? 42),
+  production_time_min_days: String(profile?.production_time_min_days ?? 21),
+  production_time_max_days: String(profile?.production_time_max_days ?? 49),
   specification_required: profile?.specification_required ?? true,
   contact_customer_after_order:
     profile?.contact_customer_after_order ?? true,
