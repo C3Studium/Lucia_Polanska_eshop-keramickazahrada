@@ -361,3 +361,5 @@ do produkce jde až sloučením PR #16 (obsahuje migraci `Migration2026102012000
   „Cena na dotaz“; záloha původního produktu ve scratchpadu `dz-backup.json`) + popis s odkazem na
   poptávku. Kód (5b2131d2, dalším commitem): prohlášení na `/certifikaty`; výrobek bez ceny ukazuje
   „Poptat výrobu“ místo „Přidat do košíku“ — do nasazení tam tlačítko do košíku zůstává.
+- 21. 10. 13:30 Railway od 20. 10. 18:37 nestaví nové commity (`main` 11675838) — výpadek na straně
+  Railway (API proměnných dopoledne nefungovalo). Tento commit je jen pokus webhook probudit.
