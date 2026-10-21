@@ -353,3 +353,11 @@ do produkce jde až sloučením PR #16 (obsahuje migraci `Migration2026102012000
   odkud se bere přihlášení do administrace; zároveň se od 20. 10. 18:37 nestaví nová nasazení):
   Domovní znamení bez ceny + odkaz na poptávku, technické údaje do 73 popisů tlačítek, nahrání
   PDF prohlášení o shodě do R2 a odkaz z produktu. Udělat, až Railway odpoví.
+- 11:40 Railway API dál nejede, admin přihlášení záložně z `backend/.env` (`IMPORT_ADMIN_*`, tentýž
+  účet). Provedeno v produkci: EU prohlášení o shodě BZ8-113 nahráno do R2
+  (`prohlaseni-o-shode-bz8-113-elektrobock-2017-….pdf`, 200 application/pdf) a odkaz + věta o zpětném
+  odběru do popisu zvonku; technické údaje (IP44, 48 V DC, 2 A, −20…+70 °C, RoHS, bezpečné malé
+  napětí) do popisů všech 73 tlačítek; „Domovní znamení NA ZAKÁZKU“ bez ceny (varianta bez cen →
+  „Cena na dotaz“; záloha původního produktu ve scratchpadu `dz-backup.json`) + popis s odkazem na
+  poptávku. Kód (5b2131d2, dalším commitem): prohlášení na `/certifikaty`; výrobek bez ceny ukazuje
+  „Poptat výrobu“ místo „Přidat do košíku“ — do nasazení tam tlačítko do košíku zůstává.
