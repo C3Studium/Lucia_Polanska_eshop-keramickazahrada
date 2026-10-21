@@ -1,4 +1,4 @@
-import { GLAZE_CERTIFICATES, hasGlazeCertificates } from "@lib/certificates"
+import { CONFORMITY_DECLARATIONS, GLAZE_CERTIFICATES, hasGlazeCertificates } from "@lib/certificates"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import styles from "./style.module.scss"
@@ -52,6 +52,42 @@ export default function Certifikaty({ email }: { email: string }) {
             Seznam protokolů právě doplňujeme. Na protokol ke konkrétní glazuře se nás
             do té doby můžete zeptat e-mailem na{" "}
             <a href={`mailto:${email}`}>{email}</a>.
+          </p>
+        </section>
+      )}
+
+      {CONFORMITY_DECLARATIONS.length > 0 && (
+        <section className={styles.notes}>
+          <h2 className={styles.subtitle}>Prohlášení o shodě (elektro)</h2>
+          <ul className={styles.list}>
+            {CONFORMITY_DECLARATIONS.map((declaration) => (
+              <li key={declaration.product} className={styles.item}>
+                <div className={styles.itemHead}>
+                  <span className={styles.glaze}>{declaration.product}</span>
+                  <span className={styles.meta}>
+                    {formatDate(declaration.issuedAt)} · {declaration.manufacturer}
+                  </span>
+                </div>
+                <p className={styles.scope}>{declaration.scope}</p>
+                <p className={styles.scope}>
+                  <LocalizedClientLink href={declaration.productPath}>Výrobek v obchodě</LocalizedClientLink>
+                  {declaration.url ? (
+                    <>
+                      {" · "}
+                      <a className={styles.link} href={declaration.url} target="_blank" rel="noopener">
+                        Prohlášení o shodě (PDF)
+                      </a>
+                    </>
+                  ) : (
+                    " · prohlášení zveřejníme po nahrání"
+                  )}
+                </p>
+              </li>
+            ))}
+          </ul>
+          <p>
+            Elektrozařízení nepatří do směsného odpadu — vysloužilý zvonek odevzdejte na sběrném
+            místě nebo nám ho vraťte.
           </p>
         </section>
       )}

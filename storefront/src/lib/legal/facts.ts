@@ -60,7 +60,7 @@ export const FACTS = {
    * v OP čl. VII) — není to odhad; potvrzení je v OPEN_QUESTIONS.
    */
   "delivery.dispatchTime":
-    "předáváme dopravci zpravidla do 2 pracovních dnů od přijetí platby (u dobírky od objednávky), doručení pak obvykle trvá 1 až 3 pracovní dny",
+    "předáváme dopravci do 3 pracovních dnů od přijetí platby (u dobírky od objednávky), doručení pak obvykle trvá 1 až 3 pracovní dny",
 } as const satisfies Record<string, string | null>
 
 /** Popis chybějícího údaje pro zvýrazněný zástupný text. */

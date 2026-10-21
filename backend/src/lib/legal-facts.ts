@@ -88,7 +88,7 @@ export const LEGAL_FACT_DEFAULTS: Readonly<LegalFactValues> = Object.freeze({
   // Převzato z dosavadní veřejné stránky Doprava a platba (tentýž slib je
   // v OP čl. VII) — není to odhad; potvrzení je v OPEN_QUESTIONS (3a).
   "delivery.dispatchTime":
-    "předáváme dopravci zpravidla do 2 pracovních dnů od přijetí platby (u dobírky od objednávky), doručení pak obvykle trvá 1 až 3 pracovní dny",
+    "předáváme dopravci do 3 pracovních dnů od přijetí platby (u dobírky od objednávky), doručení pak obvykle trvá 1 až 3 pracovní dny",
 })
 
 /** Skupiny formuláře v pořadí, v jakém je stránka ukazuje. */
