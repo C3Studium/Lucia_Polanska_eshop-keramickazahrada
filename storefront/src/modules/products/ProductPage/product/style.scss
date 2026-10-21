@@ -795,6 +795,31 @@
   color: var(--cream-02);
 }
 
+/*
+ * „Poptat výrobu" — výrobek bez ceny (Cena na dotaz). Stejná pilulka jako
+ * tlačítko do košíku, aby se čtenář nemusel učit nový prvek; vede na poptávku.
+ */
+.product__details__cta__inquiry {
+  display: inline-flex;
+  width: var(--cta-pill-w);
+  height: var(--cta-pill-h);
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--cream-06);
+  border-radius: 999px;
+  background: var(--cream-06);
+  color: var(--pdp-ink, #20211c);
+  font: 400 clamp(0.875rem, 1.167vw, 1.021rem)/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+.product__details__cta__inquiry:hover,
+.product__details__cta__inquiry:focus-visible {
+  background: transparent;
+  color: var(--cream-06);
+}
+
 /* Dobírka up front — same quiet voice as the backorder note. */
 .product__details__cta__codNote {
   width: 100%;

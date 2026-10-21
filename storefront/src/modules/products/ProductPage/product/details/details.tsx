@@ -8,6 +8,7 @@ import {
   MadeToOrderSteps,
 } from "@modules/products/components/made-to-order-notice"
 import SafetyNotice from "@modules/products/components/safety-notice"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import VoucherAmountField, {
   checkVoucherAmount,
   isCustomAmountVoucher,
@@ -213,6 +214,13 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   /* Dárkový poukaz s vlastní částkou: pole místo ceny, částka jde do košíku
      jako `metadata.voucher_amount` a backend z ní udělá cenu řádku. */
   const isVoucher = !pick && !bundle && isCustomAmountVoucher(productMeta)
+  /* Výrobek bez ceny („Cena na dotaz" — např. Domovní znamení na zakázku,
+     20. 10. 2026 rozhodnutí Lucie): nejde do košíku, vede na poptávku na
+     stránce Výroba. Bez ceny by řádek v košíku nešel ani ocenit. */
+  const priceOnRequest =
+    !pick &&
+    Boolean(selectedVariant) &&
+    selectedVariant?.calculated_price?.calculated_amount == null
   const voucherCfg = useMemo(() => voucherConfig(productMeta), [productMeta])
   const [voucherAmount, setVoucherAmount] = useState("")
   const [voucherTouched, setVoucherTouched] = useState(false)
@@ -544,6 +552,21 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                         maxDays={madeToOrderMaxDays}
                       />
                     )}
+                    {priceOnRequest ? (
+                      <div className="product__details__cta__buy" data-testid="price-on-request">
+                        <LocalizedClientLink
+                          href="/vyroba#poptavka"
+                          className="product__details__cta__inquiry"
+                          data-testid="inquiry-link"
+                        >
+                          Poptat výrobu
+                        </LocalizedClientLink>
+                        <p className="product__details__cta__codNote">
+                          Cena se odvíjí od rozsahu — pošlete nám poptávku a připravíme nabídku
+                          s cenou, lhůtou a výší zálohy.
+                        </p>
+                      </div>
+                    ) : (
                     <CTA
                       inStock={inStock}
                       selectedVariant={selectedVariant}
@@ -593,6 +616,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                       buyNowEligible={Boolean(isAuthenticated && hasSavedAddress)}
                       texts={texts}
                     />
+                    )}
                     {showMadeToOrderNotice && <MadeToOrderAddNotice />}
                     {/* Čtyři kroky zakázky (bod 05 PDF Potvrzení zakázky) —
                         zákazník čte před objednávkou to, co pak dostane v příloze. */}
