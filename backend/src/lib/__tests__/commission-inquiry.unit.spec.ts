@@ -327,3 +327,39 @@ describe("texty", () => {
     expect(neutralizeLinks("bez odkazu")).toBe("bez odkazu")
   })
 })
+
+describe("poptávka z výrobku s cenou po domluvě", () => {
+  const base = {
+    description: "Znamení s liškou",
+    name: "Jana Nováková",
+    email: "jana@example.com",
+    terms_accepted: true as const,
+    terms_version: "2026-10-15",
+  }
+
+  it("product_handle a product_title projdou schématem a jsou nepovinné", () => {
+    expect(CommissionInquirySchema.safeParse(base).success).toBe(true)
+    const parsed = CommissionInquirySchema.safeParse({
+      ...base,
+      product_handle: " domovni-znameni-na-zakazku ",
+      product_title: "Domovní znamení",
+    })
+    expect(parsed.success).toBe(true)
+    if (parsed.success) {
+      expect(parsed.data.product_handle).toBe("domovni-znameni-na-zakazku")
+    }
+  })
+
+  it("majitelka vidí „K výrobku“ jen když výrobek přišel", () => {
+    const context = { receivedAt: new Date("2026-10-21T10:00:00Z"), photoUrls: [], photosFailed: 0 }
+    const bez = buildInquiryOwnerNotification(base, context)
+    expect(String(bez.description)).not.toContain("K výrobku")
+    const s = buildInquiryOwnerNotification(
+      { ...base, product_handle: "domovni-znameni-na-zakazku", product_title: "Domovní znamení" },
+      context
+    )
+    const text = String(s.description)
+    expect(text).toContain("K výrobku: Domovní znamení")
+    expect(text.indexOf("K výrobku")).toBeLessThan(text.indexOf("Co si představuje"))
+  })
+})

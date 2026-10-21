@@ -6,6 +6,7 @@ import {
   lineQuantityOf,
 } from "../../../../../lib/order-quantity"
 import { productLink } from "../../../../../lib/storefront-url"
+import { isPriceOnRequest } from "../../../../../lib/price-on-request"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
 import { MERCHANT_CATALOG_MODULE } from "../../../../../modules/merchant-catalog"
@@ -57,6 +58,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         "handle",
         "status",
         "thumbnail",
+        "metadata",
         "variants.id",
         "variants.title",
         "variants.sku",
@@ -159,6 +161,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     // v obchodě". Draft pieces have no public page to offer.
     store_url:
       product.status === "published" ? productLink(product.handle) : null,
+    // „Cena po domluvě" (lib/price-on-request.ts) — kus bez ceny je tu
+    // v pořádku, zákazník místo košíku pošle poptávku.
+    price_on_request: isPriceOnRequest(product.metadata),
     variants: (product.variants ?? []).map((variant: any) => {
       const czk = (variant.prices ?? []).find(
         (price: any) => String(price.currency_code).toLowerCase() === "czk"

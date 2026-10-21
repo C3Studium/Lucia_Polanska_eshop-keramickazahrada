@@ -43,6 +43,7 @@ import {
   syncPackagingOnPaymentSession,
 } from "../lib/packaging";
 import { requireShipGate } from "../lib/require-ship-gate";
+import { rejectPriceOnRequestLine } from "../lib/price-on-request";
 import { requireShippableCart } from "../lib/require-shippable-cart";
 import { requireStockableCart } from "../lib/require-stockable-cart";
 import { throttleResetPassword } from "../lib/reset-password-throttle";
@@ -575,7 +576,17 @@ export default defineMiddlewares({
     {
       matcher: "/store/carts/:id/line-items-custom",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(PostAddCustomLineItemSchema)],
+      middlewares: [
+        validateAndTransformBody(PostAddCustomLineItemSchema),
+        rejectPriceOnRequestLine(),
+      ],
+    },
+    // „Cena po domluvě" (lib/price-on-request.ts) — i nativní přidání do
+    // košíku, které storefront nepoužívá, ale API ano.
+    {
+      matcher: "/store/carts/:id/line-items",
+      methods: ["POST"],
+      middlewares: [rejectPriceOnRequestLine()],
     },
     // Wishlist routes rely on Medusa's internal auth for /store/customers/me/*.
     {

@@ -120,12 +120,28 @@ type Props = {
   /** Cesta (bez země) na zásady ochrany osobních údajů. */
   privacyHref: string
   contactEmail: string
+  /**
+   * Výrobek s cenou po domluvě, od kterého zákazník přišel (stránka produktu
+   * → `/vyroba?produkt=<handle>#poptavka`): předvyplní popis a jde s poptávkou
+   * majitelce jako „K výrobku: …".
+   */
+  product?: { handle: string; title: string } | null
 }
 
-export default function InquiryForm({ termsVersion, termsHref, privacyHref, contactEmail }: Props) {
+export default function InquiryForm({
+  termsVersion,
+  termsHref,
+  privacyHref,
+  contactEmail,
+  product = null,
+}: Props) {
   const id = useId()
   const fieldId = (field: string) => `${id}-${field}`
-  const [values, setValues] = useState<CommissionInquiryValues>(EMPTY)
+  const [values, setValues] = useState<CommissionInquiryValues>(() =>
+    product
+      ? { ...EMPTY, description: `Zajímá mě výrobek „${product.title}“. ` }
+      : EMPTY
+  )
   const [errors, setErrors] = useState<CommissionInquiryErrors>({})
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [photoStatus, setPhotoStatus] = useState<string | null>(null)
@@ -294,6 +310,7 @@ export default function InquiryForm({ termsVersion, termsHref, privacyHref, cont
       phone: optional(values.phone),
       terms_accepted: true,
       terms_version: termsVersion,
+      ...(product ? { product_handle: product.handle, product_title: product.title } : {}),
       ...(drafts.length ? { photos: drafts.map((draft) => draft.upload) } : {}),
       ...(website ? { website } : {}),
     })

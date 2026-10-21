@@ -49,7 +49,12 @@ const STEPS = [
 
 const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, "")}`
 
-export default async function VyrobaInquiry() {
+type Props = {
+  /** Výrobek s cenou po domluvě, od kterého zákazník přišel (`?produkt=`). */
+  product?: { handle: string; title: string } | null
+}
+
+export default async function VyrobaInquiry({ product }: Props = {}) {
   const [registry, facts] = await Promise.all([getPublishedLegalRegistry(), getLegalFacts()])
   const termsVersion = registry.currentTermsVersion()
   const termsHref = `${LEGAL_PATHS["obchodni-podminky"]}#vyroba-na-zakazku`
@@ -122,10 +127,12 @@ export default async function VyrobaInquiry() {
         </div>
 
         <InquiryForm
+          key={product?.handle ?? "bez-vyrobku"}
           termsVersion={termsVersion}
           termsHref={termsHref}
           privacyHref={privacyHref}
           contactEmail={email}
+          product={product ?? null}
         />
       </div>
     </section>

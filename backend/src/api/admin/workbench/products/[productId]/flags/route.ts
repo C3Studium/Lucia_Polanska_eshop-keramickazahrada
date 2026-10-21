@@ -93,6 +93,12 @@ const PatchFlagsSchema = z
      * košíku jako komponenty, ne jako složený produkt).
      */
     no_promo: z.boolean().optional(),
+    /**
+     * „Cena po domluvě" — výrobek se neprodává z ceníku, cena vzniká až po
+     * poptávce (lib/price-on-request.ts). Storefront ukazuje „Cena po
+     * domluvě" a vede na poptávku; backend odmítne vložení do košíku.
+     */
+    price_on_request: z.boolean().optional(),
   })
   .refine((body) => Object.keys(body).length > 0, {
     message: "Neposlali jste žádnou změnu.",

@@ -21,8 +21,16 @@ const Inner = ({ productId }: { productId: string }) => {
   const problems: string[] = [];
   const variants = data.variants ?? [];
   if (!variants.length) problems.push("Produkt nemá žádnou variantu.");
+  // „Cena po domluvě" — bez ceny schválně; zákazník posílá poptávku.
+  if (data.price_on_request) {
+    return (
+      <Container className="p-4">
+        <Badge size="2xsmall" color="orange">Cena po domluvě — zákazník pošle poptávku</Badge>
+      </Container>
+    );
+  }
   if (variants.length && variants.every((v: any) => v.price_czk === null))
-    problems.push("Žádná varianta nemá cenu v Kč — nejde koupit.");
+    problems.push("Žádná varianta nemá cenu v Kč — nejde koupit. Nebo zapněte „Cena po domluvě“ v Typu produktu.");
   if (
     variants.length &&
     variants.every((v: any) => (v.available ?? 0) <= 0) &&
