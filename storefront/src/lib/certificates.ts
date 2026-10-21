@@ -62,7 +62,7 @@ export const CONFORMITY_DECLARATIONS: readonly ConformityDeclaration[] = [
     manufacturer: "ELEKTROBOCK CZ s.r.o., Blanenská 1763, 664 34 Kuřim",
     scope: "směrnice 2014/53/EU (RED), NV č. 426/2016 Sb.; 2011/65/EU (RoHS), NV č. 481/2012 Sb.; 433,92 MHz, < 10 mW",
     issuedAt: "2017-06-13",
-    url: null,
+    url: "https://img.matejforejt.com/prohlaseni-o-shode-bz8-113-elektrobock-2017-01M5EWGTEFY9PAM6NF8FS60EA3.pdf",
   },
 ]
 
