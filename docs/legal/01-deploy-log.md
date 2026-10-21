@@ -340,3 +340,24 @@ do produkce jde až sloučením PR #16 (obsahuje migraci `Migration2026102012000
 - Datum účinnosti: **23. 10. 2026** — verze dokumentů se přejmenuje a vydá v ten den (dřív ne,
   budoucí verze by web vrátil k OP 2015). Zbývá od Lucie: min. věk, vyzvednutí z kurzu,
   zůstatek a uplatnění poukazu, odhad nákladů vrácení (bez nich OP nevydám).
+
+## 21. 10. 2026 dopoledne — odpovědi Lucie (e-mail 20. 10. 20:41)
+
+- Právní údaje (admin API, 10:40): `course.minAge`, `course.pickupDeadline`, `delivery.dispatchTime`
+  (3 pracovní dny), `voucher.remainder`. Na webu zůstává jediné `[[DOPLNIT]]` k vydání OP:
+  `withdrawal.returnCostEstimate` (čeká na Matěje — návrh „obvykle 150–250 Kč, křehký balík“).
+- Texty v repu: OP čl. I (úřad RŽP Písek), čl. VII a Doprava (3 pracovní dny), čl. XI uplatnění
+  poukazu (zboží vč. zakázek, kurzy ne, číslo do poznámky / e-mailem, poštou v obálce), FAQ.
+  `/certifikaty` nově i sekce „Prohlášení o shodě“ (BZ8-113, Elektrobock 13. 6. 2017).
+- **Zablokováno výpadkem Railway API** („Problem processing request“ u `railway variables`,
+  odkud se bere přihlášení do administrace; zároveň se od 20. 10. 18:37 nestaví nová nasazení):
+  Domovní znamení bez ceny + odkaz na poptávku, technické údaje do 73 popisů tlačítek, nahrání
+  PDF prohlášení o shodě do R2 a odkaz z produktu. Udělat, až Railway odpoví.
+- 11:40 Railway API dál nejede, admin přihlášení záložně z `backend/.env` (`IMPORT_ADMIN_*`, tentýž
+  účet). Provedeno v produkci: EU prohlášení o shodě BZ8-113 nahráno do R2
+  (`prohlaseni-o-shode-bz8-113-elektrobock-2017-….pdf`, 200 application/pdf) a odkaz + věta o zpětném
+  odběru do popisu zvonku; technické údaje (IP44, 48 V DC, 2 A, −20…+70 °C, RoHS, bezpečné malé
+  napětí) do popisů všech 73 tlačítek; „Domovní znamení NA ZAKÁZKU“ bez ceny (varianta bez cen →
+  „Cena na dotaz“; záloha původního produktu ve scratchpadu `dz-backup.json`) + popis s odkazem na
+  poptávku. Kód (5b2131d2, dalším commitem): prohlášení na `/certifikaty`; výrobek bez ceny ukazuje
+  „Poptat výrobu“ místo „Přidat do košíku“ — do nasazení tam tlačítko do košíku zůstává.

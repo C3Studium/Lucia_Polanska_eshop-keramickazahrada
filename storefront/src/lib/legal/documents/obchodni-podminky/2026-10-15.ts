@@ -27,7 +27,7 @@ const obchodniPodminky: LegalDocumentVersion = {
       blocks: [
         {
           type: "p",
-          text: "Prodávající je {{seller.name}}, podnikající fyzická osoba se sídlem {{seller.address}}, IČO {{seller.ico}}, zapsaná v živnostenském rejstříku (dále „prodávající“ nebo „my“).",
+          text: "Prodávající je {{seller.name}}, podnikající fyzická osoba se sídlem {{seller.address}}, IČO {{seller.ico}}, zapsaná v živnostenském rejstříku vedeném Městským úřadem Písek (dále „prodávající“ nebo „my“).",
         },
         { type: "p", text: "Daň z přidané hodnoty: {{vat.status}}." },
         { type: "p", text: "Jak nás zastihnete:" },
@@ -237,7 +237,7 @@ const obchodniPodminky: LegalDocumentVersion = {
         },
         {
           type: "p",
-          text: "Zboží skladem předáváme dopravci zpravidla do 2 pracovních dnů od přijetí platby (u dobírky od objednávky). Doručení pak obvykle trvá 1 až 3 pracovní dny. U zboží na zakázku platí výrobní lhůta uvedená u výrobku nebo v nabídce ([čl. IX](/smluvni-podminky#vyroba-na-zakazku)). Není-li dodací lhůta ujednána, dodáme zboží bez zbytečného odkladu, nejpozději do 30 dnů od uzavření smlouvy.",
+          text: "Zboží skladem předáváme dopravci do 3 pracovních dnů od přijetí platby (u dobírky od objednávky). Doručení pak obvykle trvá 1 až 3 pracovní dny. U zboží na zakázku platí výrobní lhůta uvedená u výrobku nebo v nabídce ([čl. IX](/smluvni-podminky#vyroba-na-zakazku)). Není-li dodací lhůta ujednána, dodáme zboží bez zbytečného odkladu, nejpozději do 30 dnů od uzavření smlouvy.",
         },
         {
           type: "p",
@@ -472,7 +472,7 @@ const obchodniPodminky: LegalDocumentVersion = {
         },
         {
           type: "p",
-          text: "**Uplatnění:** [[DOPLNIT: jak se poukaz uplatňuje (kód v košíku, domluva e-mailem apod.) a na co (zboží, kurzy)]]. [[DOPLNIT: lze poukazem zaplatit zálohu nebo doplatek zakázky?]]",
+          text: "**Uplatnění:** poukaz platí na nákup keramiky v obchodě i v ateliéru, včetně výrobků na zakázku (lze jím uhradit zálohu i doplatek, až do výše poukazu); na kurzy zatím neplatí. V obchodě napište číslo poukazu do poznámky k objednávce, nebo nám ho pošlete e-mailem — jeho hodnotu z objednávky odečteme a rozdíl vám vrátíme, nebo ho doplatíte. V ateliéru poukaz předložíte. Poukaz posíláme poštou v obálce (poštovné podle ceníku dopravy); elektronicky ho zatím neposíláme.",
         },
         {
           type: "p",

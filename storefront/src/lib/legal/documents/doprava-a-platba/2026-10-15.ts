@@ -86,7 +86,7 @@ const dopravaAPlatba: LegalDocumentVersion = {
       blocks: [
         {
           type: "p",
-          text: "Co máme skladem, předáváme dopravci zpravidla do 2 pracovních dnů od přijetí platby (u dobírky od objednávky). Doručení pak obvykle trvá 1 až 3 pracovní dny.",
+          text: "Co máme skladem, předáváme dopravci do 3 pracovních dnů od přijetí platby (u dobírky od objednávky). Doručení pak obvykle trvá 1 až 3 pracovní dny.",
         },
         {
           type: "p",
