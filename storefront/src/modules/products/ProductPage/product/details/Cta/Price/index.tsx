@@ -6,6 +6,7 @@ import {
   getProductPrice,
 } from "@lib/util/get-product-price"
 import { convertToLocale } from "@lib/util/money"
+import { isPriceOnRequest } from "@lib/util/price-on-request"
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import styles from "./style.module.scss"
@@ -70,7 +71,10 @@ export default function ProductPrice({
 
   const selectedPrice = variant ? variantPrice : cheapestPrice
   const calculatedPrice = selectedPrice?.calculated_price
-  const hasPrice = calculatedPrice != null
+  /* „Cena po domluvě" přebije i cenu, která u variant zůstala — prodává se
+     až po poptávce (lib/util/price-on-request). */
+  const priceOnRequest = isPriceOnRequest(product.metadata)
+  const hasPrice = !priceOnRequest && calculatedPrice != null
   const isSale = selectedPrice?.price_type === "sale"
   const currencyCode = selectedPrice?.currency_code ?? "czk"
   const clearance = clearanceInfo(product)
@@ -105,7 +109,9 @@ export default function ProductPrice({
         >
           {hasPrice
             ? String(calculatedPrice).replace(/czk/i, "").trim()
-            : "Cena na dotaz"}
+            : priceOnRequest
+              ? "Cena po domluvě"
+              : "Cena na dotaz"}
         </span>
 
         {showReference && (

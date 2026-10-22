@@ -8,6 +8,7 @@ import {
 import { COMMISSION_CATEGORY_HANDLE } from "@lib/util/commission"
 import { madeToOrderBadgeText } from "@lib/util/made-to-order"
 import { convertToLocale } from "@lib/util/money"
+import { isPriceOnRequest } from "@lib/util/price-on-request"
 import { usePriceReference } from "@modules/products/ProductPage/product/details/Cta/Price/use-price-reference"
 import type { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -171,6 +172,7 @@ function ProductCard({
     availability,
     clearance,
     isMadeToOrder,
+    priceOnRequest,
   } = useMemo(() => {
     const { cheapestPrice } = getProductPrice({ product })
     const primaryImage =
@@ -197,6 +199,11 @@ function ProductCard({
         (product.categories ?? []).some(
           (category) => category?.handle === COMMISSION_CATEGORY_HANDLE
         ),
+      /* „Cena po domluvě" — karta neukáže cenu ani košík; detail vede na
+         poptávku (lib/util/price-on-request). */
+      priceOnRequest: isPriceOnRequest(
+        product.metadata as Record<string, unknown> | null | undefined
+      ),
     }
   }, [product])
 
@@ -239,11 +246,12 @@ function ProductCard({
     /* Zakázka (týž signál jako štítek „Na zakázku" níž): zadání a potvrzení,
        že ji nelze vrátit do 14 dnů, patří ke kusu na stránce produktu. */
     if (isMadeToOrder) return null
+    if (priceOnRequest) return null
     const variants = product.variants ?? []
     if (variants.length !== 1) return null
 
     return maxPurchasableQuantity(variants[0]) > 0 ? variants[0] : null
-  }, [customVoucher, isMadeToOrder, product.variants])
+  }, [customVoucher, isMadeToOrder, priceOnRequest, product.variants])
 
   /* Oblíbené se ukládají po variantě, takže platí totéž omezení jako u košíku —
      u vícevariantního kusu by karta hádala, který se má uložit. Sklad se tu
@@ -483,7 +491,9 @@ function ProductCard({
                   ).min,
                   currency_code: "czk",
                 })}`
-              : cheapestPrice?.calculated_price || "Cena na dotaz"}
+              : priceOnRequest
+                ? "Cena po domluvě"
+                : cheapestPrice?.calculated_price || "Cena na dotaz"}
           </strong>
           {salePercent != null && lowest30d != null && (
             <small

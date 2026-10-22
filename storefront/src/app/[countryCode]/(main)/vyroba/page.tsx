@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 
+import { listProducts } from "@lib/data/products"
 import { getPageContentFull, getPageSeo } from "@lib/data/site-copy"
 import VyrobaCta from "@modules/vyroba/cta"
 import VyrobaInquiry from "@modules/vyroba/InquiryForm"
@@ -14,7 +15,36 @@ export async function generateMetadata(): Promise<Metadata> {
   })
 }
 
-export default async function Home() {
+type Props = {
+  params: Promise<{ countryCode: string }>
+  searchParams: Promise<{ produkt?: string | string[] }>
+}
+
+/**
+ * `?produkt=<handle>` — zákazník přišel z výrobku s cenou po domluvě
+ * (lib/util/price-on-request); poptávka se předvyplní jeho názvem. Neznámý
+ * handle se tiše ignoruje, formulář je i tak celý.
+ */
+const inquiryProduct = async (countryCode: string, raw: string | string[] | undefined) => {
+  const handle = Array.isArray(raw) ? raw[0] : raw
+  if (!handle || !/^[\w-]{1,200}$/.test(handle)) return null
+  try {
+    const { response } = await listProducts({
+      countryCode,
+      queryParams: { handle, limit: 1, fields: "id,handle,title" },
+    })
+    const product = response.products[0]
+    return product?.handle && product.title
+      ? { handle: product.handle, title: product.title }
+      : null
+  } catch {
+    return null
+  }
+}
+
+export default async function Home({ params, searchParams }: Props) {
+  const [{ countryCode }, query] = await Promise.all([params, searchParams])
+  const product = await inquiryProduct(countryCode, query.produkt)
   /*
    * Redakční obsah stránky „Výroba" — dnes z něj sekce berou jen název
    * tlačítka, ale trasa je tím postavená: mapa jde dolů jako `copy` a další
@@ -35,7 +65,7 @@ export default async function Home() {
       <VyrobaCta copy={copy} />
       {/* Poptávka zakázky (LEGAL_AUDIT.md §6, §9) — kotva `#poptavka`. Texty
           z kódu, ne z CMS: jsou to předsmluvní informace k zakázce. */}
-      <VyrobaInquiry />
+      <VyrobaInquiry product={product} />
     </>
   )
 }

@@ -27,9 +27,10 @@ type Check = {
 
 const buildChecks = (product: AdminProduct): Check[] => {
   const variants = product.variants ?? [];
-  const hasPrice = variants.some(
-    (variant: any) => (variant.prices ?? []).length > 0
-  );
+  // „Cena po domluvě" (metadata.price_on_request) je platný stav bez ceny.
+  const hasPrice =
+    (product.metadata as any)?.price_on_request === true ||
+    variants.some((variant: any) => (variant.prices ?? []).length > 0);
   const hasWeight = Boolean(
     (product as any).weight ||
       variants.some((variant: any) => variant.weight)

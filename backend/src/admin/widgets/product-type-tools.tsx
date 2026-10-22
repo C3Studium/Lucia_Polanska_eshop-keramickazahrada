@@ -35,6 +35,7 @@ const Inner = ({ productId }: { productId: string }) => {
   const profile = profileData?.product?.profile;
   const product = productData?.product;
   const clearance = Boolean((product?.metadata as any)?.clearance);
+  const priceOnRequest = (product?.metadata as any)?.price_on_request === true;
 
   const togglePublish = useMutation({
     mutationFn: () =>
@@ -73,6 +74,26 @@ const Inner = ({ productId }: { productId: string }) => {
         clearance
           ? "Vyřazeno z výprodeje poškozených."
           : "Označeno jako poškozené — cena produktu je teď jeho jednorázová sleva."
+      );
+    },
+    onError: (error) =>
+      toast.error(ceskaChyba(error, "Změna se nepodařila.")),
+  });
+
+  const togglePriceOnRequest = useMutation({
+    mutationFn: () =>
+      sdk.client.fetch(`/admin/workbench/products/${productId}/flags`, {
+        method: "POST",
+        body: { price_on_request: !priceOnRequest },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["product-type-tools", productId] });
+      await queryClient.invalidateQueries({ queryKey: ["workbench-product", productId] });
+      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+      toast.success(
+        priceOnRequest
+          ? "Cena po domluvě vypnuta — produkt se zase prodává za cenu u variant."
+          : "Cena po domluvě — zákazník místo košíku pošle poptávku."
       );
     },
     onError: (error) =>
@@ -152,6 +173,32 @@ const Inner = ({ productId }: { productId: string }) => {
           onClick={() => toggleClearance.mutate()}
         >
           {clearance ? "Ukončit výprodej" : "Označit"}
+        </Button>
+      </div>
+
+      {/* „Cena po domluvě" (lib/price-on-request.ts): bez ceny v ceníku, kus vede
+          na poptávku na stránce Výroba a do košíku nejde ani přes API. */}
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <Text size="small" weight="plus">
+            Cena po domluvě{" "}
+            {priceOnRequest && (
+              <Badge size="2xsmall" color="orange" className="ml-1">poptávka</Badge>
+            )}
+          </Text>
+          <Text size="xsmall" className="text-ui-fg-subtle">
+            {priceOnRequest
+              ? "V obchodě je „Cena po domluvě“ a tlačítko Poptat výrobu; cena u variant se nepoužije."
+              : "Cena se sjednává až podle zadání — zákazník pošle poptávku místo nákupu."}
+          </Text>
+        </div>
+        <Button
+          size="small"
+          variant="secondary"
+          isLoading={togglePriceOnRequest.isPending}
+          onClick={() => togglePriceOnRequest.mutate()}
+        >
+          {priceOnRequest ? "Vypnout" : "Zapnout"}
         </Button>
       </div>
     </Container>

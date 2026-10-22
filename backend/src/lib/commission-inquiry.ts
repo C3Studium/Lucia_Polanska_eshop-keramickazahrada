@@ -1,5 +1,6 @@
 import { createHash } from "crypto"
 import { z } from "zod"
+import { productLink } from "./storefront-url"
 
 /**
  * Poptávka zakázky ze stránky Výroba (LEGAL_AUDIT.md §2, krok 1 doporučeného
@@ -54,6 +55,7 @@ export const INQUIRY_LIMITS = {
   name: 200,
   email: 320,
   phone: 40,
+  product: 200,
 } as const
 
 /** Vytočitelné číslo: aspoň 6 číslic (stejné minimum jako u změny objednávky). */
@@ -127,6 +129,13 @@ export const CommissionInquirySchema = z.object({
       message: `Přiložit jde nejvýš ${MAX_INQUIRY_PHOTOS} fotek.`,
     })
     .optional(),
+  /**
+   * Výrobek, od kterého poptávka přišla („Cena po domluvě" na stránce
+   * produktu → `/vyroba?produkt=<handle>`). Jen pro majitelku, ať ví, o čem
+   * zákazník mluví; storefront je posílá z URL, tak se nijak neověřují.
+   */
+  product_handle: optionalText(INQUIRY_LIMITS.product, "Odkaz na výrobek"),
+  product_title: optionalText(INQUIRY_LIMITS.product, "Název výrobku"),
   /** Honeypot — člověk pole nevidí; vyplněné = robot. */
   website: z.string().max(400).optional(),
 })
@@ -386,6 +395,18 @@ export type InquiryContext = {
 
 const clean = (value: string | null | undefined): string => (value ?? "").trim()
 
+/**
+ * „K výrobku: …" — poptávka odeslaná z produktu s cenou po domluvě
+ * (lib/price-on-request.ts). Odkaz jen když storefront zná svou adresu.
+ */
+const productLines = (input: CommissionInquiryInput): string[] => {
+  const handle = clean(input.product_handle)
+  const title = clean(input.product_title) || handle
+  if (!title) return []
+  const link = productLink(handle)
+  return [`K výrobku: ${title}${link ? ` — ${link}` : ""}`, ""]
+}
+
 /** „14. 10. 2026 15:32:10" v pražském čase. */
 export const formatPragueDateTime = (date: Date, withSeconds = false): string => {
   const parts = new Intl.DateTimeFormat("cs-CZ", {
@@ -501,6 +522,7 @@ export const buildInquiryOwnerNotification = (
       `Od: ${name} <${email}>`,
       `Telefon: ${phone || "neuveden"}`,
       "",
+      ...productLines(input),
       "Co si představuje:",
       clean(input.description),
       "",

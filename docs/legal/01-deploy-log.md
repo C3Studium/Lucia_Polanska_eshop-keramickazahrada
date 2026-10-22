@@ -363,3 +363,23 @@ do produkce jde až sloučením PR #16 (obsahuje migraci `Migration2026102012000
   „Poptat výrobu“ místo „Přidat do košíku“ — do nasazení tam tlačítko do košíku zůstává.
 - 21. 10. 13:30 Railway od 20. 10. 18:37 nestaví nové commity (`main` 11675838) — výpadek na straně
   Railway (API proměnných dopoledne nefungovalo). Tento commit je jen pokus webhook probudit.
+
+## 21. 10. 2026 odpoledne — režim „Cena po domluvě“ (Domovní znamení)
+
+- Matěj v administraci u Domovního znamení neviděl cenu (20. 10. schválně smazána) → místo
+  „produkt bez ceny“ je teď řádný režim: vlajka `product.metadata.price_on_request`
+  (přepínač **Typ produktu → Cena po domluvě** na detailu produktu, přes `/flags`, metadata se slučují).
+- Backend: `lib/price-on-request.ts` — strážce `POST /store/carts/:id/line-items` i `…/line-items-custom`
+  vrátí 400 s českou hláškou (kus s cenou po domluvě do košíku nejde ani přes API, ani když u variant
+  zůstala stará cena). Widgety „Po zveřejnění nepůjde koupit“ / „Co chybí“ berou vlajku jako platný
+  stav bez ceny. Poptávka (`CommissionInquirySchema`) nese nepovinné `product_handle`/`product_title`,
+  majitelce v e-mailu „K výrobku: … — odkaz“.
+- Storefront: `lib/util/price-on-request.ts`; detail i karta píší „Cena po domluvě“, karta bez rychlého
+  košíku, tlačítko **Poptat výrobu** → `/vyroba?produkt=<handle>#poptavka`, poptávka předvyplní
+  „Zajímá mě výrobek „…““ a pošle výrobek s sebou.
+- Ověřeno: typecheck backend + storefront čistě, `commission-inquiry.unit.spec.ts` 25/25 (2 nové).
+- **Neprovedeno (klasifikátor zablokoval zápis do produkce):** zapnutí vlajky u Domovního znamení
+  (`prod_01M088E09PTWJ2DN8YPD8WP6EY`). Po nasazení stačí v administraci kliknout „Zapnout“
+  u „Cena po domluvě“; do té doby produkt ukazuje „Cena na dotaz“ (bez ceny) — chování je stejné.
+- Otevřené: jak po domluvě zákazníkovi prodat (nabídka s cenou) — návrh: zakázková objednávka
+  z administrace (draft order s dohodnutou cenou + záloha podle § 0) — čeká na rozhodnutí Matěje.

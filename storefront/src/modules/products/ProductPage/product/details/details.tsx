@@ -48,6 +48,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import Gallery from "../Gallery/gallery"
 import CTA from "./Cta/Add"
 import ProductPrice from "./Cta/Price"
+import { inquiryHref, isPriceOnRequest } from "@lib/util/price-on-request"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -214,13 +215,16 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   /* Dárkový poukaz s vlastní částkou: pole místo ceny, částka jde do košíku
      jako `metadata.voucher_amount` a backend z ní udělá cenu řádku. */
   const isVoucher = !pick && !bundle && isCustomAmountVoucher(productMeta)
-  /* Výrobek bez ceny („Cena na dotaz" — např. Domovní znamení na zakázku,
-     20. 10. 2026 rozhodnutí Lucie): nejde do košíku, vede na poptávku na
-     stránce Výroba. Bez ceny by řádek v košíku nešel ani ocenit. */
+  /* „Cena po domluvě" (`metadata.price_on_request`, přepínač v administraci;
+     backend tutéž vlajku vynucuje v lib/price-on-request.ts) nebo výrobek
+     prostě bez ceny (Domovní znamení, 20. 10. 2026 rozhodnutí Lucie): nejde
+     do košíku, vede na poptávku na stránce Výroba s předvyplněným výrobkem.
+     Bez ceny by řádek v košíku nešel ani ocenit. */
   const priceOnRequest =
     !pick &&
-    Boolean(selectedVariant) &&
-    selectedVariant?.calculated_price?.calculated_amount == null
+    (isPriceOnRequest(productMeta) ||
+      (Boolean(selectedVariant) &&
+        selectedVariant?.calculated_price?.calculated_amount == null))
   const voucherCfg = useMemo(() => voucherConfig(productMeta), [productMeta])
   const [voucherAmount, setVoucherAmount] = useState("")
   const [voucherTouched, setVoucherTouched] = useState(false)
@@ -555,7 +559,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                     {priceOnRequest ? (
                       <div className="product__details__cta__buy" data-testid="price-on-request">
                         <LocalizedClientLink
-                          href="/vyroba#poptavka"
+                          href={inquiryHref(product.handle)}
                           className="product__details__cta__inquiry"
                           data-testid="inquiry-link"
                         >
