@@ -451,15 +451,29 @@ const TermDetail = () => {
 
   const cancelTerm = useMutation({
     mutationFn: () =>
-      sdk.client.fetch<{ emails_sent: number }>(
-        `/admin/courses/terms/${id}/cancel`,
-        { method: "POST" }
-      ),
+      sdk.client.fetch<{
+        emails_sent: number;
+        refunds: {
+          refunded_count: number;
+          manual_count: number;
+          manual_names: string[];
+        };
+      }>(`/admin/courses/terms/${id}/cancel`, { method: "POST" }),
     onSuccess: async (result) => {
       await refresh();
       toast.success(
-        `Termín zrušen. Odesláno ${result.emails_sent} e-mailů přihlášeným.`
+        `Termín zrušen. Odesláno ${result.emails_sent} e-mailů přihlášeným.` +
+          (result.refunds.refunded_count
+            ? ` ${result.refunds.refunded_count}× se peníze vrací na kartu.`
+            : "")
       );
+      /* Komu je potřeba vrátit peníze z ruky — jmenovitě, ne počtem. */
+      if (result.refunds.manual_count) {
+        toast.warning(
+          `Peníze vraťte ručně: ${result.refunds.manual_names.join(", ")}`,
+          { duration: 15000 }
+        );
+      }
     },
     onError: (error) => toast.error(ceskaChyba(error, "Zrušení se nepodařilo.")),
   });
@@ -542,7 +556,27 @@ const TermDetail = () => {
                 title="Zrušit celý termín?"
                 description={
                   aktivni.length
-                    ? "Všem přihlášeným odejde e-mail a zaplacené platby se pokusíme vrátit na kartu."
+                    ? [
+                        "Všem přihlášeným odejde e-mail s omluvou a odkazem na další termíny.",
+                        aktivni.some(
+                          (r) =>
+                            r.payment_status === "paid" &&
+                            r.payment_method === "online"
+                        )
+                          ? "Platby kartou se pokusíme vrátit automaticky."
+                          : "",
+                        /* Hotovost se automaticky vrátit nedá — ať to ví
+                           dřív, než klikne, a ne až z hlášky potom. */
+                        aktivni.some(
+                          (r) =>
+                            r.payment_status === "paid" &&
+                            r.payment_method === "on_site"
+                        )
+                          ? "Kdo platil hotově na místě, tomu peníze vrátíte osobně — napíšeme vám, komu."
+                          : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")
                     : "Na termín není nikdo přihlášený."
                 }
                 items={aktivni.map(

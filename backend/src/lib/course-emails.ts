@@ -248,6 +248,10 @@ export const sendCourseTermCancelledEmail = async (
       paidOnline:
         reservation.payment_method === "online" &&
         reservation.payment_status === "paid",
+      /* Hotovost na místě: vrátit se musí taky, jen ne automaticky. */
+      paidOnSite:
+        reservation.payment_method === "on_site" &&
+        reservation.payment_status === "paid",
       refundedAutomatically: Boolean(options.refundedAutomatically),
     },
   })
