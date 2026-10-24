@@ -19,6 +19,7 @@ import {
   readCommissionBrief,
 } from "@lib/util/made-to-order"
 import CheckoutCommissionBriefs from "../commission-briefs"
+import { isZeroPriceOnRequestCart } from "@lib/util/price-on-request"
 
 import CheckoutConsent from "../legal-consent"
 import { ORDER_BUTTON_LABEL } from "../legal-consent/labels"
@@ -142,15 +143,25 @@ const Review = ({
   const paidByGiftcard =
     cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0
 
+  /* Cena po domluvě a k úhradě 0 (jen takový kus + osobní odběr): žádná brána,
+     objednávka se dokončí s relací `pp_system_default` (lib/util/price-on-request).
+     Případná zbylá volba `?method=` z dřívějška se pak nepoužije. */
+  const zeroCharge = isZeroPriceOnRequestCart(cart)
+
   const previousStepsCompleted =
     cart.shipping_address &&
     (cart.shipping_methods?.length ?? 0) > 0 &&
-    (cart.payment_collection || paidByGiftcard || comgateMethod)
+    (cart.payment_collection || paidByGiftcard || comgateMethod || zeroCharge)
 
   /* Čím se platí — ComGate cesta ještě nemá platební relaci (zakládá se až
      tlačítkem), takže se metoda čte z `?method=`; ostatní z relace na košíku
      (tatáž, podle které `PaymentButton` volí svou variantu). */
-  const payment = describePayment({
+  const payment = zeroCharge
+    ? {
+        label: "Teď se nic neplatí",
+        note: "cenu výrobku po domluvě vám pošlu e-mailem, pak zaplatíte zálohu nebo celou částku online",
+      }
+    : describePayment({
     comgateOptionId: comgateMethod,
     comgateMethods,
     providerId: cart?.payment_collection?.payment_sessions?.[0]?.provider_id,
@@ -330,7 +341,19 @@ const Review = ({
               {!allCommissionsComplete && (
                 <p className={styles.commissionGate}>{COMMISSION_GATE_HINT}</p>
               )}
-              {comgateMethod ? (
+              {zeroCharge ? (
+                consentReady && allCommissionsComplete ? (
+                  <PaymentButton
+                    cart={cart}
+                    data-testid="submit-order-button"
+                    countryCode={countryCode}
+                    zeroCharge
+                    onBeforePlaceAction={recordConsent}
+                  />
+                ) : gateHint ? (
+                  <p className={styles.gateHint}>{gateHint}</p>
+                ) : null
+              ) : comgateMethod ? (
                 <>
                   <button
                     type="button"

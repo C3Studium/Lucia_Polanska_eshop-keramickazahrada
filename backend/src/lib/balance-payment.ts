@@ -111,10 +111,11 @@ export const ensureBalanceCollection = async (
     if (!Object.keys(patch).length) {
       return existing
     }
-    const [updated] = await paymentModule.updatePaymentCollections(
-      { id: existing.id },
-      patch
-    )
+    // Medusa 2.18 vrací u selektoru jeden záznam i pole podle verze — dřív
+    // `const [updated] =` padalo na „is not iterable" (každé srovnání
+    // existující kolekce doplatku, např. po příplatku). Bere se obojí.
+    const result = await paymentModule.updatePaymentCollections({ id: existing.id }, patch)
+    const updated = Array.isArray(result) ? result[0] : result
     return updated ?? { ...existing, ...patch }
   }
 
@@ -122,10 +123,11 @@ export const ensureBalanceCollection = async (
     input: { order_id: order.id, amount: outstanding },
   })
   const created = result[0]
-  const [flagged] = await paymentModule.updatePaymentCollections(
+  const flaggedResult = await paymentModule.updatePaymentCollections(
     { id: created.id },
     { metadata: { ...(created.metadata ?? {}), [BALANCE_COLLECTION_FLAG]: true, ...tag } }
   )
+  const flagged = Array.isArray(flaggedResult) ? flaggedResult[0] : flaggedResult
   return flagged ?? created
 }
 
@@ -263,7 +265,18 @@ export const ensureBalancePaymentLink = async (
     order,
     productionOrder,
     method = "ALL",
-  }: { order: any; productionOrder: any; method?: string }
+    part = "full",
+  }: {
+    order: any
+    productionOrder: any
+    method?: string
+    /**
+     * "deposit" = jen zbývající část zálohy (cena po domluvě — zákazník si po
+     * poslání domluvené ceny vybere „zaplatit zálohu" nebo „zaplatit celé",
+     * záloha je povinná). Bez zálohy nebo po jejím zaplacení = celý dluh.
+     */
+    part?: "full" | "deposit"
+  }
 ): Promise<BalanceLinkResult> => {
   const madeToOrder = container.resolve<MadeToOrderModuleService>(
     MADE_TO_ORDER_MODULE
@@ -273,11 +286,26 @@ export const ensureBalancePaymentLink = async (
     production_order_id: productionOrder.id,
   } as never)) as any[]
 
-  const outstanding = outstandingFor(productionOrder, requests)
+  const fullOutstanding = outstandingFor(productionOrder, requests)
 
-  if (outstanding <= 0.005) {
+  if (fullOutstanding <= 0.005) {
     return { payment_url: null, outstanding: 0, request_id: null, reused: true }
   }
+
+  // Jen záloha: dohodnutá záloha − to, co už je zaplacené (nikdy víc než dluh).
+  const paidSoFar = requests
+    .filter((request) => request.status === "paid")
+    .reduce((sum, request) => sum + toNumber(request.amount), 0)
+  const depositLeft = roundMoney(
+    Math.max(0, toNumber(productionOrder.deposit_amount) - paidSoFar)
+  )
+  const depositOnly = part === "deposit" && depositLeft > 0.005 && depositLeft < fullOutstanding
+  const outstanding = depositOnly ? depositLeft : fullOutstanding
+  // Typ zůstává „balance" i u zálohy: dorovnání po návratu z brány, dohled
+  // i vypořádání webhooku (balance-settlement, reconcile-balance-payments)
+  // počítají jen s ním — záloha by se jinak nemusela zapsat. Liší se částka
+  // a idempotenční klíč.
+  const requestType = "balance"
 
   // 1 — a link that already exists and is still valid.
   //
@@ -289,7 +317,7 @@ export const ensureBalancePaymentLink = async (
   // částku kontrolují taky — tahle větev byla jediná, co ne.)
   const reusable = requests.find(
     (request) =>
-      request.type === "balance" &&
+      request.type === requestType &&
       ["pending", "sent"].includes(request.status) &&
       request.payment_url &&
       Math.abs(toNumber(request.amount) - outstanding) <= 0.01
@@ -308,7 +336,7 @@ export const ensureBalancePaymentLink = async (
   const collection = await ensureBalanceCollection(container, order, outstanding, productionOrder.id)
 
   // 3 — the request row, keyed so a retry updates rather than duplicates.
-  const idempotencyKey = `balance:${productionOrder.id}:${outstanding}`
+  const idempotencyKey = `${depositOnly ? "deposit" : "balance"}:${productionOrder.id}:${outstanding}`
   const previous = requests.find(
     (request) => request.idempotency_key === idempotencyKey
   )
@@ -322,7 +350,7 @@ export const ensureBalancePaymentLink = async (
         provider_error_reason: null,
       } as never)
     : await madeToOrder.createProductionPaymentRequests({
-        type: "balance",
+        type: requestType,
         status: "pending",
         amount: outstanding,
         currency_code: String(order.currency_code || "czk").toLowerCase(),
@@ -345,7 +373,7 @@ export const ensureBalancePaymentLink = async (
           email: order.email,
           country_code: "CZ",
           label: `Obj. ${order.display_id || "doplatek"}`.slice(0, 16),
-          name: `Doplatek objednávky ${order.display_id || order.id}`,
+          name: `${depositOnly ? "Záloha" : "Doplatek"} objednávky ${order.display_id || order.id}`,
           lang: "cs",
           production_payment_request_id: (request as any).id,
           // Návrat z ComGate po doplatku na reálnou stránku objednávky, ne na

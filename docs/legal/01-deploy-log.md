@@ -447,3 +447,13 @@ do produkce jde až sloučením PR #16 (obsahuje migraci `Migration2026102012000
   posune `estimated_completion_at` (bez druhého e-mailu); historie v `order.metadata.order_delays`.
   Tlačítko „Oznámit zpoždění“ u zakázky bylo dosud JEN v Přehled → Zakázky (ne v detailu objednávky) —
   jeho e-mail teď píše „zakázka se zdrží“ a jmenuje výrobek. Sandbox: validace + e-mail + historie OK.
+- **Cena po domluvě jako zakázka (24. 10. noc):** zaškrtávátko „Bez ceny — cena po domluvě“ v jednoduché
+  editaci produktu (zapne i zakázku); v košíku 0 Kč („Po domluvě“), bez balného; objednávka za 0 Kč
+  systémovou platbou (`pp_system_default` — backend ji pustí jen u částky 0, `lib/zero-payment-guard.ts`);
+  v objednávce u položky „Poslat domluvenou cenu“ (`send_agreed_price`) → e-mail `commission-price-agreed`
+  se „Zaplatit zálohu / celé“ → ComGate jen za tu zakázku, zachyceno do objednávky; výroba až po záloze.
+  Oprava: `ensureBalanceCollection` padala na „is not iterable“ (srovnání kolekce doplatku). Admin:
+  přidání/přejmenování varianty v jednoduché editaci (dřív vždy selhalo), výchozí produktové stránky
+  Medusy přesměrované. OP čl. IX: u ceny po domluvě smlouva vzniká zaplacením zálohy. Sandbox: 18/18
+  (cena po domluvě), 17/17 (poukazy), backend 1612/1612.
+  **Před produkcí:** povolit `pp_system_default` v regionu Česká republika (dnes chybí).

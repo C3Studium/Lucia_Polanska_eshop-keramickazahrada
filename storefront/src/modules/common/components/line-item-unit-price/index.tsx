@@ -1,4 +1,8 @@
 import { convertToLocale } from "@lib/util/money"
+import {
+  isPriceOnRequestLine,
+  PRICE_ON_REQUEST_LINE_LABEL,
+} from "@lib/util/price-on-request"
 import { HttpTypes } from "@medusajs/types"
 import { clx } from "@medusajs/ui"
 import styles from "./style.module.scss"
@@ -22,6 +26,21 @@ const LineItemUnitPrice = ({
   const percentage_diff = Math.round(
     originalTotal > 0 ? ((originalTotal - total) / originalTotal) * 100 : 0
   )
+
+  // Cena po domluvě — viz LineItemPrice.
+  if (total <= 0 && isPriceOnRequestLine(item as any)) {
+    return (
+      <div className={styles.root}>
+        <span
+          className={styles.price}
+          data-testid="product-unit-price"
+          data-price-on-request="true"
+        >
+          {PRICE_ON_REQUEST_LINE_LABEL}
+        </span>
+      </div>
+    )
+  }
 
   return (
     <div className={styles.root}>

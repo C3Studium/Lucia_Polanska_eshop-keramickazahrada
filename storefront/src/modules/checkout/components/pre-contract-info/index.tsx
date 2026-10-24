@@ -26,6 +26,7 @@ import {
 } from "@lib/util/made-to-order"
 import { convertToLocale } from "@lib/util/money"
 import { productLines } from "@lib/util/packaging"
+import { hasPriceOnRequestLine } from "@lib/util/price-on-request"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import { LEGAL_LINKS } from "../legal-consent/labels"
@@ -272,6 +273,14 @@ export default function PreContractInfo({
       commissionLines.push(`Výroba do ${maxDays} dnů od zahájení výroby.`)
     }
     commissionLines.push(MADE_TO_ORDER_CANCEL_SENTENCE)
+  }
+
+  /* Cena po domluvě: kus je v košíku za 0 Kč, záloha z něj teď žádná —
+     cena i záloha přijdou e-mailem po objednávce. */
+  if (commission && hasPriceOnRequestLine(madeToOrder)) {
+    commissionLines.unshift(
+      "Cenu výrobku po domluvě vám pošlu e-mailem po objednávce; zálohu nebo celou částku zaplatíte až potom, výroba začne po zaplacení zálohy."
+    )
   }
 
   const withdrawalPath = LEGAL_LINKS.withdrawal

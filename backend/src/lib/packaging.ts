@@ -50,6 +50,7 @@ import { refreshPaymentCollectionForCartWorkflow } from "@medusajs/medusa/core-f
 import { decimalDigitsFor, fetchCnbRates, type CnbRateSheet } from "./cnb-rates"
 import { toNumber } from "./order-quantity"
 
+import { isPriceOnRequest } from "./price-on-request"
 import {
   isPackagingLine,
   PACKAGING_MARKER,
@@ -280,7 +281,11 @@ export const planPackagingForCart = async (
   const currency = String(cart.currency_code ?? "czk").toLowerCase()
   const sheet = currency === "czk" ? null : await cnbSheetCached()
   const plan = planPackaging({
-    items: (cart.items ?? []) as PackagingLineLike[],
+    // Cena po domluvě (lib/price-on-request.ts): balné je součástí domluvené
+    // ceny, v košíku za 0 Kč se neúčtuje. Bez řádku zboží plán jeho balné odebere.
+    items: ((cart.items ?? []) as PackagingLineLike[]).filter(
+      (item: any) => !isPriceOnRequest(item?.product?.metadata)
+    ),
     unitPriceFor: (item) =>
       packagingUnitPrice(packagingPriceCzkOf(item.product?.metadata), currency, sheet),
   })

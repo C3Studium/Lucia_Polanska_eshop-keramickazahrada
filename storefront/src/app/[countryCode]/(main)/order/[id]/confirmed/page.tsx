@@ -86,7 +86,7 @@ export default async function OrderConfirmedPage(props: Props) {
     if (outcome) {
       return (
         <OrderStateShell
-          eyebrow="Platba · doplatek"
+          eyebrow="Platba"
           title="Máme to."
           accent="Objednávka je v pořádku."
           description="Podrobnosti se nám tu nepovedlo načíst. Najdete je v e-mailu s potvrzením, nebo ve svém účtu."

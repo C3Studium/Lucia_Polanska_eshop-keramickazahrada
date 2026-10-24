@@ -74,6 +74,7 @@ const templateLabels: Record<string, string> = {
   "order-ready": "Připraveno k odeslání",
   "gift-voucher": "Dárkový poukaz",
   "gift-voucher-payment": "Poukaz — platební odkaz",
+  "commission-price-agreed": "Domluvená cena zakázky",
   "order-edited": "Objednávka upravena",
   "commission-confirmed": "Zadání potvrzeno",
   "order-processing": "Výroba začala",

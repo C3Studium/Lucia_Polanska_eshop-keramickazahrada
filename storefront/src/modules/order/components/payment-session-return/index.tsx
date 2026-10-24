@@ -33,9 +33,9 @@ export default async function PaymentSessionReturn({
   const success = outcome === "paid"
   return (
     <OrderStateShell
-      eyebrow="Platba · doplatek"
-      title={success ? "Máme to." : "Platba doplatku"}
-      accent={success ? "Doplatek je zaplacený." : undefined}
+      eyebrow="Platba"
+      title={success ? "Máme to." : "Platba"}
+      accent={success ? "Platba dorazila, děkuji." : undefined}
       description="Podrobnosti najdete v e-mailu s potvrzením nebo ve svém účtu."
       status={success ? "success" : "pending"}
       primary={{ href: "/account/orders", label: "Moje objednávky" }}

@@ -1,7 +1,9 @@
 import styles from "./style.module.scss"
 
 /**
- * Výsledky, se kterými se zákazník vrací po doplatku (§4.6).
+ * Výsledky, se kterými se zákazník vrací z platby zakázky přes e-mail —
+ * doplatek (§4.6) i záloha nebo celá částka po „Domluvené ceně" (cena po
+ * domluvě). Texty jsou proto neutrální: neříkají, o jakou platbu šlo.
  *
  * `paid` / `zruseno` / `ceka` posílá ComGate na stránku objednávky po platbě;
  * `chyba` / `neplatny-odkaz` posílá backendová pay-balance route při chybě.
@@ -9,23 +11,23 @@ import styles from "./style.module.scss"
 const MESSAGES: Record<string, { tone: "ok" | "warn"; text: string }> = {
   paid: {
     tone: "ok",
-    text: "Doplatek je zaplacený — objednávka je teď plně uhrazená. Děkujeme!",
+    text: "Platba dorazila, děkuji. Potvrzení vám přijde e-mailem.",
   },
   zruseno: {
     tone: "warn",
-    text: "Platba doplatku byla zrušená. Zkusit to můžete znovu z e-mailu, nebo nám napište.",
+    text: "Platba se zrušila a nic se nestrhlo. Zkusit to můžete znovu z odkazu v e-mailu, nebo mi napište.",
   },
   ceka: {
     tone: "warn",
-    text: "Platba doplatku se zpracovává. Jakmile dorazí, dáme vám vědět.",
+    text: "Platba se ještě zpracovává. Jakmile dorazí, dám vám vědět e-mailem.",
   },
   chyba: {
     tone: "warn",
-    text: "Platbu se nepovedlo otevřít. Napište nám prosím.",
+    text: "Platbu se nepovedlo otevřít. Napište mi prosím, ať to spolu vyřešíme.",
   },
   "neplatny-odkaz": {
     tone: "warn",
-    text: "Odkaz na platbu už neplatí. Napište nám prosím.",
+    text: "Odkaz na platbu už neplatí. Napište mi prosím a pošlu vám nový.",
   },
 }
 

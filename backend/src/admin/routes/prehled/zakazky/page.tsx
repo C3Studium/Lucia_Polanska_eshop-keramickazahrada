@@ -44,6 +44,10 @@ type ProductionOrder = {
   balance_requested_at: string | null;
   estimated_completion_at: string | null;
   customer_note: string | null;
+  /** Položka zakázky (§ 0c) — objednávka může mít zakázek víc. */
+  line_item_id?: string | null;
+  line_title?: string | null;
+  commissions_in_order?: number;
 };
 
 const formatDateTime = (value: string): string =>
@@ -115,6 +119,16 @@ const PaymentBar = ({ order }: { order: ProductionOrder }) => {
       ? Math.min(1, order.paid_total / order.agreed_total)
       : 0;
   const fullyPaid = order.outstanding <= 0.01;
+
+  // Cena 0 = výrobek s cenou po domluvě, cena ještě neodešla (blok
+  // „Domluvená cena" vpravo). „0 Kč z 0 Kč" by vypadalo jako zaplaceno.
+  if (order.agreed_total <= 0.005) {
+    return (
+      <Text size="small" className="text-ui-fg-subtle">
+        Cena po domluvě — zatím neodeslaná
+      </Text>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-y-1">
@@ -223,7 +237,7 @@ const ZakazkyInner = () => {
                 {rows.map((order) => (
                   <article
                     key={order.id}
-                    className="grid gap-4 px-6 py-5 lg:grid-cols-[140px_minmax(0,1fr)_190px_minmax(320px,auto)] lg:items-start"
+                    className="grid gap-4 px-6 py-5 lg:grid-cols-[140px_minmax(0,1fr)_190px_minmax(320px,460px)] lg:items-start"
                   >
                     <div>
                       <Text size="small" weight="plus">
@@ -286,8 +300,22 @@ const ZakazkyInner = () => {
                     </div>
 
                     <div className="min-w-0">
-                      <Text size="small" weight="plus" className="truncate">
+                      {order.line_title && (
+                        <Text size="small" weight="plus" className="truncate">
+                          {order.line_title}
+                        </Text>
+                      )}
+                      <Text
+                        size="small"
+                        weight={order.line_title ? "regular" : "plus"}
+                        className={order.line_title ? "text-ui-fg-subtle truncate" : "truncate"}
+                      >
                         {order.customer_name ?? "Zákazník"}
+                        {(order.commissions_in_order ?? 1) > 1
+                          ? ` · ${order.commissions_in_order} ${
+                              (order.commissions_in_order ?? 0) < 5 ? "zakázky" : "zakázek"
+                            } v objednávce`
+                          : ""}
                       </Text>
                       {order.customer_note && (
                         <Text

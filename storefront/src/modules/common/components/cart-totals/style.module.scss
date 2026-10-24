@@ -180,3 +180,11 @@
   letter-spacing: 0.04em;
   text-transform: none;
 }
+/* Cena po domluvě v košíku — jedna věta pod součtem (lib/util/price-on-request). */
+.priceOnRequestNote {
+  margin: clamp(.4rem, 1.2vh, .7rem) 0 0;
+  color: var(--grey-02);
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: calc(var(--cart-summary-zoom, 1) * clamp(.75rem, .96vw, .85rem));
+  line-height: 1.45;
+}

@@ -5,6 +5,7 @@ import { commissionMoney } from "../../../../lib/made-to-order/commission-money"
 import { isPersonalPickupOrder } from "../../../../lib/personal-pickup"
 import { MADE_TO_ORDER_MODULE } from "../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../modules/made-to-order/service"
+import { isAgreedPriceCommission } from "../../../../lib/made-to-order/agreed-price"
 
 /**
  * The commissions queue (§7.2, §22).
@@ -130,6 +131,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       customer_name: name || order?.email || null,
       created_at: order?.created_at ?? production.created_at,
       stage: production.stage,
+      // Cena po domluvě (lib/made-to-order/agreed-price.ts) — fronta Zakázek
+      // nemusí kvůli štítku dočítat detail každé objednávky.
+      price_on_request: isAgreedPriceCommission(production),
       currency_code: String(production.currency_code || "czk"),
       // Zakázka = položka (§ 0c): řádek fronty = jedna zakázka, s názvem položky.
       // Legacy zakázka (celá objednávka) má `line_item_id` null a název chybí.

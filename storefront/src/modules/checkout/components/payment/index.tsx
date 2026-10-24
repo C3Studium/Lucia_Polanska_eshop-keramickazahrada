@@ -4,10 +4,16 @@ import { RadioGroup } from "@headlessui/react"
 import {
   isComgate,
   isDobirkaPayment,
+  isManual,
   isPickupPayment,
   isRetiredPayment,
   paymentInfoMap,
 } from "@lib/constants"
+import {
+  isZeroPriceOnRequestCart,
+  PRICE_ON_REQUEST_ZERO_NOTE,
+  ZERO_PAYMENT_TITLE,
+} from "@lib/util/price-on-request"
 import { initiatePaymentSession, syncPaymentChoice } from "@lib/data/cart"
 import { isDobirkaFeeLine } from "@lib/util/dobirka"
 import {
@@ -89,6 +95,14 @@ const Payment = ({
    * balík dál dobírkou. Osobní odběr jako DORUČENÍ zůstává — mění se jen platba.
    */
   const depositByCard = Boolean(productionMode?.has_made_to_order)
+
+  /*
+   * Cena po domluvě a k úhradě 0 (jen takový kus + osobní odběr): ComGate
+   * 0 Kč nevezme a kartu tu chtít nemá smysl — relace `pp_system_default`
+   * a rovnou do Přehledu. Jakmile je k úhradě víc (běžné zboží, doprava),
+   * platí se normálně kartou jako u každé zakázky.
+   */
+  const zeroCharge = isZeroPriceOnRequestCart(cart)
 
   /*
    * "Zaplatím při vyzvednutí" exists only for Osobní odběr — the customer collects from the
@@ -271,6 +285,18 @@ const Payment = ({
     }
   }
 
+  /* Objednávka za 0 Kč: rovnou do Přehledu (bez `?method=`). Relaci
+     `pp_system_default` zakládá až tlačítko odeslání (PaymentButton
+     `zeroCharge`) — backend ji u zakázky bez vyplněného zadání odmítne
+     a zadání se píše až v Přehledu, stejně jako u platby kartou. */
+  const continueWithoutPayment = () => {
+    setError(null)
+    const params = new URLSearchParams(searchParams)
+    params.set("step", "review")
+    params.delete("method")
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+
   const handleSubmit = async () => {
     if (paidByGiftcard) {
       router.push(pathname + "?" + createQueryString("step", "review"), {
@@ -346,7 +372,24 @@ const Payment = ({
               půlka / celek / vlastní), pak teprve metodu. Volba se uloží na
               košík; Přehled i pravý souhrn ji pak jen čtou. Vykreslí se jen
               když košík zakázku opravdu obsahuje (říká API, neodhadujeme). */}
-          {productionMode?.has_made_to_order && (
+          {zeroCharge && (
+            <div className={styles.methodIntro} data-testid="zero-charge-payment">
+              <span>Teď nic neplatíte</span>
+              <p>{PRICE_ON_REQUEST_ZERO_NOTE}</p>
+            </div>
+          )}
+          {zeroCharge && (
+            <div className={styles.buttonRow}>
+              <PremiumActionButton
+                text="Pokračovat k přehledu"
+                onClickAction={continueWithoutPayment}
+                className={styles.submitBtn}
+                data-testid="submit-payment-button"
+              />
+            </div>
+          )}
+
+          {!zeroCharge && productionMode?.has_made_to_order && (
             <div className={styles.productionPayment}>
               <ProductionPaymentModeChoice
                 initial={productionMode}
@@ -358,7 +401,7 @@ const Payment = ({
             </div>
           )}
 
-          {!paidByGiftcard && availablePaymentMethods?.length > 0 && (
+          {!zeroCharge && !paidByGiftcard && availablePaymentMethods?.length > 0 && (
             <>
               <div className={styles.methodIntro}>
                 <span {...editableItem(steps, "platba.otazka")}>
@@ -444,7 +487,8 @@ const Payment = ({
             data-testid="payment-method-error-message"
           />
 
-          {(paidByGiftcard ||
+          {!zeroCharge &&
+            (paidByGiftcard ||
             (selectedPaymentMethod && !isComgate(selectedPaymentMethod))) && (
             <div className={styles.buttonRow}>
               <PremiumActionButton
@@ -466,7 +510,10 @@ const Payment = ({
               <div className={styles.colThird}>
                 <Text className={styles.sectionTitle}>Způsob platby</Text>
                 <Text className={styles.sectionText}>
-                  {activeComgateInfo?.name_short ||
+                  {(zeroCharge && isManual(activeSession?.provider_id)
+                    ? ZERO_PAYMENT_TITLE
+                    : null) ||
+                    activeComgateInfo?.name_short ||
                     activeComgateInfo?.name ||
                     paymentInfoMap[activeSession?.provider_id]?.title ||
                     activeSession?.provider_id}

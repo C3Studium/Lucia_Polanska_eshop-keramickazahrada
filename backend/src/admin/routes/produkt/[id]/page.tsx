@@ -2,6 +2,7 @@ import { ArrowUpRightOnBox, Photo, Plus, Trash } from "@medusajs/icons";
 import {
   Badge,
   Button,
+  Checkbox,
   Container,
   Heading,
   Input,
@@ -60,6 +61,14 @@ type NativeVariant = {
   /** Carries the variant's own photos (`images`) and customer note (`note`). */
   metadata?: Record<string, unknown> | null;
   prices?: { id?: string; currency_code: string; amount: number }[];
+  /** Hodnoty voleb varianty — to, co zákazník v obchodě vybírá. */
+  options?: { id: string; value: string; option_id?: string | null }[];
+};
+
+type NativeOption = {
+  id: string;
+  title: string;
+  values?: { id: string; value: string }[];
 };
 
 type NativeProduct = {
@@ -82,7 +91,7 @@ type NativeProduct = {
   collection?: { id: string; title: string } | null;
   images?: { id?: string; url: string }[];
   categories?: { id: string; name: string }[];
-  options?: { id: string; title: string }[];
+  options?: NativeOption[];
   variants?: NativeVariant[];
 };
 
@@ -146,8 +155,54 @@ const PRODUCT_FIELDS = [
   "weight", "length", "height", "width", "material", "collection_id", "metadata",
   "created_at", "updated_at",
   "*collection", "*images", "*categories", "*options", "*variants",
-  "*variants.prices", "variants.metadata",
+  "*variants.prices", "variants.metadata", "*options.values", "*variants.options",
 ].join(",");
+
+/*
+ * Provedení = varianta + hodnota volby (např. Provedení: Modrá). Obchod
+ * zákazníkovi nabízí HODNOTY volby, ne názvy variant — a Medusa 2.18 novou
+ * variantu s hodnotou, kterou volba ještě nezná, odmítne („Option value …
+ * does not exist"). Proto se hodnota před založením / přejmenováním přidá
+ * a po přejmenování / odebrání se nepoužívaná stará uklidí, ať v obchodě
+ * nevisí volba bez varianty. Jen u produktu s právě jednou volbou (všech
+ * 267 v živé databázi); víc voleb je výjimka pro původní editaci.
+ */
+const optionValueOf = (variant: NativeVariant, option: NativeOption): string | null =>
+  (variant.options ?? []).find((value) => value.option_id === option.id)?.value ??
+  null;
+
+const addOptionValue = async (
+  productId: string,
+  option: NativeOption,
+  value: string
+) => {
+  if ((option.values ?? []).some((entry) => entry.value === value)) return;
+  await sdk.client.fetch(`/admin/products/${productId}/options/batch`, {
+    method: "POST",
+    body: { update: [{ product_option_id: option.id, add: [{ value }] }] },
+  });
+};
+
+/** Úklid je doplněk — když selže, provedení samo je uložené správně. */
+const removeUnusedOptionValue = async (
+  productId: string,
+  option: NativeOption,
+  value: string | null,
+  remaining: NativeVariant[]
+) => {
+  if (!value) return;
+  const entry = (option.values ?? []).find((candidate) => candidate.value === value);
+  if (!entry) return;
+  if (remaining.some((variant) => optionValueOf(variant, option) === value)) return;
+  try {
+    await sdk.client.fetch(`/admin/products/${productId}/options/batch`, {
+      method: "POST",
+      body: { update: [{ product_option_id: option.id, remove: [entry.id] }] },
+    });
+  } catch {
+    // nic — stará hodnota jen zůstane v nabídce volby
+  }
+};
 
 /** Section shell — heading + hint on the left rhythm of the page. */
 const Section = ({
@@ -298,15 +353,27 @@ const VariantRow = ({
   expert,
   invalidate,
   solo = false,
+  priceOnRequest = false,
+  option = null,
+  siblings = [],
 }: {
   productId: string;
   variant: NativeVariant;
+  /** Jediná volba produktu (Provedení) — název varianty se drží s její hodnotou. */
+  option?: NativeOption | null;
+  /** Ostatní varianty produktu — kvůli úklidu nepoužívané hodnoty volby. */
+  siblings?: NativeVariant[];
   stock: StockVariant | undefined;
   canDelete: boolean;
   expert: boolean;
   invalidate: () => Promise<unknown>;
   /** Jediné provedení produktu — vykreslí se jako údaje kusu, ne jako řádek tabulky. */
   solo?: boolean;
+  /**
+   * „Bez ceny — cena po domluvě“ (metadata.price_on_request): cena se tu
+   * nezadává. Uložené ceny variant se nemažou — po vypnutí se vrátí.
+   */
+  priceOnRequest?: boolean;
 }) => {
   const save = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
@@ -323,10 +390,19 @@ const VariantRow = ({
   });
 
   const remove = useMutation({
-    mutationFn: () =>
-      sdk.client.fetch(`/admin/products/${productId}/variants/${variant.id}`, {
+    mutationFn: async () => {
+      await sdk.client.fetch(`/admin/products/${productId}/variants/${variant.id}`, {
         method: "DELETE",
-      }),
+      });
+      if (option) {
+        await removeUnusedOptionValue(
+          productId,
+          option,
+          optionValueOf(variant, option),
+          siblings
+        );
+      }
+    },
     onSuccess: async () => {
       await invalidate();
       toast.success("Varianta odstraněna.");
@@ -416,7 +492,25 @@ const VariantRow = ({
             value={variant.title ?? ""}
             required
             placeholder="Název varianty"
-            onSave={(next) => save.mutateAsync({ title: next })}
+            onSave={async (next) => {
+              const current = option ? optionValueOf(variant, option) : null;
+              if (!option || !current || current === next) {
+                return save.mutateAsync({ title: next });
+              }
+              // Přejmenování = i nová hodnota volby, kterou zákazník vidí.
+              try {
+                await addOptionValue(productId, option, next);
+              } catch (error) {
+                toast.error(ceskaChyba(error, "Uložení se nepodařilo."));
+                throw error;
+              }
+              const result = await save.mutateAsync({
+                title: next,
+                options: { [option.title]: next },
+              });
+              await removeUnusedOptionValue(productId, option, current, siblings);
+              return result;
+            }}
           />
           {expert && <CopyId value={variant.id} />}
         </div>
@@ -433,6 +527,17 @@ const VariantRow = ({
         </Pole>
       )}
       <Pole label="Cena">
+        {priceOnRequest ? (
+          <div className="flex flex-col gap-0.5 pt-1">
+            <Text size="small" weight="plus">
+              Po domluvě
+            </Text>
+            <Text size="xsmall" className="text-ui-fg-subtle">
+              Cenu pošlete zákazníkovi z objednávky.
+            </Text>
+          </div>
+        ) : (
+        <div className="flex flex-col gap-0.5">
         <InlineNumber
           value={czkPrice(variant)}
           unit="Kč"
@@ -459,6 +564,32 @@ const VariantRow = ({
             })
           }
         />
+        {/* Ceny v ostatních měnách obchodu: dopočítává je denně úloha
+            sync-currency-prices z kurzu ČNB (jobs/sync-currency-prices.ts),
+            ručně se neupravují — přepsala by je. */}
+        {(variant.prices ?? [])
+          .filter((price) => String(price.currency_code).toLowerCase() !== "czk")
+          .map((price) => (
+            <Text
+              key={price.currency_code}
+              size="xsmall"
+              className="text-ui-fg-subtle tabular-nums"
+              title="Dopočítává se denně z kurzu ČNB podle ceny v Kč."
+            >
+              {new Intl.NumberFormat("cs-CZ", {
+                style: "currency",
+                currency: String(price.currency_code).toUpperCase(),
+              }).format(Number(price.amount))}{" "}
+              · podle ČNB
+            </Text>
+          ))}
+        {czkPrice(variant) == null && (
+          <Text size="xsmall" className="text-ui-fg-subtle">
+            Bez ceny — vyplňte ji, ostatní měny se dopočítají samy.
+          </Text>
+        )}
+        </div>
+        )}
       </Pole>
       <Pole label="Skladem">
         <div className="flex items-center gap-2">
@@ -622,15 +753,19 @@ const VariantRow = ({
 
 const AddVariantRow = ({
   productId,
-  optionTitle,
+  option,
   invalidate,
   solo = false,
+  priceOnRequest = false,
 }: {
   productId: string;
-  optionTitle: string | undefined;
+  /** Jediná volba produktu; null = produkt bez voleb (nebo s víc volbami). */
+  option: NativeOption | null;
   invalidate: () => Promise<unknown>;
   /** Produkt má zatím jediné provedení — formulář se schová za tlačítko. */
   solo?: boolean;
+  /** Cena po domluvě — nové provedení se zakládá bez ceny. */
+  priceOnRequest?: boolean;
 }) => {
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
@@ -642,14 +777,19 @@ const AddVariantRow = ({
   const [open, setOpen] = useState(!solo);
 
   const add = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (!title.trim()) throw new Error("Varianta potřebuje název.");
+      // Bez hodnoty ve volbě by Medusa variantu odmítla (viz addOptionValue).
+      if (option) await addOptionValue(productId, option, title.trim());
       return sdk.client.fetch(`/admin/products/${productId}/variants`, {
         method: "POST",
         body: {
           title: title.trim(),
-          ...(optionTitle ? { options: { [optionTitle]: title.trim() } } : {}),
-          prices: price ? [{ currency_code: "czk", amount: Number(price) }] : [],
+          ...(option ? { options: { [option.title]: title.trim() } } : {}),
+          prices:
+            price && !priceOnRequest
+              ? [{ currency_code: "czk", amount: Number(price) }]
+              : [],
           // The shop default: a sold-out piece keeps selling (stock goes
           // negative); the page's „Objednání bez skladu" switch turns it off.
           allow_backorder: true,
@@ -689,14 +829,20 @@ const AddVariantRow = ({
         value={title}
         onChange={(event) => setTitle(event.target.value)}
       />
-      <Input
-        size="small"
-        className="w-28"
-        type="number"
-        placeholder="Kč"
-        value={price}
-        onChange={(event) => setPrice(event.target.value)}
-      />
+      {priceOnRequest ? (
+        <Text size="xsmall" className="text-ui-fg-muted">
+          cena po domluvě
+        </Text>
+      ) : (
+        <Input
+          size="small"
+          className="w-28"
+          type="number"
+          placeholder="Kč"
+          value={price}
+          onChange={(event) => setPrice(event.target.value)}
+        />
+      )}
       <Button size="small" isLoading={add.isPending} onClick={() => add.mutate()}>
         Přidat
       </Button>
@@ -713,7 +859,10 @@ const ReadinessCard = ({
   detail: WorkbenchDetail | undefined;
 }) => {
   const variants = product.variants ?? [];
-  const hasPrice = variants.some((variant) => czkPrice(variant) !== null);
+  // „Cena po domluvě“ je platný stav bez ceny (stejně jako product-completeness).
+  const hasPrice =
+    product.metadata?.price_on_request === true ||
+    variants.some((variant) => czkPrice(variant) !== null);
   const anyBackorder = variants.some((variant) => variant.allow_backorder);
   const allOut =
     detail !== undefined &&
@@ -890,6 +1039,33 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
     },
     onError: (error) =>
       toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
+  });
+
+  /*
+   * „Bez ceny — cena po domluvě“. Zapnutí udělá z kusu zakázku (backend zapne
+   * profil výroby i metadata.made_to_order), proto se po něm obnoví i dotazy
+   * na zakázkový profil a seznamy — štítek „zakázka" a oddíl Zakázková výroba
+   * se ukážou hned. Vypnutí zakázku nechá (vypíná se v Zakázkové výrobě).
+   */
+  const togglePriceOnRequest = useMutation({
+    mutationFn: (next: boolean) =>
+      sdk.client.fetch(`/admin/workbench/products/${productId}/flags`, {
+        method: "POST",
+        body: { price_on_request: next },
+      }),
+    onSuccess: async (_data, next) => {
+      await invalidate();
+      await queryClient.invalidateQueries({ queryKey: ["production-profile", productId] });
+      await queryClient.invalidateQueries({ queryKey: ["product-type-tools", productId] });
+      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+      toast.success(
+        next
+          ? "Cena po domluvě zapnutá — kus je teď zakázka, zákazník ho objedná za 0 Kč."
+          : "Cena po domluvě vypnutá — kus se zase prodává za cenu u provedení."
+      );
+    },
+    onError: (error) =>
+      toast.error(ceskaChyba(error, "Změna se nepodařila.")),
   });
 
   // One switch for the whole piece: backorder is a per-variant fact in the
@@ -1174,6 +1350,9 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
   const priceMin = pricedCzk.length ? Math.min(...pricedCzk) : null;
   const priceMax = pricedCzk.length ? Math.max(...pricedCzk) : null;
   const variants = product.variants ?? [];
+  const priceOnRequest = product.metadata?.price_on_request === true;
+  const singleOption =
+    (product.options ?? []).length === 1 ? product.options![0] : null;
   const stockByVariant = new Map(
     (detail?.variants ?? []).map((variant) => [variant.id, variant])
   );
@@ -1262,6 +1441,11 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                   zakázka
                 </Badge>
               )}
+              {priceOnRequest && (
+                <Badge size="2xsmall" color="purple">
+                  cena po domluvě
+                </Badge>
+              )}
               {isBundle && (
                 <Badge size="2xsmall" color="blue">
                   balíček
@@ -1288,7 +1472,14 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               ]
                 .filter(Boolean)
                 .join(" · ") || "Bez zařazení"}
-              {priceMin !== null && (
+              {priceOnRequest ? (
+                <>
+                  {" · "}
+                  <span className="text-ui-fg-base font-medium">
+                    cena po domluvě
+                  </span>
+                </>
+              ) : priceMin !== null && (
                 <>
                   {" · "}
                   <span className="text-ui-fg-base font-medium">
@@ -1472,7 +1663,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
           <ExpertToggle />
           {expert && (
             <Button size="small" variant="transparent" asChild>
-              <Link to={`/products/${product.id}`}>
+              <Link to={`/products/${product.id}?puvodni=1`}>
                 Původní editace <ArrowUpRightOnBox />
               </Link>
             </Button>
@@ -1668,6 +1859,28 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                   ? "Ukládá se při opuštění pole — žádné tlačítko navíc."
                   : "Název, kód, cena i naskladnění — všechno rovnou tady, ukládá se při opuštění pole."}
               </Text>
+              {/* Cena po domluvě (metadata.price_on_request) — jediné místo,
+                  kde se zapíná; dřívější informační věta je sloučená sem. */}
+              <label className="bg-ui-bg-subtle mt-3 flex cursor-pointer items-start gap-3 rounded-lg px-3 py-2.5">
+                <Checkbox
+                  className="mt-0.5"
+                  checked={priceOnRequest}
+                  disabled={togglePriceOnRequest.isPending}
+                  onCheckedChange={(next) =>
+                    togglePriceOnRequest.mutate(next === true)
+                  }
+                />
+                <div>
+                  <Text size="small" weight="plus">
+                    Bez ceny — cena po domluvě
+                  </Text>
+                  <Text size="small" className="text-ui-fg-subtle mt-0.5">
+                    {priceOnRequest
+                      ? "Zákazník objedná za 0 Kč, cenu mu po domluvě pošlete z objednávky; produkt je automaticky zakázka."
+                      : "Zaškrtněte, když cenu domlouváte se zákazníkem až po objednávce — kus se pak stane zakázkou."}
+                  </Text>
+                </div>
+              </label>
             </div>
             {/* Hlavička sloupců dává smysl jen nad tabulkou. */}
             {variants.length > 1 && (
@@ -1695,14 +1908,18 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                   expert={expert}
                   invalidate={invalidate}
                   solo={variants.length === 1}
+                  priceOnRequest={priceOnRequest}
+                  option={singleOption}
+                  siblings={variants.filter((other) => other.id !== variant.id)}
                 />
               ))}
             </div>
             <AddVariantRow
               productId={product.id}
-              optionTitle={product.options?.[0]?.title}
+              option={singleOption}
               invalidate={invalidate}
               solo={variants.length === 1}
+              priceOnRequest={priceOnRequest}
             />
           </section>
 

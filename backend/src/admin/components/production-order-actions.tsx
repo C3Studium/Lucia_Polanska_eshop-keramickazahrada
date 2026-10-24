@@ -14,6 +14,12 @@ import { useState } from "react";
 import { formatAmount } from "../lib/format";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba, ceskyText } from "../lib/ceska-chyba";
+import {
+  AgreedPriceBlock,
+  agreedPriceConfirmBlock,
+  agreedPriceStartBlock,
+  useCommissionsOfOrder,
+} from "./agreed-price";
 
 /**
  * The one next step for a commission, per stage (§7.2, P6-1).
@@ -117,8 +123,14 @@ const useAction = (order: Pick<ProductionOrderSummary, "id" | "order_id">) => {
  */
 const ConfirmSpecification = ({
   order,
+  priceOnRequest = false,
+  blockedReason = null,
 }: {
   order: ProductionOrderSummary;
+  /** Cena po domluvě — cena se posílá v bloku „Domluvená cena", tady se nezadává. */
+  priceOnRequest?: boolean;
+  /** Proč potvrdit ještě nejde (zakázané tlačítko s vysvětlením). */
+  blockedReason?: string | null;
 }) => {
   const [open, setOpen] = useState(false);
   const [price, setPrice] = useState(String(order.agreed_total || ""));
@@ -126,16 +138,29 @@ const ConfirmSpecification = ({
   const [note, setNote] = useState("");
   const action = useAction(order);
 
-  const parsed = Number(price);
+  const parsed = priceOnRequest ? order.agreed_total : Number(price);
   const isValid = Number.isFinite(parsed) && parsed > 0;
   // The deposit is already paid; agreeing a price below it would leave the
   // shop owing money, which is a refund conversation, not a confirmation.
   const belowPaid = isValid && parsed < order.paid_total;
 
+  if (blockedReason) {
+    return (
+      <div className="flex flex-col items-start gap-1 lg:items-end">
+        <Button size="small" variant="primary" disabled>
+          Potvrdit zadání
+        </Button>
+        <Text size="xsmall" className="text-ui-fg-muted max-w-xs lg:text-right">
+          {blockedReason}
+        </Text>
+      </div>
+    );
+  }
+
   if (!open) {
     return (
       <Button size="small" variant="primary" onClick={() => setOpen(true)}>
-        Potvrdit zadání a cenu
+        {priceOnRequest ? "Potvrdit zadání" : "Potvrdit zadání a cenu"}
       </Button>
     );
   }
@@ -165,6 +190,7 @@ const ConfirmSpecification = ({
       }}
     >
       <div className="flex flex-wrap gap-3">
+        {!priceOnRequest && (
         <div className="flex flex-col gap-y-1">
           <Label size="xsmall" htmlFor={`price-${order.id}`}>
             Domluvená celková cena
@@ -179,6 +205,7 @@ const ConfirmSpecification = ({
             onChange={(event) => setPrice(event.target.value)}
           />
         </div>
+        )}
         <div className="flex flex-col gap-y-1">
           <Label size="xsmall" htmlFor={`deadline-${order.id}`}>
             Termín dokončení
@@ -574,26 +601,54 @@ export const ProductionOrderActions = ({
 }) => {
   const mutation = useAction(order);
 
+  /*
+   * Cena po domluvě: seznam zakázek ten příznak nenese, takže se před
+   * zahájením výroby (jen tehdy na něm záleží) dočte detail objednávky —
+   * stejný dotaz, jaký drží widget na detailu objednávky.
+   */
+  const beforeProduction = ["specification_pending", "confirmed"].includes(order.stage);
+  const detail = useCommissionsOfOrder(order.order_id, beforeProduction);
+  const commission =
+    (detail.data?.production_orders ?? []).find((row) => row.id === order.id) ?? null;
+  const agreedPrice = beforeProduction && commission?.price_on_request ? commission : null;
+  const startBlocked = agreedPriceStartBlock(agreedPrice);
+
   return (
     <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+      {agreedPrice && (
+        <AgreedPriceBlock orderId={order.order_id} commission={agreedPrice} />
+      )}
+
       {order.stage === "specification_pending" && (
-        <ConfirmSpecification order={order} />
+        <ConfirmSpecification
+          order={order}
+          priceOnRequest={Boolean(agreedPrice)}
+          blockedReason={agreedPriceConfirmBlock(agreedPrice)}
+        />
       )}
 
       {order.stage === "confirmed" && (
-        <Button
-          size="small"
-          variant="primary"
-          isLoading={mutation.isPending}
-          onClick={() =>
-            mutation.mutate(
-              { action: "start_production" },
-              { onSuccess: () => toast.success("Výroba začala") }
-            )
-          }
-        >
-          Začít výrobu
-        </Button>
+        <div className="flex flex-col items-start gap-1 lg:items-end">
+          <Button
+            size="small"
+            variant="primary"
+            isLoading={mutation.isPending}
+            disabled={Boolean(startBlocked)}
+            onClick={() =>
+              mutation.mutate(
+                { action: "start_production" },
+                { onSuccess: () => toast.success("Výroba začala") }
+              )
+            }
+          >
+            Začít výrobu
+          </Button>
+          {startBlocked && (
+            <Text size="xsmall" className="text-ui-fg-muted max-w-xs lg:text-right">
+              {startBlocked}
+            </Text>
+          )}
+        </div>
       )}
 
       {order.stage === "in_production" && (

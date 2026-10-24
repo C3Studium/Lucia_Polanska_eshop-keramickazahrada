@@ -7,6 +7,12 @@ import { pickupPointLabel } from "@lib/util/pickup-point"
 import { isPackagingLine } from "@lib/util/packaging"
 import { discountRowLabel } from "@lib/util/gift-voucher-code"
 import { packagingFor } from "@modules/common/components/packaging-line"
+import {
+  hasPriceOnRequestLine,
+  isPriceOnRequestLine,
+  PRICE_ON_REQUEST_LINE_LABEL,
+  PRICE_ON_REQUEST_SUMMARY_NOTE,
+} from "@lib/util/price-on-request"
 
 /**
  * What the customer is about to pay for, in one block: the objects, where they are going,
@@ -43,6 +49,8 @@ export default function OrderRecap({
             .map((item: any) => {
               const pack = packagingFor(cart?.items as any[], item) as any
               const packTotal = pack ? Number(pack.unit_price ?? 0) * Number(pack.quantity ?? 0) : 0
+              // Cena po domluvě: místo „0 Kč" „Po domluvě" (lib/util/price-on-request).
+              const agreedLater = isPriceOnRequestLine(item)
               return (
                 <li key={item.id}>
                   <span className={styles.itemTitle}>
@@ -52,7 +60,7 @@ export default function OrderRecap({
                   <span className={styles.itemPrices}>
                     <span className={styles.itemLine}>
                       <span className={styles.itemQuantity}>{item.quantity}×</span>{" "}
-                      {money(item.unit_price)}
+                      {agreedLater ? PRICE_ON_REQUEST_LINE_LABEL : money(item.unit_price)}
                     </span>
                     {pack && (
                       <span className={`${styles.itemLine} ${styles.itemPackaging}`} data-testid="packaging-note">
@@ -60,7 +68,11 @@ export default function OrderRecap({
                         {money(pack.unit_price)}
                       </span>
                     )}
-                    <span className={styles.itemTotal}>{money(Number(item.total ?? 0) + packTotal)}</span>
+                    <span className={styles.itemTotal} data-price-on-request={agreedLater || undefined}>
+                      {agreedLater && packTotal <= 0
+                        ? PRICE_ON_REQUEST_LINE_LABEL
+                        : money(Number(item.total ?? 0) + packTotal)}
+                    </span>
                   </span>
                 </li>
               )
@@ -130,7 +142,13 @@ export default function OrderRecap({
               <dd>{money(cart?.total)}</dd>
             </div>
           </dl>
-          {deposit && (
+          {/* Cena po domluvě: proč tam u výrobku není částka. */}
+          {hasPriceOnRequestLine(cart?.items) && (
+            <p className={styles.depositNote} data-testid="recap-price-on-request">
+              {PRICE_ON_REQUEST_SUMMARY_NOTE}
+            </p>
+          )}
+          {deposit && deposit.now > 0 && (
             <p className={styles.depositNote} data-testid="recap-deposit">
               {deposit.later > 0 ? (
                 <>

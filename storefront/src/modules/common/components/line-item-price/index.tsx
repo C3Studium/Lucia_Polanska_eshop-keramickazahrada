@@ -1,5 +1,9 @@
 import { getPercentageDiff } from "@lib/util/get-precentage-diff"
 import { convertToLocale } from "@lib/util/money"
+import {
+  isPriceOnRequestLine,
+  PRICE_ON_REQUEST_LINE_LABEL,
+} from "@lib/util/price-on-request"
 import { HttpTypes } from "@medusajs/types"
 import { clx } from "@medusajs/ui"
 import styles from "./style.module.scss"
@@ -18,6 +22,24 @@ const LineItemPrice = ({
   const currentPrice = item.total ?? 0
   const originalPrice = item.original_total ?? currentPrice
   const hasReducedPrice = currentPrice < originalPrice
+
+  /* Cena po domluvě: řádek stojí 0 Kč, ale „0 Kč" by lhalo — cenu pošlu
+     po objednávce e-mailem (lib/util/price-on-request). */
+  if (currentPrice <= 0 && isPriceOnRequestLine(item as any)) {
+    return (
+      <div className={styles.root}>
+        <div className={styles.priceContainer}>
+          <span
+            className={styles.price}
+            data-testid="product-price"
+            data-price-on-request="true"
+          >
+            {PRICE_ON_REQUEST_LINE_LABEL}
+          </span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={styles.root}>
