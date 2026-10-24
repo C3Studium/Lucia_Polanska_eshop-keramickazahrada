@@ -24,6 +24,12 @@ interface CourseTermCancelledEmailProps {
   /** True when this booking was paid by card. */
   paidOnline?: boolean
   /**
+   * True when the booking was paid in cash at the studio. Nothing to refund
+   * automatically — but the money is just as real, and until this existed the
+   * e-mail said nothing about it at all.
+   */
+  paidOnSite?: boolean
+  /**
    * True when the ComGate refund already went through — the money is on its
    * way back on its own. False (with `paidOnline`) means the automatic
    * refund did not succeed and the owner returns it by hand.
@@ -39,6 +45,7 @@ function CourseTermCancelledEmailComponent({
   partySize = 1,
   totalAmount = "1 200 Kč",
   paidOnline = false,
+  paidOnSite = false,
   refundedAutomatically = false,
 }: CourseTermCancelledEmailProps) {
   const base = storefrontBase()
@@ -61,11 +68,16 @@ function CourseTermCancelledEmailComponent({
         label="Počet osob"
         value={`${partySize} ${partySize === 1 ? "osoba" : partySize < 5 ? "osoby" : "osob"}`}
       />
-      {paidOnline ? (
+      {paidOnline || paidOnSite ? (
         <LedgerRow label="Zaplaceno" value={totalAmount} strong tone="clay" />
       ) : null}
       <LedgerEnd />
 
+      {/*
+        Peníze musí být zmíněné u KAŽDÉHO, kdo zaplatil — nejen u karty.
+        Kdo platil hotově na místě, nemá kam vracet automaticky, ale jeho
+        peníze u nás leží úplně stejně; dřív o nich tenhle e-mail mlčel.
+      */}
       {paidOnline ? (
         refundedAutomatically ? (
           <Note tone="clay">
@@ -78,6 +90,12 @@ function CourseTermCancelledEmailComponent({
             nejdříve kvůli vrácení peněz — nemusíte nic dělat.
           </Note>
         )
+      ) : paidOnSite ? (
+        <Note tone="clay">
+          Částku {totalAmount} jste platili u nás na místě, takže vám ji
+          stejnou cestou vrátíme — ozveme se vám co nejdříve a domluvíme se,
+          jak vám ji předat. Nemusíte nic dělat.
+        </Note>
       ) : null}
 
       <P>

@@ -152,10 +152,45 @@ export async function POST(
       refunded: refundedIds.has(reservation.id),
       refund_failed: !refundedIds.has(reservation.id),
     })),
+    /*
+     * Kdo zaplatil hotově na místě.
+     *
+     * Automaticky se jim vrátit nedá — není kam. Dřív se o nich tahle
+     * odpověď vůbec nezmínila, takže se majitelka nedozvěděla, že má někomu
+     * vrátit peníze z ruky. Od chvíle, kdy jde platbu na místě v adminu
+     * zapsat, je to reálná situace, ne teorie.
+     */
+    paid_on_site: affected
+      .filter(
+        (reservation: any) =>
+          reservation.payment_method === "on_site" &&
+          reservation.payment_status === "paid"
+      )
+      .map((reservation: any) => ({
+        id: reservation.id,
+        name: reservation.name,
+        total_price: toAmount(reservation.total_price),
+      })),
     refunds: {
       refunded_count: refundedIds.size,
-      manual_count: manual.length,
-      manual_names: manual.map((reservation: any) => reservation.name),
+      /* Ruční vrácení = karta, u které automatika selhala, PLUS hotovost. */
+      manual_count:
+        manual.length +
+        affected.filter(
+          (reservation: any) =>
+            reservation.payment_method === "on_site" &&
+            reservation.payment_status === "paid"
+        ).length,
+      manual_names: [
+        ...manual.map((reservation: any) => reservation.name),
+        ...affected
+          .filter(
+            (reservation: any) =>
+              reservation.payment_method === "on_site" &&
+              reservation.payment_status === "paid"
+          )
+          .map((reservation: any) => `${reservation.name} (platil na místě)`),
+      ],
     },
   })
 }
