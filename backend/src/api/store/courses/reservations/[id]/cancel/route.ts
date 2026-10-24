@@ -57,8 +57,67 @@ export async function POST(
     })
     return
   }
+  /*
+   * Po uplynutí samoobslužné lhůty se nezruší, ale PODÁ SE ŽÁDOST.
+   *
+   * Dřív tu stálo jen 400 s větou „zavolejte mi prosím". Zákazník tedy
+   * musel zvednout telefon a majitelce o tom nezůstal žádný záznam — ani
+   * o tom, že někdo zrušit chtěl. Storno podmínky (Matěj, 20. 10. 2026)
+   * přitom počítají právě s tím, že pozdní zrušení se řeší individuálně:
+   * tohle je to „individuálně", jen zapsané.
+   *
+   * Druhá žádost nic nepřepisuje — jedna rezervace, jedna otevřená žádost.
+   */
   if (!isBeforeSelfServiceCutoff(term.starts_at, new Date())) {
-    res.status(400).json({ message: COURSE_SELF_SERVICE_TOO_LATE })
+    const courseService = req.scope.resolve<CourseModuleService>(COURSE_MODULE)
+
+    if (reservation.cancel_request_status === "pending") {
+      res.status(200).json({
+        status: "request_pending",
+        message:
+          "Žádost o zrušení už evidujeme — ozveme se vám, jakmile ji vyřídíme.",
+      })
+      return
+    }
+
+    const note =
+      typeof (req.body as { reason?: unknown } | undefined)?.reason === "string"
+        ? String((req.body as { reason?: string }).reason).trim().slice(0, 1000)
+        : null
+
+    await courseService.updateCourseReservations({
+      id: reservation.id,
+      cancel_request_status: "pending",
+      cancel_requested_at: new Date(),
+      cancel_request_note: note || null,
+      // Starší rozhodnutí nesmí strašit u nové žádosti.
+      cancel_decided_at: null,
+      cancel_decision_note: null,
+    } as never)
+
+    await notifyMerchant(req.scope, {
+      key: `course-cancel-request:${reservation.id}`,
+      title: `Kurzy: žádost o zrušení — ${reservation.name}`,
+      description: [
+        `${term.title} · ${formatCourseDate(term.starts_at)}`,
+        `${reservation.party_size} os. · ${reservation.name}${
+          reservation.email ? ` <${reservation.email}>` : ""
+        }${reservation.phone ? `, tel. ${reservation.phone}` : ""}`,
+        reservation.payment_status === "paid"
+          ? "Zaplaceno — při schválení rozhodnete, jestli peníze vrátit."
+          : "Nezaplaceno.",
+        note ? `Důvod: ${note}` : "Důvod neuveden.",
+        "Vyřídíte v Kurzech v záložce „Žádosti o zrušení“.",
+      ].join("\n"),
+      audience: "owner",
+      email: true,
+    }).catch(() => undefined)
+
+    res.status(200).json({
+      status: "request_created",
+      message:
+        "Do začátku kurzu zbývá méně než 24 hodin, takže zrušení posoudíme osobně. Žádost jsme přijali a ozveme se vám.",
+    })
     return
   }
 

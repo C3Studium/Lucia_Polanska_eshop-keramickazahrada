@@ -44,6 +44,25 @@ export const CourseReservation = model.define("course_reservation", {
     .nullable(),
   /** Stamped once the automatic ComGate refund succeeded — never refund twice. */
   refunded_at: model.dateTime().nullable(),
+  /**
+   * Žádost o zrušení, kterou podal zákazník po uplynutí samoobslužné lhůty
+   * (do 24 h před začátkem se ruší samo — viz `../lifecycle.ts`).
+   *
+   * Dřív se na tomhle místě jen odmítlo („zavolejte mi prosím") a telefonát
+   * se nikde nezapsal. `pending` čeká na rozhodnutí majitelky, `approved`
+   * znamená, že rezervaci zrušila (vrácení peněz je samostatné rozhodnutí),
+   * `denied` že na zrušení nepřistoupila. Null = žádost nikdy nebyla.
+   */
+  cancel_request_status: model
+    .enum(["pending", "approved", "denied"])
+    .index()
+    .nullable(),
+  cancel_requested_at: model.dateTime().nullable(),
+  /** Důvod vlastními slovy zákazníka — majitelka podle něj rozhoduje. */
+  cancel_request_note: model.text().nullable(),
+  cancel_decided_at: model.dateTime().nullable(),
+  /** Co majitelka k rozhodnutí napsala; jde zákazníkovi v e-mailu. */
+  cancel_decision_note: model.text().nullable(),
   source: model.enum(["web", "manual"]).default("web"),
   /** The owner's own note („zavolala paní Nováková, přijdou 3"). */
   note: model.text().nullable(),
