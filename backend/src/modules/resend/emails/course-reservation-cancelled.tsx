@@ -57,15 +57,15 @@ function CourseReservationCancelledEmailComponent({
   const coursesUrl = base ? `${base}/kurzy` : ""
   const paid = variant === "refunded" || variant === "manual_refund"
   return (
-    <EmailLayout preview={`Rezervace kurzu ${courseTitle} byla zrušena.`}>
-      <Eyebrow>Kurzy</Eyebrow>
-      <EmailH1 accent="byla zrušena.">Vaše rezervace</EmailH1>
+    <EmailLayout preview={`Rezervace kurzu ${courseTitle} je zrušená.`}>
+      <Eyebrow>Kurz</Eyebrow>
+      <EmailH1 accent="je zrušená.">Vaše rezervace</EmailH1>
 
       <Greeting name={customerName} />
       <P>
         {cancelledByCustomer
-          ? "vaši rezervaci kurzu jsme na vaši žádost zrušili. Tady je pro pořádek, čeho se týkala:"
-          : "vaši rezervaci kurzu jsme zrušili. Tady je pro pořádek, čeho se týkala:"}
+          ? "vaši rezervaci kurzu jsem na vaši žádost zrušila. Pro pořádek, čeho se týkala:"
+          : "vaši rezervaci kurzu jsem zrušila. Pro pořádek, čeho se týkala:"}
       </P>
 
       <LedgerRow label="Kurz" value={courseTitle} />
@@ -82,31 +82,31 @@ function CourseReservationCancelledEmailComponent({
 
       {variant === "refunded" ? (
         <Note tone="clay">
-          Částku {totalAmount} vám vracíme zpět na účet, ze kterého jste
+          Částku {totalAmount} vám vracím zpět na účet, ze kterého jste
           platili — obvykle dorazí do několika dní. Nemusíte nic dělat.
         </Note>
       ) : variant === "manual_refund" ? (
         <Note tone="clay">
-          Zaplacenou částku {totalAmount} vám vrátíme v plné výši. Ozveme se
-          vám co nejdříve kvůli vrácení peněz — nemusíte nic dělat.
+          Zaplacenou částku {totalAmount} vám vrátím v plné výši. Ozvu se vám
+          co nejdřív kvůli vrácení peněz — nemusíte nic dělat.
         </Note>
       ) : null}
 
       <P>
         {cancelledByCustomer
-          ? "Kdybyste si to rozmysleli, budeme rádi, když si vyberete z dalších termínů — a s jakýmkoli dotazem stačí odpovědět na tento e-mail."
-          : "Kdyby šlo o nedorozumění, nebo jste měli jakýkoli dotaz, stačí odpovědět na tento e-mail. A budeme rádi, když si vyberete z dalších termínů."}
+          ? "Kdybyste si to rozmysleli, budu ráda, když si vyberete z dalších termínů — a s jakýmkoli dotazem mi napište na info@keramickazahrada.cz, odpovídám sama."
+          : "Kdyby šlo o nedorozumění nebo jste měli jakýkoli dotaz, napište mi na info@keramickazahrada.cz, odpovídám sama. A budu ráda, když si vyberete z dalších termínů."}
       </P>
 
       {coursesUrl ? (
         <ButtonRow>
           <EmailButton href={coursesUrl} variant="ghost">
-            Podívat se na termíny kurzů
+            Vybrat nový termín
           </EmailButton>
         </ButtonRow>
       ) : null}
 
-      <Signature />
+      <Signature closing={cancelledByCustomer ? "Přeji hezký den," : "Děkuji za pochopení,"} />
     </EmailLayout>
   )
 }

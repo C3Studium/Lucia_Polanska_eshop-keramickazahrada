@@ -18,29 +18,34 @@ interface WelcomeEmailProps {
 function WelcomeEmailComponent({ customerName }: WelcomeEmailProps) {
   const shopUrl = storeLink()
   return (
-    <EmailLayout preview="Vítejte v Keramické zahradě — váš účet je připraven.">
+    <EmailLayout preview="Účet máte hotový. Pár slov od mě, než se porozhlédnete.">
       <Eyebrow>Váš účet</Eyebrow>
-      <EmailH1 accent="v ateliéru.">Vítejte</EmailH1>
+      <EmailH1 accent="zahradě.">Vítejte v Keramické</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        děkujeme, že jste si u nás vytvořili účet. Od této chvíle máte
-        objednávky, adresy i oblíbené objekty přehledně na jednom místě.
+        děkuji, že jste si u mě založili účet. Objednávky, adresy i oblíbené
+        kousky teď najdete na jednom místě.
+      </P>
+      <P>
+        Jsem Lucie, keramička z Písku. Všechno, co tu najdete, modeluju,
+        glazuju a pálím sama u sebe v dílně — a sama taky balím a odpovídám
+        na e-maily. Když mi napíšete, odpovím vám já.
       </P>
 
       <Note tone="olive">
-        V píseckém ateliéru právě vzniká další várka objektů — přijďte se
-        podívat.
+        Každý kousek je trochu jiný než ten na fotce — tak to u ruční práce
+        chodí.
       </Note>
 
       {shopUrl ? (
         <ButtonRow>
-          <EmailButton href={shopUrl}>Prohlédnout objekty</EmailButton>
+          <EmailButton href={shopUrl}>Prohlédnout nabídku</EmailButton>
         </ButtonRow>
       ) : null}
 
       <P small>
-        Tento e-mail vám posíláme, protože jste si vytvořili účet na
+        Tento e-mail vám posílám, protože jste si vytvořili účet na
         keramickazahrada.cz.
       </P>
       <Signature />

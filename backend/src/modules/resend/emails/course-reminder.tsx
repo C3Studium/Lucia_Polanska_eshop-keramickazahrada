@@ -50,12 +50,12 @@ function CourseReminderEmailComponent({
 }: CourseReminderEmailProps) {
   return (
     <EmailLayout preview={`Už za pár dní: ${courseTitle} — ${courseDate}.`}>
-      <Eyebrow>Kurzy</Eyebrow>
-      <EmailH1 accent="těšíme se na vás.">Kurz už se blíží,</EmailH1>
+      <Eyebrow>Kurz</Eyebrow>
+      <EmailH1 accent="za pár dní se potkáme.">Kurz už se blíží,</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        jen připomínáme, že už za pár dní se potkáme u hlíny. Tady je vše
+        jen připomínám, že už za pár dní se potkáme u hlíny. Tady je všechno
         důležité na jednom místě:
       </P>
 
@@ -83,25 +83,24 @@ function CourseReminderEmailComponent({
 
       <P>
         Vezměte si pohodlné oblečení, kterému nevadí hlína — všechno ostatní
-        bude v ateliéru připravené.
+        bude u mě v dílně připravené.
         {payOnSiteAmount
           ? " Platit můžete na místě hotově nebo kartou."
           : ""}
       </P>
 
       <P>
-        Kdyby vám do termínu cokoliv vstoupilo, dejte nám prosím vědět co
-        nejdříve — stačí odpovědět na tento e-mail nebo zavolat na{" "}
-        {CONTACT_PHONE}.
+        Kdyby vám do termínu cokoli vstoupilo, dejte mi prosím vědět co nejdřív
+        — napište mi na info@keramickazahrada.cz nebo zavolejte na {CONTACT_PHONE}.
       </P>
 
       {reservationLink ? (
         <ButtonRow>
-          <EmailButton href={reservationLink}>Detail rezervace</EmailButton>
+          <EmailButton href={reservationLink}>Zobrazit rezervaci</EmailButton>
         </ButtonRow>
       ) : null}
 
-      <Signature />
+      <Signature closing="Těším se na vás," />
     </EmailLayout>
   )
 }

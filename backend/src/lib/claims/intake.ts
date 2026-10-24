@@ -351,15 +351,15 @@ export type CreatedClaim = {
 
 /** Předmět potvrzení o přijetí podle druhu (§6). */
 export const REFUND_REQUEST_SUBJECT: Record<string, string> = {
-  reklamace: "Reklamaci jsme přijali",
-  vraceni: "Žádost o vrácení zboží jsme přijali",
-  odstoupeni: "Potvrzujeme přijetí vašeho odstoupení od smlouvy",
+  reklamace: "Reklamaci jsem přijala",
+  vraceni: "Žádost o vrácení zboží jsem přijala",
+  odstoupeni: "Potvrzuji přijetí vašeho odstoupení od smlouvy",
 }
 
 /** Předmět potvrzení, když server objednávku rovnou zrušil (§13.1). */
 export const REFUND_REQUEST_AUTO_CANCELLED_SUBJECT: Record<string, string> = {
-  vraceni: "Žádost o vrácení jsme přijali — objednávka je zrušená",
-  odstoupeni: "Potvrzujeme přijetí vašeho odstoupení od smlouvy — objednávka je zrušená",
+  vraceni: "Žádost o vrácení jsem přijala — objednávka je zrušená",
+  odstoupeni: "Potvrzuji přijetí vašeho odstoupení od smlouvy — objednávka je zrušená",
 }
 
 /**
@@ -564,7 +564,7 @@ export const createClaim = async (
   const claimsUrl = orderClaimsUrl(order.id)
 
   const emailData: Record<string, unknown> = {
-    subject: REFUND_REQUEST_SUBJECT[kind ?? ""] ?? "Žádost o vrácení jsme přijali",
+    subject: REFUND_REQUEST_SUBJECT[kind ?? ""] ?? "Vaši žádost jsem přijala",
     customerName: customerName(order),
     orderNumber: orderNumber(order),
     orderLink: orderLink(order),
@@ -649,7 +649,7 @@ export const createClaim = async (
             ...emailData,
             subject:
               REFUND_REQUEST_AUTO_CANCELLED_SUBJECT[kind ?? ""] ??
-              "Žádost jsme přijali — objednávka je zrušená",
+              "Vaši žádost jsem přijala — objednávka je zrušená",
             autoCancelled: true,
           },
         })

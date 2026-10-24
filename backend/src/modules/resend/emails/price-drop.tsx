@@ -38,7 +38,7 @@ interface PriceDropEmailProps {
  */
 function PriceDropEmailComponent({
   customerName,
-  productName = "Objekt z ateliéru",
+  productName = "Kousek z dílny",
   productImage,
   originalPrice = "",
   newPrice = "",
@@ -49,14 +49,14 @@ function PriceDropEmailComponent({
 }: PriceDropEmailProps) {
   const productUrl = productLink || storeLink()
   return (
-    <EmailLayout preview={`${productName} je nyní k mání za ${newPrice}.`}>
+    <EmailLayout preview={`${productName} je teď za ${newPrice}.`}>
       <Eyebrow>Změna ceny</Eyebrow>
-      <EmailH1 accent="cenu.">Objekt změnil</EmailH1>
+      <EmailH1 accent="nižší cenu.">Oblíbený kousek má</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        objekt, který vás zaujal, je nyní k mání za nižší cenu. Nikam
-        nespěcháme — jen jsme mysleli, že byste to rádi věděli.
+        kousek, který máte mezi oblíbenými, jsem zlevnila. Nikam nespěchám —
+        jen jsem si řekla, že byste to rádi věděli.
       </P>
 
       <Section style={{ margin: "28px 0 0" }}>
@@ -108,7 +108,7 @@ function PriceDropEmailComponent({
                 margin: "2px 0 0",
               }}
             >
-              Objekt z ateliéru
+              Kousek z dílny
             </Text>
           </Column>
           <Column
@@ -162,14 +162,14 @@ function PriceDropEmailComponent({
 
       {productUrl ? (
         <ButtonRow>
-          <EmailButton href={productUrl}>Zobrazit objekt</EmailButton>
+          <EmailButton href={productUrl}>Zobrazit výrobek</EmailButton>
         </ButtonRow>
       ) : null}
 
       {/* Dřív tu stálo „lze kdykoli vypnout v nastavení účtu" — takové
           nastavení účet nemá. Odmítnutí je odkaz pod podpisem. */}
       <P small>
-        Tuto zprávu dostáváte, protože máte objekt uložený mezi oblíbenými.
+        Tuto zprávu vám posílám, protože máte výrobek uložený mezi oblíbenými.
       </P>
       <Signature />
       <OptOutLine url={unsubscribe_url} />

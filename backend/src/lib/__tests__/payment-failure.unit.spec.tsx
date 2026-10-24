@@ -50,7 +50,7 @@ describe("payment-failed e-mail", () => {
     expect(html).toContain("Dokončit objednávku")
     expect(html).toContain("na účtu nebyl dostatek prostředků")
     expect(html).toContain("cart/recover/cart_01?step=payment")
-    expect(html).not.toContain("objednávka na vás počká")
+    expect(html).not.toContain("objednávku vám podržím")
   })
 
   it("u objednávky zůstává původní znění a číslo", () => {
@@ -62,7 +62,8 @@ describe("payment-failed e-mail", () => {
       })
     )
     expect(html).toContain("#51")
-    expect(html).toContain("Zkusit platbu znovu")
+    expect(html).toContain("objednávku vám podržím")
+    expect(html).toContain("Zopakovat platbu")
     expect(html).not.toContain("objednávka zatím nevznikla")
   })
 })

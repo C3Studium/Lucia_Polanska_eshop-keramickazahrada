@@ -1,5 +1,6 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { buildCommissionConfirmation } from "../lib/potvrzeni-zakazky"
 import {
   customerName,
   formatDate,
@@ -9,6 +10,7 @@ import {
   sendCustomerEmail,
 } from "../lib/customer-email"
 import { balancePaymentUrl } from "../lib/balance-payment-link"
+import { emailLineItems } from "../lib/email-items"
 import { captureCoveredByBalanceMail } from "../lib/balance-settlement"
 import { isAutoCancelledClaim } from "../lib/claims/auto-cancel"
 import { withdrawalUrlFor } from "../lib/claims/withdrawal-link"
@@ -208,6 +210,9 @@ const onPaymentCaptured = async ({
       ...common(order),
       paymentAmount: formatMoney(payment.amount, payment.currency_code),
       paymentMethod: "Online platba",
+      /* Za co platba byla (lib/email-items) — bez výpisu e-mail potvrzoval
+         peníze a nechával zákazníka hádat, které objednávky se týkají. */
+      paidFor: emailLineItems(order),
     },
   })
 }
@@ -359,6 +364,20 @@ const onBalancePaid = async ({
       paymentMethod: production
         ? `Doplatek${commissionTitleOf(order, production) ? ` — ${commissionTitleOf(order, production)}` : ""}`
         : "Doplatek",
+      /*
+       * Za co doplatek byl: TEN kus, ne celá objednávka (zakázka = položka),
+       * s fotkou objednaného produktu. Bez částky schválně — řádek položky
+       * by nesl cenu kusu, zatímco rozpis pod ním mluví o záloze, doplatku
+       * a příplatku; dvě různá čísla u jedné věci jen pletou.
+       */
+      paidFor: production
+        ? (() => {
+            const nazev = commissionTitleOf(order, production)
+            return nazev
+              ? [{ title: nazev, thumbnail: commissionProductImage(order, production) }]
+              : emailLineItems(order)
+          })()
+        : emailLineItems(order),
       commissionPayments,
     },
   })
@@ -648,6 +667,9 @@ const onPaymentRefunded = async ({
       ...common(order),
       refundAmount: formatMoney(refunded, payment.currency_code),
       originalPaymentAmount: formatMoney(payment.amount, payment.currency_code),
+      /* Čeho se peníze týkají. Není to výpis vráceného zboží — tahle
+         refundace může být částečná a šablona to tak i pojmenuje. */
+      paidFor: emailLineItems(order),
       refundMethod: "Zpět na účet, ze kterého platba přišla",
       estimatedRefundTime: "Peníze se obvykle vrátí do několika pracovních dnů.",
     },
@@ -800,6 +822,8 @@ const onDelayAnnounced = async ({
   if (!order) {
     return
   }
+  const production = await commissionFor(container, order.id, data.production_order_id)
+  const title = commissionTitleOf(order, production)
 
   await sendCustomerEmail(container, {
     template: "order-delayed",
@@ -810,6 +834,9 @@ const onDelayAnnounced = async ({
     orderId: order.id,
     data: {
       ...common(order),
+      // Tlačítko u zakázky (Přehled → Zakázky) = zpoždění zakázky, ne celé objednávky.
+      isCommission: true,
+      ...(title ? { delayedItems: [title] } : {}),
       ...(data.original_completion_at
         ? { originalDeliveryDate: formatDate(data.original_completion_at) }
         : {}),
@@ -1015,7 +1042,7 @@ const onMerchantStageChanged = async ({
       orderId: order.id,
       data: {
         ...common(order),
-        pickupLocation: "Ateliér Keramická zahrada",
+        pickupLocation: "Dílna Keramická zahrada, Písek",
         pickupAddress: facts["seller.address"] || "Putim 229, 397 01 Písek",
         readyDate: new Date().toLocaleDateString("cs-CZ"),
       },
@@ -1071,13 +1098,45 @@ const onProductionCompleted = async ({
     typeof data.outstanding === "number" ? data.outstanding : 0
   const production = await commissionFor(container, order.id, data.production_order_id)
 
+  /*
+   * Závěrečné potvrzení zakázky v příloze.
+   *
+   * Dokument se vyrobí znovu, takže nese stav, ve kterém zakázka skutečně
+   * končí — dohodnutý příplatek i posunutý termín. Původní potvrzení se tím
+   * NEPŘEPÍŠE: úložiště ukládá pod pevný klíč jen shodný obsah, a jakmile se
+   * obsah liší, vznikne verze vedle (název nese otisk). Zákazník tak má
+   * obojí — co bylo sjednáno na začátku i čím to skončilo — a to je přesně
+   * to, co se u změny smlouvy dokládá.
+   *
+   * Selhání nesmí zastavit e-mail: „zakázka je hotová" je zpráva, na kterou
+   * zákazník čeká, a příloha je k ní bonus.
+   */
+  let contract: { filename: string; url: string } | null = null
+  try {
+    const built = await buildCommissionConfirmation(container, order.id, {
+      productionOrderId: data.production_order_id ?? production?.id ?? null,
+    })
+    contract = built.attachment
+  } catch (error) {
+    container
+      .resolve(ContainerRegistrationKeys.LOGGER)
+      .warn(
+        `[zakázka hotová] Závěrečné potvrzení k objednávce ${order.id} se nepodařilo vyrobit: ${
+          error instanceof Error ? error.message : String(error)
+        } — e-mail jde bez něj.`
+      )
+  }
+
   await sendCustomerEmail(container, {
     template: "commission-completed",
     to: order.email,
     key: `mto-done:${data.production_order_id ?? order.id}`,
     orderId: order.id,
+    ...(contract ? { attachments: [contract] } : {}),
     data: {
       ...common(order),
+      /* Šablona podle toho může říct, že je potvrzení v příloze. */
+      contractAttached: Boolean(contract),
       fullyPaid,
       balanceDue:
         !fullyPaid && outstanding > 0

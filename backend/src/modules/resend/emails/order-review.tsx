@@ -39,7 +39,7 @@ interface OrderReviewEmailProps {
  * Hlavní tlačítko vede na Google (GOOGLE_REVIEW_URL / GOOGLE_PLACE_ID —
  * otevře rovnou dialog pro napsání recenze), vedlejší na hodnocení produktu
  * na našem webu. Bez Googlu je hlavní tlačítko web a vedlejší „Zobrazit
- * objekt". Fotka i tlačítka se vykreslí jen s reálnými daty — job posílá
+ * výrobek". Fotka i tlačítka se vykreslí jen s reálnými daty — job posílá
  * prázdné řetězce, když produkt nemá fotku či handle, a prázdný `src` se v
  * poště ukazuje jako rozbitý obrázek, prázdný `href` jako mrtvé tlačítko.
  */
@@ -63,21 +63,21 @@ function OrderReviewEmailComponent({
 
   const secondary = googleUrl
     ? siteReviewUrl && siteReviewUrl !== primaryUrl
-      ? { href: siteReviewUrl, label: "Ohodnotit na našem webu" }
+      ? { href: siteReviewUrl, label: "Ohodnotit na webu" }
       : null
     : productLink && productLink !== primaryUrl
-      ? { href: productLink, label: "Zobrazit objekt" }
+      ? { href: productLink, label: "Zobrazit výrobek" }
       : null
 
   return (
-    <EmailLayout preview="Kousek z ateliéru je u vás už týden — jak se mu daří?">
+    <EmailLayout preview="Kousek z mé dílny je u vás už týden — jak se vám s ním žije?">
       <Eyebrow>Vaše dojmy</Eyebrow>
-      <EmailH1 accent="radost?">Dělá vám</EmailH1>
+      <EmailH1 accent="s ním žije?">Jak se vám</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        kousek z našeho ateliéru je u vás už týden. Rádi bychom věděli, jak se
-        mu daří — vaše dojmy pomáhají nám i těm, kdo si objekty teprve
+        kousek z mé dílny je u vás už týden. Ráda bych věděla, jak se vám
+        s ním žije — vaše dojmy pomůžou mně i lidem, kteří si keramiku teprve
         vybírají.
       </P>
 
@@ -143,8 +143,8 @@ function OrderReviewEmailComponent({
 
       {googleUrl ? (
         <P small>
-          Pár slov na Googlu nám pomůže nejvíc — najdou nás podle nich další
-          lidé, kterým by keramika z ateliéru udělala radost.
+          Pár slov na Googlu mi pomůže nejvíc — podle nich mě najdou další
+          lidé, kterým by keramika z dílny udělala radost.
         </P>
       ) : null}
 
@@ -163,10 +163,9 @@ function OrderReviewEmailComponent({
       </ButtonRow>
 
       <P small>
-        Pokud kousek nesplnil vaše očekávání, napište nám — společně to
-        vyřešíme.
+        Pokud něco nesedí, napište mi rovnou na info@keramickazahrada.cz a společně to vyřešíme.
       </P>
-      <Signature />
+      <Signature closing="Mějte se krásně," />
       <OptOutLine url={unsubscribe_url} />
     </EmailLayout>
   )

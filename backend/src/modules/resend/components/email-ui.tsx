@@ -5,6 +5,7 @@ import {
   Head,
   Heading,
   Html,
+  Img,
   Link,
   Preview,
   Row,
@@ -20,6 +21,11 @@ import {
   type LiveLegalFacts,
   type SellerFacts,
 } from "../../../lib/legal"
+import type { EmailLineItem } from "../../../lib/email-items"
+
+/* Položky výpisu „za co platíte" skládá `lib/email-items` (jedno místo pro
+   objednávku i košík); šablony si typ berou odsud, spolu s `PaidFor`. */
+export type { EmailLineItem }
 
 /**
  * Sdílený vizuální systém e-mailů — převod designu storefrontu do řeči,
@@ -290,6 +296,187 @@ export const LedgerEnd = () => (
 )
 
 /**
+ * „Za co platíte" — položky, kterých se platba týká.
+ *
+ * ## Proč to existuje
+ *
+ * E-mail o platbě uváděl jen číslo objednávky, způsob platby a částku. Kdo
+ * u nás koupil dvakrát za týden, z něj nepoznal, které z těch dvou
+ * objednávek se peníze týkají — a u „platba neprošla" nebo „vracíme peníze"
+ * je to horší: zákazník má řešit peníze a neví za co. Faktura to říká, ale
+ * ta je příloha, kterou si nikdo neotvírá, aby se podíval, co koupil.
+ *
+ * U výrobků se vypíší řádky s fotkou (e-mail pak vypadá jako to, co si
+ * zákazník koupil); u kurzů a poukazů stačí text — fotku položky nemají a
+ * „název · termín · počet míst" řekne vše. Služby (balné, doběrečné) jdou
+ * drobným řádkem bez fotky, stejně jako v potvrzení objednávky, aby součet
+ * dával smysl a přitom nepřebily výrobky.
+ *
+ * Bez položek nevykreslí nic — prázdná sekce „za co platíte" je horší než
+ * žádná.
+ */
+export const PaidFor = ({
+  items,
+  heading = "Za co platíte",
+  photos = true,
+}: {
+  items?: EmailLineItem[] | null
+  heading?: string
+  /** Vypnuté u kurzů a poukazů. */
+  photos?: boolean
+}) => {
+  const lines = (items ?? []).filter((item) => item?.title)
+  if (!lines.length) {
+    return null
+  }
+  /* Pořadové číslo jen u zboží — balné pod ním není druhá položka. */
+  const poradi = new Map<EmailLineItem, string>()
+  let pocet = 0
+  for (const item of lines) {
+    if (!item.service) {
+      pocet += 1
+      poradi.set(item, String(pocet).padStart(2, "0"))
+    }
+  }
+
+  return (
+    <Section style={{ margin: "32px 0 0" }}>
+      <Eyebrow>{heading}</Eyebrow>
+      {lines.map((item, index) =>
+        item.service ? (
+          <Row key={index}>
+            {photos ? <Column style={{ width: "68px" }} /> : null}
+            <Column style={{ padding: "0 0 12px", verticalAlign: "top" }}>
+              <Text
+                style={{
+                  fontFamily: brand.sans,
+                  fontSize: "12px",
+                  lineHeight: "18px",
+                  color: brand.muted,
+                  margin: 0,
+                }}
+              >
+                {item.title}
+                {Number(item.quantity) > 1 ? ` · ${item.quantity} ks` : ""}
+              </Text>
+            </Column>
+            <Column
+              align="right"
+              style={{ padding: "0 0 12px", verticalAlign: "top", width: "110px" }}
+            >
+              <Text
+                style={{
+                  fontFamily: brand.sans,
+                  fontSize: "12px",
+                  lineHeight: "18px",
+                  color: brand.muted,
+                  margin: 0,
+                }}
+              >
+                {item.amount ?? ""}
+              </Text>
+            </Column>
+          </Row>
+        ) : (
+          <Row key={index} style={{ borderTop: `1px solid ${brand.line}` }}>
+            {photos ? (
+              <Column
+                style={{ width: "68px", padding: "14px 14px 14px 0", verticalAlign: "top" }}
+              >
+                {item.thumbnail ? (
+                  <Img
+                    src={item.thumbnail}
+                    alt={item.title}
+                    width="56"
+                    height="66"
+                    style={{
+                      borderRadius: "10px",
+                      objectFit: "cover",
+                      backgroundColor: brand.stone,
+                    }}
+                  />
+                ) : (
+                  /* Kamenná plocha místo fotky — prázdné místo by řádek
+                     rozhodilo a „chybí obrázek" v klientech vypadá jako chyba. */
+                  <div
+                    style={{
+                      width: "56px",
+                      height: "66px",
+                      borderRadius: "10px",
+                      backgroundColor: brand.stone,
+                    }}
+                  />
+                )}
+              </Column>
+            ) : null}
+            <Column style={{ padding: "14px 0", verticalAlign: "top" }}>
+              <Text
+                style={{
+                  fontFamily: brand.sans,
+                  fontSize: "10px",
+                  lineHeight: "14px",
+                  letterSpacing: "1.8px",
+                  color: brand.faint,
+                  margin: "0 0 4px",
+                }}
+              >
+                {poradi.get(item)}
+              </Text>
+              <Text
+                style={{
+                  fontFamily: brand.serif,
+                  fontSize: "17px",
+                  lineHeight: "22px",
+                  color: brand.ink,
+                  margin: 0,
+                }}
+              >
+                {item.title}
+              </Text>
+              {item.subtitle || Number(item.quantity) > 1 ? (
+                <Text
+                  style={{
+                    fontFamily: brand.sans,
+                    fontSize: "12px",
+                    lineHeight: "18px",
+                    color: brand.muted,
+                    margin: "2px 0 0",
+                  }}
+                >
+                  {[
+                    item.subtitle || "",
+                    Number(item.quantity) > 1 ? `${item.quantity} ks` : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </Text>
+              ) : null}
+            </Column>
+            <Column
+              align="right"
+              style={{ padding: "14px 0", verticalAlign: "top", width: "110px" }}
+            >
+              <Text
+                style={{
+                  fontFamily: brand.serif,
+                  fontSize: "16px",
+                  lineHeight: "22px",
+                  color: brand.ink,
+                  margin: 0,
+                }}
+              >
+                {item.amount ?? ""}
+              </Text>
+            </Column>
+          </Row>
+        )
+      )}
+      <LedgerEnd />
+    </Section>
+  )
+}
+
+/**
  * Pilulkové tlačítko podle storefrontu: plný inkoust s krémovým textem
  * (primary), nebo jen vlasový rám (ghost). Šipka „↗“ patří k labelu.
  * Outlook zahodí kulaté rohy — tlačítko zůstane hranaté, ale funkční.
@@ -366,8 +553,12 @@ export const Note = ({
   )
 }
 
-/** Podpis ateliéru. */
-export const Signature = () => (
+/**
+ * Podpis Lucie. `closing` je rozloučení nad jménem — výchozí je její
+ * vlastní („Přeji hezký den“), e-mail ho může přepsat podle situace
+ * („Děkuji a těším se,“ u poptávky, „Mějte se krásně,“ u doručení).
+ */
+export const Signature = ({ closing = "Přeji hezký den," }: { closing?: string }) => (
   <Section style={{ margin: "30px 0 0" }}>
     <Text
       style={{
@@ -378,7 +569,7 @@ export const Signature = () => (
         margin: 0,
       }}
     >
-      S pozdravem,
+      {closing}
     </Text>
     <Text
       style={{
@@ -545,7 +736,7 @@ export const EmailLayout = ({
                 margin: 0,
               }}
             >
-              Ateliér Lucie Polanské · Písek
+              Dílna Lucie Polanské · Písek
             </Text>
             <Text
               style={{
@@ -583,8 +774,8 @@ export const EmailLayout = ({
                 margin: "0 0 14px",
               }}
             >
-              Objekty z hlíny pro zahradu i domov. Každý kus vzniká rukama
-              v píseckém ateliéru.
+              Keramika pro zahradu i domov. Každý kousek modeluji, glazuji
+              a pálím sama ve své dílně v Písku.
             </Text>
             <Text
               style={{

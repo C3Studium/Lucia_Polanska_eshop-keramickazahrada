@@ -16,7 +16,11 @@ import {
   type ConfirmationProfileLike,
 } from "./potvrzeni-zakazky/fields"
 import { generateCommissionConfirmationPdf, type ImageFetcher } from "./potvrzeni-zakazky/pdf"
-import { storeCommissionConfirmation, type StoredConfirmation } from "./potvrzeni-zakazky/store"
+import {
+  ORDER_CONFIRMATION_SLUG,
+  storeCommissionConfirmation,
+  type StoredConfirmation,
+} from "./potvrzeni-zakazky/store"
 
 /**
  * PDF „Potvrzení zakázky" (LEGAL_AUDIT § 0, Z11) — orchestrace: načíst
@@ -341,3 +345,78 @@ export const regenerateCommissionConfirmation = (
   productionOrderId?: string | null
 ): Promise<CommissionConfirmationResult> =>
   buildCommissionConfirmation(container, orderId, { productionOrderId })
+
+/**
+ * Potvrzení objednávky — klasická kupní smlouva k běžnému zboží.
+ *
+ * Sourozenec `buildCommissionConfirmation`, jen bez zakázky: generátor podle
+ * chybějící produkční objednávky sám přepne do režimu `objednavka` (jiný
+ * oddíl 03, 05 a 06 — mimo jiné právo odstoupit do 14 dnů místo výjimky
+ * podle § 1837 písm. d) OZ).
+ *
+ * Idempotence stojí na otisku obsahu: `storeOrderConfirmation` uloží PDF pod
+ * pevný klíč `orders/{id}/potvrzeni-objednavky.pdf` a stejné bajty znovu
+ * nenahrává. Razítko o odeslání drží `order.metadata.confirmation_sent_at`,
+ * které nastavuje až subscriber po e-mailu — stejně jako u zakázky.
+ *
+ * Vyhodí, když objednávka neexistuje nebo selže generování či upload;
+ * volající chybu zaloguje a potvrzení pošle bez přílohy. Zákazník nesmí
+ * zůstat bez potvrzení kvůli PDF.
+ */
+export const buildOrderConfirmation = async (
+  container: MedusaContainer,
+  orderId: string
+): Promise<{
+  key: string
+  url: string
+  sha256: string
+  uploaded: boolean
+  attachment: { filename: string; url: string }
+  warnings: string[]
+}> => {
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+
+  const context = await loadConfirmationContext(container, orderId)
+  if (!context) throw new Error(`Objednávka ${orderId} neexistuje.`)
+
+  const { facts } = await getLegalFacts(container)
+  const { fields, warnings } = confirmationFieldsFor({
+    order: context.order,
+    productionOrder: null,
+    facts,
+    manifest: LEGAL_MANIFEST,
+  })
+  for (const warning of warnings) {
+    logger.warn(`[potvrzení objednávky] #${context.order.display_id ?? "?"}: ${warning}`)
+  }
+
+  const bytes = await generateCommissionConfirmationPdf(fields)
+
+  const meta = (context.order.metadata ?? {}) as Record<string, unknown>
+  const stored = await storeCommissionConfirmation(
+    container,
+    orderId,
+    bytes,
+    {
+      key: typeof meta.confirmation_pdf_key === "string" ? meta.confirmation_pdf_key : undefined,
+      url: typeof meta.confirmation_pdf_url === "string" ? meta.confirmation_pdf_url : undefined,
+      sha256:
+        typeof meta.confirmation_pdf_sha256 === "string" ? meta.confirmation_pdf_sha256 : undefined,
+    } as never,
+    null,
+    ORDER_CONFIRMATION_SLUG
+  )
+
+  logger.info(
+    `[potvrzení objednávky] #${context.order.display_id ?? "?"}: PDF ${
+      stored.uploaded ? "uloženo" : "beze změny"
+    } (${stored.key}, sha256 ${stored.sha256.slice(0, 8)}…).`
+  )
+
+  const number = String(context.order.display_id ?? "").replace(/[^0-9A-Za-z_-]/g, "") || "objednavka"
+  return {
+    ...stored,
+    attachment: { filename: `Potvrzeni-objednavky-${number}.pdf`, url: stored.url },
+    warnings,
+  }
+}

@@ -14,6 +14,13 @@ import VoucherAmountField, {
   isCustomAmountVoucher,
   voucherConfig,
 } from "@modules/products/components/voucher-amount"
+import GiftVoucherForm, {
+  EMPTY_GIFT_VOUCHER_FORM,
+  giftVoucherFormError,
+  voucherLineMetadata,
+  type GiftVoucherFormValue,
+} from "@modules/products/components/gift-voucher-form"
+import { isGiftVoucherProduct } from "@lib/util/gift-voucher-code"
 import {
   depositPercentageFor,
   madeToOrderMetadata,
@@ -215,6 +222,13 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   /* Dárkový poukaz s vlastní částkou: pole místo ceny, částka jde do košíku
      jako `metadata.voucher_amount` a backend z ní udělá cenu řádku. */
   const isVoucher = !pick && !bundle && isCustomAmountVoucher(productMeta)
+  /* Jakýkoli dárkový poukaz (pevná hodnota i vlastní částka): formulář
+     podoby a obdarovaného, hodnoty jdou do metadat položky. */
+  const isGiftVoucher = !pick && !bundle && isGiftVoucherProduct(productMeta)
+  const [giftVoucher, setGiftVoucher] = useState<GiftVoucherFormValue>(
+    EMPTY_GIFT_VOUCHER_FORM
+  )
+  const [giftVoucherTouched, setGiftVoucherTouched] = useState(false)
   /* „Cena po domluvě" (`metadata.price_on_request`, přepínač v administraci;
      backend tutéž vlajku vynucuje v lib/price-on-request.ts) nebo výrobek
      prostě bez ceny (Domovní znamení, 20. 10. 2026 rozhodnutí Lucie): nejde
@@ -283,6 +297,12 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
       setVoucherTouched(true)
       return
     }
+    const giftVoucherError = isGiftVoucher ? giftVoucherFormError(giftVoucher) : null
+    if (giftVoucherError) {
+      setGiftVoucherTouched(true)
+      setAddState({ kind: "error", message: giftVoucherError })
+      return
+    }
 
     window.clearTimeout(resetTimer.current)
     setAddState({ kind: "adding" })
@@ -295,7 +315,16 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
         quantity,
         countryCode,
         ...(isMadeToOrder ? { metadata: madeToOrderMetadata("") } : {}),
-        ...(voucherCheck?.ok ? { metadata: { voucher_amount: voucherCheck.amount } } : {}),
+        /* Poukaz: vlastní částka i podoba/obdarovaný v jednom objektu — oba
+           jdou přes `line-items-custom`, kde se z `voucher_amount` počítá cena. */
+        ...(isGiftVoucher || voucherCheck?.ok
+          ? {
+              metadata: {
+                ...(voucherCheck?.ok ? { voucher_amount: voucherCheck.amount } : {}),
+                ...(isGiftVoucher ? voucherLineMetadata(giftVoucher) : {}),
+              },
+            }
+          : {}),
       })
 
       if (!result?.success) {
@@ -556,6 +585,17 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                         maxDays={madeToOrderMaxDays}
                       />
                     )}
+                    {isGiftVoucher && !priceOnRequest && (
+                      <GiftVoucherForm
+                        value={giftVoucher}
+                        onChange={(value) => {
+                          setGiftVoucher(value)
+                          if (addState.kind === "error") setAddState({ kind: "idle" })
+                        }}
+                        showErrors={giftVoucherTouched}
+                        disabled={isAdding}
+                      />
+                    )}
                     {priceOnRequest ? (
                       <div className="product__details__cta__buy" data-testid="price-on-request">
                         <LocalizedClientLink
@@ -578,7 +618,9 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                       addState={addState}
                       availability={availability}
                       backorderNote={
-                        isMadeToOrder || isVoucher ? null : backorderWaitNote(product)
+                        isMadeToOrder || isVoucher || isGiftVoucher
+                          ? null
+                          : backorderWaitNote(product)
                       }
                       // Dobírka výchozí; ne u zakázky (profil i kategorie) a do zahraničí.
                       codAllowed={
@@ -614,8 +656,12 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                          anonymous, so the button re-checks them in the browser. */
                       /* Poukaz s vlastní částkou taky ne: „Koupit ihned" vkládá
                          variantu bez částky (rychlý nákup pole nemá). */
+                      /* A žádný poukaz: „Koupit ihned" nenese podobu ani obdarovaného. */
                       showBuyNow={Boolean(
-                        !isMadeToOrder && !isCommissionCategory && !isVoucher
+                        !isMadeToOrder &&
+                          !isCommissionCategory &&
+                          !isVoucher &&
+                          !isGiftVoucher
                       )}
                       buyNowEligible={Boolean(isAuthenticated && hasSavedAddress)}
                       texts={texts}

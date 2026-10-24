@@ -40,10 +40,10 @@ function CourseWaitlistSpotEmailComponent({
   const coursesUrl = base ? `${base}/kurzy#rezervace` : ""
   return (
     <EmailLayout
-      preview={`Na kurzu ${courseTitle} se uvolnilo místo — rezervace je znovu otevřená.`}
+      preview={`Na kurzu ${courseTitle} se uvolnilo místo — můžete si ho rezervovat.`}
     >
-      <Eyebrow>Kurzy</Eyebrow>
-      <EmailH1 accent="rezervace je otevřená.">Uvolnilo se místo,</EmailH1>
+      <Eyebrow>Kurz</Eyebrow>
+      <EmailH1 accent="můžete si ho rezervovat.">Uvolnilo se místo,</EmailH1>
 
       <Greeting name={customerName} />
       <P>
@@ -60,8 +60,7 @@ function CourseWaitlistSpotEmailComponent({
       <LedgerEnd />
 
       <Note tone="clay">
-        Místo držíme tomu, kdo dřív dokončí rezervaci — doporučujeme proto
-        neotálet.
+        Místo držím tomu, kdo dřív dokončí rezervaci — tak prosím neotálejte.
       </Note>
 
       {coursesUrl ? (
@@ -72,7 +71,7 @@ function CourseWaitlistSpotEmailComponent({
 
       <P>
         Kdyby vás termín mezitím přestal lákat, nemusíte dělat vůbec nic —
-        tohle je jediná zpráva, kterou vám k němu pošleme.
+        tohle je jediná zpráva, kterou vám k němu pošlu.
       </P>
 
       <Signature />

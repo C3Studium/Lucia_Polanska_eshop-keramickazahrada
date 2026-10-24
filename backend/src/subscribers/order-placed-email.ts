@@ -4,6 +4,7 @@ import type {
 } from "@medusajs/framework"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { isCommissionCheckoutOrder } from "../lib/potvrzeni-zakazky/fields"
+import { buildOrderConfirmation } from "../lib/potvrzeni-zakazky"
 import { sendOrderConfirmationWorkflow } from "../workflows/send-order-confirmation"
 
 /**
@@ -41,12 +42,38 @@ export default async function orderPlacedEmailHandler({
     // Nešlo rozhodnout — radši potvrzení poslat hned než vůbec.
   }
 
-  await sendOrderConfirmationWorkflow(container)
-    .run({
-      input: {
-        id: data.id
-      }
-    })
+  /*
+   * Klasická kupní smlouva (§ 1827 odst. 2 OZ) k běžnému zboží.
+   *
+   * Zakázka má vlastní PDF a posílá ho `commission-confirmation`; sem
+   * dojdou objednávky bez zakázkové položky, a ty potřebují potvrzení
+   * smlouvy stejně. Dokud tohle nebylo, nesl potvrzení jen e-mail —
+   * s obchodními podmínkami a poučením, ale bez dokumentu, který shrnuje,
+   * co bylo sjednáno.
+   *
+   * Selhání PDF potvrzení NEZASTAVÍ: zákazník nesmí zůstat bez e-mailu
+   * kvůli příloze. Chyba se zaloguje a potvrzení odejde bez ní.
+   */
+  let confirmation: { filename: string; url: string } | null = null
+  try {
+    const built = await buildOrderConfirmation(container, data.id)
+    confirmation = built.attachment
+  } catch (error) {
+    container
+      .resolve(ContainerRegistrationKeys.LOGGER)
+      .error(
+        `[potvrzení objednávky] PDF k objednávce ${data.id} se nepodařilo vytvořit: ${
+          error instanceof Error ? error.message : String(error)
+        } — potvrzení objednávky odchází bez něj.`
+      )
+  }
+
+  await sendOrderConfirmationWorkflow(container).run({
+    input: {
+      id: data.id,
+      ...(confirmation ? { commission_confirmations: [confirmation] } : {}),
+    },
+  })
 }
 
 export const config: SubscriberConfig = {

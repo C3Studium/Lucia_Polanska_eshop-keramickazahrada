@@ -20,14 +20,14 @@ type EmailVerificationProps = {
 
 function EmailVerificationComponent({ verification_url, email }: EmailVerificationProps) {
   return (
-    <EmailLayout preview="Zbývá jediný krok — potvrdit vaši e-mailovou adresu.">
+    <EmailLayout preview="Zbývá jediný krok — potvrdit, že je tahle adresa vaše. Odkaz platí 24 hodin.">
       <Eyebrow>Váš účet</Eyebrow>
-      <EmailH1 accent="svou adresu.">Potvrďte</EmailH1>
+      <EmailH1 accent="adresu.">Potvrďte svou</EmailH1>
 
       <Greeting />
       <P>
-        zbývá poslední krok — potvrdit, že tato e-mailová adresa patří právě
-        vám. Stačí jedno kliknutí.
+        zbývá poslední krok — potvrdit, že tato e-mailová adresa patří vám.
+        Stačí jedno kliknutí; odkaz platí 24 hodin.
       </P>
 
       {email ? (
@@ -57,8 +57,8 @@ function EmailVerificationComponent({ verification_url, email }: EmailVerificati
       </P>
 
       <P small>
-        Pokud jste o ověření e-mailu nežádali, můžete tuto zprávu v klidu
-        ignorovat.
+        Pokud jste si u mě účet nezakládali, nic se neděje — bez potvrzení se
+        nic nestane. Kdybyste si nebyli jistí, napište mi na info@keramickazahrada.cz.
       </P>
       <Signature />
     </EmailLayout>

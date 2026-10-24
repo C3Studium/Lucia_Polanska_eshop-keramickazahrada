@@ -46,7 +46,7 @@ describe("course lifecycle e-mails", () => {
 
       expect(html).toContain("Platba nedorazila")
       expect(html).toContain("do 24 hodin")
-      expect(html).toContain("uvolnili")
+      expect(html).toContain("uvolnila")
       expect(html).toContain("Kurz točení pro dospělé")
       expect(html).toContain("2 osoby")
       expect(html).toContain("https://keramickazahrada.cz/cz/kurzy#rezervace")
@@ -141,9 +141,9 @@ describe("course lifecycle e-mails", () => {
         }) as React.ReactElement
       )
       expect(html).toContain("2 200 Kč")
-      expect(html).toContain("vracíme")
+      expect(html).toContain("vracím")
       expect(html).toContain("do několika dní")
-      expect(html).not.toContain("Ozveme se vám co")
+      expect(html).not.toContain("Ozvu se vám co")
     })
 
     it("keeps the manual promise when the automatic refund did not run", () => {
@@ -153,7 +153,7 @@ describe("course lifecycle e-mails", () => {
           refundedAutomatically: false,
         }) as React.ReactElement
       )
-      expect(html).toContain("vrátíme v plné výši")
+      expect(html).toContain("vrátím v plné výši")
       expect(html).not.toContain("do několika dní")
     })
 
@@ -165,8 +165,8 @@ describe("course lifecycle e-mails", () => {
           refundedAutomatically: false,
         }) as React.ReactElement
       )
-      expect(html).not.toContain("vrátíme")
-      expect(html).not.toContain("vracíme")
+      expect(html).not.toContain("vrátím")
+      expect(html).not.toContain("vracím")
     })
   })
 
@@ -187,11 +187,11 @@ describe("course lifecycle e-mails", () => {
           variant: "refunded",
         }) as React.ReactElement
       )
-      expect(html).toContain("byla zrušena")
+      expect(html).toContain("je zrušená")
       expect(html).toContain("2 200 Kč")
-      expect(html).toContain("vracíme")
+      expect(html).toContain("vracím")
       expect(html).toContain("do několika dní")
-      expect(html).not.toContain("Ozveme se")
+      expect(html).not.toContain("Ozvu se")
     })
 
     it("promises a follow-up when the money has to come back by hand", () => {
@@ -201,8 +201,8 @@ describe("course lifecycle e-mails", () => {
           variant: "manual_refund",
         }) as React.ReactElement
       )
-      expect(html).toContain("vrátíme v plné výši")
-      expect(html).toContain("Ozveme se")
+      expect(html).toContain("vrátím v plné výši")
+      expect(html).toContain("Ozvu se")
       expect(html).not.toContain("do několika dní")
     })
 
@@ -213,8 +213,8 @@ describe("course lifecycle e-mails", () => {
           variant: "unpaid",
         }) as React.ReactElement
       )
-      expect(html).not.toContain("vrátíme")
-      expect(html).not.toContain("vracíme")
+      expect(html).not.toContain("vrátím")
+      expect(html).not.toContain("vracím")
       expect(html).not.toContain("Zaplaceno")
     })
   })
@@ -241,7 +241,7 @@ describe("course lifecycle e-mails", () => {
       expect(html).not.toContain("nedorozumění")
       // The way back stays open — and the refund promise still holds.
       expect(html).toContain("rozmysleli")
-      expect(html).toContain("vracíme")
+      expect(html).toContain("vracím")
     })
 
     it("keeps the owner's voice by default — including the misunderstanding line", () => {

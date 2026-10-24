@@ -354,7 +354,7 @@ describe("texty do potvrzení — pražský čas, maskovaný účet, adresa", ()
     expect(refundMethodTextFor("account", "19-2000145399/0800")).not.toContain("2000145399")
     expect(refundMethodTextFor("card")).toMatch(/Stejným platebním prostředkem/)
     // ComGate bere i převod a Apple/Google Pay — slib „na kartu" by nebyl pravda.
-    expect(refundMethodTextFor("card")).toContain("stejnou cestou, jakou jste platili (přes ComGate)")
+    expect(refundMethodTextFor("card")).toContain("vrátím je stejnou cestou (přes ComGate)")
     expect(refundMethodTextFor("card")).not.toMatch(/na kartu/)
     expect(refundMethodTextFor("account")).not.toMatch(/kartou/)
     expect(refundMethodTextFor("none")).toMatch(/není co vracet/)

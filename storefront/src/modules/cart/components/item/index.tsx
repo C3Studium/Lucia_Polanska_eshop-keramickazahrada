@@ -8,6 +8,7 @@ import { isDobirkaFeeLine } from "@lib/util/dobirka"
 import { isMadeToOrderLine, type ProductionLeadTime } from "@lib/util/commission"
 import { madeToOrderBadgeText } from "@lib/util/made-to-order"
 import { isPackagingLine } from "@lib/util/packaging"
+import { voucherLineSummary } from "@lib/util/gift-voucher-code"
 import { LEGAL_LINKS } from "@modules/checkout/components/legal-consent/labels"
 import PackagingLine, { PackagingNote } from "@modules/common/components/packaging-line"
 import CartQuantityStepper from "@modules/cart/components/cart-quantity-stepper"
@@ -64,6 +65,9 @@ const Item = ({
      nelze vrátit do 14 dnů" pod názvem — tatáž slova jako u ceny na stránce
      produktu; co profil nedá, se vynechá. Odkaz vede na článek OP. */
   const madeToOrder = isMadeToOrderLine(item as any)
+  const voucherSummary = voucherLineSummary(
+    item.metadata as Record<string, unknown> | null
+  )
   const madeToOrderLabel = madeToOrder
     ? madeToOrderBadgeText({
         depositPercentage: madeToOrderTerms?.deposit_percentage,
@@ -134,6 +138,13 @@ const Item = ({
         </LocalizedClientLink>
         <div className={s.options}>
           <LineItemOptions variant={item.variant} data-testid="product-variant" />
+          {/* Dárkový poukaz: podoba a obdarovaný z formuláře na stránce
+              produktu. U variant, ne v rozměrech — ty náhled v pokladně skrývá. */}
+          {voucherSummary && (
+            <span className={s.voucherSummary} data-testid="cart-gift-voucher-summary">
+              {voucherSummary}
+            </span>
+          )}
         </div>
         {madeToOrderLabel && (
           <LocalizedClientLink

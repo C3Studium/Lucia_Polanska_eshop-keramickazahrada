@@ -56,15 +56,18 @@ function ProductionStartedEmailComponent({
     ? `${depositAmount} (${depositPercentage} %)`
     : depositAmount
   return (
-    <EmailLayout preview={`Vaše zakázka ${orderNumber} je ve výrobě.`}>
-      <Eyebrow>Zakázková výroba</Eyebrow>
+    <EmailLayout
+      preview={`Zakázka ${orderNumber} je ve výrobě — právě jsem se pustila do práce.`}
+    >
+      <Eyebrow>Zakázka</Eyebrow>
       <EmailH1 accent="ve výrobě.">Zakázka je</EmailH1>
 
       <Greeting name={customerName} />
       <P>
         právě jsem se pustila do výroby vaší zakázky {orderNumber}
-        {productTitle ? ` — ${productTitle}` : ""}. Každý kousek vzniká rukama:
-        točení, sušení, pálení i glazura si žádají svůj čas.
+        {productTitle ? ` — ${productTitle}` : ""}. Každý kousek u mě vzniká
+        rukama: modelování, sušení, výpal i glazura si žádají svůj čas, tak
+        prosím o trpělivost.
       </P>
 
       {productImageUrl ? (
@@ -91,23 +94,25 @@ function ProductionStartedEmailComponent({
       {estimatedCompletion ? (
         <LedgerRow label="Předpokládané dokončení" value={estimatedCompletion} />
       ) : null}
-      {depositAmount ? <LedgerRow label="Smluvní záloha" value={depositText} /> : null}
+      {depositAmount ? <LedgerRow label="Záloha" value={depositText} /> : null}
       <LedgerEnd />
 
       <Note tone="clay">
-        Od této chvíle se při zrušení zakázky nevrací záloha {depositText};
-        všechno, co jste zaplatil(a) nad zálohu, vám vrátíme do 14 dnů.
+        Od této chvíle — od odeslání tohoto e-mailu — se při zrušení zakázky
+        záloha {depositText} nevrací. Všechno, co jste zaplatili nad zálohu,
+        vám vrátím do 14 dnů.
       </Note>
 
       <P>
         Tak to stojí v obchodních podmínkách (článek Výroba na zakázku), se
-        kterými jste při objednávce souhlasil(a): záloha kryje materiál, návrh a
-        čas už vložený do vašeho kusu. Doplatek se při zrušení nepožaduje.
+        kterými jste při objednávce souhlasili: záloha kryje materiál, návrh a
+        čas, který už jsem do vašeho kousku vložila. Doplatek po vás při
+        zrušení chtít nebudu.
       </P>
 
       <P>
-        Jakmile bude hotovo, dám vám vědět a domluvíme se na odeslání nebo
-        předání.
+        Jakmile bude hotovo, napíšu vám a domluvíme se na odeslání nebo
+        předání. Kdybyste mezitím cokoli potřebovali, napište mi na info@keramickazahrada.cz — odpovídám sama.
       </P>
 
       {orderUrl ? (
@@ -116,7 +121,7 @@ function ProductionStartedEmailComponent({
         </ButtonRow>
       ) : null}
 
-      <Signature />
+      <Signature closing="Děkuji a těším se," />
     </EmailLayout>
   )
 }

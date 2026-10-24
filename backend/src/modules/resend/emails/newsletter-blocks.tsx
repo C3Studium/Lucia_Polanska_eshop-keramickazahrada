@@ -606,7 +606,7 @@ export function NewsletterBlocksEmail({
           <P small style={{ margin: "16px 0 0" }}>
             Tento e-mail dostáváte, protože jste se přihlásili k odběru novinek
             na keramickazahrada.cz a odběr potvrdili. Odhlásit se můžete
-            kdykoli — stačí odpovědět na tento e-mail.
+            kdykoli — napište mi na info@keramickazahrada.cz.
           </P>
         )}
         <P small style={{ margin: "8px 0 0" }}>

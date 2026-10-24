@@ -72,6 +72,8 @@ const templateLabels: Record<string, string> = {
   "commission-message": "Zpráva k zakázce",
   "order-preparing": "Připravujeme",
   "order-ready": "Připraveno k odeslání",
+  "gift-voucher": "Dárkový poukaz",
+  "gift-voucher-payment": "Poukaz — platební odkaz",
   "order-edited": "Objednávka upravena",
   "commission-confirmed": "Zadání potvrzeno",
   "order-processing": "Výroba začala",

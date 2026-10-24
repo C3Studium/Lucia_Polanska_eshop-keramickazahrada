@@ -3,6 +3,7 @@
 import { convertToLocale } from "@lib/util/money"
 import { PLATCE_DPH } from "@lib/util/dph"
 import { dobirkaFeeSubtotal, packagingSubtotal } from "@lib/util/packaging"
+import { discountRowLabel } from "@lib/util/gift-voucher-code"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import type { ShippingFrom } from "@modules/cart/shipping-from"
 import React from "react"
@@ -56,6 +57,8 @@ type CartTotalsProps = {
     }> | null
     /** Zvolená doprava — bez ní se místo „0 Kč" ukáže „od …" / ceník. */
     shipping_methods?: unknown[] | null
+    /** Uplatněné akce — podle nich se řádek slevy u dárkového poukazu přejmenuje. */
+    promotions?: Array<{ code?: string | null; is_automatic?: boolean | null }> | null
   }
   /** Nejlevnější doprava pro tenhle košík (`shippingFromOptions`), dokud žádná není zvolená. */
   shippingFrom?: ShippingFrom | null
@@ -168,7 +171,11 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
         )}
         {!!(item_discount_total ?? discount_total) && (
           <div className={styles.row}>
-            <span className={styles.label}> sleva</span>
+            {/* Poukaz je slevová akce, takže sedí v témž součtu — řádek se
+                jen jmenuje podle toho, co v něm je. */}
+            <span className={styles.label}>
+              {discountRowLabel(totals.promotions) ?? " sleva"}
+            </span>
             <span
               className={styles.discount}
               data-testid="cart-discount"

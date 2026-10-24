@@ -1,0 +1,262 @@
+@use "../../styles/system/_shortcuts.scss" as *;
+
+/*
+ * Stránka poukazu — stejný hlas jako stránka rezervace kurzu (kurzy/RezervaceDetail):
+ * papírový podklad, patkový nadpis s kurzívou na konci, řádky údajů. Karta zaplaceného
+ * poukazu (PoukazKarta) má vlastní, výraznější styl — je to dárek.
+ */
+.page {
+  --pz-ink: var(--ink-05);
+  --pz-cream: var(--cream-06);
+  --pz-paper: var(--cream-05);
+  --pz-olive: var(--olive-13);
+  /* AA odstíny akcentů pro text velikosti popisku (stejně jako u kurzů). */
+  --pz-olive-text: var(--olive-08);
+  --pz-ember-text: var(--clay-13);
+
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: clamp(1.5rem, 3.4vh, 2.5rem);
+  min-height: 100svh;
+  padding: clamp(6.875rem, 16vh, 11.875rem) clamp(1rem, calc(3 * var(--fvw)), 3rem)
+    clamp(5rem, 12vh, 8.75rem);
+  color: var(--pz-ink);
+  background: var(--pz-paper);
+}
+
+.panel {
+  width: min(40rem, 100%);
+  padding: clamp(1.75rem, 4vh, 3rem) clamp(1.25rem, calc(3 * var(--fvw)), 2.75rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .2);
+  background: rgb(var(--cream-10-rgb) / .72);
+
+  h1 {
+    margin: 0.875rem 0 0;
+    font-family: "Sentient-Regular", serif;
+    font-size: clamp(2rem, 3.4vw, 3.4rem);
+    font-weight: 400;
+    line-height: 0.98;
+    letter-spacing: -0.045em;
+
+    em {
+      display: block;
+      color: var(--pz-olive);
+      font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+      font-style: normal;
+      font-weight: 300;
+    }
+  }
+
+  h2 {
+    margin: 0;
+    font-family: "Sentient-Regular", serif;
+    font-size: clamp(1.2rem, 1.6vw, 1.5rem);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+}
+
+.eyebrow {
+  color: var(--pz-olive-text);
+  font-size: var(--type-caption, 0.8125rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+
+  &[data-tone="warn"] {
+    color: var(--pz-ember-text);
+  }
+}
+
+.lede {
+  margin: clamp(0.875rem, 2vh, 1.375rem) 0 0;
+  color: rgb(var(--ink-05-rgb) / .72);
+  font-size: 0.98rem;
+  font-weight: 300;
+  line-height: 1.55;
+
+  a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+.facts {
+  margin: clamp(1.25rem, 3vh, 2rem) 0 0;
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .16);
+
+  > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: clamp(0.5rem, 1.1vh, 0.875rem) 0;
+    border-bottom: 1px solid rgb(var(--ink-05-rgb) / .1);
+  }
+
+  dt {
+    flex-shrink: 0;
+    align-self: center;
+    color: rgb(var(--ink-05-rgb) / .7);
+    font-size: var(--type-caption, 0.8125rem);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+    min-width: 0;
+    text-align: right;
+    font-size: 0.95rem;
+    overflow-wrap: anywhere;
+  }
+}
+
+.dedication {
+  font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+  white-space: pre-line;
+}
+
+.total {
+  font-family: "Sentient-Regular", serif;
+  font-size: 1.2rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: clamp(1.25rem, 3vh, 1.875rem);
+}
+
+/* WebButton má popisek 1.5rem — na téhle stránce stojí v řádku s textem, menší sedí líp. */
+.button {
+  --web-button-label-size: 1.05rem;
+}
+
+.notice {
+  margin: clamp(0.875rem, 2vh, 1.25rem) 0 0;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid rgb(var(--olive-08-rgb) / .4);
+  background: rgb(var(--olive-08-rgb) / .08);
+  color: var(--pz-olive-text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+
+  &[data-tone="warn"] {
+    border-color: rgb(var(--clay-10-rgb) / .4);
+    background: rgb(var(--clay-10-rgb) / .06);
+    color: var(--pz-ember-text);
+  }
+}
+
+.error {
+  margin: 0.75rem 0 0;
+  color: var(--clay-10);
+  font-size: 0.9rem;
+}
+
+.hint {
+  margin: 0.75rem 0 0;
+  color: rgb(var(--ink-05-rgb) / .7);
+  font-size: 0.9rem;
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+/* Tečky „ověřujeme…" — klidný puls, ne točící se kolečko. */
+.pulse {
+  display: inline-flex;
+  gap: 0.3rem;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+
+  i {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pz-pulse 1.2s ease-in-out infinite;
+
+    &:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+
+    &:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+  }
+
+  @include reduced-motion {
+    i {
+      animation: none;
+      opacity: 0.6;
+    }
+  }
+}
+
+@keyframes pz-pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Pod kartou zaplaceného poukazu: jak ho uplatnit + tlačítka. */
+.howToTitle {
+  margin: 0;
+  font-family: "Sentient-Regular", serif;
+  font-size: clamp(1.2rem, 1.6vw, 1.5rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.howTo {
+  width: min(40rem, 100%);
+
+  ul {
+    display: grid;
+    gap: 0.625rem;
+    margin: 0.875rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    position: relative;
+    padding-left: 1.25rem;
+    color: rgb(var(--ink-05-rgb) / .78);
+    font-size: 0.95rem;
+    font-weight: 300;
+    line-height: 1.55;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0.62em;
+      left: 0.125rem;
+      width: 0.4rem;
+      height: 0.4rem;
+      border-radius: 50%;
+      background: var(--pz-olive);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+  }
+}
+
+@media print {
+  .howTo,
+  .notice {
+    display: none !important;
+  }
+}

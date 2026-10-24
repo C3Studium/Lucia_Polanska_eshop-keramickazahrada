@@ -45,17 +45,17 @@ function SurchargeConfirmedEmailComponent({
   productTitle,
 }: SurchargeConfirmedEmailProps) {
   return (
-    <EmailLayout preview={`Potvrzení příplatku k objednávce ${orderNumber}.`}>
-      <Eyebrow>Zakázková výroba</Eyebrow>
-      <EmailH1 accent="k vaší zakázce.">Potvrzení příplatku</EmailH1>
+    <EmailLayout preview={`Příplatek k zakázce ${orderNumber}, jak jsme se domluvili — písemně.`}>
+      <Eyebrow>Zakázka</Eyebrow>
+      <EmailH1 accent="jak jsme se domluvili.">Příplatek</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        potvrzujeme, že k vaší zakázce
+        potvrzuji, že k vaší zakázce
         {orderNumber ? ` ${orderNumber}` : ""}
         {productTitle ? ` (${productTitle})` : ""} přibyl příplatek, na kterém jsme
-        se společně domluvili — telefonicky, e-mailem nebo zprávou. Tímto e-mailem
-        vám ho jen písemně potvrzujeme, ať to máte černé na bílém.
+        se spolu domluvili — po telefonu, e-mailem nebo zprávou. Tímto e-mailem
+        vám ho jen písemně potvrzuji, ať to máte černé na bílém.
       </P>
 
       {reason ? <Note tone="olive">{reason}</Note> : null}
@@ -71,16 +71,16 @@ function SurchargeConfirmedEmailComponent({
       <LedgerEnd />
 
       <P>
-        Příplatek je součástí doplatku, který vám pošleme k zaplacení zvlášť — na
+        Příplatek je součástí doplatku, který vám pošlu k zaplacení zvlášť — na
         faktuře ho uvidíte jako samostatnou položku.
       </P>
 
       <P>
-        Kdybyste s příplatkem nesouhlasili nebo si nebyli čímkoli jistí, ozvěte
-        se prosím paní Lucii Polanské na{" "}
-        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> nebo{" "}
+        Kdybyste s příplatkem nesouhlasili nebo si nebyli čímkoli jistí, napište
+        mi na <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> nebo
+        zavolejte na{" "}
         <a href={`tel:${CONTACT_PHONE.replace(/\s/g, "")}`}>{CONTACT_PHONE}</a>.
-        Ráda to s vámi probere.
+        Ráda to s vámi proberu.
       </P>
 
       {orderLink ? (
@@ -103,7 +103,7 @@ const mockSurchargeConfirmed: SurchargeConfirmedEmailProps = {
   orderNumber: "#12345",
   surchargeAmount: "250 Kč",
   newBalance: "3 475 Kč",
-  reason: "Domluveno telefonicky 5. 10. — ruční zdobení navíc podle vašeho přání.",
+  reason: "Domluveno po telefonu 5. 10. — ruční zdobení navíc podle vašeho přání.",
   orderLink: "https://keramickazahrada.cz/cz/order/order_12345/confirmed",
 }
 

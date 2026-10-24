@@ -36,6 +36,31 @@ const Inner = ({ productId }: { productId: string }) => {
   const product = productData?.product;
   const clearance = Boolean((product?.metadata as any)?.clearance);
   const priceOnRequest = (product?.metadata as any)?.price_on_request === true;
+  const meta = (product?.metadata ?? {}) as Record<string, unknown>;
+  // Poukaz s vlastní částkou (lib/voucher.ts) je poukaz taky — jen se nedá vypnout tady.
+  const customAmountVoucher = meta.voucher_custom_amount === true || meta.voucher_custom_amount === "true";
+  const giftVoucher = meta.gift_voucher === true || customAmountVoucher;
+
+  const toggleGiftVoucher = useMutation({
+    mutationFn: () =>
+      sdk.client.fetch(`/admin/workbench/products/${productId}/flags`, {
+        method: "POST",
+        // Na koupi poukazu slevový kód neplatí (OP čl. XI) — zapnout poukaz = vyloučit ze slev.
+        body: giftVoucher ? { gift_voucher: false } : { gift_voucher: true, no_promo: true },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["product-type-tools", productId] });
+      await queryClient.invalidateQueries({ queryKey: ["workbench-product", productId] });
+      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+      toast.success(
+        giftVoucher
+          ? "Už to není dárkový poukaz — prodává se jako běžné zboží."
+          : "Dárkový poukaz — za každý zaplacený kus vznikne poukaz s kódem na stránce Poukazy."
+      );
+    },
+    onError: (error) =>
+      toast.error(ceskaChyba(error, "Změna se nepodařila.")),
+  });
 
   const togglePublish = useMutation({
     mutationFn: () =>
@@ -173,6 +198,33 @@ const Inner = ({ productId }: { productId: string }) => {
           onClick={() => toggleClearance.mutate()}
         >
           {clearance ? "Ukončit výprodej" : "Označit"}
+        </Button>
+      </div>
+
+      {/* Dárkový poukaz (lib/gift-voucher-orders.ts): zaplacený kus = poukaz s kódem,
+          kód = slevový kód v košíku (lib/gift-voucher-promotion.ts). */}
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <Text size="small" weight="plus">
+            Dárkový poukaz{" "}
+            {giftVoucher && (
+              <Badge size="2xsmall" color="green" className="ml-1">poukaz</Badge>
+            )}
+          </Text>
+          <Text size="xsmall" className="text-ui-fg-subtle">
+            {giftVoucher
+              ? "Za každý zaplacený kus vznikne poukaz s 8místným kódem (stránka Poukazy). Hodnota = cena varianty."
+              : "Prodávat jako dárkový poukaz — varianty např. 500 / 1000 / 1500 Kč."}
+          </Text>
+        </div>
+        <Button
+          size="small"
+          variant="secondary"
+          isLoading={toggleGiftVoucher.isPending}
+          disabled={customAmountVoucher}
+          onClick={() => toggleGiftVoucher.mutate()}
+        >
+          {giftVoucher ? "Vypnout" : "Zapnout"}
         </Button>
       </div>
 

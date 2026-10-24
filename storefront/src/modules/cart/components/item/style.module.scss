@@ -202,6 +202,12 @@
 
 .options :global(*) { color: inherit !important; }
 
+/* „Elektronický pro Janu · jana@…" pod variantou poukazu. */
+.voucherSummary {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
 /* Štítek zakázky pod variantou (audit § 0) — tlumená krémová pilulka na
    inkoustové ploše řádku; odkaz na článek OP, ne tlačítko. */
 .madeToOrder {

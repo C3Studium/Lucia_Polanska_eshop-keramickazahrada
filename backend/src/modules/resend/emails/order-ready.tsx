@@ -33,16 +33,16 @@ function OrderReadyEmailComponent({
   const orderUrl = orderLink || storeLink()
   return (
     <EmailLayout
-      preview={`Objednávka ${orderNumber} je zabalená a připravená k odeslání.`}
+      preview={`Objednávka ${orderNumber} je zabalená, čeká už jen na dopravce.`}
     >
       <Eyebrow>Objednávka</Eyebrow>
-      <EmailH1 accent="k odeslání.">Připravená</EmailH1>
+      <EmailH1 accent="čeká jen na dopravce.">Zabaleno,</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        vaši objednávku {orderNumber} máme zabalenou a připravenou — teď už jen
-        čeká na předání dopravci. Jakmile ji podáme, dáme vám vědět a pošleme
-        sledování zásilky.
+        vaši objednávku {orderNumber} mám zabalenou a připravenou k odeslání —
+        teď už jen čeká, až ji předám dopravci. Jakmile ji podám, napíšu vám
+        a pošlu číslo zásilky, abyste mohli sledovat, kde právě je.
       </P>
 
       {orderNumber ? (
@@ -52,7 +52,7 @@ function OrderReadyEmailComponent({
         </>
       ) : null}
 
-      <Note tone="olive">Zabaleno a připraveno k odeslání.</Note>
+      <Note tone="olive">Zabalené a připravené na cestu k vám.</Note>
 
       {orderUrl ? (
         <ButtonRow>

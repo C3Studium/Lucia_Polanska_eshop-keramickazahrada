@@ -20,6 +20,11 @@ describe("smiDostatSlevu", () => {
     expect(smiDostatSlevu(produkt("prod_1"))).toBe(true)
   })
 
+  it("dárkový poukaz ne — slevový kód ani jiný poukaz na něj neplatí", () => {
+    expect(smiDostatSlevu(produkt("prod_1", { metadata: { gift_voucher: true } }))).toBe(false)
+    expect(smiDostatSlevu(produkt("prod_1", { metadata: { voucher_custom_amount: true } }))).toBe(false)
+  })
+
   it("kus ve výprodeji ne — cena už je stažená", () => {
     expect(
       smiDostatSlevu(produkt("prod_1", { metadata: { clearance: true } }))

@@ -59,27 +59,27 @@ function NewsletterWelcomeEmailComponent({
   const shopUrl = base || ""
 
   return (
-    <EmailLayout preview="Odběr novinek je potvrzený. Děkujeme!">
+    <EmailLayout preview="Odběr novinek je potvrzený — děkuji.">
       <Eyebrow>Newsletter</Eyebrow>
       <EmailH1 accent="je potvrzený.">Odběr</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        děkujeme — {email ? `adresu ${email} ` : "vaši adresu "}
-        jsme zapsali mezi odběratele
+        děkuji — {email ? `adresu ${email} ` : "vaši adresu "}
+        jsem zapsala mezi odběratele
         {confirmedOn ? `, potvrzeno ${confirmedOn}` : ""}. Od téhle chvíle vám
-        budeme posílat novinky z ateliéru.
+        budu posílat novinky z dílny.
       </P>
 
       <P>
-        Nebude jich moc. Píšeme, když z pece vyjde něco nového, když se otevře
-        termín kurzu nebo když má ateliér něco, co stojí za řeč — tedy
+        Nebude jich moc. Píšu, když z pece vyjde něco nového, když otevřu
+        termín kurzu nebo když mám v dílně něco, co stojí za řeč — tedy
         několikrát do roka, ne každý týden.
       </P>
 
       {shopUrl ? (
         <ButtonRow>
-          <EmailButton href={shopUrl}>Prohlédnout si ateliér</EmailButton>
+          <EmailButton href={shopUrl}>Prohlédnout nabídku</EmailButton>
         </ButtonRow>
       ) : null}
 
@@ -88,19 +88,18 @@ function NewsletterWelcomeEmailComponent({
       {unsubscribeLink ? (
         <Note>
           Odhlásit se můžete kdykoli a zdarma — stačí jedno kliknutí{" "}
-          <a href={unsubscribeLink}>zde</a>. Žádné vysvětlování po vás chtít
-          nebudeme.
+          <a href={unsubscribeLink}>zde</a>. Nic vysvětlovat nemusíte.
         </Note>
       ) : (
         <Note>
           Odhlásit se můžete kdykoli a zdarma — odkaz najdete v patičce každé
-          zprávy, kterou od nás dostanete.
+          zprávy, kterou od mě dostanete.
         </Note>
       )}
 
       <P small>
-        Vaši adresu používáme jen k posílání těchto novinek a nikomu ji
-        nepředáváme. Víc najdete v zásadách ochrany osobních údajů.
+        Vaši adresu používám jen k posílání těchto novinek a nikomu ji
+        nepředávám. Víc najdete v zásadách ochrany osobních údajů.
       </P>
 
       <Signature />

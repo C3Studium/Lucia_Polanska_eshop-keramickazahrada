@@ -26,6 +26,12 @@ interface OrderDelayedEmailProps {
   trackingLink?: string;
   orderLink?: string;
   supportEmail?: string;
+  /** Výrobky, které se dodělávají a kvůli kterým se objednávka zdrží („Hrnek · 2 ks"). */
+  delayedItems?: string[];
+  /** Zdrží se celá objednávka (všechny výrobky), ne jen část. */
+  wholeOrder?: boolean;
+  /** Zpoždění zakázky (smluvní termín výroby) — „zakázka", ne „objednávka". */
+  isCommission?: boolean;
 }
 
 /**
@@ -42,24 +48,55 @@ function OrderDelayedEmailComponent({
   compensationOffer,
   trackingLink,
   orderLink = "",
-  supportEmail = CONTACT_EMAIL
+  supportEmail = CONTACT_EMAIL,
+  delayedItems,
+  wholeOrder = false,
+  isCommission = false,
 }: OrderDelayedEmailProps) {
   const orderUrl = orderLink || storeLink()
+  const noun = isCommission ? "zakázka" : "objednávka"
+  const Noun = isCommission ? "Zakázka" : "Objednávka"
+  const items = delayedItems ?? []
   return (
     <EmailLayout
-      preview={`Objednávka ${orderNumber} se zdrží — omlouváme se a děkujeme za trpělivost.`}
+      preview={`${Noun} ${orderNumber} se zdrží — omlouvám se a děkuji za trpělivost.`}
     >
-      <Eyebrow>Objednávka {orderNumber}</Eyebrow>
-      <EmailH1 accent="zdrží.">Objednávka se</EmailH1>
+      <Eyebrow>
+        {Noun} {orderNumber}
+      </Eyebrow>
+      <EmailH1 accent={`${noun} se zdrží.`}>Omlouvám se,</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        musíme vás poprosit o strpení — vaše objednávka se zdrží. Ruční výroba
-        má vlastní rytmus a někdy si vyžádá víc času, než jsme čekali. Níže
-        najdete nový termín.
+        omlouvám se — vaše {noun} {orderNumber} se zdrží. Ruční výroba má svůj
+        rytmus a tentokrát si vyžádala víc času, než jsem počítala. Nový termín
+        najdete níže; kdyby vám nevyhovoval, napište mi a domluvíme se, co dál.
       </P>
 
-      {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
+      {items.length && !isCommission ? (
+        <>
+          <P>
+            {items.length === 1
+              ? "Ještě dodělávám tenhle kousek:"
+              : "Ještě dodělávám tyhle kousky:"}
+          </P>
+          <ul style={{ margin: "0 0 16px", paddingLeft: "20px", color: brand.body, fontFamily: brand.sans, fontSize: "15px", lineHeight: "24px" }}>
+            {items.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+          {!wholeOrder ? (
+            <P>
+              Objednávku vám pošlu celou, jakmile{" "}
+              {items.length === 1 ? "bude hotový" : "budou hotové"}. Kdybyste
+              chtěli zbytek poslat dřív, napište mi.
+            </P>
+          ) : null}
+        </>
+      ) : null}
+
+      {orderNumber ? <LedgerRow label={Noun} value={orderNumber} /> : null}
+      {isCommission && items.length ? <LedgerRow label="Výrobek" value={items.join(", ")} /> : null}
       {originalDeliveryDate ? (
         <LedgerRow label="Původní termín" value={originalDeliveryDate} />
       ) : null}
@@ -67,11 +104,11 @@ function OrderDelayedEmailComponent({
       {delayReason ? <LedgerRow label="Důvod" value={delayReason} /> : null}
       <LedgerEnd />
 
-      <Note tone="clay">Za zdržení se vám omlouváme.</Note>
+      <Note tone="clay">Raději pořádně než rychle — děkuji, že mi dáte ten čas.</Note>
 
       {compensationOffer ? (
         <P>
-          Jako poděkování za trpělivost jsme pro vás připravili:{" "}
+          Jako poděkování za trpělivost jsem pro vás připravila:{" "}
           {compensationOffer}.
         </P>
       ) : null}
@@ -95,7 +132,7 @@ function OrderDelayedEmailComponent({
       </ButtonRow>
 
       <P small>
-        Máte-li jakýkoli dotaz, napište nám na{" "}
+        Kdybyste chtěli cokoli vědět, napište mi na{" "}
         <Link
           href={`mailto:${supportEmail}`}
           style={{ color: brand.ink, textDecoration: "underline" }}
@@ -104,7 +141,7 @@ function OrderDelayedEmailComponent({
         </Link>
         .
       </P>
-      <Signature />
+      <Signature closing="Děkuji za trpělivost," />
     </EmailLayout>
   )
 }
@@ -121,7 +158,9 @@ const mockOrderDelayed: OrderDelayedEmailProps = {
   newDeliveryDate: "22. 10. 2026",
   delayReason: "Ruční výroba si vyžádala více času",
   orderLink: "https://keramickazahrada.cz/cz/order/order_12345/confirmed",
-  supportEmail: "info@keramickazahrada.cz"
+  supportEmail: "info@keramickazahrada.cz",
+  delayedItems: ["Pítko pro ptáky — List velký 44 cm", "Vlčí mák červeno oranžový · 3 ks"],
+  wholeOrder: false,
 }
 
 export default () => <OrderDelayedEmailComponent {...mockOrderDelayed} />

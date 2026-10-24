@@ -37,15 +37,14 @@ function NewsletterConfirmComponent({
   confirmLink,
 }: NewsletterSignupEmailProps & { confirmLink: string }) {
   return (
-    <EmailLayout preview="Jedno kliknutí a jste v okruhu ateliéru — potvrďte prosím svůj odběr.">
+    <EmailLayout preview="Ještě jedno kliknutí, prosím — potvrďte, že novinky z dílny chcete.">
       <Eyebrow>Newsletter</Eyebrow>
-      <EmailH1 accent="odběr.">Potvrďte</EmailH1>
+      <EmailH1 accent="kliknutí.">Ještě jedno</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        děkujeme za zájem o novinky z ateliéru. Zbývá poslední krok:
-        potvrďte prosím, že jste odběr opravdu chtěli vy. Stačí jedno
-        kliknutí.
+        děkuji za zájem o novinky z mé dílny. Zbývá poslední krok: potvrďte
+        prosím, že jste si odběr přáli právě vy.
       </P>
 
       <ButtonRow>
@@ -53,19 +52,19 @@ function NewsletterConfirmComponent({
       </ButtonRow>
 
       <P>
-        Dokud odběr nepotvrdíte, žádné zprávy vám posílat nebudeme. Po
-        potvrzení se ozveme, když z pece vyjdou nové objekty nebo když
-        vypíšeme termíny kurzů — a jinak mlčíme.
+        Dokud odběr nepotvrdíte, nic vám posílat nebudu. Potom se ozvu, když
+        z pece vyjdou nové kousky nebo když vypíšu termíny kurzů — a jinak
+        mlčím.
       </P>
 
       <Note tone="olive">
-        Nové objekty a termíny kurzů bez zbytečného hluku, nejvýše jednou
+        Nové kousky a termíny kurzů bez zbytečného hluku, nejvýše jednou
         týdně.
       </Note>
 
       <P small>
-        Pokud jste se k odběru nepřihlásili vy, tento e-mail klidně
-        ignorujte — bez potvrzení vám nic chodit nebude. Odkaz pro potvrzení:{" "}
+        Pokud jste se k odběru nepřihlásili vy, tento e-mail klidně nechte
+        být — bez potvrzení vám nic chodit nebude. Odkaz pro potvrzení:{" "}
         <Link
           href={confirmLink}
           style={{ color: brand.ink, textDecoration: "underline" }}
@@ -84,28 +83,28 @@ function NewsletterSignupEmailComponent({
 }: NewsletterSignupEmailProps) {
   const shopUrl = storeLink()
   return (
-    <EmailLayout preview="Vítejte v okruhu ateliéru — nové objekty a termíny kurzů bez zbytečného hluku.">
+    <EmailLayout preview="Novinky z dílny — nové kousky a termíny kurzů, bez zbytečného hluku.">
       <Eyebrow>Newsletter</Eyebrow>
-      <EmailH1 accent="ateliéru.">Blízko</EmailH1>
+      <EmailH1 accent="z dílny.">Novinky</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        děkujeme, že jste se přidali do okruhu lidí, kterým píšeme
-        z ateliéru. Ozveme se, když z pece vyjdou nové objekty nebo když
-        vypíšeme termíny kurzů — a jinak mlčíme.
+        děkuji, že jste se přidali k lidem, kterým píšu z dílny. Ozvu se,
+        když z pece vyjdou nové kousky nebo když vypíšu termíny kurzů —
+        a jinak mlčím.
       </P>
       <P>
-        Píšeme nejvýše jednou týdně, obvykle méně. Vaši adresu používáme
-        jen pro tyto zprávy a nikomu ji nepředáváme.
+        Píšu nejvýše jednou týdně, obvykle méně. Vaši adresu používám jen
+        pro tyto zprávy a nikomu ji nepředávám.
       </P>
 
       <Note tone="olive">
-        Nové objekty a termíny kurzů bez zbytečného hluku.
+        Nové kousky a termíny kurzů bez zbytečného hluku.
       </Note>
 
       {shopUrl ? (
         <ButtonRow>
-          <EmailButton href={shopUrl}>Prohlédnout objekty</EmailButton>
+          <EmailButton href={shopUrl}>Prohlédnout nabídku</EmailButton>
         </ButtonRow>
       ) : null}
 
@@ -126,7 +125,7 @@ function NewsletterSignupEmailComponent({
       ) : (
         <P small>
           Odhlásit se můžete kdykoli — odkaz najdete v patičce každé zprávy,
-          nebo stačí odpovědět na tento e-mail.
+          nebo mi napište na info@keramickazahrada.cz.
         </P>
       )}
       <Signature />

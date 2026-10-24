@@ -39,6 +39,7 @@ import {
   normalizujIco,
   zkontrolujFirmu,
 } from "@lib/util/firma"
+import { looksLikeVoucherCode } from "@lib/util/gift-voucher-code"
 
 /**
  * Retrieves a cart by its ID. If no ID is provided, it will use the cart ID from the cookies.
@@ -874,6 +875,124 @@ const miriNaDopravu = (akce: any): boolean =>
 /** Úvodní věta obou zpráv o nahrazení — pravidlo se říká pokaždé stejně. */
 const JEDEN_KOD = "Můžete mít jen jeden slevový kód na objednávku."
 
+/**
+ * Dárkový poukaz v poli slevového kódu.
+ *
+ * Každý zaplacený poukaz je v Meduse slevová akce s tímtéž kódem (pevná
+ * částka = zůstatek, `backend/src/lib/gift-voucher-promotion.ts`). Uplatňuje
+ * se tedy stejně jako slevový kód, ale podle jiných pravidel: do „jednoho
+ * slevového kódu na objednávku" se nepočítá, nenahrazuje ho a poukazů může
+ * být v košíku víc. Jestli zadaný kód je poukaz a v jakém je stavu, řekne
+ * backend (`/store/gift-voucher-codes/:code`) — z odpovědi na zápis do košíku
+ * se to poznat nedá (neplatný kód Medusa tiše zahodí, viz `StavKodu`).
+ */
+type StavPoukazu =
+  | { is_voucher: false }
+  | {
+      is_voucher: true
+      /** Normalizovaný tvar — ten se posílá do košíku. */
+      code: string
+      state: "active" | "pending_payment" | "used" | "expired" | "cancelled" | "refunded"
+      balance: number
+      valid_until_label: string
+    }
+
+async function zjistiPoukaz(code: string): Promise<StavPoukazu | null> {
+  return sdk.client
+    .fetch<StavPoukazu>(
+      `/store/gift-voucher-codes/${encodeURIComponent(code)}`,
+      { method: "GET", cache: "no-store" }
+    )
+    .catch(() => null)
+}
+
+/** Kódy poukazů v košíku se poznají podle tvaru (`lib/util/gift-voucher-code.ts`). */
+const jePoukaz = (promotion: any): boolean =>
+  !promotion?.is_automatic && looksLikeVoucherCode(promotion?.code)
+
+/** „1 250 Kč" — poukazy jsou v celých korunách. */
+const kc = (castka: number): string =>
+  `${new Intl.NumberFormat("cs-CZ", { maximumFractionDigits: 0 }).format(
+    Math.round(castka)
+  )} Kč`
+
+const POUKAZ_NEPROSEL =
+  "Poukaz se nepodařilo uplatnit. Zkuste to prosím ještě jednou, nebo mi napište na info@keramickazahrada.cz."
+
+/** Proč poukaz nejde uplatnit — nebo jeho uplatnění a kolik se odečetlo. */
+async function uplatniPoukaz(
+  poukaz: Extract<StavPoukazu, { is_voucher: true }>,
+  currentCart: HttpTypes.StoreCart | null
+): Promise<VysledekKodu | null> {
+  switch (poukaz.state) {
+    case "pending_payment":
+      return chyba("Tenhle poukaz ještě není zaplacený.")
+    case "used":
+      return chyba("Poukaz je už celý vyčerpaný.")
+    case "expired":
+      return chyba(`Platnost poukazu skončila ${poukaz.valid_until_label}.`)
+    case "cancelled":
+      return chyba("Tenhle poukaz je zrušený.")
+    case "refunded":
+      return chyba("Za tenhle poukaz se vrátily peníze, takže už neplatí.")
+  }
+
+  if (!currentCart) {
+    return chyba("Košík se nepodařilo načíst. Obnovte prosím stránku.")
+  }
+
+  /* Poukaz je v korunách a jeho akce má měnu CZK — na košík v eurech by
+     prošel naprázdno. */
+  if (String(currentCart.currency_code ?? "").toLowerCase() !== "czk") {
+    return chyba(
+      "Poukaz jde uplatnit jen na objednávku v korunách. Napište mi na info@keramickazahrada.cz, domluvíme se."
+    )
+  }
+
+  /* Všechno, co v košíku je — automatické akce, slevový kód i jiné poukazy.
+     `applyPromotions` seznam přepisuje celý, takže nic z toho nesmí vypadnout. */
+  const stavajici = (currentCart.promotions ?? [])
+    .map((promotion: any) => promotion?.code)
+    .filter((kod: unknown): kod is string => typeof kod === "string")
+
+  if (stavajici.includes(poukaz.code)) {
+    return chyba("Tenhle poukaz už v košíku máte.")
+  }
+
+  /* Kolik se odečetlo = rozdíl `discount_total` před a po. Ostatní akce jsou
+     v obou měřeních stejné. */
+  const pred = Number(currentCart.discount_total ?? 0)
+
+  try {
+    const cart = await applyPromotions([...stavajici, poukaz.code])
+    const uplatnen = (cart?.promotions ?? []).some(
+      (promotion: any) => promotion.code === poukaz.code
+    )
+    const odecteno = Number(cart?.discount_total ?? 0) - pred
+
+    if (!uplatnen || !(odecteno > 0)) {
+      await vratKody(stavajici)
+      /* Akce poukazu dopadá jen na položky s `is_discountable` — když se
+         neodečetlo nic, je celý košík ze zboží ve slevě (nebo bez slevových
+         kódů). Lucie ho pak odečte ručně. */
+      return chyba(
+        uplatnen
+          ? "Poukaz jde uplatnit jen na zboží, které není ve slevě. Napište mi na info@keramickazahrada.cz, odečtu ho ručně."
+          : POUKAZ_NEPROSEL
+      )
+    }
+
+    return info(
+      `Poukaz uplatněn — odečteno ${kc(odecteno)}, na poukazu zbude ${kc(
+        Math.max(0, poukaz.balance - odecteno)
+      )}.`
+    )
+  } catch {
+    await vratKody(stavajici)
+    return chyba(POUKAZ_NEPROSEL)
+  }
+}
+
 export async function submitPromotionForm(
   currentState: VysledekKodu | null,
   formData: FormData
@@ -894,6 +1013,19 @@ export async function submitPromotionForm(
     const currentCart = await retrieveCart()
 
     /*
+     * Dárkový poukaz má vlastní pravidla (`uplatniPoukaz`). Když se backendu
+     * nedá zeptat a kód má tvar poukazu, radši se nic nemění: běžná cesta by
+     * ho vzala jako slevový kód a mohla by kvůli němu sundat ten stávající.
+     */
+    const poukaz = await zjistiPoukaz(code)
+    if (poukaz?.is_voucher) {
+      return await uplatniPoukaz(poukaz, currentCart)
+    }
+    if (!poukaz && looksLikeVoucherCode(code)) {
+      return chyba("Kód se teď nepodařilo ověřit. Zkuste to prosím za chvíli znovu.")
+    }
+
+    /*
      * Automatické akce si obchod nasazuje sám a zákazník je nezadával — do
      * počtu „kolik kódů jsem uplatnil" se proto nepočítají a v seznamu, který
      * se posílá zpátky, musí zůstat.
@@ -904,8 +1036,13 @@ export async function submitPromotionForm(
     const automaticke = kodyPromoakci
       .filter((promotion: any) => promotion.is_automatic)
       .map((promotion: any) => promotion.code as string)
+    /* Poukazy v košíku nejsou „slevový kód" — do pravidla jednoho kódu se
+       nepočítají a při přepisu seznamu musí vždycky zůstat. */
+    const poukazy = kodyPromoakci
+      .filter(jePoukaz)
+      .map((promotion: any) => promotion.code as string)
     const rucniAkce = kodyPromoakci.filter(
-      (promotion: any) => !promotion.is_automatic
+      (promotion: any) => !promotion.is_automatic && !jePoukaz(promotion)
     )
     const rucni = rucniAkce.map((promotion: any) => promotion.code as string)
 
@@ -935,7 +1072,7 @@ export async function submitPromotionForm(
     /* Co v košíku bylo, než se sáhlo na kódy. Když nový neprojde, musí se to
        vrátit — `applyPromotions` seznam přepisuje celý, takže by jinak pokus
        o neplatný kód smazal ten funkční, který tam zákazník už měl. */
-    puvodniKody = [...automaticke, ...rucni]
+    puvodniKody = [...automaticke, ...poukazy, ...rucni]
 
     /*
      * Kolik košík ušetřil PŘED novým kódem — proti tomu se bude porovnávat.
@@ -979,7 +1116,7 @@ export async function submitPromotionForm(
      * just the new code silently dropped every code already applied. Automatic
      * ones therefore go do seznamu spolu s novým kódem.
      */
-    const cart = await applyPromotions([...automaticke, code])
+    const cart = await applyPromotions([...automaticke, ...poukazy, code])
 
     // If the backend accepted the update but did not apply a promotion for the
     // provided code, surface a user-friendly message so the UI can show it.

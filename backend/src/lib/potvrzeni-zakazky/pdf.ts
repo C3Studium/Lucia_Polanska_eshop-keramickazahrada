@@ -55,17 +55,31 @@ const hex = (value: string): RGB => {
   const n = parseInt(value.replace("#", ""), 16)
   return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255)
 }
-const INK = hex("#1f1d1a")
-const LEAD = hex("#3d3a35")
-const MUTED = hex("#6b665e")
-const ACCENT = hex("#b4553a")
-const HAIR = hex("#d8d3cb")
-const ROW = hex("#ebe7e0")
-const BOX_BG = hex("#faf3ee")
-const BRIEF_BG = hex("#f6f4f0")
-const PH_BG = hex("#fbeee8")
-const PHOTO_BORDER = hex("#b8b2a8")
-const PHOTO_TEXT = hex("#9a948a")
+/*
+ * Černobíle, schválně (24. 10. 2026).
+ *
+ * Tohle je smlouva — tiskne se, zakládá, kopíruje a posílá dál. Barevný
+ * dokument na černobílé tiskárně ztratí přesně to, co barva nesla: hliněný
+ * akcent u čísel oddílů zešedne na totéž jako okolní text a zvýrazněná
+ * záloha splyne s pozadím. Důraz proto nese ŘEZ A LINKA, ne odstín — to
+ * přežije jakoukoli tiskárnu, fax i kopírku.
+ *
+ * Šedé zůstávají jen jako plochy (řádky tabulky, rámeček zadání) a jako
+ * druhotný text; všechno podstatné je plná čerň.
+ */
+const INK = hex("#000000")
+const LEAD = hex("#1a1a1a")
+const MUTED = hex("#595959")
+/** Dřív hliněná; teď čerň — rozdíl drží prostrkání a tučný řez. */
+const ACCENT = hex("#000000")
+const HAIR = hex("#b3b3b3")
+const ROW = hex("#f0f0f0")
+const BOX_BG = hex("#f7f7f7")
+const BRIEF_BG = hex("#f5f5f5")
+/** Podklad zvýrazněné zálohy — tmavší než ostatní plochy, ať je vidět i v tisku. */
+const PH_BG = hex("#e4e4e4")
+const PHOTO_BORDER = hex("#999999")
+const PHOTO_TEXT = hex("#666666")
 
 const NBSP = " "
 
@@ -185,10 +199,23 @@ export const generateCommissionConfirmationPdf = async (
   const bold = await doc.embedFont(toBytes(SANSATION_BOLD_BASE64), { subset: true })
   const fonts = { regular, bold }
 
+  /*
+   * Dva dokumenty, jeden generátor (24. 10. 2026): „Potvrzení zakázky" pro
+   * výrobu podle zadání a „Potvrzení objednávky" pro běžné zboží. Liší se
+   * oddíly 03, 05 a 06 a pár řádků v ceně — rozvržení, stránkování, patička
+   * i všechno ostatní je společné.
+   */
+  const zakazka = input.kind !== "objednavka"
+  const nazevDokumentu = zakazka ? "Potvrzení zakázky" : "Potvrzení objednávky"
+
   // Pevná metadata — datum objednávky, ne „teď" (viz determinismus v hlavičce).
   const stamp = new Date(input.order.placed_at_iso)
-  doc.setTitle(`Potvrzení zakázky č. ${input.order.number}`)
-  doc.setSubject("Potvrzení kupní smlouvy na výrobek podle zadání (§ 1827 odst. 2 OZ)")
+  doc.setTitle(`${nazevDokumentu} č. ${input.order.number}`)
+  doc.setSubject(
+    zakazka
+      ? "Potvrzení kupní smlouvy na výrobek podle zadání (§ 1827 odst. 2 OZ)"
+      : "Potvrzení kupní smlouvy uzavřené na dálku (§ 1827 odst. 2 OZ)"
+  )
   doc.setAuthor(input.seller.brand)
   doc.setProducer("Keramická zahrada — e-shop")
   doc.setCreator("potvrzeni-zakazky (pdf-lib)")
@@ -545,7 +572,7 @@ export const generateCommissionConfirmationPdf = async (
     const top = y
     const brandBase = top - 9
     drawSpaced(input.seller.brand.toUpperCase(), MARGIN, brandBase, 9, regular, MUTED, 0.72)
-    page.drawText("Potvrzení zakázky", { x: MARGIN, y: brandBase - 16, size: 13, font: bold, color: INK })
+    page.drawText(nazevDokumentu, { x: MARGIN, y: brandBase - 16, size: 13, font: bold, color: INK })
 
     const right = (text: string, baseline: number, size: number, font: PDFFont, color: RGB) =>
       page.drawText(text, { x: MARGIN + CONTENT_W - font.widthOfTextAtSize(text, size), y: baseline, size, font, color })
@@ -563,7 +590,14 @@ export const generateCommissionConfirmationPdf = async (
     y = ruleY - 12
   }
 
-  place(paragraph([b("Výrobek podle vašeho zadání")], { size: 18, gapAfter: 4 }))
+  /* Perex nad oddíly. U běžného zboží žádné „zadání" není — ta věta patří
+     jen zakázce a do klasické smlouvy by nesedla. */
+  place(
+    paragraph([b(zakazka ? "Výrobek podle vašeho zadání" : "Zboží z našeho ateliéru")], {
+      size: 18,
+      gapAfter: 4,
+    })
+  )
   place(
     paragraph(
       [
@@ -585,6 +619,9 @@ export const generateCommissionConfirmationPdf = async (
         [
           { label: "Jméno", value: [r(`${input.seller.name}, podnikající fyzická osoba`)] },
           { label: "Sídlo · IČO", value: [r(`${input.seller.address} · ${input.seller.ico}`)] },
+          /* § 435 OZ — údaj o zápisu do veřejného rejstříku patří na
+             obchodní listiny, a potvrzení smlouvy jí je. */
+          { label: "Zápis", value: [r(input.seller.register)] },
           { label: "Kontakt", value: [r(`${input.seller.email} · ${input.seller.phone}`)] },
         ],
         colW
@@ -610,41 +647,60 @@ export const generateCommissionConfirmationPdf = async (
     })
   }
 
-  // ── 03 Co vyrábíme ────────────────────────────────────────────────────────
-  place(heading("03", "Co vyrábíme"), 40)
-  {
-    const valueW = CONTENT_W * 0.7
+  // ── 03 Co vyrábíme / Co jste objednal(a) ─────────────────────────────────
+  if (zakazka) {
+    place(heading("03", "Co vyrábíme"), 40)
+    {
+      const valueW = CONTENT_W * 0.7
+      place(
+        kvTable([
+          {
+            label: "Výrobek",
+            value: [b(input.product.title), r(input.product.variant_suffix)],
+          },
+          {
+            label: "Vaše zadání",
+            value: stack([briefBox(input.brief.text, valueW), photosRow(input.brief.photos.slice(0, 3))]),
+          },
+        ])
+      )
+    }
+    place(spacer(6))
     place(
-      kvTable([
-        {
-          label: "Výrobek",
-          value: [b(input.product.title), r(input.product.variant_suffix)],
-        },
-        {
-          label: "Vaše zadání",
-          value: stack([briefBox(input.brief.text, valueW), photosRow(input.brief.photos.slice(0, 3))]),
-        },
-      ])
+      small(
+        [
+          r(
+            "Zadání jste zapsal(a) do objednávky a je pro obě strany závazné. Chcete-li ho změnit, napište nám co nejdřív — po zahájení výroby je změna možná jen dohodou a může změnit cenu i termín."
+          ),
+        ],
+        0
+      )
+    )
+  } else {
+    /* U běžného zboží zastupuje zadání seznam položek — to je ten „předmět
+       smlouvy", který § 1827 odst. 2 chce mít v potvrzení. */
+    place(heading("03", "Co jste objednal(a)"), 40)
+    place(
+      sumTable(
+        input.items.length
+          ? input.items.map((item) => ({
+              label: [
+                b(item.title),
+                ...(item.quantity ? [r(` · ${item.quantity}`)] : []),
+              ],
+              amount: `${item.amount}${NBSP}${input.price.currency}`,
+            }))
+          : [{ label: [r("Položky objednávky")], amount: "neuvedeno" }]
+      )
     )
   }
-  place(spacer(6))
-  place(
-    small(
-      [
-        r(
-          "Zadání jste zapsal(a) do objednávky a je pro obě strany závazné. Chcete-li ho změnit, napište nám co nejdřív — po zahájení výroby je změna možná jen dohodou a může změnit cenu i termín."
-        ),
-      ],
-      0
-    )
-  )
 
   // ── 04 Cena a platby ──────────────────────────────────────────────────────
   const cur = input.price.currency
   place(heading("04", "Cena a platby"), 40)
   place(
     sumTable([
-      { label: [r("Cena výrobku")], amount: `${input.price.item}${NBSP}${cur}` },
+      { label: [r(zakazka ? "Cena výrobku" : "Zboží celkem")], amount: `${input.price.item}${NBSP}${cur}` },
       ...(input.price.other !== null
         ? [{ label: [r("Další zboží v objednávce")], amount: `${input.price.other}${NBSP}${cur}` }]
         : []),
@@ -665,28 +721,81 @@ export const generateCommissionConfirmationPdf = async (
         amount: `${input.price.total}${NBSP}${cur}`,
         total: true,
       },
-      {
-        label: [
-          r(`Zaplaceno při objednávce (${input.deposit.method}, ${input.deposit.paid_at}) — z toho záloha `),
-          r(`${input.mto.deposit}${NBSP}%`, { highlight: true, size: 9 }),
-          r(` = ${input.price.deposit}${NBSP}${cur}`),
-        ],
-        amount: `${input.price.paid}${NBSP}${cur}`,
-      },
-      { label: [r("Zbývá doplatit po dokončení, před odesláním")], amount: `${input.price.balance}${NBSP}${cur}` },
+      /* Záloha a doplatek existují jen u zakázky — u běžného zboží se platí
+         celá částka naráz a prázdné řádky „0 Kč" by jen mátly. */
+      ...(zakazka
+        ? [
+            {
+              label: [
+                r(`Zaplaceno při objednávce (${input.deposit.method}, ${input.deposit.paid_at}) — z toho záloha `),
+                /* Tučně, protože v černobílém dokumentu nese důraz řez, ne barva. */
+                r(`${input.mto.deposit}${NBSP}%`, { highlight: true, bold: true, size: 9 }),
+                r(` = ${input.price.deposit}${NBSP}${cur}`),
+              ],
+              amount: `${input.price.paid}${NBSP}${cur}`,
+            },
+            {
+              label: [r("Zbývá doplatit po dokončení, před odesláním")],
+              amount: `${input.price.balance}${NBSP}${cur}`,
+            },
+          ]
+        : [
+            {
+              label: [
+                r(
+                  input.deposit.paid_at === "neuvedeno"
+                    ? "Zaplaceno"
+                    : `Zaplaceno (${input.deposit.method}, ${input.deposit.paid_at})`
+                ),
+              ],
+              amount: `${input.price.paid}${NBSP}${cur}`,
+            },
+            /* Převod nebo dobírka — co ještě zbývá uhradit, ať to dokument
+               neskrývá za prázdné „Zaplaceno 0". */
+            ...(input.price.balance !== "0"
+              ? [
+                  {
+                    label: [r("Zbývá uhradit")],
+                    amount: `${input.price.balance}${NBSP}${cur}`,
+                  },
+                ]
+              : []),
+          ]),
     ])
   )
   place(spacer(6))
   place(
     small([
       r(
-        `${input.price.note ? `${input.price.note} ` : ""}Ceny jsou konečné${input.vat.note}. Odkaz k doplatku vám pošleme e-mailem po schválení výrobku. Nezaplatíte-li ani po připomenutí do 30 dnů, platí, že jste zakázku zrušil(a) po zahájení výroby (bod 06, odst. 2).`
+        zakazka
+          ? `${input.price.note ? `${input.price.note} ` : ""}Ceny jsou konečné${input.vat.note}. Odkaz k doplatku vám pošleme e-mailem po schválení výrobku. Nezaplatíte-li ani po připomenutí do 30 dnů, platí, že jste zakázku zrušil(a) po zahájení výroby (bod 06, odst. 2).`
+          : `${input.price.note ? `${input.price.note} ` : ""}Ceny jsou konečné${input.vat.note}; žádné další poplatky k nim nepřibývají.`
       ),
     ])
   )
 
   // ── 05 Jak to půjde dál ───────────────────────────────────────────────────
   place(heading("05", "Jak to půjde dál"), 40)
+  if (!zakazka) {
+    place(
+      orderedList([
+        [
+          b("Odeslání."),
+          r(` ${input.delivery.dispatch}. O předání dopravci vám přijde e-mail se sledovacím číslem.`),
+        ],
+        [
+          b("Převzetí."),
+          r(
+            " Zásilku si při převzetí prohlédněte. Poškození obalu nebo obsahu nám dejte vědět co nejdřív — poškození při přepravě řešíme my s dopravcem, vy se o to starat nemusíte."
+          ),
+        ],
+        [
+          b("Doklad."),
+          r(" Daňový doklad k objednávce vám pošleme e-mailem; najdete ho i ve svém účtu."),
+        ],
+      ])
+    )
+  } else
   place(
     orderedList([
       [
@@ -715,7 +824,68 @@ export const generateCommissionConfirmationPdf = async (
     ])
   )
 
-  // ── 06 Zrušení zakázky a vrácení peněz ────────────────────────────────────
+  // ── 06 Odstoupení / Zrušení zakázky ──────────────────────────────────────
+  if (!zakazka) {
+    /*
+     * U běžného zboží je to PŘESNĚ OPAČNÝ příběh než u zakázky: zákazník
+     * právo odstoupit do 14 dnů má. Proto se tenhle oddíl nedá sdílet
+     * a je to hlavní důvod, proč jsou dokumenty dva.
+     */
+    place(heading("06", "Odstoupení od smlouvy do 14 dnů"), 40)
+    place(
+      box([
+        b("Od smlouvy můžete odstoupit do 14 dnů od převzetí zboží, bez udání důvodu"),
+        r(
+          " (§ 1829 OZ). Lhůta běží ode dne, kdy zásilku převezmete vy nebo osoba, kterou určíte. Stačí nám do té doby odeslat oznámení — e-mailem na "
+        ),
+        b(input.seller.email),
+        r(" nebo formulářem"),
+        ...(input.links.withdrawal
+          ? [r(", který najdete na "), r(input.links.withdrawal, { href: input.links.withdrawal })]
+          : []),
+        r("."),
+      ])
+    )
+    place(spacer(8))
+    place(
+      orderedList([
+        [
+          b("Zboží pošlete zpět"),
+          r(
+            " nejpozději do 14 dnů od odstoupení. Náklady na vrácení nesete vy; zboží zabalte tak, aby cestou neutrpělo."
+          ),
+          /* § 1820 odst. 1 písm. g) OZ: u zboží, které pro svou povahu nelze
+             vrátit obvyklou poštovní cestou, musí zákazník znát odhad. */
+          ...(input.delivery.return_cost
+            ? [r(` Odhadem jde o ${input.delivery.return_cost}.`)]
+            : []),
+        ],
+        [
+          b("Peníze vrátíme do 14 dnů"),
+          r(
+            " od odstoupení, stejným způsobem, jakým jste platil(a). Vracíme i poštovné, které jste zaplatil(a) při odeslání k vám — ve výši nejlevnějšího způsobu dopravy, který nabízíme. Vrácení peněz můžeme zdržet, dokud zboží nedostaneme zpět nebo neprokážete, že jste ho odeslal(a) (§ 1832 odst. 4 OZ)."
+          ),
+        ],
+        [
+          b("Snížená hodnota."),
+          r(
+            " Odpovídáte za snížení hodnoty zboží, které vzniklo tím, že jste s ním nakládal(a) jinak, než je nutné k seznámení s jeho povahou a vlastnostmi (§ 1833 OZ)."
+          ),
+        ],
+      ])
+    )
+    place(spacer(6))
+    place(
+      small(
+        [
+          r(
+            "Úplné poučení o odstoupení a vzorový formulář jsou přílohou e-mailu s potvrzením objednávky a jsou i na webu."
+          ),
+        ],
+        0
+      )
+    )
+  } else {
   place(heading("06", "Zrušení zakázky a vrácení peněz"), 40)
   place(
     box([
@@ -745,6 +915,7 @@ export const generateCommissionConfirmationPdf = async (
       ],
     ])
   )
+  }
 
   // ── 07 Vady ───────────────────────────────────────────────────────────────
   place(heading("07", "Vady"), 40)
@@ -758,8 +929,12 @@ export const generateCommissionConfirmationPdf = async (
         " odstín a kresba glazury, drobné nerovnosti a stopy ruční práce ani drobná odchylka rozměru — každý kus vzniká rukama a žádné dva nejsou stejné. "
       ),
       b("Vadou je"),
+      /* „Schválená podoba" vzniká až schválením fotografie před výpalem —
+         u běžného zboží žádná taková není, tam je měřítkem popis v e-shopu. */
       r(
-        " prasklina, odštěpek, odlupující se glazura, jiný motiv, text nebo rozměr než ve schválené podobě, a poškození při přepravě. Při vadě máte právo nejprve na opravu nebo nový kus, pak na slevu nebo vrácení peněz (§ 2169–2171 OZ). Podrobně v "
+        zakazka
+          ? " prasklina, odštěpek, odlupující se glazura, jiný motiv, text nebo rozměr než ve schválené podobě, a poškození při přepravě. Při vadě máte právo nejprve na opravu nebo nový kus, pak na slevu nebo vrácení peněz (§ 2169–2171 OZ). Podrobně v "
+          : " prasklina, odštěpek, odlupující se glazura, nesoulad s popisem a fotografiemi v e-shopu, a poškození při přepravě. Při vadě máte právo nejprve na opravu nebo nový kus, pak na slevu nebo vrácení peněz (§ 2169–2171 OZ). Podrobně v "
       ),
       r("Reklamačním řádu", input.links.complaints ? { href: input.links.complaints } : {}),
       r("."),
@@ -770,21 +945,27 @@ export const generateCommissionConfirmationPdf = async (
   place(heading("08", "Co jste odsouhlasil(a) při objednávce"), 40)
   place(
     consentRow(
-      `Seznámil(a) jsem se s obchodními podmínkami ve znění od ${input.terms.version} včetně článku Výroba na zakázku.`,
+      zakazka
+        ? `Seznámil(a) jsem se s obchodními podmínkami ve znění od ${input.terms.version} včetně článku Výroba na zakázku.`
+        : `Seznámil(a) jsem se s obchodními podmínkami ve znění od ${input.terms.version}.`,
       input.consent.terms_at
     )
   )
-  place(
-    consentRow(
-      "Beru na vědomí, že výrobek podle mého zadání nelze vrátit ve 14denní lhůtě a že záloha se po zahájení výroby nevrací.",
-      input.consent.mto_at
+  /* Poučení o výjimce z odstoupení patří jen k zakázce — u běžného zboží by
+     to byla nepravda, protože odstoupit lze (bod 06). */
+  if (zakazka) {
+    place(
+      consentRow(
+        "Beru na vědomí, že výrobek podle mého zadání nelze vrátit ve 14denní lhůtě a že záloha se po zahájení výroby nevrací.",
+        input.consent.mto_at
+      )
     )
-  )
+  }
   place(spacer(6))
   place(
     small([
       r(
-        `Souhlasy jsou uložené u objednávky č. ${input.order.number} s verzí podmínek a časem podle našeho serveru. Smlouva byla uzavřena česky, na dálku; toto potvrzení je její potvrzení v textové podobě (§ 1827 odst. 2 OZ). Spory lze řešit mimosoudně u České obchodní inspekce (Štěpánská 796/44, 110 00 Praha 1, www.coi.cz). Přílohy: Obchodní podmínky ${input.terms.version} · Poučení o odstoupení · Reklamační řád (PDF).`
+        `Souhlasy jsou uložené u objednávky č. ${input.order.number} s verzí podmínek a časem podle našeho serveru. Smlouva byla uzavřena česky, na dálku; toto potvrzení je jejím potvrzením v textové podobě (§ 1827 odst. 2 OZ). Spory lze řešit mimosoudně u České obchodní inspekce (Štěpánská 796/44, 110 00 Praha 1, www.coi.cz). Přílohy: Obchodní podmínky ${input.terms.version} · Poučení o odstoupení · Reklamační řád (PDF).`
       ),
     ])
   )
@@ -799,7 +980,7 @@ export const generateCommissionConfirmationPdf = async (
     input.seller.address,
     input.seller.email,
   ]
-  const footerRight = `Potvrzení zakázky č. ${input.order.number} · OP ${input.terms.version}`
+  const footerRight = `${nazevDokumentu} č. ${input.order.number} · OP ${input.terms.version}`
   for (const p of pages) {
     const lineY = MARGIN + 14
     p.drawLine({ start: { x: MARGIN, y: lineY }, end: { x: MARGIN + CONTENT_W, y: lineY }, thickness: 0.4, color: HAIR })

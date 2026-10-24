@@ -53,6 +53,7 @@ import { ReturnReceivedEmail } from "./emails/return-received";
 import { ReturnResolvedEmail } from "./emails/return-resolved";
 import { PriceDropEmail } from "./emails/price-drop";
 import { InvoiceIssuedEmail } from "./emails/invoice-issued";
+import { ContractResentEmail } from "./emails/contract-resent";
 import { SurchargeNoticeEmail } from "./emails/surcharge-notice";
 import { SurchargeConfirmedEmail } from "./emails/surcharge-confirmed";
 import { CommissionMessageEmail } from "./emails/commission-message";
@@ -63,7 +64,9 @@ import { CourseReminderEmail } from "./emails/course-reminder";
 import { CourseWaitlistSpotEmail } from "./emails/course-waitlist-spot";
 import { CourseReservationCancelledEmail } from "./emails/course-reservation-cancelled";
 import { CommissionInquiryReceivedEmail } from "./emails/commission-inquiry-received";
-import { withEmailLegalFacts } from "./components/email-ui";
+import { GiftVoucherEmail } from "./emails/gift-voucher";
+import { GiftVoucherPaymentEmail } from "./emails/gift-voucher-payment";
+import { CONTACT_EMAIL, withEmailLegalFacts } from "./components/email-ui";
 import { loadEmailLegalFacts } from "./live-legal-facts";
 import type { LiveLegalFacts } from "../../lib/legal";
 import {
@@ -132,6 +135,7 @@ enum Templates {
   // iDoklad (FINISHINGTODOLIST §1): sent with a link to our own copy of the
   // invoice PDF once the invoice is issued.
   INVOICE_ISSUED = "invoice-issued",
+  CONTRACT_RESENT = "contract-resent",
   // Zakázka: „k zakázce přibyl příplatek" — ruční informování zákazníka.
   SURCHARGE_NOTICE = "surcharge-notice",
   // Zakázka: písemné potvrzení příplatku dohodnutého jinou cestou (telefon/e-mail).
@@ -152,6 +156,9 @@ enum Templates {
   // Poptávka zakázky ze stránky Výroba — potvrzení zákazníkovi
   // (api/store/commission-inquiries).
   COMMISSION_INQUIRY_RECEIVED = "commission-inquiry-received",
+  // Dárkové poukazy (stránka Poukazy, lib/gift-voucher-emails.ts).
+  GIFT_VOUCHER = "gift-voucher",
+  GIFT_VOUCHER_PAYMENT = "gift-voucher-payment",
   // TODO(emails): the remaining templates in ./emails/ are designed but have
   // no trigger to hang off yet. Register them here (both enums + the map +
   // a subject) once the underlying feature exists:
@@ -221,6 +228,7 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.RETURN_RESOLVED]: ReturnResolvedEmail,
   [Templates.PRICE_DROP]: PriceDropEmail,
   [Templates.INVOICE_ISSUED]: InvoiceIssuedEmail,
+  [Templates.CONTRACT_RESENT]: ContractResentEmail,
   [Templates.SURCHARGE_NOTICE]: SurchargeNoticeEmail,
   [Templates.SURCHARGE_CONFIRMED]: SurchargeConfirmedEmail,
   [Templates.COMMISSION_MESSAGE]: CommissionMessageEmail,
@@ -231,6 +239,8 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.COURSE_WAITLIST_SPOT]: CourseWaitlistSpotEmail,
   [Templates.COURSE_RESERVATION_CANCELLED]: CourseReservationCancelledEmail,
   [Templates.COMMISSION_INQUIRY_RECEIVED]: CommissionInquiryReceivedEmail,
+  [Templates.GIFT_VOUCHER]: GiftVoucherEmail,
+  [Templates.GIFT_VOUCHER_PAYMENT]: GiftVoucherPaymentEmail,
 }
 
 export enum EmailTemplates {
@@ -284,6 +294,7 @@ export enum EmailTemplates {
   RETURN_RESOLVED = "return-resolved",
   PRICE_DROP = "price-drop",
   INVOICE_ISSUED = "invoice-issued",
+  CONTRACT_RESENT = "contract-resent",
   SURCHARGE_NOTICE = "surcharge-notice",
   SURCHARGE_CONFIRMED = "surcharge-confirmed",
   COMMISSION_MESSAGE = "commission-message",
@@ -294,6 +305,9 @@ export enum EmailTemplates {
   COURSE_WAITLIST_SPOT = "course-waitlist-spot",
   COURSE_RESERVATION_CANCELLED = "course-reservation-cancelled",
   COMMISSION_INQUIRY_RECEIVED = "commission-inquiry-received",
+  // Dárkové poukazy (stránka Poukazy, lib/gift-voucher-emails.ts).
+  GIFT_VOUCHER = "gift-voucher",
+  GIFT_VOUCHER_PAYMENT = "gift-voucher-payment",
 }
 
 /**
@@ -497,17 +511,17 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
     }
     switch(template) {
       case Templates.ORDER_PLACED:
-        return "Objednávka přijata — děkujeme"
+        return "Objednávku mám, děkuji"
       case Templates.USER_INVITED:
         return "Pozvánka do administrace Keramické zahrady"
       case Templates.PASSWORD_RESET:
-        return "Obnovení hesla"
+        return "Nové heslo — odkaz platí 15 minut"
       case Templates.EMAIL_VERIFICATION:
         return "Potvrďte svou e-mailovou adresu"
       case Templates.VARIANT_RESTOCK:
-        return "Objekt je zpět skladem"
+        return "Váš oblíbený kousek je zpátky skladem"
       case Templates.ABANDONED_CART:
-        return "Váš košík na vás čeká"
+        return "Zapomněli jste na něco?"
       case Templates.MERCHANT_NOTIFICATION:
         return "Upozornění z e-shopu"
       case Templates.MERCHANT_DAILY_SUMMARY:
@@ -516,93 +530,107 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Týdenní souhrn"
       // §16 subjects, verbatim.
       case Templates.PAYMENT_RECEIVED:
-        return "Platba přijata — děkujeme"
+        return "Platba dorazila, děkuji"
       case Templates.PAYMENT_FAILED:
-        return "Platba se nezdařila"
+        return "Platba neprošla — zkuste to prosím znovu"
       case Templates.PAYMENT_PENDING:
         // The one send site is the made-to-order balance request — the subject
         // says what is wanted, not a vague „odkaz k platbě".
-        return "Prosíme o doplatek — odkaz k platbě"
+        return "Prosím o doplatek za vaši zakázku"
       case Templates.PAYMENT_REFUNDED:
-        return "Vracíme peníze"
+        return "Vracím vám peníze"
       case Templates.ORDER_SHIPMENT:
-        return "Objednávka odeslána"
+        return "Objednávka je na cestě k vám"
       case Templates.ORDER_CANCELLED:
-        return "Objednávka zrušena"
+        return "Vaše objednávka je zrušená"
       case Templates.ORDER_PROCESSING:
-        return "Vaše zakázka je ve výrobě"
+        // OP čl. IX a FAQ jmenují tento e-mail „Zakázka je ve výrobě“ — předmět
+        // tak musí začínat, od něj běží lhůta a nevratnost zálohy (Z3).
+        return "Zakázka je ve výrobě — pustila jsem se do ní"
       case Templates.PRODUCTION_STARTED:
         // Z3: zahájení výroby platí od tohoto e-mailu — předmět říká přímo, co se stalo.
-        return "Vaše zakázka je ve výrobě"
+        return "Zakázka je ve výrobě — pustila jsem se do ní"
       case Templates.COMMISSION_CANCELLED:
-        return "Zakázka zrušena"
+        return "Zakázka je zrušená — jak je to s penězi"
       case Templates.COMMISSION_CONFIRMED:
         return "Zadání vaší zakázky je potvrzené"
       case Templates.ORDER_PREPARING:
-        return "Vaši objednávku připravujeme"
+        return "Vaši objednávku právě balím"
       case Templates.ORDER_EDITED:
-        return "Objednávka upravena"
+        return "Úpravu objednávky mám uloženou"
       case Templates.ORDER_READY:
-        return "Objednávka je připravená k odeslání"
+        return "Zabaleno, čeká jen na dopravce"
       case Templates.COMMISSION_COMPLETED:
         return "Vaše zakázka je hotová"
       case Templates.ORDER_REFUNDED:
-        return "Objednávka vrácena"
+        return "Peníze jsou na cestě zpět k vám"
       case Templates.ORDER_REVIEW:
-        return "Jak se vám líbí nový kousek?"
+        return "Jak se vám s ním žije?"
       case Templates.ORDER_READY_PICKUP:
         // Personal pickup at the atelier — nothing was posted, so no „zásilka".
-        return "Objednávka je připravena k vyzvednutí"
+        return "Objednávka na vás čeká v dílně"
       case Templates.ORDER_DELIVERED:
         // Sent on the personal-pickup handover (delivery.created) — the
         // customer just carried the objects home themselves.
-        return "Objekty jsou u vás — děkujeme"
+        return "Kousky jsou u vás — děkuji"
       case Templates.ORDER_DELAYED:
-        return "Výroba se protáhne"
+        return "Omlouvám se, objednávka se zdrží"
       case Templates.WELCOME:
         return "Vítejte v Keramické zahradě"
       case Templates.ACCOUNT_DELETED:
-        return "Váš účet byl smazán"
+        return "Váš účet jsem smazala"
       case Templates.RETURN_APPROVED:
-        return "Vrácení schváleno"
+        return "Vaši žádost jsem schválila"
       case Templates.NEWSLETTER_SIGNUP:
-        return "Vítejte v okruhu ateliéru"
+        return "Novinky z dílny — potvrďte prosím odběr"
       case Templates.NEWSLETTER_UNSUBSCRIBE:
-        return "Odhlášení potvrzeno"
+        return "Odhlášení z novinek je hotové"
       case Templates.NEWSLETTER_WELCOME:
-        return "Odběr novinek je potvrzený — děkujeme"
+        return "Odběr novinek je potvrzený — děkuji"
       case Templates.PROMOTIONAL:
-        return "Z ateliéru — objekty za příznivější cenu"
+        return "Kousky z dílny za nižší cenu"
       case Templates.BUNDLE_PUBLISHED:
-        return "Nový balíček z ateliéru je k nahlédnutí"
+        return "Nový balíček z dílny"
       case Templates.REFUND_REQUEST:
         // Výchozí; intake posílá předmět podle druhu v `data.subject`
         // („Reklamaci jsme přijali" / „Odstoupení od smlouvy jsme přijali").
-        return "Žádost o vrácení jsme přijali"
+        return "Vaši žádost jsem přijala"
       case Templates.RETURN_REJECTED:
-        return "Žádost o vrácení nemůžeme přijmout"
+        return "Žádosti bohužel nemohu vyhovět"
       case Templates.RETURN_RECEIVED:
-        return "Zboží k nám dorazilo"
+        return "Zboží ke mně dorazilo"
       case Templates.RETURN_RESOLVED:
         return "Potvrzení o vyřízení"
       case Templates.PRICE_DROP:
-        return "Objekt změnil cenu"
+        return "Oblíbený kousek má nižší cenu"
       case Templates.INVOICE_ISSUED:
         return "Faktura k vaší objednávce"
+      case Templates.CONTRACT_RESENT:
+        return "Potvrzení smlouvy k vaší objednávce"
       case Templates.COURSE_RESERVATION_CONFIRMED:
-        return "Rezervace kurzu potvrzena"
+        return "Vaše rezervace kurzu keramiky"
       case Templates.COURSE_TERM_CANCELLED:
-        return "Termín kurzu se bohužel ruší"
+        return "Termín kurzu musím zrušit — omlouvám se"
       case Templates.COURSE_PAYMENT_EXPIRED:
-        return "Platba nedorazila — rezervaci kurzu jsme uvolnili"
+        return "Platba nedorazila, místo jsem uvolnila"
       case Templates.COURSE_REMINDER:
-        return "Připomínáme: váš kurz keramiky se blíží"
+        return "Za pár dní se potkáme u hlíny"
       case Templates.COURSE_WAITLIST_SPOT:
         return "Na kurzu se uvolnilo místo"
       case Templates.COURSE_RESERVATION_CANCELLED:
-        return "Vaše rezervace kurzu byla zrušena"
+        return "Rezervace kurzu je zrušená"
       case Templates.COMMISSION_INQUIRY_RECEIVED:
-        return "Poptávku jsme přijali"
+        return "Děkuji za poptávku — ozvu se s nabídkou"
+      case Templates.GIFT_VOUCHER:
+        return "Dárkový poukaz do Keramické zahrady"
+      case Templates.GIFT_VOUCHER_PAYMENT:
+        return "Dárkový poukaz — odkaz k zaplacení"
+      case Templates.SURCHARGE_NOTICE:
+        return "K vaší zakázce přibyl příplatek"
+      case Templates.SURCHARGE_CONFIRMED:
+        return "Příplatek k zakázce — jak jsme se domluvili"
+      case Templates.COMMISSION_MESSAGE:
+        return "Zpráva z dílny k vaší zakázce"
       // WIP: Add more cases for other templates as needed
       default:
         return "Zpráva z Keramické zahrady"
@@ -772,9 +800,13 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         typeof providedSubject === "string" && providedSubject.trim().length
           ? providedSubject
           : this.getTemplateSubject(notification.template as Templates),
-      ...(typeof providedReplyTo === "string" && providedReplyTo.trim().length
-        ? { replyTo: providedReplyTo.trim() }
-        : {}),
+      // Odesílá se z noreply adresy — bez Reply-To by odpověď zákazníka skončila
+      // v prázdnu. Výchozí je adresa Lucie (CONTACT_EMAIL), kterou e-maily
+      // nabízejí i v textu; kontaktní formulář posílá vlastní (zákazníkovu).
+      replyTo:
+        typeof providedReplyTo === "string" && providedReplyTo.trim().length
+          ? providedReplyTo.trim()
+          : CONTACT_EMAIL,
       ...(resendTags.length ? { tags: resendTags } : {}),
       ...unsubscribeHeaders,
     }

@@ -1,5 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { MedusaError, Modules } from "@medusajs/framework/utils"
+import { applyDiscountableRule } from "../../../../../../lib/discountable"
 import { z } from "@medusajs/framework/zod"
 
 /**
@@ -99,6 +100,12 @@ const PatchFlagsSchema = z
      * domluvě" a vede na poptávku; backend odmítne vložení do košíku.
      */
     price_on_request: z.boolean().optional(),
+    /**
+     * Typ produktu „Dárkový poukaz“ — za každý zaplacený kus vznikne poukaz
+     * s vlastním kódem (lib/gift-voucher-orders.ts). Widget zapíná zároveň
+     * `no_promo`: na koupi poukazu slevový kód neplatí (OP čl. XI).
+     */
+    gift_voucher: z.boolean().optional(),
   })
   .refine((body) => Object.keys(body).length > 0, {
     message: "Neposlali jste žádnou změnu.",
@@ -116,7 +123,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   const productModule = req.scope.resolve(Modules.PRODUCT)
   const [product] = await productModule.listProducts(
     { id: req.params.productId } as never,
-    { take: 1, select: ["id", "metadata"] as never }
+    { take: 1, select: ["id", "metadata", "discountable"] as never }
   )
 
   if (!product) {
@@ -132,6 +139,20 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   await productModule.updateProducts(req.params.productId, {
     metadata,
   } as never)
+
+  // „Bez slev. kódů", poukaz a výprodej rozhodují o `product.discountable`.
+  // Přímý zápis do modulu nevydá `product.updated` (naměřeno 24. 10. v sandboxu:
+  // no_promo zůstalo discountable až do nočního přepočtu), proto se pravidlo
+  // srovná hned tady — jen pro tenhle produkt, zbytek dělá denní úloha.
+  if (["no_promo", "gift_voucher", "clearance"].some((key) => key in parsed.data)) {
+    await applyDiscountableRule(req.scope, [
+      { id: req.params.productId, discountable: (product as any).discountable, metadata },
+    ]).catch((error) =>
+      req.scope
+        .resolve("logger")
+        .warn(`[discountable] Přepočet po změně příznaků se nepodařil: ${(error as Error)?.message ?? error}`)
+    )
+  }
 
   res.status(200).json({
     id: req.params.productId,

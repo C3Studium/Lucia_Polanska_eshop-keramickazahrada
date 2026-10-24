@@ -57,25 +57,24 @@ function PromotionalEmailComponent({
   expiryDate,
   productLink = "",
   unsubscribeLink = "",
-  receivingReason = "Tuto zprávu dostáváte jako odběratel novinek ateliéru."
+  receivingReason = "Tuto zprávu dostáváte jako odběratel novinek z mé dílny."
 }: PromotionalEmailProps) {
   const productUrl = productLink || storeLink()
   return (
     <EmailLayout
       preview={
         discountCode
-          ? `Objekty z ateliéru za příznivější cenu — s kódem ${discountCode}.`
-          : "Objekty z ateliéru za příznivější cenu."
+          ? `Kousky z dílny za nižší cenu — s kódem ${discountCode}.`
+          : "Kousky z dílny za nižší cenu."
       }
     >
-      <Eyebrow>Z ateliéru</Eyebrow>
-      <EmailH1 accent="příznivější cenu.">Objekty za</EmailH1>
+      <Eyebrow>Z dílny</Eyebrow>
+      <EmailH1 accent="nižší cenu.">Kousky za</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        na objekty z ateliéru teď platí příznivější cena. Pokud jste
-        některý kus delší dobu zvažovali, možná je vhodná chvíle se
-        k němu vrátit.
+        na kousky z mé dílny teď platí nižší cena. Pokud jste některý delší
+        dobu zvažovali, možná je ta chvíle se k němu vrátit.
       </P>
 
       {discountCode ? <LedgerRow label="Kód" value={discountCode} strong /> : null}
@@ -87,14 +86,14 @@ function PromotionalEmailComponent({
 
       {discountCode ? (
         <P style={{ margin: "24px 0 16px" }}>
-          Kód stačí zadat při objednávce. Platí na objekty, které jsou
-          právě skladem.
+          Kód stačí zadat při objednávce. Platí na kousky, které mám právě
+          skladem.
         </P>
       ) : null}
 
       {productUrl ? (
         <ButtonRow>
-          <EmailButton href={productUrl}>Prohlédnout objekty</EmailButton>
+          <EmailButton href={productUrl}>Prohlédnout nabídku</EmailButton>
         </ButtonRow>
       ) : null}
 
@@ -113,8 +112,7 @@ function PromotionalEmailComponent({
         </P>
       ) : (
         <P small>
-          {receivingReason} Pokud podobné zprávy dostávat nechcete, stačí
-          odpovědět na tento e-mail a už vám je posílat nebudeme.
+          {receivingReason} Pokud podobné zprávy dostávat nechcete, napište mi na info@keramickazahrada.cz a už vám je posílat nebudu.
         </P>
       )}
       <P small style={{ margin: "8px 0 0" }}>

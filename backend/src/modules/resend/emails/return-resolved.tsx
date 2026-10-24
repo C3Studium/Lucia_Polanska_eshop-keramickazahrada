@@ -48,10 +48,10 @@ interface ReturnResolvedEmailProps {
 }
 
 const OUTCOME: Record<string, string> = {
-  repair: "Objekt je opravený a míří k vám zpět.",
-  replace: "Posíláme vám nový kus.",
-  discount: "Část ceny vám vracíme — objekt zůstává u vás.",
-  refund: "Peníze vám vracíme stejnou cestou, jakou k nám platba přišla.",
+  repair: "Kousek je opravený a míří k vám zpět.",
+  replace: "Posílám vám nový kus.",
+  discount: "Část ceny vám vracím — kousek zůstává u vás.",
+  refund: "Peníze vám vracím stejnou cestou, jakou ke mně platba přišla.",
 }
 
 /**
@@ -95,7 +95,7 @@ function ReturnResolvedEmailComponent({
         isClaim
           ? `Reklamace k objednávce ${orderNumber} je vyřízená.`
           : isEdit
-            ? `Rozdíl po úpravě objednávky ${orderNumber} jsme vám vrátili.`
+            ? `Rozdíl po úpravě objednávky ${orderNumber} jsem vám vrátila.`
             : `Vrácení k objednávce ${orderNumber} je vyřízené.`
       }
     >
@@ -111,8 +111,8 @@ function ReturnResolvedEmailComponent({
         {isClaim
           ? "vaše reklamace je vyřízená. Toto je písemné potvrzení o datu a způsobu vyřízení."
           : isEdit
-            ? "po vaší úpravě vyšla objednávka levněji — rozdíl jsme vám vrátili. Níže je shrnutí."
-            : "vaše vrácení je vyřízené. Níže je shrnutí, jak jsme je uzavřeli."}
+            ? "po vaší úpravě vyšla objednávka levněji — rozdíl jsem vám vrátila. Níže je shrnutí."
+            : "vaše vrácení je vyřízené. Níže je shrnutí, jak jsem je uzavřela."}
       </P>
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
@@ -147,17 +147,17 @@ function ReturnResolvedEmailComponent({
       {protocolUrl || claimsUrl || orderLink || creditNoteUrl ? (
         <ButtonRow>
           {protocolUrl ? (
-            <EmailButton href={protocolUrl}>Potvrzení o vyřízení (PDF)</EmailButton>
+            <EmailButton href={protocolUrl}>Stáhnout potvrzení (PDF)</EmailButton>
           ) : claimsUrl || orderLink ? (
             <EmailButton href={claimsUrl || orderLink}>
-              {claimsUrl ? "Stav žádosti" : "Zobrazit objednávku"}
+              {claimsUrl ? "Sledovat stav žádosti" : "Zobrazit objednávku"}
             </EmailButton>
           ) : null}
           {protocolUrl && (claimsUrl || orderLink) ? (
             <>
               <span style={{ display: "inline-block", width: "12px" }} />
               <EmailButton href={claimsUrl || orderLink} variant="ghost">
-                {claimsUrl ? "Stav žádosti" : "Zobrazit objednávku"}
+                {claimsUrl ? "Sledovat stav žádosti" : "Zobrazit objednávku"}
               </EmailButton>
             </>
           ) : null}
@@ -179,15 +179,15 @@ function ReturnResolvedEmailComponent({
 
       <P small>
         {refundAmount && byCard
-          ? "Připsání peněz na účet závisí na vaší bance, obvykle do 3–5 pracovních dnů. "
+          ? "Připsání peněz na účet záleží na vaší bance, obvykle do 3–5 pracovních dnů. "
           : refundAmount
-            ? "Peníze vracíme ručně (převodem na účet nebo hotově); pokud od vás potřebujeme číslo účtu, ozveme se. "
+            ? "Peníze vracím ručně (převodem na účet nebo hotově); pokud od vás budu potřebovat číslo účtu, ozvu se. "
             : ""}
         {creditNoteNote ? `${creditNoteNote} ` : ""}
         {isClaim
           ? "Nesouhlasíte-li s vyřízením, máte právo obrátit se na Českou obchodní inspekci (www.coi.cz), případně na soud. "
           : ""}
-        Máte-li jakýkoli dotaz, stačí odpovědět na tento e-mail.
+        Kdyby cokoli, napište mi na info@keramickazahrada.cz — odpovídám sama.
       </P>
       <Signature />
     </EmailLayout>

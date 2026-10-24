@@ -9,7 +9,9 @@ import {
   LedgerRow,
   Note,
   P,
+  PaidFor,
   Signature,
+  type EmailLineItem,
 } from "../components/email-ui"
 import { storeLink } from "../../../lib/storefront-url"
 
@@ -18,6 +20,13 @@ interface PaymentRefundedEmailProps {
   orderNumber?: string;
   refundAmount?: string;
   originalPaymentAmount?: string;
+  /**
+   * Co bylo v objednávce, které se vrácení týká (`lib/email-items`). Není to
+   * výpis vráceného zboží — tahle refundace může být i částečná, a tvrdit
+   * „vracíme tyhle kusy" by bylo víc, než co se opravdu ví. Říká, které
+   * objednávky se peníze týkají.
+   */
+  paidFor?: EmailLineItem[] | null;
   /** Only when somebody actually stated one — no fabricated default. */
   refundReason?: string;
   refundMethod?: string;
@@ -41,6 +50,7 @@ function PaymentRefundedEmailComponent({
   refundMethod = "Zpět na účet, ze kterého platba přišla",
   estimatedRefundTime = "Peníze by se na vašem účtu měly objevit do 3–5 pracovních dnů.",
   orderLink = "",
+  paidFor,
 }: PaymentRefundedEmailProps) {
   const orderUrl = orderLink || storeLink()
 
@@ -48,17 +58,18 @@ function PaymentRefundedEmailComponent({
     <EmailLayout
       preview={
         refundAmount
-          ? `Vracíme vám ${refundAmount} za objednávku ${orderNumber}.`
-          : `Vracíme vám platbu za objednávku ${orderNumber}.`
+          ? `Vracím vám ${refundAmount} za objednávku ${orderNumber}.`
+          : `Vracím vám platbu za objednávku ${orderNumber}.`
       }
     >
       <Eyebrow>Platba</Eyebrow>
-      <EmailH1 accent="vracíme.">Platbu</EmailH1>
+      <EmailH1 accent="vám vracím.">Platbu</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        vrácení platby za vaši objednávku je zpracováno. Peníze se k vám
-        vracejí stejnou cestou, jakou k nám přišly.
+        vrácení platby za vaši objednávku jsem zadala. Peníze se k vám vrací
+        stejnou cestou, jakou ke mně přišly. Kdyby za tím bylo něco, co jsem
+        mohla udělat lépe, budu ráda, když mi napíšete.
       </P>
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
@@ -74,6 +85,11 @@ function PaymentRefundedEmailComponent({
       ) : null}
       <LedgerEnd />
 
+      {/* Které objednávky se peníze týkají. Nadpis mluví o objednávce, ne o
+          vráceném zboží — tahle refundace může být částečná (výpis
+          konkrétních vrácených kusů posílá modul reklamací ve svém e-mailu). */}
+      <PaidFor items={paidFor} heading="Co bylo v objednávce" />
+
       <Note tone="olive">{estimatedRefundTime}</Note>
 
       {orderUrl ? (
@@ -83,8 +99,9 @@ function PaymentRefundedEmailComponent({
       ) : null}
 
       <P small>
-        Rychlost připsání se liší podle banky a platební metody. Pokud se
-        částka v uvedené lhůtě neobjeví, stačí odpovědět na tento e-mail.
+        Jak rychle se částka připíše, záleží na vaší bance a způsobu platby.
+        Pokud se do uvedené lhůty neobjeví, napište mi na info@keramickazahrada.cz —
+        podívám se na to.
       </P>
       <Signature />
     </EmailLayout>
@@ -104,7 +121,18 @@ const mockPaymentRefunded: PaymentRefundedEmailProps = {
   refundReason: "Částečné vrácení zboží",
   refundMethod: "Zpět na účet, ze kterého platba přišla",
   estimatedRefundTime: "Peníze se obvykle vrátí do několika pracovních dnů.",
-  orderLink: "https://keramickazahrada.cz/cz/order/order_12345/confirmed"
+  orderLink: "https://keramickazahrada.cz/cz/order/order_12345/confirmed",
+  paidFor: [
+    {
+      title: "Keramické pítko pro ptáky",
+      subtitle: "Modrá glazura",
+      quantity: 1,
+      amount: "1 950 Kč",
+      thumbnail:
+        "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png",
+    },
+    { title: "Miska na mýdlo", quantity: 2, amount: "470 Kč" },
+  ],
 }
 
 export default () => <PaymentRefundedEmailComponent {...mockPaymentRefunded} />

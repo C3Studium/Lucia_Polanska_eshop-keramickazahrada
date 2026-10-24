@@ -37,6 +37,7 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { isClearanceProduct } from "./clearance"
+import { isCustomAmountVoucher } from "./voucher"
 
 export type DiscountableProduct = {
   id: string
@@ -84,6 +85,13 @@ export const smiDostatSlevu = (
     return false
   }
   if (isClearanceProduct(product)) {
+    return false
+  }
+  // Dárkový poukaz (typ produktu i poukaz s vlastní částkou): na jeho koupi
+  // slevový kód neplatí a nedá se zaplatit jiným poukazem (OP čl. XI) —
+  // poukazy jsou v košíku slevové akce (lib/gift-voucher-promotion.ts).
+  const meta = (product.metadata ?? {}) as Record<string, unknown>
+  if (meta.gift_voucher === true || meta.gift_voucher === "true" || isCustomAmountVoucher(meta)) {
     return false
   }
   return !membership.saleProductIds.has(product.id)

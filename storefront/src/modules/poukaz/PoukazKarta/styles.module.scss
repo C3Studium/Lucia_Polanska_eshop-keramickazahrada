@@ -1,0 +1,263 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+
+/*
+ * Karta dárkového poukazu. Výraznější než zbytek stránky — je to dárek: teplý krémový
+ * papír, dvojitý rámeček v olivové, glazurová tečka v hlíně, hodnota velkým Sentientem.
+ * Tytéž barvy drží i na papíře (`print-color-adjust: exact`), jen bez stínu.
+ */
+.card {
+  --card-ink: var(--ink-05);
+  --card-paper: var(--cream-06);
+  --card-olive: var(--olive-13);
+  --card-olive-text: var(--olive-08);
+  --card-clay: var(--clay-27);
+  --card-clay-text: var(--clay-13);
+
+  width: min(40rem, 100%);
+  padding: clamp(0.5rem, 1.2vw, 0.75rem);
+  color: var(--card-ink);
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgb(var(--white-rgb) / .55), transparent 60%),
+    var(--card-paper);
+  border: 1px solid rgb(var(--olive-13-rgb) / .55);
+  box-shadow: 0 34px 60px -42px rgb(var(--black-01-rgb) / .55);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+  break-inside: avoid;
+}
+
+.frame {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: clamp(0.75rem, 1.8vh, 1.125rem);
+  padding: clamp(1.75rem, 4.4vh, 3rem) clamp(1rem, calc(3 * var(--fvw)), 2.75rem)
+    clamp(1.5rem, 3.6vh, 2.5rem);
+  border: 1px solid rgb(var(--olive-13-rgb) / .4);
+  text-align: center;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem 0.75rem;
+  color: var(--card-olive-text);
+  font-size: var(--type-caption, 0.8125rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--card-clay);
+}
+
+.recipient {
+  margin: clamp(0.25rem, 1vh, 0.75rem) 0 0;
+  font-family: "Sentient-Regular", serif;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
+
+  span {
+    color: var(--card-olive);
+    font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+    font-weight: 300;
+  }
+}
+
+.dedication {
+  max-width: 30rem;
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / .8);
+  font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+  font-size: clamp(1rem, 1.3vw, 1.15rem);
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+
+  &::before {
+    content: "„";
+  }
+
+  &::after {
+    content: "“";
+  }
+}
+
+.value {
+  margin: clamp(0.25rem, 1vh, 0.75rem) 0 0;
+  font-family: "Sentient-Regular", serif;
+  font-size: clamp(2.75rem, 7vw, 4.75rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.codeBox {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 26rem;
+  padding: clamp(0.875rem, 2vh, 1.25rem) 0.75rem;
+  border-top: 1px dashed rgb(var(--olive-13-rgb) / .55);
+  border-bottom: 1px dashed rgb(var(--olive-13-rgb) / .55);
+}
+
+.label {
+  color: rgb(var(--ink-05-rgb) / .7);
+  font-size: var(--type-caption, 0.8125rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.code {
+  font-family: "Sentient-Regular", serif;
+  font-size: clamp(1.35rem, 6.2vw, 2.25rem);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  user-select: all;
+}
+
+.copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0 1.125rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / .42);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--card-ink);
+  font-family: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease;
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+}
+
+@include fine-pointer {
+  .copy:hover {
+    border-color: var(--card-ink);
+    background: rgb(var(--white-rgb) / .6);
+  }
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 2rem;
+  margin: 0;
+
+  > div {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  dt {
+    color: rgb(var(--ink-05-rgb) / .7);
+    font-size: var(--type-caption, 0.8125rem);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+    font-size: 1rem;
+  }
+}
+
+.foot {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 30rem;
+  margin-top: clamp(0.25rem, 1vh, 0.75rem);
+  color: rgb(var(--ink-05-rgb) / .72);
+  font-size: 0.85rem;
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+.signature {
+  color: var(--card-clay-text);
+  font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+  font-size: 1.05rem;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/*
+ * Tisk: na papíře JEN karta.
+ *
+ * Hlavička, patička, lišty a podklad webu nemají vlastní tiskové styly, a vyjmenovávat
+ * je tady by se rozešlo při první změně layoutu. Místo toho se schová všechno, co není
+ * kartou, uvnitř karty ani jejím předkem — a předkům (html, body, <main>, obaly layoutu)
+ * se srazí odsazení, výška a podklad, ať karta začíná nahoře na první stránce.
+ * Celé je to podmíněné `:has(.card)`, takže na ostatních stránkách se nic nemění, i kdyby
+ * stylopis po navigaci zůstal v dokumentu.
+ */
+@media print {
+  :global(html):has(.card) :global(*):not(:has(.card)):not(.card):not(.card *) {
+    display: none !important;
+  }
+
+  :global(html):has(.card),
+  :global(html):has(.card) :global(*):has(.card) {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    overflow: visible !important;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 150mm;
+    margin: 0 auto !important;
+    box-shadow: none;
+  }
+
+  .frame {
+    padding: 12mm 10mm 9mm;
+  }
+
+  .value {
+    font-size: 44pt;
+  }
+
+  .code {
+    font-size: 22pt;
+  }
+
+  .copy,
+  .srOnly {
+    display: none !important;
+  }
+}

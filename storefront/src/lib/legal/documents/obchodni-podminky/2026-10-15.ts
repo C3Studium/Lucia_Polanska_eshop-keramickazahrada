@@ -464,7 +464,7 @@ const obchodniPodminky: LegalDocumentVersion = {
       blocks: [
         {
           type: "p",
-          text: "Dárkový poukaz kupujete v obchodě jako běžný výrobek. Jeho hodnota je uvedena na poukazu.",
+          text: "Dárkový poukaz koupíte v obchodě jako běžný výrobek (při nákupu zvolíte, zda ho chcete elektronicky e-mailem, nebo vytištěný poštou), nebo si ho objednáte přímo u nás (e-mailem, telefonem nebo v ateliéru). Poukaz objednaný přímo u nás zaplatíte hotově, převodem na účet, nebo online přes platební odkaz, který vám pošleme e-mailem; poukaz vystavíme, jakmile platba dorazí. Každý poukaz má jedinečný osmimístný kód; jeho hodnota, kód a konec platnosti jsou uvedené na poukazu. Poukaz koupený v obchodě vystavíme, jakmile je objednávka zaplacená.",
         },
         {
           type: "p",
@@ -472,7 +472,7 @@ const obchodniPodminky: LegalDocumentVersion = {
         },
         {
           type: "p",
-          text: "**Uplatnění:** poukaz platí na nákup keramiky v obchodě i v ateliéru, včetně výrobků na zakázku (lze jím uhradit zálohu i doplatek, až do výše poukazu); na kurzy zatím neplatí. V obchodě napište číslo poukazu do poznámky k objednávce, nebo nám ho pošlete e-mailem — jeho hodnotu z objednávky odečteme a rozdíl vám vrátíme, nebo ho doplatíte. V ateliéru poukaz předložíte. Poukaz posíláme poštou v obálce (poštovné podle ceníku dopravy); elektronicky ho zatím neposíláme.",
+          text: "**Uplatnění:** poukaz platí na nákup keramiky v obchodě i v ateliéru, včetně výrobků na zakázku (lze jím uhradit zálohu i doplatek, až do výše zůstatku poukazu); na kurzy zatím neplatí. V obchodě zadáte kód poukazu v košíku nebo v pokladně do pole „Slevový kód nebo dárkový poukaz“ a uplatněná částka se z ceny objednávky odečte hned. Poukaz se tímto způsobem odečítá z ceny zboží, na které se nevztahuje sleva — ne ze zboží ve slevě či výprodeji a ne z poštovného; na takové zboží ho na požádání (e-mailem) uplatníme ručně a rozdíl vám vrátíme. Poukazů lze v jedné objednávce uplatnit víc a lze je kombinovat se slevovým kódem. V ateliéru poukaz předložíte nebo řeknete jeho kód. Aktuální zůstatek poukazu vám kdykoli sdělíme. Poukaz vám podle vaší volby pošleme vytištěný poštou v obálce (poštovné podle ceníku dopravy), nebo elektronicky e-mailem — na přání i přímo obdarovanému.",
         },
         {
           type: "p",

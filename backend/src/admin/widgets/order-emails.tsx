@@ -140,7 +140,39 @@ const OrderEmailsInner = ({ order }: { order: AdminOrder }) => {
     onError: (error) => toast.error(ceskaChyba(error, "Akci se nepodařilo dokončit.")),
   });
 
+  /*
+   * Doposlání potvrzení smlouvy.
+   *
+   * Potvrzení objednávky nikdy nečeká na PDF — když se dokument nepovede,
+   * e-mail odejde bez přílohy a chyba jde jen do logu. Tohle je ta ruční
+   * náprava: dokument se vyrobí znovu a odejde samostatným e-mailem.
+   */
+  const smlouva = useMutation<
+    { sent: boolean; documents: { filename: string; url: string }[] },
+    Error,
+    void
+  >({
+    mutationFn: () =>
+      sdk.client.fetch(`/admin/orders/${order.id}/contract`, { method: "POST" }),
+    onSuccess: async (result) => {
+      toast.success(
+        result.documents.length > 1
+          ? `Odesláno ${result.documents.length} potvrzení smlouvy.`
+          : "Potvrzení smlouvy odesláno."
+      );
+      await queryClient.invalidateQueries({ queryKey: ["order-emails"] });
+    },
+    onError: (error) =>
+      toast.error(ceskaChyba(error, "Potvrzení se nepodařilo doposlat.")),
+  });
+
   const emails = data?.emails ?? [];
+
+  /* Dorazilo potvrzení objednávky s dokumentem? Když ne, tlačítko to
+     nenápadně připomene — jinak je to jen náprava na vyžádání. */
+  const potvrzeniOdeslano = emails.some(
+    (email) => email.template === "order-placed" && email.status === "success"
+  );
 
   return (
     <Container className="divide-y p-0">
@@ -151,14 +183,29 @@ const OrderEmailsInner = ({ order }: { order: AdminOrder }) => {
             Co zákazník o této objednávce dostal.
           </Text>
         </div>
-        <Button
-          size="small"
-          variant="secondary"
-          isLoading={vyzva.isPending}
-          onClick={() => vyzva.mutate()}
-        >
-          Poslat výzvu k zaplacení
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="small"
+            variant="secondary"
+            isLoading={smlouva.isPending}
+            title={
+              potvrzeniOdeslano
+                ? "Vyrobí dokument znovu a pošle ho samostatným e-mailem."
+                : "Potvrzení objednávky zatím neodešlo — zkontrolujte seznam níž."
+            }
+            onClick={() => smlouva.mutate()}
+          >
+            Doposlat potvrzení smlouvy
+          </Button>
+          <Button
+            size="small"
+            variant="secondary"
+            isLoading={vyzva.isPending}
+            onClick={() => vyzva.mutate()}
+          >
+            Poslat výzvu k zaplacení
+          </Button>
+        </div>
       </header>
 
       {isLoading && (

@@ -56,15 +56,15 @@ function OrderDeliveredEmailComponent({
   const shopUrl = storeLink()
   return (
     <EmailLayout
-      preview={`Objednávka ${orderNumber} je vyřízená — objekty jsou u vás.`}
+      preview={`Objednávka ${orderNumber} je u vás — děkuji za důvěru.`}
     >
       <Eyebrow>Objednávka {orderNumber}</Eyebrow>
-      <EmailH1 accent="u vás.">Objekty jsou</EmailH1>
+      <EmailH1 accent="jsou u vás.">Vaše kousky</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        vaše objednávka {orderNumber} je vyřízená a objekty jsou teď ve vašich
-        rukou. Věříme, že vám budou dělat radost — v zahradě i doma.
+        vaše objednávka {orderNumber} je u vás a z mé strany tím vyřízená.
+        Přeji si, aby vám kousky dělaly radost — v zahradě i doma.
       </P>
 
       {orderNumber ? (
@@ -74,11 +74,11 @@ function OrderDeliveredEmailComponent({
         </>
       ) : null}
 
-      <Note tone="olive">Děkujeme za důvěru.</Note>
+      <Note tone="olive">Děkuji, že jste si vybrali keramiku z mé dílny.</Note>
 
       <P>
-        Budete-li se chtít podělit o své dojmy, budeme rádi. A kdybyste
-        s kousky potřebovali cokoli poradit, stačí odpovědět na tento e-mail.
+        Kdybyste s kousky potřebovali cokoli poradit — třeba jak o ně pečovat —
+        napište mi na info@keramickazahrada.cz, odpovídám sama.
       </P>
 
       {shopUrl ? (
@@ -91,11 +91,11 @@ function OrderDeliveredEmailComponent({
       {shippedByCarrier ? (
         <>
           <P>
-            <strong>Dorazila zásilka poškozená?</strong> Napište nám prosím
-            {orderNumber ? ` (objednávka ${orderNumber})` : ""} a pošlete fotky
-            obalu i zboží — poškozený kus vyměníme nebo vrátíme peníze
-            a s dopravcem si to vyřešíme sami. Obal si prosím schovejte, dokud
-            se vám neozveme.
+            <strong>Dorazila zásilka poškozená?</strong> Napište mi prosím
+            {orderNumber ? ` (objednávka ${orderNumber})` : ""} a přiložte fotky
+            obalu i zboží — poškozený kousek vyměním nebo vám vrátím peníze
+            a s dopravcem si to vyřídím sama. Obal si prosím schovejte, dokud
+            se vám neozvu.
           </P>
           {claimUrl ? (
             <P>
@@ -120,7 +120,7 @@ function OrderDeliveredEmailComponent({
         </P>
       ) : null}
 
-      <Signature />
+      <Signature closing="Mějte se krásně," />
     </EmailLayout>
   )
 }

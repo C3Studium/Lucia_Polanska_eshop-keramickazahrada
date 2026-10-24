@@ -6,6 +6,7 @@ import React, { useActionState } from "react"
 import { applyPromotions, submitPromotionForm } from "@lib/data/cart"
 import { convertToLocale } from "@lib/util/money"
 import { maZlevnenePolozky } from "@lib/util/sleva"
+import { formatVoucherCode, looksLikeVoucherCode } from "@lib/util/gift-voucher-code"
 import { HttpTypes } from "@medusajs/types"
 import Trash from "@modules/common/icons/trash"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
@@ -76,7 +77,14 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({
    * a zákazník je nezadával; poznají se podle toho, že u nich chybí i tlačítko
    * na odebrání.
    */
-  const maRucniKod = promotions.some((promotion) => !promotion.is_automatic)
+  /* Dárkové poukazy (`lib/util/gift-voucher-code.ts`) se do „jednoho kódu"
+     nepočítají — poukazů může být víc a stojí vedle slevového kódu. */
+  const jePoukaz = (promotion: { code?: string | null; is_automatic?: boolean | null }) =>
+    !promotion.is_automatic && looksLikeVoucherCode(promotion.code)
+  const maRucniKod = promotions.some(
+    (promotion) => !promotion.is_automatic && !jePoukaz(promotion)
+  )
+  const maPoukaz = promotions.some(jePoukaz)
 
   /* Kód se nevztahuje na kusy, které už mají sníženou cenu. Píše se to, jen
      když je takový kus opravdu v košíku — jinak by to byla výstraha do prázdna. */
@@ -91,7 +99,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({
           <div className={styles.label}>
             <PremiumActionButton
               compact
-              text="Mám slevový kód"
+              text="Mám slevový kód nebo poukaz"
               onClickAction={() => setIsOpen((current) => !current)}
               active={isOpen}
               type="button"
@@ -128,14 +136,14 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({
                     id="promotion-input"
                     name="code"
                     type="text"
-                    aria-label="Slevový kód"
-                    placeholder="Napište slevový kód"
+                    aria-label="Slevový kód nebo dárkový poukaz"
+                    placeholder="Kód slevy nebo poukazu"
                     autoFocus
                     data-testid="discount-input"
                   />
                   <PremiumActionButton
                     compact
-                    text="Použít"
+                    text="Uplatnit"
                     type="submit"
                     data-testid="discount-apply-button"
                     className={styles.applyBtn}
@@ -154,14 +162,25 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({
           </AnimatePresence>
         </form>
 
-        {(maRucniKod || maZlevnene) && (
+        {(isOpen || maRucniKod || maPoukaz || maZlevnene) && (
           <div className={styles.poznamky}>
-            {maRucniKod && (
+            {(isOpen || maRucniKod || maPoukaz) && (
               <Text
                 className={styles.poznamka}
                 data-testid="discount-replace-note"
               >
-                Uplatnit lze jeden slevový kód — zůstane ten, který slevuje víc.
+                Slevový kód jde na objednávku jen jeden — zůstane ten, který
+                slevuje víc. Dárkových poukazů můžete uplatnit víc, i spolu se
+                slevovým kódem.
+              </Text>
+            )}
+            {(isOpen || maPoukaz) && (
+              <Text
+                className={styles.poznamka}
+                data-testid="discount-voucher-note"
+              >
+                Poukaz se odečítá ze zboží, které není ve slevě, ne z poštovného
+                — zbytek doplatíte.
               </Text>
             )}
             {maZlevnene && (
@@ -179,10 +198,11 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({
           <div className={styles.promotionsWrap}>
             <div className={styles.promotionsCol}>
               <Heading className={styles.heading}>
-                Použité slevové kódy:
+                {maPoukaz ? "Uplatněné kódy a poukazy:" : "Použité slevové kódy:"}
               </Heading>
 
               {promotions.map((promotion) => {
+                const poukaz = jePoukaz(promotion)
                 return (
                   <div
                     key={promotion.id}
@@ -190,6 +210,18 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({
                     data-testid="discount-row"
                   >
                     <Text className={styles.promoText}>
+                      {poukaz ? (
+                        /* Bez `truncate`: osm znaků kódu je to podstatné
+                           a oříznuté na „Dárkový poukaz …" by zmizelo. */
+                        <span className={styles.voucherCode} data-testid="discount-code">
+                          Dárkový poukaz{" "}
+                          <Badge color="grey" size="small">
+                            <span translate="no">
+                              {formatVoucherCode(promotion.code)}
+                            </span>
+                          </Badge>
+                        </span>
+                      ) : (
                       <span className="truncate" data-testid="discount-code">
                         <Badge
                           color={promotion.is_automatic ? "green" : "grey"}
@@ -222,6 +254,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({
                           </Tooltip>
                         )} */}
                       </span>
+                      )}
                     </Text>
                     {!promotion.is_automatic && (
                       <button
@@ -237,7 +270,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({
                       >
                         <Trash size={14} />
                         <span className="sr-only">
-                          Odebrat slevový kód
+                          {poukaz ? "Odebrat dárkový poukaz" : "Odebrat slevový kód"}
                         </span>
                       </button>
                     )}

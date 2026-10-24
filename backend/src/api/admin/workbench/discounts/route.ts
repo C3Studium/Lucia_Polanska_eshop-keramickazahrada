@@ -6,6 +6,7 @@ import {
   type OrderScanRow,
 } from "../../../../lib/sale-stats"
 import { MERCHANT_CATALOG_MODULE } from "../../../../modules/merchant-catalog"
+import { VOUCHER_CAMPAIGN_PREFIX } from "../../../../modules/gift-voucher/code"
 
 /**
  * Slevy+ — the joined read for the last missing domain (phase 3).
@@ -27,7 +28,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
   const catalog = req.scope.resolve<any>(MERCHANT_CATALOG_MODULE)
 
-  const [{ data: promotions }, { data: campaigns }, { data: priceLists }, selections] =
+  const [{ data: allPromotions }, { data: allCampaigns }, { data: priceLists }, selections] =
     await Promise.all([
       query.graph({
         entity: "promotion",
@@ -39,6 +40,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           "created_at",
           "campaign.id",
           "campaign.name",
+          "campaign.campaign_identifier",
           "application_method.type",
           "application_method.value",
           "application_method.target_type",
@@ -57,6 +59,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           "budget.type",
           "budget.limit",
           "budget.used",
+          "campaign_identifier",
           "promotions.id",
         ],
         pagination: { take: 100, skip: 0 },
@@ -78,6 +81,17 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         .listSeasonalSelections({} as never, { relations: ["items"] })
         .catch(() => [])) as Promise<any[]>,
     ])
+
+  // Dárkové poukazy jsou slevové kódy jen technicky (lib/gift-voucher-promotion.ts) —
+  // patří na stránku Poukazy, ne mezi slevy.
+  const isVoucherCampaign = (identifier: unknown) =>
+    typeof identifier === "string" && identifier.startsWith(VOUCHER_CAMPAIGN_PREFIX)
+  const promotions = (allPromotions as any[]).filter(
+    (promotion) => !isVoucherCampaign(promotion.campaign?.campaign_identifier)
+  )
+  const campaigns = (allCampaigns as any[]).filter(
+    (campaign) => !isVoucherCampaign(campaign.campaign_identifier)
+  )
 
   // One order scan feeds every statistic below — per-code revenue, campaign
   // roll-ups, seasonal windows. Capped and reported, never silently cut.

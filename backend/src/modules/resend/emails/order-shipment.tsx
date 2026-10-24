@@ -61,15 +61,15 @@ function OrderShipmentEmailComponent({
 
   return (
     <EmailLayout
-      preview={`Objednávku ${orderNumber} jsme předali dopravci — je na cestě k vám.`}
+      preview={`Objednávku ${orderNumber} jsem předala dopravci — je na cestě k vám.`}
     >
       <Eyebrow>Zásilka</Eyebrow>
-      <EmailH1 accent="na cestě.">Objednávka je</EmailH1>
+      <EmailH1 accent="je na cestě k vám.">Vaše objednávka</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        objednávku {orderNumber} jsme předali dopravci. Každý kus balíme
-        ručně, aby k vám dorazil tak, jak opustil ateliér.
+        objednávku {orderNumber} jsem předala dopravci. Každý kousek jsem
+        zabalila ručně, aby k vám dorazil tak, jak odešel z dílny.
       </P>
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
@@ -81,18 +81,6 @@ function OrderShipmentEmailComponent({
         <LedgerRow label="Odhad doručení" value={estimatedDelivery} />
       ) : null}
       <LedgerEnd />
-
-      <Note tone="olive">Křehké objekty cestují v ochranném balení.</Note>
-
-      {/* Prosba, ne podmínka — škodu s dopravcem řešíme my (§ 2161 OZ). */}
-      <Note tone="clay">
-        Až zásilka dorazí, prohlédněte si prosím obal ještě při převzetí. Je-li
-        promáčklý, protržený nebo prosakuje, můžete zásilku rozbalit před
-        doručovatelem a poškození s ním rovnou sepsat — usnadní nám to vyřízení
-        s dopravcem. Podmínkou to ale není: když poškození najdete až doma,
-        napište nám a pošlete fotky, obal si prosím schovejte. Poškozené zboží
-        vyměníme nebo vrátíme peníze a s dopravcem si to vyřešíme sami.
-      </Note>
 
       <ButtonRow>
         {hasTracking ? (
@@ -112,15 +100,27 @@ function OrderShipmentEmailComponent({
         ) : null}
       </ButtonRow>
 
+      <Note tone="olive">Keramika je křehká, proto cestuje v pořádném balení.</Note>
+
+      {/* Prosba, ne podmínka — škodu s dopravcem řeší prodávající (§ 2161 OZ). */}
+      <Note tone="clay">
+        Až zásilka dorazí, prohlédněte si prosím obal ještě při převzetí. Je-li
+        promáčklý, protržený nebo prosakuje, můžete balík rozbalit rovnou před
+        doručovatelem a poškození s ním sepsat — mně to pak usnadní vyřízení
+        s dopravcem. Podmínkou to ale není: když poškození najdete až doma,
+        napište mi a přiložte fotky, obal si prosím schovejte. Poškozený kousek
+        vyměním nebo vám vrátím peníze a s dopravcem si to vyřídím sama.
+      </Note>
+
       <P small>
-        O doručení vás bude dopravce informovat SMS nebo e-mailem. Pokud vás
+        O doručení vám dá dopravce vědět SMS nebo e-mailem. Když vás
         nezastihne, zásilku uloží k vyzvednutí.
       </P>
 
       {/* § 1830a OZ — tlačítko pro odstoupení i pro hosta bez účtu. */}
       {withdrawalUrl ? (
         <P small>
-          Rozmysleli jste si to? Od kupní smlouvy můžete odstoupit bez udání
+          Kdybyste si to rozmysleli: od kupní smlouvy můžete odstoupit bez udání
           důvodu do 14 dnů od převzetí zboží, online přes tlačítko{" "}
           <Link href={withdrawalUrl} style={{ color: brand.clay }}>
             Odstoupit od smlouvy

@@ -33,7 +33,7 @@ interface OrderReadyPickupEmailProps {
 function OrderReadyPickupEmailComponent({
   customerName,
   orderNumber = "",
-  pickupLocation = "Ateliér Keramická zahrada",
+  pickupLocation = "Dílna Keramická zahrada, Písek",
   pickupAddress = "Putim 229, 397 01 Písek",
   pickupHours,
   readyDate,
@@ -44,15 +44,15 @@ function OrderReadyPickupEmailComponent({
   const orderUrl = orderLink || storeLink()
   return (
     <EmailLayout
-      preview={`Objednávka ${orderNumber} je zabalená a připravená k vyzvednutí.`}
+      preview={`Objednávka ${orderNumber} je zabalená a čeká na vás v dílně.`}
     >
       <Eyebrow>Osobní odběr</Eyebrow>
-      <EmailH1 accent="k vyzvednutí.">Připraveno</EmailH1>
+      <EmailH1 accent="čeká na vás v dílně.">Zabaleno,</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        vaše objednávka {orderNumber} je zabalená a čeká na vás. Vše potřebné
-        k vyzvednutí najdete níže.
+        vaši objednávku {orderNumber} mám zabalenou a čeká na vás u mě
+        v dílně. Kde a kdy si ji můžete vyzvednout, najdete níže.
       </P>
 
       <LedgerRow label="Objednávka" value={orderNumber} />
@@ -67,7 +67,7 @@ function OrderReadyPickupEmailComponent({
       ) : null}
       <LedgerEnd />
 
-      <Note tone="olive">Objednávka na vás čeká.</Note>
+      <Note tone="olive">Objednávka na vás čeká u mě v dílně.</Note>
 
       {orderUrl ? (
         <ButtonRow>
@@ -78,8 +78,8 @@ function OrderReadyPickupEmailComponent({
       <P small>
         {pickupInstructions
           ? `${pickupInstructions} `
-          : "Termín vyzvednutí si prosím domluvíme — stačí odpovědět na tento e-mail nebo zavolat. "}
-        Pokud se vám to zrovna nehodí, dejte nám vědět, objednávka počká.
+          : "Termín vyzvednutí si prosím domluvíme — napište mi na info@keramickazahrada.cz nebo mi zavolejte. "}
+        Kdyby se vám to teď nehodilo, napište mi; objednávka u mě počká.
       </P>
       <Signature />
     </EmailLayout>
@@ -94,7 +94,7 @@ export const OrderReadyPickupEmail = (props: OrderReadyPickupEmailProps) => (
 const mockOrderReadyPickup: OrderReadyPickupEmailProps = {
   customerName: "Jan Novák",
   orderNumber: "#12345",
-  pickupLocation: "Ateliér Keramická zahrada",
+  pickupLocation: "Dílna Keramická zahrada, Písek",
   pickupAddress: "Putim 229, 397 01 Písek",
   readyDate: new Date().toLocaleDateString('cs-CZ'),
   orderLink: "https://keramickazahrada.cz/cz/order/order_12345/confirmed",

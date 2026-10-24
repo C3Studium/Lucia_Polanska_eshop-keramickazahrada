@@ -10,7 +10,9 @@ import {
   MultiLine,
   Note,
   P,
+  PaidFor,
   Signature,
+  type EmailLineItem,
 } from "../components/email-ui"
 
 interface OrderRefundedEmailProps {
@@ -23,6 +25,12 @@ interface OrderRefundedEmailProps {
   refundMethod?: string;
   /** Košík vrácení (§13.2) — řádek za řádek („název · N ks · částka"). */
   refundLines?: string;
+  /**
+   * Týž košík vrácení s fotkami (`lib/email-items.refundEmailLineItems`).
+   * Když přijde, nahradí textový řádek „Vrácené položky" — fotka řekne víc
+   * než název. Starší e-maily ve frontě ho nemají a vykreslí se jako dřív.
+   */
+  paidFor?: EmailLineItem[] | null;
   /** Dobropis (§13.3): číslo + odkaz na PDF, nebo věta, proč zatím není. */
   creditNoteNumber?: string;
   creditNoteUrl?: string;
@@ -44,29 +52,33 @@ function OrderRefundedEmailComponent({
   refundReason,
   refundMethod,
   refundLines,
+  paidFor,
   creditNoteNumber,
   creditNoteUrl,
   creditNoteNote,
   orderLink = ""
 }: OrderRefundedEmailProps) {
+  const vypisSFotkami = Boolean(paidFor?.length)
   const manual = Boolean(refundMethod && !/comgate|kart/i.test(refundMethod))
   return (
-    <EmailLayout preview={`Vrácení peněz za objednávku ${orderNumber} je zpracováno.`}>
+    <EmailLayout preview={`Peníze za objednávku ${orderNumber} jsou na cestě zpět k vám.`}>
       <Eyebrow>Objednávka</Eyebrow>
       <EmailH1 accent="na cestě zpět.">Peníze</EmailH1>
 
       <Greeting name={customerName} />
       <P>
         {manual
-          ? "vrácení peněz za vaši objednávku jsme zpracovali. Částku vám vracíme ručně — převodem na účet, nebo hotově."
-          : "vrácení peněz za vaši objednávku jsme zpracovali. Částka se k vám vrací stejnou cestou, jakou k nám přišla."}
+          ? "peníze za vaši objednávku vám vracím ručně — převodem na účet, nebo hotově."
+          : "peníze za vaši objednávku jsem odeslala zpět. Vrací se k vám stejnou cestou, jakou ke mně přišly."}
       </P>
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
       {refundReason ? (
         <LedgerRow label="Důvod vrácení" value={refundReason} />
       ) : null}
-      {refundLines ? (
+      {/* Textový výpis jen tam, kde fotky nejsou (starší e-maily ve frontě) —
+          jinak by stejné položky stály v e-mailu dvakrát. */}
+      {refundLines && !vypisSFotkami ? (
         <LedgerRow label="Vrácené položky" value={<MultiLine value={refundLines} />} />
       ) : null}
       {refundAmount ? (
@@ -78,10 +90,13 @@ function OrderRefundedEmailComponent({
       ) : null}
       <LedgerEnd />
 
+      {/* Za co peníze vracíme — košík vrácení s fotkami. */}
+      <PaidFor items={paidFor} heading="Za co vracíme peníze" />
+
       <Note tone="olive">
         {manual
-          ? "Pokud od vás potřebujeme číslo účtu, ozveme se e-mailem."
-          : "Peníze se na vašem účtu objeví zpravidla do 3–5 pracovních dnů."}
+          ? "Pokud od vás budu potřebovat číslo účtu, ozvu se e-mailem."
+          : "Na účtu je uvidíte zpravidla do 3–5 pracovních dnů."}
       </Note>
 
       {orderLink || creditNoteUrl ? (
@@ -99,9 +114,9 @@ function OrderRefundedEmailComponent({
       ) : null}
 
       <P small>
-        {manual ? "" : "Přesná doba připsání závisí na vaší bance. "}
+        {manual ? "" : "Přesná doba připsání záleží na vaší bance. "}
         {creditNoteNote ? `${creditNoteNote} ` : ""}
-        Máte-li jakýkoli dotaz, stačí odpovědět na tento e-mail.
+        Kdyby cokoli, napište mi na info@keramickazahrada.cz — odpovídám sama.
       </P>
       <Signature />
     </EmailLayout>
@@ -118,7 +133,18 @@ const mockOrderRefunded: OrderRefundedEmailProps = {
   orderNumber: "#12345",
   refundAmount: "1 250 Kč",
   refundReason: "Vrácení rozdílu po úpravě objednávky",
-  orderLink: "https://keramickazahrada.cz/cz/order/order_12345/confirmed"
+  orderLink: "https://keramickazahrada.cz/cz/order/order_12345/confirmed",
+  paidFor: [
+    {
+      title: "Keramické pítko pro ptáky",
+      subtitle: "Modrá glazura",
+      quantity: 1,
+      amount: "1 160 Kč",
+      thumbnail:
+        "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png",
+    },
+    { title: "Poštovné", amount: "90 Kč", service: true },
+  ],
 }
 
 export default () => <OrderRefundedEmailComponent {...mockOrderRefunded} />

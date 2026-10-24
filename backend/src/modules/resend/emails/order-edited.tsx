@@ -43,14 +43,14 @@ function OrderEditedEmailComponent({
 }: OrderEditedEmailProps) {
   const orderUrl = orderLink || storeLink()
   return (
-    <EmailLayout preview={`Úpravu objednávky ${orderNumber} jsme uložili.`}>
+    <EmailLayout preview={`Úpravu objednávky ${orderNumber} mám uloženou.`}>
       <Eyebrow>Úprava objednávky</Eyebrow>
-      <EmailH1 accent="upravena.">Objednávka</EmailH1>
+      <EmailH1 accent="mám uloženou.">Vaši úpravu</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        vaši úpravu objednávky {orderNumber} jsme uložili. Takhle teď
-        objednávka vypadá.
+        vaši úpravu objednávky {orderNumber} mám uloženou a dál se řídím už
+        jen podle ní. Takhle teď objednávka vypadá:
       </P>
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
@@ -70,8 +70,8 @@ function OrderEditedEmailComponent({
       ) : null}
 
       <P>
-        Pokud jste úpravu nedělali vy, odpovězte nám prosím na tento e-mail —
-        dáme to do pořádku.
+        Pokud jste úpravu nedělali vy, napište mi prosím na info@keramickazahrada.cz —
+        dám to do pořádku.
       </P>
 
       <Signature />

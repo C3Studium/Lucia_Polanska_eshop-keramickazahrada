@@ -52,13 +52,13 @@ interface ReturnApprovedEmailProps {
 /** Co bude následovat — podle rozhodnutí (docs/reklamace-a-zruseni.md §6). */
 const NEXT_STEP: Record<string, string> = {
   repair:
-    "Objekt opravíme a pošleme vám ho zpět. O přijetí zásilky i o odeslání opraveného kusu vás budeme informovat e-mailem.",
+    "Kousek opravím a pošlu vám ho zpět. O přijetí zásilky i o odeslání opraveného kusu vám dám vědět e-mailem.",
   replace:
-    "Jakmile k nám objekt dorazí, pošleme vám nový kus. O přijetí zásilky i o odeslání výměny vás budeme informovat e-mailem.",
+    "Jakmile ke mně kousek dorazí, pošlu vám nový. O přijetí zásilky i o odeslání výměny vám dám vědět e-mailem.",
   discount:
-    "Objekt zůstává u vás a část ceny vám vrátíme stejnou cestou, jakou k nám platba přišla. Nic posílat nemusíte.",
+    "Kousek zůstává u vás a část ceny vám vrátím stejnou cestou, jakou ke mně platba přišla. Nic posílat nemusíte.",
   refund:
-    "Jakmile k nám objekty dorazí a projdou kontrolou, vrátíme vám peníze stejnou cestou, jakou k nám platba přišla.",
+    "Jakmile ke mně výrobky dorazí a prohlédnu si je, vrátím vám peníze stejnou cestou, jakou ke mně platba přišla.",
 }
 
 /**
@@ -78,7 +78,7 @@ function ReturnApprovedEmailComponent({
   carrierDamage = false,
   damagedItem = false,
   returnReason,
-  returnMethod = "Zásilka na adresu ateliéru",
+  returnMethod = "Zásilka na adresu dílny",
   returnDeadline,
   returnAddress,
   returnInstructions,
@@ -98,20 +98,20 @@ function ReturnApprovedEmailComponent({
   const h1 = isClaim ? "Reklamace" : nothingToReturn ? "Objednávka" : "Vrácení"
   const accent = isClaim ? "uznána." : nothingToReturn ? "zrušena." : "schváleno."
   const intro = isClaim
-    ? "vaši reklamaci jsme posoudili a uznali. Níže najdete, jak ji vyřídíme a co bude následovat."
+    ? "vaši reklamaci jsem posoudila a uznávám ji. Níže najdete, jak ji vyřídím a co bude následovat."
     : nothingToReturn
-      ? "vaší žádosti jsme vyhověli. Objednávka k vám ještě neodešla, takže nic posílat nemusíte — rušíme ji."
-      : "vaší žádosti o vrácení jsme vyhověli. Níže najdete vše potřebné — kam objekty poslat a dokdy."
+      ? "vaší žádosti vyhovuji. Objednávka k vám ještě neodešla, takže nic posílat nemusíte — ruším ji."
+      : "vaší žádosti o vrácení vyhovuji. Níže najdete vše potřebné — kam kousky poslat a dokdy."
   const deadline =
     returnDeadline ||
-    (isClaim ? "vyřídíme do 30 dnů od uplatnění" : "peníze vrátíme do 14 dnů od přijetí zboží")
+    (isClaim ? "vyřídím do 30 dnů od uplatnění" : "peníze vrátím do 14 dnů od přijetí zboží")
 
   return (
     <EmailLayout
       preview={
         isClaim
-          ? `Reklamaci k objednávce ${orderNumber} jsme uznali.`
-          : `Vrácení k objednávce ${orderNumber} jsme schválili.`
+          ? `Reklamaci k objednávce ${orderNumber} uznávám.`
+          : `Vrácení k objednávce ${orderNumber} je schválené.`
       }
     >
       <Eyebrow>{eyebrow}</Eyebrow>
@@ -122,7 +122,7 @@ function ReturnApprovedEmailComponent({
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
       {returnNumber ? <LedgerRow label="Vrácení" value={returnNumber} /> : null}
-      {objects ? <LedgerRow label="Objekty" value={<MultiLine value={objects} />} /> : null}
+      {objects ? <LedgerRow label="Zboží" value={<MultiLine value={objects} />} /> : null}
       {returnReason ? <LedgerRow label="Důvod" value={returnReason} /> : null}
       {carrierDamage ? (
         <LedgerRow label="Příčina" value="Poškozeno přepravou" tone="clay" />
@@ -150,21 +150,21 @@ function ReturnApprovedEmailComponent({
 
       <Note tone="olive">
         {nothingToReturn
-          ? "Nic posílat nemusíte. Pokud jste už něco zaplatili, vrátíme to stejnou cestou, jakou k nám platba přišla; jinak je tím vše vyřízené."
+          ? "Nic posílat nemusíte. Pokud jste už něco zaplatili, vrátím to stejnou cestou, jakou ke mně platba přišla; jinak je tím vše vyřízené."
           : (NEXT_STEP[outcome] ?? NEXT_STEP.refund)}
         {/* 15. 10. 2026 (právní audit §4.1): za vadu při převzetí odpovídá
             prodávající (§ 2161, § 2159 odst. 2 OZ) — škodu u dopravce řešíme
             my, zákazník nic dalšího podávat nemusí. Ruší rozhodnutí z 12. 10.,
             podle kterého reklamoval u České pošty příjemce. */}
         {carrierDamage
-          ? " Poškození při přepravě řešíme s dopravcem my — vy nic dalšího podávat nemusíte."
+          ? " Poškození při přepravě řeším s dopravcem já — vy nic dalšího podávat nemusíte."
           : ""}
       </Note>
 
       {claimsUrl || orderUrl ? (
         <ButtonRow>
           <EmailButton href={claimsUrl || orderUrl}>
-            {claimsUrl ? "Stav žádosti" : "Zobrazit objednávku"}
+            {claimsUrl ? "Sledovat stav žádosti" : "Zobrazit objednávku"}
           </EmailButton>
           {protocolUrl ? (
             <>
@@ -185,8 +185,8 @@ function ReturnApprovedEmailComponent({
         <P small>
           {returnInstructions ? `${returnInstructions} ` : ""}
           Kousky prosím pečlivě zabalte, ať cestu zpět přečkají ve zdraví, a
-          přiložte číslo objednávky. Číslo zásilky nám můžete zapsat na
-          stránce žádosti. O přijetí zásilky vás budeme informovat e-mailem.
+          přiložte číslo objednávky. Číslo zásilky mi můžete zapsat na stránce
+          žádosti. Jakmile zásilka dorazí, dám vám vědět e-mailem.
         </P>
       ) : null}
       <Signature />
@@ -207,8 +207,8 @@ const mockReturnApproved: ReturnApprovedEmailProps = {
   resolutionLabel: "vrácení peněz",
   approvedItems: "Keramický hrnek — modrý, Keramický talíř — bílý",
   returnReason: "Požadavek zákazníka",
-  returnMethod: "Zásilka na adresu ateliéru",
-  returnDeadline: "peníze vrátíme do 14 dnů od přijetí zboží",
+  returnMethod: "Zásilka na adresu dílny",
+  returnDeadline: "peníze vrátím do 14 dnů od přijetí zboží",
   returnAddress: "Keramická zahrada\nPutim 229\n397 01 Písek",
   returnInstructions: "Přiložte prosím číslo objednávky.",
   orderLink: "https://keramickazahrada.cz/orders/12345",

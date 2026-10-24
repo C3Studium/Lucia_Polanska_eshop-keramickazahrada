@@ -20,14 +20,15 @@ type PasswordResetEmailProps = {
 
 function PasswordResetEmailComponent({ reset_url, email }: PasswordResetEmailProps) {
   return (
-    <EmailLayout preview="Nastavte si nové heslo jedním kliknutím.">
+    <EmailLayout preview="Nové heslo si nastavíte jedním kliknutím. Odkaz platí 15 minut.">
       <Eyebrow>Váš účet</Eyebrow>
-      <EmailH1 accent="hesla.">Obnovení</EmailH1>
+      <EmailH1 accent="heslo.">Nastavte si nové</EmailH1>
 
       <Greeting />
       <P>
-        obdrželi jsme žádost o obnovení hesla k vašemu účtu. Nové heslo si
-        nastavíte tlačítkem níže.
+        někdo — nejspíš vy — požádal o nové heslo k vašemu účtu. Nastavíte si
+        ho tlačítkem níže; odkaz platí 15 minut, potom si můžete nechat
+        poslat nový.
       </P>
 
       {email ? (
@@ -57,9 +58,9 @@ function PasswordResetEmailComponent({ reset_url, email }: PasswordResetEmailPro
       </P>
 
       <P small>
-        Odkaz z bezpečnostních důvodů brzy vyprší a je určen jen vám — nikomu
-        jej prosím nepředávejte. Pokud jste o obnovení hesla nežádali, můžete
-        tento e-mail v klidu ignorovat; vaše heslo zůstane beze změny.
+        Odkaz je určený jen vám, nikomu ho prosím nepředávejte. Pokud jste
+        o nové heslo nežádali, nic se neděje — vaše heslo zůstává, jak je.
+        Kdyby vás to znepokojilo, napište mi na info@keramickazahrada.cz.
       </P>
       <Signature />
     </EmailLayout>

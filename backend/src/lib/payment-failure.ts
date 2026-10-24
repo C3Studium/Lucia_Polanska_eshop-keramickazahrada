@@ -8,6 +8,7 @@ import {
   orderNumber,
   sendCustomerEmail,
 } from "./customer-email"
+import { emailLineItems } from "./email-items"
 
 /**
  * „Platba neprošla" — e-mail zákazníkovi s odkazem na opakování, když platba
@@ -80,6 +81,33 @@ const NAME_FIELDS = (prefix: string) => [
 ]
 
 /**
+ * Za co platba byla — položky košíku nebo objednávky do e-mailu.
+ *
+ * Samostatným dotazem, ne rozbalením přes platební kolekci: `items.*` o dva
+ * skoky dál (`collection.cart.items.*`) je přesně ten tvar, u kterého
+ * `query.graph` umí spadnout — a kvůli výpisu položek nesmí zmizet celý
+ * e-mail „platba neprošla". Chyba tady znamená jen e-mail bez výpisu, jako
+ * dřív.
+ */
+const polozkyProEmail = async (
+  container: MedusaContainer,
+  entity: "cart" | "order",
+  id: string
+) => {
+  try {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const { data } = await query.graph({
+      entity,
+      fields: ["id", "currency_code", "items.*"],
+      filters: { id },
+    })
+    return emailLineItems(data[0] as any)
+  } catch {
+    return []
+  }
+}
+
+/**
  * „Neprošla" za zrušenou relaci ComGate z pokladny nebo z odkazu k platbě
  * objednávky. Vrací, zda se e-mail zařadil (opakované volání se stejnou relací
  * notifikační modul přeskočí podle klíče `payfail:{session}`).
@@ -142,6 +170,7 @@ export const emailFailedCheckoutPayment = async (
         customerName: customerName(order),
         orderNumber: orderNumber(order),
         paymentAmount,
+        paidFor: await polozkyProEmail(container, "order", order.id),
         failureReason,
         retryLink: orderLink(order),
       },
@@ -158,6 +187,8 @@ export const emailFailedCheckoutPayment = async (
         checkout: true,
         customerName: customerName(cart),
         paymentAmount,
+        /* Obsah košíku, který odkaz obnoví — ať zákazník vidí, o co jde. */
+        paidFor: await polozkyProEmail(container, "cart", cart.id),
         failureReason,
         retryLink: recover ? `${recover}?step=payment` : "",
       },

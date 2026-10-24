@@ -398,3 +398,52 @@ do produkce jde až sloučením PR #16 (obsahuje migraci `Migration2026102012000
 - Pozor na záměnu: `npm run build` je `medusa build` a `npm run typecheck` jede proti
   kořenovému tsconfigu, ne proti tomu v `src/admin`. Hlášení z adminu tedy build neshazovala
   a neshazují; kořenový typecheck je čistý.
+
+## 24. 10. 2026 — e-maily v hlase Lucie, Reply-To, DOPLNIT, dárkové poukazy
+
+- **E-maily:** všech 48 zákaznických šablon přepsaných do hlasu Lucie (1. osoba, „dílna/kousek“, silná tlačítka),
+  předměty v `service.ts` + `lib/claims`. Předmět e-mailu o zahájení výroby začíná „Zakázka je ve výrobě“ (tak ho
+  jmenují OP čl. IX a FAQ). Věty „odpovězte na tento e-mail“ → „napište mi na info@keramickazahrada.cz“
+  a výchozí **Reply-To = info@keramickazahrada.cz** u všech e-mailů (odesílá se z noreply).
+- **DOPLNIT:** výchozí hodnoty v kódu (backend `lib/legal-facts.ts` i storefront `lib/legal/facts.ts`) —
+  odhad nákladů na vrácení „150 až 250 Kč za křehký balík Českou poštou“ (Matěj 24. 10.), min. věk 6 let,
+  vyzvednutí do 1 měsíce, zůstatek poukazu zůstává. Pozor: pokud jsou v administraci → Právní údaje tyto
+  klíče uložené jako prázdné, výchozí hodnota se nepoužije — vyplnit tam. OP čl. XI + FAQ přepsané pro
+  poukazy s kódem (elektronické i vytištěné, platba hotově / převodem / odkazem). Text ve Studiu může
+  mít přednost před repem (uplatnění poukazu se na webu ukazovalo jako DOPLNIT) — ověřit / přeseedovat.
+- **Dárkové poukazy (nový modul `gift-voucher`):** tabulky `gift_voucher` + `gift_voucher_redemption`
+  (`Migration20261024150000`), admin stránka **Poukazy** (vystavení na jméno, elektronický/vytištěný,
+  zaplaceno hotově/převodem nebo platební odkaz ComGate, poslat e-mailem, uplatnit, vrátit uplatnění,
+  zrušit), stránka poukazu `/poukaz/:id?token=` (zaplatit, zobrazit, vytisknout), platba stejně jako kurzy
+  (kolekce → relace → webhook / dohled `reconcile-gift-voucher-payments` → `payment.captured` →
+  `subscribers/gift-voucher-payment.ts`), e-maily `gift-voucher` a `gift-voucher-payment`.
+  Sandbox e2e (vystavení, e-mail, uplatnění/přečerpání/vrácení, ComGate odkaz → PAID → zaplaceno →
+  poukaz obdarovanému + zpráva majitelce, zrušení, validace): 21/22 OK, 22. kontrola byla chyba testu.
+- **Zbývá (fáze 2):** poukaz koupený v obchodě jako výrobek zatím nevytváří řádek v Poukazech; uplatnění
+  kódem přímo v pokladně (odečet z ceny) zatím není — uplatňuje se ručně v administraci.
+- **Poukaz jako slevový kód (24. 10. večer):** kód poukazu je nově 8 znaků (`7HQ4M2XP`, čte se „7HQ4 M2XP“,
+  abeceda bez 0/O/1/I/L/5/S, `crypto.randomBytes`). Každý zaplacený platný poukaz má v Meduse slevovou akci
+  se stejným kódem (pevná částka = zůstatek, kampaň `gift-voucher-{kód}` s koncem platnosti) —
+  `lib/gift-voucher-promotion.ts` ji srovnává po každé změně; Slevy+ poukazy nezobrazuje. Po objednávce
+  (`subscribers/gift-voucher-orders.ts`) se uplatněná částka odečte, zrušení objednávky ji vrátí. Typ
+  produktu „Dárkový poukaz“ (přepínač v Typu produktu, zapíná i „Bez slev. kódů“): za každý zaplacený kus
+  vznikne poukaz (podoba/obdarovaný z metadat položky), elektronický odejde sám. OP čl. XI + FAQ
+  přepsané (kód do pole „Slevový kód nebo dárkový poukaz“; neodečítá se ze zboží ve slevě, z balného ani
+  z poštovného). Sandbox: 17/17 + poukaz vyšší než nákup (zbytek zůstane) OK.
+  Storefront: pole „Slevový kód nebo dárkový poukaz“ (poukazů víc + jeden slevový kód), formulář poukazu na
+  stránce produktu (podoba, pro koho, e-mail, věnování → metadata položky), karta poukazu „XXXX XXXX“.
+  Oprava: poukaz jako výrobek nesmí jít zlevnit ani zaplatit poukazem (`lib/discountable.ts`); a route
+  `/flags` teď přepočítá `discountable` hned — přímý zápis metadat nevydával `product.updated`, takže
+  „Bez slev. kódů“ platilo až po nočním přepočtu (starší chyba). Testy backendu 1597/1597.
+- **Vrácené peníze = spotřebovaný poukaz (24. 10. večer):** nový stav `refunded` (`refunded_at`, `refund_note`).
+  Vrácení peněz u objednávky (`lib/claims/refund-action.ts` → `voidVouchersForOrderRefund`) zneplatní přesně
+  ty poukazy, za jejichž kusy peníze odcházejí; zrušená zaplacená objednávka taky. Přímo prodaný poukaz:
+  akce „Vrátit peníze“ (ComGate přes `paymentModule.refundPayment` — workflow chce objednávku; hotově /
+  převodem jen zápis). Zneplatněný poukaz nejde uplatnit, obnovit ani vrátit znovu; kód v obchodě vypnutý.
+  Sandbox 16/16 (hotově, ComGate, odstoupení od 1 ze 2 kusů, „vrátit vše“ zneplatní oba).
+- **Zpoždění objednávky (24. 10. večer):** nový panel „Zpoždění“ v detailu KAŽDÉ objednávky
+  (`admin/widgets/order-delay.tsx`, `POST/GET /admin/orders/:id/delay`, `lib/order-delay.ts`): výběr výrobků,
+  které se dodělávají, nový termín, důvod → e-mail `order-delayed` se seznamem výrobků; zakázkám mezi nimi se
+  posune `estimated_completion_at` (bez druhého e-mailu); historie v `order.metadata.order_delays`.
+  Tlačítko „Oznámit zpoždění“ u zakázky bylo dosud JEN v Přehled → Zakázky (ne v detailu objednávky) —
+  jeho e-mail teď píše „zakázka se zdrží“ a jmenuje výrobek. Sandbox: validace + e-mail + historie OK.
