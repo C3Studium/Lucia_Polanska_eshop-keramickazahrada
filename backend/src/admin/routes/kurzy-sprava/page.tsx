@@ -23,6 +23,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { EmptyState } from "../../components/empty-state";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
 import { SubTabs } from "../../components/work-tabs";
@@ -1160,13 +1161,21 @@ type TermsView = "seznam" | "kalendar";
 
 const TERMS_VIEW_KEY = "kz-kurzy-terms-view";
 
+/*
+ * Výchozí je KALENDÁŘ.
+ *
+ * Kurzy jsou termíny — věc, která má datum. Seznam karet z toho dělal
+ * nekonečný sloupec, ve kterém se „kdy je volno" hledalo čtením. Kalendář
+ * to ukáže naráz. Seznam zůstává pro hledání a pro delší výhled; kdo si ho
+ * jednou zvolí, zůstane mu.
+ */
 const readTermsView = (): TermsView => {
   try {
-    return localStorage.getItem(TERMS_VIEW_KEY) === "kalendar"
-      ? "kalendar"
-      : "seznam";
+    return localStorage.getItem(TERMS_VIEW_KEY) === "seznam"
+      ? "seznam"
+      : "kalendar";
   } catch {
-    return "seznam";
+    return "kalendar";
   }
 };
 
@@ -1212,7 +1221,8 @@ const TermsViewSwitch = ({
  * the very same edit drawer the list cards use.
  */
 /** Most chips one day cell shows before collapsing into „+ X dalších". */
-const MAX_DAY_CHIPS = 4;
+/* Velký kalendář unese víc — den s pěti termíny je výjimka, ne pravidlo. */
+const MAX_DAY_CHIPS = 6;
 
 const CalendarTermChip = ({
   term,
@@ -1247,24 +1257,27 @@ const CalendarTermChip = ({
     "otevře úpravu termínu",
   ].join(", ");
 
+  /*
+   * Chip vede na STRÁNKU termínu, ne do vysouvacího panelu.
+   *
+   * Panel uměl jen údaje termínu. Všechno ostatní, co se s termínem dělá —
+   * účastníci, kdo zaplatil, komu vystavit fakturu, koho zrušit, kdo čeká
+   * na místo — bylo rozesypané po kartách v seznamu. Stránka to má
+   * pohromadě a jde na ni poslat odkaz.
+   */
   return (
-    <TermEditorDrawer
-      term={term}
-      trigger={
-        <button
-          type="button"
-          aria-label={ariaLabel}
-          className={`${chipClass} w-full rounded-md px-1.5 py-1 text-left text-xs leading-tight outline-none focus-visible:ring-2 focus-visible:ring-ui-border-interactive`}
-        >
-          <span className="font-medium">{time}</span>
-          {` · ${term.seats_taken}/${term.capacity}`}
-          <span className="block truncate">
-            {isDraft ? "koncept" : stateWord}
-            {` · ${term.title}`}
-          </span>
-        </button>
-      }
-    />
+    <Link
+      to={`/kurzy-sprava/${term.id}`}
+      aria-label={ariaLabel}
+      className={`${chipClass} block w-full rounded-md px-1.5 py-1 text-left text-xs leading-tight outline-none focus-visible:ring-2 focus-visible:ring-ui-border-interactive`}
+    >
+      <span className="font-medium">{time}</span>
+      {` · ${term.seats_taken}/${term.capacity}`}
+      <span className="block truncate">
+        {isDraft ? "koncept" : stateWord}
+        {` · ${term.title}`}
+      </span>
+    </Link>
   );
 };
 
@@ -1317,7 +1330,7 @@ const TermsCalendar = ({ terms }: { terms: AdminTerm[] }) => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1.5">
         {CZECH_WEEKDAYS.map((weekday) => (
           <Text
             key={weekday.short}
@@ -1333,7 +1346,7 @@ const TermsCalendar = ({ terms }: { terms: AdminTerm[] }) => {
           cell ? (
             <div
               key={cell.key}
-              className={`min-h-24 rounded-lg border p-1.5 ${
+              className={`min-h-36 rounded-lg border p-2 ${
                 cell.key === todayKey
                   ? "border-ui-border-interactive"
                   : "border-ui-border-base"
@@ -1397,7 +1410,7 @@ const TermsCalendar = ({ terms }: { terms: AdminTerm[] }) => {
           ) : (
             <div
               key={`pad-${index}`}
-              className="min-h-24 rounded-lg"
+              className="min-h-36 rounded-lg"
               aria-hidden="true"
             />
           )
