@@ -1,4 +1,3 @@
-import { CubeSolid } from "@medusajs/icons";
 import {
   Badge,
   Container,

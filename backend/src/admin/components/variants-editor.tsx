@@ -1,5 +1,5 @@
 import {
-  Button, Drawer, Input, Text, toast,
+  Button, Drawer, Input, toast,
 } from "@medusajs/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
