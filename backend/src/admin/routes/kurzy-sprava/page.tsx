@@ -82,6 +82,12 @@ type AdminReservation = {
   /** Doklad v iDokladu — null, dokud se nevystavil. */
   idoklad_invoice_number: string | null;
   idoklad_pdf_url: string | null;
+  /** Žádost o zrušení po uplynutí samoobslužné lhůty; null = nikdy nebyla. */
+  cancel_request_status: "pending" | "approved" | "denied" | null;
+  cancel_requested_at: string | null;
+  cancel_request_note: string | null;
+  cancel_decided_at: string | null;
+  cancel_decision_note: string | null;
   created_at: string;
 };
 
@@ -1157,6 +1163,8 @@ const TermCard = ({
  * „Kalendář / Seznam" — the choice persists per browser, same pattern as the
  * shared view switcher. Seznam is the default: it is what she is used to.
  */
+type TermTab = "upcoming" | "past" | "zadosti";
+
 type TermsView = "seznam" | "kalendar";
 
 const TERMS_VIEW_KEY = "kz-kurzy-terms-view";
@@ -1431,7 +1439,16 @@ const TermsCalendar = ({ terms }: { terms: AdminTerm[] }) => {
 /* ------------------------------------------------------------------ */
 
 const KurzySpravaInner = () => {
-  const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
+  const [tab, setTab] = useState<TermTab>("upcoming");
+
+  /* Jen počet do odznaku záložky — samotnou frontu načítá až ta záložka. */
+  const { data: cancelRequests } = useQuery<{ pending_count: number }>({
+    queryKey: ["course-cancel-requests", "count"],
+    queryFn: () =>
+      sdk.client.fetch(`/admin/courses/cancellation-requests`, {
+        query: { stav: "cekajici" },
+      }),
+  });
   const [termsView, setTermsViewState] = useState<TermsView>(readTermsView);
   const setTermsView = (next: TermsView) => {
     setTermsViewState(next);
@@ -1526,11 +1543,19 @@ const KurzySpravaInner = () => {
         tabs={[
           { key: "upcoming", label: "Nadcházející", count: upcoming.length },
           { key: "past", label: "Proběhlé a zrušené", count: past.length },
+          {
+            key: "zadosti",
+            label: "Žádosti o zrušení",
+            count: cancelRequests?.pending_count || undefined,
+          },
         ]}
         active={tab}
-        onSelect={(key) => setTab(key as "upcoming" | "past")}
+        onSelect={(key) => setTab(key as TermTab)}
       />
 
+      {tab === "zadosti" && <CancellationRequests />}
+
+      {tab !== "zadosti" && (
       <div className="px-6 py-6">
         {tab === "upcoming" && !termsQuery.isError && (
           <div className="mb-4 flex justify-end">
@@ -1596,7 +1621,220 @@ const KurzySpravaInner = () => {
           </div>
         )}
       </div>
+      )}
     </Container>
+  );
+};
+
+/* ------------------------------------------------------------------ */
+/* Žádosti o zrušení                                                   */
+/* ------------------------------------------------------------------ */
+
+type CancelRequestRow = AdminReservation & {
+  term: { id: string; title: string; starts_at: string; location: string };
+};
+
+/**
+ * Fronta žádostí o zrušení.
+ *
+ * Zákazník ji podá, když chce zrušit později než 24 hodin před začátkem —
+ * dřív se mu na tom místě jen napsalo „zavolejte mi" a nikde o tom nezůstal
+ * záznam. Storno podmínky počítají s tím, že se to posoudí individuálně;
+ * tohle je to posouzení, zapsané.
+ *
+ * Schválit jde **s vrácením peněz i bez něj** — pozdní zrušení nemusí
+ * znamenat plnou vratku a majitelka na to má mít páku, aniž by musela
+ * odmítnout celé zrušení.
+ */
+const CancelRequestCard = ({ request }: { request: CancelRequestRow }) => {
+  const queryClient = useQueryClient();
+  const [note, setNote] = useState("");
+
+  const decide = useMutation({
+    mutationFn: (body: { decision: "approve" | "deny"; refund?: boolean }) =>
+      sdk.client.fetch<{
+        decision: string;
+        refund?: { refunded: boolean; amount: number | null };
+        needs_manual_refund?: boolean;
+        customer_emailed?: boolean;
+      }>(`/admin/courses/reservations/${request.id}/cancel-request`, {
+        method: "POST",
+        body: { ...body, note },
+      }),
+    onSuccess: async (result) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["course-cancel-requests"] }),
+        queryClient.invalidateQueries({ queryKey: ["course-terms"] }),
+      ]);
+      if (result.decision === "denied") {
+        toast.success(
+          "Žádost zamítnuta. Zákazníkovi dejte prosím vědět sami — zamítnutí je rozhovor, ne automat."
+        );
+        return;
+      }
+      if (result.refund?.refunded) {
+        toast.success(
+          `Zrušeno a ${
+            result.refund.amount != null ? formatCzk(result.refund.amount) : "peníze"
+          } se vrací na kartu.${result.customer_emailed ? " Zákazník dostal e-mail." : ""}`
+        );
+      } else if (result.needs_manual_refund) {
+        toast.warning(
+          "Zrušeno, ale automatické vrácení se nepovedlo — vraťte peníze ručně."
+        );
+      } else {
+        toast.success(
+          `Zrušeno bez vrácení peněz.${result.customer_emailed ? " Zákazník dostal e-mail." : ""}`
+        );
+      }
+    },
+    onError: async (error) =>
+      toast.error(await errorMessage(error, "Rozhodnutí se nepodařilo uložit.")),
+  });
+
+  const zaplaceno = request.payment_status === "paid";
+  const kartou = zaplaceno && request.payment_method === "online";
+
+  return (
+    <div className="border-ui-border-base rounded-xl border p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <Text size="small" weight="plus">
+            {request.name}
+            <span className="text-ui-fg-muted font-normal">
+              {" · "}
+              {people(request.party_size)}
+            </span>
+          </Text>
+          <Text size="xsmall" className="text-ui-fg-muted">
+            {request.term.title} · {dayLabel(pragueDayKey(request.term.starts_at))} v {formatPragueTime(request.term.starts_at)}
+          </Text>
+          <Text size="xsmall" className="text-ui-fg-muted">
+            {[request.phone, request.email].filter(Boolean).join(" · ") ||
+              "bez kontaktu"}
+          </Text>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          {paymentBadge(request)}
+          <Text size="small" className="tabular-nums">
+            {formatCzk(request.total_price)}
+          </Text>
+        </div>
+      </div>
+
+      <div className="bg-ui-bg-subtle mt-3 rounded-lg px-3 py-2">
+        <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
+          Důvod zákazníka
+        </Text>
+        <Text size="small" className="mt-0.5">
+          {request.cancel_request_note || "Neuvedl žádný."}
+        </Text>
+      </div>
+
+      {request.cancel_request_status === "pending" ? (
+        <div className="mt-3 flex flex-col gap-2">
+          <Input
+            size="small"
+            placeholder="Poznámka k rozhodnutí (u zamítnutí povinná — zákazník ji uvidí)"
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="small"
+              isLoading={decide.isPending}
+              onClick={() => decide.mutate({ decision: "approve", refund: true })}
+            >
+              {kartou ? "Zrušit a vrátit peníze" : "Zrušit rezervaci"}
+            </Button>
+            {kartou && (
+              <Button
+                size="small"
+                variant="secondary"
+                isLoading={decide.isPending}
+                onClick={() =>
+                  decide.mutate({ decision: "approve", refund: false })
+                }
+              >
+                Zrušit bez vrácení
+              </Button>
+            )}
+            <Button
+              size="small"
+              variant="transparent"
+              disabled={decide.isPending || !note.trim()}
+              title={note.trim() ? undefined : "Napište prosím důvod zamítnutí."}
+              onClick={() => decide.mutate({ decision: "deny" })}
+            >
+              Zamítnout
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-3">
+          <Badge
+            size="2xsmall"
+            color={request.cancel_request_status === "approved" ? "green" : "grey"}
+          >
+            {request.cancel_request_status === "approved"
+              ? "Schváleno"
+              : "Zamítnuto"}
+          </Badge>
+          {request.cancel_decision_note ? (
+            <Text size="xsmall" className="text-ui-fg-muted mt-1">
+              {request.cancel_decision_note}
+            </Text>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const CancellationRequests = () => {
+  const [vse, setVse] = useState(false);
+  const { data, isLoading } = useQuery<{
+    requests: CancelRequestRow[];
+    pending_count: number;
+  }>({
+    queryKey: ["course-cancel-requests", vse],
+    queryFn: () =>
+      sdk.client.fetch(`/admin/courses/cancellation-requests`, {
+        query: { stav: vse ? "vse" : "cekajici" },
+      }),
+  });
+
+  const rows = data?.requests ?? [];
+
+  return (
+    <div className="flex flex-col gap-4 px-6 py-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Text size="small" className="text-ui-fg-subtle max-w-2xl">
+          Když chce zákazník zrušit později než 24 hodin před začátkem, nezruší
+          se to samo — přijde sem. Schválit jde s vrácením peněz i bez něj.
+        </Text>
+        <Button size="small" variant="secondary" onClick={() => setVse(!vse)}>
+          {vse ? "Jen čekající" : "Zobrazit i vyřízené"}
+        </Button>
+      </div>
+
+      {isLoading && <Skeleton className="h-40 rounded-xl" />}
+
+      {!isLoading && rows.length === 0 && (
+        <EmptyState
+          title={vse ? "Žádné žádosti" : "Nic nečeká na rozhodnutí"}
+          description="Zrušení dřív než 24 hodin před začátkem si zákazníci odbaví sami; sem chodí jen ta pozdní."
+        />
+      )}
+
+      {!isLoading && rows.length > 0 && (
+        <div className="grid gap-4 xl:grid-cols-2">
+          {rows.map((request) => (
+            <CancelRequestCard key={request.id} request={request} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 

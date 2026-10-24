@@ -25,6 +25,12 @@ export const serializeAdminReservation = (reservation: any) => ({
   /* Doklad — řádek podle nich pozná, jestli je co vystavovat a kam odkázat. */
   idoklad_invoice_number: reservation.idoklad_invoice_number ?? null,
   idoklad_pdf_url: reservation.idoklad_pdf_url ?? null,
+  /* Žádost o zrušení po uplynutí samoobslužné lhůty — fronta v administraci. */
+  cancel_request_status: reservation.cancel_request_status ?? null,
+  cancel_requested_at: reservation.cancel_requested_at ?? null,
+  cancel_request_note: reservation.cancel_request_note ?? null,
+  cancel_decided_at: reservation.cancel_decided_at ?? null,
+  cancel_decision_note: reservation.cancel_decision_note ?? null,
   source: reservation.source,
   note: reservation.note ?? null,
   customer_id: reservation.customer_id ?? null,
