@@ -19,6 +19,11 @@ import {
 } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { SettleBalanceOffline } from "../components/production-order-actions";
+import {
+  AgreedPriceBlock,
+  agreedPriceConfirmBlock,
+  agreedPriceStartBlock,
+} from "../components/agreed-price";
 import { formatAmount } from "../lib/format";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
@@ -71,6 +76,13 @@ type ProductionOrder = {
   /** Z11: PDF „Potvrzení zakázky" — plní subscriber PDF; tady se jen čte. */
   confirmation_pdf_url?: string | null;
   confirmation_sent_at?: string | null;
+  /** Cena po domluvě: položka objednaná za 0 Kč, cenu Lucie pošle odsud. */
+  price_on_request?: boolean;
+  agreed_price_sent_at?: string | null;
+  /** Položka zakázky (§ 0c) — objednávka může mít zakázek víc. */
+  line_title?: string | null;
+  line_variant_title?: string | null;
+  line_thumbnail?: string | null;
 };
 
 const formatDateTime = (value: string | null | undefined): string =>
@@ -87,6 +99,8 @@ const formatDateTime = (value: string | null | undefined): string =>
 
 type ProductionResponse = {
   production_order?: ProductionOrder | null;
+  /** Všechny zakázky objednávky — jedna na zakázkovou položku (§ 0c). */
+  production_orders?: ProductionOrder[];
 };
 
 type ProductionAction =
@@ -126,6 +140,8 @@ const MadeToOrderOrderWidgetInner = ({
     retry: false,
   });
   const productionOrder = productionQuery.data?.production_order;
+  const commissions = productionQuery.data?.production_orders ??
+    (productionOrder ? [productionOrder] : []);
 
   const [editingSurcharge, setEditingSurcharge] = useState(false);
   const [surchargeDraft, setSurchargeDraft] = useState("");
@@ -140,7 +156,9 @@ const MadeToOrderOrderWidgetInner = ({
     }) =>
       sdk.client.fetch(`/admin/made-to-order/orders/${order.id}/actions`, {
         method: "POST",
-        body: payload,
+        // Widget ukazuje (a ovládá) první zakázku objednávky; bez id by server
+        // u objednávky s víc zakázkami akci odmítl (§ 0c).
+        body: { ...payload, production_order_id: productionOrder?.id },
       }),
     onSuccess: async (_data, variables) => {
       await queryClient.invalidateQueries({
@@ -203,6 +221,19 @@ const MadeToOrderOrderWidgetInner = ({
   // byl druhý, stejný. Smíšená objednávka ho má dál tady.
   const pureCommission = Boolean(productionOrder.pure_commission);
   const nextAction = pureCommission ? undefined : actionForStage[productionOrder.stage];
+  // Cena po domluvě: potvrzení zadání až po poslané ceně, výroba až po záloze.
+  const nextActionBlocked =
+    nextAction?.action === "start_production"
+      ? agreedPriceStartBlock(productionOrder)
+      : nextAction?.action === "confirm_specification"
+        ? agreedPriceConfirmBlock(productionOrder)
+        : null;
+  const agreedPriceCommissions = commissions.filter(
+    (commission) => commission.price_on_request
+  );
+  const priceNotSentYet =
+    Boolean(productionOrder.price_on_request) &&
+    toNum(productionOrder.agreed_total) <= 0.005;
   const stepInDailyWork = pureCommission && Boolean(actionForStage[productionOrder.stage]);
   const basePrice = toNum(
     productionOrder.agreed_total ?? productionOrder.original_total
@@ -222,8 +253,14 @@ const MadeToOrderOrderWidgetInner = ({
       payment.type === "balance" &&
       (payment.status === "pending" || payment.status === "sent")
   );
+  // Cena po domluvě před výrobou: platební odkazy (záloha / celé) nese e-mail
+  // „Domluvená cena" — druhá výzva k doplacení celé částky by zákazníka mátla.
   const canRequestBalance =
     outstanding > 0.005 &&
+    !(
+      productionOrder.price_on_request &&
+      ["specification_pending", "confirmed"].includes(productionOrder.stage)
+    ) &&
     !["ready_to_ship", "completed", "cancelled"].includes(
       productionOrder.stage
     );
@@ -237,7 +274,15 @@ const MadeToOrderOrderWidgetInner = ({
             <Badge color={stageMeta[productionOrder.stage].color}>
               {stageMeta[productionOrder.stage].label}
             </Badge>
+            {productionOrder.price_on_request && (
+              <Badge color="purple">Cena po domluvě</Badge>
+            )}
           </div>
+          {commissions.length > 1 && productionOrder.line_title && (
+            <Text size="small" weight="plus" className="mt-1">
+              {productionOrder.line_title} (zakázka 1 z {commissions.length})
+            </Text>
+          )}
           <Text size="small" className="text-ui-fg-subtle mt-1">
             Smluvní záloha{" "}
             {productionOrder.deposit_amount !== null &&
@@ -246,7 +291,10 @@ const MadeToOrderOrderWidgetInner = ({
                   productionOrder.deposit_percentage
                 } %)`
               : `${productionOrder.deposit_percentage} %`}{" "}
-            · cena {formatAmount(basePrice, currency)}
+            · cena{" "}
+            {priceNotSentYet
+              ? "po domluvě (zatím neodeslaná)"
+              : formatAmount(basePrice, currency)}
             {surcharge > 0
               ? ` + příplatek ${formatAmount(surcharge, currency)}`
               : ""}
@@ -421,13 +469,21 @@ const MadeToOrderOrderWidgetInner = ({
           )}
 
           {nextAction && (
-            <Button
-              variant="primary"
-              isLoading={runAction.isPending}
-              onClick={() => runAction.mutate({ action: nextAction.action })}
-            >
-              {nextAction.label}
-            </Button>
+            <div className="flex flex-col items-start gap-1 sm:items-end">
+              <Button
+                variant="primary"
+                isLoading={runAction.isPending}
+                disabled={Boolean(nextActionBlocked)}
+                onClick={() => runAction.mutate({ action: nextAction.action })}
+              >
+                {nextAction.label}
+              </Button>
+              {nextActionBlocked && (
+                <Text size="xsmall" className="text-ui-fg-muted max-w-xs sm:text-right">
+                  {nextActionBlocked}
+                </Text>
+              )}
+            </div>
           )}
 
           {/* Doplatek — pošle zákazníkovi e-mail s platebním odkazem. Vidět
@@ -483,6 +539,22 @@ const MadeToOrderOrderWidgetInner = ({
           )}
         </div>
       </div>
+
+      {/* Cena po domluvě — blok u KAŽDÉ takové zakázky (položky) zvlášť. */}
+      {agreedPriceCommissions.map((commission) => (
+        <div key={commission.id} className="px-6 py-5">
+          <AgreedPriceBlock
+            orderId={order.id}
+            commission={commission}
+            showItem
+            // Odeslání srovná nativní „Nesplacenou částku" objednávky, kterou
+            // náš query klient nevidí → jako u výzvy k doplacení stránku obnovíme.
+            onSent={() => {
+              setTimeout(() => window.location.reload(), 1500);
+            }}
+          />
+        </div>
+      ))}
 
       <div className="grid gap-px bg-ui-border-base sm:grid-cols-4">
         <div className="bg-ui-bg-base px-6 py-4">

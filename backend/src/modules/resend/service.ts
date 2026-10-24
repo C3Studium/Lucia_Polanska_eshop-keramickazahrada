@@ -66,6 +66,7 @@ import { CourseReservationCancelledEmail } from "./emails/course-reservation-can
 import { CommissionInquiryReceivedEmail } from "./emails/commission-inquiry-received";
 import { GiftVoucherEmail } from "./emails/gift-voucher";
 import { GiftVoucherPaymentEmail } from "./emails/gift-voucher-payment";
+import { CommissionPriceAgreedEmail } from "./emails/commission-price-agreed";
 import { CONTACT_EMAIL, withEmailLegalFacts } from "./components/email-ui";
 import { loadEmailLegalFacts } from "./live-legal-facts";
 import type { LiveLegalFacts } from "../../lib/legal";
@@ -159,6 +160,8 @@ enum Templates {
   // Dárkové poukazy (stránka Poukazy, lib/gift-voucher-emails.ts).
   GIFT_VOUCHER = "gift-voucher",
   GIFT_VOUCHER_PAYMENT = "gift-voucher-payment",
+  // Cena po domluvě — domluvená cena + zaplatit zálohu / celé.
+  COMMISSION_PRICE_AGREED = "commission-price-agreed",
   // TODO(emails): the remaining templates in ./emails/ are designed but have
   // no trigger to hang off yet. Register them here (both enums + the map +
   // a subject) once the underlying feature exists:
@@ -241,6 +244,7 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.COMMISSION_INQUIRY_RECEIVED]: CommissionInquiryReceivedEmail,
   [Templates.GIFT_VOUCHER]: GiftVoucherEmail,
   [Templates.GIFT_VOUCHER_PAYMENT]: GiftVoucherPaymentEmail,
+  [Templates.COMMISSION_PRICE_AGREED]: CommissionPriceAgreedEmail,
 }
 
 export enum EmailTemplates {
@@ -308,6 +312,8 @@ export enum EmailTemplates {
   // Dárkové poukazy (stránka Poukazy, lib/gift-voucher-emails.ts).
   GIFT_VOUCHER = "gift-voucher",
   GIFT_VOUCHER_PAYMENT = "gift-voucher-payment",
+  // Cena po domluvě — domluvená cena + zaplatit zálohu / celé.
+  COMMISSION_PRICE_AGREED = "commission-price-agreed",
 }
 
 /**
@@ -625,6 +631,8 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Dárkový poukaz do Keramické zahrady"
       case Templates.GIFT_VOUCHER_PAYMENT:
         return "Dárkový poukaz — odkaz k zaplacení"
+      case Templates.COMMISSION_PRICE_AGREED:
+        return "Domluvená cena za vaši zakázku"
       case Templates.SURCHARGE_NOTICE:
         return "K vaší zakázce přibyl příplatek"
       case Templates.SURCHARGE_CONFIRMED:

@@ -336,7 +336,9 @@ export default async function initializeMerchantOrder({
 
     // Co na tuhle zakázku připadá z pokladní platby (posuvník rozdělil řádky;
     // první zakázka k tomu nese zaplacené „navíc" za objednávku).
-    await madeToOrderService.createProductionPaymentRequests({
+    // Nulová platba (cena po domluvě — objednáno za 0 Kč) žádost nemá: DB
+    // vyžaduje kladnou částku a zálohu zaplatí zákazník až po domluvené ceně.
+    if (Number(plan.deposit_paid) > 0.005) await madeToOrderService.createProductionPaymentRequests({
       type: "deposit",
       status: paid ? "paid" : "pending",
       amount: plan.deposit_paid,

@@ -36,6 +36,10 @@ import {
   listCommissionsOfOrder,
 } from "../../../../../../lib/made-to-order/orders-of"
 import { startProduction } from "../../../../../../lib/made-to-order/start-production"
+import {
+  assertDepositPaidForAgreedPrice,
+  sendAgreedPrice,
+} from "../../../../../../lib/made-to-order/agreed-price"
 import { isServiceLine } from "../../../../../../lib/packaging-lines"
 import {
   LINE_QUANTITY_FIELDS,
@@ -56,6 +60,7 @@ type ProductionAction =
   | "remind_balance"
   | "settle_balance_offline"
   | "announce_delay"
+  | "send_agreed_price"
   | "cancel"
 
 type ActionBody = {
@@ -66,6 +71,8 @@ type ActionBody = {
    */
   production_order_id?: string | null
   agreed_total?: number
+  /** send_agreed_price: procento zálohy (výchozí z profilu, nejvýš 50). */
+  deposit_percentage?: number | null
   /** adjust_surcharge: příplatek v Kč (hlavní jednotka). Navyšuje doplatek. */
   surcharge?: number
   /** notify_surcharge: nepovinný důvod příplatku, uvidí ho zákazník v e-mailu. */
@@ -283,6 +290,8 @@ export const POST = async (
     // mimo bránu. Zapíše peníze k objednávce A pošle fakturu s potvrzením.
     "settle_balance_offline",
     "announce_delay",
+    // Cena po domluvě: domluvená cena + e-mail „zaplatit zálohu / celé".
+    "send_agreed_price",
     "cancel",
   ]
   if (!actions.includes(body.action)) {
@@ -453,7 +462,19 @@ export const POST = async (
     })
   }
 
+  if (body.action === "send_agreed_price") {
+    const sent = await sendAgreedPrice(req.scope, {
+      orderId: req.params.orderId,
+      productionOrder,
+      agreedTotal: Number(body.agreed_total),
+      depositPercentage: body.deposit_percentage ?? null,
+    })
+    productionOrder = sent.productionOrder
+  }
+
   if (body.action === "start_production") {
+    // Cena po domluvě: bez poslané ceny a zaplacené zálohy výroba nezačne.
+    await assertDepositPaidForAgreedPrice(req.scope, productionOrder)
     // Z3 (LEGAL_AUDIT.md § 0): zahájení výroby platí od e-mailu „Zakázka je ve
     // výrobě" — posílá se SYNCHRONNĚ v lib/made-to-order/start-production;
     // když neodejde, fáze se vrátí a akce skončí chybou. Už oznámená zakázka

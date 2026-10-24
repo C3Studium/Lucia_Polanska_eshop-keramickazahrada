@@ -24,7 +24,7 @@ export const isPriceOnRequest = (
 ): boolean => metadata?.[PRICE_ON_REQUEST_KEY] === true
 
 export const PRICE_ON_REQUEST_MESSAGE =
-  "Tento výrobek má cenu po domluvě a do košíku nejde vložit. Pošlete nám poptávku na stránce Výroba — připravíme nabídku s cenou, lhůtou a výší zálohy."
+  "Výrobek s cenou po domluvě se do košíku přidává ze stránky výrobku (cena v košíku je 0 Kč, domluvenou cenu pošleme po objednávce)."
 
 /**
  * Strážce přidání do košíku (`POST /store/carts/:id/line-items` i

@@ -18,6 +18,11 @@ import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
 import { ceskaChyba } from "../lib/ceska-chyba";
 import {
+  agreedPriceConfirmBlock,
+  agreedPriceStartBlock,
+  type AgreedPriceCommission,
+} from "../components/agreed-price";
+import {
   isProductionPhase,
   productionStageMeta,
   productionStep,
@@ -33,11 +38,11 @@ type MerchantOrderDetailResponse = {
 
 /** Sdílený dotaz s widgetem „Výroba na zakázku" (stejný klíč = jedna odpověď). */
 type ProductionResponse = {
-  production_order?: {
+  production_order?: (AgreedPriceCommission & {
     stage: ProductionStage;
     pure_commission?: boolean;
     outstanding_amount?: number | string;
-  } | null;
+  }) | null;
 };
 
 const stepSuccess: Record<ProductionStepAction, string> = {
@@ -142,6 +147,14 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
   if (productionMode && production) {
     const next = productionStep[production.stage];
     const meta = productionStageMeta[production.stage];
+    // Cena po domluvě: potvrzení až po poslané ceně, výroba až po záloze
+    // (cenu Lucie posílá ve „Výrobě na zakázku" u položky).
+    const blocked =
+      next?.action === "start_production"
+        ? agreedPriceStartBlock(production)
+        : next?.action === "confirm_specification"
+          ? agreedPriceConfirmBlock(production)
+          : null;
     return (
       <Container className="divide-y p-0">
         <div className="flex items-center justify-between gap-x-2 px-6 py-4">
@@ -167,10 +180,16 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
               variant="primary"
               size="small"
               isLoading={step.isPending}
+              disabled={Boolean(blocked)}
               onClick={() => step.mutate(next.action)}
             >
               {next.label}
             </Button>
+          )}
+          {next && blocked && (
+            <Text size="xsmall" className="text-ui-fg-muted">
+              {blocked} Domluvená cena a platby jsou ve „Výrobě na zakázku“.
+            </Text>
           )}
         </div>
       </Container>

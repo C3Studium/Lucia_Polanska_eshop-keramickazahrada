@@ -3,6 +3,10 @@ import { PLATCE_DPH } from "@lib/util/dph"
 import { HttpTypes } from "@medusajs/types"
 import styles from "../styles/order-summary.module.scss"
 import { dobirkaFeeSubtotal, packagingSubtotal } from "@lib/util/packaging"
+import {
+  hasPriceOnRequestLine,
+  PRICE_ON_REQUEST_ORDER_NOTE,
+} from "@lib/util/price-on-request"
 
 type OrderSummaryProps = {
   order: HttpTypes.StoreOrder
@@ -88,6 +92,15 @@ const OrderSummary = ({ order }: OrderSummaryProps) => {
           <span>Celkem</span>
           <span>{getAmount(order.total)}</span>
         </div>
+        {/* Cena po domluvě: řádek stojí 0 Kč, cena přijde e-mailem. */}
+        {hasPriceOnRequestLine(order.items as any) && (
+          <p
+            style={{ opacity: 0.78, fontSize: ".9em", marginTop: ".6rem" }}
+            data-testid="order-price-on-request-note"
+          >
+            {PRICE_ON_REQUEST_ORDER_NOTE}
+          </p>
+        )}
       </div>
     </div>
   )

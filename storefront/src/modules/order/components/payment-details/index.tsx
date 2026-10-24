@@ -6,6 +6,7 @@ import { translateStatus } from "@lib/i18n/statuses"
 import Divider from "@modules/common/components/divider"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
+import { isZeroPayment, ZERO_PAYMENT_TITLE } from "@lib/util/price-on-request"
 import styles from "../styles/payment-details.module.scss"
 
 type PaymentDetailsProps = {
@@ -40,7 +41,9 @@ const PaymentDetails = ({ order }: PaymentDetailsProps) => {
             <div className={styles.colLeft}>
               <p className={styles.label}>Způsob platby</p>
               <p className={styles.value} data-testid="payment-method">
-                {paymentMethodTitle(payment.provider_id)}
+                {isZeroPayment(payment)
+                  ? ZERO_PAYMENT_TITLE
+                  : paymentMethodTitle(payment.provider_id)}
               </p>
             </div>
             <div className={styles.colRight}>

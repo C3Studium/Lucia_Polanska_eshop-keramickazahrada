@@ -6,7 +6,10 @@ import {
   getProductPrice,
 } from "@lib/util/get-product-price"
 import { convertToLocale } from "@lib/util/money"
-import { isPriceOnRequest } from "@lib/util/price-on-request"
+import {
+  isPriceOnRequest,
+  PRICE_ON_REQUEST_PRODUCT_NOTE,
+} from "@lib/util/price-on-request"
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import styles from "./style.module.scss"
@@ -71,8 +74,8 @@ export default function ProductPrice({
 
   const selectedPrice = variant ? variantPrice : cheapestPrice
   const calculatedPrice = selectedPrice?.calculated_price
-  /* „Cena po domluvě" přebije i cenu, která u variant zůstala — prodává se
-     až po poptávce (lib/util/price-on-request). */
+  /* „Cena po domluvě" přebije i cenu, která u variant zůstala — do košíku
+     jde za 0 Kč a cenu Lucie pošle po domluvě (lib/util/price-on-request). */
   const priceOnRequest = isPriceOnRequest(product.metadata)
   const hasPrice = !priceOnRequest && calculatedPrice != null
   const isSale = selectedPrice?.price_type === "sale"
@@ -113,6 +116,13 @@ export default function ProductPrice({
               ? "Cena po domluvě"
               : "Cena na dotaz"}
         </span>
+
+        {/* Cena po domluvě: do košíku za 0 Kč, cena přijde e-mailem. */}
+        {priceOnRequest && (
+          <p className={styles.line} data-testid="price-on-request-note">
+            <span className={styles.note}>{PRICE_ON_REQUEST_PRODUCT_NOTE}</span>
+          </p>
+        )}
 
         {showReference && (
           <>

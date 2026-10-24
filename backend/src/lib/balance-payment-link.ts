@@ -73,7 +73,9 @@ export const balancePaymentUrl = (
    * víc, každá vlastní doplatek). Bez ní routa vezme jedinou zakázku s
    * otevřeným doplatkem — staré odkazy v e-mailech tak dál fungují.
    */
-  productionOrderId?: string | null
+  productionOrderId?: string | null,
+  /** "deposit" = jen záloha (cena po domluvě), jinak celý dluh. */
+  part?: "full" | "deposit"
 ): string | null => {
   const base = (
     process.env.BACKEND_PUBLIC_URL ||
@@ -85,7 +87,9 @@ export const balancePaymentUrl = (
     return null
   }
 
-  return `${base}/made-to-order/${orderId}/pay-balance${balancePaymentQuery(orderId, productionOrderId)}`
+  return `${base}/made-to-order/${orderId}/pay-balance${balancePaymentQuery(orderId, productionOrderId)}${
+    part === "deposit" ? "&castka=zaloha" : ""
+  }`
 }
 
 /** `?token=…[&production_order_id=…]` — sdílené s fallbackem na host requestu v routě `balance`. */

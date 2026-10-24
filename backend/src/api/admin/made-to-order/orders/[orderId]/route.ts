@@ -9,6 +9,7 @@ import {
 } from "../../../../../lib/made-to-order/orders-of"
 import { LINE_QUANTITY_FIELDS } from "../../../../../lib/order-quantity"
 import { isPersonalPickupOrder } from "../../../../../lib/personal-pickup"
+import { isAgreedPriceCommission } from "../../../../../lib/made-to-order/agreed-price"
 
 const toNumber = (value: unknown): number => {
   if (typeof value === "number") return value
@@ -145,6 +146,15 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         customerSpecification ?? productionOrder.customer_note ?? null,
       pure_commission: pureCommission,
       personal_pickup: personalPickup,
+      // Cena po domluvě (lib/made-to-order/agreed-price.ts): položka objednaná
+      // za 0 Kč — admin ukáže „Domluvená cena" a „Poslat domluvenou cenu".
+      price_on_request: isAgreedPriceCommission(productionOrder),
+      // `final_total_confirmed_at` nastaví i „Potvrdit zadání" — odeslaná
+      // domluvená cena je jen tam, kde je i kladná `agreed_total`.
+      agreed_price_sent_at:
+        Number((productionOrder.agreed_total as any)?.value ?? productionOrder.agreed_total ?? 0) > 0
+          ? productionOrder.final_total_confirmed_at ?? null
+          : null,
     }
   })
 

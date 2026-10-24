@@ -352,6 +352,7 @@ const obchodniPodminky: LegalDocumentVersion = {
           type: "ul",
           items: [
             "**Zakázkový výrobek z obchodu:** objednáte ho jako jiné zboží a v pokladně vyplníte zadání (text, číslo, motiv, případně fotografie). Smlouva vzniká potvrzením objednávky ([čl. IV](/smluvni-podminky#uzavreni-smlouvy)).",
+            "**Zakázkový výrobek s cenou po domluvě:** u výrobku označeného „Cena po domluvě“ odešlete objednávku za 0 Kč — je to závazná poptávka s vaším zadáním, ne ještě kupní smlouva. Cenu, výši zálohy a lhůtu vám pošleme e-mailem; kupní smlouva vzniká, až zaplatíte zálohu (nebo rovnou celou cenu). Dokud nezaplatíte, můžete objednávku bez následků zrušit a nic nedlužíte. Výrobu začneme až po zaplacení zálohy; dál platí tento článek.",
             "**Zakázka podle poptávky:** pošlete nám poptávku přes formulář na stránce [Výroba](/vyroba) nebo e-mailem. Pošleme vám nabídku s popisem nebo náčrtem, cenou, výrobní lhůtou a výší zálohy. Smlouva vzniká, když nabídku potvrdíte nebo zaplatíte zálohu — podle toho, co nastane dříve.",
           ],
         },

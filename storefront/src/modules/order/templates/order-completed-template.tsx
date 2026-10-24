@@ -35,6 +35,16 @@ import { pickupPointLabel } from "@lib/util/pickup-point"
 import { isPackagingLine, productLines, withPackagingUnderProducts } from "@lib/util/packaging"
 import PackagingLine, { PackagingNote, packagingFor } from "@modules/common/components/packaging-line"
 import { dobirkaFeeSubtotal, packagingSubtotal } from "@lib/util/packaging"
+import { isMadeToOrderLine } from "@lib/util/commission"
+import {
+  hasPriceOnRequestLine,
+  isPriceOnRequestLine,
+  isZeroPayment,
+  PRICE_ON_REQUEST_LINE_LABEL,
+  PRICE_ON_REQUEST_ORDER_NOTE,
+  ZERO_PAYMENT_STATUS,
+  ZERO_PAYMENT_TITLE,
+} from "@lib/util/price-on-request"
 
 type OrderCompletedTemplateProps = {
   order: HttpTypes.StoreOrder
@@ -133,7 +143,9 @@ export default async function OrderCompletedTemplate({
     "cs"
   )
   const paymentTitle = payment
-    ? paymentMethodTitle(payment.provider_id)
+    ? isZeroPayment(payment)
+      ? ZERO_PAYMENT_TITLE
+      : paymentMethodTitle(payment.provider_id)
     : "Čeká na přiřazení"
 
   /*
@@ -173,11 +185,17 @@ export default async function OrderCompletedTemplate({
   const payLaterLabel = isPickupPayment(payment?.provider_id)
     ? "Platba až na místě"
     : "Platba při převzetí (dobírka)"
+  /* Cena po domluvě: objednáno za 0 Kč, cenu Lucie pošle e-mailem. Dokud se
+     nic nezaplatilo, „Zaplaceno" by lhalo. */
+  const priceOnRequestOrder = hasPriceOnRequestLine(order.items as any)
+  const awaitingAgreedPrice = priceOnRequestOrder && paidNow <= 0.005
   const paymentStatusLabel = showDeposit
     ? "Záloha zaplacena"
-    : paysLater
-      ? payLaterLabel
-      : paymentStatus
+    : awaitingAgreedPrice
+      ? ZERO_PAYMENT_STATUS
+      : paysLater
+        ? payLaterLabel
+        : paymentStatus
 
   /*
    * „Odstoupit od smlouvy" (§ 1829, tlačítko § 1830a OZ) — od 14. 10. 2026
@@ -439,7 +457,9 @@ export default async function OrderCompletedTemplate({
                 <div className={s.paymentGrid}>
                   <div>
                     <span>Metoda</span>
-                    <strong data-testid="payment-method">{paymentTitle}</strong>
+                    <strong data-testid="payment-method">
+                      {!payment && awaitingAgreedPrice ? ZERO_PAYMENT_TITLE : paymentTitle}
+                    </strong>
                   </div>
                   <div>
                     <span>Stav</span>
@@ -484,6 +504,8 @@ export default async function OrderCompletedTemplate({
                   const lineTotal =
                     (item as HttpTypes.StoreOrderLineItem & { total?: number })
                       .total ?? unitPrice * item.quantity
+                  // Cena po domluvě: místo „0 Kč" „Po domluvě".
+                  const agreedLater = isPriceOnRequestLine(item as any)
 
                   return (
                     <article
@@ -498,7 +520,7 @@ export default async function OrderCompletedTemplate({
                         <Thumbnail thumbnail={item.thumbnail} size="square" />
                       </div>
                       <div className={s.itemCopy}>
-                        <p>Z ateliéru</p>
+                        <p>{isMadeToOrderLine(item as any) ? "Na zakázku" : "Z ateliéru"}</p>
                         <h3 data-testid="product-name">{item.product_title}</h3>
                         <div className={s.variant}>
                           <LineItemOptions
@@ -511,12 +533,15 @@ export default async function OrderCompletedTemplate({
                       <div className={s.itemQuantity}>
                         <span>Množství</span>
                         <strong data-testid="product-quantity">
-                          {item.quantity} × {money(unitPrice)}
+                          {item.quantity} ×{" "}
+                          {agreedLater ? PRICE_ON_REQUEST_LINE_LABEL : money(unitPrice)}
                         </strong>
                       </div>
                       <div className={s.itemTotal}>
                         <span>Celkem</span>
-                        <strong>{money(lineTotal)}</strong>
+                        <strong data-price-on-request={agreedLater || undefined}>
+                          {agreedLater ? PRICE_ON_REQUEST_LINE_LABEL : money(lineTotal)}
+                        </strong>
                       </div>
                     </article>
                   )
@@ -612,6 +637,14 @@ export default async function OrderCompletedTemplate({
                   <span>Platba</span>
                   <strong>{paymentStatusLabel}</strong>
                 </div>
+                {awaitingAgreedPrice && (
+                  <p
+                    style={{ marginTop: ".9rem", fontSize: ".85em", lineHeight: 1.5, opacity: 0.8 }}
+                    data-testid="order-price-on-request-note"
+                  >
+                    {PRICE_ON_REQUEST_ORDER_NOTE}
+                  </p>
+                )}
               </div>
             </div>
 

@@ -118,7 +118,7 @@ const Inner = ({ productId }: { productId: string }) => {
       toast.success(
         priceOnRequest
           ? "Cena po domluvě vypnuta — produkt se zase prodává za cenu u variant."
-          : "Cena po domluvě — zákazník místo košíku pošle poptávku."
+          : "Cena po domluvě — kus je teď zakázka, zákazník ho objedná za 0 Kč a cenu mu pošlete z objednávky."
       );
     },
     onError: (error) =>
@@ -228,20 +228,20 @@ const Inner = ({ productId }: { productId: string }) => {
         </Button>
       </div>
 
-      {/* „Cena po domluvě" (lib/price-on-request.ts): bez ceny v ceníku, kus vede
-          na poptávku na stránce Výroba a do košíku nejde ani přes API. */}
+      {/* „Cena po domluvě" (lib/price-on-request.ts): kus je zakázka, do košíku
+          jde za 0 Kč a domluvenou cenu Lucie pošle z objednávky. */}
       <div className="flex items-center justify-between gap-2">
         <div>
           <Text size="small" weight="plus">
             Cena po domluvě{" "}
             {priceOnRequest && (
-              <Badge size="2xsmall" color="orange" className="ml-1">poptávka</Badge>
+              <Badge size="2xsmall" color="orange" className="ml-1">zapnuto</Badge>
             )}
           </Text>
           <Text size="xsmall" className="text-ui-fg-subtle">
             {priceOnRequest
-              ? "V obchodě je „Cena po domluvě“ a tlačítko Poptat výrobu; cena u variant se nepoužije."
-              : "Cena se sjednává až podle zadání — zákazník pošle poptávku místo nákupu."}
+              ? "Zákazník objedná za 0 Kč, cenu mu po domluvě pošlete z objednávky; cena u variant se nepoužije."
+              : "Cena se domlouvá až po objednávce — kus se tím stane zakázkou."}
           </Text>
         </div>
         <Button

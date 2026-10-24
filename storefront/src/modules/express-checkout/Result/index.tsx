@@ -1,6 +1,10 @@
 "use client"
 
 import { convertToLocale } from "@lib/util/money"
+import {
+  isPriceOnRequestLine,
+  PRICE_ON_REQUEST_LINE_LABEL,
+} from "@lib/util/price-on-request"
 import { HttpTypes } from "@medusajs/types"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import { motion } from "framer-motion"
@@ -201,10 +205,13 @@ export default function ExpressResult({
                 <PackagingNote item={packagingFor(order.items, item)} currencyCode={order.currency_code} />
               </div>
               <span>
-                {convertToLocale({
-                  amount: item.total || item.unit_price * item.quantity,
-                  currency_code: order.currency_code,
-                })}
+                {/* Cena po domluvě: místo „0 Kč" „Po domluvě". */}
+                {isPriceOnRequestLine(item as any)
+                  ? PRICE_ON_REQUEST_LINE_LABEL
+                  : convertToLocale({
+                      amount: item.total || item.unit_price * item.quantity,
+                      currency_code: order.currency_code,
+                    })}
               </span>
             </div>
             )

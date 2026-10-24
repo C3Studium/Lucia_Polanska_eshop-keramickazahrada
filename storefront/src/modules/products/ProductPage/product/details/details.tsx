@@ -136,9 +136,18 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   const [addState, setAddState] = useState<AddToCartState>({ kind: "idle" })
   const [quantity, setQuantity] = useState(1)
 
+  /* „Cena po domluvě" (`metadata.price_on_request`, přepínač v administraci):
+     zakázka, která jde do košíku za 0 Kč (cenu dá backend v get-custom-price);
+     domluvenou cenu Lucie pošle e-mailem po objednávce. Zapnutí v administraci
+     zapne i profil výroby — vlajka sama ale stačí, aby šel kus do košíku jako
+     zakázka (brief, poučení), i kdyby se profil nenačetl. */
+  const productMetaForFlags = (product.metadata ?? null) as Record<string, unknown> | null
+  const priceOnRequestFlag = !pick && isPriceOnRequest(productMetaForFlags)
+
   // V režimu výběru se zakázka nenabízí (server ji do `allowed` nedá), takže
   // panel zakázky ani „zakázkový" košík tu nemají co dělat.
-  const isMadeToOrder = !pick && Boolean(productionProfile?.enabled)
+  const isMadeToOrder =
+    !pick && (Boolean(productionProfile?.enabled) || priceOnRequestFlag)
   /* Zakázka has two signals — the catalogue category today, the production
      profile once profiles are filled in. Either one counts (they do not
      overlap yet), so the category alone must also keep „Koupit ihned" away. */
@@ -229,16 +238,15 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
     EMPTY_GIFT_VOUCHER_FORM
   )
   const [giftVoucherTouched, setGiftVoucherTouched] = useState(false)
-  /* „Cena po domluvě" (`metadata.price_on_request`, přepínač v administraci;
-     backend tutéž vlajku vynucuje v lib/price-on-request.ts) nebo výrobek
-     prostě bez ceny (Domovní znamení, 20. 10. 2026 rozhodnutí Lucie): nejde
-     do košíku, vede na poptávku na stránce Výroba s předvyplněným výrobkem.
-     Bez ceny by řádek v košíku nešel ani ocenit. */
+  /* Výrobek prostě bez ceny (a BEZ vlajky „Cena po domluvě"): nejde do
+     košíku, vede na poptávku na stránce Výroba s předvyplněným výrobkem —
+     bez ceny by řádek v košíku nešel ocenit. Kus s vlajkou do košíku jde
+     (za 0 Kč, viz `priceOnRequestFlag`), i když cenu v ceníku nemá. */
   const priceOnRequest =
     !pick &&
-    (isPriceOnRequest(productMeta) ||
-      (Boolean(selectedVariant) &&
-        selectedVariant?.calculated_price?.calculated_amount == null))
+    !priceOnRequestFlag &&
+    Boolean(selectedVariant) &&
+    selectedVariant?.calculated_price?.calculated_amount == null
   const voucherCfg = useMemo(() => voucherConfig(productMeta), [productMeta])
   const [voucherAmount, setVoucherAmount] = useState("")
   const [voucherTouched, setVoucherTouched] = useState(false)
@@ -555,7 +563,10 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                         profile={productionProfile}
                         variantId={selectedVariant?.id}
                         unitAmount={
-                          selectedVariant?.calculated_price?.calculated_amount ?? null
+                          // Cena po domluvě: záloha se počítá až z domluvené ceny.
+                          priceOnRequestFlag
+                            ? null
+                            : selectedVariant?.calculated_price?.calculated_amount ?? null
                         }
                         currencyCode={region?.currency_code ?? "czk"}
                       />
@@ -666,6 +677,22 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                       buyNowEligible={Boolean(isAuthenticated && hasSavedAddress)}
                       texts={texts}
                     />
+                    )}
+                    {/* Cena po domluvě: kdo se chce nejdřív zeptat, má poptávku
+                        jako vedlejší cestu (stránka Výroba, výrobek předvyplněný). */}
+                    {priceOnRequestFlag && (
+                      <p
+                        className="product__details__cta__codNote"
+                        data-testid="price-on-request-inquiry"
+                      >
+                        Nejdřív se zeptat?{" "}
+                        <LocalizedClientLink
+                          href={inquiryHref(product.handle)}
+                          data-testid="inquiry-link"
+                        >
+                          Napište mi poptávku
+                        </LocalizedClientLink>
+                      </p>
                     )}
                     {showMadeToOrderNotice && <MadeToOrderAddNotice />}
                     {/* Čtyři kroky zakázky (bod 05 PDF Potvrzení zakázky) —

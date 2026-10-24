@@ -4,6 +4,10 @@ import { convertToLocale } from "@lib/util/money"
 import { PLATCE_DPH } from "@lib/util/dph"
 import { dobirkaFeeSubtotal, packagingSubtotal } from "@lib/util/packaging"
 import { discountRowLabel } from "@lib/util/gift-voucher-code"
+import {
+  hasPriceOnRequestLine,
+  PRICE_ON_REQUEST_SUMMARY_NOTE,
+} from "@lib/util/price-on-request"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import type { ShippingFrom } from "@modules/cart/shipping-from"
 import React from "react"
@@ -54,6 +58,11 @@ type CartTotalsProps = {
       product_id?: string | null
       quantity?: number | null
       unit_price?: number | null
+      /** Jen kvůli větě o ceně po domluvě (`isPriceOnRequestLine`). */
+      product?: {
+        categories?: { handle?: string | null }[] | null
+        metadata?: Record<string, any> | null
+      } | null
     }> | null
     /** Zvolená doprava — bez ní se místo „0 Kč" ukáže „od …" / ceník. */
     shipping_methods?: unknown[] | null
@@ -262,6 +271,11 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
           {convertToLocale({ amount: total ?? 0, currency_code })}
         </span>
       </div>
+      {hasPriceOnRequestLine(totals.items as any) && (
+        <p className={styles.priceOnRequestNote} data-testid="cart-price-on-request-note">
+          {PRICE_ON_REQUEST_SUMMARY_NOTE}
+        </p>
+      )}
   <div className={`${styles.divider} ${styles.mt}`} />
     </div>
   )

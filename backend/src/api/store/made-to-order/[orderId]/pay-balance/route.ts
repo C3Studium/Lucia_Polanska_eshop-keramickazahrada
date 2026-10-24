@@ -128,6 +128,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     const link = await ensureBalancePaymentLink(req.scope, {
       order,
       productionOrder,
+      // Cena po domluvě: e-mail nabízí „zaplatit zálohu" i „zaplatit celé".
+      part: req.query.castka === "zaloha" ? "deposit" : "full",
     })
 
     if (!link.payment_url) {

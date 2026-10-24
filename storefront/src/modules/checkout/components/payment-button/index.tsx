@@ -6,7 +6,12 @@ import {
   isManual,
   isPickupPayment,
 } from "@lib/constants"
-import { placeOrder } from "@lib/data/cart"
+import { initiatePaymentSession, placeOrder } from "@lib/data/cart"
+import {
+  PRICE_ON_REQUEST_ZERO_BUTTON,
+  PRICE_ON_REQUEST_ZERO_NOTE,
+  ZERO_PAYMENT_PROVIDER,
+} from "@lib/util/price-on-request"
 import { HttpTypes } from "@medusajs/types"
 // Button from @medusajs/ui replaced with local ClickButton
 import React, { useState } from "react"
@@ -26,6 +31,12 @@ type PaymentButtonProps = {
   onBeforePlaceAction?: () => Promise<void>
   /** Kolik se teď platí, už naformátované („1 290 Kč"). U zakázky záloha. */
   amountLabel?: string
+  /**
+   * Cena po domluvě a k úhradě 0 (jen takový kus + osobní odběr): ComGate
+   * 0 Kč nevezme, objednávka se dokončí s relací `pp_system_default` —
+   * tlačítko si ji před dokončením založí samo, kdyby na košíku nebyla.
+   */
+  zeroCharge?: boolean
 }
 
 /*
@@ -40,6 +51,7 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
   "data-testid": dataTestId,
   onBeforePlaceAction,
   amountLabel,
+  zeroCharge = false,
 }) => {
   const notReady =
     !cart ||
@@ -50,6 +62,32 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
 
   const amount = amountLabel ? ` ${amountLabel}` : ""
   const paymentSession = cart.payment_collection?.payment_sessions?.[0]
+
+  if (zeroCharge) {
+    return (
+      <DirectPlaceOrderButton
+        notReady={notReady}
+        label={PRICE_ON_REQUEST_ZERO_BUTTON}
+        note={PRICE_ON_REQUEST_ZERO_NOTE}
+        onBeforePlaceAction={async () => {
+          await onBeforePlaceAction?.()
+          if (paymentSession?.provider_id !== ZERO_PAYMENT_PROVIDER) {
+            const result = await initiatePaymentSession(cart, {
+              provider_id: ZERO_PAYMENT_PROVIDER,
+            })
+            if (!result.success) {
+              throw new Error(
+                result.message ||
+                  "Objednávku se nepodařilo připravit. Zkuste to prosím znovu."
+              )
+            }
+          }
+        }}
+        data-testid={dataTestId}
+      />
+    )
+  }
+
   switch (true) {
     case isManual(paymentSession?.provider_id):
       return (
@@ -103,12 +141,15 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
 const DirectPlaceOrderButton = ({
   notReady,
   note,
+  label = ORDER_BUTTON_LABEL,
   onBeforePlaceAction,
   "data-testid": dataTestId,
 }: {
   notReady: boolean
   /** Věta pod tlačítkem: jak a kolik se platí. */
   note: string
+  /** Název tlačítka — jinak „Objednávka zavazující k platbě". */
+  label?: string
   onBeforePlaceAction?: () => Promise<void>
   "data-testid"?: string
 }) => {
@@ -134,7 +175,7 @@ const DirectPlaceOrderButton = ({
     <div className={styles.root} style={styleObj}>
       <ClickButton
         className={styles.button}
-        text={submitting ? "Odesíláme…" : ORDER_BUTTON_LABEL}
+        text={submitting ? "Odesíláme…" : label}
         onClickAction={handlePayment}
         disabled={notReady || submitting}
         data-testid={dataTestId ?? "submit-order-button"}

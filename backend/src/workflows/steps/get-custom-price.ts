@@ -7,6 +7,7 @@ import {
   VOUCHER_AMOUNT_KEY,
   voucherConfig,
 } from "../../lib/voucher"
+import { isPriceOnRequest } from "../../lib/price-on-request"
 
 export type GetCustomPriceStepInput = {
   variant: ProductVariantDTO & {
@@ -33,6 +34,15 @@ export const getCustomPriceStep = createStep(
      * nemá) měnu neznáme → „unknown" poukaz odmítne, místo aby částku
      * v korunách tiše prodal v eurech.
      */
+    /*
+     * Cena po domluvě (lib/price-on-request.ts): zakázka, jejíž cenu Lucie
+     * domluví až po objednávce. V košíku stojí 0 Kč (obchod píše „Cena po
+     * domluvě"), záloha z ní je 0; skutečnou cenu pošle z administrace
+     * („Poslat domluvenou cenu") a zákazník zaplatí zálohu nebo celé.
+     */
+    if (isPriceOnRequest(variant.product?.metadata as Record<string, unknown>)) {
+      return new StepResponse(0)
+    }
     if (isCustomAmountVoucher(variant.product?.metadata as Record<string, unknown>)) {
       const result = validateVoucherAmount(
         metadata[VOUCHER_AMOUNT_KEY],

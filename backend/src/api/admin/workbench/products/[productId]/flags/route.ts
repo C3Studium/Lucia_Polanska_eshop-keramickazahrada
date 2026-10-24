@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { MedusaError, Modules } from "@medusajs/framework/utils"
 import { applyDiscountableRule } from "../../../../../../lib/discountable"
+import { MADE_TO_ORDER_MODULE } from "../../../../../../modules/made-to-order"
 import { z } from "@medusajs/framework/zod"
 
 /**
@@ -131,9 +132,31 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   }
 
   // Read, merge, write — the step each caller used to skip.
-  const metadata = {
+  const metadata: Record<string, unknown> = {
     ...((product as any).metadata ?? {}),
     ...parsed.data,
+  }
+
+  // Cena po domluvě = vždy zakázka (Matěj 24. 10.): zapnutí zároveň zapne
+  // profil zakázkové výroby (výchozí hodnoty, existující se jen zapne) a jeho
+  // zrcadlo `metadata.made_to_order`. Vypnutí ceny po domluvě zakázku nechá —
+  // ta může dál běžet s pevnou cenou; vypíná se v Typu produktu zvlášť.
+  if (parsed.data.price_on_request === true) {
+    const madeToOrder = req.scope.resolve<any>(MADE_TO_ORDER_MODULE)
+    const [profile] = await madeToOrder.listProductProductionProfiles({ product_id: req.params.productId })
+    if (profile) {
+      if (!profile.enabled) await madeToOrder.updateProductProductionProfiles({ id: profile.id, enabled: true })
+    } else {
+      await madeToOrder.createProductProductionProfiles({
+        product_id: req.params.productId,
+        enabled: true,
+        specification_required: true,
+        production_time_min_days: 14,
+        production_time_max_days: 42,
+        default_deposit_percentage: 25,
+      })
+    }
+    metadata.made_to_order = true
   }
 
   await productModule.updateProducts(req.params.productId, {

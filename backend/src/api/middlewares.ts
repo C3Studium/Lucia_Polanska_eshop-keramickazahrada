@@ -44,6 +44,7 @@ import {
 } from "../lib/packaging";
 import { requireShipGate } from "../lib/require-ship-gate";
 import { rejectPriceOnRequestLine } from "../lib/price-on-request";
+import { requireZeroAmountForSystemProvider } from "../lib/zero-payment-guard";
 import { requireShippableCart } from "../lib/require-shippable-cart";
 import { requireStockableCart } from "../lib/require-stockable-cart";
 import { throttleResetPassword } from "../lib/reset-password-throttle";
@@ -309,7 +310,12 @@ export default defineMiddlewares({
       methods: ["POST"],
       // Balné napřed (lib/packaging.ts), pak doběrečné — relace vzniká až
       // na košíku, kde sedí obojí.
-      middlewares: [syncPackagingOnPaymentSession(), applyDobirkaFeeOnPaymentSession()],
+      // Systémová platba (bez peněz) jen u objednávky za 0 Kč — až po srovnání částky.
+      middlewares: [
+        syncPackagingOnPaymentSession(),
+        applyDobirkaFeeOnPaymentSession(),
+        requireZeroAmountForSystemProvider(),
+      ],
     },
     /*
      * Balné u každého výrobku (lib/packaging.ts). Storefront po každé změně
@@ -576,10 +582,8 @@ export default defineMiddlewares({
     {
       matcher: "/store/carts/:id/line-items-custom",
       methods: ["POST"],
-      middlewares: [
-        validateAndTransformBody(PostAddCustomLineItemSchema),
-        rejectPriceOnRequestLine(),
-      ],
+      // Cenu po domluvě (0 Kč) nastaví krok get-custom-price — tahle cesta ji pustí.
+      middlewares: [validateAndTransformBody(PostAddCustomLineItemSchema)],
     },
     // „Cena po domluvě" (lib/price-on-request.ts) — i nativní přidání do
     // košíku, které storefront nepoužívá, ale API ano.
