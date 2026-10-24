@@ -1,5 +1,4 @@
 import { HttpTypes } from "@medusajs/framework/types";
-import { Tools } from "@medusajs/icons";
 import {
   Badge,
   Button,

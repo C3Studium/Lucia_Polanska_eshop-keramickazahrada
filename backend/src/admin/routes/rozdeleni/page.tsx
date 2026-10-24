@@ -60,7 +60,6 @@ const Inner = () => {
      without one (the misclick she'll want to fix) · archived. */
   const [catTab, setCatTab] = useState<"vse" | "skolekci" | "bez" | "archiv">("vse");
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [assignSearch, setAssignSearch] = useState("");
   const [renamingCategory, setRenamingCategory] = useState<{ id: string; name: string } | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
@@ -691,7 +690,10 @@ const Inner = () => {
               ).map((category: any) => (
                 <div key={category.id}
                   className={categoryId === category.id ? "bg-ui-bg-base-pressed rounded-md px-3 py-2" : "hover:bg-ui-bg-base-hover rounded-md px-3 py-2"}>
-                  {renamingCategory?.id === category.id ? (
+                  {/* Porovnání přes `?.` nezúží typ, takže uvnitř větve byl
+                      `renamingCategory` pořád `| null` — proto ta dvě hlášení
+                      z typecheck. Explicitní test zúží. */}
+                  {renamingCategory && renamingCategory.id === category.id ? (
                     <span className="flex items-center gap-1">
                       <Input size="small" value={renamingCategory.name}
                         onChange={(e) => setRenamingCategory({ id: category.id, name: e.target.value })} />

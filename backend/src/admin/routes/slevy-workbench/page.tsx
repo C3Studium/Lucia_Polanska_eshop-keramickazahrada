@@ -23,7 +23,7 @@ import {
 import { useState } from "react";
 import { DiscountEditor } from "../../components/discount-editor";
 import { EmptyState } from "../../components/empty-state";
-import { ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
+import { ExpertToggle, RawData } from "../../lib/expert-mode";
 import { SubTabs } from "../../components/work-tabs";
 import { formatCzk } from "../../lib/workbench";
 import { formatDate } from "../../lib/format";

@@ -1,4 +1,3 @@
-import { ListTree } from "@medusajs/icons";
 import {
   Badge,
   Button,

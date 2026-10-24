@@ -1,4 +1,3 @@
-import { Tools } from "@medusajs/icons";
 import MadeToOrderPage from "./produkty/page";
 
 /**

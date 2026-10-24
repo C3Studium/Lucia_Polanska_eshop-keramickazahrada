@@ -7,7 +7,7 @@ import {
 import { useState } from "react";
 import { SubTabs } from "../../components/work-tabs";
 import { ExpertToggle, RawData } from "../../lib/expert-mode";
-import { formatCzk, productionStageLabels, stageLabels } from "../../lib/workbench";
+import { formatCzk, productionStageLabels } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";

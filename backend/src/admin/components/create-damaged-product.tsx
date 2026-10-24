@@ -1,6 +1,6 @@
 import { Button, Input, Label, Text, Textarea, toast } from "@medusajs/ui"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { ChangeEvent, useEffect, useMemo, useState } from "react"
+import { ChangeEvent, useEffect, useState } from "react"
 import { sdk } from "../lib/sdk"
 import { ceskaChyba } from "../lib/ceska-chyba"
 
@@ -74,11 +74,6 @@ export default function CreateDamagedProduct({
   })
 
   const variants = product?.variants ?? []
-  const selectedVariant = useMemo(
-    () => variants.find((variant) => variant.id === variantId) ?? null,
-    [variants, variantId]
-  )
-
   const pickProduct = (hit: ProductHit) => {
     setProduct(hit)
     const only = hit.variants?.length === 1 ? hit.variants[0] : null

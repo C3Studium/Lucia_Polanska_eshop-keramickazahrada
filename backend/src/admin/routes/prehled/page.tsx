@@ -4,8 +4,6 @@ import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { ArrowPath, House } from "@medusajs/icons";
 import {
   Badge,
-  Input,
-  toast,
   Button,
   Container,
   Heading,
@@ -14,12 +12,9 @@ import {
   clx,
 } from "@medusajs/ui";
 import {
-  useMutation,
-  useQueryClient,
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   OrderRow,
@@ -469,7 +464,6 @@ const shopTiles = (summary: OperationsSummary): Tile[] => {
  * enforces. Display here, law in the backend.
  */
 const VitrinaCard = () => {
-  const queryClient = useQueryClient();
   const { data } = useQuery<{
     open: boolean;
     vacation: boolean;

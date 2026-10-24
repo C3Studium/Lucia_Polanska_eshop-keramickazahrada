@@ -383,3 +383,18 @@ do produkce jde až sloučením PR #16 (obsahuje migraci `Migration2026102012000
   u „Cena po domluvě“; do té doby produkt ukazuje „Cena na dotaz“ (bez ceny) — chování je stejné.
 - Otevřené: jak po domluvě zákazníkovi prodat (nabídka s cenou) — návrh: zakázková objednávka
   z administrace (draft order s dohodnutou cenou + záloha podle § 0) — čeká na rozhodnutí Matěje.
+
+## 24. 10. 2026 — Railway po třídenní odstávce, úklid nepoužitého kódu
+
+- Railway od ~21. 10. nestavěl. Všechno, co se mezitím commitlo a pushlo, leží na GitHubu
+  nenasazené — mimo jiné celá admin UI dávka (§1–§5, §8, §12, §13), opravy kurzů (dokončení
+  platby přes ComGate, uvítací e-mail, ruční faktura) a newsletter (poděkování po potvrzení,
+  jednoklikové odhlášení). **Nic se neztratilo, jen se to nepostavilo.**
+- Tenhle commit je retrigger. Aby nebyl prázdný, nese skutečný úklid: `tsc` nad
+  `src/admin/tsconfig.json` hlásil 16 nepoužitých deklarací a 2 typové chyby
+  (`rozdeleni`: `renamingCategory?.id === …` nezúží typ, uvnitř větve zůstal `| null`).
+  Zbylo jediné hlášení — `commissionLabel` v `production-order-actions.tsx`, které je
+  schválně ponechané: je to příprava pro widget na víc zakázek (viz cbc6f14d, OPEN_QUESTIONS ZA1).
+- Pozor na záměnu: `npm run build` je `medusa build` a `npm run typecheck` jede proti
+  kořenovému tsconfigu, ne proti tomu v `src/admin`. Hlášení z adminu tedy build neshazovala
+  a neshazují; kořenový typecheck je čistý.
