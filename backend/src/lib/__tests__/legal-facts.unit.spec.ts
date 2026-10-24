@@ -139,7 +139,11 @@ describe("resolveLegalFacts", () => {
 
 describe("helpers", () => {
   it("lists missing facts in form order", () => {
-    const missing = missingLegalFacts(resolveLegalFacts({ "seller.phone": "" }))
+    /* `seller.register` je ve formuláři před telefonem a výchozí hodnotu
+       nemá — aby test měřil pořadí, a ne to, co zrovna chybí, vyplní se. */
+    const missing = missingLegalFacts(
+      resolveLegalFacts({ "seller.register": "Městský úřad Písek", "seller.phone": "" })
+    )
     expect(missing[0]).toBe("seller.phone")
     expect(missing).toContain("bank.account")
     expect(missing).not.toContain("seller.name")

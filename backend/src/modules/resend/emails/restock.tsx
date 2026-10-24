@@ -37,17 +37,17 @@ function RestockEmailComponent({
 }: RestockEmailProps) {
 
   return (
-    <EmailLayout preview="Objekt, který jste sledovali, je zpět skladem.">
+    <EmailLayout preview="Kousek, který jste sledovali, mám zase skladem.">
       <Eyebrow>Znovu skladem</Eyebrow>
-      <EmailH1 accent="skladem.">Objekt je zpět</EmailH1>
+      <EmailH1 accent="skladem.">Je zpátky</EmailH1>
 
       <Greeting />
       <P>
-        objekt, který jste si uložili mezi oblíbené, se vrátil na polici.
-        Rádi vám ho znovu představujeme.
+        kousek, který jste si uložili mezi oblíbené, mám zase skladem. Tak vám
+        dávám vědět.
       </P>
 
-      {/* Objekt — řádek podle vzoru objednávky */}
+      {/* Výrobek — řádek podle vzoru objednávky */}
       <Section style={{ margin: "28px 0 0" }}>
         <Row style={{ borderTop: `1px solid ${brand.line}` }}>
           <Column
@@ -107,16 +107,19 @@ function RestockEmailComponent({
         <LedgerEnd />
       </Section>
 
-      <Note tone="olive">Objekt je nyní dostupný k objednání.</Note>
+      <Note tone="olive">
+        Můžete si ho rovnou objednat — u zboží skladem předám balíček
+        dopravci do 3 pracovních dnů.
+      </Note>
 
       <ButtonRow>
         <EmailButton href={product_url || storeLink()}>
-          Zobrazit objekt
+          Zobrazit výrobek
         </EmailButton>
       </ButtonRow>
 
       <P small>
-        Tento e-mail vám posíláme, protože jste si objekt uložili mezi
+        Tento e-mail vám posílám, protože jste si výrobek uložili mezi
         oblíbené.
       </P>
       <Signature />

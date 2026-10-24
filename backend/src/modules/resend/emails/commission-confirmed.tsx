@@ -55,15 +55,17 @@ function CommissionConfirmedEmailComponent({
 }: CommissionConfirmedEmailProps) {
   const orderUrl = orderLink || storeLink()
   return (
-    <EmailLayout preview={`Zadání vaší zakázky ${orderNumber} je potvrzené.`}>
-      <Eyebrow>Zakázková výroba</Eyebrow>
+    <EmailLayout
+      preview={`Zadání zakázky ${orderNumber} je potvrzené — dám vědět, až se pustím do práce.`}
+    >
+      <Eyebrow>Zakázka</Eyebrow>
       <EmailH1 accent="potvrzené.">Zadání je</EmailH1>
 
       <Greeting name={customerName} />
       <P>
         prošla jsem si vaše zadání{orderNumber ? ` k objednávce ${orderNumber}` : ""} a
-        všechno je jasné — zakázku potvrzuji. Jakmile se pustím do výroby, dám
-        vám vědět.
+        všechno je jasné — zakázku potvrzuji a děkuji za ni. Jakmile se pustím do
+        práce, napíšu vám e-mail; do té doby nemusíte nic dělat.
       </P>
 
       {productImageUrl ? (
@@ -97,8 +99,8 @@ function CommissionConfirmedEmailComponent({
 
       <Note tone="olive">
         {balanceDue
-          ? "Doplatek zaplatíte až po dokončení — výzvu s odkazem vám pošlu."
-          : "Zakázka je zaplacená, nic dalšího po vás nechci."}
+          ? "Doplatek budete platit až po dokončení — pošlu vám výzvu s odkazem na platbu."
+          : "Zakázka je zaplacená celá — teď je to na mně."}
       </Note>
 
       {orderUrl ? (
@@ -107,7 +109,11 @@ function CommissionConfirmedEmailComponent({
         </ButtonRow>
       ) : null}
 
-      <Signature />
+      <P small>
+        Kdybyste chtěli na zadání ještě něco upřesnit, napište mi na info@keramickazahrada.cz — odpovídám sama.
+      </P>
+
+      <Signature closing="Děkuji a těším se," />
     </EmailLayout>
   )
 }

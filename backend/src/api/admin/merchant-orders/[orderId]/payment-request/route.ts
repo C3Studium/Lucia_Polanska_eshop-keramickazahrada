@@ -10,6 +10,7 @@ import {
   sendCustomerEmail,
 } from "../../../../../lib/customer-email"
 import { toNumber } from "../../../../../lib/order-quantity"
+import { emailLineItems } from "../../../../../lib/email-items"
 
 /**
  * „Pošlete zákazníkovi výzvu k zaplacení."
@@ -52,6 +53,8 @@ const ORDER_FIELDS = [
   "email",
   "currency_code",
   "total",
+  /* Za co se platí — výpis položek do e-mailu (lib/email-items). */
+  "items.*",
   "shipping_address.first_name",
   "shipping_address.last_name",
   "payment_collections.amount",
@@ -141,6 +144,8 @@ export async function POST(
       estimatedConfirmationTime:
         "Platba se obvykle potvrdí do několika minut. Jakmile dorazí, ozveme se s potvrzením.",
       makingPhotoUrl: null,
+      /* Celá objednávka — výzva chce peníze, tak musí říct za co. */
+      paidFor: emailLineItems(order),
     },
   })
 

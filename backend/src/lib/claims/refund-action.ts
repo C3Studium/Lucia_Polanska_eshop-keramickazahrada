@@ -26,6 +26,7 @@ import {
   type ProviderConfirmation,
 } from "./comgate-confirmation"
 import { isEditRefundKind, kindLabel } from "./constants"
+import { refundEmailLineItems } from "../email-items"
 import { storedRefundAccount } from "./refund-account"
 import { lineItemsTotal } from "./line-items"
 import { goodsShipped, loadOrderMoney } from "./money"
@@ -70,6 +71,7 @@ import {
 } from "./refund-rules"
 import { MADE_TO_ORDER_MODULE } from "../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../modules/made-to-order/service"
+import { voidVouchersForOrderRefund } from "../gift-voucher-orders"
 
 /**
  * Vrácení peněz k jedné žádosti (docs/reklamace-a-zruseni.md §3 „Pravidla
@@ -629,6 +631,19 @@ export const refundClaim = async (
       : {}),
   })
 
+  // 3b) Dárkové poukazy koupené v objednávce, za které teď odcházejí peníze,
+  //     se zneplatní — jinak by zákazník měl peníze i poukaz (OP čl. XI).
+  await voidVouchersForOrderRefund(
+    scope,
+    order.id,
+    lines as any[],
+    `Peníze vráceny k žádosti (${kindLabel(request.kind)}) — objednávka #${order.display_id}`
+  ).catch((error) =>
+    scope
+      .resolve(ContainerRegistrationKeys.LOGGER)
+      .error(`[poukazy] Zneplatnění poukazů po vrácení peněz (objednávka ${order.id}) selhalo: ${(error as Error)?.message ?? error}`)
+  )
+
   // 4) dobropis za TUHLE refundaci (§13.3) — s ČERSTVÝMI metadaty včetně
   //    historie (viz hlavička). Výsledek na záznam refundace.
   const freshOrder = { ...order, metadata: await readFreshMetadata(scope, order.id) }
@@ -687,6 +702,8 @@ export const refundClaim = async (
         refundReason: kindLabel(request.kind),
         refundMethod: refundMethodLabel(method, request.refund_account),
         ...(refundLines ? { refundLines } : {}),
+        /* Týž košík vrácení s fotkami — šablona pak textový výpis vynechá. */
+        paidFor: refundEmailLineItems(order, lines, currency),
         ...creditNoteEmailData(refunds, creditNote),
         orderLink: orderLink(order) || undefined,
       },

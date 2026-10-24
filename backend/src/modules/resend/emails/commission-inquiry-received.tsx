@@ -93,13 +93,13 @@ function CommissionInquiryReceivedEmailComponent({
 
   return (
     <EmailLayout preview="Poptávka dorazila — ozvu se vám s nabídkou.">
-      <Eyebrow>Zakázková výroba · Poptávka</Eyebrow>
+      <Eyebrow>Zakázka · Poptávka</Eyebrow>
       <EmailH1 accent="poptávku.">Děkuji za</EmailH1>
 
       <Greeting name={customerName} />
       <P>
         vaše poptávka ke mně dorazila. Projdu si ji a ozvu se vám — zpravidla do
-        dvou pracovních dnů — s nabídkou, případně s otázkami, které budu
+        dvou pracovních dnů — s nabídkou, nebo napřed s otázkami, které budu
         k návrhu potřebovat.
       </P>
 
@@ -131,17 +131,17 @@ function CommissionInquiryReceivedEmailComponent({
         vás poptávka k ničemu nezavazuje.
       </Step>
       <Step index={3} title="Výroba">
-        Do práce se pustím po připsání zálohy.
+        Do práce se pustím po připsání zálohy — a napíšu vám, že jsem začala.
       </Step>
 
       <Note tone="clay">
         Zakázku vyrobenou podle vašeho zadání nelze vrátit ve 14denní lhůtě pro
         odstoupení od smlouvy (§ 1837 písm. d) občanského zákoníku). Proto si
-        všechno důležité domluvíme předem.
+        všechno důležité — podobu, rozměry i barvy — domluvíme předem.
       </Note>
 
       <P>
-        Chcete něco doplnit, třeba další fotku? Stačí odpovědět na tento e-mail.
+        Chcete něco doplnit, třeba další fotku místa? Napište mi na info@keramickazahrada.cz, odpovídám sama.
       </P>
 
       <Section style={{ margin: "8px 0 0" }}>
@@ -155,7 +155,7 @@ function CommissionInquiryReceivedEmailComponent({
             termsLabel
           )}
           {consentedAtLabel ? ` (${consentedAtLabel})` : ""}. Údaje z poptávky
-          použijeme jen k vypracování nabídky
+          použiju jen k vypracování nabídky
           {privacyUrl ? (
             <>
               {" — "}
@@ -168,7 +168,7 @@ function CommissionInquiryReceivedEmailComponent({
         </P>
       </Section>
 
-      <Signature />
+      <Signature closing="Děkuji a těším se," />
     </EmailLayout>
   )
 }

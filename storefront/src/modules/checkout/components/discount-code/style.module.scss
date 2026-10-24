@@ -233,6 +233,15 @@ $touch-floor: 2.75rem;
             font-size: calc(var(--cart-summary-zoom, 1) * 0.9375rem);
           }
 
+          /* „Dárkový poukaz 7HQ4 M2XP" — zalomí se před kódem, kód sám ne. */
+          .voucherCode {
+            display: inline-flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.3rem;
+            white-space: nowrap;
+          }
+
           .removeBtn {
             display: flex;
             align-items: center;

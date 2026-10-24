@@ -39,15 +39,15 @@ function SurchargeNoticeEmailComponent({
   orderLink = "",
 }: SurchargeNoticeEmailProps) {
   return (
-    <EmailLayout preview={`Úprava ceny k objednávce ${orderNumber}.`}>
-      <Eyebrow>Úprava ceny</Eyebrow>
+    <EmailLayout preview={`K zakázce ${orderNumber} přibyl příplatek — píšu vám, co a proč.`}>
+      <Eyebrow>Zakázka</Eyebrow>
       <EmailH1 accent="k vaší zakázce.">Příplatek</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        při výrobě vašeho kousku na míru vznikly práce navíc, a tak k ceně
-        přibyl příplatek. Chceme, abyste o tom věděli dřív, než vám pošleme
-        doplatek k zaplacení.
+        při výrobě vašeho kousku se objevily práce navíc, a tak k ceně přibyl
+        příplatek. Chci, abyste o tom věděli dřív, než vám pošlu výzvu
+        k doplatku.
       </P>
 
       {reason ? <Note tone="clay">{reason}</Note> : null}
@@ -62,8 +62,8 @@ function SurchargeNoticeEmailComponent({
       <LedgerEnd />
 
       <P>
-        Doplatek vám pošleme k zaplacení zvlášť. Kdyby vám cokoli nehrálo,
-        stačí odpovědět na tento e-mail.
+        Doplatek vám pošlu k zaplacení zvlášť, příplatek v něm bude jako
+        samostatná položka. Kdyby vám cokoli nehrálo, napište mi na info@keramickazahrada.cz — ráda to vysvětlím.
       </P>
 
       {orderLink ? (
@@ -86,7 +86,7 @@ const mockSurchargeNotice: SurchargeNoticeEmailProps = {
   orderNumber: "#12345",
   surchargeAmount: "250 Kč",
   newBalance: "3 475 Kč",
-  reason: "Přidali jsme ruční zdobení navíc podle vašeho přání.",
+  reason: "Přidala jsem ruční zdobení navíc podle vašeho přání.",
   orderLink: "https://keramickazahrada.cz/cz/order/order_12345/confirmed",
 }
 

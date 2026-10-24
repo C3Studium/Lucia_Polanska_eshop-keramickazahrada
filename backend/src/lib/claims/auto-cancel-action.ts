@@ -95,7 +95,7 @@ export const autoCancelClaim = async (
       key: `return-approved:req:${updated.id}`,
       orderId: order.id,
       data: {
-        subject: "Objednávka zrušena",
+        subject: "Objednávku jsem na vaši žádost zrušila",
         ...claimEmailBase(updated, protocol.url),
         returnReason: updated.reason,
         goodsReturnRequired: false,

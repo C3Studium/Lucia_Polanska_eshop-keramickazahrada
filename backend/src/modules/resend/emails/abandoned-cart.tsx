@@ -49,20 +49,20 @@ function AbandonedCartEmailComponent({
   })
 
   return (
-    <EmailLayout preview="Váš košík na vás počká. Objekty v něm zůstávají odložené.">
+    <EmailLayout preview="Zapomněli jste na něco? Košík mám pro vás schovaný — dokončit ho můžete jedním kliknutím.">
       <Eyebrow>Váš košík</Eyebrow>
-      <EmailH1 accent="počká.">Váš košík na vás</EmailH1>
+      <EmailH1 accent="na něco?">Zapomněli jste</EmailH1>
 
       <Greeting name={customer?.first_name} />
       <P>
-        při poslední návštěvě jste si do košíku odložili několik kousků z
-        ateliéru. Nikam nespěchají — najdete je přesně tam, kde jste je
-        nechali.
+        při poslední návštěvě vám v košíku zůstalo pár kousků z mé dílny.
+        Nechala jsem vám ho tak, jak jste ho opustili — stačí objednávku
+        dokončit a já se o zabalení postarám.
       </P>
 
-      {/* Odložené objekty */}
+      {/* Co je v košíku */}
       <Section style={{ margin: "28px 0 0" }}>
-        <Eyebrow>Odložené objekty</Eyebrow>
+        <Eyebrow>V košíku</Eyebrow>
         {items?.map((item, idx) => (
           <Row key={idx} style={{ borderTop: `1px solid ${brand.line}` }}>
             <Column
@@ -154,13 +154,19 @@ function AbandonedCartEmailComponent({
 
       <ButtonRow>
         <EmailButton href={cartRecoverLink(cart_id)}>
-          Vrátit se ke košíku
+          Dokončit objednávku
         </EmailButton>
       </ButtonRow>
 
+      <P>
+        Každý kousek vzniká u mě v dílně ručně, a tak žádný není úplně stejný
+        jako ten na fotce — to je na ruční práci to hezké. Nikam vás netlačím;
+        jen vám chci říct, že u zboží skladem předám balíček dopravci do
+        3 pracovních dnů od objednání.
+      </P>
+
       <P small>
-        Pokud jste nákup dokončit nechtěli, tento e-mail můžete v klidu
-        přehlédnout.
+        Kdyby vás cokoli zarazilo, třeba u dopravy nebo platby, napište mi na info@keramickazahrada.cz — odpovídám sama.
       </P>
       <Signature />
       <OptOutLine url={unsubscribe_url} />

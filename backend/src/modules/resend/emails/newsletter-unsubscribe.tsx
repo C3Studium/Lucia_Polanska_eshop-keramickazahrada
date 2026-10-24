@@ -23,20 +23,19 @@ function NewsletterUnsubscribeEmailComponent({
   const base = storefrontBase()
   const newsletterUrl = base ? `${base}/newsletter` : ""
   return (
-    <EmailLayout preview="Odhlášení z newsletteru jsme potvrdili.">
+    <EmailLayout preview="Odhlášení z novinek je hotové.">
       <Eyebrow>Newsletter</Eyebrow>
-      <EmailH1 accent="potvrzeno.">Odhlášení</EmailH1>
+      <EmailH1 accent="hotové.">Odhlášení je</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        {email ? `adresu ${email}` : "vaši adresu"} jsme právě vyřadili ze
-        seznamu odběratelů. Žádné další zprávy z ateliéru už vám chodit
+        {email ? `adresu ${email}` : "vaši adresu"} jsem právě vyřadila ze
+        seznamu odběratelů. Žádné další novinky z dílny vám už chodit
         nebudou.
       </P>
       <P>
-        Vaše rozhodnutí respektujeme — a děkujeme za čas, který jste našim
-        zprávám dosud věnovali. Kdybyste se někdy chtěli vrátit, dveře
-        zůstávají otevřené.
+        Je to v pořádku — a děkuji za čas, který jste mým zprávám věnovali.
+        Kdybyste se někdy chtěli vrátit, dveře zůstávají otevřené.
       </P>
 
       {newsletterUrl ? (
@@ -48,10 +47,10 @@ function NewsletterUnsubscribeEmailComponent({
       ) : null}
 
       <P small>
-        Vaše údaje zůstávají chráněny podle zásad ochrany osobních údajů.
+        Vaše údaje zůstávají chráněné podle zásad ochrany osobních údajů.
         Pokud šlo o omyl, stačí se na webu kdykoli přihlásit znovu.
       </P>
-      <Signature />
+      <Signature closing="Mějte se krásně," />
     </EmailLayout>
   )
 }

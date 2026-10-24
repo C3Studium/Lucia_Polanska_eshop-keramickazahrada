@@ -43,16 +43,16 @@ function CoursePaymentExpiredEmailComponent({
   const coursesUrl = base ? `${base}/kurzy#rezervace` : ""
   return (
     <EmailLayout
-      preview={`Platba za rezervaci kurzu ${courseTitle} nedorazila — místo jsme uvolnili.`}
+      preview={`Platba za rezervaci kurzu ${courseTitle} nedorazila — místo jsem uvolnila.`}
     >
-      <Eyebrow>Kurzy</Eyebrow>
-      <EmailH1 accent="rezervaci jsme uvolnili.">Platba nedorazila,</EmailH1>
+      <Eyebrow>Kurz</Eyebrow>
+      <EmailH1 accent="místo jsem uvolnila.">Platba nedorazila,</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        u vaší rezervace kurzu jsme čekali na platbu kartou, ale do 24 hodin
-        nedorazila. Rezervaci jsme proto uvolnili, aby místa nezůstala
-        blokovaná — takhle to děláme u všech nedokončených plateb.
+        u vaší rezervace kurzu jsem čekala na platbu kartou, ale do 24 hodin
+        nedorazila. Rezervaci jsem proto uvolnila, aby místa nezůstala
+        blokovaná — tak to dělám u všech nedokončených plateb, nic se neděje.
       </P>
 
       <LedgerRow label="Kurz" value={courseTitle} />
@@ -66,8 +66,8 @@ function CoursePaymentExpiredEmailComponent({
       <LedgerEnd />
 
       <Note>
-        Pokud máte o kurz stále zájem, stačí si místo rezervovat znovu —
-        zabere to minutu.
+        Pokud o kurz pořád máte zájem, stačí si místo rezervovat znovu — zabere
+        to minutu.
       </Note>
 
       {coursesUrl ? (
@@ -77,8 +77,7 @@ function CoursePaymentExpiredEmailComponent({
       ) : null}
 
       <P>
-        A kdybyste platbu mezitím odeslali a tahle zpráva vám nesedí,
-        odpovězte prosím na tento e-mail — společně to dáme do pořádku.
+        A kdybyste platbu mezitím odeslali a tahle zpráva vám nesedí, napište mi prosím na info@keramickazahrada.cz — dám to do pořádku.
       </P>
 
       <Signature />

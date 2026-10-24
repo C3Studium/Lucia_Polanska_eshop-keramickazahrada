@@ -138,11 +138,11 @@ const RULES: ErrorRule[] = [
   // --- discounts --------------------------------------------------------------
   {
     match: ["promotion", "not found"],
-    message: "Tenhle slevový kód neznáme. Zkontrolujte prosím, jestli sedí.",
+    message: "Takový slevový kód ani poukaz neznáme. Zkontrolujte prosím, jestli sedí.",
   },
   {
     match: ["discount", "not found"],
-    message: "Tenhle slevový kód neznáme. Zkontrolujte prosím, jestli sedí.",
+    message: "Takový slevový kód ani poukaz neznáme. Zkontrolujte prosím, jestli sedí.",
   },
 
   // --- transport --------------------------------------------------------------

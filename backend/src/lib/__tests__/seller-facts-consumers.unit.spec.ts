@@ -14,7 +14,7 @@ describe("protocolSeller (reklamační protokol)", () => {
       name: "Lucie Polanská",
       address: "Putim 229, 397 01 Písek",
       ico: "03441482",
-      email: "info@keramickazahrada.cz",
+      email: "lucie.polanska@gmail.com",
       phone: "+420 775 211 578",
     })
     expect(protocolSeller({ ...LEGAL_FACT_DEFAULTS, "seller.phone": "+420 600 000 000" }).phone).toBe(

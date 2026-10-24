@@ -25,7 +25,17 @@ export const FACTS = {
   "seller.name": "Lucie Polanská",
   "seller.address": "Putim 229, 397 01 Písek",
   "seller.ico": "03441482",
-  "seller.email": "info@keramickazahrada.cz",
+  /* Úřad vedoucí živnostenský rejstřík (§ 435 OZ — údaj o zápisu patří na
+     obchodní listiny). Čeká na potvrzení, OPEN_QUESTIONS N5. */
+  "seller.register": null,
+  /*
+   * Kontakt prodávající v právních dokumentech (24. 10. 2026). Adresa pro
+   * odstoupení od smlouvy a reklamaci — musí fungovat dnes, proto osobní
+   * Gmail, ne `lucie@keramickazahrada.cz`, který teprve vznikne.
+   * Zákaznická podpora e-shopu zůstává na `info@keramickazahrada.cz`
+   * (viz lib/constants/contact.ts) — to je jiná role než právní kontakt.
+   */
+  "seller.email": "lucie.polanska@gmail.com",
   "seller.phone": "+420 775 211 578",
   "seller.web": "keramickazahrada.cz",
   "seller.webUrl": "https://keramickazahrada.cz",
@@ -40,7 +50,9 @@ export const FACTS = {
   /** Platnost dárkového poukazu (dnes uváděn 1 rok jen u „volné“ varianty). */
   "voucher.validity": null,
   /** Co se stane se zůstatkem poukazu při nákupu pod jeho hodnotu. */
-  "voucher.remainder": null,
+  // Odpovědi Lucie z 20. 10. 2026; odhad nákladů na vrácení potvrdil Matěj 24. 10.
+  "voucher.remainder":
+    "zbytek hodnoty zůstává na poukazu a můžete ho využít při dalším nákupu do konce jeho platnosti",
   /** Nástroj na rozesílku newsletteru (zpracovatel pro Zásady). */
   "privacy.newsletterTool": null,
   /** Hosting / provozovatel infrastruktury a jeho sídlo (zpracovatel pro Zásady). */
@@ -48,11 +60,17 @@ export const FACTS = {
   "privacy.hosting":
     "Railway Corporation, San Francisco, USA — aplikace obchodu a databáze běží v jejím datovém centru v Amsterdamu (Nizozemsko); Cloudflare, Inc., San Francisco, USA — soubory ukládá v úložišti R2 omezeném na Evropskou unii; Supabase Pte. Ltd., Singapur — obsah webu ukládá v datovém centru ve Frankfurtu nad Mohanem (Německo)",
   /** Odhad nákladů na vrácení zboží poštou (§ 1820 odst. 1 písm. i) OZ). */
-  "withdrawal.returnCostEstimate": null,
+  // Odpovědi Lucie z 20. 10. 2026; odhad nákladů na vrácení potvrdil Matěj 24. 10.
+  "withdrawal.returnCostEstimate":
+    "150 až 250 Kč za křehký balík Českou poštou",
   /** Minimální věk dítěte na kurzu. */
-  "course.minAge": null,
+  // Odpovědi Lucie z 20. 10. 2026; odhad nákladů na vrácení potvrdil Matěj 24. 10.
+  "course.minAge":
+    "6 let (mladší děti s doprovodem rodiče)",
   /** Do kdy si vyzvednout výrobek z kurzu po výpalu. */
-  "course.pickupDeadline": null,
+  // Odpovědi Lucie z 20. 10. 2026; odhad nákladů na vrácení potvrdil Matěj 24. 10.
+  "course.pickupDeadline":
+    "1 měsíce od kurzu, termín si domluvíme; mimo Písek je můžu poslat poštou",
   /**
    * Dodací lhůta zboží skladem (předsmluvní informace v posledním kroku
    * pokladny, § 1820 odst. 1 písm. g) OZ). Celá fráze, např. „odešleme do …".
@@ -68,6 +86,7 @@ const MISSING: Record<LegalFactKey, string> = {
   "seller.name": "jméno prodávající",
   "seller.address": "adresa sídla",
   "seller.ico": "IČO",
+  "seller.register": "úřad vedoucí živnostenský rejstřík",
   "seller.email": "e-mail",
   "seller.phone": "telefon",
   "seller.web": "doména obchodu",

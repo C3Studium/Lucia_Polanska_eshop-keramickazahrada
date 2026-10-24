@@ -223,7 +223,7 @@ export const LEGAL_FAQ: LegalFaqGroup[] = [
         question: "Jak dlouho platí dárkový poukaz a jak ho uplatním?",
         answer: [
           "Platnost: {{voucher.validity}} od nákupu; datum konce platnosti najdete na poukazu. Poukaz nejde vyměnit za peníze.",
-          "Uplatnění: číslo poukazu napište do poznámky k objednávce, nebo mi ho pošlete e-mailem; v ateliéru ho stačí předložit. Platí na keramiku z obchodu i na zakázky, na kurzy zatím ne. Zbytek hodnoty zůstává na poukazu do konce platnosti.",
+          "Uplatnění: kód poukazu zadejte v košíku nebo v pokladně do pole „Slevový kód nebo dárkový poukaz“ — částka se odečte hned (ze zboží, které není ve slevě; poštovné doplatíte). V ateliéru ho stačí předložit. Platí na keramiku z obchodu i na zakázky, na kurzy zatím ne. Zbytek hodnoty zůstává na poukazu do konce platnosti a zůstatek vám kdykoli řeknu. Poukaz vám pošlu vytištěný poštou, nebo elektronicky e-mailem — klidně rovnou obdarovanému.",
         ],
       },
       {

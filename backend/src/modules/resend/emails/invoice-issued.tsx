@@ -102,12 +102,12 @@ function InvoiceIssuedEmailComponent({
 
   const lead =
     invoiceKind === "deposit"
-      ? "posíláme fakturu za zálohu k vaší objednávce na míru."
+      ? "posílám fakturu za zálohu na vaši zakázku. Nic dalšího od vás teď nepotřebuji — doklad si jen uložte."
       : invoiceKind === "balance"
-        ? "posíláme fakturu za doplatek k vaší objednávce na míru."
+        ? "posílám fakturu za doplatek vaší zakázky. Nic dalšího od vás nepotřebuji — doklad si jen uložte."
         : invoicePdfUrl
-          ? "posíláme fakturu k vaší objednávce. Nic dalšího od vás nepotřebujeme — doklad si jen uložte pro případ, že ho budete někdy potřebovat."
-          : "k vaší objednávce jsme vystavili fakturu. Kdybyste doklad potřebovali v PDF, stačí odpovědět na tento e-mail a pošleme vám ho."
+          ? "posílám fakturu k vaší objednávce. Nic dalšího od vás nepotřebuji — doklad si jen uložte, kdybyste ho někdy potřebovali."
+          : "k vaší objednávce jsem vystavila fakturu. Kdybyste doklad potřebovali v PDF, napište mi na info@keramickazahrada.cz a pošlu vám ho."
 
   return (
     <EmailLayout preview={`Faktura ${invoiceNumber} k objednávce ${orderNumber}.`}>
@@ -120,7 +120,7 @@ function InvoiceIssuedEmailComponent({
       {invoiceKind === "deposit" && balanceRemaining ? (
         <Note tone="clay">
           Tato faktura je za zaplacenou zálohu. Zbývá doplatit {balanceRemaining} —
-          vyžádáme si ho, až bude kousek hotový, a pošleme k němu druhou fakturu.
+          o doplatek vás požádám, až bude kousek hotový, a pošlu k němu druhou fakturu.
         </Note>
       ) : null}
 
@@ -171,10 +171,10 @@ function InvoiceIssuedEmailComponent({
         </Section>
       ) : null}
 
-      {/* Objekty — celý obsah objednávky, stejně jako v potvrzení objednávky. */}
+      {/* Výrobky — celý obsah objednávky, stejně jako v potvrzení objednávky. */}
       {order?.items?.length ? (
         <Section style={{ margin: "32px 0 0" }}>
-          <Eyebrow>Objednané</Eyebrow>
+          <Eyebrow>Co jste si objednali</Eyebrow>
           {/* Balné (lib/packaging.ts) hned pod svým výrobkem, menším řádkem. */}
           {withPackagingUnderProducts(order.items as any[]).map((item: any) =>
             isPackagingLine(item) ? (

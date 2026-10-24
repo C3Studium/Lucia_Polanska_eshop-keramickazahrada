@@ -93,55 +93,55 @@ const COPY: Record<
 > = {
   reklamace: {
     eyebrow: "Reklamace",
-    h1: "Reklamaci jsme",
-    accent: "přijali.",
-    preview: (order) => `Reklamaci k objednávce ${order} jsme přijali.`,
+    h1: "Reklamaci jsem",
+    accent: "přijala.",
+    preview: (order) => `Reklamaci k objednávce ${order} jsem přijala.`,
     intro:
-      "vaši reklamaci jsme přijali a začínáme ji posuzovat. Tento e-mail je písemným potvrzením o jejím uplatnění — níže najdete, kdy jste ji uplatnili, čeho se týká a co požadujete.",
+      "vaši reklamaci jsem přijala a začínám ji posuzovat. Mrzí mě, že vám kousek dělá starosti. Tento e-mail je písemným potvrzením o jejím uplatnění — níže najdete, kdy jste ji uplatnili, čeho se týká a co požadujete.",
     submittedLabel: "Uplatněno",
     reasonLabel: "Popis vady",
-    deadlineLabel: "Vyřídíme",
-    note: "Reklamaci vyřídíme bez zbytečného odkladu, nejpozději do 30 dnů od jejího uplatnění. O výsledku vám dáme vědět e-mailem.",
+    deadlineLabel: "Vyřídím",
+    note: "Reklamaci vyřídím bez zbytečného odkladu, nejpozději do 30 dnů od jejího uplatnění. O výsledku vám dám vědět e-mailem.",
   },
   vraceni: {
     eyebrow: "Vrácení zboží",
     h1: "Žádost o vrácení",
-    accent: "jsme přijali.",
-    preview: (order) => `Žádost o vrácení zboží k objednávce ${order} jsme přijali.`,
+    accent: "jsem přijala.",
+    preview: (order) => `Žádost o vrácení zboží k objednávce ${order} jsem přijala.`,
     intro:
-      "vaši žádost o vrácení zboží jsme přijali. Jakmile ji posoudíme, pošleme vám pokyny, kam zboží poslat.",
+      "vaši žádost o vrácení zboží jsem přijala. Jakmile ji posoudím, pošlu vám pokyny, kam zboží poslat.",
     submittedLabel: "Odesláno",
     reasonLabel: "Důvod",
-    deadlineLabel: "Peníze vracíme",
-    note: "Peníze vracíme do 14 dnů; smíme počkat, než k nám zboží dorazí zpět, nebo než nám prokážete, že jste ho odeslali.",
+    deadlineLabel: "Peníze vrátím",
+    note: "Peníze vrátím do 14 dnů; smím počkat, než se ke mně zboží vrátí, nebo než mi prokážete, že jste ho odeslali.",
   },
   odstoupeni: {
     eyebrow: "Odstoupení od smlouvy",
-    h1: "Potvrzujeme přijetí",
+    h1: "Potvrzuji přijetí",
     accent: "odstoupení.",
     preview: (order) =>
-      `Potvrzujeme přijetí vašeho odstoupení od smlouvy k objednávce ${order}.`,
+      `Potvrzuji přijetí vašeho odstoupení od smlouvy k objednávce ${order}.`,
     intro:
-      "potvrzujeme přijetí vašeho odstoupení od kupní smlouvy. Níže je celý obsah prohlášení, jak jsme ho od vás přijali, včetně data a času jeho odeslání.",
+      "potvrzuji přijetí vašeho odstoupení od kupní smlouvy. Níže je celý obsah prohlášení, jak jsem ho od vás přijala, včetně data a času jeho odeslání.",
     submittedLabel: "Odesláno",
     reasonLabel: "Důvod",
-    deadlineLabel: "Peníze vrátíme",
+    deadlineLabel: "Peníze vrátím",
     note: "",
   },
 }
 
 const FALLBACK = {
   eyebrow: "Vrácení peněz",
-  h1: "Žádost jsme",
-  accent: "přijali.",
+  h1: "Žádost jsem",
+  accent: "přijala.",
   preview: (order: string) =>
-    `Žádost o vrácení peněz k objednávce ${order} jsme přijali.`,
+    `Žádost o vrácení peněz k objednávce ${order} jsem přijala.`,
   intro:
-    "vaši žádost o vrácení peněz jsme v pořádku přijali a začínáme ji vyřizovat.",
+    "vaši žádost o vrácení peněz jsem přijala a začínám ji vyřizovat.",
   submittedLabel: "Odesláno",
   reasonLabel: "Důvod",
   deadlineLabel: "Doba vyřízení",
-  note: "Žádost je u nás — pracujeme na ní a o vyřízení vám dáme vědět.",
+  note: "Žádost je u mě — pracuji na ní a o vyřízení vám dám vědět.",
 }
 
 /** „Co teď" po odstoupení — podle toho, zda zboží odešlo a zda jde o celou smlouvu. */
@@ -161,24 +161,24 @@ const WithdrawalNextSteps = ({
   if (autoCancelled) {
     return (
       <Note tone="olive">
-        Objednávka je zrušená. Nic jste nezaplatili a zboží jsme ještě
-        neodeslali — nic nám neposílejte, není co vracet.
+        Objednávka je zrušená. Nic jste nezaplatili a zboží jsem ještě
+        neodeslala — nic mi neposílejte, není co vracet.
       </Note>
     )
   }
   const refundSentence = nothingToRefund
     ? "Zatím jste nic nezaplatili, takže není co vracet."
     : wholeOrder
-      ? "Peníze vrátíme bez zbytečného odkladu, nejpozději do 14 dnů od odstoupení — kupní cenu i náklady na dodání ve výši nejlevnějšího způsobu dodání, který nabízíme."
-      : "Peníze za uvedené zboží vrátíme bez zbytečného odkladu, nejpozději do 14 dnů od odstoupení."
+      ? "Peníze vrátím bez zbytečného odkladu, nejpozději do 14 dnů od odstoupení — kupní cenu i náklady na dodání ve výši nejlevnějšího způsobu dodání, který nabízím."
+      : "Peníze za uvedené zboží vrátím bez zbytečného odkladu, nejpozději do 14 dnů od odstoupení."
   if (!goodsShipped) {
     return (
       <>
         <P>
           <strong>Co bude dál:</strong>{" "}
           {wholeOrder
-            ? "zboží jsme ještě neodeslali — objednávku zastavíme a nic nám neposíláte."
-            : "zboží jsme ještě neodeslali — uvedené kusy vám neposíláme, zbytek objednávky pošleme jako obvykle."}{" "}
+            ? "zboží jsem ještě neodeslala — objednávku zastavím a nic mi neposíláte."
+            : "zboží jsem ještě neodeslala — uvedené kusy vám neposílám, zbytek objednávky pošlu jako obvykle."}{" "}
           {refundSentence}
         </P>
       </>
@@ -190,17 +190,17 @@ const WithdrawalNextSteps = ({
         <strong>Co bude dál:</strong>
       </P>
       <P>
-        1. Zboží nám prosím pošlete zpět nebo předejte nejpozději do 14 dnů od
+        1. Zboží mi prosím pošlete zpět nebo předejte nejpozději do 14 dnů od
         odstoupení na adresu <strong>{returnAddress}</strong>. Lhůta je
-        zachovaná, když zásilku odešlete před jejím uplynutím. Keramiku prosím
-        pečlivě zabalte, nejlépe do původního obalu; přímé náklady na vrácení
-        zboží nesete vy.
+        zachovaná, když zásilku odešlete před jejím uplynutím. Keramika je
+        křehká, tak ji prosím pečlivě zabalte, nejlépe do původního obalu;
+        přímé náklady na vrácení zboží nesete vy.
       </P>
       <P>
         2. {refundSentence}
         {nothingToRefund
           ? ""
-          : " Peníze smíme vrátit až poté, co zboží obdržíme, nebo co nám prokážete, že jste ho odeslali — podle toho, co nastane dříve."}
+          : " Peníze smím vrátit až poté, co zboží dostanu zpět, nebo co mi prokážete, že jste ho odeslali — podle toho, co nastane dříve."}
       </P>
       <P>
         3. Odpovídáte jen za snížení hodnoty zboží, které vzniklo nakládáním
@@ -322,8 +322,8 @@ function RefundRequestEmailComponent({
         />
       ) : autoCancelled ? (
         <Note tone="olive">
-          Objednávka je zrušená. Nic jste nezaplatili a zboží jsme ještě
-          neodeslali — nic nám neposílejte, není co vracet.
+          Objednávka je zrušená. Nic jste nezaplatili a zboží jsem ještě
+          neodeslala — nic mi neposílejte, není co vracet.
         </Note>
       ) : (
         <Note tone="olive">{copy.note}</Note>
@@ -331,9 +331,9 @@ function RefundRequestEmailComponent({
 
       {excludedItems ? (
         <Note tone="clay">
-          Zboží vyrobené na zakázku podle vašeho zadání z odstoupení vyjímáme —
+          Zboží vyrobené na zakázku podle vašeho zadání z odstoupení vyjímám —
           u něj zákon odstoupení nepřipouští (§ 1837 písm. d) občanského
-          zákoníku). Má-li vadu, můžete ho reklamovat.
+          zákoníku). Má-li vadu, můžete ho samozřejmě reklamovat.
         </Note>
       ) : null}
 
@@ -342,7 +342,7 @@ function RefundRequestEmailComponent({
       {isClaim && protocolUrl ? (
         <P small>
           Protokol o uplatnění reklamace se stejnými údaji si můžete stáhnout
-          jako PDF — odkaz je na tlačítku níže.
+          jako PDF — tlačítko je níže.
         </P>
       ) : null}
 
@@ -375,8 +375,9 @@ function RefundRequestEmailComponent({
 
       <P small>
         {refundMethodText
-          ? "Jakmile bude vše vyřízeno, pošleme vám písemné potvrzení e-mailem."
-          : "Peníze vracíme stejnou cestou, jakou k nám platba přišla. Jakmile bude vše vyřízeno, pošleme vám písemné potvrzení e-mailem."}
+          ? "Jakmile bude vše vyřízené, pošlu vám písemné potvrzení e-mailem."
+          : "Peníze vracím stejnou cestou, jakou ke mně platba přišla. Jakmile bude vše vyřízené, pošlu vám písemné potvrzení e-mailem."}{" "}
+        Kdyby cokoli, napište mi na info@keramickazahrada.cz — odpovídám sama.
       </P>
       <Signature />
     </EmailLayout>

@@ -54,6 +54,8 @@ const facts = {
   "seller.name": "Lucie Polanská",
   "seller.address": "Putim 229, 397 01 Písek",
   "seller.ico": "03441482",
+  /* Zápis do rejstříku (§ 435 OZ) — bez něj PDF hlásí varování. */
+  "seller.register": "Městský úřad Písek",
   "seller.email": "info@keramickazahrada.cz",
   "seller.phone": "+420 775 211 578",
   "vat.status": "nejsme plátci DPH",

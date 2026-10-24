@@ -141,7 +141,7 @@ export async function POST(req: MedusaRequest<PostStoreNewsletter>, res: MedusaR
         to: email,
         key: `nl-confirm:${email}:${day}`,
         data: {
-          subject: "Potvrďte odběr novinek z ateliéru",
+          subject: "Novinky z dílny — potvrďte prosím odběr",
           confirmLink,
         },
       }).catch((error) =>

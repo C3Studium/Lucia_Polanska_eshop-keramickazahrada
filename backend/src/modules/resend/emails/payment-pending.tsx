@@ -9,7 +9,9 @@ import {
   LedgerRow,
   Note,
   P,
+  PaidFor,
   Signature,
+  type EmailLineItem,
 } from "../components/email-ui"
 import { storeLink } from "../../../lib/storefront-url"
 
@@ -47,6 +49,12 @@ interface PaymentPendingEmailProps {
   depositInvoiceNumber?: string | null;
   /** Název položky zakázky — u objednávky s víc zakázkami říká, za který kus se doplácí. */
   productTitle?: string | null;
+  /**
+   * Za co se platí — položky objednávky s fotkou (`lib/email-items`). U
+   * doplatku zakázky je to ten jeden kus, u ruční výzvy k zaplacení celá
+   * objednávka. Bez nich e-mail ukáže jen částku, jako dřív.
+   */
+  paidFor?: EmailLineItem[] | null;
 }
 
 function PaymentPendingEmailComponent({
@@ -62,6 +70,7 @@ function PaymentPendingEmailComponent({
   depositPaid,
   depositInvoiceUrl,
   depositInvoiceNumber,
+  paidFor,
 }: PaymentPendingEmailProps) {
   const payUrl = paymentLink || orderLink || storeLink()
 
@@ -73,14 +82,14 @@ function PaymentPendingEmailComponent({
           : "Zbývá doplatek za vaši zakázku — zaplatíte jedním kliknutím."
       }
     >
-      <Eyebrow>Zakázková výroba</Eyebrow>
-      <EmailH1 accent="o doplatek.">Prosíme</EmailH1>
+      <Eyebrow>Zakázka</Eyebrow>
+      <EmailH1 accent="o doplatek.">Prosím</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        posíláme odkaz k zaplacení doplatku za vaši zakázku
+        posílám odkaz k zaplacení doplatku za vaši zakázku
         {orderNumber ? ` ${orderNumber}` : ""}. Zaplatit můžete kartou nebo
-        převodem — stačí jedno kliknutí na tlačítko níže.
+        převodem — stačí kliknout na tlačítko níže.
       </P>
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
@@ -94,12 +103,17 @@ function PaymentPendingEmailComponent({
       ) : null}
       <LedgerEnd />
 
+      {/* Za co se platí. U doplatku zakázky to říká řádek „Výrobek" a fotka
+          níž; u ruční výzvy k zaplacení (celá objednávka) by jinak e-mail
+          chtěl peníze a neřekl za co. */}
+      <PaidFor items={paidFor} heading="Za co platíte" />
+
       {depositInvoiceUrl ? (
         <P small style={{ margin: "0 0 4px" }}>
           Zálohovou fakturu
           {depositInvoiceNumber ? ` ${depositInvoiceNumber}` : ""} si můžete
           stáhnout <a href={depositInvoiceUrl}>zde</a>. Fakturu na doplatek vám
-          pošleme po jeho zaplacení.
+          pošlu, jakmile ho zaplatíte.
         </P>
       ) : null}
 
@@ -131,15 +145,15 @@ function PaymentPendingEmailComponent({
       ) : null}
 
       <Note tone="olive">
-        Jakmile doplatek dorazí, potvrdíme vám ho e-mailem a domluvíme se
+        Jakmile doplatek dorazí, potvrdím vám ho e-mailem a domluvíme se
         na předání.
       </Note>
 
       <P small>
         {estimatedConfirmationTime} Kdyby vám odkaz nefungoval nebo jste si
-        s čímkoli nevěděli rady, stačí odpovědět na tento e-mail.
+        s čímkoli nevěděli rady, napište mi na info@keramickazahrada.cz — odpovídám sama.
       </P>
-      <Signature />
+      <Signature closing="Děkuji a těším se," />
     </EmailLayout>
   )
 }
@@ -161,6 +175,16 @@ const mockPaymentPending: PaymentPendingEmailProps = {
   depositPaid: "1 225 Kč",
   depositInvoiceUrl: "https://keramickazahrada.cz/faktura-20260002.pdf",
   depositInvoiceNumber: "20260002",
+  paidFor: [
+    {
+      title: "Keramické pítko pro ptáky",
+      subtitle: "Modrá glazura",
+      quantity: 1,
+      amount: "2 450 Kč",
+      thumbnail:
+        "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png",
+    },
+  ],
 }
 
 export default () => <PaymentPendingEmailComponent {...mockPaymentPending} />

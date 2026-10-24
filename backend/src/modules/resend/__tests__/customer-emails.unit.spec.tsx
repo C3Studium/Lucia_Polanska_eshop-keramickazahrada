@@ -125,7 +125,7 @@ describe("customer e-mail templates after the audit", () => {
       const html = renderToStaticMarkup(
         orderPlacedEmail({ order: pickupOrder }) as React.ReactElement
       )
-      expect(html).toContain("Osobní odběr v ateliéru")
+      expect(html).toContain("Osobní odběr v dílně")
       expect(html).not.toContain("Doručovací adresa")
     })
 
@@ -182,7 +182,7 @@ describe("customer e-mail templates after the audit", () => {
         )
         expect(html).toContain("obchodními podmínkami ve znění platném od 1. 12. 2026")
         expect(html).toContain('href="https://keramickazahrada.cz/cz/smluvni-podminky/2026-12-01"')
-        expect(html).not.toContain("V příloze posíláme obchodní podmínky")
+        expect(html).not.toContain("V příloze posílám obchodní podmínky")
         expect(html).not.toContain("obchodni-podminky-2026-10-15.pdf")
       })
 
@@ -193,7 +193,7 @@ describe("customer e-mail templates after the audit", () => {
         expect(html).toContain("Smlouva a poučení")
         expect(html).toContain("uzavření kupní smlouvy")
         expect(html).toContain(
-          "V příloze posíláme obchodní podmínky platné pro tuto smlouvu a poučení o odstoupení od smlouvy s formulářem (PDF)"
+          "V příloze posílám obchodní podmínky platné pro tuto smlouvu a poučení o odstoupení od smlouvy s formulářem (PDF)"
         )
         expect(html).toContain("znění platné od 15. 10. 2026")
         expect(html).toContain("IČO 03441482")
@@ -213,7 +213,7 @@ describe("customer e-mail templates after the audit", () => {
             attachments_failed: true,
           }) as React.ReactElement
         )
-        expect(html).not.toContain("V příloze posíláme")
+        expect(html).not.toContain("V příloze posílám")
         expect(html).toContain("ve znění platném od 15. 10. 2026")
         expect(html).toContain("stáhnout PDF")
         expect(html).toContain("https://img.example.cz/legal/obchodni-podminky-2026-10-15.pdf")
@@ -307,6 +307,22 @@ describe("customer e-mail templates after the audit", () => {
       )
       expect(html).toContain("450")
       expect(html).not.toContain("4,50")
+    })
+
+    it("asks the question and offers one strong CTA, no discount and no shrug", () => {
+      const html = renderToStaticMarkup(
+        abandonedCartEmail({
+          customer: { first_name: "Jan" },
+          cart_id: "cart_1",
+          items: [{ product_title: "Keramický talíř", quantity: 1, unit_price: 450 }],
+        }) as React.ReactElement
+      )
+      expect(html).toContain("Zapomněli jste")
+      expect(html).toContain("Dokončit objednávku")
+      expect(html).toContain("https://keramickazahrada.cz/cz/cart/recover/cart_1")
+      // Lucie's voice: first person, no team, no soft „můžete přehlédnout".
+      expect(html).not.toContain("můžete v klidu")
+      expect(html).not.toContain("sleva")
     })
   })
 
@@ -442,7 +458,7 @@ describe("customer e-mail templates after the audit", () => {
       expect(html).toContain("Dorazila zásilka poškozená")
       // 14. 10. 2026 (právní audit §4.1): poškození hlásí zákazník nám,
       // s dopravcem to řešíme my — žádná lhůta ani formulář pošty.
-      expect(html).toContain("s dopravcem si to vyřešíme sami")
+      expect(html).toContain("s dopravcem si to vyřídím sama")
       expect(html).not.toContain(CP_CLAIM_FORM_URL)
       expect(html).not.toContain("dva pracovní dny")
     })

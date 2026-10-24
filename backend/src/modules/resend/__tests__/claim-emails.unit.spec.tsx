@@ -161,7 +161,7 @@ describe("claim e-mails — položky a poškození přepravou", () => {
       }) as React.ReactElement
     )
     expect(manual).not.toContain("3–5 pracovních dnů")
-    expect(manual).toContain("vracíme ručně")
+    expect(manual).toContain("vracím ručně")
     expect(manual).toContain("vystaví až v ostrém režimu")
     expect(manual).not.toContain("Dobropis (PDF)")
   })
@@ -260,8 +260,8 @@ describe("refund-request — potvrzení odstoupení a reklamace s datem a časem
     const html = renderToStaticMarkup(
       RefundRequestEmail({ ...withdrawal, wholeOrder: true, goodsShipped: true }) as React.ReactElement
     )
-    expect(html).toContain("Potvrzujeme přijetí")
-    expect(html).toContain("potvrzujeme přijetí vašeho odstoupení od kupní smlouvy")
+    expect(html).toContain("Potvrzuji přijetí")
+    expect(html).toContain("potvrzuji přijetí vašeho odstoupení od kupní smlouvy")
     // datum a čas odeslání + kanál
     expect(html).toContain("15. 10. 2026 v 14:32")
     expect(html).toContain("online na webu obchodu")
@@ -306,7 +306,7 @@ describe("refund-request — potvrzení odstoupení a reklamace s datem a časem
     const unshipped = renderToStaticMarkup(
       RefundRequestEmail({ ...withdrawal, wholeOrder: true, goodsShipped: false }) as React.ReactElement
     )
-    expect(unshipped).toContain("zboží jsme ještě neodeslali")
+    expect(unshipped).toContain("zboží jsem ještě neodeslala")
     expect(unshipped).not.toContain("Lucie Polanská, Putim 229")
 
     const cancelled = renderToStaticMarkup(
@@ -320,7 +320,7 @@ describe("refund-request — potvrzení odstoupení a reklamace s datem a časem
     )
     expect(cancelled).toContain("Objednávka je zrušená")
     // i tak potvrzení přijetí s datem a časem odeslání (§ 1830a)
-    expect(cancelled).toContain("Potvrzujeme přijetí")
+    expect(cancelled).toContain("Potvrzuji přijetí")
     expect(cancelled).toContain("15. 10. 2026 v 14:32")
     expect(cancelled).toContain("Zahradní mísa")
 
@@ -330,7 +330,7 @@ describe("refund-request — potvrzení odstoupení a reklamace s datem a časem
     )
     expect(unpaid).toContain("Lucie Polanská, Putim 229, 397 01 Písek")
     expect(unpaid).toContain("není co vracet")
-    expect(unpaid).not.toContain("Peníze smíme vrátit")
+    expect(unpaid).not.toContain("Peníze smím vrátit")
   })
 
   it("reklamace (§ 19 ZOS): datum a čas uplatnění, obsah, požadavek, 30 dnů od uplatnění", () => {

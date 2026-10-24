@@ -48,7 +48,7 @@ function ReturnRejectedEmailComponent({
   rejectedItems,
   items,
   rejectionReason,
-  appealInstructions = "Ozvat se nám můžete kdykoli — rádi to s vámi probereme",
+  appealInstructions = "Ozvat se mi můžete kdykoli — ráda to s vámi proberu",
   orderLink = "",
   supportEmail = CONTACT_EMAIL,
   protocolUrl,
@@ -58,42 +58,42 @@ function ReturnRejectedEmailComponent({
   const eyebrow = isClaim ? "Reklamace" : "Vrácení"
   const h1 = isClaim ? "Reklamaci" : "Vrácení"
   const intro = isClaim
-    ? "vaši reklamaci jsme pečlivě posoudili. Je nám líto, ale tentokrát ji nemůžeme uznat — odůvodnění uvádíme níže."
-    : "vaši žádost o vrácení jsme pečlivě posoudili. Je nám líto, ale tentokrát jí nemůžeme vyhovět — důvod uvádíme níže."
+    ? "vaši reklamaci jsem pečlivě posoudila. Je mi líto, ale tentokrát ji nemohu uznat — proč, píšu níže."
+    : "vaši žádost o vrácení jsem pečlivě posoudila. Je mi líto, ale tentokrát jí nemohu vyhovět — důvod uvádím níže."
   return (
     <EmailLayout
       preview={
         isClaim
-          ? `Reklamaci k objednávce ${orderNumber} bohužel nemůžeme uznat.`
-          : `Žádosti o vrácení k objednávce ${orderNumber} bohužel nemůžeme vyhovět.`
+          ? `Reklamaci k objednávce ${orderNumber} bohužel nemohu uznat.`
+          : `Žádosti o vrácení k objednávce ${orderNumber} bohužel nemohu vyhovět.`
       }
     >
       <Eyebrow>{eyebrow}</Eyebrow>
-      <EmailH1 accent="nemůžeme přijmout.">{h1}</EmailH1>
+      <EmailH1 accent="nemohu přijmout.">{h1}</EmailH1>
 
       <Greeting name={customerName} />
       <P>{intro}</P>
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
       {returnNumber ? <LedgerRow label="Vrácení" value={returnNumber} /> : null}
-      {objects ? <LedgerRow label="Objekty" value={<MultiLine value={objects} />} /> : null}
+      {objects ? <LedgerRow label="Zboží" value={<MultiLine value={objects} />} /> : null}
       {rejectionReason ? (
         <LedgerRow label="Důvod zamítnutí" value={rejectionReason} tone="danger" />
       ) : null}
       <LedgerEnd />
 
       <P>
-        Objekt zůstává váš. Pokud už k nám doputoval, pošleme vám ho zpět na
+        Kousek zůstává váš. Pokud už ke mně doputoval, pošlu vám ho zpět na
         adresu z objednávky.
       </P>
 
       <Note tone="danger">
-        Žádosti jsme tentokrát nemohli vyhovět — pokud to vidíte jinak,
-        ozvěte se nám a společně to probereme.
+        Vím, že to není zpráva, kterou jste čekali. Pokud to vidíte jinak,
+        napište mi — ráda si vaše důvody ještě vyslechnu.
       </Note>
 
       <ButtonRow>
-        <EmailButton href={`mailto:${supportEmail}`}>Napsat nám</EmailButton>
+        <EmailButton href={`mailto:${supportEmail}`}>Napsat Lucii</EmailButton>
         {orderLink ? (
           <>
             <span style={{ display: "inline-block", width: "12px" }} />
@@ -130,7 +130,7 @@ const mockReturnRejected: ReturnRejectedEmailProps = {
   orderNumber: "#12345",
   kind: "reklamace",
   rejectedItems: "Keramický hrnek — modrý",
-  rejectionReason: "Objekt nese stopy mechanického poškození, nejde o vadu výrobku",
+  rejectionReason: "Kousek nese stopy mechanického poškození, nejde o vadu výrobku",
   orderLink: "https://keramickazahrada.cz/orders/12345",
   supportEmail: CONTACT_EMAIL,
 }

@@ -276,6 +276,10 @@ const medusaConfig = {
       // Course terms and reservations (kurzy) — see docs/kurzy-system.md.
       resolve: "./src/modules/course",
     },
+    {
+      // Dárkové poukazy (stránka Poukazy) — kód, zůstatek, uplatnění, platba ComGate.
+      resolve: "./src/modules/gift-voucher",
+    },
     // iDoklad invoicing (FINISHINGTODOLIST §1) — registered only with
     // credentials in hand; without them every invoicing entry point degrades
     // to a logged no-op, so checkout and fulfilment never depend on it.

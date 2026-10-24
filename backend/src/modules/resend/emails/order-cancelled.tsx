@@ -41,15 +41,14 @@ function OrderCancelledEmailComponent({
 }: OrderCancelledEmailProps) {
   const shopUrl = storeLink()
   return (
-    <EmailLayout preview={`Objednávku ${orderNumber} jsme zrušili.`}>
+    <EmailLayout preview={`Objednávku ${orderNumber} jsem musela zrušit — omlouvám se.`}>
       <Eyebrow>Objednávka {orderNumber}</Eyebrow>
-      <EmailH1 accent="zrušena.">Objednávka byla</EmailH1>
+      <EmailH1 accent="je zrušená.">Objednávka</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        vaši objednávku {orderNumber} jsme zrušili. Pokud jste o zrušení
-        nežádali nebo je vám cokoli nejasné, ozvěte se nám — stačí odpovědět
-        na tento e-mail.
+        mrzí mě to, ale vaši objednávku {orderNumber} jsem zrušila. Pokud jste
+        o zrušení nežádali nebo vám cokoli není jasné, napište mi na info@keramickazahrada.cz a dáme to do pořádku.
       </P>
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
@@ -59,13 +58,14 @@ function OrderCancelledEmailComponent({
       ) : null}
       <LedgerEnd />
 
-      <Note tone="danger">Objednávka byla zrušena.</Note>
+      <Note tone="danger">Objednávka je zrušená, nic dalšího od vás nepotřebuji.</Note>
 
       {refundRecorded ? (
         <P>
-          Zaplacenou částku{refundAmount ? ` ${refundAmount}` : ""} jsme vám
-          vrátili stejnou cestou, jakou k nám platba přišla. Připsání závisí
-          na vaší bance, obvykle do několika pracovních dnů.
+          Zaplacenou částku{refundAmount ? ` ${refundAmount}` : ""} jsem vám
+          vrátila stejnou cestou, jakou ke mně platba přišla. Kdy se peníze
+          objeví na účtu, záleží na vaší bance — obvykle do několika
+          pracovních dnů.
         </P>
       ) : null}
 
@@ -78,12 +78,12 @@ function OrderCancelledEmailComponent({
       ) : null}
 
       <P small>
-        Omlouváme se za případné nepříjemnosti.
+        Omlouvám se za komplikace, které vám tím vznikly.
         {refundRecorded
           ? ""
-          : " Máte-li k platbě nebo ke zrušení dotaz, stačí odpovědět na tento e-mail."}
+          : " Kdybyste měli k platbě nebo ke zrušení otázku, napište mi na info@keramickazahrada.cz."}
       </P>
-      <Signature />
+      <Signature closing="Omlouvám se a děkuji za pochopení," />
     </EmailLayout>
   )
 }

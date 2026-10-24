@@ -25,6 +25,43 @@ export const NEUVEDENO = "neuvedeno"
 
 /** Všechny `{{…}}` ze vzoru — hotové texty, jak se tisknou. */
 export type CommissionConfirmationInput = {
+  /**
+   * Který ze dvou dokumentů se sází (24. 10. 2026).
+   *
+   * - `zakazka` — výroba podle zadání: nese brief, zálohu, dobu výroby
+   *   a výjimku z odstoupení (§ 1837 písm. d) OZ).
+   * - `objednavka` — kupní smlouva na běžné zboží: nese seznam položek,
+   *   lhůtu odeslání a **právo odstoupit do 14 dnů**, tedy přesně opačný
+   *   příběh než zakázka.
+   *
+   * Společné zůstává všechno ostatní — strany, ceny, vady, souhlasy
+   * i celé rozvržení, stránkování a patička.
+   */
+  kind: "zakazka" | "objednavka"
+  /**
+   * Položky objednávky — jen u `objednavka`, kde zastávají to, čím je
+   * u zakázky zadání. Službové řádky (doprava, balné) sem nepatří, ty jsou
+   * v cenové tabulce.
+   */
+  items: {
+    title: string
+    /** „2×" u množství nad jedna, jinak prázdné. */
+    quantity: string
+    amount: string
+  }[]
+  /** Jen u `objednavka`: co se zákazníkovi slibuje o odeslání a vrácení. */
+  delivery: {
+    /** Věta z právních údajů (`delivery.dispatchTime`), nebo „neuvedeno". */
+    dispatch: string
+    /**
+     * Odhad nákladů na vrácení zboží (`withdrawal.returnCostEstimate`).
+     *
+     * § 1820 odst. 1 písm. g) OZ ho chce u zboží, které pro svou povahu
+     * nelze vrátit obvyklou poštovní cestou — keramika křehká je, takže
+     * sem patří. Prázdné = údaj chybí a věta se vynechá.
+     */
+    return_cost: string
+  }
   order: {
     /** „#1234" — číslo objednávky, jak ho zná zákazník. */
     number: string
@@ -49,6 +86,8 @@ export type CommissionConfirmationInput = {
     ico: string
     email: string
     phone: string
+    /** „zapsaná v živnostenském rejstříku vedeném …" (§ 435 OZ). */
+    register: string
   }
   customer: {
     name: string
@@ -105,6 +144,8 @@ export type CommissionConfirmationInput = {
   }
   links: {
     complaints: string
+    /** Poučení o odstoupení — jen u `objednavka`, kde se na ně odkazuje. */
+    withdrawal: string
   }
   consent: {
     terms_at: string
@@ -380,6 +421,14 @@ export const confirmationFieldsFor = ({
    * „další položky". Legacy zakázka (bez řádku) = celá objednávka jako dřív:
    * všechny zakázkové řádky dohromady, běžné zboží jako „další zboží".
    */
+  /*
+   * Bez zakázky se sází KLASICKÁ kupní smlouva (24. 10. 2026). Pozná se podle
+   * toho, že žádná produkční objednávka nepřišla — ne podle metadat košíku,
+   * která u běžného zboží vůbec nevznikají. Zakázková varování, zálohu,
+   * dobu výroby a výjimku z odstoupení pak celé přeskočí.
+   */
+  const jeZakazka = Boolean(productionOrder)
+
   const perCommission = Boolean(productionOrder?.line_item_id)
   const ownLine = perCommission
     ? goods.find((item) => item.id === productionOrder?.line_item_id) ?? null
@@ -416,6 +465,18 @@ export const confirmationFieldsFor = ({
   if (!order.created_at) warnings.push(`Objednávka nemá datum vytvoření — PDF ho uvádí jako „neuvedeno".`)
 
   // ── Prodávající (právní údaje) ────────────────────────────────────────────
+  /*
+   * Zápis do veřejného rejstříku (§ 435 OZ) — povinný údaj na obchodních
+   * listinách, a potvrzení smlouvy jí je. Bez úřadu se uvede aspoň sám
+   * zápis; s úřadem celá věta.
+   */
+  const registerAuthority = text(facts?.["seller.register"])
+  if (!registerAuthority) {
+    warnings.push(
+      `Právní údaj „seller.register" (úřad vedoucí živnostenský rejstřík) chybí — dokument uvede zápis bez úřadu (§ 435 OZ).`
+    )
+  }
+
   const seller = {
     brand: "Keramická zahrada",
     name: orDefault(facts?.["seller.name"]),
@@ -423,6 +484,9 @@ export const confirmationFieldsFor = ({
     ico: orDefault(facts?.["seller.ico"]),
     email: orDefault(facts?.["seller.email"]),
     phone: orDefault(facts?.["seller.phone"]),
+    register: registerAuthority
+      ? `zapsaná v živnostenském rejstříku vedeném ${registerAuthority}`
+      : "zapsaná v živnostenském rejstříku",
   }
   for (const key of ["seller.name", "seller.address", "seller.ico", "seller.email", "seller.phone"] as const) {
     if (!text(facts?.[key])) warnings.push(`Právní údaj „${key}" chybí — v Potvrzení zakázky je „neuvedeno".`)
@@ -460,7 +524,7 @@ export const confirmationFieldsFor = ({
         : perCommission && snapshotTitle
           ? { title: snapshotTitle, variant_suffix: snapshotQuantity > 1 ? ` · ${snapshotQuantity} ks` : "" }
           : { title: NEUVEDENO, variant_suffix: "" }
-  if (!titled.length && product.title === NEUVEDENO) {
+  if (jeZakazka && !titled.length && product.title === NEUVEDENO) {
     warnings.push(`Objednávka nemá žádný zakázkový řádek — PDF uvádí výrobek jako „neuvedeno".`)
   }
 
@@ -497,9 +561,14 @@ export const confirmationFieldsFor = ({
   const depositRequest = (productionOrder?.payment_requests ?? []).find(
     (request) => request?.type === "deposit"
   )
-  const checkoutCollection = (order.payment_collections ?? []).find(
-    (collection) => collection?.metadata?.made_to_order
-  )
+  /*
+   * U zakázky je to pokladní kolekce označená `made_to_order` (zálohová),
+   * u běžné objednávky prostě ta, kterou objednávka má. Dřív se hledala jen
+   * ta zakázková, takže klasická smlouva hlásila „Zaplaceno 0".
+   */
+  const checkoutCollection = jeZakazka
+    ? (order.payment_collections ?? []).find((collection) => collection?.metadata?.made_to_order)
+    : (order.payment_collections ?? [])[0]
   const collectionPaid =
     Boolean(checkoutCollection) &&
     (["authorized", "completed", "captured"].includes(String(checkoutCollection?.status || "").toLowerCase()) ||
@@ -518,7 +587,7 @@ export const confirmationFieldsFor = ({
     : collectionPaid && !perItem
       ? round2(toNumber(checkoutCollection?.amount))
       : 0
-  if (!depositPaid && !collectionPaid) {
+  if (jeZakazka && !depositPaid && !collectionPaid) {
     warnings.push(`Záloha u zakázky zatím není zaplacená — PDF uvádí zaplaceno 0 a datum platby „neuvedeno".`)
   }
 
@@ -556,13 +625,25 @@ export const confirmationFieldsFor = ({
       ? `Objednávka obsahuje další položky; doprava a balné ${formatCzechMoney(shippingTotal)} ${currency} se platí jednou s objednávkou.`
       : null,
   }
-  if (contractualDeposit === null) {
+  if (jeZakazka && contractualDeposit === null) {
     warnings.push(`Produkční objednávka nemá smluvní zálohu (deposit_amount ani deposit_percentage) — PDF uvádí „neuvedeno".`)
   }
 
   const deposit = {
     method,
-    paid_at: depositPaid ? formatCzechDateTime(depositRequest?.paid_at) : NEUVEDENO,
+    /*
+     * U zakázky datum ze zálohové žádosti. U běžné objednávky žádná taková
+     * žádost není — platba v pokladně proběhne v okamžiku objednávky, takže
+     * se uvádí její čas. Nezaplacená objednávka (převod, dobírka) nemá co
+     * datovat.
+     */
+    paid_at: jeZakazka
+      ? depositPaid
+        ? formatCzechDateTime(depositRequest?.paid_at)
+        : NEUVEDENO
+      : collectionPaid
+        ? formatCzechDateTime(order.created_at)
+        : NEUVEDENO,
   }
 
   // ── Výroba ────────────────────────────────────────────────────────────────
@@ -580,7 +661,7 @@ export const confirmationFieldsFor = ({
     lead_time_min: days(profile?.production_time_min_days),
     lead_time_max: days(profile?.production_time_max_days),
   }
-  if (mto.lead_time_max === NEUVEDENO) {
+  if (jeZakazka && mto.lead_time_max === NEUVEDENO) {
     warnings.push(`Profil výroby nemá lhůtu dokončení (production_time_max_days) — PDF uvádí „neuvedeno".`)
   }
 
@@ -599,12 +680,59 @@ export const confirmationFieldsFor = ({
     mto_at: mtoAck ? formatCzechDateTime(recordedAt || mtoAck) : NEUVEDENO,
   }
   if (!termsAt) warnings.push(`Objednávka nemá čas souhlasu s OP (terms_accepted_at) — PDF uvádí „neuvedeno".`)
-  if (!mtoAck) warnings.push(`Objednávka nemá poučení o zakázce (made_to_order_ack_at) — PDF uvádí „neuvedeno".`)
+  if (jeZakazka && !mtoAck) warnings.push(`Objednávka nemá poučení o zakázce (made_to_order_ack_at) — PDF uvádí „neuvedeno".`)
 
   const confirmedAt = productionOrder?.created_at ?? null
 
+  /*
+   * Bez zakázky se sází KLASICKÁ kupní smlouva. Rozpoznává se podle toho, že
+   * žádná produkční objednávka nepřišla — ne podle metadat košíku, která
+   * u běžného zboží vůbec nevznikají.
+   */
+  const kind: "zakazka" | "objednavka" = productionOrder ? "zakazka" : "objednavka"
+
+  /*
+   * Položky — u klasické smlouvy nahrazují zadání; službové řádky (doprava,
+   * balné) sem nepatří, ty nese cenová tabulka. Měnu připojuje až generátor,
+   * stejně jako u ostatních částek.
+   */
+  const confirmationItems = goods.map((item) => {
+    const nazev = text(item.product_title) || text(item.title) || NEUVEDENO
+    const varianta = text(item.variant_title)
+    const mnozstvi = Math.trunc(toNumber(item.quantity) || 1)
+    return {
+      title: isDefaultVariantTitle(varianta) ? nazev : `${nazev} — ${varianta}`,
+      quantity: mnozstvi > 1 ? `${mnozstvi}×` : "",
+      amount: formatCzechMoney(toNumber(item.total)),
+    }
+  })
+
+  const dispatch =
+    typeof facts?.["delivery.dispatchTime"] === "string" &&
+    facts["delivery.dispatchTime"].trim()
+      ? facts["delivery.dispatchTime"].trim()
+      : NEUVEDENO
+  if (kind === "objednavka" && dispatch === NEUVEDENO) {
+    warnings.push(
+      `Chybí údaj „delivery.dispatchTime" — potvrzení objednávky uvádí lhůtu odeslání jako „neuvedeno".`
+    )
+  }
+
+  /* § 1820 odst. 1 písm. g) OZ — u zboží, které nelze vrátit obvyklou
+     poštovní cestou (a křehká keramika takové je), musí zákazník znát
+     odhad nákladů na vrácení. */
+  const returnCost = text(facts?.["withdrawal.returnCostEstimate"])
+  if (kind === "objednavka" && !returnCost) {
+    warnings.push(
+      `Chybí údaj „withdrawal.returnCostEstimate" — potvrzení objednávky neuvede odhad nákladů na vrácení (§ 1820 odst. 1 písm. g) OZ).`
+    )
+  }
+
   return {
     fields: {
+      kind,
+      items: confirmationItems,
+      delivery: { dispatch, return_cost: returnCost },
       order: {
         number: order.display_id !== null && order.display_id !== undefined ? `#${order.display_id}` : NEUVEDENO,
         placed_at: formatCzechDateTime(order.created_at),
@@ -627,7 +755,10 @@ export const confirmationFieldsFor = ({
       deposit,
       mto,
       vat: { note: vat.note },
-      links: { complaints: legalPageUrl("reklamacni-rad", manifest) },
+      links: {
+        complaints: legalPageUrl("reklamacni-rad", manifest),
+        withdrawal: legalPageUrl("odstoupeni-od-smlouvy", manifest),
+      },
       consent,
     },
     warnings,

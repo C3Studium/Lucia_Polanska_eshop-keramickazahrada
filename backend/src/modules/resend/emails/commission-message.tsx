@@ -38,13 +38,13 @@ function CommissionMessageEmailComponent({
   productTitle,
 }: CommissionMessageEmailProps) {
   return (
-    <EmailLayout preview={`Nová zpráva k vaší zakázce ${orderNumber}.`}>
-      <Eyebrow>Zakázková výroba</Eyebrow>
-      <EmailH1 accent="k vaší zakázce.">Nová zpráva</EmailH1>
+    <EmailLayout preview={`Píšu vám z dílny k zakázce ${orderNumber}.`}>
+      <Eyebrow>Zakázka</Eyebrow>
+      <EmailH1 accent="k vaší zakázce.">Zpráva z dílny</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        máme pro vás vzkaz k vaší zakázce
+        píšu vám k vaší zakázce
         {orderNumber ? ` ${orderNumber}` : ""}
         {productTitle ? ` (${productTitle})` : ""}:
       </P>
@@ -52,7 +52,7 @@ function CommissionMessageEmailComponent({
       {message && message.trim() ? (
         <Note tone="olive">{message}</Note>
       ) : (
-        <P>Přikládáme fotku z výroby — podívejte se.</P>
+        <P>Posílám fotku z výroby — podívejte se, jak to zatím vypadá.</P>
       )}
 
       {photoUrl ? (
@@ -72,13 +72,13 @@ function CommissionMessageEmailComponent({
       ) : null}
 
       <P style={{ margin: "20px 0 0" }}>
-        Odpovědět můžete přímo u své objednávky — napište nám tam, nebo přiložte
-        vlastní fotku.
+        Odpovědět mi můžete přímo u své objednávky — napište mi tam, nebo
+        přiložte vlastní fotku. Celé naše vlákno tam uvidíte pohromadě.
       </P>
 
       {orderLink ? (
         <ButtonRow>
-          <EmailButton href={orderLink}>Otevřít objednávku</EmailButton>
+          <EmailButton href={orderLink}>Odpovědět Lucii</EmailButton>
         </ButtonRow>
       ) : null}
       <Signature />

@@ -31,10 +31,10 @@ interface ReturnReceivedEmailProps {
 
 /** Co se děje dál — podle rozhodnutí. */
 const NEXT: Record<string, string> = {
-  repair: "Objekt teď opravíme a pošleme vám ho zpět. Jakmile bude na cestě, dáme vám vědět.",
-  replace: "Připravujeme pro vás nový kus. Jakmile bude na cestě, dáme vám vědět.",
-  discount: "Zkontrolujeme stav a vrátíme vám dohodnutou část ceny.",
-  refund: "Zkontrolujeme stav a vrátíme vám peníze stejnou cestou, jakou k nám platba přišla.",
+  repair: "Kousek teď opravím a pošlu vám ho zpět. Jakmile bude na cestě, dám vám vědět.",
+  replace: "Připravuji pro vás nový kus. Jakmile bude na cestě, dám vám vědět.",
+  discount: "Prohlédnu si ho a vrátím vám dohodnutou část ceny.",
+  refund: "Prohlédnu si ho a vrátím vám peníze stejnou cestou, jakou ke mně platba přišla.",
 }
 
 /**
@@ -56,14 +56,14 @@ function ReturnReceivedEmailComponent({
   const isClaim = kind === "reklamace"
   const next = NEXT[resolution ?? "refund"] ?? NEXT.refund
   return (
-    <EmailLayout preview={`Zásilka k objednávce ${orderNumber} k nám dorazila.`}>
+    <EmailLayout preview={`Zásilka k objednávce ${orderNumber} ke mně dorazila.`}>
       <Eyebrow>{isClaim ? "Reklamace" : "Vrácení"}</Eyebrow>
-      <EmailH1 accent="dorazilo.">Zboží k nám</EmailH1>
+      <EmailH1 accent="dorazilo.">Zboží ke mně</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        vrácená zásilka k nám v pořádku dorazila. Objekt teď kontrolujeme a
-        pokračujeme ve vyřízení.
+        vrácená zásilka ke mně v pořádku dorazila — nic se neztratilo. Kousek
+        si teď prohlédnu a pokračuji ve vyřízení.
       </P>
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
@@ -79,7 +79,7 @@ function ReturnReceivedEmailComponent({
       {claimsUrl || orderLink ? (
         <ButtonRow>
           <EmailButton href={claimsUrl || orderLink}>
-            {claimsUrl ? "Stav žádosti" : "Zobrazit objednávku"}
+            {claimsUrl ? "Sledovat stav žádosti" : "Zobrazit objednávku"}
           </EmailButton>
           {protocolUrl ? (
             <>
@@ -93,10 +93,9 @@ function ReturnReceivedEmailComponent({
       ) : null}
 
       <P small>
-        O vyřízení vám pošleme písemné potvrzení e-mailem. Máte-li jakýkoli
-        dotaz, stačí odpovědět na tento e-mail.
+        O vyřízení vám pošlu písemné potvrzení e-mailem. Kdyby cokoli, napište mi na info@keramickazahrada.cz — odpovídám sama.
       </P>
-      <Signature />
+      <Signature closing="Děkuji za trpělivost," />
     </EmailLayout>
   )
 }

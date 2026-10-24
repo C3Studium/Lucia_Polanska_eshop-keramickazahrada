@@ -32,22 +32,23 @@ interface OrderProcessingEmailProps {
 function OrderProcessingEmailComponent({
   customerName,
   orderNumber = "",
-  estimatedProcessingTime = "Jakmile bude hotovo, dáme vám vědět a domluvíme se na odeslání.",
+  estimatedProcessingTime = "Jakmile bude hotovo, napíšu vám a domluvíme se na odeslání nebo předání.",
   orderLink = "",
   estimatedCompletion,
 }: OrderProcessingEmailProps) {
   const orderUrl = orderLink || storeLink()
   return (
     <EmailLayout
-      preview={`Vaše zakázka ${orderNumber} je ve výrobě.`}
+      preview={`Zakázka ${orderNumber} je ve výrobě — právě jsem se pustila do práce.`}
     >
-      <Eyebrow>Zakázková výroba</Eyebrow>
+      <Eyebrow>Zakázka</Eyebrow>
       <EmailH1 accent="začíná.">Výroba</EmailH1>
 
       <Greeting name={customerName} />
       <P>
         právě se pouštím do výroby vaší zakázky {orderNumber}. Každý kousek
-        vzniká rukama — točení, sušení, pálení i glazura si žádají svůj čas.
+        u mě vzniká rukama — modelování, sušení, výpal i glazura si žádají svůj
+        čas, tak prosím o trpělivost.
       </P>
 
       {orderNumber ? (
@@ -60,7 +61,17 @@ function OrderProcessingEmailComponent({
         </>
       ) : null}
 
-      <Note tone="olive">Výroba právě začala.</Note>
+      <Note tone="olive">
+        Výroba právě začala — od této chvíle běží i lhůta dokončení.
+      </Note>
+
+      <P>
+        Od odeslání tohoto e-mailu platí, že při zrušení zakázky se záloha
+        nevrací; všechno, co jste zaplatili nad zálohu, vám vrátím do 14 dnů.
+        Tak to stojí v obchodních podmínkách (článek Výroba na zakázku), se
+        kterými jste při objednávce souhlasili: záloha kryje materiál, návrh a
+        čas, který už jsem do vašeho kousku vložila.
+      </P>
 
       <P>{estimatedProcessingTime}</P>
 
@@ -70,7 +81,7 @@ function OrderProcessingEmailComponent({
         </ButtonRow>
       ) : null}
 
-      <Signature />
+      <Signature closing="Děkuji a těším se," />
     </EmailLayout>
   )
 }

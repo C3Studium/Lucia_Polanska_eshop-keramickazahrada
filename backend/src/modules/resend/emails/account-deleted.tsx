@@ -25,30 +25,29 @@ function AccountDeletedEmailComponent({
   deletionDate = new Date().toLocaleDateString('cs-CZ')
 }: AccountDeletedEmailProps) {
   return (
-    <EmailLayout preview="Váš účet byl smazán. Děkujeme za důvěru.">
+    <EmailLayout preview="Váš účet jsem smazala. Děkuji za důvěru.">
       <Eyebrow>Váš účet</Eyebrow>
-      <EmailH1 accent="a děkujeme.">Na shledanou</EmailH1>
+      <EmailH1 accent="a děkuji.">Na shledanou</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        váš účet jsme smazali. Osobní údaje jsme odstranili v souladu se
-        zásadami ochrany osobních údajů; historii objednávek uchováváme
-        jen tam, kde nám to ukládá zákon.
+        váš účet jsem smazala. Osobní údaje jsem odstranila podle zásad
+        ochrany osobních údajů; historii objednávek uchovávám jen tam, kde mi
+        to ukládá zákon.
       </P>
 
       <LedgerRow label="Účet" value={email} />
       <LedgerRow label="Smazán dne" value={deletionDate} />
       <LedgerEnd />
 
-      <P>Děkujeme za důvěru i za čas, který jste u nás strávili.</P>
+      <P>Děkuji za důvěru i za čas, který jste u mě strávili.</P>
 
       <Note tone="olive">
-        Dveře ateliéru zůstávají otevřené — nový účet si můžete založit
-        kdykoli.
+        Dveře dílny zůstávají otevřené — nový účet si můžete založit kdykoli.
       </Note>
 
       <P small>
-        Pokud jste o smazání účtu nežádali, napište nám prosím na{" "}
+        Pokud jste o smazání účtu nežádali, napište mi prosím na{" "}
         <Link
           href={`mailto:${CONTACT_EMAIL}`}
           style={{ color: brand.ink, textDecoration: "underline" }}
@@ -57,7 +56,7 @@ function AccountDeletedEmailComponent({
         </Link>
         .
       </P>
-      <Signature />
+      <Signature closing="Mějte se krásně," />
     </EmailLayout>
   );
 }

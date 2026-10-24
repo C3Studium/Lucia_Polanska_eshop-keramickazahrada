@@ -24,14 +24,26 @@ const lineSuffix = (lineItemId?: string | null): string =>
  * objednávky: `orders/<order>/potvrzeni-zakazky-<line_item_id>.pdf`; legacy
  * zakázka (celá objednávka) zůstává bez přípony, jak byla uložená.
  */
-export const confirmationKeyFor = (orderId: string, lineItemId?: string | null): string =>
-  `orders/${orderId}/potvrzeni-zakazky${lineSuffix(lineItemId)}.pdf`
+/**
+ * Klasická kupní smlouva nemá řádek zakázky, ale má vlastní jméno — klíč je
+ * v adrese PDF vidět, takže „potvrzeni-zakazky" u objednávky hrnků by mátlo.
+ */
+export const ORDER_CONFIRMATION_SLUG = "potvrzeni-objednavky"
+export const COMMISSION_CONFIRMATION_SLUG = "potvrzeni-zakazky"
+
+export const confirmationKeyFor = (
+  orderId: string,
+  lineItemId?: string | null,
+  slug: string = COMMISSION_CONFIRMATION_SLUG
+): string => `orders/${orderId}/${slug}${lineSuffix(lineItemId)}.pdf`
 
 export const confirmationVersionKeyFor = (
   orderId: string,
   sha256: string,
-  lineItemId?: string | null
-): string => `orders/${orderId}/potvrzeni-zakazky${lineSuffix(lineItemId)}-${sha256.slice(0, 8)}.pdf`
+  lineItemId?: string | null,
+  slug: string = COMMISSION_CONFIRMATION_SLUG
+): string =>
+  `orders/${orderId}/${slug}${lineSuffix(lineItemId)}-${sha256.slice(0, 8)}.pdf`
 
 export const sha256Hex = (bytes: Uint8Array): string =>
   createHash("sha256").update(bytes).digest("hex")
@@ -91,8 +103,10 @@ export const planConfirmationStorage = (input: {
   fixedKeyExists: boolean
   /** Řádek objednávky (zakázka = položka); chybí u legacy zakázky. */
   lineItemId?: string | null
+  /** „potvrzeni-zakazky" (výchozí) nebo „potvrzeni-objednavky". */
+  slug?: string
 }): { action: "reuse"; key: string } | { action: "upload"; key: string } => {
-  const fixedKey = confirmationKeyFor(input.orderId, input.lineItemId)
+  const fixedKey = confirmationKeyFor(input.orderId, input.lineItemId, input.slug)
   const previousKey = input.previous?.key || fixedKey
   if (input.previous?.sha256 === input.sha256) {
     return { action: "reuse", key: previousKey }
@@ -103,7 +117,7 @@ export const planConfirmationStorage = (input: {
   // Pod pevným klíčem je jiné (nebo neznámé) PDF — nepřepisovat, uložit vedle.
   return {
     action: "upload",
-    key: confirmationVersionKeyFor(input.orderId, input.sha256, input.lineItemId),
+    key: confirmationVersionKeyFor(input.orderId, input.sha256, input.lineItemId, input.slug),
   }
 }
 
@@ -113,11 +127,13 @@ export const storeCommissionConfirmation = async (
   bytes: Uint8Array,
   previous?: PreviousConfirmation | null,
   /** Řádek objednávky, jehož zakázku PDF potvrzuje; bez něj legacy klíč bez přípony. */
-  lineItemId?: string | null
+  lineItemId?: string | null,
+  /** Druh dokumentu — rozlišuje klíč i název souboru v úložišti. */
+  slug: string = COMMISSION_CONFIRMATION_SLUG
 ): Promise<StoredConfirmation> => {
   const sha256 = sha256Hex(bytes)
   const provider = resolveFixedKeyProvider(container)
-  const fixedKey = confirmationKeyFor(orderId, lineItemId)
+  const fixedKey = confirmationKeyFor(orderId, lineItemId, slug)
 
   if (!provider) {
     if (previous?.sha256 === sha256 && previous.url) {
@@ -132,7 +148,7 @@ export const storeCommissionConfirmation = async (
     const fileModule = container.resolve(Modules.FILE)
     const [uploaded] = await fileModule.createFiles([
       {
-        filename: `potvrzeni-zakazky-${orderId}${lineItemId ? `-${lineItemId}` : ""}.pdf`,
+        filename: `${slug}-${orderId}${lineItemId ? `-${lineItemId}` : ""}.pdf`,
         mimeType: CONFIRMATION_MIME,
         content: Buffer.from(bytes).toString("base64"),
         access: "public" as const,
@@ -142,7 +158,7 @@ export const storeCommissionConfirmation = async (
   }
 
   const fixedKeyExists = await provider.objectExistsAtKey(fixedKey)
-  const plan = planConfirmationStorage({ orderId, sha256, previous, fixedKeyExists, lineItemId })
+  const plan = planConfirmationStorage({ orderId, sha256, previous, fixedKeyExists, lineItemId, slug })
 
   if (plan.action === "reuse") {
     return { key: plan.key, url: previous?.url || provider.publicUrlForKey(plan.key), sha256, uploaded: false }

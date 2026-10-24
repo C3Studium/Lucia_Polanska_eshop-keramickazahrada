@@ -51,14 +51,14 @@ function CourseTermCancelledEmailComponent({
   const base = storefrontBase()
   const coursesUrl = base ? `${base}/kurzy` : ""
   return (
-    <EmailLayout preview={`Termín kurzu ${courseTitle} se ruší.`}>
-      <Eyebrow>Kurzy</Eyebrow>
-      <EmailH1 accent="omlouváme se.">Termín se ruší,</EmailH1>
+    <EmailLayout preview={`Termín kurzu ${courseTitle} musím zrušit — omlouvám se.`}>
+      <Eyebrow>Kurz</Eyebrow>
+      <EmailH1 accent="omlouvám se.">Termín se ruší,</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        musíme bohužel zrušit termín kurzu, na který jste měli rezervaci.
-        Moc nás to mrzí.
+        moc se omlouvám — termín kurzu, na který jste měli rezervaci, musím
+        zrušit. Mrzí mě to, a tady je, co to pro vás znamená.
       </P>
 
       <LedgerRow label="Kurz" value={courseTitle} />
@@ -81,38 +81,37 @@ function CourseTermCancelledEmailComponent({
       {paidOnline ? (
         refundedAutomatically ? (
           <Note tone="clay">
-            Částku {totalAmount} vám vracíme zpět na účet, ze kterého jste
+            Částku {totalAmount} vám vracím zpět na účet, ze kterého jste
             platili — obvykle dorazí do několika dní. Nemusíte nic dělat.
           </Note>
         ) : (
           <Note tone="clay">
-            Zaplacenou částku vám vrátíme v plné výši. Ozveme se vám co
-            nejdříve kvůli vrácení peněz — nemusíte nic dělat.
+            Zaplacenou částku vám vrátím v plné výši. Ozvu se vám co nejdřív
+            kvůli vrácení peněz — nemusíte nic dělat.
           </Note>
         )
       ) : paidOnSite ? (
         <Note tone="clay">
-          Částku {totalAmount} jste platili u nás na místě, takže vám ji
-          stejnou cestou vrátíme — ozveme se vám co nejdříve a domluvíme se,
-          jak vám ji předat. Nemusíte nic dělat.
+          Částku {totalAmount} jste platili u mě na místě, takže vám ji vrátím
+          stejnou cestou — ozvu se vám co nejdřív a domluvíme se, jak vám ji
+          předat. Nemusíte nic dělat.
         </Note>
       ) : null}
 
       <P>
-        Jakmile vypíšeme nové termíny, najdete je na našem webu v sekci
-        Kurzy. A pokud byste měli jakýkoli dotaz, stačí odpovědět na tento
-        e-mail.
+        Jakmile vypíšu nové termíny, najdete je na webu v sekci Kurzy — budu
+        ráda, když si některý vyberete. A s čímkoli mi napište na info@keramickazahrada.cz, odpovídám sama.
       </P>
 
       {coursesUrl ? (
         <ButtonRow>
           <EmailButton href={coursesUrl} variant="ghost">
-            Podívat se na termíny kurzů
+            Vybrat nový termín
           </EmailButton>
         </ButtonRow>
       ) : null}
 
-      <Signature />
+      <Signature closing="Omlouvám se a děkuji za pochopení," />
     </EmailLayout>
   )
 }

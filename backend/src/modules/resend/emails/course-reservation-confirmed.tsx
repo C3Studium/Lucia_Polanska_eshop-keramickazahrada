@@ -96,15 +96,21 @@ function CourseReservationConfirmedEmailComponent({
   const versionSuffix = termsVersionLabel ? ` (znění od ${termsVersionLabel})` : ""
   return (
     <EmailLayout
-      preview={`Rezervace kurzu ${courseTitle} — ${courseDate}.`}
+      preview={
+        paid
+          ? `Místo na kurzu ${courseTitle} (${courseDate}) je vaše a zaplacené.`
+          : awaiting
+            ? `Místo na kurzu ${courseTitle} (${courseDate}) pro vás držím.`
+            : `Místo na kurzu ${courseTitle} (${courseDate}) máte rezervované.`
+      }
     >
-      <Eyebrow>Kurzy</Eyebrow>
+      <Eyebrow>Kurz</Eyebrow>
       <EmailH1
         accent={
           paid
-            ? "a je zaplacená."
+            ? "je vaše."
             : awaiting
-              ? "pro vás držíme."
+              ? "pro vás držím."
               : "máte rezervované."
         }
       >
@@ -114,10 +120,10 @@ function CourseReservationConfirmedEmailComponent({
       <Greeting name={customerName} />
       <P>
         {paid
-          ? "děkujeme — platba dorazila a vaše místo na kurzu je závazně rezervované. Tady je vše důležité na jednom místě:"
+          ? "děkuji — platba dorazila a vaše místo na kurzu je závazně rezervované. Tady je všechno důležité na jednom místě:"
           : awaiting
-            ? "děkujeme za rezervaci. Místo pro vás držíme; jakmile dorazí platba, pošleme vám potvrzení s dokladem. Tady je vše důležité na jednom místě:"
-            : "vaše místo na kurzu je rezervované. Tady je vše důležité na jednom místě:"}
+            ? "děkuji za rezervaci. Místo pro vás držím; jakmile dorazí platba, pošlu vám potvrzení s dokladem. Tady je všechno důležité na jednom místě:"
+            : "vaše místo na kurzu je rezervované. Tady je všechno důležité na jednom místě:"}
       </P>
 
       <LedgerRow label="Kurz" value={courseTitle} />
@@ -142,14 +148,14 @@ function CourseReservationConfirmedEmailComponent({
         <>
           <P>
             Teď už se nemusíte o nic starat — stačí přijít. Vezměte si pohodlné
-            oblečení, kterému nevadí hlína; všechno ostatní bude v ateliéru
+            oblečení, kterému nevadí hlína; všechno ostatní bude u mě v dílně
             připravené.
           </P>
           {/* Storno patří i do zaplacené varianty — kdo zaplatil, potřebuje
               vědět, že se dá ozvat, nejen kdo platí na místě. */}
           <Note>
-            Kdyby vám termín nakonec nevyšel, dejte nám prosím co nejdříve
-            vědět — stačí odpovědět na tento e-mail a společně to vyřešíme.
+            Kdyby vám termín nakonec nevyšel, dejte mi prosím vědět co nejdřív —
+            napište mi na info@keramickazahrada.cz a domluvíme se.
           </Note>
         </>
       ) : awaiting ? (
@@ -160,21 +166,21 @@ function CourseReservationConfirmedEmailComponent({
             Obvykle to jsou minuty.
           </P>
           <Note>
-            Kdyby platba neprošla nebo jste ji nestihli dokončit, můžete to
-            zkusit znovu na stránce rezervace níž. Místo pro vás držíme
-            24 hodin; potom ho nabídneme dalším zájemcům.
+            Kdyby platba neprošla nebo jste ji nestihli dokončit, zkuste to
+            znovu na stránce rezervace níž. Místo pro vás držím 24 hodin; potom
+            ho nabídnu dalším zájemcům.
           </Note>
         </>
       ) : (
         <>
           <P>
             Kurz zaplatíte hotově nebo kartou přímo na místě. Vezměte si
-            pohodlné oblečení, kterému nevadí hlína; všechno ostatní bude
-            v ateliéru připravené.
+            pohodlné oblečení, kterému nevadí hlína; všechno ostatní bude u mě
+            v dílně připravené.
           </P>
           <Note>
-            Kdyby vám termín nakonec nevyšel, dejte nám prosím vědět — místo
-            uvolníme někomu dalšímu. Stačí odpovědět na tento e-mail.
+            Kdyby vám termín nakonec nevyšel, dejte mi prosím vědět — místo
+            uvolním někomu dalšímu. Napište mi na info@keramickazahrada.cz.
           </Note>
         </>
       )}
@@ -249,7 +255,7 @@ function CourseReservationConfirmedEmailComponent({
       {reservationLink || invoicePdfUrl ? (
         <ButtonRow>
           {reservationLink ? (
-            <EmailButton href={reservationLink}>Detail rezervace</EmailButton>
+            <EmailButton href={reservationLink}>Zobrazit rezervaci</EmailButton>
           ) : null}
           {invoicePdfUrl ? (
             <>
@@ -262,7 +268,7 @@ function CourseReservationConfirmedEmailComponent({
         </ButtonRow>
       ) : null}
 
-      <Signature />
+      <Signature closing="Děkuji a těším se," />
     </EmailLayout>
   )
 }

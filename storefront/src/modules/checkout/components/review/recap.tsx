@@ -5,6 +5,7 @@ import { PLATCE_DPH } from "@lib/util/dph"
 import styles from "./style.module.scss"
 import { pickupPointLabel } from "@lib/util/pickup-point"
 import { isPackagingLine } from "@lib/util/packaging"
+import { discountRowLabel } from "@lib/util/gift-voucher-code"
 import { packagingFor } from "@modules/common/components/packaging-line"
 
 /**
@@ -112,7 +113,7 @@ export default function OrderRecap({
             </div>
             {Boolean(cart?.item_discount_total) && (
               <div>
-                <dt>Sleva</dt>
+                <dt>{discountRowLabel((cart as any)?.promotions) ?? "Sleva"}</dt>
                 {/* Sleva na ZBOŽÍ. `discount_total` nese i tu dopravní, jenže
                     řádek Doprava pod tím ukazuje cenu po slevě — odečetlo by
                     se to dvakrát. Doprava zdarma se tedy neukáže jako sleva,

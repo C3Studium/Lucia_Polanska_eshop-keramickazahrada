@@ -66,15 +66,14 @@ function BundlePublishedEmailComponent({ bundle, customer, unsubscribeLink }: Bu
   const savings = itemsTotal - bundle.total_price
 
   return (
-    <EmailLayout preview={`Nový balíček ${bundle.name} je k nahlédnutí.`}>
-      <Eyebrow index="01">Z ateliéru</Eyebrow>
-      <EmailH1 accent="k nahlédnutí.">Nový balíček</EmailH1>
+    <EmailLayout preview={`Nový balíček ${bundle.name} — kousky, které se k sobě hodí.`}>
+      <Eyebrow index="01">Z dílny</Eyebrow>
+      <EmailH1 accent="z dílny.">Nový balíček</EmailH1>
 
       <Greeting name={customer?.first_name} />
       <P>
-        v ateliéru jsme dali dohromady nový soubor objektů, které se
-        k sobě hodí — a společně je pořídíte za příznivější cenu. Rádi
-        vám ho představíme.
+        dala jsem dohromady několik kousků, které se k sobě hodí — a společně
+        vyjdou levněji než po jednom. Ráda vám ho ukážu.
       </P>
 
       {/* Balíček */}
@@ -94,9 +93,9 @@ function BundlePublishedEmailComponent({ bundle, customer, unsubscribeLink }: Bu
         <P>{bundle.description}</P>
       </Section>
 
-      {/* Objekty */}
+      {/* Co je v balíčku */}
       <Section style={{ margin: "24px 0 0" }}>
-        <Eyebrow index="03">Objekty</Eyebrow>
+        <Eyebrow index="03">Co je v balíčku</Eyebrow>
         {bundle.items?.map((item, i) => (
           <Row key={item.id} style={{ borderTop: `1px solid ${brand.line}` }}>
             <Column
@@ -216,7 +215,8 @@ function BundlePublishedEmailComponent({ bundle, customer, unsubscribeLink }: Bu
       </ButtonRow>
 
       <P small>
-        Označení balíčku pro případnou komunikaci: {bundle.id}
+        Kdybyste se chtěli na balíček zeptat, uveďte prosím jeho označení:{" "}
+        {bundle.id}
       </P>
 
       {unsubscribeLink ? (

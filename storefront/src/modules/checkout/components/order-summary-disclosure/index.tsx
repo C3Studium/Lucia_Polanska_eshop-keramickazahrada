@@ -6,6 +6,7 @@ import ItemsPreviewTemplate from "@modules/cart/templates/preview"
 import Thumbnail from "@modules/products/components/thumbnail"
 import { convertToLocale } from "@lib/util/money"
 import { vyrobek } from "@lib/util/plurals"
+import { formatVoucherCode, looksLikeVoucherCode } from "@lib/util/gift-voucher-code"
 import styles from "./style.module.scss"
 
 /**
@@ -66,9 +67,21 @@ const OrderSummaryDisclosure = ({ cart, children }: Props) => {
 
   /* Automatické akce se nevypisují — zákazník je nezadával a v zavřeném
      souhrnu jde o to, jestli JEHO kód platí. */
-  const kod = (cart.promotions ?? []).find(
+  const rucni = (cart.promotions ?? []).filter(
     (promotion) => !promotion.is_automatic && promotion.code
-  )?.code
+  )
+  /* Slevový kód má přednost; poukaz (`lib/util/gift-voucher-code.ts`) se
+     ukáže, když jiný kód v košíku není. */
+  const slevovy = rucni.find((promotion) => !looksLikeVoucherCode(promotion.code))
+  const poukazy = rucni.filter((promotion) => looksLikeVoucherCode(promotion.code))
+  const kod = slevovy?.code ?? (poukazy[0] ? formatVoucherCode(poukazy[0].code) : undefined)
+  const kodPopis = slevovy
+    ? poukazy.length
+      ? "slevový kód a dárkový poukaz"
+      : "uplatněný slevový kód"
+    : poukazy.length > 1
+      ? "uplatněné dárkové poukazy"
+      : "uplatněný dárkový poukaz"
 
   return (
     <div className={styles.root} data-otevreno={otevreno ? "ano" : "ne"}>
@@ -118,7 +131,7 @@ const OrderSummaryDisclosure = ({ cart, children }: Props) => {
         {kod && (
           <span className={styles.kod}>
             <span className={styles.kodZnacka}>{kod}</span>
-            <span className={styles.kodPopis}>uplatněný slevový kód</span>
+            <span className={styles.kodPopis}>{kodPopis}</span>
           </span>
         )}
       </button>

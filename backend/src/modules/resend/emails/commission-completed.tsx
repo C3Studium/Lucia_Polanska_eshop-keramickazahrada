@@ -47,16 +47,18 @@ function CommissionCompletedEmailComponent({
 }: CommissionCompletedEmailProps) {
   const orderUrl = orderLink || storeLink()
   return (
-    <EmailLayout preview={`Vaše zakázka ${orderNumber} je hotová.`}>
-      <Eyebrow>Zakázková výroba</Eyebrow>
+    <EmailLayout
+      preview={`Zakázka ${orderNumber} je hotová${fullyPaid ? " — chystám ji k odeslání." : " — zbývá doplatek."}`}
+    >
+      <Eyebrow>Zakázka</Eyebrow>
       <EmailH1 accent="je hotová.">Zakázka</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        máme skvělou zprávu — vaše zakázka
+        mám radost — vaše zakázka
         {orderNumber ? ` ${orderNumber}` : ""}
-        {productTitle ? ` (${productTitle})` : ""} je hotová. Každý kousek vznikal
-        rukama, a tenhle je teď na světě.
+        {productTitle ? ` (${productTitle})` : ""} je hotová. Vznikala u mě
+        v dílně kousek po kousku a teď je na světě.
       </P>
 
       {makingPhotoUrl ? (
@@ -77,10 +79,10 @@ function CommissionCompletedEmailComponent({
 
       {fullyPaid ? (
         <>
-          <Note tone="olive">Zakázka je hotová — chystáme ji k odeslání.</Note>
+          <Note tone="olive">Je zaplacená celá — chystám ji k odeslání.</Note>
           <P style={{ margin: "20px 0 0" }}>
-            Teď ji pečlivě zabalíme a pošleme. Jakmile zásilka vyrazí, dáme vám
-            vědět.
+            Teď ji pečlivě zabalím a předám dopravci. Jakmile vyrazí na cestu,
+            napíšu vám.
           </P>
         </>
       ) : (
@@ -92,8 +94,8 @@ function CommissionCompletedEmailComponent({
             </>
           ) : null}
           <P>
-            Zbývá doplatit zbytek ceny — výzvu k platbě s odkazem vám pošleme
-            zvlášť. Jakmile bude doplatek zaplacený, zakázku zabalíme a odešleme.
+            Zbývá doplatit zbytek ceny — výzvu k platbě s odkazem vám pošlu
+            zvlášť. Jakmile doplatek dorazí, kousek zabalím a předám dopravci.
           </P>
         </>
       )}
@@ -104,7 +106,12 @@ function CommissionCompletedEmailComponent({
         </ButtonRow>
       ) : null}
 
-      <Signature />
+      <P small>
+        Kdybyste chtěli cokoli domluvit jinak, napište mi na info@keramickazahrada.cz —
+        odpovídám sama.
+      </P>
+
+      <Signature closing="Mějte se krásně," />
     </EmailLayout>
   )
 }

@@ -72,36 +72,36 @@ function CommissionCancelledEmailComponent({
       : depositKept
     : null
   const methodText =
-    refundMethodText ?? "stejnou cestou, jakou k nám platba přišla"
+    refundMethodText ?? "stejnou cestou, jakou ke mně platba přišla"
 
   return (
-    <EmailLayout preview={`Zakázku ${orderNumber} jsme zrušili.`}>
-      <Eyebrow>Zakázková výroba</Eyebrow>
-      <EmailH1 accent="zrušena.">Zakázka byla</EmailH1>
+    <EmailLayout preview={`Zakázka ${orderNumber} je zrušená — tady je, jak to je s penězi.`}>
+      <Eyebrow>Zakázka</Eyebrow>
+      <EmailH1 accent="zrušená.">Zakázka je</EmailH1>
 
       <Greeting name={customerName} />
 
       {trigger === "unpaid_balance" ? (
         <P>
           doplatek za zakázku {orderNumber}
-          {productTitle ? ` (${productTitle})` : ""} nebyl zaplacen do 30 dnů
-          od výzvy ani po připomenutí. Podle obchodních podmínek (článek Výroba
-          na zakázku) se tím zakázka ruší stejně, jako kdybyste ji zrušil(a)
-          sám/sama po zahájení výroby. Doplatek už nepožadujeme.
+          {productTitle ? ` (${productTitle})` : ""} nedorazil do 30 dnů od
+          výzvy ani po připomenutí. Podle obchodních podmínek (článek Výroba na
+          zakázku) se tím zakázka ruší stejně, jako kdybyste ji zrušili
+          sám/sama po zahájení výroby. Doplatek už po vás nechci.
         </P>
       ) : trigger === "seller" ? (
         <P>
           zakázku {orderNumber}
-          {productTitle ? ` (${productTitle})` : ""} jsme museli zrušit z naší
-          strany. Mrzí nás to — podle obchodních podmínek vám vracíme vše, co
-          jste zaplatil(a).
+          {productTitle ? ` (${productTitle})` : ""} musím zrušit ze své
+          strany. Moc mě to mrzí — podle obchodních podmínek vám vracím všechno,
+          co jste zaplatili.
         </P>
       ) : (
         <P>
-          na vaši žádost jsme zrušili zakázku {orderNumber}
-          {productTitle ? ` (${productTitle})` : ""}. Níže je, jak to je s
-          penězi — řídí se tím, zda už výroba začala (obchodní podmínky, článek
-          Výroba na zakázku).
+          na vaši žádost jsem zrušila zakázku {orderNumber}
+          {productTitle ? ` (${productTitle})` : ""}. Níže píšu, jak to je
+          s penězi — záleží na tom, zda už výroba začala (obchodní podmínky,
+          článek Výroba na zakázku).
         </P>
       )}
 
@@ -116,22 +116,22 @@ function CommissionCancelledEmailComponent({
         <LedgerRow label="Záloha (nevrací se)" value={keptText} tone="clay" />
       ) : null}
       {refundAmount ? (
-        <LedgerRow label="Vracíme" value={refundAmount} strong tone="olive" />
+        <LedgerRow label="Vrátím vám" value={refundAmount} strong tone="olive" />
       ) : null}
       <LedgerEnd />
 
       {!paidTotal ? (
         <>
-          <Note tone="danger">Zakázka je zrušená. Nebylo nic zaplaceno — není co vracet.</Note>
+          <Note tone="danger">Zakázka je zrušená. Zaplaceno nebylo nic, takže není co vracet.</Note>
         </>
       ) : !after ? (
         <>
           <Note tone="olive">
-            Výroba ještě nezačala — vracíme vám vše, {refundAmount}, do 14 dnů.
+            Výroba ještě nezačala — vrátím vám všechno, {refundAmount}, do 14 dnů.
           </Note>
           <P>
-            Peníze pošleme {methodText}. Připsání závisí na vaší bance, obvykle
-            jde o několik pracovních dnů.
+            Peníze pošlu {methodText}. Kdy se připíšou, záleží na vaší bance —
+            obvykle je to několik pracovních dnů.
           </P>
         </>
       ) : refundAmount ? (
@@ -139,13 +139,13 @@ function CommissionCancelledEmailComponent({
           <Note tone="clay">
             Výroba už začala
             {productionStartedAtText ? ` (e-mail z ${productionStartedAtText})` : ""}
-            , proto se záloha {keptText} nevrací. Vše nad zálohu — {refundAmount}
-            — vám vrátíme do 14 dnů.
+            , proto se záloha {keptText} nevrací. Všechno nad zálohu — {refundAmount}
+            — vám vrátím do 14 dnů.
           </Note>
           <P>
-            Peníze pošleme {methodText}. Záloha kryje materiál, návrh a čas,
-            který už byl do vašeho kusu vložen; doplatek nepožadujeme a
-            rozpracovaný výrobek zůstává v ateliéru.
+            Peníze pošlu {methodText}. Záloha kryje materiál, návrh a čas, který
+            už jsem do vašeho kousku vložila; doplatek po vás nechci a
+            rozpracovaný výrobek zůstává u mě v dílně.
           </P>
         </>
       ) : (
@@ -157,7 +157,7 @@ function CommissionCancelledEmailComponent({
             nic — není co vracet.
           </Note>
           <P>
-            Doplatek nepožadujeme a rozpracovaný výrobek zůstává v ateliéru.
+            Doplatek po vás nechci a rozpracovaný výrobek zůstává u mě v dílně.
           </P>
         </>
       )}
@@ -169,8 +169,7 @@ function CommissionCancelledEmailComponent({
       ) : null}
 
       <P>
-        Pokud jste o zrušení nežádal(a) nebo je vám cokoli nejasné, ozvěte se —
-        stačí odpovědět na tento e-mail.
+        Pokud jste o zrušení nežádali nebo vám cokoli nesedí, napište mi na info@keramickazahrada.cz, odpovídám sama.
       </P>
 
       {orderUrl ? (
@@ -181,7 +180,11 @@ function CommissionCancelledEmailComponent({
         </ButtonRow>
       ) : null}
 
-      <Signature />
+      <Signature
+        closing={
+          trigger === "seller" ? "Omlouvám se a děkuji za pochopení," : "Přeji hezký den,"
+        }
+      />
     </EmailLayout>
   )
 }

@@ -30,6 +30,7 @@ export const LEGAL_FACT_KEYS = [
   "seller.name",
   "seller.address",
   "seller.ico",
+  "seller.register",
   "seller.email",
   "seller.phone",
   "seller.web",
@@ -68,7 +69,19 @@ export const LEGAL_FACT_DEFAULTS: Readonly<LegalFactValues> = Object.freeze({
   "seller.name": "Lucie Polanská",
   "seller.address": "Putim 229, 397 01 Písek",
   "seller.ico": "03441482",
-  "seller.email": "info@keramickazahrada.cz",
+  /* Úřad, který vede živnostenský rejstřík (§ 435 OZ) — čeká na potvrzení
+     (OPEN_QUESTIONS N5). Null: dokument pak uvede zápis bez úřadu. */
+  "seller.register": null,
+  /*
+   * Kontaktní adresa prodávající v právních dokumentech (24. 10. 2026).
+   *
+   * Je to adresa, na kterou zákazník posílá odstoupení od smlouvy a
+   * reklamaci, takže musí fungovat DNES — proto osobní Gmail, ne
+   * `lucie@keramickazahrada.cz`, který teprve vznikne. Až bude doménová
+   * schránka založená a ověřená, přepíše se to v administraci →
+   * Právní údaje; kód se kvůli tomu měnit nemusí.
+   */
+  "seller.email": "lucie.polanska@gmail.com",
   "seller.phone": "+420 775 211 578",
   "seller.web": "keramickazahrada.cz",
   "seller.webUrl": "https://keramickazahrada.cz",
@@ -77,14 +90,22 @@ export const LEGAL_FACT_DEFAULTS: Readonly<LegalFactValues> = Object.freeze({
   "mto.deposit": null,
   "course.cancellation": null,
   "voucher.validity": null,
-  "voucher.remainder": null,
+  // Odpovědi Lucie z 20. 10. 2026; odhad nákladů na vrácení potvrdil Matěj 24. 10.
+  "voucher.remainder":
+    "zbytek hodnoty zůstává na poukazu a můžete ho využít při dalším nákupu do konce jeho platnosti",
   "privacy.newsletterTool": null,
   // Ověřeno 16. 10. 2026 — viz storefront/src/lib/legal/facts.ts.
   "privacy.hosting":
     "Railway Corporation, San Francisco, USA — aplikace obchodu a databáze běží v jejím datovém centru v Amsterdamu (Nizozemsko); Cloudflare, Inc., San Francisco, USA — soubory ukládá v úložišti R2 omezeném na Evropskou unii; Supabase Pte. Ltd., Singapur — obsah webu ukládá v datovém centru ve Frankfurtu nad Mohanem (Německo)",
-  "withdrawal.returnCostEstimate": null,
-  "course.minAge": null,
-  "course.pickupDeadline": null,
+  // Odpovědi Lucie z 20. 10. 2026; odhad nákladů na vrácení potvrdil Matěj 24. 10.
+  "withdrawal.returnCostEstimate":
+    "150 až 250 Kč za křehký balík Českou poštou",
+  // Odpovědi Lucie z 20. 10. 2026; odhad nákladů na vrácení potvrdil Matěj 24. 10.
+  "course.minAge":
+    "6 let (mladší děti s doprovodem rodiče)",
+  // Odpovědi Lucie z 20. 10. 2026; odhad nákladů na vrácení potvrdil Matěj 24. 10.
+  "course.pickupDeadline":
+    "1 měsíce od kurzu, termín si domluvíme; mimo Písek je můžu poslat poštou",
   // Převzato z dosavadní veřejné stránky Doprava a platba (tentýž slib je
   // v OP čl. VII) — není to odhad; potvrzení je v OPEN_QUESTIONS (3a).
   "delivery.dispatchTime":
@@ -146,6 +167,15 @@ export const LEGAL_FACT_META: Record<LegalFactKey, LegalFactMeta> = {
     group: "Prodávající",
     multiline: false,
     maxLength: 200,
+  },
+  "seller.register": {
+    label: "Zápis v rejstříku — úřad",
+    help:
+      "Který živnostenský úřad vede zápis, například Městský úřad Písek. § 435 občanského zákoníku chce na obchodních listinách — a potvrzení smlouvy jí je — údaj o zápisu do veřejného rejstříku. Bez tohoto údaje uvede dokument zápis bez úřadu.",
+    example: "Městský úřad Písek",
+    group: "Prodávající",
+    multiline: false,
+    maxLength: 120,
   },
   "seller.ico": {
     label: "IČO",

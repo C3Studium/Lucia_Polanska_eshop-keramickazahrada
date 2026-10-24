@@ -33,15 +33,16 @@ function OrderPreparingEmailComponent({
   const orderUrl = orderLink || storeLink()
   return (
     <EmailLayout
-      preview={`Objednávku ${orderNumber} připravujeme.`}
+      preview={`Objednávku ${orderNumber} právě balím.`}
     >
       <Eyebrow>Objednávka</Eyebrow>
-      <EmailH1 accent="vaši objednávku.">Připravujeme</EmailH1>
+      <EmailH1 accent="právě balím.">Vaši objednávku</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        vaši objednávku {orderNumber} jsme vzali do ruky a připravujeme ji
-        pro vás. Jakmile bude hotová, dáme vám hned vědět.
+        vaši objednávku {orderNumber} jsem vzala do ruky a balím ji. Každý
+        kousek ještě prohlédnu a zabalím tak, aby cestu zvládl bez úhony.
+        Jakmile objednávku předám dopravci, napíšu vám znovu.
       </P>
 
       {orderNumber ? (
@@ -51,7 +52,7 @@ function OrderPreparingEmailComponent({
         </>
       ) : null}
 
-      <Note tone="olive">Objednávku připravujeme.</Note>
+      <Note tone="olive">Balím a kontroluji každý kousek sama.</Note>
 
       {orderUrl ? (
         <ButtonRow>

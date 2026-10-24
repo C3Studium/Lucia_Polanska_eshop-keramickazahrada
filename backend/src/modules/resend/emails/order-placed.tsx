@@ -139,9 +139,11 @@ function LegalSection({
 
   const attachedNames = [
     confirmationAttached
-      ? confirmations.length > 1
-        ? "potvrzení zakázek"
-        : "potvrzení zakázky"
+      ? madeToOrder.length
+        ? confirmations.length > 1
+          ? "potvrzení zakázek"
+          : "potvrzení zakázky"
+        : "potvrzení objednávky"
       : null,
     termsAttached ? "obchodní podmínky platné pro tuto smlouvu" : null,
     withdrawalAttached ? "poučení o odstoupení od smlouvy s formulářem" : null,
@@ -161,9 +163,9 @@ function LegalSection({
     >
       <Eyebrow index="06">Smlouva a poučení</Eyebrow>
       <P>
-        Tímto e-mailem potvrzujeme vaši objednávku a uzavření kupní smlouvy.
+        Tímto e-mailem potvrzuji vaši objednávku a uzavření kupní smlouvy.
         {attachedNames.length
-          ? ` V příloze posíláme ${attachedList} (PDF) — uschovejte si je.`
+          ? ` V příloze posílám ${attachedList} (PDF) — uschovejte si je, prosím.`
           : legal.terms
             ? ` Smlouva se řídí obchodními podmínkami ve znění platném od ${legal.terms.version_label}; najdete je na odkazu níže.`
             : ""}
@@ -181,10 +183,18 @@ function LegalSection({
           const attached = Boolean(confirmation?.attached) && !attachmentsFailed
           return (
             <P key={confirmation.url ?? index} small style={{ margin: "0 0 6px" }}>
+              {/*
+                Objednávka bez zakázkové položky nese klasickou kupní
+                smlouvu — „Potvrzení zakázky" by u hrnků bylo nesmyslné.
+              */}
               <strong style={{ color: brand.ink }}>
-                Potvrzení zakázky{confirmations.length > 1 ? ` ${index + 1}/${confirmations.length}` : ""}
+                {madeToOrder.length
+                  ? `Potvrzení zakázky${confirmations.length > 1 ? ` ${index + 1}/${confirmations.length}` : ""}`
+                  : "Potvrzení objednávky"}
               </strong>{" "}
-              · smlouva na výrobek podle vašeho zadání
+              {madeToOrder.length
+                ? "· smlouva na výrobek podle vašeho zadání"
+                : "· potvrzení kupní smlouvy (§ 1827 odst. 2 OZ)"}
               {attached ? " — v příloze (PDF)" : ""}
               {!attached && confirmation.url ? (
                 <>
@@ -223,16 +233,17 @@ function LegalSection({
 
       {legal.all_made_to_order ? (
         <P small style={{ margin: "16px 0 0" }}>
-          Zboží v této objednávce vyrábíme podle vašeho zadání, proto od smlouvy
+          Zboží v této objednávce vyrábím podle vašeho zadání, proto od smlouvy
           nelze odstoupit ve 14denní lhůtě (§ 1837 písm. d) občanského
-          zákoníku). Práva z vadného plnění vám zůstávají — viz reklamační řád.
+          zákoníku). Práva z vadného plnění vám samozřejmě zůstávají — viz
+          reklamační řád.
         </P>
       ) : (
         <P small style={{ margin: "16px 0 0" }}>
           Od smlouvy můžete odstoupit bez udání důvodu do 14 dnů od převzetí
-          zboží. Stačí nám to oznámit — e-mailem, dopisem nebo
+          zboží. Stačí mi to oznámit — e-mailem, dopisem nebo
           {withdrawalAttached ? " formulářem z přílohy" : " vzorovým formulářem"}
-          , použít ho ale nemusíte. Peníze vrátíme do 14 dnů od odstoupení
+          , použít ho ale nemusíte. Peníze vám vrátím do 14 dnů od odstoupení
           stejným způsobem, jakým jste platili; podrobnosti jsou v poučení
           o odstoupení.
           {madeToOrder.length
@@ -324,19 +335,23 @@ function OrderPlacedEmailComponent({
   const trackUrl = orderLink(order)
 
   return (
-    <EmailLayout preview="Objednávku jsme zaznamenali — děkujeme.">
+    <EmailLayout preview="Objednávku mám, děkuji. Teď je to na mně.">
       <Eyebrow index="01">Objednávka {`#${order.display_id}`}</Eyebrow>
-      <EmailH1 accent="zaznamenali.">Objednávku jsme</EmailH1>
+      <EmailH1 accent="děkuji.">Objednávku mám,</EmailH1>
 
       <P>{greetingName ? `Dobrý den, ${greetingName},` : "Dobrý den,"}</P>
       <P>
-        děkujeme za vaši objednávku. Každý kus teď zkontrolujeme a pečlivě
-        zabalíme — jakmile objednávku předáme dopravci, pošleme další zprávu.
+        děkuji za vaši objednávku — mám ji u sebe a teď je to na mně.{" "}
+        {owes || legal?.all_made_to_order
+          ? "Výrobek na zakázku má svůj vlastní běh: jakmile se pustím do výroby, napíšu vám, a znovu až bude kousek hotový."
+          : isPickup
+            ? "Každý kousek prohlédnu a zabalím; až bude objednávka připravená k vyzvednutí u mě v dílně, dám vám vědět."
+            : "Každý kousek prohlédnu a pečlivě zabalím. Zboží skladem předám dopravci do 3 pracovních dnů a pošlu vám číslo zásilky, abyste ji mohli sledovat."}
       </P>
 
-      {/* Objekty */}
+      {/* Výrobky */}
       <Section style={{ margin: "32px 0 0" }}>
-        <Eyebrow index="02">Objekty</Eyebrow>
+        <Eyebrow index="02">Co jste si objednali</Eyebrow>
         {/* Balné (lib/packaging.ts) je vlastní položka — hned pod svým
             výrobkem, menším řádkem bez fotky a bez pořadového čísla. */}
         {withPackagingUnderProducts((order.items ?? []) as any[]).map((item: any) =>
@@ -490,7 +505,7 @@ function OrderPlacedEmailComponent({
         <Section style={{ margin: "32px 0 0" }}>
           <Eyebrow index="04">Doručení a platba</Eyebrow>
           {isPickup ? (
-            <LedgerRow label="Doručení" value="Osobní odběr v ateliéru" />
+            <LedgerRow label="Doručení" value="Osobní odběr v dílně" />
           ) : pickupPoint ? (
             <LedgerRow label="Výdejní místo" value={`Balíkovna — ${pickupPoint}`} />
           ) : addressNode ? (
@@ -520,8 +535,8 @@ function OrderPlacedEmailComponent({
         <Section style={{ margin: "32px 0 0" }}>
           <Note tone="clay">Zbývá doplatit {balanceText}.</Note>
           <P>
-            Váš kousek se vyrábí na míru. Doplatek můžete zaplatit hned, nebo
-            počkat, až vám napíšeme, že je hotovo — jak je vám milejší.
+            Váš kousek vyrábím na zakázku. Doplatek můžete zaplatit hned, nebo
+            počkat, až vám napíšu, že je hotový — jak je vám milejší.
           </P>
           {balance_payment_url && (
             <ButtonRow>
@@ -572,8 +587,8 @@ function OrderPlacedEmailComponent({
         >
           <Eyebrow index="05">Správa objednávky</Eyebrow>
           <P>
-            Potřebujete něco změnit, nebo zboží reklamovat či vrátit? Zařídíte
-            to přímo odsud — přihlášení není potřeba.
+            Potřebujete něco změnit, nebo kousek reklamovat či vrátit? Zařídíte
+            to rovnou odsud, bez přihlášení.
           </P>
           <ButtonRow>
             {edit_order_url ? (
@@ -618,9 +633,9 @@ function OrderPlacedEmailComponent({
       ) : null}
 
       <P style={{ margin: "32px 0 0" }}>
-        Máte-li jakýkoli dotaz, stačí odpovědět na tento e-mail.
+        Kdyby cokoli, napište mi na info@keramickazahrada.cz — odpovídám sama.
       </P>
-      <Signature />
+      <Signature closing="Děkuji a těším se," />
 
       <P small style={{ margin: "28px 0 0", color: brand.faint }}>
         {/* The display number, not the internal `order_01…` id — the internal

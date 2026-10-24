@@ -516,7 +516,7 @@ export const refundMethodTextFor = (
   // „card" = zaplaceno přes ComGate — a ta bere i převod, Apple Pay
   // a Google Pay, takže ne „na kartu", ale stejnou cestou přes bránu.
   if (kind === "card") {
-    return "Stejným platebním prostředkem, jakým jste platili — vrátíme je stejnou cestou, jakou jste platili (přes ComGate)."
+    return "Stejným platebním prostředkem, jakým jste platili — vrátím je stejnou cestou (přes ComGate)."
   }
   if (kind === "account") {
     const masked = maskRefundAccount(accountDisplay)
