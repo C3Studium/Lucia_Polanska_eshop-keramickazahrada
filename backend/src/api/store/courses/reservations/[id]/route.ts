@@ -4,8 +4,8 @@ import type CourseModuleService from "../../../../../modules/course/service"
 import { toAmount } from "../../../../../modules/course/pricing"
 import { verifyCourseReservationToken } from "../../../../../lib/course-reservation-link"
 import {
+  checkCourseReservationPayment,
   hasOpenOnlinePayment,
-  reconcileCourseReservationPayment,
 } from "../../../../../lib/course-payment-reconcile"
 
 /*
@@ -20,7 +20,7 @@ import {
  * obnovuje sama a brána nemá dostat salvu.
  */
 const CHECK_EVERY_MS = 2000
-const lastCheck = new Map<string, number>()
+const lastCheck = new Map<string, { at: number; status: string | null }>()
 /** Kolik počkat, než subscriber po zachycení zapíše „zaplaceno" (ms). */
 const SETTLE_WAIT_MS = [300, 500, 700, 1000]
 
@@ -53,12 +53,25 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
 
+  /*
+   * Živý stav u brány jde i stránce: `canceled` = zákazník klikl „Zrušit
+   * platbu", `pending` po návratu = „Návrat do e-shopu" (nebo převod na
+   * cestě). Stránka podle toho nabídne zaplatit znovu.
+   */
+  let gatewayStatus: string | null = null
   const now = Date.now()
-  if (hasOpenOnlinePayment(reservation) && now - (lastCheck.get(reservationId) ?? 0) >= CHECK_EVERY_MS) {
-    lastCheck.set(reservationId, now)
+  const previous = lastCheck.get(reservationId)
+  if (hasOpenOnlinePayment(reservation) && previous && now - previous.at < CHECK_EVERY_MS) {
+    gatewayStatus = previous.status
+  } else if (hasOpenOnlinePayment(reservation)) {
     if (lastCheck.size > 500) lastCheck.clear()
-    const captured = await reconcileCourseReservationPayment(req.scope as any, reservation).catch(() => false)
-    for (const wait of captured ? SETTLE_WAIT_MS : []) {
+    const checked = await checkCourseReservationPayment(req.scope as any, reservation).catch(() => ({
+      captured: false,
+      status: null,
+    }))
+    gatewayStatus = checked.status
+    lastCheck.set(reservationId, { at: now, status: gatewayStatus })
+    for (const wait of checked.captured ? SETTLE_WAIT_MS : []) {
       await new Promise((done) => setTimeout(done, wait))
       const fresh = await loadReservation(courseService, reservationId)
       if (fresh?.term) reservation = fresh
@@ -75,6 +88,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       total_price: toAmount(reservation.total_price),
       payment_method: reservation.payment_method,
       payment_status: reservation.payment_status,
+      /** Živý stav platby u ComGate (`canceled`, `pending`, …) — jen u otevřené online platby. */
+      gateway_status: reservation.payment_status === "paid" ? null : gatewayStatus,
       status: reservation.status,
       /** Why a cancelled row was cancelled — the page words self-cancels differently. */
       cancel_reason: reservation.cancel_reason ?? null,

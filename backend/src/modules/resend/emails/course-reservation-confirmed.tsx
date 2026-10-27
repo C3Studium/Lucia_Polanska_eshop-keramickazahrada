@@ -132,7 +132,7 @@ function CourseReservationConfirmedEmailComponent({
         paid
           ? `Platba za kurz ${courseTitle} (${courseDate}) dorazila, rezervace je potvrzená.`
           : awaiting
-            ? `Rezervaci kurzu ${courseTitle} (${courseDate}) mám, zbývá dokončit platbu.`
+            ? `Rezervaci kurzu ${courseTitle} (${courseDate}) mám, platba zatím nedorazila.`
             : `Rezervace kurzu ${courseTitle} (${courseDate}) je potvrzená, platíte na místě.`
       }
     >
@@ -154,7 +154,7 @@ function CourseReservationConfirmedEmailComponent({
         {paid
           ? "platba dorazila, děkuji. Rezervace kurzu je tím potvrzená a místo je vaše. Tady je přehled:"
           : awaiting
-            ? "děkuji za rezervaci kurzu. Místo vám držím, rezervace se potvrdí, jakmile dorazí platba kartou. Tady je přehled:"
+            ? "děkuji za rezervaci kurzu. Platba kartou k nám zatím nedorazila; místo vám mezitím držím. Tady je přehled:"
             : "děkuji za rezervaci kurzu, je potvrzená. Zaplatíte na místě, hotově nebo kartou. Tady je přehled:"}
       </P>
 
@@ -190,8 +190,8 @@ function CourseReservationConfirmedEmailComponent({
       ) : awaiting ? (
         <>
           <P>
-            Pokud jste platbu kartou už dokončili, nemusíte nic dělat. Hned jak
-            ji banka potvrdí, pošlu vám další e-mail s pozvánkou a fakturou.
+            Pokud jste platbu kartou dokončili, nemusíte nic dělat. Jakmile ji
+            banka potvrdí, pošlu vám potvrzení s pozvánkou a fakturou.
           </P>
           <Note>
             Kdyby platba neprošla nebo jste ji nestihli dokončit, zaplatíte

@@ -142,7 +142,8 @@ export const courseTermsInfo = (
 /**
  * The reservation confirmation — `variant: "paid"` after the ComGate webhook,
  * `variant: "on_site"` immediately for pay-on-site bookings, and
- * `variant: "awaiting_payment"` immediately for online ones. One template,
+ * `variant: "awaiting_payment"` for online ones still unpaid after 2 minutes
+ * (`jobs/course-awaiting-payment-email.ts`; od 27. 10. 2026 — dřív hned). One template,
  * three voices; the paid variant doubles as the payment receipt, which is why
  * there is no separate course-payment-received template.
  *

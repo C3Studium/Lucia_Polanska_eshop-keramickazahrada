@@ -33,25 +33,40 @@ export const hasOpenOnlinePayment = (reservation: any): boolean =>
   )
 
 /**
- * @returns `true`, když brána hlásí zaplaceno a platba se právě zachytila.
- * Vyhazuje jen chyby brány / workflow — volající rozhodne, co s nimi.
+ * Živý stav platby u brány (`captured` / `canceled` / `pending` / …), nebo
+ * null, když se není na co ptát. Neukládá nic — jen se zeptá.
+ *
+ * Bez oznámení od ComGate (adresa v portálu) je to jediný způsob, jak poznat,
+ * že zákazník na bráně klikl „Zrušit platbu" (`canceled`), nebo jen
+ * „Návrat do e-shopu" (platba zůstává `pending`).
  */
-export const reconcileCourseReservationPayment = async (
+export const courseGatewayStatus = async (
   container: MedusaContainer,
   reservation: any
-): Promise<boolean> => {
-  if (!hasOpenOnlinePayment(reservation)) return false
-
+): Promise<string | null> => {
+  if (!reservation?.payment_session_id) return null
   const paymentModule = container.resolve(Modules.PAYMENT)
   const [session] = await paymentModule.listPaymentSessions({
     id: reservation.payment_session_id,
   } as never)
-  if (!session) return false
-
+  if (!session) return null
   // Ptá se poskytovatele, neodhaduje ze stáří záznamu.
   const result = await paymentStatusFromProvider(container, session as any)
-  const status = String(result?.status ?? "").toLowerCase()
-  if (!HOTOVO.includes(status)) return false
+  return String(result?.status ?? "").toLowerCase() || null
+}
+
+/**
+ * Zeptá se brány a zaplacenou platbu zachytí.
+ * @returns `captured` = právě se zachytila; `status` = živý stav u brány.
+ * Vyhazuje jen chyby brány / workflow — volající rozhodne, co s nimi.
+ */
+export const checkCourseReservationPayment = async (
+  container: MedusaContainer,
+  reservation: any
+): Promise<{ captured: boolean; status: string | null }> => {
+  if (!hasOpenOnlinePayment(reservation)) return { captured: false, status: null }
+  const status = await courseGatewayStatus(container, reservation)
+  if (!status || !HOTOVO.includes(status)) return { captured: false, status }
 
   /*
    * Relace byla jen vytvořená, ne autorizovaná, takže v kolekci není žádná
@@ -68,5 +83,11 @@ export const reconcileCourseReservationPayment = async (
       },
     } as never,
   })
-  return true
+  return { captured: true, status }
 }
+
+/** @returns `true`, když brána hlásí zaplaceno a platba se právě zachytila. */
+export const reconcileCourseReservationPayment = async (
+  container: MedusaContainer,
+  reservation: any
+): Promise<boolean> => (await checkCourseReservationPayment(container, reservation)).captured

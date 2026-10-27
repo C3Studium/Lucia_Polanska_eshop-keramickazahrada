@@ -43,6 +43,38 @@ export default function PaymentPending({
     return () => window.clearInterval(timer)
   }, [router])
 
+  /*
+   * Objednávka ještě nevznikla = platba u nás nedoběhla. Nejčastěji zákazník
+   * na bráně klikl „Návrat do e-shopu" (ComGate pak platbu nechá otevřenou
+   * a pošle ho sem). „Objednávku máme" by byla nepravda — nabídnout dokončení
+   * platby a košík. Převod na cestě to nerozbije: stránka se dál obnovuje
+   * a jakmile objednávka vznikne, ukáže její číslo.
+   */
+  if (!orderNumber) {
+    return (
+      <OrderStateShell
+        eyebrow="Platba nedokončena"
+        title="Ještě není zaplaceno."
+        accent="Košík vám zůstal."
+        description="Platba k nám zatím nedorazila. Pokud jste ji na platební bráně nedokončili, dokončete ji tlačítkem níže. Pokud jste posílali převod, nemusíte nic dělat — jakmile peníze dorazí, objednávku dokončíme a pošleme potvrzení e-mailem."
+        status="pending"
+        primary={{ href: "/checkout?step=payment", label: "Dokončit platbu" }}
+        secondary={{ href: "/cart", label: "Zobrazit košík" }}
+      >
+        <dl className={styles.reference}>
+          <div>
+            <dt>Kdyby něco</dt>
+            <dd>
+              <a href={`mailto:${supportEmail}`}>{supportEmail}</a>
+              <span aria-hidden="true"> · </span>
+              <a href={`tel:${supportPhone.replace(/s/g, "")}`}>{supportPhone}</a>
+            </dd>
+          </div>
+        </dl>
+      </OrderStateShell>
+    )
+  }
+
   return (
     <OrderStateShell
       eyebrow={itemValue(block, "oboci")?.trim() || "Čekáme na banku"}
