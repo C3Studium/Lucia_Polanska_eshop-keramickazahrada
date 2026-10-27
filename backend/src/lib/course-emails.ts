@@ -1,7 +1,7 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { formatMoney, sendCustomerEmail } from "./customer-email"
-import { courseReservationLink } from "./course-reservation-link"
+import { coursePaymentLink, courseReservationLink } from "./course-reservation-link"
 import { storefrontBase } from "./storefront-url"
 import {
   findVersion,
@@ -174,7 +174,7 @@ export const sendCourseReservationConfirmedEmail = async (
   reservation: any,
   term: any,
   options: {
-    variant: "paid" | "on_site" | "awaiting_payment"
+    variant: "paid" | "on_site" | "awaiting_payment" | "payment_failed"
     invoicePdfUrl?: string | null
     /**
      * A different dedupe key for re-sends with new content — the party-size
@@ -207,7 +207,7 @@ export const sendCourseReservationConfirmedEmail = async (
   const candidates: EmailAttachmentRef[] = []
   if (terms.attachment) candidates.push(terms.attachment)
   let invitation: EmailAttachmentRef | null = null
-  if (options.variant !== "awaiting_payment") {
+  if (options.variant === "paid" || options.variant === "on_site") {
     invitation = await storeCourseInvitation(container, {
       reservationId: String(reservation.id),
       customerName: base.customerName,
@@ -257,7 +257,9 @@ export const sendCourseReservationConfirmedEmail = async (
       ? `Platba přijata — rezervace kurzu ${base.courseTitle} je potvrzená`
       : options.variant === "on_site"
         ? `Rezervace kurzu ${base.courseTitle} je potvrzená`
-        : `Rezervaci kurzu ${base.courseTitle} mám — zbývá platba`
+        : options.variant === "payment_failed"
+          ? `Platba za kurz ${base.courseTitle} neprošla — zkuste to prosím znovu`
+          : `Rezervaci kurzu ${base.courseTitle} mám — zbývá platba`
 
   return sendCustomerEmail(container, {
     template: "course-reservation-confirmed",
@@ -267,6 +269,11 @@ export const sendCourseReservationConfirmedEmail = async (
       ...base,
       subject,
       variant: options.variant,
+      // Tlačítko „Zaplatit" rovnou na bránu (vždy živá platba, viz coursePaymentLink).
+      paymentLink:
+        options.variant === "awaiting_payment" || options.variant === "payment_failed"
+          ? coursePaymentLink(String(reservation.id))
+          : "",
       invoicePdfUrl: options.invoicePdfUrl || "",
       invoiceAttached: attached(invoice),
       invitationUrl: invitation?.url ?? "",
@@ -409,4 +416,21 @@ export const sendCourseWaitlistSpotEmail = async (
       courseLocation: term.location,
       partySize: Number(entry.party_size) || 1,
     },
+  })
+
+/**
+ * „Platba neprošla" — zákazník na bráně klikl „Zrušit platbu", platbu banka
+ * zamítla, nebo vypršela. Jednou za platební pokus (`course-payfail:<relace>`):
+ * když zkusí znovu a zase to nevyjde, přijde nový e-mail k novému pokusu.
+ * Tlačítko vede rovnou na NOVOU platbu (`coursePaymentLink`), místo se drží
+ * dál, dokud ho neuvolní `expire-course-payments` (24 h).
+ */
+export const sendCoursePaymentFailedEmail = async (
+  container: MedusaContainer,
+  reservation: any,
+  term: any
+): Promise<boolean> =>
+  sendCourseReservationConfirmedEmail(container, reservation, term, {
+    variant: "payment_failed",
+    keyOverride: `course-payfail:${reservation.payment_session_id ?? reservation.id}`,
   })

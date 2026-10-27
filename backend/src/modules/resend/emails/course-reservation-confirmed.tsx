@@ -36,7 +36,9 @@ interface CourseReservationConfirmedEmailProps {
    * "awaiting_payment" the moment an online reservation is created — before
    * anybody knows how the card payment went.
    */
-  variant?: "paid" | "on_site" | "awaiting_payment"
+  variant?: "paid" | "on_site" | "awaiting_payment" | "payment_failed"
+  /** Odkaz „Zaplatit" rovnou na bránu (čeká na platbu / platba neprošla). */
+  paymentLink?: string
   /** Signed link to the reservation page. */
   reservationLink?: string
   /** Our copy of the iDoklad invoice PDF — empty when not (yet) issued. */
@@ -102,6 +104,7 @@ function CourseReservationConfirmedEmailComponent({
   totalAmount = "1 200 Kč",
   variant = "on_site",
   reservationLink = "",
+  paymentLink = "",
   invoicePdfUrl = "",
   invoiceAttached = false,
   invitationUrl = "",
@@ -122,6 +125,9 @@ function CourseReservationConfirmedEmailComponent({
   /* Rezervace založená, platba ještě nedoputovala. Není to chyba — zákazník
      se z brány vrátí dřív, než dorazí ověřené oznámení. */
   const awaiting = variant === "awaiting_payment"
+  /* Platba na bráně zrušená, zamítnutá nebo vypršelá — místo pořád držím. */
+  const failed = variant === "payment_failed"
+  const unpaid = awaiting || failed
   // Zástupný text `[[DOPLNIT …]]` zákazník nikdy neuvidí.
   const termsReady = hasCourseCancellationTerms(cancellationTerms)
   const attached = termsAttached && !attachments_failed
@@ -131,29 +137,35 @@ function CourseReservationConfirmedEmailComponent({
       preview={
         paid
           ? `Platba za kurz ${courseTitle} (${courseDate}) dorazila, rezervace je potvrzená.`
-          : awaiting
+          : failed
+            ? `Platba za kurz ${courseTitle} (${courseDate}) neprošla. Místo vám držím, zkuste to prosím znovu.`
+            : awaiting
             ? `Rezervaci kurzu ${courseTitle} (${courseDate}) mám, platba zatím nedorazila.`
             : `Rezervace kurzu ${courseTitle} (${courseDate}) je potvrzená, platíte na místě.`
       }
     >
-      <Eyebrow>{paid ? "Kurz · platba přijata" : "Kurz · rezervace"}</Eyebrow>
+      <Eyebrow>{paid ? "Kurz · platba přijata" : failed ? "Kurz · platba neprošla" : "Kurz · rezervace"}</Eyebrow>
       <EmailH1
         accent={
           paid
             ? "je zaplacená a potvrzená."
-            : awaiting
-              ? "čeká na platbu."
-              : "je potvrzená."
+            : failed
+              ? "místo vám pořád držím."
+              : awaiting
+                ? "čeká na platbu."
+                : "je potvrzená."
         }
       >
-        Vaše rezervace
+        {failed ? "Platba neprošla," : "Vaše rezervace"}
       </EmailH1>
 
       <Greeting name={customerName} />
       <P>
         {paid
           ? "platba dorazila, děkuji. Rezervace kurzu je tím potvrzená a místo je vaše. Tady je přehled:"
-          : awaiting
+          : failed
+            ? "platba za rezervaci kurzu neprošla nebo byla zrušená — nic jsme vám nestrhli. Místo vám ale pořád držím, stačí zaplatit znovu. Tady je přehled:"
+            : awaiting
             ? "děkuji za rezervaci kurzu. Platba kartou k nám zatím nedorazila; místo vám mezitím držím. Tady je přehled:"
             : "děkuji za rezervaci kurzu, je potvrzená. Zaplatíte na místě, hotově nebo kartou. Tady je přehled:"}
       </P>
@@ -169,7 +181,7 @@ function CourseReservationConfirmedEmailComponent({
         value={`${partySize} ${partySize === 1 ? "osoba" : partySize < 5 ? "osoby" : "osob"}`}
       />
       <LedgerRow
-        label={paid ? "Zaplaceno" : awaiting ? "K zaplacení" : "Cena (na místě)"}
+        label={paid ? "Zaplaceno" : unpaid ? "K zaplacení" : "Cena (na místě)"}
         value={totalAmount}
         strong
         tone="olive"
@@ -187,6 +199,17 @@ function CourseReservationConfirmedEmailComponent({
             invoiceAttached={invoiceAttached}
           />
         </>
+      ) : failed ? (
+        <>
+          <P>
+            Tlačítkem Zaplatit níž otevřete novou platbu. Jakmile projde, pošlu
+            vám potvrzení s pozvánkou a fakturou.
+          </P>
+          <Note>
+            Místo vám držím 24 hodin od rezervace, potom ho nabídnu dalším
+            zájemcům. Kdyby platba kartou nešla, napište mi a domluvíme se.
+          </Note>
+        </>
       ) : awaiting ? (
         <>
           <P>
@@ -195,8 +218,8 @@ function CourseReservationConfirmedEmailComponent({
           </P>
           <Note>
             Kdyby platba neprošla nebo jste ji nestihli dokončit, zaplatíte
-            na stránce rezervace (tlačítko níž). Místo vám držím 24 hodin,
-            potom ho nabídnu dalším zájemcům.
+            tlačítkem níž. Místo vám držím 24 hodin, potom ho nabídnu dalším
+            zájemcům.
           </Note>
         </>
       ) : (
@@ -277,11 +300,16 @@ function CourseReservationConfirmedEmailComponent({
         </P>
       ) : null}
 
-      {reservationLink || invoicePdfUrl || invitationUrl ? (
+      {reservationLink || invoicePdfUrl || invitationUrl || paymentLink ? (
         <ButtonRow>
+          {unpaid && paymentLink ? (
+            <>
+              <EmailButton href={paymentLink}>{failed ? "Zaplatit znovu" : "Zaplatit"}</EmailButton>{" "}
+            </>
+          ) : null}
           {reservationLink ? (
-            <EmailButton href={reservationLink}>
-              {awaiting ? "Zobrazit rezervaci a zaplatit" : "Zobrazit rezervaci"}
+            <EmailButton href={reservationLink} variant={unpaid && paymentLink ? "ghost" : undefined}>
+              {unpaid && !paymentLink ? "Zobrazit rezervaci a zaplatit" : "Zobrazit rezervaci"}
             </EmailButton>
           ) : null}
           {invitationUrl && !invitationAttached ? (

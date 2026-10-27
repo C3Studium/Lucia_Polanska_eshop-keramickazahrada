@@ -75,3 +75,19 @@ export const courseReservationLink = (reservationId: string): string => {
     reservationId
   )}`
 }
+
+/**
+ * Odkaz „Zaplatit" do e-mailu — vede rovnou na platební bránu.
+ *
+ * Míří na backend (`/kurzy/rezervace/:id/zaplatit`, bez publishable key, jako
+ * doplatek zakázky), který platbu založí nebo vrátí ještě živou a přesměruje
+ * na ComGate. Zrušená platba se tak nikdy nevrátí — odkaz v e-mailu platí,
+ * dokud rezervace trvá. Prázdné, když backend nezná svou veřejnou adresu.
+ */
+export const coursePaymentLink = (reservationId: string): string => {
+  const base = (process.env.BACKEND_PUBLIC_URL || process.env.MEDUSA_BACKEND_URL || "").replace(/\/+$/, "")
+  if (!base) {
+    return ""
+  }
+  return `${base}/kurzy/rezervace/${reservationId}/zaplatit?token=${signCourseReservationToken(reservationId)}`
+}
