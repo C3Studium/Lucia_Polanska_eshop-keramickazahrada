@@ -26,8 +26,9 @@ export const FACTS = {
   "seller.address": "Putim 229, 397 01 Písek",
   "seller.ico": "03441482",
   /* Úřad vedoucí živnostenský rejstřík (§ 435 OZ — údaj o zápisu patří na
-     obchodní listiny). Čeká na potvrzení, OPEN_QUESTIONS N5. */
-  "seller.register": null,
+     obchodní listiny). Potvrzeno 24. 10. 2026 (OPEN_QUESTIONS N5); sedmý pád,
+     dokument skládá větu „…rejstříku vedeném {hodnota}". */
+  "seller.register": "Městským úřadem Písek",
   /*
    * Kontakt prodávající v právních dokumentech (24. 10. 2026). Adresa pro
    * odstoupení od smlouvy a reklamaci — musí fungovat dnes, proto osobní
@@ -96,7 +97,7 @@ const MISSING: Record<LegalFactKey, string> = {
   "vat.status": "plátce DPH ano/ne",
   "mto.deposit": "výše zálohy u zakázky v %, doporučeno 30–50 %",
   "course.cancellation":
-    "storno podmínky kurzů, doporučeno: 7 a více dní předem 100 %, 2–6 dní 50 % nebo přesun, méně než 48 h 0 %",
+    "storno podmínky kurzů — online zrušení nejpozději 24 h před kurzem (celá částka zpět), později jen telefonicky",
   "voucher.validity": "platnost poukazu, dnes 1 rok",
   "voucher.remainder": "co se stane se zůstatkem poukazu, když nákup nedosáhne jeho hodnoty",
   "privacy.newsletterTool": "nástroj na rozesílku newsletteru",

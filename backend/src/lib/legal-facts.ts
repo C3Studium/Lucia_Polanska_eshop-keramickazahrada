@@ -69,9 +69,16 @@ export const LEGAL_FACT_DEFAULTS: Readonly<LegalFactValues> = Object.freeze({
   "seller.name": "Lucie Polanská",
   "seller.address": "Putim 229, 397 01 Písek",
   "seller.ico": "03441482",
-  /* Úřad, který vede živnostenský rejstřík (§ 435 OZ) — čeká na potvrzení
-     (OPEN_QUESTIONS N5). Null: dokument pak uvede zápis bez úřadu. */
-  "seller.register": null,
+  /*
+   * Úřad, který vede živnostenský rejstřík (§ 435 OZ — údaj o zápisu patří
+   * na obchodní listiny, a potvrzení smlouvy jí je).
+   *
+   * Potvrzeno 24. 10. 2026 (OPEN_QUESTIONS N5): týž úřad, který na webu
+   * uvádějí obchodní podmínky („zapsaná v živnostenském rejstříku vedeném
+   * Městským úřadem Písek"). Sedmý pád schválně — dokument skládá větu
+   * „…rejstříku vedeném {hodnota}" (lib/potvrzeni-zakazky/fields.ts).
+   */
+  "seller.register": "Městským úřadem Písek",
   /*
    * Kontaktní adresa prodávající v právních dokumentech (24. 10. 2026).
    *
@@ -273,7 +280,7 @@ export const LEGAL_FACT_META: Record<LegalFactKey, LegalFactMeta> = {
   "course.cancellation": {
     label: "Storno podmínky kurzů",
     help:
-      "Co se stane, když zákazník zruší rezervaci kurzu. Text se ukáže v obchodních podmínkách („Storno podmínky: …“), na stránce Kurzy, v okně rezervace (zákazník ho potvrzuje zaškrtnutím), v častých dotazech a v e-mailu s potvrzením rezervace. Pište souvislý text, klidně několik vět. Dnes obchod dovolí zrušit rezervaci online nejpozději 48 hodin před kurzem a vrátí celou částku — když napíšete jiné pravidlo, řekněte Matějovi, ať upraví i automatické vracení peněz.",
+      "Co se stane, když zákazník zruší rezervaci kurzu. Text se ukáže v obchodních podmínkách („Storno podmínky: …“), na stránce Kurzy, v okně rezervace (nad tlačítkem rezervace), v častých dotazech a v e-mailu s potvrzením rezervace. Pište souvislý text, klidně několik vět. Dnes obchod dovolí zrušit rezervaci online nejpozději 24 hodin před kurzem a vrátí celou částku; později jen telefonicky — když napíšete jiné pravidlo, řekněte Matějovi, ať upraví i automatické vracení peněz.",
     example:
       "Rezervaci můžete zrušit zdarma nejpozději 7 dní před kurzem. Při zrušení 2 až 6 dní předem vracíme polovinu ceny, nebo vám nabídneme jiný termín. Později už peníze nevracíme, můžete ale poslat náhradníka.",
     group: "Kurzy",

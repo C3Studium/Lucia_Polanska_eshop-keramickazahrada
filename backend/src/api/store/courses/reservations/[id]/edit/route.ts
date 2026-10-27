@@ -20,7 +20,7 @@ import { loadReservationForSelfService } from "../self-service"
  * „Změnit počet osob" — the customer edits their own party size.
  *
  * Access is the token OR the logged-in owner (see `../self-service.ts`).
- * Allowed until the same 48h cutoff as the cancel, and ONLY while nothing was
+ * Allowed until the same 24h cutoff as the cancel, and ONLY while nothing was
  * paid online: a captured card payment fixes the amount, so paid reservations
  * are told to cancel (auto-refund) and re-book instead.
  *

@@ -58,7 +58,7 @@ function CourseReservationCancelledEmailComponent({
   const paid = variant === "refunded" || variant === "manual_refund"
   return (
     <EmailLayout preview={`Rezervace kurzu ${courseTitle} je zrušená.`}>
-      <Eyebrow>Kurz</Eyebrow>
+      <Eyebrow>Kurz · rezervace</Eyebrow>
       <EmailH1 accent="je zrušená.">Vaše rezervace</EmailH1>
 
       <Greeting name={customerName} />

@@ -41,6 +41,12 @@ interface CourseReservationConfirmedEmailProps {
   reservationLink?: string
   /** Our copy of the iDoklad invoice PDF — empty when not (yet) issued. */
   invoicePdfUrl?: string
+  /** Faktura jde s e-mailem jako příloha. */
+  invoiceAttached?: boolean
+  /** Pozvánka na kurz (PDF) — prázdné u „čeká na platbu". */
+  invitationUrl?: string
+  /** Pozvánka jde s e-mailem jako příloha. */
+  invitationAttached?: boolean
   /** Poučení o výjimce z odstoupení (§ 1837 písm. j) OZ) — `modules/course/legal.ts`. */
   noWithdrawalNotice?: string
   /**
@@ -63,6 +69,29 @@ interface CourseReservationConfirmedEmailProps {
   attachments_failed?: boolean
 }
 
+/** Věta o přílohách — jen o tom, co opravdu přišlo. */
+function AttachmentsNote({
+  invitationAttached,
+  invoiceAttached,
+}: {
+  invitationAttached: boolean
+  invoiceAttached: boolean
+}) {
+  if (!invitationAttached && !invoiceAttached) return null
+  const what =
+    invitationAttached && invoiceAttached
+      ? "pozvánku na kurz a fakturu"
+      : invitationAttached
+        ? "pozvánku na kurz"
+        : "fakturu"
+  return (
+    <Note>
+      V příloze najdete {what} (PDF).
+      {invitationAttached ? " Pozvánku si můžete vytisknout, nebo ji jen mít v telefonu." : ""}
+    </Note>
+  )
+}
+
 function CourseReservationConfirmedEmailComponent({
   customerName = "Vážený zákazníku",
   courseTitle = "Kurz točení pro dospělé",
@@ -74,6 +103,9 @@ function CourseReservationConfirmedEmailComponent({
   variant = "on_site",
   reservationLink = "",
   invoicePdfUrl = "",
+  invoiceAttached = false,
+  invitationUrl = "",
+  invitationAttached = false,
   // Výchozí poučení = konstanta: i notifikace uložená před zavedením poučení
   // (bez toho klíče v `data`) se při opakovaném odeslání vykreslí s ním.
   // Storno bez údaje = odkaz na OP čl. X, jako u nevyplněných podmínek.
@@ -98,32 +130,32 @@ function CourseReservationConfirmedEmailComponent({
     <EmailLayout
       preview={
         paid
-          ? `Místo na kurzu ${courseTitle} (${courseDate}) je vaše a zaplacené.`
+          ? `Platba za kurz ${courseTitle} (${courseDate}) dorazila, rezervace je potvrzená.`
           : awaiting
-            ? `Místo na kurzu ${courseTitle} (${courseDate}) pro vás držím.`
-            : `Místo na kurzu ${courseTitle} (${courseDate}) máte rezervované.`
+            ? `Rezervaci kurzu ${courseTitle} (${courseDate}) mám, zbývá dokončit platbu.`
+            : `Rezervace kurzu ${courseTitle} (${courseDate}) je potvrzená, platíte na místě.`
       }
     >
-      <Eyebrow>Kurz</Eyebrow>
+      <Eyebrow>{paid ? "Kurz · platba přijata" : "Kurz · rezervace"}</Eyebrow>
       <EmailH1
         accent={
           paid
-            ? "je vaše."
+            ? "je zaplacená a potvrzená."
             : awaiting
-              ? "pro vás držím."
-              : "máte rezervované."
+              ? "čeká na platbu."
+              : "je potvrzená."
         }
       >
-        Místo u hlíny
+        Vaše rezervace
       </EmailH1>
 
       <Greeting name={customerName} />
       <P>
         {paid
-          ? "děkuji — platba dorazila a vaše místo na kurzu je závazně rezervované. Tady je všechno důležité na jednom místě:"
+          ? "platba dorazila, děkuji. Rezervace kurzu je tím potvrzená a místo je vaše. Tady je přehled:"
           : awaiting
-            ? "děkuji za rezervaci. Místo pro vás držím; jakmile dorazí platba, pošlu vám potvrzení s dokladem. Tady je všechno důležité na jednom místě:"
-            : "vaše místo na kurzu je rezervované. Tady je všechno důležité na jednom místě:"}
+            ? "děkuji za rezervaci kurzu. Místo vám držím, rezervace se potvrdí, jakmile dorazí platba kartou. Tady je přehled:"
+            : "děkuji za rezervaci kurzu, je potvrzená. Zaplatíte na místě, hotově nebo kartou. Tady je přehled:"}
       </P>
 
       <LedgerRow label="Kurz" value={courseTitle} />
@@ -147,41 +179,34 @@ function CourseReservationConfirmedEmailComponent({
       {paid ? (
         <>
           <P>
-            Teď už se nemusíte o nic starat — stačí přijít. Vezměte si pohodlné
-            oblečení, kterému nevadí hlína; všechno ostatní bude u mě v dílně
-            připravené.
+            Teď už stačí jen přijít. Vezměte si pohodlné oblečení, kterému
+            nevadí hlína; hlínu, nářadí i zástěry máme v dílně připravené.
           </P>
-          {/* Storno patří i do zaplacené varianty — kdo zaplatil, potřebuje
-              vědět, že se dá ozvat, nejen kdo platí na místě. */}
-          <Note>
-            Kdyby vám termín nakonec nevyšel, dejte mi prosím vědět co nejdřív —
-            napište mi na info@keramickazahrada.cz a domluvíme se.
-          </Note>
+          <AttachmentsNote
+            invitationAttached={invitationAttached}
+            invoiceAttached={invoiceAttached}
+          />
         </>
       ) : awaiting ? (
         <>
           <P>
-            Pokud jste platbu kartou už dokončili, je všechno v pořádku —
-            potvrzení s dokladem vám přijde hned, jak ji banka potvrdí.
-            Obvykle to jsou minuty.
+            Pokud jste platbu kartou už dokončili, nemusíte nic dělat. Hned jak
+            ji banka potvrdí, pošlu vám další e-mail s pozvánkou a fakturou.
           </P>
           <Note>
-            Kdyby platba neprošla nebo jste ji nestihli dokončit, zkuste to
-            znovu na stránce rezervace níž. Místo pro vás držím 24 hodin; potom
-            ho nabídnu dalším zájemcům.
+            Kdyby platba neprošla nebo jste ji nestihli dokončit, zaplatíte
+            na stránce rezervace (tlačítko níž). Místo vám držím 24 hodin,
+            potom ho nabídnu dalším zájemcům.
           </Note>
         </>
       ) : (
         <>
           <P>
-            Kurz zaplatíte hotově nebo kartou přímo na místě. Vezměte si
-            pohodlné oblečení, kterému nevadí hlína; všechno ostatní bude u mě
+            Kurz zaplatíte na místě, hotově nebo kartou. Vezměte si pohodlné
+            oblečení, kterému nevadí hlína; hlínu, nářadí i zástěry máme
             v dílně připravené.
           </P>
-          <Note>
-            Kdyby vám termín nakonec nevyšel, dejte mi prosím vědět — místo
-            uvolním někomu dalšímu. Napište mi na info@keramickazahrada.cz.
-          </Note>
+          <AttachmentsNote invitationAttached={invitationAttached} invoiceAttached={false} />
         </>
       )}
 
@@ -190,7 +215,7 @@ function CourseReservationConfirmedEmailComponent({
           písm. j) OZ), a storno podmínky, které platí místo toho. Dokud
           nejsou doplněné, odkaz na jejich místo v OP — ne zástupný text. */}
       <P>
-        <strong>Storno podmínky.</strong> {noWithdrawalNotice}
+        <strong>Kdyby vám termín nevyšel.</strong> {noWithdrawalNotice}
       </P>
       {termsReady ? (
         <>
@@ -252,12 +277,22 @@ function CourseReservationConfirmedEmailComponent({
         </P>
       ) : null}
 
-      {reservationLink || invoicePdfUrl ? (
+      {reservationLink || invoicePdfUrl || invitationUrl ? (
         <ButtonRow>
           {reservationLink ? (
-            <EmailButton href={reservationLink}>Zobrazit rezervaci</EmailButton>
+            <EmailButton href={reservationLink}>
+              {awaiting ? "Zobrazit rezervaci a zaplatit" : "Zobrazit rezervaci"}
+            </EmailButton>
           ) : null}
-          {invoicePdfUrl ? (
+          {invitationUrl && !invitationAttached ? (
+            <>
+              {" "}
+              <EmailButton href={invitationUrl} variant="ghost">
+                Pozvánka (PDF)
+              </EmailButton>
+            </>
+          ) : null}
+          {invoicePdfUrl && !invoiceAttached ? (
             <>
               {" "}
               <EmailButton href={invoicePdfUrl} variant="ghost">
@@ -289,6 +324,9 @@ const mockCourseReservationConfirmed: CourseReservationConfirmedEmailProps = {
   variant: "paid",
   reservationLink: "https://keramickazahrada.cz/cz/kurzy/rezervace/res_123?token=abc",
   invoicePdfUrl: "https://keramickazahrada.cz/faktura-20260042.pdf",
+  invoiceAttached: true,
+  invitationUrl: "https://img.matejforejt.com/courses/res_123/pozvanka.pdf",
+  invitationAttached: true,
   termsLink: "https://keramickazahrada.cz/cz/smluvni-podminky#kurzy",
 }
 

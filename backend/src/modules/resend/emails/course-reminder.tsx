@@ -50,8 +50,8 @@ function CourseReminderEmailComponent({
 }: CourseReminderEmailProps) {
   return (
     <EmailLayout preview={`Už za pár dní: ${courseTitle} — ${courseDate}.`}>
-      <Eyebrow>Kurz</Eyebrow>
-      <EmailH1 accent="za pár dní se potkáme.">Kurz už se blíží,</EmailH1>
+      <Eyebrow>Kurz · připomínka</Eyebrow>
+      <EmailH1 accent="už za pár dní.">Váš kurz keramiky</EmailH1>
 
       <Greeting name={customerName} />
       <P>

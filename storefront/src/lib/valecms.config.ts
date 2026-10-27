@@ -27,6 +27,8 @@
 // přepsat i komponentu.
 import { defineGlobals, definePage, defineSite, defineSurface } from '@c3studium/valecms/site'
 
+import { studioPreviewListed } from './studio-preview/pages'
+
 /**
  * Úvodní stránka.
  *
@@ -99,7 +101,7 @@ const homepage = definePage({
  * v `note`), `<stav>.text` pro `termin-zrusen`, `zruseno-vami`, `zruseno`,
  * `zaplaceno`, `na-miste`, `zpracovava`, `nezaplaceno`; `zmena.nadpis`,
  * `zmena.napoveda`, `zruseni.otazka`. Věty o vracení peněz (zrušený termín
- * po zaplacení, zrušení zákazníkem, potvrzení zrušení) a lhůta 48 hodin
+ * po zaplacení, zrušení zákazníkem, potvrzení zrušení) a lhůta 24 hodin
  * jsou v kódu — `zruseno-vami` proto `.text` nemá. Adresa je dynamická, upravuje
  * se ve formuláři bloku.
  */
@@ -466,8 +468,25 @@ const surfaces = [
     form('seo.obchod', 'SEO — Obchod', 'obchod.seo'),
 ]
 
+/* -------------------------------------------------------- ukázkové stránky -- */
+/*
+ * Stránky, které bez objednávky, tokenu, rezervace nebo poukazu nejdou
+ * otevřít (potvrzení objednávky, úprava z e-mailu, rezervace kurzu, poukaz…).
+ * Seznam a vysvětlení jsou v `./studio-preview/pages`: každá vyhrazená adresa
+ * (`/cz/order/ukazka/confirmed`) je tu obyčejná stránka se jménem, a když ji
+ * otevře přihlášený redaktor, `middleware.ts` ji přepíše na skutečná data.
+ *
+ * Statická route bez vlastního souboru — knihovna to jednou za proces zaloguje
+ * („…ke které v src/pages není soubor") a stránku do seznamu dá i tak.
+ * Dynamickou route (`[id]`) by Studio umělo jen s adresami z dokumentů CMS,
+ * a objednávky v CMS nejsou.
+ */
+const previewPages = studioPreviewListed.map((page) =>
+    definePage({ route: page.path, title: page.title, ...(page.copy ? { copy: page.copy } : {}) })
+)
+
 export default defineSite({
-    pages: [homepage, kurzy, oMne, vyroba, dotazy, ...textPages, ...legalPages],
+    pages: [homepage, kurzy, oMne, vyroba, dotazy, ...textPages, ...legalPages, ...previewPages],
     surfaces,
     /*
      * Jedenáct adres pro tentýž obsah.

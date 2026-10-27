@@ -49,6 +49,9 @@ import {
 } from "../format"
 import KurzyCalendar from "./Calendar"
 
+/** Nejvíc osob v jedné rezervaci online — větší skupina se domlouvá napřímo. */
+const ONLINE_PARTY_MAX = 30
+
 import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 /**
  * The reservation modal — „Vybrat termín" opens it over the kurzy page.
@@ -330,12 +333,13 @@ function RezervaceModalPanel({
   )
   /* Podmínky rezervace — vždy NEZAŠKRTNUTÉ a záměrně mimo `ModalDraft`:
      souhlas se dává pokaždé znovu, ne obnovou rozepsaného formuláře.
-     OP a výjimka z odstoupení (§ 1837 písm. j) OZ — kurz s pevným termínem)
-     jsou povinné, fotky nepovinné. */
+     Souhlas s OP je povinný, fotky nepovinné. Poučení o výjimce z odstoupení
+     (§ 1837 písm. j) OZ) zákon chce jen SDĚLIT předem, ne odškrtnout — stojí
+     jako věta pod storno podmínkami a s rezervací se zaznamená
+     (`exception_ack: true` = poučení bylo v okně nad tlačítkem). */
   const [termsAccepted, setTermsAccepted] = useState(false)
-  const [exceptionAck, setExceptionAck] = useState(false)
   const [photoConsent, setPhotoConsent] = useState(false)
-  const legalReady = termsAccepted && exceptionAck
+  const legalReady = termsAccepted
   const [website, setWebsite] = useState("")
 
   const [quote, setQuote] = useState<CourseQuote | null>(null)
@@ -367,7 +371,21 @@ function RezervaceModalPanel({
     () => terms.find((term) => term.id === selectedId) ?? null,
     [terms, selectedId]
   )
-  const maxParty = selected ? Math.max(1, Math.min(selected.seats_left, 30)) : 30
+  const maxParty = selected ? Math.max(1, Math.min(selected.seats_left, ONLINE_PARTY_MAX)) : ONLINE_PARTY_MAX
+  /* Proč nejde přidat další osobu — zákazník to jinak nepozná (stepper jen zešedne). */
+  const partyLimitText =
+    selected && partySize >= maxParty
+      ? selected.seats_left <= ONLINE_PARTY_MAX
+        ? fillPlaceholders(text("pocet.limit"), { osoby: peopleLabel(selected.seats_left) })
+        : fillPlaceholders(text("pocet.strop"), { max: String(ONLINE_PARTY_MAX) })
+      : null
+  const occupancyText = selected
+    ? fillPlaceholders(text("kurz.obsazenost"), {
+        obsazeno: String(Math.max(0, selected.seats_taken)),
+        kapacita: String(selected.capacity),
+        volno: selected.sold_out ? soldOutText : seatsLabel(selected.seats_left),
+      })
+    : null
 
   const validName = isValidName(name)
   const validEmail = isValidEmail(email)
@@ -522,7 +540,7 @@ function RezervaceModalPanel({
     setWlDone(null)
     if (!term.sold_out) {
       setPartySize((current) =>
-        Math.max(1, Math.min(current, Math.min(term.seats_left, 30)))
+        Math.max(1, Math.min(current, Math.min(term.seats_left, ONLINE_PARTY_MAX)))
       )
     }
   }
@@ -563,7 +581,7 @@ function RezervaceModalPanel({
       setStepError({
         step: "platba",
         message:
-          "Před rezervací prosím potvrďte souhlas s obchodními podmínkami a storno podmínky kurzu.",
+          "Před rezervací prosím potvrďte souhlas s obchodními podmínkami.",
       })
       return
     }
@@ -579,7 +597,7 @@ function RezervaceModalPanel({
       payment_method: paymentMethod,
       website,
       terms_accepted: termsAccepted,
-      exception_ack: exceptionAck,
+      exception_ack: true,
       photo_consent: photoConsent,
       client_accepted_at: new Date().toISOString(),
     })
@@ -816,6 +834,19 @@ function RezervaceModalPanel({
           </motion.div>
         ) : (
           <>
+            {selected ? (
+              <div className="kurzyModal__course" aria-live="polite">
+                <strong>{selected.title}</strong>
+                <span>
+                  {formatPrague(selected.starts_at)}
+                  {selected.location ? ` · ${selected.location}` : ""}
+                </span>
+                <span className="kurzyModal__courseSeats" {...edit("kurz.obsazenost")}>
+                  {occupancyText}
+                </span>
+              </div>
+            ) : null}
+
             <nav className="kurzyModal__progress" aria-label="Postup rezervace">
               {steps.map((item, index) => (
                 <button
@@ -1150,10 +1181,6 @@ function RezervaceModalPanel({
                         ← Zpět na termín
                       </button>
 
-                      <p className="kurzyModal__chosen">
-                        {selected.title} · {formatPrague(selected.starts_at)}
-                      </p>
-
                       <div className="kurzyModal__fields">
                         <label>
                           <span>Jméno a příjmení</span>
@@ -1251,6 +1278,15 @@ function RezervaceModalPanel({
                               +
                             </button>
                           </div>
+                          {partyLimitText ? (
+                            <p
+                              className="kurzyModal__countHint"
+                              aria-live="polite"
+                              {...edit(selected.seats_left <= ONLINE_PARTY_MAX ? "pocet.limit" : "pocet.strop")}
+                            >
+                              {partyLimitText}
+                            </p>
+                          ) : null}
                         </div>
                       </div>
 
@@ -1374,6 +1410,12 @@ function RezervaceModalPanel({
                           <strong>Storno podmínky:</strong>{" "}
                           {renderInline("{{course.cancellation}}", { facts: legalFacts })}
                         </p>
+                        <p className="kurzyModal__storno" data-testid="course-exception-notice">
+                          Kurz má pevný termín, proto u něj neplatí zákonné
+                          odstoupení do 14 dnů bez udání důvodu (§ 1837 písm. j)
+                          občanského zákoníku). Místo něj platí storno podmínky
+                          výše.
+                        </p>
                         <label className="kurzyModal__check">
                           <input
                             type="checkbox"
@@ -1392,29 +1434,6 @@ function RezervaceModalPanel({
                               rel="noopener"
                             >
                               obchodními podmínkami
-                            </LocalizedClientLink>
-                            .
-                          </span>
-                        </label>
-                        <label className="kurzyModal__check">
-                          <input
-                            type="checkbox"
-                            checked={exceptionAck}
-                            onChange={(event) => {
-                              setExceptionAck(event.target.checked)
-                              setStepError(null)
-                            }}
-                            data-testid="course-exception-checkbox"
-                          />
-                          <span>
-                            Beru na vědomí, že u kurzu s pevným termínem nelze
-                            odstoupit do 14 dnů (§ 1837 písm. j) OZ); platí{" "}
-                            <LocalizedClientLink
-                              href={LEGAL_LINKS.termsCourses}
-                              target="_blank"
-                              rel="noopener"
-                            >
-                              storno podmínky
                             </LocalizedClientLink>
                             .
                           </span>
@@ -1483,7 +1502,7 @@ function RezervaceModalPanel({
                       </div>
                       <p className="kurzyModal__payNote" aria-live="polite">
                         {!legalReady
-                          ? "Nejdřív prosím potvrďte obchodní podmínky a storno podmínky."
+                          ? "Nejdřív prosím potvrďte obchodní podmínky."
                           : !quote || quoteLoading
                             ? "Počítáme cenu…"
                             : paymentMethod === "online"

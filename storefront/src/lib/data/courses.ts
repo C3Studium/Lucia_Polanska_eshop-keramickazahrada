@@ -51,7 +51,7 @@ export type CourseReservationInput = {
   website?: string
   /** Souhlas s OP (čl. Kurzy) — povinný, backend bez něj rezervaci odmítne. */
   terms_accepted: boolean
-  /** Poučení: u kurzu s pevným termínem nelze odstoupit do 14 dnů (§ 1837 písm. j) OZ). Povinné. */
+  /** Poučení o výjimce z odstoupení (§ 1837 písm. j) OZ) bylo v okně nad tlačítkem — okno posílá vždy `true`. */
   exception_ack: boolean
   /** Nepovinný souhlas s fotkami z kurzu. */
   photo_consent: boolean
@@ -281,7 +281,7 @@ export type CancelCourseReservationResult =
 /**
  * The customer cancels their own reservation. Auth is the signed token; a
  * logged-in customer's session travels along too, so the backend accepts
- * either proof. The backend enforces the 48h cutoff, frees the seats, runs
+ * either proof. The backend enforces the 24h cutoff, frees the seats, runs
  * the automatic refund for online-paid bookings and sends the e-mails — the
  * UI only relays its Czech answer.
  */
@@ -325,7 +325,7 @@ export type EditCourseReservationResult =
 
 /**
  * The customer changes their party size (same auth as the cancel). Allowed
- * only before the 48h cutoff and while nothing was paid online; capacity and
+ * only before the 24h cutoff and while nothing was paid online; capacity and
  * the new price are settled server-side under the term's row lock.
  */
 export const editCourseReservation = async (

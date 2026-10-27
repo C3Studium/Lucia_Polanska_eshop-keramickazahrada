@@ -21,6 +21,7 @@ import {
   courseCancellationTerms,
 } from "../modules/course/legal"
 import { getLegalFacts } from "./merchant-settings"
+import { storeCourseInvitation } from "./course-invitation"
 import {
   courseCancelledKey,
   courseExpiredKey,
@@ -194,9 +195,50 @@ export const sendCourseReservationConfirmedEmail = async (
   // Nikdy nevyhodí — bez nastavení jsou údaje výchozí a storno `null`.
   const { facts } = await getLegalFacts(container)
 
+  const base = baseData(reservation, term)
+  const cancellationTerms = courseCancellationTerms(facts)
+
+  /*
+   * Přílohy: obchodní podmínky (zveřejněné PDF), pozvánka na kurz (potvrzená
+   * rezervace — zaplacená nebo na místě, ne „čeká na platbu") a u zaplacené
+   * faktura z iDokladu. Každá jen když jde stáhnout; jinak zůstane odkaz.
+   */
+  const candidates: EmailAttachmentRef[] = []
+  if (terms.attachment) candidates.push(terms.attachment)
+  let invitation: EmailAttachmentRef | null = null
+  if (options.variant !== "awaiting_payment") {
+    invitation = await storeCourseInvitation(container, {
+      reservationId: String(reservation.id),
+      customerName: base.customerName,
+      courseTitle: base.courseTitle,
+      courseDate: base.courseDate,
+      courseLocation: base.courseLocation ?? "",
+      courseDuration: base.courseDuration,
+      partySize: base.partySize,
+      totalAmount: base.totalAmount,
+      paid: options.variant === "paid",
+      sellerName: String(facts["seller.name"] ?? ""),
+      sellerPhone: String(facts["seller.phone"] ?? ""),
+      sellerEmail: String(facts["seller.email"] ?? ""),
+      sellerWeb: String(facts["seller.web"] ?? ""),
+      cancellationTerms,
+    }).catch((error) => {
+      logger.warn(
+        `[kurzy] Pozvánku k rezervaci ${reservation.id} se nepodařilo vytvořit: ${(error as Error)?.message ?? error}`
+      )
+      return null
+    })
+    if (invitation) candidates.push(invitation)
+  }
+  const invoice: EmailAttachmentRef | null =
+    options.variant === "paid" && options.invoicePdfUrl
+      ? { filename: "faktura.pdf", url: options.invoicePdfUrl }
+      : null
+  if (invoice) candidates.push(invoice)
+
   let attachments: EmailAttachmentRef[] = []
-  if (terms.attachment) {
-    const { reachable, failed } = await checkAttachmentUrls([terms.attachment])
+  if (candidates.length) {
+    const { reachable, failed } = await checkAttachmentUrls(candidates)
     attachments = reachable
     for (const miss of failed) {
       logger.warn(
@@ -205,23 +247,37 @@ export const sendCourseReservationConfirmedEmail = async (
       )
     }
   }
+  const attached = (ref: EmailAttachmentRef | null) =>
+    Boolean(ref && attachments.some((item) => item.url === ref.url))
+
+  /* Předmět podle stavu — zaplacené potvrzení nesmí vypadat jako kopie prvního e-mailu. */
+  const subject =
+    options.variant === "paid"
+      ? `Platba přijata — rezervace kurzu ${base.courseTitle} je potvrzená`
+      : options.variant === "on_site"
+        ? `Rezervace kurzu ${base.courseTitle} je potvrzená`
+        : `Rezervaci kurzu ${base.courseTitle} mám — zbývá platba`
 
   return sendCustomerEmail(container, {
     template: "course-reservation-confirmed",
     to: reservation.email,
     key: options.keyOverride ?? `course-confirm:${options.variant}:${reservation.id}`,
     data: {
-      ...baseData(reservation, term),
+      ...base,
+      subject,
       variant: options.variant,
       invoicePdfUrl: options.invoicePdfUrl || "",
+      invoiceAttached: attached(invoice),
+      invitationUrl: invitation?.url ?? "",
+      invitationAttached: attached(invitation),
       noWithdrawalNotice: COURSE_NO_WITHDRAWAL_NOTICE,
       // Nevyplněné storno do dat nejde jako text — šablona pak odkáže na OP čl. X.
-      cancellationTerms: courseCancellationTerms(facts),
+      cancellationTerms,
       termsLink: courseTermsLink(),
       termsVersionLabel: terms.version_label,
       termsVersionUrl: terms.page_url,
       termsPdfUrl: terms.pdf_url ?? "",
-      termsAttached: attachments.length > 0,
+      termsAttached: attached(terms.attachment),
     },
     ...(attachments.length ? { attachments } : {}),
   })

@@ -6,7 +6,8 @@
  * stejně. Položky klíčované popiskem; `scripts/seed-texts.mjs` nese tytéž
  * věty (změna tady = změna tam).
  *
- * Zástupci `{osoby}` a `{email}` se dosazují v komponentě (`fillPlaceholders`).
+ * Zástupci `{osoby}`, `{email}`, `{obsazeno}`, `{kapacita}`, `{volno}` a `{max}`
+ * se dosazují v komponentě (`fillPlaceholders`).
  *
  * Co tu schválně NENÍ: souhlasy a storno podmínky (§ 1837 písm. j) OZ, fakta
  * z administrace), způsoby platby, ceny a názvy cenových pásem, chybové
@@ -19,6 +20,13 @@ export const REZERVACE_OKNO_DEFAULTS = {
     "Právě nejsou vypsané žádné termíny. Napište mi a dám vám vědět, jakmile vypíšu další.",
   "kalendar.napoveda": "Vyberte v kalendáři označený den a jeho termíny se ukážou tady.",
   "termin.obsazeno": "obsazeno · dáme vědět, až se uvolní",
+  /** Lišta nahoře v okně u zvoleného termínu. */
+  "kurz.obsazenost": "Přihlášeno {obsazeno} z {kapacita} · {volno}",
+  /** Pod počtem osob, když už další přidat nejde, protože termín nemá víc míst. */
+  "pocet.limit":
+    "Víc osob už přidat nejde — tenhle termín má volno jen pro {osoby}. Pro větší skupinu vyberte jiný termín nebo nám napište.",
+  /** Totéž, když míst je dost, ale online rezervace má strop. */
+  "pocet.strop": "Online jde najednou rezervovat nejvýš {max} osob. Pro větší skupinu nám prosím napište.",
   "cekacka.uvod":
     "Termín je plně obsazený. Nechte nám kontakt a napíšeme vám, jakmile se místo uvolní.",
   "cekacka.tlacitko": "Dejte mi vědět",

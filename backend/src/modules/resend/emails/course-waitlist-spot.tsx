@@ -42,8 +42,8 @@ function CourseWaitlistSpotEmailComponent({
     <EmailLayout
       preview={`Na kurzu ${courseTitle} se uvolnilo místo — můžete si ho rezervovat.`}
     >
-      <Eyebrow>Kurz</Eyebrow>
-      <EmailH1 accent="můžete si ho rezervovat.">Uvolnilo se místo,</EmailH1>
+      <Eyebrow>Kurz · volné místo</Eyebrow>
+      <EmailH1 accent="můžete si ho rezervovat.">Na kurzu je volné místo,</EmailH1>
 
       <Greeting name={customerName} />
       <P>

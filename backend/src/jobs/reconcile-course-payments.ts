@@ -1,10 +1,11 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
-import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
-import { processPaymentWorkflow } from "@medusajs/medusa/core-flows"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { COURSE_MODULE } from "../modules/course"
 import type CourseModuleService from "../modules/course/service"
-import { toAmount } from "../modules/course/pricing"
-import { paymentStatusFromProvider } from "../lib/payment-provider-status"
+import {
+  hasOpenOnlinePayment,
+  reconcileCourseReservationPayment,
+} from "../lib/course-payment-reconcile"
 
 /**
  * Doptá se ComGate, co se stalo s platbami za kurzy.
@@ -48,15 +49,11 @@ import { paymentStatusFromProvider } from "../lib/payment-provider-status"
  * napíše. Dvě úlohy psát o téže věci by znamenalo dva e-maily.
  */
 
-/** Terminální stavy brány — tam už není co hlídat. */
-const HOTOVO = ["captured", "authorized"]
-
 export default async function reconcileCoursePayments(
   container: MedusaContainer
 ) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const courseService = container.resolve<CourseModuleService>(COURSE_MODULE)
-  const paymentModule = container.resolve(Modules.PAYMENT)
 
   const reservations = (await courseService.listCourseReservations(
     {} as never
@@ -68,13 +65,7 @@ export default async function reconcileCoursePayments(
    * ptát). Zrušené rezervace sem nepatří — platba, která k nim dorazí, je
    * peníze bez místa a tu hlasitou cestu zařídí subscriber.
    */
-  const otevrene = reservations.filter(
-    (reservation) =>
-      reservation.payment_method === "online" &&
-      reservation.payment_status !== "paid" &&
-      reservation.status !== "cancelled" &&
-      reservation.payment_session_id
-  )
+  const otevrene = reservations.filter(hasOpenOnlinePayment)
 
   if (!otevrene.length) {
     return
@@ -84,41 +75,14 @@ export default async function reconcileCoursePayments(
 
   for (const reservation of otevrene) {
     try {
-      const [session] = await paymentModule.listPaymentSessions({
-        id: reservation.payment_session_id,
-      } as never)
-
-      if (!session) {
+      // Tentýž dotaz na bránu, který dělá stránka rezervace po návratu z brány.
+      if (!(await reconcileCourseReservationPayment(container, reservation))) {
         continue
       }
-
-      // Ptá se poskytovatele, neodhaduje ze stáří záznamu.
-      const result = await paymentStatusFromProvider(container, session as any)
-      const status = String(result?.status ?? "").toLowerCase()
-
-      if (!HOTOVO.includes(status)) {
-        continue
-      }
-
-      /*
-       * Relace byla jen vytvořená, ne autorizovaná, takže v kolekci není
-       * žádná `Payment` k zachycení — `processPaymentWorkflow` s `captured`
-       * ji autorizuje A zachytí, což je přesně to, co dělá ověřené
-       * oznámení. Teprve to vydá `payment.captured`.
-       */
-      await processPaymentWorkflow(container).run({
-        input: {
-          action: "captured",
-          data: {
-            session_id: reservation.payment_session_id,
-            amount: toAmount(reservation.total_price),
-          },
-        } as never,
-      })
 
       srovnano += 1
       logger.info(
-        `[kurzy] Dohled srovnal platbu rezervace ${reservation.id} (${reservation.name}) — ComGate hlásí ${status}.`
+        `[kurzy] Dohled srovnal platbu rezervace ${reservation.id} (${reservation.name}) — ComGate hlásí zaplaceno.`
       )
     } catch (error) {
       // Jedna rezervace nesmí shodit dohled nad ostatními.

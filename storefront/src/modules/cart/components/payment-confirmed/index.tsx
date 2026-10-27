@@ -33,6 +33,7 @@ export default function PaymentConfirmed({
   supportEmail,
   supportPhone,
   block,
+  preview = false,
 }: {
   id: string
   supportEmail: string
@@ -47,13 +48,18 @@ export default function PaymentConfirmed({
    * nejasnou větu tady je druhá platba.
    */
   block?: CopyBlock
+  /**
+   * Ukázka ve Studiu (`/cart/ukazka/confirmed`): jen texty čekání, košík se
+   * NEDOKONČUJE — žádný `placeOrder`.
+   */
+  preview?: boolean
 }) {
   const [failed, setFailed] = useState(false)
   const startedRef = useRef(false)
 
   useEffect(() => {
     // React runs effects twice in development; the order must only be placed once.
-    if (startedRef.current) {
+    if (startedRef.current || preview) {
       return
     }
     startedRef.current = true
@@ -82,7 +88,7 @@ export default function PaymentConfirmed({
     }
 
     complete()
-  }, [id])
+  }, [id, preview])
 
   if (failed) {
     return (

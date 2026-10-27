@@ -614,15 +614,16 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       case Templates.CONTRACT_RESENT:
         return "Potvrzení smlouvy k vaší objednávce"
       case Templates.COURSE_RESERVATION_CONFIRMED:
-        return "Vaše rezervace kurzu keramiky"
+        // Výchozí; potvrzení posílá předmět podle stavu v `data.subject` (course-emails.ts).
+        return "Rezervace kurzu keramiky"
       case Templates.COURSE_TERM_CANCELLED:
-        return "Termín kurzu musím zrušit — omlouvám se"
+        return "Termín kurzu se ruší — omlouvám se"
       case Templates.COURSE_PAYMENT_EXPIRED:
-        return "Platba nedorazila, místo jsem uvolnila"
+        return "Rezervace kurzu vypršela — platba nedorazila"
       case Templates.COURSE_REMINDER:
-        return "Za pár dní se potkáme u hlíny"
+        return "Připomínka: kurz keramiky už za pár dní"
       case Templates.COURSE_WAITLIST_SPOT:
-        return "Na kurzu se uvolnilo místo"
+        return "Na kurzu je volné místo"
       case Templates.COURSE_RESERVATION_CANCELLED:
         return "Rezervace kurzu je zrušená"
       case Templates.COMMISSION_INQUIRY_RECEIVED:
