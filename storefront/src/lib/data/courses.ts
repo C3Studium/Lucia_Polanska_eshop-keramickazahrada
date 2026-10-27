@@ -92,6 +92,10 @@ export type CourseReservationDetail = {
    * nezaplacené online rezervace, jinak null.
    */
   gateway_status?: string | null
+  /** Zaplaceno celkem (prvotní platba + doplatky − vrácené). */
+  paid_amount?: number
+  /** Zbývá doplatit — po přidání osob u zaplacené rezervace. */
+  amount_due?: number
   status: "active" | "cancelled"
   /** Why a cancelled reservation was cancelled — self-cancels read differently. */
   cancel_reason: "auto_expired" | "manual" | "term_cancelled" | "customer" | null
@@ -326,6 +330,15 @@ export type EditCourseReservationResult =
       party_size: number
       pricing_tier: "single" | "pair" | "group"
       total_price: number
+      paid_amount: number
+      amount_due: number
+      /** Doplatek po přidání osob — rovnou na platební bránu. */
+      payment_url?: string
+      /** Co se s penězi stalo (doplatek / vrácení rozdílu). */
+      change?:
+        | { action: "none" }
+        | { action: "supplement"; amount: number }
+        | { action: "refund"; amount: number; refunded: boolean }
     }
   | { ok: false; message: string }
 
@@ -346,7 +359,11 @@ export const editCourseReservation = async (
         party_size: number
         pricing_tier: "single" | "pair" | "group"
         total_price: number
+        paid_amount?: number
+        amount_due?: number
       }
+      payment_url?: string
+      change?: Extract<EditCourseReservationResult, { ok: true }>["change"]
     }>(
       `/store/courses/reservations/${reservationId}/edit?token=${encodeURIComponent(token)}`,
       {
@@ -361,6 +378,10 @@ export const editCourseReservation = async (
       party_size: result.reservation.party_size,
       pricing_tier: result.reservation.pricing_tier,
       total_price: result.reservation.total_price,
+      paid_amount: result.reservation.paid_amount ?? 0,
+      amount_due: result.reservation.amount_due ?? 0,
+      payment_url: result.payment_url,
+      change: result.change,
     }
   } catch (error) {
     return {

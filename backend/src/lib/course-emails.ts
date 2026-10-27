@@ -182,6 +182,10 @@ export const sendCourseReservationConfirmedEmail = async (
      * already delivered and would swallow the updated numbers.
      */
     keyOverride?: string
+    /** Úprava počtu osob u zaplacené rezervace: doplatek nebo vrácení rozdílu. */
+    change?:
+      | { action: "supplement"; amount: number }
+      | { action: "refund"; amount: number; refunded: boolean }
   }
 ): Promise<boolean> => {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
@@ -252,8 +256,12 @@ export const sendCourseReservationConfirmedEmail = async (
     Boolean(ref && attachments.some((item) => item.url === ref.url))
 
   /* Předmět podle stavu — zaplacené potvrzení nesmí vypadat jako kopie prvního e-mailu. */
-  const subject =
-    options.variant === "paid"
+  const change = options.change
+  const subject = change
+    ? change.action === "supplement"
+      ? `Rezervace kurzu ${base.courseTitle} je upravená — zbývá doplatit ${formatMoney(change.amount, "czk")}`
+      : `Rezervace kurzu ${base.courseTitle} je upravená — rozdíl vám vracím`
+    : options.variant === "paid"
       ? `Platba přijata — rezervace kurzu ${base.courseTitle} je potvrzená`
       : options.variant === "on_site"
         ? `Rezervace kurzu ${base.courseTitle} je potvrzená`
@@ -271,9 +279,15 @@ export const sendCourseReservationConfirmedEmail = async (
       variant: options.variant,
       // Tlačítko „Zaplatit" rovnou na bránu (vždy živá platba, viz coursePaymentLink).
       paymentLink:
-        options.variant === "awaiting_payment" || options.variant === "payment_failed"
+        options.variant === "awaiting_payment" ||
+        options.variant === "payment_failed" ||
+        change?.action === "supplement"
           ? coursePaymentLink(String(reservation.id))
           : "",
+      changeKind: change ? (change.action === "refund" && !change.refunded ? "refund_manual" : change.action) : "",
+      changeAmount: change ? formatMoney(change.amount, "czk") : "",
+      paidAmount: formatMoney(reservation.paid_amount ?? 0, "czk"),
+      amountDue: formatMoney(reservation.amount_due ?? 0, "czk"),
       invoicePdfUrl: options.invoicePdfUrl || "",
       invoiceAttached: attached(invoice),
       invitationUrl: invitation?.url ?? "",

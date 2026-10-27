@@ -225,36 +225,30 @@ describe("updateReservationPartySize", () => {
     expect(payload).not.toHaveProperty("payment_url")
   })
 
-  it("refuses when a card payment landed before the lock — either signal, re-checked in-transaction", async () => {
-    // The route's eligibility check ran on a pre-read; the ComGate subscriber
-    // may stamp the payment in the window before our lock. The method must
-    // re-decide on the locked row — a paid reservation's amount is fixed.
-    const paidByStatus = makeFakeManager({
+  it("reprices a paid reservation and keeps its payment link — the difference is settled outside (lib/course-party-change)", async () => {
+    // Od 28. 10. 2026: zaplacenou rezervaci jde upravit. Cena se přepočítá,
+    // ale prvotní platba (kolekce, relace, odkaz) zůstává — doplatek / vrácení
+    // řeší lib/course-party-change samostatnou platbou.
+    const paid = makeFakeManager({
       reservation: baseReservation({
         payment_method: "online",
         payment_status: "paid",
-      }),
-      term: baseTerm(),
-      takenByOthers: 0,
-    })
-    await expect(run(makeService(), paidByStatus, 2)).rejects.toThrow(
-      "Zaplacenou rezervaci"
-    )
-
-    const paidByStamp = makeFakeManager({
-      reservation: baseReservation({
-        payment_method: "online",
-        payment_status: "pending",
         paid_at: "2026-08-19T10:00:00Z",
+        payment_collection_id: "pay_col_1",
+        payment_session_id: "payses_1",
+        payment_url: "https://pay.example/1",
       }),
       term: baseTerm(),
       takenByOthers: 0,
     })
     const service = makeService()
-    await expect(run(service, paidByStamp, 2)).rejects.toThrow(
-      "Zaplacenou rezervaci"
-    )
-    expect(service.updateCourseReservations).not.toHaveBeenCalled()
+    await run(service, paid, 2)
+    expect(service.updateCourseReservations).toHaveBeenCalledTimes(1)
+    const patch = (service.updateCourseReservations as jest.Mock).mock.calls[0][0]
+    expect(patch.party_size).toBe(2)
+    expect(patch).not.toHaveProperty("payment_collection_id")
+    expect(patch).not.toHaveProperty("payment_session_id")
+    expect(patch).not.toHaveProperty("payment_url")
   })
 
   it("refuses cancelled reservations, non-published terms and nonsense sizes", async () => {

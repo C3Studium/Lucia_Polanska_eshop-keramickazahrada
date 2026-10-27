@@ -63,6 +63,10 @@ type Reservation = {
   party_size: number;
   pricing_tier: "single" | "pair" | "group";
   total_price: number;
+  /** Zaplaceno celkem (prvotní platba + doplatky − vrácené). */
+  paid_amount?: number;
+  /** Zbývá doplatit (doplatek po úpravě počtu osob / platba na místě). */
+  amount_due?: number;
   payment_method: "online" | "on_site";
   payment_status: "pending" | "paid" | "on_site";
   paid_at: string | null;
@@ -327,6 +331,17 @@ const ParticipantRow = ({
         <Text size="xsmall" className="text-ui-fg-muted">
           {TIER_LABEL[reservation.pricing_tier]}
         </Text>
+        {/* Evidence peněz: u zaplacené online rezervace po úpravě počtu osob. */}
+        {reservation.status !== "cancelled" &&
+        reservation.payment_method === "online" &&
+        (reservation.paid_amount ?? 0) > 0 ? (
+          <Text size="xsmall" className="tabular-nums text-ui-fg-subtle">
+            Zaplaceno {formatCzk(reservation.paid_amount ?? 0)}
+            {(reservation.amount_due ?? 0) > 0 ? (
+              <span className="text-ui-fg-error"> · zbývá {formatCzk(reservation.amount_due ?? 0)}</span>
+            ) : null}
+          </Text>
+        ) : null}
       </div>
 
       <div className="flex flex-wrap items-start justify-end gap-2">
@@ -507,7 +522,12 @@ const TermDetail = () => {
   const aktivni = term.reservations.filter((r) => r.status !== "cancelled");
   const zrusene = term.reservations.filter((r) => r.status === "cancelled");
   const zaplaceno = aktivni.filter((r) => r.payment_status === "paid");
-  const vybrano = zaplaceno.reduce((sum, r) => sum + r.total_price, 0);
+  // Skutečně vybráno: evidence peněz (doplatky i vrácené), u starších řádků cena.
+  const vybrano = aktivni.reduce(
+    (sum, r) => sum + (r.paid_amount ?? (r.payment_status === "paid" ? r.total_price : 0)),
+    0
+  );
+  void zaplaceno;
   const ocekavano = aktivni.reduce((sum, r) => sum + r.total_price, 0);
 
   const dayKey = pragueDayKey(term.starts_at);

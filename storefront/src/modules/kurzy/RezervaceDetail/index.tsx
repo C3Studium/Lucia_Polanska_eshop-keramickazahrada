@@ -170,6 +170,13 @@ const voiceFor = (
     }
     return say("zruseno", { tone: "warn" })
   }
+  if (reservation.payment_status === "paid" && (reservation.amount_due ?? 0) > 0) {
+    /* Po přidání osob zbývá doplatek — „Místo je vaše, platba dorazila" by lhalo. */
+    return say("nezaplaceno", {
+      tone: "warn",
+      moneyText: `Po přidání osob zbývá doplatit ${czk(reservation.amount_due ?? 0)}. Místo pro všechny držíme — doplatek zaplatíte kartou stejně jako rezervaci.`,
+    })
+  }
   if (reservation.payment_status === "paid") {
     return say("zaplaceno", { tone: "ok" })
   }
@@ -265,8 +272,8 @@ export default function RezervaceDetail({
      nebo rezervace skončí, hlídání se vypne samo. */
   const watching =
     reservation.payment_method === "online" &&
-    reservation.payment_status !== "paid" &&
-    reservation.status === "active"
+    reservation.status === "active" &&
+    (reservation.payment_status !== "paid" || (reservation.amount_due ?? 0) > 0)
   usePaymentWatch(async () => {
     router.refresh()
     return false
@@ -281,7 +288,10 @@ export default function RezervaceDetail({
   const paidOnline =
     reservation.payment_method === "online" &&
     reservation.payment_status === "paid"
-  const canEdit = canSelfService && !paidOnline
+  // I zaplacenou rezervaci jde upravit: rozdíl se doplatí, nebo vrátí (backend).
+  const canEdit = canSelfService
+  /* Doplatek po přidání osob u zaplacené rezervace. */
+  const supplementDue = paidOnline && (reservation.amount_due ?? 0) > 0
   /* The cutoff line shows only while there is still a course to miss. */
   const showCutoffNote = termOpen && !beforeCutoff && startsAtMs > Date.now()
 
@@ -314,16 +324,27 @@ export default function RezervaceDetail({
       setEditSaving(false)
       return
     }
+    // Přidané osoby u zaplacené rezervace → rovnou zaplatit rozdíl.
+    if (result.payment_url) {
+      setNotice(`Rezervace je nově pro ${result.party_size} ${peopleWord(result.party_size)}. Přesměrovávám na doplatek ${czk(result.amount_due)}…`)
+      window.location.href = result.payment_url
+      return
+    }
     setEditSaving(false)
     setEditOpen(false)
+    const change = result.change
     setNotice(
       `Hotovo — rezervace je nově pro ${result.party_size} ${peopleWord(
         result.party_size
       )}, celkem ${czk(result.total_price)}.${
-        reservation.payment_method === "on_site"
-          ? " Potvrzení s novými údaji jsme poslali e-mailem."
-          : ""
-      }`
+        change?.action === "refund"
+          ? change.refunded
+            ? ` Rozdíl ${czk(change.amount)} vám vracíme stejnou cestou, jakou jste platili.`
+            : ` Rozdíl ${czk(change.amount)} vám vrátíme — automaticky to nešlo, ozveme se.`
+          : change?.action === "supplement"
+            ? ` Zbývá doplatit ${czk(result.amount_due)} — tlačítko Doplatit najdete níž.`
+            : ""
+      } Potvrzení s novými údaji jsme poslali e-mailem.`
     )
     router.refresh()
   }, [
@@ -414,17 +435,48 @@ export default function RezervaceDetail({
               {peopleWord(reservation.party_size)}
             </dd>
           </div>
-          <div>
-            <dt>
-              {reservation.payment_status === "paid"
-                ? "Zaplaceno"
-                : reservation.payment_method === "on_site"
-                  ? "Na místě zaplatíte"
-                  : "K platbě"}
-            </dt>
-            <dd className="kurzyDetail__total">{czk(reservation.total_price)}</dd>
-          </div>
+          {supplementDue ? (
+            <>
+              <div>
+                <dt>Cena celkem</dt>
+                <dd>{czk(reservation.total_price)}</dd>
+              </div>
+              <div>
+                <dt>Zaplaceno</dt>
+                <dd>{czk(reservation.paid_amount ?? 0)}</dd>
+              </div>
+              <div>
+                <dt>K doplacení</dt>
+                <dd className="kurzyDetail__total">{czk(reservation.amount_due ?? 0)}</dd>
+              </div>
+            </>
+          ) : (
+            <div>
+              <dt>
+                {reservation.payment_status === "paid"
+                  ? "Zaplaceno"
+                  : reservation.payment_method === "on_site"
+                    ? "Na místě zaplatíte"
+                    : "K platbě"}
+              </dt>
+              <dd className="kurzyDetail__total">{czk(reservation.total_price)}</dd>
+            </div>
+          )}
         </dl>
+
+        {supplementDue ? (
+          <div className="kurzyDetail__actions">
+            <button type="button" className="kurzyDetail__retry" onClick={retry} disabled={retrying}>
+              {retrying ? "Připravuji platbu…" : `Doplatit ${czk(reservation.amount_due ?? 0)}`}
+              <i aria-hidden="true">↗</i>
+            </button>
+            {retryError ? (
+              <p className="kurzyDetail__error" role="alert">
+                {retryError}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         {voice.canRetry ? (
           <div className="kurzyDetail__actions">
@@ -499,6 +551,13 @@ export default function RezervaceDetail({
                   >
                     {selfService("zmena.napoveda")}
                   </p>
+                  {paidOnline ? (
+                    <p className="kurzyDetail__selfServiceHint">
+                      Rezervace je zaplacená: když osoby přidáte, rozdíl hned doplatíte kartou; když
+                      uberete, rozdíl vám vrátíme stejnou cestou, jakou jste platili. Cena na osobu se
+                      řídí počtem osob.
+                    </p>
+                  ) : null}
                   {editError ? (
                     <p className="kurzyDetail__error" role="alert">
                       {editError}
@@ -561,7 +620,7 @@ export default function RezervaceDetail({
                   se uvolní dalším zájemcům.{" "}
                   {paidOnline
                     ? `Zaplacenou částku ${czk(
-                        reservation.total_price
+                        reservation.paid_amount ?? reservation.total_price
                       )} vám vrátíme stejnou cestou, jakou jste platili.`
                     : "Nic jste zatím neplatili, takže se nic nevrací."}{" "}
                   Potvrzení o zrušení pošleme e-mailem.

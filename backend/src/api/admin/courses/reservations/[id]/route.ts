@@ -1,3 +1,4 @@
+import { syncCourseMoney } from "../../../../../lib/course-money"
 import type {
   AuthenticatedMedusaRequest,
   MedusaResponse,
@@ -95,6 +96,8 @@ export async function PATCH(
 
   if (Object.keys(patch).length === 1) {
     // Nic ke změně — vrátí se, co je, místo prázdného zápisu.
+    // Evidence peněz (zaplaceno / zbývá) po změně — lib/course-money.
+    await syncCourseMoney(req.scope, req.params.id).catch(() => null)
     res.json({ reservation: serializeAdminReservation(reservation) })
     return
   }
@@ -140,6 +143,8 @@ export async function PATCH(
     { relations: ["term"] } as never
   )) as any[]
 
+  // Evidence peněz (zaplaceno / zbývá) po změně — lib/course-money.
+  await syncCourseMoney(req.scope, req.params.id).catch(() => null)
   res.json({
     reservation: serializeAdminReservation(updated ?? reservation),
     email_sent: emailSent,

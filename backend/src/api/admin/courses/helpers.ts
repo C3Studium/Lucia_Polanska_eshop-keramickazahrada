@@ -13,6 +13,9 @@ export const serializeAdminReservation = (reservation: any) => ({
   party_size: Math.trunc(toAmount(reservation.party_size)),
   pricing_tier: reservation.pricing_tier,
   total_price: toAmount(reservation.total_price),
+  /** Evidence peněz (lib/course-money): zaplaceno celkem a zbývá doplatit. */
+  paid_amount: toAmount(reservation.paid_amount),
+  amount_due: toAmount(reservation.amount_due),
   payment_method: reservation.payment_method,
   payment_status: reservation.payment_status,
   paid_at: reservation.paid_at ?? null,

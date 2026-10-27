@@ -2,6 +2,8 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { COURSE_MODULE } from "../../../../../modules/course"
 import type CourseModuleService from "../../../../../modules/course/service"
 import { ensureCoursePaymentLink } from "../../../../../lib/course-payment"
+import { ensureCourseSupplementLink } from "../../../../../lib/course-party-change"
+import { toAmount } from "../../../../../modules/course/pricing"
 import {
   courseReservationLink,
   verifyCourseReservationToken,
@@ -31,10 +33,13 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     { relations: ["term"] } as never
   )) as any[]
 
+  // Doplatek po úpravě počtu osob: zaplacená rezervace, ale něco zbývá.
+  const supplementDue =
+    reservation?.payment_status === "paid" && toAmount(reservation?.amount_due) > 0
   const payable =
     reservation?.term &&
     reservation.payment_method === "online" &&
-    reservation.payment_status !== "paid" &&
+    (reservation.payment_status !== "paid" || supplementDue) &&
     reservation.status !== "cancelled" &&
     reservation.term.status === "published" &&
     new Date(reservation.term.starts_at).getTime() > Date.now()
@@ -46,7 +51,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   }
 
   try {
-    const link = await ensureCoursePaymentLink(req.scope, { reservation, term: reservation.term })
+    const link = supplementDue
+      ? await ensureCourseSupplementLink(req.scope, { reservation, term: reservation.term })
+      : await ensureCoursePaymentLink(req.scope, { reservation, term: reservation.term })
     res.redirect(303, link.payment_url)
   } catch (error) {
     req.scope

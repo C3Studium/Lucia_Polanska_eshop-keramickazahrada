@@ -1,3 +1,4 @@
+import { syncCourseMoney } from "../../../../../../lib/course-money"
 import type {
   AuthenticatedMedusaRequest,
   MedusaResponse,
@@ -108,6 +109,10 @@ export async function POST(
   )
   for (const reservation of refunded) {
     refundedIds.add(reservation.id)
+  }
+  // Evidence peněz po zrušení termínu a vrácení (lib/course-money).
+  for (const reservation of affected) {
+    await syncCourseMoney(req.scope, reservation.id).catch(() => null)
   }
 
   let emailsSent = 0

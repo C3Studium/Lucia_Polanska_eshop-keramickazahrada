@@ -5,7 +5,9 @@ import { toAmount } from "../../../../../modules/course/pricing"
 import { verifyCourseReservationToken } from "../../../../../lib/course-reservation-link"
 import {
   checkCourseReservationPayment,
+  checkCourseSupplementPayments,
   hasOpenOnlinePayment,
+  hasOpenSupplement,
 } from "../../../../../lib/course-payment-reconcile"
 
 /*
@@ -61,7 +63,16 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   let gatewayStatus: string | null = null
   const now = Date.now()
   const previous = lastCheck.get(reservationId)
-  if (hasOpenOnlinePayment(reservation) && previous && now - previous.at < CHECK_EVERY_MS) {
+  if (hasOpenSupplement(reservation) && !(previous && now - previous.at < CHECK_EVERY_MS)) {
+    lastCheck.set(reservationId, { at: now, status: null })
+    const captured = await checkCourseSupplementPayments(req.scope as any, reservationId).catch(() => false)
+    for (const wait of captured ? SETTLE_WAIT_MS : []) {
+      await new Promise((done) => setTimeout(done, wait))
+      const fresh = await loadReservation(courseService, reservationId)
+      if (fresh?.term) reservation = fresh
+      if (!hasOpenSupplement(reservation)) break
+    }
+  } else if (hasOpenOnlinePayment(reservation) && previous && now - previous.at < CHECK_EVERY_MS) {
     gatewayStatus = previous.status
   } else if (hasOpenOnlinePayment(reservation)) {
     if (lastCheck.size > 500) lastCheck.clear()
@@ -88,6 +99,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       total_price: toAmount(reservation.total_price),
       payment_method: reservation.payment_method,
       payment_status: reservation.payment_status,
+      /** Evidence peněz: zaplaceno celkem a zbývá (doplatek po úpravě / na místě). */
+      paid_amount: toAmount(reservation.paid_amount),
+      amount_due: toAmount(reservation.amount_due),
       /** Živý stav platby u ComGate (`canceled`, `pending`, …) — jen u otevřené online platby. */
       gateway_status: reservation.payment_status === "paid" ? null : gatewayStatus,
       status: reservation.status,

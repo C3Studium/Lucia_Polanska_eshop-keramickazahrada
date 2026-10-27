@@ -1,3 +1,4 @@
+import { syncCourseMoney } from "../../../../../../lib/course-money"
 import type {
   AuthenticatedMedusaRequest,
   MedusaResponse,
@@ -202,6 +203,8 @@ export async function POST(
     email: true,
   }).catch(() => undefined)
 
+  // Evidence peněz (zaplaceno / zbývá) po změně — lib/course-money.
+  await syncCourseMoney(req.scope, req.params.id).catch(() => null)
   res.json({
     ok: true,
     /** Money is (or already was) on its way back to the card. */

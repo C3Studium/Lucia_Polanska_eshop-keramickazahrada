@@ -73,15 +73,14 @@ describe("canCustomerEditParty", () => {
     ).toBe(true)
   })
 
-  it("never allows editing under a landed card payment — either signal counts", () => {
+  it("allows editing a paid online reservation too — the difference is paid or refunded (28. 10. 2026)", () => {
     expect(
       canCustomerEditParty({
         status: "active",
         payment_method: "online",
         payment_status: "paid",
       })
-    ).toBe(false)
-    // `paid_at` stamped but status not yet flipped — the subscriber race.
+    ).toBe(true)
     expect(
       canCustomerEditParty({
         status: "active",
@@ -89,7 +88,7 @@ describe("canCustomerEditParty", () => {
         payment_status: "pending",
         paid_at: "2026-08-19T10:00:00Z",
       })
-    ).toBe(false)
+    ).toBe(true)
   })
 
   it("refuses cancelled reservations regardless of payment", () => {
