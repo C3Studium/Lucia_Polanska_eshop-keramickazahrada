@@ -71,6 +71,10 @@ type AdminReservation = {
   party_size: number;
   pricing_tier: "single" | "pair" | "group";
   total_price: number;
+  /** Zaplaceno celkem (prvotní platba + doplatky − vrácené). */
+  paid_amount?: number;
+  /** Zbývá doplatit (doplatek po úpravě počtu osob / platba na místě). */
+  amount_due?: number;
   payment_method: "online" | "on_site";
   payment_status: "pending" | "paid" | "on_site";
   paid_at: string | null;
@@ -1062,6 +1066,11 @@ const TermCard = ({
                     <span className="text-ui-fg-muted">
                       ({TIER_LABEL[reservation.pricing_tier]})
                     </span>
+                    {reservation.payment_status === "paid" && 0 < (reservation.amount_due ?? 0) ? (
+                      <span className="text-ui-fg-error">
+                        {" "}· zbývá doplatit {formatCzk(reservation.amount_due ?? 0)}
+                      </span>
+                    ) : null}
                   </Text>
                 </div>
                 <div className="flex flex-wrap items-center justify-end gap-2">

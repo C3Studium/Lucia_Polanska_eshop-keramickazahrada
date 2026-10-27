@@ -37,8 +37,15 @@ interface CourseReservationConfirmedEmailProps {
    * anybody knows how the card payment went.
    */
   variant?: "paid" | "on_site" | "awaiting_payment" | "payment_failed"
-  /** Odkaz „Zaplatit" rovnou na bránu (čeká na platbu / platba neprošla). */
+  /** Odkaz „Zaplatit" rovnou na bránu (čeká na platbu / platba neprošla / doplatek). */
   paymentLink?: string
+  /** Úprava počtu osob: `supplement` = doplatit, `refund` = vráceno, `refund_manual` = vrátíme ručně. */
+  changeKind?: "" | "supplement" | "refund" | "refund_manual"
+  /** Částka doplatku / vrácení, naformátovaná. */
+  changeAmount?: string
+  /** Zaplaceno celkem a zbývá — u úpravy. */
+  paidAmount?: string
+  amountDue?: string
   /** Signed link to the reservation page. */
   reservationLink?: string
   /** Our copy of the iDoklad invoice PDF — empty when not (yet) issued. */
@@ -105,6 +112,10 @@ function CourseReservationConfirmedEmailComponent({
   variant = "on_site",
   reservationLink = "",
   paymentLink = "",
+  changeKind = "",
+  changeAmount = "",
+  paidAmount = "",
+  amountDue = "",
   invoicePdfUrl = "",
   invoiceAttached = false,
   invitationUrl = "",
@@ -127,7 +138,10 @@ function CourseReservationConfirmedEmailComponent({
   const awaiting = variant === "awaiting_payment"
   /* Platba na bráně zrušená, zamítnutá nebo vypršelá — místo pořád držím. */
   const failed = variant === "payment_failed"
-  const unpaid = awaiting || failed
+  const supplement = changeKind === "supplement"
+  const refund = changeKind === "refund" || changeKind === "refund_manual"
+  const changed = supplement || refund
+  const unpaid = awaiting || failed || supplement
   // Zástupný text `[[DOPLNIT …]]` zákazník nikdy neuvidí.
   const termsReady = hasCourseCancellationTerms(cancellationTerms)
   const attached = termsAttached && !attachments_failed
@@ -144,10 +158,16 @@ function CourseReservationConfirmedEmailComponent({
             : `Rezervace kurzu ${courseTitle} (${courseDate}) je potvrzená, platíte na místě.`
       }
     >
-      <Eyebrow>{paid ? "Kurz · platba přijata" : failed ? "Kurz · platba neprošla" : "Kurz · rezervace"}</Eyebrow>
+      <Eyebrow>
+        {changed ? "Kurz · úprava rezervace" : paid ? "Kurz · platba přijata" : failed ? "Kurz · platba neprošla" : "Kurz · rezervace"}
+      </Eyebrow>
       <EmailH1
         accent={
-          paid
+          supplement
+            ? "zbývá doplatit rozdíl."
+            : refund
+              ? "rozdíl vám vracím."
+              : paid
             ? "je zaplacená a potvrzená."
             : failed
               ? "místo vám pořád držím."
@@ -156,12 +176,18 @@ function CourseReservationConfirmedEmailComponent({
                 : "je potvrzená."
         }
       >
-        {failed ? "Platba neprošla," : "Vaše rezervace"}
+        {changed ? "Rezervace je upravená," : failed ? "Platba neprošla," : "Vaše rezervace"}
       </EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        {paid
+        {supplement
+          ? `změnu počtu osob mám. Nová cena je o ${changeAmount} vyšší než to, co už máte zaplaceno — rozdíl doplatíte tlačítkem níž. Tady je přehled:`
+          : changeKind === "refund"
+            ? `změnu počtu osob mám. Rozdíl ${changeAmount} vám vracím stejnou cestou, jakou jste platili — obvykle dorazí do několika dní. Tady je přehled:`
+            : changeKind === "refund_manual"
+              ? `změnu počtu osob mám. Rozdíl ${changeAmount} vám vrátím — automaticky to tentokrát nešlo, ozvu se vám. Tady je přehled:`
+        : paid
           ? "platba dorazila, děkuji. Rezervace kurzu je tím potvrzená a místo je vaše. Tady je přehled:"
           : failed
             ? "platba za rezervaci kurzu neprošla nebo byla zrušená — nic jsme vám nestrhli. Místo vám ale pořád držím, stačí zaplatit znovu. Tady je přehled:"
@@ -180,12 +206,21 @@ function CourseReservationConfirmedEmailComponent({
         label="Počet osob"
         value={`${partySize} ${partySize === 1 ? "osoba" : partySize < 5 ? "osoby" : "osob"}`}
       />
-      <LedgerRow
-        label={paid ? "Zaplaceno" : unpaid ? "K zaplacení" : "Cena (na místě)"}
-        value={totalAmount}
-        strong
-        tone="olive"
-      />
+      {changed ? (
+        <>
+          <LedgerRow label="Cena celkem" value={totalAmount} />
+          <LedgerRow label="Zaplaceno" value={paidAmount} />
+          {supplement ? <LedgerRow label="K doplacení" value={amountDue} strong tone="olive" /> : null}
+          {refund ? <LedgerRow label="Vracím" value={changeAmount} strong tone="olive" /> : null}
+        </>
+      ) : (
+        <LedgerRow
+          label={paid ? "Zaplaceno" : unpaid ? "K zaplacení" : "Cena (na místě)"}
+          value={totalAmount}
+          strong
+          tone="olive"
+        />
+      )}
       <LedgerEnd />
 
       {paid ? (
@@ -304,7 +339,9 @@ function CourseReservationConfirmedEmailComponent({
         <ButtonRow>
           {unpaid && paymentLink ? (
             <>
-              <EmailButton href={paymentLink}>{failed ? "Zaplatit znovu" : "Zaplatit"}</EmailButton>{" "}
+              <EmailButton href={paymentLink}>
+                {supplement ? `Doplatit ${amountDue}` : failed ? "Zaplatit znovu" : "Zaplatit"}
+              </EmailButton>{" "}
             </>
           ) : null}
           {reservationLink ? (

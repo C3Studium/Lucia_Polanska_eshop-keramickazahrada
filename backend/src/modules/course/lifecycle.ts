@@ -151,25 +151,17 @@ export type EditCandidate = {
 }
 
 /**
- * Whether the customer may change the party size themselves: only while no
- * online payment has landed. A paid card payment fixes the amount — changing
- * seats under it would detach the money from the price, so paid reservations
- * go through cancel (auto-refund) + re-book instead. `paid_at` OR a `paid`
- * status counts as paid, same belt-and-braces as `shouldAutoExpire`.
+ * Whether the customer may change the party size themselves.
+ *
+ * Od 28. 10. 2026 i u ZAPLACENÉ online rezervace: cena se přepočítá a rozdíl
+ * se doplatí novou platbou, nebo vrátí přes ComGate (lib/course-party-change,
+ * vzor zakázky — doplatek jako samostatná platba, evidence `paid_amount` /
+ * `amount_due`). Dřív šla zaplacená rezervace upravit jen zrušením a novou
+ * rezervací, a zákazník v okně neviděl proč.
  */
-export const canCustomerEditParty = (reservation: EditCandidate): boolean => {
-  if (reservation.status !== "active") {
-    return false
-  }
-  if (reservation.payment_method === "on_site") {
-    return true
-  }
-  return (
-    reservation.payment_method === "online" &&
-    reservation.payment_status !== "paid" &&
-    !reservation.paid_at
-  )
-}
+export const canCustomerEditParty = (reservation: EditCandidate): boolean =>
+  reservation.status === "active" &&
+  (reservation.payment_method === "on_site" || reservation.payment_method === "online")
 
 /* ------------------------------------------------------------------------- */
 /* Reminder window (3 days before the course)                                */

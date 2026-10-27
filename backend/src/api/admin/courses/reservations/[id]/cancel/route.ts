@@ -1,3 +1,4 @@
+import { syncCourseMoney } from "../../../../../../lib/course-money"
 import type {
   AuthenticatedMedusaRequest,
   MedusaResponse,
@@ -107,6 +108,8 @@ export async function POST(
     )
   )
 
+  // Evidence peněz (zaplaceno / zbývá) po změně — lib/course-money.
+  await syncCourseMoney(req.scope, req.params.id).catch(() => null)
   res.json({
     reservation: serializeAdminReservation(reservation),
     /** Whether the cancellation e-mail reached the queue (false = no address). */

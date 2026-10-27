@@ -5,6 +5,8 @@ import { getMerchantIdentity } from "@lib/data/merchant"
 import { getPageCopy } from "@lib/data/site-copy"
 import { retrieveOrder } from "@lib/data/orders"
 import PaymentPending from "@modules/cart/components/payment-pending"
+import CartPaymentWatcher from "@modules/cart/components/cart-payment-watcher"
+import { STUDIO_PREVIEW_ID } from "@lib/studio-preview/pages"
 
 type Props = {
   params: Promise<{ id: string }>
@@ -29,6 +31,9 @@ export default async function PaymentPendingPage(props: Props) {
   const copy = await getPageCopy("kosik")
 
   return (
+    <>
+    {/* Zaplaceno → objednávka, zrušeno → „nezaplaceno", hned (ne až po dohledu). */}
+    {id !== STUDIO_PREVIEW_ID ? <CartPaymentWatcher cartId={id} onCanceled="canceled-page" /> : null}
     <PaymentPending
       reference={id}
       orderNumber={order?.display_id ? `#${order.display_id}` : undefined}
@@ -36,5 +41,6 @@ export default async function PaymentPendingPage(props: Props) {
       supportPhone={merchant.phone}
       block={copy["kosik.platba-ceka"]}
     />
+    </>
   )
 }

@@ -1,3 +1,4 @@
+import { syncCourseMoney } from "../lib/course-money"
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { COURSE_MODULE } from "../modules/course"
@@ -75,6 +76,7 @@ export default async function expireCoursePayments(container: MedusaContainer) {
         continue
       }
       expired += 1
+      await syncCourseMoney(container, candidate.id).catch(() => null)
 
       const term = candidate.term
       if (term) {

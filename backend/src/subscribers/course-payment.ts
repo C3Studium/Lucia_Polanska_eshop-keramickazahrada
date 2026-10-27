@@ -6,6 +6,8 @@ import type CourseModuleService from "../modules/course/service"
 import { formatCourseDate, sendCourseReservationConfirmedEmail } from "../lib/course-emails"
 import { ensureInvoiceForCourseReservation } from "../lib/course-invoice"
 import { notifyMerchant } from "../lib/notify"
+import { syncCourseMoney } from "../lib/course-money"
+import { toAmount } from "../modules/course/pricing"
 
 /**
  * When a course reservation's ComGate payment arrives.
@@ -65,8 +67,13 @@ export default async function coursePaymentCapturedHandler({
         fields: ["id", "metadata"],
         filters: { id: collectionId },
       })
-      const staleReservationId = (collections[0] as any)?.metadata
-        ?.course_reservation_id
+      const metadata = (collections[0] as any)?.metadata ?? {}
+      // Doplatek po úpravě počtu osob (lib/course-party-change) — vlastní platba.
+      if (metadata.course_payment_request_id) {
+        await onSupplementCaptured(container, String(metadata.course_payment_request_id), payment)
+        return
+      }
+      const staleReservationId = metadata.course_reservation_id
       if (staleReservationId) {
         const [stale] = (await courseService.listCourseReservations(
           { id: staleReservationId } as never
@@ -149,6 +156,7 @@ export default async function coursePaymentCapturedHandler({
     } as never)
     reservation.payment_status = "paid"
     reservation.paid_at = payment.captured_at || new Date().toISOString()
+    Object.assign(reservation, (await syncCourseMoney(container, reservation.id)) ?? {})
     logger.info(
       `[kurzy] Rezervace ${reservation.id} (${reservation.name}) je zaplacená.`
     )
@@ -222,4 +230,52 @@ export default async function coursePaymentCapturedHandler({
 
 export const config: SubscriberConfig = {
   event: "payment.captured",
+}
+
+/**
+ * Zaplacený doplatek po úpravě počtu osob: záznam `paid`, přepočet
+ * `paid_amount` / `amount_due`, potvrzení zákazníkovi (s novou pozvánkou)
+ * a zpráva majitelce. Idempotentní — opakovaná událost nic nezdvojí.
+ */
+const onSupplementCaptured = async (container: any, requestId: string, payment: any) => {
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+  const courseService = container.resolve(COURSE_MODULE) as CourseModuleService
+  const [request] = (await courseService.listCoursePaymentRequests({ id: requestId } as never)) as any[]
+  if (!request) return
+  const firstCapture = request.status !== "paid"
+  if (firstCapture) {
+    await courseService.updateCoursePaymentRequests({
+      id: request.id,
+      // I nahrazený (zrušený) doplatek, který zákazník přesto zaplatil, je zaplacený.
+      status: "paid",
+      paid_at: payment?.captured_at ? new Date(payment.captured_at) : new Date(),
+    } as never)
+  }
+  const money = await syncCourseMoney(container, request.reservation_id)
+  const [reservation] = (await courseService.listCourseReservations(
+    { id: request.reservation_id } as never,
+    { relations: ["term"] } as never
+  )) as any[]
+  if (!reservation?.term || !firstCapture) return
+  logger.info(`[kurzy] Rezervace ${reservation.id}: doplatek ${toAmount(request.amount)} Kč zaplacen.`)
+
+  const overpaid = money ? Math.round((money.paid_amount - toAmount(reservation.total_price)) * 100) / 100 : 0
+  await sendCourseReservationConfirmedEmail(container, { ...reservation, ...(money ?? {}) }, reservation.term, {
+    variant: "paid",
+    keyOverride: `course-supplement-paid:${request.id}`,
+  }).catch(() => undefined)
+  await notifyMerchant(container, {
+    key: `course-supplement-paid:${request.id}`,
+    title: `Kurzy: doplatek zaplacen — ${reservation.name}`,
+    description: [
+      `${reservation.term.title} · ${formatCourseDate(reservation.term.starts_at)}`,
+      `${reservation.party_size} os. · doplatek ${toAmount(request.amount)} Kč kartou.`,
+      "Faktura na doplatek se automaticky nevystavuje — vystavte ji prosím v iDokladu.",
+      overpaid > 0 ? `POZOR: zákazník má přeplaceno ${overpaid} Kč (zaplatil nahrazený doplatek) — vraťte prosím rozdíl.` : "",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+    audience: "owner",
+    urgent: overpaid > 0,
+  }).catch(() => undefined)
 }

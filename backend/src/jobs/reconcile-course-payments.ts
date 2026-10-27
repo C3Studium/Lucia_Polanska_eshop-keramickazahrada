@@ -3,7 +3,9 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { COURSE_MODULE } from "../modules/course"
 import type CourseModuleService from "../modules/course/service"
 import {
+  checkCourseSupplementPayments,
   hasOpenOnlinePayment,
+  hasOpenSupplement,
   reconcileCourseReservationPayment,
 } from "../lib/course-payment-reconcile"
 
@@ -66,6 +68,17 @@ export default async function reconcileCoursePayments(
    * peníze bez místa a tu hlasitou cestu zařídí subscriber.
    */
   const otevrene = reservations.filter(hasOpenOnlinePayment)
+
+  // Doplatky po úpravě počtu osob — tatáž záchrana, když oznámení nechodí.
+  for (const reservation of reservations.filter(hasOpenSupplement)) {
+    await checkCourseSupplementPayments(container, reservation.id).catch((error) =>
+      logger.warn(
+        `[kurzy] Doplatek rezervace ${reservation.id} se nepodařilo ověřit: ${
+          error instanceof Error ? error.message : "neznámá chyba"
+        }`
+      )
+    )
+  }
 
   if (!otevrene.length) {
     return

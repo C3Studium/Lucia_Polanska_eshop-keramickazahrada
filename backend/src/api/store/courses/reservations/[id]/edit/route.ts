@@ -15,6 +15,9 @@ import {
 import { toAmount } from "../../../../../../modules/course/pricing"
 import { sendCourseReservationConfirmedEmail } from "../../../../../../lib/course-emails"
 import { loadReservationForSelfService } from "../self-service"
+import { settleCoursePartyChange, type PartyChangeOutcome } from "../../../../../../lib/course-party-change"
+import { syncCourseMoney } from "../../../../../../lib/course-money"
+import { notifyMerchant } from "../../../../../../lib/notify"
 
 /**
  * „Změnit počet osob" — the customer edits their own party size.
@@ -113,12 +116,49 @@ export async function POST(
     throw error
   }
 
-  if (reservation.email && reservation.payment_method === "on_site") {
-    await sendCourseReservationConfirmedEmail(req.scope, updated, term, {
-      variant: "on_site",
+  /*
+   * Peníze po přepočtu ceny (lib/course-party-change, vzor zakázky):
+   * zaplacená online rezervace → doplatek novou platbou, nebo vrácení rozdílu;
+   * na místě / nezaplacená online → nová cena platí sama.
+   */
+  let outcome: PartyChangeOutcome = { action: "none" }
+  try {
+    outcome = await settleCoursePartyChange(req.scope, { reservationId: reservation.id, term })
+  } catch (error) {
+    req.scope
+      .resolve("logger")
+      .error(
+        `[kurzy] Úprava rezervace ${reservation.id}: rozdíl se nepodařilo vyřídit: ${
+          error instanceof Error ? error.message : error
+        }`
+      )
+  }
+  const money = (await syncCourseMoney(req.scope, reservation.id)) ?? { paid_amount: 0, amount_due: 0 }
+  const fresh = { ...updated, ...money }
+
+  if (reservation.email) {
+    await sendCourseReservationConfirmedEmail(req.scope, fresh, term, {
+      variant:
+        reservation.payment_method === "on_site" ? "on_site" : money.paid_amount > 0 ? "paid" : "awaiting_payment",
       keyOverride: courseConfirmUpdatedKey(reservation.id, partySize),
+      change: outcome.action === "none" ? undefined : outcome,
     }).catch(() => undefined)
   }
+  await notifyMerchant(req.scope, {
+    key: `course-edit:${reservation.id}:${partySize}:${Date.now()}`,
+    title: `Kurzy: změna počtu osob — ${reservation.name}`,
+    description: [
+      `${term.title}: ${Math.trunc(toAmount(reservation.party_size))} → ${partySize} os., cena ${toAmount(updated.total_price)} Kč.`,
+      outcome.action === "supplement"
+        ? `Doplatek ${outcome.amount} Kč — zákazník platí kartou.`
+        : outcome.action === "refund"
+          ? outcome.refunded
+            ? `Vráceno ${outcome.amount} Kč přes ComGate.`
+            : `Vrátit ${outcome.amount} Kč — automaticky se nepovedlo, vraťte ručně.`
+          : "Bez platby (na místě / ještě nezaplaceno).",
+    ].join("\n"),
+    audience: "owner",
+  }).catch(() => undefined)
 
   res.json({
     ok: true,
@@ -127,6 +167,10 @@ export async function POST(
       party_size: Math.trunc(toAmount(updated.party_size)),
       pricing_tier: updated.pricing_tier,
       total_price: toAmount(updated.total_price),
+      paid_amount: money.paid_amount,
+      amount_due: money.amount_due,
     },
+    change: outcome,
+    ...(outcome.action === "supplement" ? { payment_url: outcome.payment_url } : {}),
   })
 }

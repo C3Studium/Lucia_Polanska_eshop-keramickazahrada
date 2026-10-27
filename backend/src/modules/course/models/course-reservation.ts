@@ -1,5 +1,6 @@
 import { model } from "@medusajs/framework/utils"
 import { CourseTerm } from "./course-term"
+import { CoursePaymentRequest } from "./course-payment-request"
 
 /**
  * One booking on a term — a web reservation (guest or logged-in customer) or
@@ -23,6 +24,21 @@ export const CourseReservation = model.define("course_reservation", {
   party_size: model.number(),
   pricing_tier: model.enum(["single", "pair", "group"]),
   total_price: model.bigNumber(),
+  /**
+   * Kolik u nás zákazník má zaplaceno (prvotní platba + doplatky − vrácené).
+   * Online rezervace: po zaplacení = cena; po změně počtu osob se drží
+   * skutečnost, ne nová cena. Na místě: 0, dokud se nezaplatí na místě.
+   */
+  paid_amount: model.bigNumber().default(0),
+  /**
+   * Kolik zbývá zaplatit: cena − zaplaceno (nikdy záporné; přeplatek se
+   * vrací a je v `course_payment_request` typu refund). Po přidání osob
+   * u zaplacené rezervace = doplatek.
+   */
+  amount_due: model.bigNumber().default(0),
+  payment_requests: model.hasMany(() => CoursePaymentRequest, {
+    mappedBy: "reservation",
+  }),
   payment_method: model.enum(["online", "on_site"]),
   payment_status: model
     .enum(["pending", "paid", "on_site"])

@@ -1,3 +1,4 @@
+import { syncCourseMoney } from "../../../../../../lib/course-money"
 import type {
   AuthenticatedMedusaRequest,
   MedusaResponse,
@@ -99,6 +100,8 @@ export async function POST(
     const [updated] = (await courseService.listCourseReservations(
       { id: reservation.id } as never
     )) as any[]
+    // Evidence peněz (zaplaceno / zbývá) po změně — lib/course-money.
+    await syncCourseMoney(req.scope, req.params.id).catch(() => null)
     res.json({
       reservation: serializeAdminReservation(updated ?? reservation),
       decision: "denied",
@@ -169,6 +172,8 @@ export async function POST(
     { id: reservation.id } as never
   )) as any[]
 
+  // Evidence peněz (zaplaceno / zbývá) po změně — lib/course-money.
+  await syncCourseMoney(req.scope, req.params.id).catch(() => null)
   res.json({
     reservation: serializeAdminReservation(updated ?? reservation),
     decision: "approved",

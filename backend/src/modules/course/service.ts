@@ -9,6 +9,7 @@ import type { EntityManager } from "@medusajs/framework/mikro-orm/knex"
 import { CourseReservation } from "./models/course-reservation"
 import { CourseTerm } from "./models/course-term"
 import { CourseWaitlist } from "./models/course-waitlist"
+import { CoursePaymentRequest } from "./models/course-payment-request"
 import { canCustomerEditParty } from "./lifecycle"
 import { fitsCapacity, quoteFor, toAmount } from "./pricing"
 
@@ -30,6 +31,7 @@ export default class CourseModuleService extends MedusaService({
   CourseTerm,
   CourseReservation,
   CourseWaitlist,
+  CoursePaymentRequest,
 }) {
   /**
    * Creates a reservation with the capacity check done *inside* the
@@ -130,6 +132,9 @@ export default class CourseModuleService extends MedusaService({
         payment_method: input.payment_method,
         payment_status:
           input.payment_method === "online" ? "pending" : "on_site",
+        // Evidence peněz (lib/course-money): nic zaplaceno, zbývá celá cena.
+        paid_amount: 0,
+        amount_due: quote.total,
         status: "active",
         source: input.source,
         note: input.note || null,

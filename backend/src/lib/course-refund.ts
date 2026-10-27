@@ -7,7 +7,8 @@ import {
   pickRefundablePayment,
 } from "../modules/course/lifecycle"
 import { toAmount } from "../modules/course/pricing"
-import { COMGATE_PROVIDER_ID } from "./balance-payment"
+import { netCapturedFor, reservationCollectionIds, syncCourseMoney } from "./course-money"
+import { refundCourseAmount } from "./course-party-change"
 
 /**
  * Automatic ComGate refunds for cancelled course reservations.
@@ -60,73 +61,39 @@ export const refundCourseReservation = async (
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
 
   try {
-    const query = container.resolve(ContainerRegistrationKeys.QUERY)
-    const { data: collections } = await query.graph({
-      entity: "payment_collection",
-      fields: [
-        "id",
-        "payments.id",
-        "payments.provider_id",
-        "payments.amount",
-        "payments.captured_at",
-        "payments.canceled_at",
-        "payments.captures.amount",
-        "payments.refunds.amount",
-      ],
-      filters: { id: reservation.payment_collection_id },
-    })
-    const payments = ((collections[0] as any)?.payments ?? []) as any[]
-    const payment = pickRefundablePayment(payments, COMGATE_PROVIDER_ID) as any
-
-    if (!payment) {
-      // Paid per our books but no captured ComGate payment to pull back —
-      // the state the manual fallback exists for.
-      return { status: "no_card_payment", amount: null }
-    }
-
-    // What is still refundable: captured minus already refunded. On the happy
-    // path that is simply the full amount (course collections hold exactly one
-    // full-capture payment) — but if a previous run refunded the money and
-    // crashed before stamping `refunded_at`, the retry lands here with zero
-    // remaining and must stamp instead of refunding twice.
-    const capturesSum = ((payment.captures ?? []) as any[]).reduce(
-      (sum, capture) => sum + toAmount(capture?.amount),
-      0
-    )
-    const captured = capturesSum > 0 ? capturesSum : toAmount(payment.amount)
-    const alreadyRefunded = ((payment.refunds ?? []) as any[]).reduce(
-      (sum, refund) => sum + toAmount(refund?.amount),
-      0
-    )
-    const amount = Math.round((captured - alreadyRefunded) * 100) / 100
-
-    if (!(captured > 0)) {
-      return { status: "no_card_payment", amount: null }
-    }
-
+    /*
+     * Vrací VŠECHNY peníze rezervace: prvotní platbu i doplatky po úpravě
+     * počtu osob (lib/course-party-change), minus to, co už se vrátilo
+     * (vratka po ubrání osob, nebo dřívější běh, který spadl před razítkem).
+     */
     const courseService = container.resolve<CourseModuleService>(COURSE_MODULE)
+    const requests = (await courseService.listCoursePaymentRequests({ reservation_id: reservation.id } as never)) as any[]
+    const amount = await netCapturedFor(container, reservationCollectionIds(reservation, requests))
 
     if (!(amount > 0)) {
-      // The money already went back (a stamp that never landed) — record the
-      // fact and report it as the already-refunded case it is.
-      await courseService.updateCourseReservations({
-        id: reservation.id,
-        refunded_at: new Date(),
-      } as never)
+      // Nic zachyceného k vrácení: buď nebylo zaplaceno kartou, nebo už se vše
+      // vrátilo (razítko, které nedopadlo) — razítko jen tehdy, když platba byla.
+      if (!reservation.payment_collection_id) return { status: "no_card_payment", amount: null }
+      await courseService.updateCourseReservations({ id: reservation.id, refunded_at: new Date() } as never)
+      await syncCourseMoney(container, reservation.id)
       return { status: "already_refunded", amount: null }
     }
 
-    const paymentModule = container.resolve(Modules.PAYMENT)
-    await paymentModule.refundPayment({
-      payment_id: payment.id,
+    const refunded = await refundCourseAmount(
+      container,
+      reservation,
       amount,
-      note: `Zrušená rezervace kurzu ${reservation.id}`,
-    })
+      `Zrušená rezervace kurzu ${reservation.id}`
+    )
+    if (Math.round(refunded * 100) < Math.round(amount * 100)) {
+      throw new Error(`vráceno jen ${refunded} z ${amount} Kč`)
+    }
 
     await courseService.updateCourseReservations({
       id: reservation.id,
       refunded_at: new Date(),
     } as never)
+    await syncCourseMoney(container, reservation.id)
 
     logger.info(
       `[kurzy] Rezervace ${reservation.id} (${reservation.name}) — vráceno ${amount} Kč přes ComGate.`

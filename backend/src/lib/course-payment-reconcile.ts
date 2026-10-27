@@ -122,3 +122,47 @@ export const reconcileCourseReservationPayment = async (
   container: MedusaContainer,
   reservation: any
 ): Promise<boolean> => (await checkCourseReservationPayment(container, reservation)).captured
+
+/** Zaplacená rezervace, ale po úpravě počtu osob zbývá doplatek. */
+export const hasOpenSupplement = (reservation: any): boolean =>
+  Boolean(
+    reservation &&
+      reservation.payment_method === "online" &&
+      reservation.payment_status === "paid" &&
+      reservation.status !== "cancelled" &&
+      toAmount(reservation.amount_due) > 0
+  )
+
+/**
+ * Doplatky čekající na platbu (`course_payment_request`): zaplacený u brány
+ * zachytí (→ subscriber: zaplaceno, přepočet, e-mail), zrušený u brány označí
+ * jako zrušený (další „Doplatit" založí nový). Vrací, zda se něco zachytilo.
+ */
+export const checkCourseSupplementPayments = async (
+  container: MedusaContainer,
+  reservationId: string
+): Promise<boolean> => {
+  const courseService = container.resolve(COURSE_MODULE) as any
+  const pending = ((await courseService.listCoursePaymentRequests({
+    reservation_id: reservationId,
+    type: "supplement",
+    status: "pending",
+  })) as any[]).filter((r) => r.payment_session_id)
+  let captured = false
+  for (const request of pending) {
+    const status = await courseGatewayStatus(container, request)
+    if (status === "canceled") {
+      await courseService.updateCoursePaymentRequests({ id: request.id, status: "cancelled", note: "Zrušeno na platební bráně." })
+      continue
+    }
+    if (!status || !HOTOVO.includes(status)) continue
+    await processPaymentWorkflow(container).run({
+      input: {
+        action: "captured",
+        data: { session_id: request.payment_session_id, amount: toAmount(request.amount) },
+      } as never,
+    })
+    captured = true
+  }
+  return captured
+}
