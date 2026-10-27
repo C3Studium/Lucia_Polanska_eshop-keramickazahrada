@@ -69,9 +69,16 @@ export const LEGAL_FACT_DEFAULTS: Readonly<LegalFactValues> = Object.freeze({
   "seller.name": "Lucie Polanská",
   "seller.address": "Putim 229, 397 01 Písek",
   "seller.ico": "03441482",
-  /* Úřad, který vede živnostenský rejstřík (§ 435 OZ) — čeká na potvrzení
-     (OPEN_QUESTIONS N5). Null: dokument pak uvede zápis bez úřadu. */
-  "seller.register": null,
+  /*
+   * Úřad, který vede živnostenský rejstřík (§ 435 OZ — údaj o zápisu patří
+   * na obchodní listiny, a potvrzení smlouvy jí je).
+   *
+   * Potvrzeno 24. 10. 2026 (OPEN_QUESTIONS N5): týž úřad, který na webu
+   * uvádějí obchodní podmínky („zapsaná v živnostenském rejstříku vedeném
+   * Městským úřadem Písek"). Sedmý pád schválně — dokument skládá větu
+   * „…rejstříku vedeném {hodnota}" (lib/potvrzeni-zakazky/fields.ts).
+   */
+  "seller.register": "Městským úřadem Písek",
   /*
    * Kontaktní adresa prodávající v právních dokumentech (24. 10. 2026).
    *
