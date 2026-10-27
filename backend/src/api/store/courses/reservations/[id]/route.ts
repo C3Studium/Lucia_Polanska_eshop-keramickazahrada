@@ -9,6 +9,7 @@ import {
   hasOpenOnlinePayment,
   hasOpenSupplement,
 } from "../../../../../lib/course-payment-reconcile"
+import { pendingCourseChange } from "../../../../../lib/course-party-change"
 
 /*
  * Rychlé potvrzení platby. Zákazník se z ComGate vrací sem (`?vysledek=paid`)
@@ -63,15 +64,19 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   let gatewayStatus: string | null = null
   const now = Date.now()
   const previous = lastCheck.get(reservationId)
-  if (hasOpenSupplement(reservation) && !(previous && now - previous.at < CHECK_EVERY_MS)) {
+  // Rozpracovaná změna počtu osob (čekající doplatek) — platí, až doplatek projde.
+  let pending = await pendingCourseChange(req.scope as any, reservationId).catch(() => null)
+  if ((hasOpenSupplement(reservation) || pending) && !(previous && now - previous.at < CHECK_EVERY_MS)) {
     lastCheck.set(reservationId, { at: now, status: null })
     const captured = await checkCourseSupplementPayments(req.scope as any, reservationId).catch(() => false)
     for (const wait of captured ? SETTLE_WAIT_MS : []) {
       await new Promise((done) => setTimeout(done, wait))
       const fresh = await loadReservation(courseService, reservationId)
       if (fresh?.term) reservation = fresh
-      if (!hasOpenSupplement(reservation)) break
+      pending = await pendingCourseChange(req.scope as any, reservationId).catch(() => null)
+      if (!pending && !hasOpenSupplement(reservation)) break
     }
+    if (!captured) pending = await pendingCourseChange(req.scope as any, reservationId).catch(() => null)
   } else if (hasOpenOnlinePayment(reservation) && previous && now - previous.at < CHECK_EVERY_MS) {
     gatewayStatus = previous.status
   } else if (hasOpenOnlinePayment(reservation)) {
@@ -101,6 +106,14 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       payment_status: reservation.payment_status,
       /** Schválená výjimka (žádost o místo) — zákazník si ještě vybírá platbu. */
       payment_choice_pending: Boolean(reservation.payment_choice_pending),
+      /** Rozpracovaná změna počtu osob — platí po zaplacení doplatku. */
+      pending_change: pending
+        ? {
+            party_size: Math.trunc(toAmount(pending.party_size)),
+            total_price: toAmount(pending.total_price),
+            amount: toAmount(pending.amount),
+          }
+        : null,
       /** Evidence peněz: zaplaceno celkem a zbývá (doplatek po úpravě / na místě). */
       paid_amount: toAmount(reservation.paid_amount),
       amount_due: toAmount(reservation.amount_due),

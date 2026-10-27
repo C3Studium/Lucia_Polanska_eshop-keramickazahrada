@@ -7,6 +7,7 @@ import { formatCourseDate, sendCourseReservationConfirmedEmail } from "../lib/co
 import { ensureInvoiceForCourseReservation } from "../lib/course-invoice"
 import { notifyMerchant } from "../lib/notify"
 import { syncCourseMoney } from "../lib/course-money"
+import { applyPaidCourseChange } from "../lib/course-party-change"
 import { toAmount } from "../modules/course/pricing"
 
 /**
@@ -251,12 +252,16 @@ const onSupplementCaptured = async (container: any, requestId: string, payment: 
       paid_at: payment?.captured_at ? new Date(payment.captured_at) : new Date(),
     } as never)
   }
+  // Změna počtu osob platí až teď (rozpracovaná změna → zaplaceno).
+  const applied = firstCapture ? await applyPaidCourseChange(container, request).catch(() => "noop") : "noop"
   const money = await syncCourseMoney(container, request.reservation_id)
   const [reservation] = (await courseService.listCourseReservations(
     { id: request.reservation_id } as never,
     { relations: ["term"] } as never
   )) as any[]
   if (!reservation?.term || !firstCapture) return
+  // Změnu nešlo provést (termín se zaplnil) — doplatek se vrátil, majitelka má zprávu.
+  if (applied === "refunded") return
   logger.info(`[kurzy] Rezervace ${reservation.id}: doplatek ${toAmount(request.amount)} Kč zaplacen.`)
 
   const overpaid = money ? Math.round((money.paid_amount - toAmount(reservation.total_price)) * 100) / 100 : 0

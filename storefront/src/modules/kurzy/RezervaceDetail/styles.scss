@@ -181,6 +181,11 @@
     font-size: 0.9rem;
   }
 
+  /* Shrnutí změny počtu osob před potvrzením („pokladna"). */
+  &__summary {
+    margin: 0.75rem 0 0.25rem !important;
+  }
+
   &__notice {
     margin: clamp(0.875rem, 2vh, 1.25rem) 0 0;
     padding: 0.75rem 0.875rem;

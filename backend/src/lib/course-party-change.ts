@@ -3,7 +3,7 @@ import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/frame
 import { createPaymentSessionsWorkflow } from "@medusajs/medusa/core-flows"
 import { COURSE_MODULE } from "../modules/course"
 import type CourseModuleService from "../modules/course/service"
-import { toAmount } from "../modules/course/pricing"
+import { fitsCapacity, quoteFor, toAmount } from "../modules/course/pricing"
 import { COMGATE_PROVIDER_ID, paymentUrlFromSession } from "./balance-payment"
 import { courseReservationPath } from "./course-reservation-link"
 import { syncCourseMoney } from "./course-money"
@@ -54,46 +54,89 @@ const supplementGatewayStatus = async (container: MedusaContainer, request: any)
   return String((await paymentStatusFromProvider(container, session as any))?.status ?? "").toLowerCase() || null
 }
 
+/* ------------------------------------------------------------- náhled -- */
+
+export type PartyChangePreview = {
+  party_size: number
+  pricing_tier: string
+  per_person: number
+  total_price: number
+  /** Kolik zákazník u nás má zaplaceno (online), 0 u platby na místě / nezaplacené. */
+  paid_amount: number
+  /** `supplement` = doplatit, `refund` = vrátíme, `none` = bez pohybu peněz. */
+  action: "supplement" | "refund" | "none"
+  amount: number
+  /** Vejde se nový počet na termín? */
+  seats_ok: boolean
+  message?: string
+}
+
 /**
- * Odkaz na zaplacení doplatku (`amount_due`). Živý rozpracovaný doplatek se
- * stejnou částkou se vrátí (dvojklik = jedna platba), zrušený u brány nikdy.
+ * Náhled změny počtu osob — NIC neukládá. Stránka rezervace ho ukáže jako
+ * shrnutí („pokladnu") před potvrzením: nová cena, zaplaceno, doplatek /
+ * vrácení. Stejný výpočet pak použije samotná změna.
  */
-export const ensureCourseSupplementLink = async (
+export const previewCoursePartyChange = async (
   container: MedusaContainer,
-  { reservation, term }: { reservation: any; term: any }
-): Promise<{ payment_url: string; amount: number; request_id: string }> => {
+  { reservation, term, partySize }: { reservation: any; term: any; partySize: number }
+): Promise<PartyChangePreview> => {
   const courseService = container.resolve<CourseModuleService>(COURSE_MODULE)
-  const amount = round2(toAmount(reservation.amount_due))
-  if (!(amount > 0)) {
-    throw new MedusaError(MedusaError.Types.INVALID_DATA, "U rezervace není co doplácet.")
-  }
+  const quote = quoteFor(partySize, term)
+  const others = (await courseService.listCourseReservations({ term_id: term.id, status: "active" } as never)) as any[]
+  const taken = others
+    .filter((r) => r.id !== reservation.id)
+    .reduce((sum, r) => sum + Math.trunc(toAmount(r.party_size)), 0)
+  const seatsOk = fitsCapacity(term.capacity, taken, partySize)
+  const left = Math.max(0, Math.trunc(toAmount(term.capacity)) - taken)
 
-  const open = (await listRequests(container, reservation.id)).find(
-    (r) => r.type === "supplement" && r.status === "pending"
-  )
-  if (open && round2(toAmount(open.amount)) === amount && open.payment_url) {
-    const live = await supplementGatewayStatus(container, open).catch(() => null)
-    if (live !== "canceled") return { payment_url: open.payment_url, amount, request_id: open.id }
+  const paidOnline = reservation.payment_method === "online" && toAmount(reservation.paid_amount) > 0
+  const paid = paidOnline ? round2(toAmount(reservation.paid_amount)) : 0
+  const diff = round2(quote.total - paid)
+  return {
+    party_size: partySize,
+    pricing_tier: quote.tier,
+    per_person: quote.per_person,
+    total_price: quote.total,
+    paid_amount: paid,
+    action: !paidOnline || diff === 0 ? "none" : diff > 0 ? "supplement" : "refund",
+    amount: paidOnline ? Math.abs(diff) : 0,
+    seats_ok: seatsOk,
+    ...(seatsOk
+      ? {}
+      : {
+          message:
+            left > 0
+              ? `Na tento termín zbývá už jen ${left} ${left === 1 ? "místo" : left < 5 ? "místa" : "míst"}.`
+              : "Tento termín je už plně obsazený.",
+        }),
   }
-  if (open) {
-    await courseService.updateCoursePaymentRequests({ id: open.id, status: "cancelled" } as never)
-  }
+}
 
+/* --------------------------------------------- doplatek = rozpracovaná změna -- */
+
+/** Rozpracovaná změna (čekající doplatek), nebo null. */
+export const pendingCourseChange = async (container: MedusaContainer, reservationId: string) =>
+  (await listRequests(container, reservationId)).find((r) => r.type === "supplement" && r.status === "pending") ?? null
+
+const createSupplementPayment = async (
+  container: MedusaContainer,
+  { reservation, term, amount, partySize, total }: { reservation: any; term: any; amount: number; partySize: number; total: number }
+) => {
+  const courseService = container.resolve<CourseModuleService>(COURSE_MODULE)
   const paymentModule = container.resolve(Modules.PAYMENT)
   const request = (await courseService.createCoursePaymentRequests({
     reservation_id: reservation.id,
     type: "supplement",
     status: "pending",
     amount,
-    party_size: Math.trunc(toAmount(reservation.party_size)),
-    total_price: toAmount(reservation.total_price),
+    party_size: partySize,
+    total_price: total,
   } as never)) as any
   const collection = await paymentModule.createPaymentCollections({
     currency_code: "czk",
     amount,
     metadata: { course_reservation_id: reservation.id, course_payment_request_id: request.id },
   })
-
   const { result: session } = await createPaymentSessionsWorkflow(container).run({
     input: {
       payment_collection_id: collection.id,
@@ -106,7 +149,7 @@ export const ensureCourseSupplementLink = async (
         full_name: reservation.name,
         country_code: "CZ",
         label: "Kurz doplatek".slice(0, 16),
-        name: `Doplatek kurzu — ${term.title}`,
+        name: `Doplatek kurzu — ${term.title} (${partySize} os.)`,
         lang: "cs",
         category: "OTHER",
         delivery: "ELECTRONIC_DELIVERY",
@@ -128,6 +171,106 @@ export const ensureCourseSupplementLink = async (
     payment_url: paymentUrl,
   } as never)
   return { payment_url: paymentUrl, amount, request_id: request.id }
+}
+
+/**
+ * Zákazník přidal osoby u zaplacené rezervace: založí ROZPRACOVANOU změnu —
+ * doplatek s cílovým počtem osob a cenou. Rezervace se zatím NEMĚNÍ; změna
+ * platí, až doplatek projde (`applyPaidCourseChange`). Zrušená platba nebo
+ * „Zrušit změnu" tak nechá rezervaci, jak byla.
+ */
+export const startCourseSupplement = async (
+  container: MedusaContainer,
+  { reservation, term, preview }: { reservation: any; term: any; preview: PartyChangePreview }
+) => {
+  await cancelPendingSupplements(container, reservation.id)
+  return createSupplementPayment(container, {
+    reservation,
+    term,
+    amount: preview.amount,
+    partySize: preview.party_size,
+    total: preview.total_price,
+  })
+}
+
+/**
+ * „Doplatit" ze stránky / e-mailu: živý rozpracovaný doplatek se vrátí
+ * (dvojklik = jedna platba), zrušený u brány se založí znovu se stejným cílem.
+ */
+export const ensureCourseSupplementLink = async (
+  container: MedusaContainer,
+  { reservation, term }: { reservation: any; term: any }
+): Promise<{ payment_url: string; amount: number; request_id: string }> => {
+  const courseService = container.resolve<CourseModuleService>(COURSE_MODULE)
+  const open = await pendingCourseChange(container, reservation.id)
+  if (!open) {
+    // Starší stav (doplatek po okamžité změně): zbývá-li něco, zaplatí se to.
+    const due = round2(toAmount(reservation.amount_due))
+    if (!(due > 0)) throw new MedusaError(MedusaError.Types.INVALID_DATA, "U rezervace není co doplácet.")
+    return createSupplementPayment(container, {
+      reservation,
+      term,
+      amount: due,
+      partySize: Math.trunc(toAmount(reservation.party_size)),
+      total: toAmount(reservation.total_price),
+    })
+  }
+  if (open.payment_url) {
+    const live = await supplementGatewayStatus(container, open).catch(() => null)
+    if (live !== "canceled") return { payment_url: open.payment_url, amount: round2(toAmount(open.amount)), request_id: open.id }
+  }
+  await courseService.updateCoursePaymentRequests({ id: open.id, status: "cancelled" } as never)
+  return createSupplementPayment(container, {
+    reservation,
+    term,
+    amount: round2(toAmount(open.amount)),
+    partySize: Math.trunc(toAmount(open.party_size)),
+    total: toAmount(open.total_price),
+  })
+}
+
+/**
+ * Doplatek prošel → změna počtu osob platí. Když se mezitím termín zaplnil
+ * (místa se během platby nedrží), doplatek se vrátí a majitelka dostane zprávu.
+ * @returns `applied` | `refunded` | `noop`
+ */
+export const applyPaidCourseChange = async (
+  container: MedusaContainer,
+  request: any
+): Promise<"applied" | "refunded" | "noop"> => {
+  const courseService = container.resolve<CourseModuleService>(COURSE_MODULE)
+  const [reservation] = (await courseService.listCourseReservations({ id: request.reservation_id } as never)) as any[]
+  const target = Math.trunc(toAmount(request.party_size))
+  if (!reservation || reservation.status !== "active" || Math.trunc(toAmount(reservation.party_size)) === target) {
+    return "noop"
+  }
+  try {
+    await courseService.updateReservationPartySize({ reservation_id: reservation.id, party_size: target })
+    return "applied"
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    const refunded = await refundCourseAmount(
+      container,
+      { ...reservation, payment_collection_id: null },
+      toAmount(request.amount),
+      `Doplatek kurzu ${reservation.id} — změnu nešlo provést`
+    ).catch(() => 0)
+    await courseService
+      .updateCoursePaymentRequests({ id: request.id, note: `Změnu nešlo provést (${message}); vráceno ${refunded} Kč.` } as never)
+      .catch(() => undefined)
+    await notifyMerchant(container, {
+      key: `course-change-failed:${request.id}`,
+      title: `Kurzy: doplatek zaplacen, ale změna nešla — ${reservation.name}`,
+      description: [
+        `Zákazník doplatil ${toAmount(request.amount)} Kč za změnu na ${target} os., ale změna nešla provést: ${message}`,
+        refunded > 0 ? `Doplatek ${refunded} Kč se vrátil přes ComGate.` : "Doplatek se nepodařilo vrátit automaticky — vraťte prosím ručně.",
+        "Ozvěte se prosím zákazníkovi.",
+      ].join(String.fromCharCode(10)),
+      audience: "owner",
+      urgent: true,
+    }).catch(() => undefined)
+    return "refunded"
+  }
 }
 
 /**

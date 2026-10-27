@@ -259,7 +259,7 @@ export const sendCourseReservationConfirmedEmail = async (
   const change = options.change
   const subject = change
     ? change.action === "supplement"
-      ? `Rezervace kurzu ${base.courseTitle} je upravená — zbývá doplatit ${formatMoney(change.amount, "czk")}`
+      ? `Změna rezervace kurzu ${base.courseTitle} — zbývá doplatit ${formatMoney(change.amount, "czk")}`
       : `Rezervace kurzu ${base.courseTitle} je upravená — rozdíl vám vracím`
     : options.variant === "paid"
       ? `Platba přijata — rezervace kurzu ${base.courseTitle} je potvrzená`

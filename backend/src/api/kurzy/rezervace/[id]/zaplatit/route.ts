@@ -2,7 +2,7 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { COURSE_MODULE } from "../../../../../modules/course"
 import type CourseModuleService from "../../../../../modules/course/service"
 import { ensureCoursePaymentLink } from "../../../../../lib/course-payment"
-import { ensureCourseSupplementLink } from "../../../../../lib/course-party-change"
+import { ensureCourseSupplementLink, pendingCourseChange } from "../../../../../lib/course-party-change"
 import { toAmount } from "../../../../../modules/course/pricing"
 import {
   courseReservationLink,
@@ -35,7 +35,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
   // Doplatek po úpravě počtu osob: zaplacená rezervace, ale něco zbývá.
   const supplementDue =
-    reservation?.payment_status === "paid" && toAmount(reservation?.amount_due) > 0
+    reservation?.payment_status === "paid" &&
+    (toAmount(reservation?.amount_due) > 0 ||
+      Boolean(reservation && (await pendingCourseChange(req.scope, reservation.id))))
   const payable =
     reservation?.term &&
     reservation.payment_method === "online" &&

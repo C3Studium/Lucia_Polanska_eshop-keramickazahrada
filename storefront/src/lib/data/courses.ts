@@ -88,6 +88,8 @@ export type CourseReservationDetail = {
   payment_status: "pending" | "paid" | "on_site"
   /** Schválená žádost o místo — zákazník si ještě vybírá platbu a potvrzuje podmínky. */
   payment_choice_pending?: boolean
+  /** Rozpracovaná změna počtu osob — platí, až projde doplatek. */
+  pending_change?: { party_size: number; total_price: number; amount: number } | null
   /**
    * Živý stav platby u ComGate (`canceled` = zákazník klikl „Zrušit platbu",
    * `pending` = platba otevřená, třeba po „Návrat do e-shopu"). Jen u
@@ -259,6 +261,42 @@ export const joinCourseWaitlist = async (
     }
   }
 }
+
+export type CoursePartyChangePreview = {
+  party_size: number
+  pricing_tier: string
+  per_person: number
+  total_price: number
+  paid_amount: number
+  action: "supplement" | "refund" | "none"
+  amount: number
+  seats_ok: boolean
+  message?: string
+}
+
+/** Shrnutí změny počtu osob před potvrzením — nic neukládá. */
+export const previewCoursePartyChange = async (
+  reservationId: string,
+  token: string,
+  partySize: number
+): Promise<CoursePartyChangePreview | null> =>
+  sdk.client
+    .fetch<{ preview: CoursePartyChangePreview }>(
+      `/store/courses/reservations/${reservationId}/edit/preview?token=${encodeURIComponent(token)}`,
+      { method: "POST", body: { party_size: partySize }, cache: "no-store" }
+    )
+    .then((result) => result.preview)
+    .catch(() => null)
+
+/** „Zrušit změnu" — zahodí rozpracovanou změnu (čekající doplatek). */
+export const discardCourseChange = async (reservationId: string, token: string): Promise<boolean> =>
+  sdk.client
+    .fetch(`/store/courses/reservations/${reservationId}/edit/discard?token=${encodeURIComponent(token)}`, {
+      method: "POST",
+      cache: "no-store",
+    })
+    .then(() => true)
+    .catch(() => false)
 
 /**
  * Potvrzení schválené výjimky (žádost o místo): volba platby + souhlasy.
