@@ -96,7 +96,7 @@ const MISSING: Record<LegalFactKey, string> = {
   "vat.status": "plátce DPH ano/ne",
   "mto.deposit": "výše zálohy u zakázky v %, doporučeno 30–50 %",
   "course.cancellation":
-    "storno podmínky kurzů, doporučeno: 7 a více dní předem 100 %, 2–6 dní 50 % nebo přesun, méně než 48 h 0 %",
+    "storno podmínky kurzů — online zrušení nejpozději 24 h před kurzem (celá částka zpět), později jen telefonicky",
   "voucher.validity": "platnost poukazu, dnes 1 rok",
   "voucher.remainder": "co se stane se zůstatkem poukazu, když nákup nedosáhne jeho hodnoty",
   "privacy.newsletterTool": "nástroj na rozesílku newsletteru",

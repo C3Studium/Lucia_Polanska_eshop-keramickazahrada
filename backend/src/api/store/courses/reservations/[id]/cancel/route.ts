@@ -23,7 +23,7 @@ import { loadReservationForSelfService } from "../self-service"
  * „Zrušit rezervaci" — the customer cancels their own booking.
  *
  * Access is the token OR the logged-in owner of the reservation (see
- * `../self-service.ts`). Allowed until 48 hours before the term starts —
+ * `../self-service.ts`). Allowed until 24 hours before the term starts —
  * after that the route refuses with a Czech ask-to-call message, because
  * inside that window the owner plans material and seats around the headcount.
  *

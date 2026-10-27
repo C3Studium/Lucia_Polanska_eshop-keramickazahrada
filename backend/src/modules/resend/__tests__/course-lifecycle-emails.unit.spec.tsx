@@ -44,7 +44,7 @@ describe("course lifecycle e-mails", () => {
         }) as React.ReactElement
       )
 
-      expect(html).toContain("Platba nedorazila")
+      expect(html).toContain("Rezervace vypršela")
       expect(html).toContain("do 24 hodin")
       expect(html).toContain("uvolnila")
       expect(html).toContain("Kurz točení pro dospělé")
@@ -113,7 +113,7 @@ describe("course lifecycle e-mails", () => {
           partySize: 2,
         }) as React.ReactElement
       )
-      expect(html).toContain("Uvolnilo se místo")
+      expect(html).toContain("Na kurzu je volné místo")
       expect(html).toContain("kdo dřív dokončí rezervaci")
       expect(html).toContain("https://keramickazahrada.cz/cz/kurzy#rezervace")
       expect(html).toContain("Rezervovat místo")

@@ -347,6 +347,47 @@
     font-weight: 300;
   }
 
+  /* Lišta nad kroky: jaký kurz, kdy, kde a kolik je volno — na všech krocích. */
+  &__course {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.875rem;
+    min-width: 0;
+    margin-top: clamp(0.75rem, 1.8vh, 1.125rem);
+    padding: 0.625rem 0.875rem;
+    border: 1px solid rgb(var(--ink-05-rgb) / .16);
+    border-radius: 0.625rem;
+    background: rgb(var(--white-rgb) / .45);
+    color: rgb(var(--ink-05-rgb) / .75);
+    font-size: 0.875rem;
+    line-height: 1.4;
+
+    strong {
+      min-width: 0;
+      color: var(--kurzy-charcoal);
+      font-family: "Sentient-Regular", serif;
+      font-size: 1.05rem;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &__courseSeats {
+    color: var(--kurzy-olive-text);
+    font-size: 0.8125rem;
+    letter-spacing: 0.02em;
+  }
+
+  &__countHint {
+    flex-basis: 100%;
+    margin: 0.5rem 0 0;
+    color: var(--kurzy-ember-text);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+  }
+
   &__chosen {
     margin: 0;
     padding-bottom: 0.75rem;

@@ -605,7 +605,7 @@ scenarios.d = async () => {
     const submit = modal.getByTestId("course-submit-button")
     const checks = {
       terms_initially_checked: await modal.getByTestId("course-terms-checkbox").isChecked(),
-      exception_initially_checked: await modal.getByTestId("course-exception-checkbox").isChecked(),
+      exception_notice: (await modal.getByTestId("course-exception-notice").innerText()).trim(),
       photo_initially_checked: await modal.getByTestId("course-photo-checkbox").isChecked(),
       button_initial: await buttonInfo(submit),
       pay_note_initial: (await modal.locator(".kurzyModal__payNote").textContent())?.trim(),
@@ -614,8 +614,7 @@ scenarios.d = async () => {
     await submit.scrollIntoViewIfNeeded()
     shots.push(await shot(page, "d-platba-unchecked", { fullPage: false }))
     await modal.getByTestId("course-terms-checkbox").check()
-    checks.button_terms_only = await buttonInfo(submit)
-    await modal.getByTestId("course-exception-checkbox").check()
+    // Poučení o výjimce z odstoupení je věta, ne zaškrtávátko — stačí souhlas s OP.
     checks.button_ready = await buttonInfo(submit)
     checks.pay_note_ready = (await modal.locator(".kurzyModal__payNote").textContent())?.trim()
     await submit.scrollIntoViewIfNeeded()
@@ -633,10 +632,9 @@ scenarios.d = async () => {
     return {
       ok:
         checks.terms_initially_checked === false &&
-        checks.exception_initially_checked === false &&
+        /§ 1837/.test(checks.exception_notice ?? "") &&
         checks.photo_initially_checked === false &&
         checks.button_initial.disabled === true &&
-        checks.button_terms_only.disabled === true &&
         checks.button_ready.disabled === false &&
         checks.button_ready.text.startsWith(COURSE_BUTTON) &&
         Boolean(reservation?.consents?.exception_ack),

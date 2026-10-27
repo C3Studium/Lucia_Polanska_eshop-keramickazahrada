@@ -51,7 +51,14 @@ export default async function abandonedCartJob(
     })
   
     totalCount = metadata?.count ?? 0
-    const cartsWithItems = abandonedCarts.filter(cart => cart.items?.length > 0 && !cart.metadata?.abandoned_notification)
+    // `metadata.preview` = ukázkový košík z administrace (Ukázky stránek) —
+    // nikdy nepatří zákazníkovi, i kdyby do něj někdo v pokladně vepsal e-mail.
+    const cartsWithItems = abandonedCarts.filter(
+      cart =>
+        cart.items?.length > 0 &&
+        !cart.metadata?.abandoned_notification &&
+        !cart.metadata?.preview
+    )
   
     // Prázdnou stránku nemá smysl posílat do workflow — `updateCartsStep`
     // by dostal prázdné pole.

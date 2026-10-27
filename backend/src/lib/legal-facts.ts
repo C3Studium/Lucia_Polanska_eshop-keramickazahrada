@@ -273,7 +273,7 @@ export const LEGAL_FACT_META: Record<LegalFactKey, LegalFactMeta> = {
   "course.cancellation": {
     label: "Storno podmínky kurzů",
     help:
-      "Co se stane, když zákazník zruší rezervaci kurzu. Text se ukáže v obchodních podmínkách („Storno podmínky: …“), na stránce Kurzy, v okně rezervace (zákazník ho potvrzuje zaškrtnutím), v častých dotazech a v e-mailu s potvrzením rezervace. Pište souvislý text, klidně několik vět. Dnes obchod dovolí zrušit rezervaci online nejpozději 48 hodin před kurzem a vrátí celou částku — když napíšete jiné pravidlo, řekněte Matějovi, ať upraví i automatické vracení peněz.",
+      "Co se stane, když zákazník zruší rezervaci kurzu. Text se ukáže v obchodních podmínkách („Storno podmínky: …“), na stránce Kurzy, v okně rezervace (nad tlačítkem rezervace), v častých dotazech a v e-mailu s potvrzením rezervace. Pište souvislý text, klidně několik vět. Dnes obchod dovolí zrušit rezervaci online nejpozději 24 hodin před kurzem a vrátí celou částku; později jen telefonicky — když napíšete jiné pravidlo, řekněte Matějovi, ať upraví i automatické vracení peněz.",
     example:
       "Rezervaci můžete zrušit zdarma nejpozději 7 dní před kurzem. Při zrušení 2 až 6 dní předem vracíme polovinu ceny, nebo vám nabídneme jiný termín. Později už peníze nevracíme, můžete ale poslat náhradníka.",
     group: "Kurzy",

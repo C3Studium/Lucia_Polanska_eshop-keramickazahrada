@@ -155,7 +155,7 @@ export default class CourseModuleService extends MedusaService({
    * A pending online payment link carries the OLD amount, so when one exists
    * it is cleared in the same update: the next „Zaplatit" mints a fresh
    * collection and session at the new price instead of charging the stale
-   * total. Whether the customer is *allowed* to edit (48h cutoff, not paid
+   * total. Whether the customer is *allowed* to edit (24h cutoff, not paid
    * online) is the route's question — this method only guarantees that
    * whatever lands, lands consistently.
    */

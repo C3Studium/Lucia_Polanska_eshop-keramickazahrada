@@ -1,5 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 import { NextRequest, NextResponse } from "next/server"
+import { studioPreviewNeedsResolve, studioPreviewPageFor } from "@lib/studio-preview/pages"
 
 // Prefer server-side URL, then public; normalize trailing slash
 const RAW_BACKEND_URL =
@@ -124,6 +125,75 @@ async function getCountryCode(
 }
 
 /**
+ * Ukázkové stránky Studia (`@lib/studio-preview/pages`).
+ *
+ * - `fixed` (stavy newsletteru) → přepis bez dotazu, pro kohokoli — stránka by
+ *   tentýž stav ukázala i s `?stav=` v adrese.
+ * - ostatní jen pro požadavek s cookie Studia (`cms_session`) — každý jiný
+ *   požadavek projde bez jediného dotazu navíc. Jestli je session platná,
+ *   rozhodne až `/api/studio/ukazka` (Node, ValeCMS); middleware běží na Edge
+ *   a session ověřit neumí. Odpověď:
+ *   - `target` → přepis (adresa v rámu Studia zůstane vyhrazená),
+ *   - `cookies` → vloží se do cookies TOHOTO požadavku (ukázkový košík, token
+ *     ukázkového zákazníka); prohlížeč je nedostane, takže v rámu jde jen koukat,
+ *   - `missing` → krátké vysvětlení místo cizí 404,
+ *   - cokoli jiného (není redaktor, chyba) → normální cesta, jako by tu tohle nebylo.
+ */
+const withCookies = (request: NextRequest, extra: Record<string, string> | undefined): Headers => {
+  const headers = new Headers(request.headers)
+  if (!extra || !Object.keys(extra).length) return headers
+  const kept = (headers.get("cookie") ?? "")
+    .split(";")
+    .map((part) => part.trim())
+    .filter((part) => part && !Object.hasOwn(extra, part.split("=")[0]))
+  headers.set("cookie", [...kept, ...Object.entries(extra).map(([name, value]) => `${name}=${value}`)].join("; "))
+  return headers
+}
+
+async function resolveStudioPreview(request: NextRequest): Promise<NextResponse | null> {
+  const page = studioPreviewPageFor(request.nextUrl.pathname)
+  if (!page) return null
+  if (page.fixed) {
+    return NextResponse.rewrite(new URL(page.fixed, request.nextUrl.origin))
+  }
+  if (!studioPreviewNeedsResolve(page) || !request.cookies.get("cms_session")?.value) return null
+  // Redaktor s vlastním košíkem vidí ten svůj.
+  if (page.cart && request.cookies.get("_medusa_cart_id")?.value) return null
+
+  const origin = process.env.PORT ? `http://127.0.0.1:${process.env.PORT}` : request.nextUrl.origin
+  let answer: { target?: string; cookies?: Record<string, string>; missing?: string } | null = null
+  try {
+    const res = await fetch(
+      `${origin}/api/studio/ukazka?p=${encodeURIComponent(page.path)}`,
+      { headers: { cookie: request.headers.get("cookie") ?? "" }, cache: "no-store" }
+    )
+    if (res.status === 404) return null
+    answer = await res.json().catch(() => null)
+  } catch {
+    return null
+  }
+  if (!answer) return null
+
+  if (answer.target) {
+    return NextResponse.rewrite(new URL(answer.target, request.nextUrl.origin), {
+      request: { headers: withCookies(request, answer.cookies) },
+    })
+  }
+  if (answer.cookies) {
+    return NextResponse.next({ request: { headers: withCookies(request, answer.cookies) } })
+  }
+  const what = String(answer.missing ?? "ukázková data").replace(/[<>&"]/g, "")
+  return new NextResponse(
+    `<!doctype html><html lang="cs"><meta charset="utf-8"><title>Ukázka — chybí data</title>` +
+      `<body style="font:16px/1.5 system-ui,sans-serif;max-width:36rem;margin:15vh auto;padding:0 16px;color:#2b2622">` +
+      `<h1 style="font-size:1.25rem">Tahle ukázka zatím nemá data</h1>` +
+      `<p>Stránka se ukazuje na skutečných datech z obchodu a chybí: <strong>${what}</strong>. ` +
+      `Až v obchodě vznikne, ukázka se tu objeví sama.</p></body></html>`,
+    { status: 200, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } }
+  )
+}
+
+/**
  * Middleware to handle region selection and onboarding status.
  */
 export async function middleware(request: NextRequest) {
@@ -131,6 +201,12 @@ export async function middleware(request: NextRequest) {
   if ( request.nextUrl.pathname.startsWith("/studio")) {
     return NextResponse.next()
   }
+
+  const studioPreview = await resolveStudioPreview(request)
+  if (studioPreview) {
+    return studioPreview
+  }
+
   let cacheIdCookie = request.cookies.get("_medusa_cache_id")
 
   let cacheId = cacheIdCookie?.value || crypto.randomUUID()

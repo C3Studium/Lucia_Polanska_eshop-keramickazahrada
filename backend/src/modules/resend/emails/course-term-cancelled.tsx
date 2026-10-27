@@ -52,8 +52,8 @@ function CourseTermCancelledEmailComponent({
   const coursesUrl = base ? `${base}/kurzy` : ""
   return (
     <EmailLayout preview={`Termín kurzu ${courseTitle} musím zrušit — omlouvám se.`}>
-      <Eyebrow>Kurz</Eyebrow>
-      <EmailH1 accent="omlouvám se.">Termín se ruší,</EmailH1>
+      <Eyebrow>Kurz · zrušený termín</Eyebrow>
+      <EmailH1 accent="omlouvám se.">Termín kurzu se ruší,</EmailH1>
 
       <Greeting name={customerName} />
       <P>

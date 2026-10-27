@@ -335,8 +335,6 @@ const MUST_BE_EMPTY = [
   "BALIKOVNA_API_TOKEN",
   "BALIKOVNA_API_SECRET",
   "SUPABASE_SERVICE_ROLE_KEY",
-  "CMS_ADMIN_PASSWORD",
-  "CMS_SESSION_SECRET",
   "ALGOLIA_API_KEY",
   "MEILISEARCH_API_KEY",
   "SANITY_API_TOKEN",
@@ -346,7 +344,8 @@ const MUST_BE_EMPTY = [
 ]
 
 /** Smí být neprázdné jen se sandboxovou hodnotou (začíná „sandbox-“). */
-const SANDBOX_VALUE_ONLY = ["COMGATE_MERCHANT", "COMGATE_SECRET"]
+// CMS_ADMIN_PASSWORD / CMS_SESSION_SECRET: přihlášení do Studia v sandboxu (ukázkové stránky).
+const SANDBOX_VALUE_ONLY = ["COMGATE_MERCHANT", "COMGATE_SECRET", "CMS_ADMIN_PASSWORD", "CMS_SESSION_SECRET"]
 
 function isLocalUrl(v) {
   try {

@@ -43,10 +43,10 @@ function CoursePaymentExpiredEmailComponent({
   const coursesUrl = base ? `${base}/kurzy#rezervace` : ""
   return (
     <EmailLayout
-      preview={`Platba za rezervaci kurzu ${courseTitle} nedorazila — místo jsem uvolnila.`}
+      preview={`Rezervace kurzu ${courseTitle} vypršela — platba nedorazila, místo jsem uvolnila.`}
     >
-      <Eyebrow>Kurz</Eyebrow>
-      <EmailH1 accent="místo jsem uvolnila.">Platba nedorazila,</EmailH1>
+      <Eyebrow>Kurz · rezervace</Eyebrow>
+      <EmailH1 accent="platba nedorazila.">Rezervace vypršela,</EmailH1>
 
       <Greeting name={customerName} />
       <P>

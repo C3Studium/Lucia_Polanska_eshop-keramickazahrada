@@ -28,8 +28,12 @@ import { czk, formatDuration, formatPrague } from "../format"
  * the same cutoff the backend enforces — replaced by one line saying why.
  */
 
-/** Mirrors the backend's COURSE_SELF_SERVICE_CUTOFF_HOURS — display only. */
-const SELF_SERVICE_CUTOFF_HOURS = 48
+/** Mirrors the backend's COURSE_SELF_SERVICE_CUTOFF_HOURS (24 h od 20. 10. 2026) — display only. */
+const SELF_SERVICE_CUTOFF_HOURS = 24
+
+/** Samoobnovování stránky, dokud se čeká na potvrzení platby. */
+const AUTO_REFRESH_EVERY_MS = 2500
+const AUTO_REFRESH_FOR_MS = 2 * 60 * 1000
 
 const peopleWord = (count: number): string =>
   count === 1 ? "osoba" : count < 5 ? "osoby" : "osob"
@@ -237,6 +241,24 @@ export default function RezervaceDetail({
     window.addEventListener("pageshow", handlePageShow)
     return () => window.removeEventListener("pageshow", handlePageShow)
   }, [])
+
+  /* Po návratu z brány: backend se při každém čtení zeptá ComGate a zaplacenou
+     platbu hned zachytí (GET rezervace). Stránka se proto sama obnovuje, dokud
+     je stav „zpracovává se" — obvykle to srovná první nebo druhé obnovení.
+     Po dvou minutách přestane; zbývá tlačítko „Obnovit stav". */
+  const waiting = voice.tone === "wait"
+  useEffect(() => {
+    if (!waiting) return
+    const started = Date.now()
+    const timer = window.setInterval(() => {
+      if (Date.now() - started > AUTO_REFRESH_FOR_MS) {
+        window.clearInterval(timer)
+        return
+      }
+      router.refresh()
+    }, AUTO_REFRESH_EVERY_MS)
+    return () => window.clearInterval(timer)
+  }, [waiting, router])
 
   const startsAtMs = new Date(reservation.term.starts_at).getTime()
   const beforeCutoff =

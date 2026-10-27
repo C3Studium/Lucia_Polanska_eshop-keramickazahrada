@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import PaymentConfirmed from "@modules/cart/components/payment-confirmed"
 import { getMerchantIdentity } from "@lib/data/merchant"
 import { getPageCopy } from "@lib/data/site-copy"
+import { STUDIO_PREVIEW_ID } from "@lib/studio-preview/pages"
 type Props = {
   params: Promise<{ id: string }>
 }
@@ -27,6 +28,7 @@ export default async function OrderConfirmedPage(props: Props) {
       supportEmail={merchant.email}
       supportPhone={merchant.phone}
       block={copy["kosik.platba-potvrzena"]}
+      preview={params.id === STUDIO_PREVIEW_ID}
     />
   )
 }

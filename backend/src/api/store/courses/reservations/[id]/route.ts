@@ -3,6 +3,32 @@ import { COURSE_MODULE } from "../../../../../modules/course"
 import type CourseModuleService from "../../../../../modules/course/service"
 import { toAmount } from "../../../../../modules/course/pricing"
 import { verifyCourseReservationToken } from "../../../../../lib/course-reservation-link"
+import {
+  hasOpenOnlinePayment,
+  reconcileCourseReservationPayment,
+} from "../../../../../lib/course-payment-reconcile"
+
+/*
+ * Rychlé potvrzení platby. Zákazník se z ComGate vrací sem (`?vysledek=paid`)
+ * a stránka se ptá na stav. Dřív čekala na oznámení od ComGate (chodí jen
+ * s adresou v portálu) nebo na dohledový job (až 10 minut). Teď se při čtení
+ * nezaplacené online rezervace zeptáme brány hned a zaplacenou platbu
+ * zachytíme — „zaplaceno" pak zapíše subscriber během vteřiny, stránka si
+ * to dočte dalším obnovením.
+ *
+ * Nejvýš jeden dotaz na bránu za 2 s na rezervaci: stránka se po návratu
+ * obnovuje sama a brána nemá dostat salvu.
+ */
+const CHECK_EVERY_MS = 2000
+const lastCheck = new Map<string, number>()
+/** Kolik počkat, než subscriber po zachycení zapíše „zaplaceno" (ms). */
+const SETTLE_WAIT_MS = [300, 500, 700, 1000]
+
+const loadReservation = async (courseService: CourseModuleService, id: string) =>
+  ((await courseService.listCourseReservations(
+    { id } as never,
+    { relations: ["term"] } as never
+  )) as any[])[0]
 
 /**
  * One reservation, for whoever holds its signed link.
@@ -20,15 +46,24 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   }
 
   const courseService = req.scope.resolve<CourseModuleService>(COURSE_MODULE)
-  const reservations = (await courseService.listCourseReservations(
-    { id: reservationId } as never,
-    { relations: ["term"] } as never
-  )) as any[]
-  const reservation = reservations[0]
+  let reservation = await loadReservation(courseService, reservationId)
 
   if (!reservation || !reservation.term) {
     res.status(404).json({ message: "Rezervace nebyla nalezena." })
     return
+  }
+
+  const now = Date.now()
+  if (hasOpenOnlinePayment(reservation) && now - (lastCheck.get(reservationId) ?? 0) >= CHECK_EVERY_MS) {
+    lastCheck.set(reservationId, now)
+    if (lastCheck.size > 500) lastCheck.clear()
+    const captured = await reconcileCourseReservationPayment(req.scope as any, reservation).catch(() => false)
+    for (const wait of captured ? SETTLE_WAIT_MS : []) {
+      await new Promise((done) => setTimeout(done, wait))
+      const fresh = await loadReservation(courseService, reservationId)
+      if (fresh?.term) reservation = fresh
+      if (reservation.payment_status === "paid") break
+    }
   }
 
   res.json({

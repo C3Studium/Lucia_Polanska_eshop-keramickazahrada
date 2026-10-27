@@ -674,6 +674,8 @@ const TEXT_BLOCKS = [
         key: "kurzy.rezervace-okno",
         page: "kurzy",
         title: "Okno rezervace kurzu",
+        // Popisky přibývají (27. 10.: kurz.obsazenost, pocet.limit, pocet.strop).
+        mergeItems: true,
         data: {
             items: [
                 item("oboci", "Kurzy · Rezervace"),
@@ -683,6 +685,15 @@ const TEXT_BLOCKS = [
                 ),
                 item("kalendar.napoveda", "Vyberte v kalendáři označený den a jeho termíny se ukážou tady."),
                 item("termin.obsazeno", "obsazeno · dáme vědět, až se uvolní"),
+                item("kurz.obsazenost", "Přihlášeno {obsazeno} z {kapacita} · {volno}"),
+                item(
+                    "pocet.limit",
+                    "Víc osob už přidat nejde — tenhle termín má volno jen pro {osoby}. Pro větší skupinu vyberte jiný termín nebo nám napište."
+                ),
+                item(
+                    "pocet.strop",
+                    "Online jde najednou rezervovat nejvýš {max} osob. Pro větší skupinu nám prosím napište."
+                ),
                 item(
                     "cekacka.uvod",
                     "Termín je plně obsazený. Nechte nám kontakt a napíšeme vám, jakmile se místo uvolní."
