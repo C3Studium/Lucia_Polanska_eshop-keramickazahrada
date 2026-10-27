@@ -214,3 +214,108 @@ export const ensureInvoiceForCourseReservation = async (
     return { status: "failed", reason: message }
   }
 }
+
+/**
+ * Faktura na zaplacený DOPLATEK po přidání osob (`course_payment_request`).
+ *
+ * iDoklad vystavenou fakturu měnit neumí a nová cena by měnila uzavřený
+ * doklad — doplatek proto dostane vlastní fakturu na rozdíl („doplatek za
+ * N os."). Idempotentní podle `idoklad_invoice_id` na záznamu doplatku.
+ */
+export const ensureInvoiceForCourseSupplement = async (
+  container: MedusaContainer,
+  request: any,
+  reservation: any,
+  term: any
+): Promise<CourseInvoiceResult> => {
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+  const idoklad = resolveIdokladService(container)
+  if (!idoklad) {
+    return { status: "skipped", reason: "iDoklad není nakonfigurován." }
+  }
+  if (request.idoklad_invoice_id) {
+    return { status: "exists", invoice_number: request.idoklad_invoice_number ?? null, pdf_url: request.idoklad_pdf_url ?? null }
+  }
+  const courseService = container.resolve<CourseModuleService>(COURSE_MODULE)
+  try {
+    const email = String(reservation.email ?? "").trim()
+    let contact = email ? await idoklad.findContactByEmail(email) : null
+    if (!contact) {
+      const countryId = await idoklad.findCountryIdByCode("cz").catch(() => undefined)
+      contact = await idoklad.createContact({
+        CompanyName: String(reservation.name || "Zákazník kurzu").slice(0, 200),
+        ...(email ? { Email: email.slice(0, 254) } : {}),
+        ...(reservation.phone ? { Mobile: String(reservation.phone).slice(0, 20) } : {}),
+        ...(countryId ? { CountryId: countryId } : {}),
+      })
+    }
+    const defaults = await idoklad.getInvoiceDefault()
+    const paymentOptions = await idoklad.listPaymentOptions().catch(() => [])
+    const paymentOptionId = pickPaymentOptionId(paymentOptions, { cod: false, defaultId: defaults.PaymentOptionId })
+    const amount = toAmount(request.amount)
+    const item: IdokladInvoiceItemPayload = {
+      Name: `Doplatek — ${term.title}, ${formatPragueDate(term.starts_at)}: navýšení na ${Math.trunc(toAmount(request.party_size))} os.`.slice(0, 200),
+      Amount: 1,
+      UnitPrice: amount,
+      PriceType: PRICE_TYPE_WITH_VAT,
+      VatRateType: vatRateTypeFor(idoklad.vatPayer),
+      IsTaxMovement: false,
+      DiscountPercentage: 0,
+      ItemType: ITEM_TYPE_NORMAL,
+    }
+    const today = pragueDate()
+    const invoice = await idoklad.createInvoice({
+      CurrencyId: defaults.CurrencyId,
+      DateOfIssue: today,
+      DateOfTaxing: today,
+      DateOfMaturity: defaults.DateOfMaturity || today,
+      Description: `Doplatek kurzu ${term.title}`.slice(0, 200),
+      DocumentSerialNumber: defaults.DocumentSerialNumber,
+      IsEet: false,
+      IsIncomeTax: defaults.IsIncomeTax ?? true,
+      Items: [item],
+      NumericSequenceId: idoklad.numericSequenceId ?? defaults.NumericSequenceId,
+      PartnerId: contact.Id,
+      PaymentOptionId: paymentOptionId ?? defaults.PaymentOptionId,
+      Note: `Doplatek k rezervaci kurzu. Původní faktura: ${reservation.idoklad_invoice_number ?? "—"}. Vystaveno automaticky e-shopem Keramická zahrada.`,
+    } as never)
+    await courseService.updateCoursePaymentRequests({
+      id: request.id,
+      idoklad_invoice_id: invoice.Id,
+      idoklad_invoice_number: invoice.DocumentNumber ?? null,
+    } as never)
+    logger.info(`[idoklad] Faktura ${invoice.DocumentNumber} vystavena k doplatku rezervace kurzu ${reservation.id}.`)
+    await idoklad.fullyPayInvoice(invoice.Id, pragueDate(request.paid_at)).catch((error) => {
+      logger.warn(`[idoklad] Úhradu faktury ${invoice.DocumentNumber} (doplatek) se nepodařilo zapsat: ${describeError(error)}`)
+    })
+    let pdfUrl: string | null = null
+    try {
+      const pdf = await idoklad.getInvoicePdf(invoice.Id)
+      const fileModule = container.resolve(Modules.FILE)
+      const [uploaded] = await fileModule.createFiles([
+        {
+          filename: `faktura-${invoice.DocumentNumber || invoice.Id}.pdf`,
+          mimeType: "application/pdf",
+          content: pdf.toString("base64"),
+          access: "public" as const,
+        },
+      ])
+      pdfUrl = uploaded?.url ?? null
+      if (pdfUrl) await courseService.updateCoursePaymentRequests({ id: request.id, idoklad_pdf_url: pdfUrl } as never)
+    } catch (error) {
+      logger.warn(`[idoklad] PDF faktury ${invoice.DocumentNumber} (doplatek) se nepodařilo uložit: ${describeError(error)}`)
+    }
+    return { status: "created", invoice_number: invoice.DocumentNumber ?? null, pdf_url: pdfUrl }
+  } catch (error) {
+    const message = describeError(error)
+    logger.error(`[idoklad] Fakturu k doplatku rezervace ${reservation.id} se nepodařilo vystavit: ${message}`)
+    await notifyMerchant(container, {
+      key: `idoklad-course-supplement:${request.id}`,
+      title: "iDoklad: fakturu k doplatku kurzu se nepodařilo vystavit",
+      description: `${reservation.name} — ${term.title}, doplatek ${toAmount(request.amount)} Kč: ${message}`,
+      audience: "dev",
+      email: true,
+    }).catch(() => undefined)
+    return { status: "failed", reason: message }
+  }
+}

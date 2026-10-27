@@ -1037,6 +1037,23 @@
     }
   }
 
+  /* Mimo Česko: místo rezervace výzva přepnout obchod na Česko. */
+  &__regionLock {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+    margin-top: clamp(1rem, 2.5vh, 1.75rem);
+
+    p {
+      margin: 0;
+      max-width: 36rem;
+      color: rgb(var(--ink-05-rgb) / .8);
+      font-size: 1rem;
+      line-height: 1.55;
+    }
+  }
+
   /* Vzkaz k žádosti o místo — vypadá jako ostatní pole formuláře. */
   &__wlNote {
     display: flex;

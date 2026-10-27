@@ -263,6 +263,9 @@ export const joinCourseWaitlist = async (
 }
 
 export type CoursePartyChangePreview = {
+  before_party_size: number
+  before_per_person: number
+  before_total_price: number
   party_size: number
   pricing_tier: string
   per_person: number

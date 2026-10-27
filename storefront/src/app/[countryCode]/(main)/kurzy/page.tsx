@@ -45,7 +45,7 @@ export default async function Home(props: {
 
   return (
     <>
-      <Kurzy copy={copy} terms={terms} legalFacts={legalFacts} />
+      <Kurzy copy={copy} terms={terms} legalFacts={legalFacts} countryCode={countryCode} />
       {/* Poučení o vyloučení odstoupení (§ 1837 písm. j) OZ) a storno podmínky.
           Za <Kurzy>, protože ta vrací vlastní <main> a do modulu home/Kurzy
           se odsud nesahá; proto je to <aside> s vlastním nadpisem. */}

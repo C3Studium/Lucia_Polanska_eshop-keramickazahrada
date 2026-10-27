@@ -211,7 +211,8 @@ export const sendCourseReservationConfirmedEmail = async (
   const candidates: EmailAttachmentRef[] = []
   if (terms.attachment) candidates.push(terms.attachment)
   let invitation: EmailAttachmentRef | null = null
-  if (options.variant === "paid" || options.variant === "on_site") {
+  // Rozpracovaná změna (doplatek ještě nezaplacen) pozvánku na nový počet nedostane.
+  if ((options.variant === "paid" || options.variant === "on_site") && options.change?.action !== "supplement") {
     invitation = await storeCourseInvitation(container, {
       reservationId: String(reservation.id),
       customerName: base.customerName,
@@ -257,7 +258,11 @@ export const sendCourseReservationConfirmedEmail = async (
 
   /* Předmět podle stavu — zaplacené potvrzení nesmí vypadat jako kopie prvního e-mailu. */
   const change = options.change
-  const subject = change
+  // Zaplacený doplatek po přidání osob — nový doklad k upravené rezervaci.
+  const supplementPaid = String(options.keyOverride ?? "").startsWith("course-supplement-paid:")
+  const subject = supplementPaid
+    ? `Doplatek přijat — rezervace kurzu ${base.courseTitle} je aktualizovaná`
+    : change
     ? change.action === "supplement"
       ? `Změna rezervace kurzu ${base.courseTitle} — zbývá doplatit ${formatMoney(change.amount, "czk")}`
       : `Rezervace kurzu ${base.courseTitle} je upravená — rozdíl vám vracím`

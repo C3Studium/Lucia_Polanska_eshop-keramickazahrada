@@ -5,6 +5,7 @@ import {
   motion,
   type Variants,
 } from "framer-motion"
+import { updateRegion } from "@lib/data/cart"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 
@@ -140,7 +141,17 @@ type Props = {
   heading?: CopyBlock
   /** Blok `kurzy.rezervace-okno` — texty okna, viz `../copy.ts`. */
   block?: CopyBlock
+  /**
+   * Kód země z adresy. Kurzy se rezervují jen v Česku (ateliér v Písku, ceny
+   * v Kč) — jinde okno místo rezervace nabídne přepnout obchod na Česko.
+   */
+  countryCode?: string
 }
+
+/** Jediná země, kde jdou kurzy rezervovat. */
+export const COURSE_COUNTRY = "cz"
+/** Příznak v adrese: po přepnutí země se okno rezervace samo otevře. */
+export const OPEN_RESERVATION_PARAM = "rezervace"
 
 export default function RezervaceModal({
   open,
@@ -149,6 +160,7 @@ export default function RezervaceModal({
   legalFacts = FALLBACK_FACTS,
   heading,
   block,
+  countryCode = COURSE_COUNTRY,
 }: Props) {
   if (typeof document === "undefined") {
     return null
@@ -162,6 +174,7 @@ export default function RezervaceModal({
           legalFacts={legalFacts}
           heading={heading}
           block={block}
+          countryCode={countryCode}
         />
       ) : null}
     </AnimatePresence>,
@@ -175,13 +188,34 @@ function RezervaceModalPanel({
   legalFacts,
   heading,
   block,
+  countryCode,
 }: {
   initialTerms: CourseTerm[]
   onClose: () => void
   legalFacts: LegalFacts
   heading?: CopyBlock
   block?: CopyBlock
+  countryCode: string
 }) {
+  const regionLocked = countryCode.toLowerCase() !== COURSE_COUNTRY
+  const [switching, setSwitching] = useState(false)
+  const [switchError, setSwitchError] = useState<string | null>(null)
+  /* Přepnutí obchodu na Česko — tatáž cesta jako přepínač země vpravo nahoře
+     (`updateRegion`: košík, cache, přesměrování). Do adresy jde příznak,
+     podle kterého stránka Kurzy okno po přepnutí hned znovu otevře. */
+  const switchToCzech = async () => {
+    if (switching) return
+    setSwitching(true)
+    setSwitchError(null)
+    try {
+      await updateRegion(COURSE_COUNTRY, `/kurzy?${OPEN_RESERVATION_PARAM}=1`)
+    } catch (error) {
+      // `redirect()` ze serverové akce se hlásí výjimkou — to je úspěch.
+      if (String((error as { digest?: unknown })?.digest ?? "").startsWith("NEXT_REDIRECT")) return
+      setSwitchError("Přepnout se teď nepodařilo. Zkuste to prosím znovu, nebo zvolte Česko vpravo nahoře.")
+      setSwitching(false)
+    }
+  }
   /* Okno se po zapnutí editace samo nepřekreslí, dokud v něm člověk nic
      nevybere — bez tohohle by anotace zůstaly prázdné. Viz hook. */
   useEditRerender()
@@ -775,7 +809,23 @@ function RezervaceModalPanel({
           </button>
         </header>
 
-        {confirmed ? (
+        {regionLocked ? (
+          <div className="kurzyModal__regionLock" role="status">
+            <p>
+              Kurzy probíhají v ateliéru v Písku a rezervují se v korunách, proto je jde rezervovat jen
+              v české verzi obchodu. Přepněte si obchod na Česko — okno rezervace zůstane otevřené.
+            </p>
+            {switchError ? (
+              <p className="kurzyModal__error" role="alert">
+                {switchError}
+              </p>
+            ) : null}
+            <button type="button" className="kurzyModal__primary" onClick={switchToCzech} disabled={switching}>
+              {switching ? "Přepínám na Česko…" : "Přepnout na Česko (Kč)"}
+              <i aria-hidden="true">→</i>
+            </button>
+          </div>
+        ) : confirmed ? (
           <motion.div
             className="kurzyModal__summary"
             initial={reduceMotion ? false : { opacity: 0, y: SUMMARY_RISE }}

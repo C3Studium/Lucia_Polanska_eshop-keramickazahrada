@@ -1,12 +1,13 @@
 "use client"
 
 import { useStudioSurface } from "@c3studium/valecms/edit"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
+
 
 import type { CourseTerm } from "@lib/data/courses"
 import type { LegalFacts } from "@lib/legal/facts"
 import Rezervace from "@modules/kurzy/Rezervace"
-import RezervaceModal from "@modules/kurzy/RezervaceModal"
+import RezervaceModal, { OPEN_RESERVATION_PARAM } from "@modules/kurzy/RezervaceModal"
 
 import Intro from "./Intro"
 import type { CopyBlocks } from "@lib/util/site-copy"
@@ -21,14 +22,27 @@ export default function Kurzy({
   copy,
   terms,
   legalFacts,
+  countryCode,
 }: {
   /** Bloky stránky `kurzy` z CMS; termíny níž jsou z Medusy. */
   copy: CopyBlocks
   terms: CourseTerm[]
   /** Právní údaje (storno podmínky, e-mail) pro rezervaci — `getLegalFacts()` na serveru. */
   legalFacts?: LegalFacts
+  /** Kód země z adresy — kurzy jdou rezervovat jen v Česku (okno to řeší). */
+  countryCode?: string
 }) {
   const [modalOpen, setModalOpen] = useState(false)
+  /* Po přepnutí obchodu na Česko z okna rezervace přijde stránka s
+     `?rezervace=1` — okno se hned znovu otevře a příznak z adresy zmizí. */
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    if (url.searchParams.get(OPEN_RESERVATION_PARAM) !== "1") return
+    setModalOpen(true)
+    url.searchParams.delete(OPEN_RESERVATION_PARAM)
+    // Jen přepis adresy — žádné nové načtení stránky (okno zůstane otevřené).
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash)
+  }, [])
   const triggerRef = useRef<HTMLElement | null>(null)
 
   const openModal = useCallback(() => {
@@ -74,6 +88,7 @@ export default function Kurzy({
         legalFacts={legalFacts}
         heading={copy["kurzy.rezervace"]}
         block={copy["kurzy.rezervace-okno"]}
+        countryCode={countryCode}
       />
     </main>
   )

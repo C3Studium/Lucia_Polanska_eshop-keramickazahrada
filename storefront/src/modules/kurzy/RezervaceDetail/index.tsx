@@ -732,9 +732,17 @@ export default function RezervaceDetail({
                       ) : (
                         <>
                           <div>
+                            <dt>Dosud</dt>
+                            <dd>
+                              {preview.before_party_size} {peopleWord(preview.before_party_size)} ×{" "}
+                              {czk(preview.before_per_person)} = {czk(preview.before_total_price)}
+                            </dd>
+                          </div>
+                          <div>
                             <dt>Nově</dt>
                             <dd>
-                              {preview.party_size} {peopleWord(preview.party_size)} · {czk(preview.per_person)}/os.
+                              {preview.party_size} {peopleWord(preview.party_size)} × {czk(preview.per_person)} ={" "}
+                              {czk(preview.total_price)}
                             </dd>
                           </div>
                           <div>

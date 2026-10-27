@@ -33,6 +33,10 @@ export const CoursePaymentRequest = model.define("course_payment_request", {
   payment_session_id: model.text().index().nullable(),
   payment_url: model.text().nullable(),
   paid_at: model.dateTime().nullable(),
+  /** Faktura na zaplacený doplatek (iDoklad) — vlastní doklad, původní se nemění. */
+  idoklad_invoice_id: model.number().nullable(),
+  idoklad_invoice_number: model.text().nullable(),
+  idoklad_pdf_url: model.text().nullable(),
   /** Proč selhalo vrácení, nebo poznámka k ručnímu vyřízení. */
   note: model.text().nullable(),
 })

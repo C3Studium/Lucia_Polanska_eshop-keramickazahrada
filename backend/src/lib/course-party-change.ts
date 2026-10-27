@@ -57,6 +57,10 @@ const supplementGatewayStatus = async (container: MedusaContainer, request: any)
 /* ------------------------------------------------------------- náhled -- */
 
 export type PartyChangePreview = {
+  /** Stav před změnou — počet, cena na osobu, celkem. */
+  before_party_size: number
+  before_per_person: number
+  before_total_price: number
   party_size: number
   pricing_tier: string
   per_person: number
@@ -92,7 +96,12 @@ export const previewCoursePartyChange = async (
   const paidOnline = reservation.payment_method === "online" && toAmount(reservation.paid_amount) > 0
   const paid = paidOnline ? round2(toAmount(reservation.paid_amount)) : 0
   const diff = round2(quote.total - paid)
+  const beforeParty = Math.max(1, Math.trunc(toAmount(reservation.party_size)))
+  const beforeTotal = round2(toAmount(reservation.total_price))
   return {
+    before_party_size: beforeParty,
+    before_per_person: round2(beforeTotal / beforeParty),
+    before_total_price: beforeTotal,
     party_size: partySize,
     pricing_tier: quote.tier,
     per_person: quote.per_person,
