@@ -123,21 +123,10 @@ export const POST = async (
       })
 
       /*
-       * „Místo držíme, platba se zpracovává."
-       *
-       * DŘÍV tu nebylo nic. Platba na místě dostala potvrzení hned, platba
-       * kartou až po `payment.captured` — a ta událost přijde jen tehdy,
-       * když ComGate zavolá naše oznámení. Když nezavolalo, zákazník
-       * neslyšel 24 hodin nic a pak mu přišlo „platba nedorazila", i když
-       * zaplatil. Tenhle e-mail je důkaz, že rezervace vznikla, a nese odkaz,
-       * přes který se k platbě vrátí.
-       *
-       * Potvrzení platby přijde zvlášť (`subscribers/course-payment.ts`) —
-       * jiný dedupe klíč, takže se nepřebijí.
+       * E-mail „rezervace čeká na platbu" tu schválně NENÍ: odchází až po
+       * 2 minutách bez platby (`jobs/course-awaiting-payment-email.ts`).
+       * Kdo zaplatí hned, dostane jen potvrzení platby s pozvánkou.
        */
-      await sendCourseReservationConfirmedEmail(req.scope, reservation, term, {
-        variant: "awaiting_payment",
-      }).catch(() => undefined)
 
       await notifyMerchant(req.scope, {
         key: `course-res:${reservation.id}`,
