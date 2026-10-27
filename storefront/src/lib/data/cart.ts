@@ -1701,3 +1701,19 @@ export async function removeBundleFromCart(bundleId: string) {
     })
     .catch(medusaError)
 }
+
+/**
+ * Stav platby košíku po návratu z brány — backend se zeptá ComGate a zaplacený
+ * košík rovnou dokončí (`GET /store/carts/:id/payment-status`). Čte to
+ * `CartPaymentWatcher` na stránkách „čekáme na banku" a „nezaplaceno".
+ */
+export async function getCartPaymentState(
+  cartId: string
+): Promise<{ state: "paid" | "pending" | "canceled" | "unknown"; order_id?: string }> {
+  return sdk.client
+    .fetch<{ state: "paid" | "pending" | "canceled" | "unknown"; order_id?: string }>(
+      `/store/carts/${encodeURIComponent(cartId)}/payment-status`,
+      { cache: "no-store" }
+    )
+    .catch(() => ({ state: "unknown" as const }))
+}

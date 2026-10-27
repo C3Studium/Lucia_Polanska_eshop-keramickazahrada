@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { usePaymentWatch } from "@lib/hooks/use-payment-watch"
 
 import {
   cancelCourseReservation,
@@ -31,9 +32,6 @@ import { czk, formatDuration, formatPrague } from "../format"
 /** Mirrors the backend's COURSE_SELF_SERVICE_CUTOFF_HOURS (24 h od 20. 10. 2026) — display only. */
 const SELF_SERVICE_CUTOFF_HOURS = 24
 
-/** Samoobnovování stránky, dokud se čeká na potvrzení platby. */
-const AUTO_REFRESH_EVERY_MS = 2500
-const AUTO_REFRESH_FOR_MS = 2 * 60 * 1000
 
 const peopleWord = (count: number): string =>
   count === 1 ? "osoba" : count < 5 ? "osoby" : "osob"
@@ -261,24 +259,18 @@ export default function RezervaceDetail({
     return () => window.removeEventListener("pageshow", handlePageShow)
   }, [])
 
-  /* Po návratu z brány: backend se při každém čtení zeptá ComGate a zaplacenou
-     platbu hned zachytí (GET rezervace). Stránka se proto sama obnovuje, dokud
-     je stav „zpracovává se" — obvykle to srovná první nebo druhé obnovení.
-     Po dvou minutách přestane; zbývá tlačítko „Obnovit stav". */
-  const waiting =
-    voice.tone === "wait" || (Boolean(voice.canRetry) && reservation.gateway_status === "pending")
-  useEffect(() => {
-    if (!waiting) return
-    const started = Date.now()
-    const timer = window.setInterval(() => {
-      if (Date.now() - started > AUTO_REFRESH_FOR_MS) {
-        window.clearInterval(timer)
-        return
-      }
-      router.refresh()
-    }, AUTO_REFRESH_EVERY_MS)
-    return () => window.clearInterval(timer)
-  }, [waiting, router])
+  /* Dokud online platba není zaplacená, stránka se sama obnovuje (backend se
+     při každém čtení zeptá ComGate a zaplacenou platbu hned zachytí) — každé
+     3 s, později 10 s, a hned po návratu do záložky. Jakmile je zaplaceno
+     nebo rezervace skončí, hlídání se vypne samo. */
+  const watching =
+    reservation.payment_method === "online" &&
+    reservation.payment_status !== "paid" &&
+    reservation.status === "active"
+  usePaymentWatch(async () => {
+    router.refresh()
+    return false
+  }, watching)
 
   const startsAtMs = new Date(reservation.term.starts_at).getTime()
   const beforeCutoff =
@@ -302,9 +294,15 @@ export default function RezervaceDetail({
       window.location.href = result.payment_url
       return
     }
+    // Platba mezitím prošla (stránka ukazovala starý stav) → ukázat „zaplaceno", ne chybu.
+    if (/zaplacen/i.test(result.message ?? "")) {
+      setRetrying(false)
+      router.refresh()
+      return
+    }
     setRetryError(result.message ?? "Platbu se teď nepodařilo založit.")
     setRetrying(false)
-  }, [reservation.id, retrying, token])
+  }, [reservation.id, retrying, router, token])
 
   const saveEdit = useCallback(async () => {
     if (editSaving || editSize === reservation.party_size) return

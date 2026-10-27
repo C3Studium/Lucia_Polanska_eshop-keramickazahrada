@@ -1,3 +1,5 @@
+import RefreshWhilePaying from "@modules/common/components/refresh-while-paying"
+import { commissionsOf } from "@lib/util/made-to-order"
 import { retrieveOrder, getOrderAccessToken } from "@lib/data/orders"
 import { getOrderClaims } from "@lib/data/claims"
 import { fallbackStageLabel, getOrderProgress } from "@lib/data/order-progress"
@@ -105,8 +107,13 @@ export default async function OrderConfirmedPage(props: Props) {
   // `kosik` (konec nákupu). Výpadek CMS = texty z kódu.
   const copy = await getPageCopy("kosik")
 
+  /* Návrat z brány s otevřeným doplatkem → stránka se sama obnovuje (každé
+     načtení se zeptá brány, viz reconcileOrderBalance výš), dokud nedoběhne. */
+  const balanceOpen = commissionsOf(commissionBalance).some((c) => (c.outstanding ?? 0) > 0)
+
   return (
     <>
+      {outcome && outcome !== "zruseno" && balanceOpen ? <RefreshWhilePaying /> : null}
       <BalancePaymentNotice outcome={outcome} />
       <OrderCompletedTemplate
         copy={copy}
