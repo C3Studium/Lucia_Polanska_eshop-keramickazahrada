@@ -3,6 +3,8 @@ import { Modules } from "@medusajs/framework/utils"
 import { processPaymentWorkflow } from "@medusajs/medusa/core-flows"
 import { toAmount } from "../modules/course/pricing"
 import { paymentStatusFromProvider } from "./payment-provider-status"
+import { COURSE_MODULE } from "../modules/course"
+import { sendCoursePaymentFailedEmail } from "./course-emails"
 
 /**
  * Srovnání platby jedné rezervace kurzu s bránou.
@@ -66,6 +68,15 @@ export const checkCourseReservationPayment = async (
 ): Promise<{ captured: boolean; status: string | null }> => {
   if (!hasOpenOnlinePayment(reservation)) return { captured: false, status: null }
   const status = await courseGatewayStatus(container, reservation)
+  if (status === "canceled") {
+    /*
+     * Zákazník klikl „Zrušit platbu", banka platbu zamítla, nebo vypršela.
+     * Rezervace trvá (místo se drží 24 h) — pošleme odkaz, jak zaplatit znovu.
+     * Jednou za platební pokus (dedupe), takže opakované kontroly nic nezdvojí.
+     */
+    await notifyPaymentFailed(container, reservation)
+    return { captured: false, status }
+  }
   if (!status || !HOTOVO.includes(status)) return { captured: false, status }
 
   /*
@@ -84,6 +95,26 @@ export const checkCourseReservationPayment = async (
     } as never,
   })
   return { captured: true, status }
+}
+
+const notifyPaymentFailed = async (container: MedusaContainer, reservation: any) => {
+  try {
+    let term = reservation.term
+    if (!term) {
+      const courseService = container.resolve(COURSE_MODULE) as any
+      const [withTerm] = await courseService.listCourseReservations(
+        { id: reservation.id },
+        { relations: ["term"] }
+      )
+      term = withTerm?.term
+    }
+    if (!term) return
+    // Termín, který už proběhl nebo se zrušil, nemá smysl znovu platit.
+    if (term.status !== "published" || new Date(term.starts_at).getTime() <= Date.now()) return
+    await sendCoursePaymentFailedEmail(container, reservation, term)
+  } catch {
+    // E-mail nesmí shodit kontrolu platby — opakuje se při další kontrole.
+  }
 }
 
 /** @returns `true`, když brána hlásí zaplaceno a platba se právě zachytila. */

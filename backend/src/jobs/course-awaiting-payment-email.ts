@@ -3,7 +3,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { COURSE_MODULE } from "../modules/course"
 import type CourseModuleService from "../modules/course/service"
 import { sendCourseReservationConfirmedEmail } from "../lib/course-emails"
-import { reconcileCourseReservationPayment } from "../lib/course-payment-reconcile"
+import { checkCourseReservationPayment } from "../lib/course-payment-reconcile"
 
 /**
  * „Vaše rezervace čeká na platbu" — jen když platba za 2 minuty nedorazila.
@@ -44,8 +44,10 @@ export default async function courseAwaitingPaymentEmail(container: MedusaContai
   for (const reservation of candidates) {
     try {
       if (!reservation.term) continue
-      // Zaplaceno, jen oznámení ještě nepřišlo → potvrzení platby obstará subscriber.
-      if (await reconcileCourseReservationPayment(container, reservation).catch(() => false)) continue
+      // Zaplaceno (potvrzení obstará subscriber), nebo zrušeno (e-mail „Platba
+      // neprošla" s odkazem už poslala kontrola) → „čeká na platbu" ne.
+      const checked = await checkCourseReservationPayment(container, reservation).catch(() => null)
+      if (checked?.captured || checked?.status === "canceled") continue
       await sendCourseReservationConfirmedEmail(container, reservation, reservation.term, {
         variant: "awaiting_payment",
       })
