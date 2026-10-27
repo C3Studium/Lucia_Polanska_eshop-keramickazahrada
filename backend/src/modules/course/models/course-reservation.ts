@@ -36,6 +36,12 @@ export const CourseReservation = model.define("course_reservation", {
    * u zaplacené rezervace = doplatek.
    */
   amount_due: model.bigNumber().default(0),
+  /**
+   * Rezervace vznikla schválením žádosti o místo nad kapacitu — zákazník si
+   * ještě musí vybrat platbu (kartou / na místě) a potvrdit obchodní podmínky
+   * na stránce rezervace (`POST …/confirm`). Pak se příznak smaže.
+   */
+  payment_choice_pending: model.boolean().default(false),
   payment_requests: model.hasMany(() => CoursePaymentRequest, {
     mappedBy: "reservation",
   }),

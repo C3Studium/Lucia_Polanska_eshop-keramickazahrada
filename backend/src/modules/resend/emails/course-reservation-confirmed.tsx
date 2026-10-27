@@ -164,7 +164,7 @@ function CourseReservationConfirmedEmailComponent({
       <EmailH1
         accent={
           supplement
-            ? "zbývá doplatit rozdíl."
+            ? "čeká na doplatek."
             : refund
               ? "rozdíl vám vracím."
               : paid
@@ -176,13 +176,13 @@ function CourseReservationConfirmedEmailComponent({
                 : "je potvrzená."
         }
       >
-        {changed ? "Rezervace je upravená," : failed ? "Platba neprošla," : "Vaše rezervace"}
+        {supplement ? "Změna rezervace" : changed ? "Rezervace je upravená," : failed ? "Platba neprošla," : "Vaše rezervace"}
       </EmailH1>
 
       <Greeting name={customerName} />
       <P>
         {supplement
-          ? `změnu počtu osob mám. Nová cena je o ${changeAmount} vyšší než to, co už máte zaplaceno — rozdíl doplatíte tlačítkem níž. Tady je přehled:`
+          ? `změnu počtu osob mám. Platit začne, jakmile doplatíte rozdíl ${changeAmount} — tlačítkem níž. Do té doby platí rezervace, jak byla. Přehled po změně:`
           : changeKind === "refund"
             ? `změnu počtu osob mám. Rozdíl ${changeAmount} vám vracím stejnou cestou, jakou jste platili — obvykle dorazí do několika dní. Tady je přehled:`
             : changeKind === "refund_manual"

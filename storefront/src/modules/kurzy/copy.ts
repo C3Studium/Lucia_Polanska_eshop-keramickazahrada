@@ -30,6 +30,13 @@ export const REZERVACE_OKNO_DEFAULTS = {
   "cekacka.uvod":
     "Termín je plně obsazený. Nechte nám kontakt a napíšeme vám, jakmile se místo uvolní.",
   "cekacka.tlacitko": "Dejte mi vědět",
+  /** Žádost o místo na plném termínu (od 28. 10. 2026 místo čekací listiny). */
+  "zadost.uvod":
+    "Termín je plně obsazený. Pošlete nám žádost — podívám se, jestli pro vás můžu udělat výjimku, a ozvu se e-mailem nebo telefonem. Zatím nic neplatíte.",
+  "zadost.tlacitko": "Poslat žádost o místo",
+  "zadost.hotovo.nadpis": "Žádost mám, ozvu se vám.",
+  "zadost.hotovo.text":
+    "Žádost pro {osoby} jsem dostala. Jakmile rozhodnu, napíšu vám na {email} — když místo bude, přijde odkaz, kde si vyberete platbu.",
   "cekacka.hotovo.nadpis": "Dáme vědět, až se uvolní místo.",
   "cekacka.hotovo.text":
     "Jakmile se na termínu uvolní místo pro {osoby}, pošleme vám zprávu na {email}.",

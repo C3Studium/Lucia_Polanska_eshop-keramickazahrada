@@ -15,7 +15,13 @@ import {
 import { toAmount } from "../../../../../../modules/course/pricing"
 import { sendCourseReservationConfirmedEmail } from "../../../../../../lib/course-emails"
 import { loadReservationForSelfService } from "../self-service"
-import { settleCoursePartyChange, type PartyChangeOutcome } from "../../../../../../lib/course-party-change"
+import {
+  cancelPendingSupplements,
+  previewCoursePartyChange,
+  settleCoursePartyChange,
+  startCourseSupplement,
+  type PartyChangeOutcome,
+} from "../../../../../../lib/course-party-change"
 import { syncCourseMoney } from "../../../../../../lib/course-money"
 import { notifyMerchant } from "../../../../../../lib/notify"
 
@@ -84,7 +90,9 @@ export async function POST(
 
   if (Math.trunc(toAmount(reservation.party_size)) === partySize) {
     // Nothing changes — answer with the current state instead of re-running
-    // the lock and re-sending mail for a no-op.
+    // the lock and re-sending mail for a no-op. Návrat na původní počet ruší
+    // i rozpracovanou změnu (čekající doplatek).
+    await cancelPendingSupplements(req.scope, reservation.id).catch(() => undefined)
     res.json({
       ok: true,
       reservation: {
@@ -98,6 +106,61 @@ export async function POST(
   }
 
   const courseService = req.scope.resolve<CourseModuleService>(COURSE_MODULE)
+
+  /*
+   * Přidání osob u ZAPLACENÉ rezervace = jako pokladna: změna platí, až doplatek
+   * projde (lib/course-party-change `startCourseSupplement` →
+   * `applyPaidCourseChange`). Rezervace se teď nemění — zrušená platba nebo
+   * „Zrušit změnu" ji nechá, jak byla. Ubrání osob se provede hned (vrácení).
+   */
+  const preview = await previewCoursePartyChange(req.scope, { reservation, term, partySize })
+  if (!preview.seats_ok) {
+    res.status(400).json({ message: preview.message ?? "Tolik míst na termínu není." })
+    return
+  }
+  if (preview.action === "supplement") {
+    try {
+      const link = await startCourseSupplement(req.scope, { reservation, term, preview })
+      if (reservation.email) {
+        await sendCourseReservationConfirmedEmail(
+          req.scope,
+          {
+            ...reservation,
+            party_size: preview.party_size,
+            total_price: preview.total_price,
+            paid_amount: preview.paid_amount,
+            amount_due: preview.amount,
+          },
+          term,
+          {
+            variant: "paid",
+            keyOverride: `course-change-pending:${link.request_id}`,
+            change: { action: "supplement", amount: preview.amount },
+          }
+        ).catch(() => undefined)
+      }
+      res.json({
+        ok: true,
+        reservation: {
+          id: reservation.id,
+          party_size: Math.trunc(toAmount(reservation.party_size)),
+          pricing_tier: reservation.pricing_tier,
+          total_price: toAmount(reservation.total_price),
+          paid_amount: toAmount(reservation.paid_amount),
+          amount_due: toAmount(reservation.amount_due),
+        },
+        pending_change: { party_size: preview.party_size, total_price: preview.total_price, amount: preview.amount },
+        change: { action: "supplement", amount: preview.amount },
+        payment_url: link.payment_url,
+      })
+    } catch (error) {
+      req.scope.resolve("logger").error(
+        `[kurzy] Doplatek k rezervaci ${reservation.id} se nepodařilo založit: ${error instanceof Error ? error.message : error}`
+      )
+      res.status(502).json({ message: "Platbu doplatku se teď nepodařilo založit. Zkuste to prosím za chvíli." })
+    }
+    return
+  }
 
   let updated: any
   try {

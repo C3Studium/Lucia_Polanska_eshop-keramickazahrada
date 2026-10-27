@@ -86,6 +86,10 @@ export type CourseReservationDetail = {
   total_price: number
   payment_method: "online" | "on_site"
   payment_status: "pending" | "paid" | "on_site"
+  /** Schválená žádost o místo — zákazník si ještě vybírá platbu a potvrzuje podmínky. */
+  payment_choice_pending?: boolean
+  /** Rozpracovaná změna počtu osob — platí, až projde doplatek. */
+  pending_change?: { party_size: number; total_price: number; amount: number } | null
   /**
    * Živý stav platby u ComGate (`canceled` = zákazník klikl „Zrušit platbu",
    * `pending` = platba otevřená, třeba po „Návrat do e-shopu"). Jen u
@@ -219,6 +223,10 @@ export type CourseWaitlistInput = {
   term_id: string
   name: string
   email: string
+  /** Telefon — u žádosti o místo volá majitelka. */
+  phone: string
+  /** Vzkaz k žádosti (nepovinný). */
+  note?: string
   party_size: number
   /** Honeypot — forwarded verbatim, humans never fill it. */
   website?: string
@@ -251,6 +259,78 @@ export const joinCourseWaitlist = async (
         "Zápis se nepodařilo odeslat. Zkuste to prosím znovu."
       ),
     }
+  }
+}
+
+export type CoursePartyChangePreview = {
+  before_party_size: number
+  before_per_person: number
+  before_total_price: number
+  party_size: number
+  pricing_tier: string
+  per_person: number
+  total_price: number
+  paid_amount: number
+  action: "supplement" | "refund" | "none"
+  amount: number
+  seats_ok: boolean
+  message?: string
+}
+
+/** Shrnutí změny počtu osob před potvrzením — nic neukládá. */
+export const previewCoursePartyChange = async (
+  reservationId: string,
+  token: string,
+  partySize: number
+): Promise<CoursePartyChangePreview | null> =>
+  sdk.client
+    .fetch<{ preview: CoursePartyChangePreview }>(
+      `/store/courses/reservations/${reservationId}/edit/preview?token=${encodeURIComponent(token)}`,
+      { method: "POST", body: { party_size: partySize }, cache: "no-store" }
+    )
+    .then((result) => result.preview)
+    .catch(() => null)
+
+/** „Zrušit změnu" — zahodí rozpracovanou změnu (čekající doplatek). */
+export const discardCourseChange = async (reservationId: string, token: string): Promise<boolean> =>
+  sdk.client
+    .fetch(`/store/courses/reservations/${reservationId}/edit/discard?token=${encodeURIComponent(token)}`, {
+      method: "POST",
+      cache: "no-store",
+    })
+    .then(() => true)
+    .catch(() => false)
+
+/**
+ * Potvrzení schválené výjimky (žádost o místo): volba platby + souhlasy.
+ * Verze OP a otisk storno podmínek doplní server, jako u běžné rezervace.
+ */
+export const confirmCourseReservation = async (
+  reservationId: string,
+  token: string,
+  input: { payment_method: "online" | "on_site"; terms_accepted: true; photo_consent: boolean }
+): Promise<{ ok: true; payment_url?: string } | { ok: false; message: string }> => {
+  const [registry, facts] = await Promise.all([getPublishedLegalRegistry(), getLegalFacts()])
+  const termsVersion = registry.currentTermsVersion()
+  const stornoText = inlineToPlain("{{course.cancellation}}", { facts })
+  try {
+    const result = await sdk.client.fetch<{ ok: boolean; payment_url?: string }>(
+      `/store/courses/reservations/${reservationId}/confirm?token=${encodeURIComponent(token)}`,
+      {
+        method: "POST",
+        body: {
+          ...input,
+          exception_ack: true,
+          terms_version: termsVersion,
+          cancellation_terms_text_version: `${termsVersion}:${textFingerprint(stornoText)}`,
+          client_accepted_at: new Date().toISOString(),
+        },
+        cache: "no-store",
+      }
+    )
+    return { ok: true, payment_url: result.payment_url }
+  } catch (error) {
+    return { ok: false, message: readableMessage(error, "Rezervaci se nepodařilo potvrdit. Zkuste to prosím znovu.") }
   }
 }
 

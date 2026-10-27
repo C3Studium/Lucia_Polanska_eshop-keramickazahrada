@@ -3,7 +3,7 @@ import { MedusaError } from "@medusajs/framework/utils"
 import { COURSE_MODULE } from "../../../../../../modules/course"
 import type CourseModuleService from "../../../../../../modules/course/service"
 import { ensureCoursePaymentLink } from "../../../../../../lib/course-payment"
-import { ensureCourseSupplementLink } from "../../../../../../lib/course-party-change"
+import { ensureCourseSupplementLink, pendingCourseChange } from "../../../../../../lib/course-party-change"
 import { toAmount } from "../../../../../../modules/course/pricing"
 import { verifyCourseReservationToken } from "../../../../../../lib/course-reservation-link"
 
@@ -48,7 +48,8 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   try {
     // Zaplacená rezervace s doplatkem po úpravě počtu osob → platba rozdílu.
     const link =
-      reservation.payment_status === "paid" && toAmount(reservation.amount_due) > 0
+      reservation.payment_status === "paid" &&
+      (toAmount(reservation.amount_due) > 0 || Boolean(await pendingCourseChange(req.scope, reservation.id)))
         ? await ensureCourseSupplementLink(req.scope, { reservation, term: reservation.term })
         : await ensureCoursePaymentLink(req.scope, {
             reservation,

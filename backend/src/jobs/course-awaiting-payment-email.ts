@@ -44,6 +44,8 @@ export default async function courseAwaitingPaymentEmail(container: MedusaContai
   for (const reservation of candidates) {
     try {
       if (!reservation.term) continue
+      // Schválená výjimka: zákazník dostal e-mail „potvrďte rezervaci", platbu ještě nevybral.
+      if (reservation.payment_choice_pending) continue
       // Zaplaceno (potvrzení obstará subscriber), nebo zrušeno (e-mail „Platba
       // neprošla" s odkazem už poslala kontrola) → „čeká na platbu" ne.
       const checked = await checkCourseReservationPayment(container, reservation).catch(() => null)

@@ -3,6 +3,13 @@
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { usePaymentWatch } from "@lib/hooks/use-payment-watch"
+import {
+  confirmCourseReservation,
+  discardCourseChange,
+  previewCoursePartyChange,
+  type CoursePartyChangePreview,
+} from "@lib/data/courses"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import {
   cancelCourseReservation,
@@ -50,6 +57,7 @@ type StateKey =
   | "na-miste"
   | "zpracovava"
   | "nezaplaceno"
+  | "vyjimka"
 
 /**
  * Výchozí texty stavů. `text` chybí tam, kde odstavec říká něco o penězích
@@ -84,6 +92,13 @@ const STATE_DEFAULTS: Record<
     nadpis: "Místo je vaše,",
     zvyrazneni: "těšíme se na vás.",
     text: "Platba dorazila a potvrzení jsme poslali e-mailem. Stačí přijít — vezměte si oblečení, kterému nevadí hlína.",
+  },
+  /* Schválená žádost o místo na plném termínu — zákazník si vybírá platbu. */
+  vyjimka: {
+    stitek: "Výjimka schválena",
+    nadpis: "Místo pro vás mám,",
+    zvyrazneni: "stačí vybrat platbu.",
+    text: "Termín byl plně obsazený, ale výjimku jsem schválila — místo pro vás mám. Vyberte níž, jak zaplatíte, a potvrďte obchodní podmínky. Místo držím 24 hodin.",
   },
   "na-miste": {
     stitek: "Rezervováno",
@@ -170,6 +185,10 @@ const voiceFor = (
     }
     return say("zruseno", { tone: "warn" })
   }
+  if (reservation.payment_choice_pending && reservation.payment_status !== "paid") {
+    /* Schválená žádost o místo: zákazník si vybírá platbu a potvrzuje podmínky. */
+    return say("vyjimka", { tone: "ok" })
+  }
   if (reservation.payment_status === "paid" && (reservation.amount_due ?? 0) > 0) {
     /* Po přidání osob zbývá doplatek — „Místo je vaše, platba dorazila" by lhalo. */
     return say("nezaplaceno", {
@@ -252,6 +271,72 @@ export default function RezervaceDetail({
   const [cancelError, setCancelError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
+  /* ------------------------------------- shrnutí změny počtu osob („pokladna") */
+  const [preview, setPreview] = useState<CoursePartyChangePreview | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
+  useEffect(() => {
+    if (!editOpen || editSize === reservation.party_size) {
+      setPreview(null)
+      return
+    }
+    let alive = true
+    setPreviewLoading(true)
+    const timer = window.setTimeout(async () => {
+      const result = await previewCoursePartyChange(reservation.id, token, editSize)
+      if (!alive) return
+      setPreview(result)
+      setPreviewLoading(false)
+    }, 250)
+    return () => {
+      alive = false
+      window.clearTimeout(timer)
+    }
+  }, [editOpen, editSize, reservation.id, reservation.party_size, token])
+
+  /* Rozpracovaná změna (čekající doplatek) — „Zrušit změnu". */
+  const [discarding, setDiscarding] = useState(false)
+  const discardChange = async () => {
+    if (discarding) return
+    setDiscarding(true)
+    await discardCourseChange(reservation.id, token)
+    setDiscarding(false)
+    setNotice("Změnu jsme zrušili — rezervace zůstává, jak byla.")
+    router.refresh()
+  }
+
+  /* ---------------------------------------- schválená výjimka: volba platby */
+  const choosing = Boolean(reservation.payment_choice_pending) && reservation.payment_status !== "paid" && reservation.status === "active"
+  const [choiceTerms, setChoiceTerms] = useState(false)
+  const [choicePhotos, setChoicePhotos] = useState(false)
+  const [choiceBusy, setChoiceBusy] = useState<"online" | "on_site" | null>(null)
+  const [choiceError, setChoiceError] = useState<string | null>(null)
+  const confirmChoice = async (method: "online" | "on_site") => {
+    if (choiceBusy) return
+    if (!choiceTerms) {
+      setChoiceError("Potvrďte prosím souhlas s obchodními podmínkami.")
+      return
+    }
+    setChoiceBusy(method)
+    setChoiceError(null)
+    const result = await confirmCourseReservation(reservation.id, token, {
+      payment_method: method,
+      terms_accepted: true,
+      photo_consent: choicePhotos,
+    })
+    if (!result.ok) {
+      setChoiceError(result.message)
+      setChoiceBusy(null)
+      return
+    }
+    if (result.payment_url) {
+      window.location.href = result.payment_url
+      return
+    }
+    setChoiceBusy(null)
+    setNotice("Hotovo — rezervace je potvrzená, zaplatíte na místě. Potvrzení jsme poslali e-mailem.")
+    router.refresh()
+  }
+
   const voice = voiceFor(reservation, outcome, block)
 
   /* Back from ComGate via bfcache: the page resumes frozen mid-„Připravuji
@@ -273,7 +358,7 @@ export default function RezervaceDetail({
   const watching =
     reservation.payment_method === "online" &&
     reservation.status === "active" &&
-    (reservation.payment_status !== "paid" || (reservation.amount_due ?? 0) > 0)
+    (reservation.payment_status !== "paid" || (reservation.amount_due ?? 0) > 0 || Boolean(reservation.pending_change))
   usePaymentWatch(async () => {
     router.refresh()
     return false
@@ -435,7 +520,32 @@ export default function RezervaceDetail({
               {peopleWord(reservation.party_size)}
             </dd>
           </div>
-          {supplementDue ? (
+          {reservation.pending_change ? (
+          <div className="kurzyDetail__actions kurzyDetail__choice">
+            <p className="kurzyDetail__notice">
+              Změna na {reservation.pending_change.party_size} {peopleWord(reservation.pending_change.party_size)} (celkem{" "}
+              {czk(reservation.pending_change.total_price)}) čeká na doplatek{" "}
+              {czk(reservation.pending_change.amount)}. Platit začne, jakmile doplatek projde — do té doby
+              platí rezervace, jak je.
+            </p>
+            <div className="kurzyDetail__selfServiceRow">
+              <button type="button" className="kurzyDetail__retry" onClick={retry} disabled={retrying || discarding}>
+                {retrying ? "Připravuji platbu…" : `Doplatit ${czk(reservation.pending_change.amount)}`}
+                <i aria-hidden="true">↗</i>
+              </button>
+              <button type="button" className="kurzyDetail__ghost" onClick={discardChange} disabled={retrying || discarding}>
+                {discarding ? "Ruším…" : "Zrušit změnu"}
+              </button>
+            </div>
+            {retryError ? (
+              <p className="kurzyDetail__error" role="alert">
+                {retryError}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {supplementDue ? (
             <>
               <div>
                 <dt>Cena celkem</dt>
@@ -509,8 +619,62 @@ export default function RezervaceDetail({
           </div>
         ) : null}
 
+        {choosing ? (
+          <div className="kurzyDetail__actions kurzyDetail__choice">
+            <label className="kurzyDetail__check">
+              <input
+                type="checkbox"
+                checked={choiceTerms}
+                onChange={(event) => {
+                  setChoiceTerms(event.target.checked)
+                  setChoiceError(null)
+                }}
+              />
+              <span>
+                Souhlasím s{" "}
+                <LocalizedClientLink href="/smluvni-podminky#kurzy" target="_blank" rel="noopener">
+                  obchodními podmínkami
+                </LocalizedClientLink>
+                . Kurz má pevný termín, proto u něj neplatí zákonné odstoupení do 14 dnů bez udání
+                důvodu (§ 1837 písm. j) občanského zákoníku); platí storno podmínky.
+              </span>
+            </label>
+            <label className="kurzyDetail__check">
+              <input type="checkbox" checked={choicePhotos} onChange={(event) => setChoicePhotos(event.target.checked)} />
+              <span>
+                Souhlasím s pořízením fotografií z kurzu a jejich zveřejněním na webu a sociálních
+                sítích (nepovinné).
+              </span>
+            </label>
+            {choiceError ? (
+              <p className="kurzyDetail__error" role="alert">
+                {choiceError}
+              </p>
+            ) : null}
+            <div className="kurzyDetail__selfServiceRow">
+              <button
+                type="button"
+                className="kurzyDetail__retry"
+                disabled={choiceBusy !== null}
+                onClick={() => confirmChoice("online")}
+              >
+                {choiceBusy === "online" ? "Připravuji platbu…" : `Zaplatit kartou ${czk(reservation.total_price)}`}
+                <i aria-hidden="true">↗</i>
+              </button>
+              <button
+                type="button"
+                className="kurzyDetail__ghost"
+                disabled={choiceBusy !== null}
+                onClick={() => confirmChoice("on_site")}
+              >
+                {choiceBusy === "on_site" ? "Potvrzuji…" : "Zaplatím na místě"}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {/* ---------------------------------------------- self-service --- */}
-        {canSelfService ? (
+        {canSelfService && !choosing ? (
           <div className="kurzyDetail__selfService">
             <h2 {...editableItem(block, "zmena.nadpis")}>{selfService("zmena.nadpis")}</h2>
 
@@ -558,6 +722,54 @@ export default function RezervaceDetail({
                       řídí počtem osob.
                     </p>
                   ) : null}
+                  {editSize !== reservation.party_size ? (
+                    <dl className="kurzyDetail__summary" aria-live="polite">
+                      {previewLoading || !preview ? (
+                        <div>
+                          <dt>Počítáme…</dt>
+                          <dd />
+                        </div>
+                      ) : (
+                        <>
+                          <div>
+                            <dt>Dosud</dt>
+                            <dd>
+                              {preview.before_party_size} {peopleWord(preview.before_party_size)} ×{" "}
+                              {czk(preview.before_per_person)} = {czk(preview.before_total_price)}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Nově</dt>
+                            <dd>
+                              {preview.party_size} {peopleWord(preview.party_size)} × {czk(preview.per_person)} ={" "}
+                              {czk(preview.total_price)}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Cena celkem</dt>
+                            <dd>{czk(preview.total_price)}</dd>
+                          </div>
+                          {preview.paid_amount > 0 ? (
+                            <div>
+                              <dt>Už zaplaceno</dt>
+                              <dd>{czk(preview.paid_amount)}</dd>
+                            </div>
+                          ) : null}
+                          {preview.action !== "none" ? (
+                            <div>
+                              <dt>{preview.action === "supplement" ? "Doplatíte" : "Vrátíme vám"}</dt>
+                              <dd className="kurzyDetail__total">{czk(preview.amount)}</dd>
+                            </div>
+                          ) : null}
+                        </>
+                      )}
+                    </dl>
+                  ) : null}
+                  {preview && !preview.seats_ok ? (
+                    <p className="kurzyDetail__error" role="alert">
+                      {preview.message}
+                    </p>
+                  ) : null}
                   {editError ? (
                     <p className="kurzyDetail__error" role="alert">
                       {editError}
@@ -568,9 +780,22 @@ export default function RezervaceDetail({
                       type="button"
                       className="kurzyDetail__retry"
                       onClick={saveEdit}
-                      disabled={editSaving || editSize === reservation.party_size}
+                      disabled={
+                        editSaving ||
+                        editSize === reservation.party_size ||
+                        previewLoading ||
+                        !preview ||
+                        !preview.seats_ok
+                      }
                     >
-                      {editSaving ? "Ukládám…" : "Uložit změnu"}
+                      {editSaving
+                        ? "Ukládám…"
+                        : preview?.action === "supplement"
+                          ? `Pokračovat k platbě ${czk(preview.amount)}`
+                          : preview?.action === "refund"
+                            ? `Potvrdit a vrátit ${czk(preview.amount)}`
+                            : "Potvrdit změnu"}
+                      {preview?.action === "supplement" ? <i aria-hidden="true">↗</i> : null}
                     </button>
                     <button
                       type="button"

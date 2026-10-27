@@ -5,6 +5,7 @@ import {
   motion,
   type Variants,
 } from "framer-motion"
+import { updateRegion } from "@lib/data/cart"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 
@@ -33,7 +34,6 @@ import { editableItem } from "@modules/common/components/cms-text"
 
 import {
   REZERVACE_OKNO_DEFAULTS,
-  WAITLIST_RULE,
   type RezervaceOknoLabel,
 } from "../copy"
 import {
@@ -141,7 +141,17 @@ type Props = {
   heading?: CopyBlock
   /** Blok `kurzy.rezervace-okno` — texty okna, viz `../copy.ts`. */
   block?: CopyBlock
+  /**
+   * Kód země z adresy. Kurzy se rezervují jen v Česku (ateliér v Písku, ceny
+   * v Kč) — jinde okno místo rezervace nabídne přepnout obchod na Česko.
+   */
+  countryCode?: string
 }
+
+/** Jediná země, kde jdou kurzy rezervovat. */
+export const COURSE_COUNTRY = "cz"
+/** Příznak v adrese: po přepnutí země se okno rezervace samo otevře. */
+export const OPEN_RESERVATION_PARAM = "rezervace"
 
 export default function RezervaceModal({
   open,
@@ -150,6 +160,7 @@ export default function RezervaceModal({
   legalFacts = FALLBACK_FACTS,
   heading,
   block,
+  countryCode = COURSE_COUNTRY,
 }: Props) {
   if (typeof document === "undefined") {
     return null
@@ -163,6 +174,7 @@ export default function RezervaceModal({
           legalFacts={legalFacts}
           heading={heading}
           block={block}
+          countryCode={countryCode}
         />
       ) : null}
     </AnimatePresence>,
@@ -176,13 +188,34 @@ function RezervaceModalPanel({
   legalFacts,
   heading,
   block,
+  countryCode,
 }: {
   initialTerms: CourseTerm[]
   onClose: () => void
   legalFacts: LegalFacts
   heading?: CopyBlock
   block?: CopyBlock
+  countryCode: string
 }) {
+  const regionLocked = countryCode.toLowerCase() !== COURSE_COUNTRY
+  const [switching, setSwitching] = useState(false)
+  const [switchError, setSwitchError] = useState<string | null>(null)
+  /* Přepnutí obchodu na Česko — tatáž cesta jako přepínač země vpravo nahoře
+     (`updateRegion`: košík, cache, přesměrování). Do adresy jde příznak,
+     podle kterého stránka Kurzy okno po přepnutí hned znovu otevře. */
+  const switchToCzech = async () => {
+    if (switching) return
+    setSwitching(true)
+    setSwitchError(null)
+    try {
+      await updateRegion(COURSE_COUNTRY, `/kurzy?${OPEN_RESERVATION_PARAM}=1`)
+    } catch (error) {
+      // `redirect()` ze serverové akce se hlásí výjimkou — to je úspěch.
+      if (String((error as { digest?: unknown })?.digest ?? "").startsWith("NEXT_REDIRECT")) return
+      setSwitchError("Přepnout se teď nepodařilo. Zkuste to prosím znovu, nebo zvolte Česko vpravo nahoře.")
+      setSwitching(false)
+    }
+  }
   /* Okno se po zapnutí editace samo nepřekreslí, dokud v něm člověk nic
      nevybere — bez tohohle by anotace zůstaly prázdné. Viz hook. */
   useEditRerender()
@@ -359,6 +392,8 @@ function RezervaceModalPanel({
   /* The waitlist mini-form a full term opens instead of the booking. */
   const [wlName, setWlName] = useState("")
   const [wlEmail, setWlEmail] = useState("")
+  const [wlPhone, setWlPhone] = useState("")
+  const [wlNote, setWlNote] = useState("")
   const [wlPartySize, setWlPartySize] = useState(1)
   const [wlWebsite, setWlWebsite] = useState("")
   const [wlSubmitting, setWlSubmitting] = useState(false)
@@ -650,12 +685,18 @@ function RezervaceModalPanel({
       setWlError("Zkontrolujte prosím e-mailovou adresu.")
       return
     }
+    if (wlPhone.replace(/\D/g, "").length < 6) {
+      setWlError("Vyplňte prosím telefon — u žádosti o místo se vám můžeme ozvat i telefonicky.")
+      return
+    }
 
     setWlSubmitting(true)
     const result = await joinCourseWaitlist({
       term_id: selected.id,
       name: wlName.trim(),
       email: wlEmail.trim(),
+      phone: wlPhone.trim(),
+      note: wlNote.trim() || undefined,
       party_size: wlPartySize,
       website: wlWebsite,
     })
@@ -768,7 +809,23 @@ function RezervaceModalPanel({
           </button>
         </header>
 
-        {confirmed ? (
+        {regionLocked ? (
+          <div className="kurzyModal__regionLock" role="status">
+            <p>
+              Kurzy probíhají v ateliéru v Písku a rezervují se v korunách, proto je jde rezervovat jen
+              v české verzi obchodu. Přepněte si obchod na Česko — okno rezervace zůstane otevřené.
+            </p>
+            {switchError ? (
+              <p className="kurzyModal__error" role="alert">
+                {switchError}
+              </p>
+            ) : null}
+            <button type="button" className="kurzyModal__primary" onClick={switchToCzech} disabled={switching}>
+              {switching ? "Přepínám na Česko…" : "Přepnout na Česko (Kč)"}
+              <i aria-hidden="true">→</i>
+            </button>
+          </div>
+        ) : confirmed ? (
           <motion.div
             className="kurzyModal__summary"
             initial={reduceMotion ? false : { opacity: 0, y: SUMMARY_RISE }}
@@ -1012,26 +1069,24 @@ function RezervaceModalPanel({
                                   className="kurzyModal__waitlistDone"
                                   role="status"
                                 >
-                                  <strong {...edit("cekacka.hotovo.nadpis")}>
-                                    {text("cekacka.hotovo.nadpis")}
+                                  <strong {...edit("zadost.hotovo.nadpis")}>
+                                    {text("zadost.hotovo.nadpis")}
                                   </strong>
-                                  {/* Zástupci → jen ve formuláři. Pravidlo
-                                      čekací listiny za větou drží kód. */}
+                                  {/* Zástupci → jen ve formuláři. */}
                                   <p>
-                                    {fillPlaceholders(text("cekacka.hotovo.text"), {
+                                    {fillPlaceholders(text("zadost.hotovo.text"), {
                                       osoby: peopleLabel(wlDone.partySize),
                                       email: wlDone.email,
-                                    })}{" "}
-                                    {WAITLIST_RULE}
+                                    })}
                                   </p>
                                 </div>
                               ) : (
                                 <form onSubmit={submitWaitlist} noValidate>
                                   <p
                                     className="kurzyModal__waitlistIntro"
-                                    {...edit("cekacka.uvod")}
+                                    {...edit("zadost.uvod")}
                                   >
-                                    {text("cekacka.uvod")}
+                                    {text("zadost.uvod")}
                                   </p>
                                   <div className="kurzyModal__fields">
                                     <label>
@@ -1057,6 +1112,15 @@ function RezervaceModalPanel({
                                         onChange={(event) =>
                                           setWlEmail(event.target.value)
                                         }
+                                        required
+                                      />
+                                    </label>
+                                    <label>
+                                      <span>Telefon</span>
+                                      <PhoneInput
+                                        name="wl-phone"
+                                        value={wlPhone}
+                                        onChange={(event) => setWlPhone(event.target.value)}
                                         required
                                       />
                                     </label>
@@ -1094,6 +1158,18 @@ function RezervaceModalPanel({
                                     </div>
                                   </div>
 
+                                  <label className="kurzyModal__wlNote">
+                                    <span>Vzkaz (nepovinné)</span>
+                                    <textarea
+                                      name="wl-note"
+                                      rows={3}
+                                      maxLength={1000}
+                                      placeholder="Třeba: jsme rodina s dětmi 8 a 10 let, termín se nám jinak nehodí."
+                                      value={wlNote}
+                                      onChange={(event) => setWlNote(event.target.value)}
+                                    />
+                                  </label>
+
                                   {/* Honeypot — humans never see it. */}
                                   <input
                                     type="text"
@@ -1109,9 +1185,9 @@ function RezervaceModalPanel({
                                   />
 
                                   <p className="kurzyModal__consent">
-                                    E-mail použijeme jen pro tohle jedno
-                                    upozornění na uvolněné místo — nic dalšího
-                                    na něj posílat nebudeme.
+                                    E-mail a telefon použijeme jen k vyřízení
+                                    téhle žádosti — nic dalšího na ně posílat
+                                    nebudeme.
                                   </p>
 
                                   {wlError ? (
@@ -1126,7 +1202,7 @@ function RezervaceModalPanel({
                                     disabled={wlSubmitting}
                                   >
                                     {/* Bez anotace v místě — tlačítko nese i šipku. */}
-                                    {wlSubmitting ? "Odesílám…" : text("cekacka.tlacitko")}
+                                    {wlSubmitting ? "Odesílám…" : text("zadost.tlacitko")}
                                     <i aria-hidden="true">↗</i>
                                   </button>
                                 </form>

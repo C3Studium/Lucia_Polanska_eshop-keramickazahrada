@@ -4,9 +4,10 @@ import { COURSE_MODULE } from "../modules/course"
 import { photoConsentLine } from "../modules/course/legal"
 import type CourseModuleService from "../modules/course/service"
 import { formatCourseDate, sendCourseReservationConfirmedEmail } from "../lib/course-emails"
-import { ensureInvoiceForCourseReservation } from "../lib/course-invoice"
+import { ensureInvoiceForCourseReservation, ensureInvoiceForCourseSupplement } from "../lib/course-invoice"
 import { notifyMerchant } from "../lib/notify"
 import { syncCourseMoney } from "../lib/course-money"
+import { applyPaidCourseChange } from "../lib/course-party-change"
 import { toAmount } from "../modules/course/pricing"
 
 /**
@@ -251,17 +252,35 @@ const onSupplementCaptured = async (container: any, requestId: string, payment: 
       paid_at: payment?.captured_at ? new Date(payment.captured_at) : new Date(),
     } as never)
   }
+  // Změna počtu osob platí až teď (rozpracovaná změna → zaplaceno).
+  const applied = firstCapture ? await applyPaidCourseChange(container, request).catch(() => "noop") : "noop"
   const money = await syncCourseMoney(container, request.reservation_id)
   const [reservation] = (await courseService.listCourseReservations(
     { id: request.reservation_id } as never,
     { relations: ["term"] } as never
   )) as any[]
   if (!reservation?.term || !firstCapture) return
+  // Změnu nešlo provést (termín se zaplnil) — doplatek se vrátil, majitelka má zprávu.
+  if (applied === "refunded") return
   logger.info(`[kurzy] Rezervace ${reservation.id}: doplatek ${toAmount(request.amount)} Kč zaplacen.`)
 
   const overpaid = money ? Math.round((money.paid_amount - toAmount(reservation.total_price)) * 100) / 100 : 0
+  /*
+   * Nový doklad: iDoklad fakturu změnit neumí, doplatek dostane vlastní
+   * fakturu. Jde jako příloha potvrzení — spolu s novou pozvánkou na nový
+   * počet osob. Selhání faktury potvrzení nezastaví.
+   */
+  const [paidRequest] = (await courseService.listCoursePaymentRequests({ id: request.id } as never)) as any[]
+  const invoice = await ensureInvoiceForCourseSupplement(
+    container,
+    paidRequest ?? request,
+    reservation,
+    reservation.term
+  ).catch(() => ({ status: "failed" as const, pdf_url: null }))
+
   await sendCourseReservationConfirmedEmail(container, { ...reservation, ...(money ?? {}) }, reservation.term, {
     variant: "paid",
+    invoicePdfUrl: invoice.pdf_url ?? null,
     keyOverride: `course-supplement-paid:${request.id}`,
   }).catch(() => undefined)
   await notifyMerchant(container, {
@@ -270,7 +289,11 @@ const onSupplementCaptured = async (container: any, requestId: string, payment: 
     description: [
       `${reservation.term.title} · ${formatCourseDate(reservation.term.starts_at)}`,
       `${reservation.party_size} os. · doplatek ${toAmount(request.amount)} Kč kartou.`,
-      "Faktura na doplatek se automaticky nevystavuje — vystavte ji prosím v iDokladu.",
+      invoice.status === "created" || invoice.status === "exists"
+        ? `Faktura na doplatek vystavena${(invoice as any).invoice_number ? ` (${(invoice as any).invoice_number})` : ""}.`
+        : invoice.status === "skipped"
+          ? "iDoklad není nastavený — fakturu na doplatek vystavte ručně."
+          : "Fakturu na doplatek se nepodařilo vystavit — vystavte ji prosím ručně.",
       overpaid > 0 ? `POZOR: zákazník má přeplaceno ${overpaid} Kč (zaplatil nahrazený doplatek) — vraťte prosím rozdíl.` : "",
     ]
       .filter(Boolean)

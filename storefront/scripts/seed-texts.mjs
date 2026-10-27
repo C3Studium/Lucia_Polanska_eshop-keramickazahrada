@@ -699,6 +699,10 @@ const TEXT_BLOCKS = [
                     "Termín je plně obsazený. Nechte nám kontakt a napíšeme vám, jakmile se místo uvolní."
                 ),
                 item("cekacka.tlacitko", "Dejte mi vědět"),
+                item("zadost.uvod", "Termín je plně obsazený. Pošlete nám žádost — podívám se, jestli pro vás můžu udělat výjimku, a ozvu se e-mailem nebo telefonem. Zatím nic neplatíte."),
+                item("zadost.tlacitko", "Poslat žádost o místo"),
+                item("zadost.hotovo.nadpis", "Žádost mám, ozvu se vám."),
+                item("zadost.hotovo.text", "Žádost pro {osoby} jsem dostala. Jakmile rozhodnu, napíšu vám na {email} — když místo bude, přijde odkaz, kde si vyberete platbu."),
                 item("cekacka.hotovo.nadpis", "Dáme vědět, až se uvolní místo."),
                 // Bez „Místo se přitom nedrží…" — pravidlo čekací listiny drží kód.
                 item(
@@ -719,6 +723,8 @@ const TEXT_BLOCKS = [
         key: "kurzy.rezervace-stavy",
         page: "kurzy",
         title: "Stránka rezervace kurzu",
+        // Popisky přibývají (28. 10.: vyjimka.*) — doplní se do existujícího bloku.
+        mergeItems: true,
         data: {
             items: [
                 item("termin-zrusen.stitek", "Termín zrušen"),
@@ -740,6 +746,9 @@ const TEXT_BLOCKS = [
                     "zaplaceno.text",
                     "Platba dorazila a potvrzení jsme poslali e-mailem. Stačí přijít — vezměte si oblečení, kterému nevadí hlína."
                 ),
+                item("vyjimka.stitek", "Výjimka schválena"),
+                item("vyjimka.nadpis", "Místo pro vás mám,", "stačí vybrat platbu."),
+                item("vyjimka.text", "Termín byl plně obsazený, ale výjimku jsem schválila — místo pro vás mám. Vyberte níž, jak zaplatíte, a potvrďte obchodní podmínky. Místo držím 24 hodin."),
                 item("na-miste.stitek", "Rezervováno"),
                 item("na-miste.nadpis", "Místo je vaše,", "zaplatíte na místě."),
                 item(

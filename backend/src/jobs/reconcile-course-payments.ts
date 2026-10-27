@@ -70,7 +70,13 @@ export default async function reconcileCoursePayments(
   const otevrene = reservations.filter(hasOpenOnlinePayment)
 
   // Doplatky po úpravě počtu osob — tatáž záchrana, když oznámení nechodí.
-  for (const reservation of reservations.filter(hasOpenSupplement)) {
+  // + rezervace s rozpracovanou změnou (čekající doplatek).
+  const pendingIds = new Set(
+    ((await courseService.listCoursePaymentRequests({ type: "supplement", status: "pending" } as never)) as any[]).map(
+      (r) => r.reservation_id
+    )
+  )
+  for (const reservation of reservations.filter((r) => hasOpenSupplement(r) || pendingIds.has(r.id))) {
     await checkCourseSupplementPayments(container, reservation.id).catch((error) =>
       logger.warn(
         `[kurzy] Doplatek rezervace ${reservation.id} se nepodařilo ověřit: ${
