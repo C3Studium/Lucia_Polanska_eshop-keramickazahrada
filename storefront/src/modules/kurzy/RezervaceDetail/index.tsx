@@ -189,8 +189,27 @@ const voiceFor = (
    * řádek — tedy „platba nedorazila, zkuste to znovu" člověku, který právě
    * zaplatil. Krom toho, že to je nepravda, mu to nabízelo zaplatit podruhé.
    */
-  if (outcome === "paid" || outcome === "pending") {
+  /*
+   * Brána sama říká, co se stalo (GET rezervace se jí ptá):
+   * - `canceled`: zákazník klikl „Zrušit platbu" (nebo platba vypršela) →
+   *   zaplatit znovu založí NOVOU platbu,
+   * - `pending` po návratu s `pending`/`cancelled`: klikl „Návrat do
+   *   e-shopu" a nezaplatil — nebo posílá převod. Nabídnout dokončení; tlačítko
+   *   otevře TUTÉŽ platbu, takže dvakrát zaplatit nejde.
+   */
+  if (reservation.gateway_status === "canceled") {
+    return say("nezaplaceno", { tone: "warn", canRetry: true })
+  }
+  if (outcome === "paid") {
     return say("zpracovava", { tone: "wait" })
+  }
+  if (outcome === "pending" || outcome === "cancelled") {
+    return say("nezaplaceno", {
+      tone: "warn",
+      canRetry: true,
+      moneyText:
+        "Platba zatím nedorazila. Pokud jste ji na platební bráně nedokončili, dokončete ji tlačítkem níže — otevře se stejná platba, zaplatit dvakrát tedy nejde. Pokud jste platili převodem, nemusíte nic dělat: jakmile peníze dorazí, pošleme vám potvrzení e-mailem.",
+    })
   }
 
   /* Zbývá návrat se `cancelled` a přímé otevření odkazu — tam platba
@@ -246,7 +265,8 @@ export default function RezervaceDetail({
      platbu hned zachytí (GET rezervace). Stránka se proto sama obnovuje, dokud
      je stav „zpracovává se" — obvykle to srovná první nebo druhé obnovení.
      Po dvou minutách přestane; zbývá tlačítko „Obnovit stav". */
-  const waiting = voice.tone === "wait"
+  const waiting =
+    voice.tone === "wait" || (Boolean(voice.canRetry) && reservation.gateway_status === "pending")
   useEffect(() => {
     if (!waiting) return
     const started = Date.now()

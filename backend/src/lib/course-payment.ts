@@ -1,3 +1,4 @@
+import { courseGatewayStatus } from "./course-payment-reconcile"
 import { MedusaError, Modules } from "@medusajs/framework/utils"
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { createPaymentSessionsWorkflow } from "@medusajs/medusa/core-flows"
@@ -50,7 +51,9 @@ export const ensureCoursePaymentLink = async (
 
   // 1 — a link that already exists is returned as-is, unless the customer
   // cancelled that ComGate payment (its redirect is dead then, and a retry
-  // needs a fresh session).
+  // needs a fresh session). The stored provider status only changes with
+  // ComGate's notification, so ask the gateway itself: without the
+  // notification, „Zrušit platbu" would otherwise hand back the dead link.
   if (reservation.payment_url && reservation.payment_session_id) {
     const session = await paymentModule
       .retrievePaymentSession(reservation.payment_session_id)
@@ -60,10 +63,14 @@ export const ensureCoursePaymentLink = async (
         (session?.data as any)?.providerStatus ??
         ""
     ).toUpperCase()
+    const liveStatus = session
+      ? await courseGatewayStatus(container, reservation).catch(() => null)
+      : null
     const reusable =
       session &&
       session.status !== "canceled" &&
-      providerStatus !== "CANCELLED"
+      providerStatus !== "CANCELLED" &&
+      liveStatus !== "canceled"
     if (reusable) {
       return { payment_url: reservation.payment_url, reused: true }
     }

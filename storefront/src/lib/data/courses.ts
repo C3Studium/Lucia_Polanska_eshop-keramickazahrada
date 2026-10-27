@@ -86,6 +86,12 @@ export type CourseReservationDetail = {
   total_price: number
   payment_method: "online" | "on_site"
   payment_status: "pending" | "paid" | "on_site"
+  /**
+   * Živý stav platby u ComGate (`canceled` = zákazník klikl „Zrušit platbu",
+   * `pending` = platba otevřená, třeba po „Návrat do e-shopu"). Jen u
+   * nezaplacené online rezervace, jinak null.
+   */
+  gateway_status?: string | null
   status: "active" | "cancelled"
   /** Why a cancelled reservation was cancelled — self-cancels read differently. */
   cancel_reason: "auto_expired" | "manual" | "term_cancelled" | "customer" | null
