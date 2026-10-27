@@ -18,6 +18,8 @@ export const serializeAdminReservation = (reservation: any) => ({
   amount_due: toAmount(reservation.amount_due),
   payment_method: reservation.payment_method,
   payment_status: reservation.payment_status,
+  /** Schválená výjimka — zákazník ještě nevybral platbu. */
+  payment_choice_pending: Boolean(reservation.payment_choice_pending),
   paid_at: reservation.paid_at ?? null,
   status: reservation.status,
   cancelled_at: reservation.cancelled_at ?? null,

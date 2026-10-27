@@ -86,6 +86,8 @@ export type CourseReservationDetail = {
   total_price: number
   payment_method: "online" | "on_site"
   payment_status: "pending" | "paid" | "on_site"
+  /** Schválená žádost o místo — zákazník si ještě vybírá platbu a potvrzuje podmínky. */
+  payment_choice_pending?: boolean
   /**
    * Živý stav platby u ComGate (`canceled` = zákazník klikl „Zrušit platbu",
    * `pending` = platba otevřená, třeba po „Návrat do e-shopu"). Jen u
@@ -219,6 +221,10 @@ export type CourseWaitlistInput = {
   term_id: string
   name: string
   email: string
+  /** Telefon — u žádosti o místo volá majitelka. */
+  phone: string
+  /** Vzkaz k žádosti (nepovinný). */
+  note?: string
   party_size: number
   /** Honeypot — forwarded verbatim, humans never fill it. */
   website?: string
@@ -251,6 +257,39 @@ export const joinCourseWaitlist = async (
         "Zápis se nepodařilo odeslat. Zkuste to prosím znovu."
       ),
     }
+  }
+}
+
+/**
+ * Potvrzení schválené výjimky (žádost o místo): volba platby + souhlasy.
+ * Verze OP a otisk storno podmínek doplní server, jako u běžné rezervace.
+ */
+export const confirmCourseReservation = async (
+  reservationId: string,
+  token: string,
+  input: { payment_method: "online" | "on_site"; terms_accepted: true; photo_consent: boolean }
+): Promise<{ ok: true; payment_url?: string } | { ok: false; message: string }> => {
+  const [registry, facts] = await Promise.all([getPublishedLegalRegistry(), getLegalFacts()])
+  const termsVersion = registry.currentTermsVersion()
+  const stornoText = inlineToPlain("{{course.cancellation}}", { facts })
+  try {
+    const result = await sdk.client.fetch<{ ok: boolean; payment_url?: string }>(
+      `/store/courses/reservations/${reservationId}/confirm?token=${encodeURIComponent(token)}`,
+      {
+        method: "POST",
+        body: {
+          ...input,
+          exception_ack: true,
+          terms_version: termsVersion,
+          cancellation_terms_text_version: `${termsVersion}:${textFingerprint(stornoText)}`,
+          client_accepted_at: new Date().toISOString(),
+        },
+        cache: "no-store",
+      }
+    )
+    return { ok: true, payment_url: result.payment_url }
+  } catch (error) {
+    return { ok: false, message: readableMessage(error, "Rezervaci se nepodařilo potvrdit. Zkuste to prosím znovu.") }
   }
 }
 

@@ -1172,7 +1172,7 @@ const TermCard = ({
  * „Kalendář / Seznam" — the choice persists per browser, same pattern as the
  * shared view switcher. Seznam is the default: it is what she is used to.
  */
-type TermTab = "upcoming" | "past" | "zadosti";
+type TermTab = "upcoming" | "past" | "zadosti" | "mista";
 
 type TermsView = "seznam" | "kalendar";
 
@@ -1450,6 +1450,14 @@ const TermsCalendar = ({ terms }: { terms: AdminTerm[] }) => {
 const KurzySpravaInner = () => {
   const [tab, setTab] = useState<TermTab>("upcoming");
 
+  /* Žádosti o místo na plném termínu — jen počet do odznaku. */
+  const { data: seatRequests } = useQuery<{ pending_count: number }>({
+    queryKey: ["course-seat-requests", "count"],
+    queryFn: () =>
+      sdk.client.fetch(`/admin/courses/reservation-requests`, {
+        query: { stav: "cekajici" },
+      }),
+  });
   /* Jen počet do odznaku záložky — samotnou frontu načítá až ta záložka. */
   const { data: cancelRequests } = useQuery<{ pending_count: number }>({
     queryKey: ["course-cancel-requests", "count"],
@@ -1553,6 +1561,11 @@ const KurzySpravaInner = () => {
           { key: "upcoming", label: "Nadcházející", count: upcoming.length },
           { key: "past", label: "Proběhlé a zrušené", count: past.length },
           {
+            key: "mista",
+            label: "Žádosti o místo",
+            count: seatRequests?.pending_count || undefined,
+          },
+          {
             key: "zadosti",
             label: "Žádosti o zrušení",
             count: cancelRequests?.pending_count || undefined,
@@ -1563,8 +1576,9 @@ const KurzySpravaInner = () => {
       />
 
       {tab === "zadosti" && <CancellationRequests />}
+      {tab === "mista" && <SeatRequests />}
 
-      {tab !== "zadosti" && (
+      {tab !== "zadosti" && tab !== "mista" && (
       <div className="px-6 py-6">
         {tab === "upcoming" && !termsQuery.isError && (
           <div className="mb-4 flex justify-end">
@@ -1840,6 +1854,177 @@ const CancellationRequests = () => {
         <div className="grid gap-4 xl:grid-cols-2">
           {rows.map((request) => (
             <CancelRequestCard key={request.id} request={request} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ------------------------------------------------------------------ */
+/* Žádosti o místo na plně obsazeném termínu                           */
+/* ------------------------------------------------------------------ */
+
+type SeatRequestRow = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  party_size: number;
+  note: string | null;
+  status: "waiting" | "approved" | "denied";
+  decided_at: string | null;
+  decision_note: string | null;
+  reservation_id: string | null;
+  created_at: string;
+  term: AdminTerm;
+};
+
+const SeatRequestCard = ({ request }: { request: SeatRequestRow }) => {
+  const queryClient = useQueryClient();
+  const [note, setNote] = useState("");
+  const decide = useMutation({
+    mutationFn: (action: "approve" | "deny") =>
+      sdk.client.fetch(`/admin/courses/reservation-requests/${request.id}`, {
+        method: "POST",
+        body: { action, note: note.trim() || undefined },
+      }),
+    onSuccess: (_result, action) => {
+      queryClient.invalidateQueries({ queryKey: ["course-seat-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["course-terms"] });
+      toast.success(
+        action === "approve"
+          ? "Výjimka schválena — zákazník dostal e-mail s odkazem, kde si vybere platbu."
+          : "Žádost zamítnuta — zákazník dostal omluvný e-mail."
+      );
+    },
+    onError: async (error) =>
+      toast.error(await errorMessage(error, "Rozhodnutí se nepodařilo uložit.")),
+  });
+
+  const volno = Math.max(0, request.term.capacity - request.term.seats_taken);
+
+  return (
+    <div className="border-ui-border-base rounded-xl border p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <Text size="small" weight="plus">
+            {request.name}
+            <span className="text-ui-fg-muted font-normal">
+              {" · "}
+              {people(request.party_size)}
+            </span>
+          </Text>
+          <Text size="xsmall" className="text-ui-fg-muted">
+            {request.term.title} · {dayLabel(pragueDayKey(request.term.starts_at))} v{" "}
+            {formatPragueTime(request.term.starts_at)}
+          </Text>
+          <Text size="xsmall" className="text-ui-fg-muted">
+            Obsazeno {request.term.seats_taken} z {request.term.capacity}
+            {volno > 0 ? ` · volno ${volno}` : " · plno"}
+          </Text>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          {request.phone ? (
+            <a
+              href={`tel:${request.phone.replace(/\s/g, "")}`}
+              className="txt-compact-small-plus text-ui-fg-interactive"
+            >
+              Zavolat {request.phone}
+            </a>
+          ) : null}
+          <Text size="xsmall" className="text-ui-fg-muted">
+            {request.email}
+          </Text>
+        </div>
+      </div>
+
+      {request.note ? (
+        <div className="bg-ui-bg-subtle mt-3 rounded-lg px-3 py-2">
+          <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
+            Vzkaz zákazníka
+          </Text>
+          <Text size="small" className="mt-0.5">
+            {request.note}
+          </Text>
+        </div>
+      ) : null}
+
+      {request.status === "waiting" ? (
+        <div className="mt-3 flex flex-col gap-2">
+          <Input
+            size="small"
+            placeholder="Vzkaz zákazníkovi (nepovinné — přijde v e-mailu)"
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="small" isLoading={decide.isPending} onClick={() => decide.mutate("approve")}>
+              Schválit výjimku
+            </Button>
+            <Button
+              size="small"
+              variant="transparent"
+              isLoading={decide.isPending}
+              onClick={() => decide.mutate("deny")}
+            >
+              Zamítnout
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Badge size="2xsmall" color={request.status === "approved" ? "green" : "grey"}>
+            {request.status === "approved" ? "Schváleno — čeká na potvrzení zákazníkem" : "Zamítnuto"}
+          </Badge>
+          {request.decision_note ? (
+            <Text size="xsmall" className="text-ui-fg-muted">
+              {request.decision_note}
+            </Text>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const SeatRequests = () => {
+  const [vse, setVse] = useState(false);
+  const { data, isLoading } = useQuery<{ requests: SeatRequestRow[]; pending_count: number }>({
+    queryKey: ["course-seat-requests", vse],
+    queryFn: () =>
+      sdk.client.fetch(`/admin/courses/reservation-requests`, {
+        query: { stav: vse ? "vse" : "cekajici" },
+      }),
+  });
+  const rows = data?.requests ?? [];
+
+  return (
+    <div className="flex flex-col gap-4 px-6 py-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Text size="small" className="text-ui-fg-subtle max-w-2xl">
+          Když je termín plně obsazený, zákazník pošle žádost o místo — nic neplatí. Můžete mu
+          zavolat, schválit výjimku nad kapacitu (dostane e-mail a v rezervaci si vybere platbu
+          kartou nebo na místě), nebo žádost zamítnout s omluvou.
+        </Text>
+        <Button size="small" variant="secondary" onClick={() => setVse(!vse)}>
+          {vse ? "Jen čekající" : "Zobrazit i vyřízené"}
+        </Button>
+      </div>
+
+      {isLoading && <Skeleton className="h-40 rounded-xl" />}
+
+      {!isLoading && rows.length === 0 && (
+        <EmptyState
+          title={vse ? "Žádné žádosti" : "Nic nečeká na rozhodnutí"}
+          description="Žádosti chodí jen z plně obsazených termínů."
+        />
+      )}
+
+      {!isLoading && rows.length > 0 && (
+        <div className="grid gap-4 xl:grid-cols-2">
+          {rows.map((request) => (
+            <SeatRequestCard key={request.id} request={request} />
           ))}
         </div>
       )}

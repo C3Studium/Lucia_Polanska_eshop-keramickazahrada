@@ -63,6 +63,7 @@ import { CoursePaymentExpiredEmail } from "./emails/course-payment-expired";
 import { CourseReminderEmail } from "./emails/course-reminder";
 import { CourseWaitlistSpotEmail } from "./emails/course-waitlist-spot";
 import { CourseReservationCancelledEmail } from "./emails/course-reservation-cancelled";
+import { CourseRequestEmail } from "./emails/course-request";
 import { CommissionInquiryReceivedEmail } from "./emails/commission-inquiry-received";
 import { GiftVoucherEmail } from "./emails/gift-voucher";
 import { GiftVoucherPaymentEmail } from "./emails/gift-voucher-payment";
@@ -154,6 +155,8 @@ enum Templates {
   COURSE_WAITLIST_SPOT = "course-waitlist-spot",
   // …and the single-reservation cancellation notice (refund story included).
   COURSE_RESERVATION_CANCELLED = "course-reservation-cancelled",
+  // Žádost o místo na plném termínu: přijata / schválena / zamítnuta (data.variant).
+  COURSE_REQUEST = "course-request",
   // Poptávka zakázky ze stránky Výroba — potvrzení zákazníkovi
   // (api/store/commission-inquiries).
   COMMISSION_INQUIRY_RECEIVED = "commission-inquiry-received",
@@ -241,6 +244,7 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.COURSE_REMINDER]: CourseReminderEmail,
   [Templates.COURSE_WAITLIST_SPOT]: CourseWaitlistSpotEmail,
   [Templates.COURSE_RESERVATION_CANCELLED]: CourseReservationCancelledEmail,
+  [Templates.COURSE_REQUEST]: CourseRequestEmail,
   [Templates.COMMISSION_INQUIRY_RECEIVED]: CommissionInquiryReceivedEmail,
   [Templates.GIFT_VOUCHER]: GiftVoucherEmail,
   [Templates.GIFT_VOUCHER_PAYMENT]: GiftVoucherPaymentEmail,
@@ -308,6 +312,8 @@ export enum EmailTemplates {
   COURSE_REMINDER = "course-reminder",
   COURSE_WAITLIST_SPOT = "course-waitlist-spot",
   COURSE_RESERVATION_CANCELLED = "course-reservation-cancelled",
+  // Žádost o místo na plném termínu: přijata / schválena / zamítnuta (data.variant).
+  COURSE_REQUEST = "course-request",
   COMMISSION_INQUIRY_RECEIVED = "commission-inquiry-received",
   // Dárkové poukazy (stránka Poukazy, lib/gift-voucher-emails.ts).
   GIFT_VOUCHER = "gift-voucher",
@@ -626,6 +632,9 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Na kurzu je volné místo"
       case Templates.COURSE_RESERVATION_CANCELLED:
         return "Rezervace kurzu je zrušená"
+      case Templates.COURSE_REQUEST:
+        // Výchozí; odesílatel posílá předmět podle stavu v `data.subject`.
+        return "Žádost o místo na kurzu"
       case Templates.COMMISSION_INQUIRY_RECEIVED:
         return "Děkuji za poptávku — ozvu se s nabídkou"
       case Templates.GIFT_VOUCHER:

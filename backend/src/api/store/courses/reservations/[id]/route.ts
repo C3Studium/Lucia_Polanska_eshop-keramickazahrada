@@ -99,6 +99,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       total_price: toAmount(reservation.total_price),
       payment_method: reservation.payment_method,
       payment_status: reservation.payment_status,
+      /** Schválená výjimka (žádost o místo) — zákazník si ještě vybírá platbu. */
+      payment_choice_pending: Boolean(reservation.payment_choice_pending),
       /** Evidence peněz: zaplaceno celkem a zbývá (doplatek po úpravě / na místě). */
       paid_amount: toAmount(reservation.paid_amount),
       amount_due: toAmount(reservation.amount_due),

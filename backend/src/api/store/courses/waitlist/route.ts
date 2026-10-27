@@ -3,6 +3,9 @@ import { z } from "zod"
 import { COURSE_MODULE } from "../../../../modules/course"
 import type CourseModuleService from "../../../../modules/course/service"
 import { seatsLeft } from "../../../../modules/course/pricing"
+import { sendCourseRequestEmail } from "../../../../lib/course-request"
+import { formatCourseDate } from "../../../../lib/course-emails"
+import { notifyMerchant } from "../../../../lib/notify"
 
 /**
  * „Dáme vědět, až se uvolní místo" — the waitlist form on a full term's card.
@@ -28,6 +31,10 @@ const WaitlistSchema = z.object({
     .email("Zkontrolujte prosím e-mailovou adresu.")
     .max(320),
   party_size: z.number().int().min(1).max(30),
+  /** Telefon — majitelka u žádosti o výjimku volá. */
+  phone: z.string().trim().min(6, "Zkontrolujte prosím telefon.").max(40),
+  /** Vzkaz k žádosti (nepovinný). */
+  note: z.string().trim().max(1000).optional(),
   /** Honeypot — humans never see the field, so any content marks a bot. */
   website: z.string().max(400).optional(),
 })
@@ -104,19 +111,43 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   // One live entry per address and term — a double submit (or an impatient
   // reload) must not queue two future notifications for one person.
   const existing = (await courseService.listCourseWaitlists(
-    { term_id: term.id, email, notified_at: null } as never
+    { term_id: term.id, email, status: "waiting" } as never
   )) as any[]
   if (existing.length) {
     res.status(201).json({ ok: true })
     return
   }
 
-  await courseService.createCourseWaitlists({
+  const entry = (await courseService.createCourseWaitlists({
     term_id: term.id,
     name: input.name,
     email,
+    phone: input.phone,
+    note: input.note?.trim() || null,
     party_size: input.party_size,
-  } as never)
+    status: "waiting",
+  } as never)) as any
+
+  /*
+   * Žádost o místo (od 28. 10. 2026): zákazník dostane potvrzení, že žádost
+   * máme, majitelka zprávu s telefonem — rozhodne v administraci (Kurzy →
+   * Žádosti o místo), nebo zavolá.
+   */
+  await sendCourseRequestEmail(req.scope, entry, term, "received").catch(() => undefined)
+  await notifyMerchant(req.scope, {
+    key: `course-request:${entry.id}`,
+    title: `Kurzy: žádost o místo na plném termínu — ${input.name}`,
+    description: [
+      `${term.title} · ${formatCourseDate(term.starts_at)}`,
+      `${input.party_size} os. · ${input.name} <${email}>, tel. ${input.phone}`,
+      input.note ? `Vzkaz: ${input.note}` : "",
+      "Rozhodněte v administraci: Kurzy → Žádosti o místo (schválit výjimku / zamítnout).",
+    ]
+      .filter(Boolean)
+      .join(String.fromCharCode(10)),
+    audience: "owner",
+    email: true,
+  }).catch(() => undefined)
 
   res.status(201).json({ ok: true })
 }

@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { usePaymentWatch } from "@lib/hooks/use-payment-watch"
+import { confirmCourseReservation } from "@lib/data/courses"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import {
   cancelCourseReservation,
@@ -50,6 +52,7 @@ type StateKey =
   | "na-miste"
   | "zpracovava"
   | "nezaplaceno"
+  | "vyjimka"
 
 /**
  * Výchozí texty stavů. `text` chybí tam, kde odstavec říká něco o penězích
@@ -84,6 +87,13 @@ const STATE_DEFAULTS: Record<
     nadpis: "Místo je vaše,",
     zvyrazneni: "těšíme se na vás.",
     text: "Platba dorazila a potvrzení jsme poslali e-mailem. Stačí přijít — vezměte si oblečení, kterému nevadí hlína.",
+  },
+  /* Schválená žádost o místo na plném termínu — zákazník si vybírá platbu. */
+  vyjimka: {
+    stitek: "Výjimka schválena",
+    nadpis: "Místo pro vás mám,",
+    zvyrazneni: "stačí vybrat platbu.",
+    text: "Termín byl plně obsazený, ale výjimku jsem schválila — místo pro vás mám. Vyberte níž, jak zaplatíte, a potvrďte obchodní podmínky. Místo držím 24 hodin.",
   },
   "na-miste": {
     stitek: "Rezervováno",
@@ -170,6 +180,10 @@ const voiceFor = (
     }
     return say("zruseno", { tone: "warn" })
   }
+  if (reservation.payment_choice_pending && reservation.payment_status !== "paid") {
+    /* Schválená žádost o místo: zákazník si vybírá platbu a potvrzuje podmínky. */
+    return say("vyjimka", { tone: "ok" })
+  }
   if (reservation.payment_status === "paid" && (reservation.amount_due ?? 0) > 0) {
     /* Po přidání osob zbývá doplatek — „Místo je vaše, platba dorazila" by lhalo. */
     return say("nezaplaceno", {
@@ -251,6 +265,39 @@ export default function RezervaceDetail({
   const [cancelling, setCancelling] = useState(false)
   const [cancelError, setCancelError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+
+  /* ---------------------------------------- schválená výjimka: volba platby */
+  const choosing = Boolean(reservation.payment_choice_pending) && reservation.payment_status !== "paid" && reservation.status === "active"
+  const [choiceTerms, setChoiceTerms] = useState(false)
+  const [choicePhotos, setChoicePhotos] = useState(false)
+  const [choiceBusy, setChoiceBusy] = useState<"online" | "on_site" | null>(null)
+  const [choiceError, setChoiceError] = useState<string | null>(null)
+  const confirmChoice = async (method: "online" | "on_site") => {
+    if (choiceBusy) return
+    if (!choiceTerms) {
+      setChoiceError("Potvrďte prosím souhlas s obchodními podmínkami.")
+      return
+    }
+    setChoiceBusy(method)
+    setChoiceError(null)
+    const result = await confirmCourseReservation(reservation.id, token, {
+      payment_method: method,
+      terms_accepted: true,
+      photo_consent: choicePhotos,
+    })
+    if (!result.ok) {
+      setChoiceError(result.message)
+      setChoiceBusy(null)
+      return
+    }
+    if (result.payment_url) {
+      window.location.href = result.payment_url
+      return
+    }
+    setChoiceBusy(null)
+    setNotice("Hotovo — rezervace je potvrzená, zaplatíte na místě. Potvrzení jsme poslali e-mailem.")
+    router.refresh()
+  }
 
   const voice = voiceFor(reservation, outcome, block)
 
@@ -509,8 +556,62 @@ export default function RezervaceDetail({
           </div>
         ) : null}
 
+        {choosing ? (
+          <div className="kurzyDetail__actions kurzyDetail__choice">
+            <label className="kurzyDetail__check">
+              <input
+                type="checkbox"
+                checked={choiceTerms}
+                onChange={(event) => {
+                  setChoiceTerms(event.target.checked)
+                  setChoiceError(null)
+                }}
+              />
+              <span>
+                Souhlasím s{" "}
+                <LocalizedClientLink href="/smluvni-podminky#kurzy" target="_blank" rel="noopener">
+                  obchodními podmínkami
+                </LocalizedClientLink>
+                . Kurz má pevný termín, proto u něj neplatí zákonné odstoupení do 14 dnů bez udání
+                důvodu (§ 1837 písm. j) občanského zákoníku); platí storno podmínky.
+              </span>
+            </label>
+            <label className="kurzyDetail__check">
+              <input type="checkbox" checked={choicePhotos} onChange={(event) => setChoicePhotos(event.target.checked)} />
+              <span>
+                Souhlasím s pořízením fotografií z kurzu a jejich zveřejněním na webu a sociálních
+                sítích (nepovinné).
+              </span>
+            </label>
+            {choiceError ? (
+              <p className="kurzyDetail__error" role="alert">
+                {choiceError}
+              </p>
+            ) : null}
+            <div className="kurzyDetail__selfServiceRow">
+              <button
+                type="button"
+                className="kurzyDetail__retry"
+                disabled={choiceBusy !== null}
+                onClick={() => confirmChoice("online")}
+              >
+                {choiceBusy === "online" ? "Připravuji platbu…" : `Zaplatit kartou ${czk(reservation.total_price)}`}
+                <i aria-hidden="true">↗</i>
+              </button>
+              <button
+                type="button"
+                className="kurzyDetail__ghost"
+                disabled={choiceBusy !== null}
+                onClick={() => confirmChoice("on_site")}
+              >
+                {choiceBusy === "on_site" ? "Potvrzuji…" : "Zaplatím na místě"}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {/* ---------------------------------------------- self-service --- */}
-        {canSelfService ? (
+        {canSelfService && !choosing ? (
           <div className="kurzyDetail__selfService">
             <h2 {...editableItem(block, "zmena.nadpis")}>{selfService("zmena.nadpis")}</h2>
 

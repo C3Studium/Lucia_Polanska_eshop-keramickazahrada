@@ -51,7 +51,8 @@ export const notifyCourseWaitlist = async (
   }
 
   const entries = (await courseService.listCourseWaitlists(
-    { term_id: termId, notified_at: null } as never,
+    // Jen otevřené žádosti — schválené mají rezervaci, zamítnuté už odpověď.
+    { term_id: termId, notified_at: null, status: "waiting" } as never,
     { order: { created_at: "ASC" } } as never
   )) as any[]
 

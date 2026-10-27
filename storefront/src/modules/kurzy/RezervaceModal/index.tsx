@@ -33,7 +33,6 @@ import { editableItem } from "@modules/common/components/cms-text"
 
 import {
   REZERVACE_OKNO_DEFAULTS,
-  WAITLIST_RULE,
   type RezervaceOknoLabel,
 } from "../copy"
 import {
@@ -359,6 +358,8 @@ function RezervaceModalPanel({
   /* The waitlist mini-form a full term opens instead of the booking. */
   const [wlName, setWlName] = useState("")
   const [wlEmail, setWlEmail] = useState("")
+  const [wlPhone, setWlPhone] = useState("")
+  const [wlNote, setWlNote] = useState("")
   const [wlPartySize, setWlPartySize] = useState(1)
   const [wlWebsite, setWlWebsite] = useState("")
   const [wlSubmitting, setWlSubmitting] = useState(false)
@@ -650,12 +651,18 @@ function RezervaceModalPanel({
       setWlError("Zkontrolujte prosím e-mailovou adresu.")
       return
     }
+    if (wlPhone.replace(/\D/g, "").length < 6) {
+      setWlError("Vyplňte prosím telefon — u žádosti o místo se vám můžeme ozvat i telefonicky.")
+      return
+    }
 
     setWlSubmitting(true)
     const result = await joinCourseWaitlist({
       term_id: selected.id,
       name: wlName.trim(),
       email: wlEmail.trim(),
+      phone: wlPhone.trim(),
+      note: wlNote.trim() || undefined,
       party_size: wlPartySize,
       website: wlWebsite,
     })
@@ -1012,26 +1019,24 @@ function RezervaceModalPanel({
                                   className="kurzyModal__waitlistDone"
                                   role="status"
                                 >
-                                  <strong {...edit("cekacka.hotovo.nadpis")}>
-                                    {text("cekacka.hotovo.nadpis")}
+                                  <strong {...edit("zadost.hotovo.nadpis")}>
+                                    {text("zadost.hotovo.nadpis")}
                                   </strong>
-                                  {/* Zástupci → jen ve formuláři. Pravidlo
-                                      čekací listiny za větou drží kód. */}
+                                  {/* Zástupci → jen ve formuláři. */}
                                   <p>
-                                    {fillPlaceholders(text("cekacka.hotovo.text"), {
+                                    {fillPlaceholders(text("zadost.hotovo.text"), {
                                       osoby: peopleLabel(wlDone.partySize),
                                       email: wlDone.email,
-                                    })}{" "}
-                                    {WAITLIST_RULE}
+                                    })}
                                   </p>
                                 </div>
                               ) : (
                                 <form onSubmit={submitWaitlist} noValidate>
                                   <p
                                     className="kurzyModal__waitlistIntro"
-                                    {...edit("cekacka.uvod")}
+                                    {...edit("zadost.uvod")}
                                   >
-                                    {text("cekacka.uvod")}
+                                    {text("zadost.uvod")}
                                   </p>
                                   <div className="kurzyModal__fields">
                                     <label>
@@ -1057,6 +1062,15 @@ function RezervaceModalPanel({
                                         onChange={(event) =>
                                           setWlEmail(event.target.value)
                                         }
+                                        required
+                                      />
+                                    </label>
+                                    <label>
+                                      <span>Telefon</span>
+                                      <PhoneInput
+                                        name="wl-phone"
+                                        value={wlPhone}
+                                        onChange={(event) => setWlPhone(event.target.value)}
                                         required
                                       />
                                     </label>
@@ -1094,6 +1108,18 @@ function RezervaceModalPanel({
                                     </div>
                                   </div>
 
+                                  <label className="kurzyModal__wlNote">
+                                    <span>Vzkaz (nepovinné)</span>
+                                    <textarea
+                                      name="wl-note"
+                                      rows={3}
+                                      maxLength={1000}
+                                      placeholder="Třeba: jsme rodina s dětmi 8 a 10 let, termín se nám jinak nehodí."
+                                      value={wlNote}
+                                      onChange={(event) => setWlNote(event.target.value)}
+                                    />
+                                  </label>
+
                                   {/* Honeypot — humans never see it. */}
                                   <input
                                     type="text"
@@ -1109,9 +1135,9 @@ function RezervaceModalPanel({
                                   />
 
                                   <p className="kurzyModal__consent">
-                                    E-mail použijeme jen pro tohle jedno
-                                    upozornění na uvolněné místo — nic dalšího
-                                    na něj posílat nebudeme.
+                                    E-mail a telefon použijeme jen k vyřízení
+                                    téhle žádosti — nic dalšího na ně posílat
+                                    nebudeme.
                                   </p>
 
                                   {wlError ? (
@@ -1126,7 +1152,7 @@ function RezervaceModalPanel({
                                     disabled={wlSubmitting}
                                   >
                                     {/* Bez anotace v místě — tlačítko nese i šipku. */}
-                                    {wlSubmitting ? "Odesílám…" : text("cekacka.tlacitko")}
+                                    {wlSubmitting ? "Odesílám…" : text("zadost.tlacitko")}
                                     <i aria-hidden="true">↗</i>
                                   </button>
                                 </form>

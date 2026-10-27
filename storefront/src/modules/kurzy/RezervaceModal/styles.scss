@@ -1037,6 +1037,40 @@
     }
   }
 
+  /* Vzkaz k žádosti o místo — vypadá jako ostatní pole formuláře. */
+  &__wlNote {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    margin-top: 0.75rem;
+
+    span {
+      color: rgb(var(--ink-05-rgb) / .7);
+      font-size: var(--type-caption, 0.8125rem);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 4.5rem;
+      padding: 0.625rem 0.875rem;
+      border: 1px solid rgb(var(--ink-05-rgb) / .5);
+      border-radius: 0;
+      background: var(--white);
+      color: inherit;
+      font: inherit;
+      font-size: var(--type-body, 1rem);
+      resize: vertical;
+      transition: border-color 0.25s ease;
+
+      &:focus {
+        border-color: var(--kurzy-charcoal);
+        outline: none;
+      }
+    }
+  }
+
   &__waitlistIntro {
     margin: 0;
     color: rgb(var(--ink-05-rgb) / .7);
