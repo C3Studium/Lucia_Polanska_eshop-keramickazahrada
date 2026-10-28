@@ -150,6 +150,24 @@
   border-bottom: 1px solid rgb(var(--ink-05-rgb) / .1);
 }
 
+/* Název a pod ním miniatura fotky. */
+.itemMain {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .5rem;
+}
+
+.itemThumb {
+  display: block;
+  width: clamp(3.5rem, 6vw, 4.75rem);
+  height: clamp(3.5rem, 6vw, 4.75rem);
+  overflow: hidden;
+  border: 1px solid rgb(var(--ink-05-rgb) / .12);
+  background: var(--cream-02);
+}
+
 .itemTitle {
   color: var(--review-ink);
   font: 400 clamp(1rem, 1.33vw, 1.3rem)/1.45 "Sansation-Regular", sans-serif;

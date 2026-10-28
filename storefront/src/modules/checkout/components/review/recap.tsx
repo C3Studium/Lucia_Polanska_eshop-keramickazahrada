@@ -7,6 +7,7 @@ import { pickupPointLabel } from "@lib/util/pickup-point"
 import { isPackagingLine } from "@lib/util/packaging"
 import { discountRowLabel } from "@lib/util/gift-voucher-code"
 import { packagingFor } from "@modules/common/components/packaging-line"
+import Thumbnail from "@modules/products/components/thumbnail"
 import {
   hasPriceOnRequestLine,
   isPriceOnRequestLine,
@@ -53,9 +54,21 @@ export default function OrderRecap({
               const agreedLater = isPriceOnRequestLine(item)
               return (
                 <li key={item.id}>
-                  <span className={styles.itemTitle}>
-                    {item.product_title ?? item.title}
-                    {item.variant_title ? ` · ${item.variant_title}` : ""}
+                  <span className={styles.itemMain}>
+                    <span className={styles.itemTitle}>
+                      {item.product_title ?? item.title}
+                      {item.variant_title ? ` · ${item.variant_title}` : ""}
+                    </span>
+                    {/* Miniatura pod názvem — ať je v přehledu vidět, co přesně jde do košíku. */}
+                    {item.thumbnail || item.variant?.product?.images?.length ? (
+                      <span className={styles.itemThumb} data-testid="recap-thumbnail">
+                        <Thumbnail
+                          thumbnail={item.thumbnail}
+                          images={item.variant?.product?.images}
+                          size="square"
+                        />
+                      </span>
+                    ) : null}
                   </span>
                   <span className={styles.itemPrices}>
                     <span className={styles.itemLine}>
