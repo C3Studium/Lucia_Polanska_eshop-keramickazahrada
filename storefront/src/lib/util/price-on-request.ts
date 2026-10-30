@@ -60,8 +60,16 @@ export const PRICE_ON_REQUEST_SUMMARY_NOTE =
 export const PRICE_ON_REQUEST_ZERO_NOTE =
   "Teď se nic neplatí. Až spolu domluvíme cenu, pošlu vám ji e-mailem a zaplatíte zálohu nebo celou částku."
 
-/** Tlačítko odeslání objednávky za 0 Kč. */
-export const PRICE_ON_REQUEST_ZERO_BUTTON = "Odeslat objednávku"
+/**
+ * Tlačítko odeslání objednávky za 0 Kč.
+ *
+ * U ceny po domluvě se teď neplatí nic, takže „Zaplatit" by lhalo a „Odeslat
+ * objednávku" zase zlehčovalo, co se děje: zákazník se objednávkou závazně
+ * zavazuje a platí až potom (30. 10. 2026). Košík zaplacený celý poukazem je
+ * obyčejné odeslání — tam zbývá původní znění.
+ */
+export const PRICE_ON_REQUEST_ZERO_BUTTON = "Závazně objednat — platba po domluvě"
+export const VOUCHER_ZERO_BUTTON = "Odeslat objednávku"
 
 /** Poskytovatel platby pro objednávku, ve které se teď nic neplatí. */
 export const ZERO_PAYMENT_PROVIDER = "pp_system_default"
@@ -109,6 +117,7 @@ export const zeroChargeCopy = (
         reviewLabel: "Teď se nic neplatí",
         reviewNote:
           "cenu výrobku po domluvě vám pošlu e-mailem, pak zaplatíte zálohu nebo celou částku online",
+        button: PRICE_ON_REQUEST_ZERO_BUTTON,
       }
     : {
         heading: "Zaplaceno dárkovým poukazem",
@@ -116,6 +125,7 @@ export const zeroChargeCopy = (
         title: VOUCHER_PAYMENT_TITLE,
         reviewLabel: VOUCHER_PAYMENT_TITLE,
         reviewNote: "k úhradě nezbývá nic",
+        button: VOUCHER_ZERO_BUTTON,
       }
 
 /** Název platby u objednávky, ve které se při objednání nic neplatilo. */
