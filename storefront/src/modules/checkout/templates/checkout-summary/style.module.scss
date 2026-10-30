@@ -22,7 +22,26 @@
     max-height: calc(100svh - var(--summary-sticky-top) - 1rem);
     overflow-y: auto;
     overscroll-behavior: contain;
+
+    // Posuvník musí být VIDĚT, ne jen fungovat: u zakázky je souhrn dvakrát
+    // vyšší než okno a nic jiného nenapoví, že se v něm dá rolovat. Tenký
+    // a krémový, ať nekřičí na tmavém sloupci.
     scrollbar-width: thin;
+    scrollbar-color: rgb(var(--cream-06-rgb) / .35) transparent;
+
+    &::-webkit-scrollbar {
+      width: .375rem;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: rgb(var(--cream-06-rgb) / .35);
+    }
+    &::-webkit-scrollbar-thumb:hover {
+      background: rgb(var(--cream-06-rgb) / .55);
+    }
   }
 }
 
