@@ -19,7 +19,11 @@ import {
   restrictionNotice,
   type DeliveryRestriction,
 } from "@lib/util/fragile"
-import { readCommissionBrief } from "@lib/util/made-to-order"
+import {
+  commissionPieceFilled,
+  commissionPiecesOf,
+  readCommissionBrief,
+} from "@lib/util/made-to-order"
 import CheckoutCommissionBriefs from "@modules/checkout/components/commission-briefs"
 import { HttpTypes } from "@medusajs/types"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
@@ -100,13 +104,17 @@ export const Shipping = ({
   /* U zakázky se nedá dál k platbě, dokud není brief vyplněný — aspoň text NEBO
      fotka. Počáteční stav z už uloženého briefu; CommissionBrief po uložení hlásí
      změnu. Pozor: klik na dopravu u hotové adresy jinak auto-přeskočí na platbu. */
-  const briefHasContent = (b: ReturnType<typeof readCommissionBrief>) =>
-    Boolean(b.specification || b.note || (b.photos?.length ?? 0))
+  /* Po KUSECH, ne po řádku: řádek s množstvím 2 jsou dva kusy a každý má své
+     zadání. Složený pohled na řádku by byl neprázdný už s jedním z nich. */
+  const lineBriefDone = (item: any) =>
+    commissionPiecesOf(item).every(commissionPieceFilled)
   const [commissionComplete, setCommissionComplete] = useState<
     Record<string, boolean>
   >(() =>
     Object.fromEntries(
-      commissionLines.map((line) => [line.id, briefHasContent(line.brief)])
+      ((cart?.items ?? []) as any[])
+        .filter(isMadeToOrderLine)
+        .map((item) => [item.id as string, lineBriefDone(item)])
     )
   )
   const allCommissionsComplete = commissionLines.every(

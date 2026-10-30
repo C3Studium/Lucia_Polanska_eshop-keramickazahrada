@@ -147,7 +147,51 @@ export type CommissionBrief = {
   photos?: string[]
   /** Kdy zákazník zaškrtl poučení Z10 k TÉHLE položce (ISO). Zapisuje pokladna. */
   ack_at?: string
+  /** Zadání po kusech (řádek s množstvím > 1); chybí u jediného kusu. */
+  pieces?: CommissionPiece[]
 }
+
+/** Zadání JEDNOHO kusu zakázkového řádku — „Domovní znamení · 2 ks" = dva kusy. */
+export type CommissionPiece = {
+  specification: string
+  photos: string[]
+}
+
+/**
+ * Kusy řádku, doplněné na jeho množství. Zrcadlo `lib/commission-brief.ts`
+ * na backendu: bez uloženého pole patří staré zadání PRVNÍMU kusu a zbylé
+ * začínají prázdné — „vyplněno" by jinak lhalo a brána by pustila kus bez
+ * zadání.
+ */
+export const commissionPiecesOf = (item: {
+  quantity?: number | null
+  metadata?: Record<string, any> | null
+}): CommissionPiece[] => {
+  const brief = readCommissionBrief(item)
+  const count = Math.max(1, Math.floor(Number(item?.quantity ?? 1)) || 1)
+  const stored = brief.pieces
+
+  return Array.from({ length: count }, (_, index) => {
+    const piece = stored?.[index]
+    if (piece) {
+      return {
+        specification: piece.specification ?? "",
+        photos: piece.photos ?? [],
+      }
+    }
+    if (index === 0 && !stored) {
+      return {
+        specification: brief.specification || brief.note || "",
+        photos: brief.photos ?? [],
+      }
+    }
+    return { specification: "", photos: [] }
+  })
+}
+
+/** Má kus zadání? Text NEBO fotka — táž podmínka jako brána u obou pokladen. */
+export const commissionPieceFilled = (piece: CommissionPiece): boolean =>
+  Boolean(piece.specification?.trim() || piece.photos.length)
 
 /**
  * The line-item metadata shape the backend reads. Built here so no caller guesses it.
@@ -188,6 +232,17 @@ export const readCommissionBrief = (item: {
       ? raw.photos.filter((url: unknown): url is string => typeof url === "string")
       : undefined,
     ack_at: typeof raw.ack_at === "string" ? raw.ack_at : undefined,
+    pieces: Array.isArray(raw.pieces)
+      ? raw.pieces.map((piece: any) => ({
+          specification:
+            typeof piece?.specification === "string" ? piece.specification : "",
+          photos: Array.isArray(piece?.photos)
+            ? piece.photos.filter(
+                (url: unknown): url is string => typeof url === "string"
+              )
+            : [],
+        }))
+      : undefined,
   }
 }
 
