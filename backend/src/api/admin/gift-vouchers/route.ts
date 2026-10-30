@@ -84,10 +84,17 @@ const firstMessage = (error: z.ZodError) => {
 export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) {
   const service = req.scope.resolve<GiftVoucherModuleService>(GIFT_VOUCHER_MODULE)
   const q = String(req.query.q ?? "").trim()
+  /* `order_id` — poukazy koupené v jedné objednávce (widget na jejím detailu). */
+  const orderId = String(req.query.order_id ?? "").trim()
   const vouchers = (await service.listGiftVouchers(
-    {} as never,
+    (orderId ? { order_id: orderId } : {}) as never,
     { relations: ["redemptions"], order: { created_at: "DESC" } } as never
   )) as any[]
+
+  if (orderId) {
+    res.json({ gift_vouchers: vouchers.map(serializeAdminVoucher) })
+    return
+  }
 
   const needle = q.toLowerCase()
   const codeNeedle = normalizeVoucherCode(q)
