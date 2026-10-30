@@ -548,8 +548,10 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                         className="product__voucherPrice"
                         data-testid="voucher-price-from"
                       >
-                        Vlastní částka od {formatVoucherInt(voucherCfg.min)}{" "}
-                        {voucherUnitOf(voucherCfg.currency)}
+                        Možnost od {formatVoucherInt(voucherCfg.min)}
+                        {voucherCfg.currency === "czk"
+                          ? ",-"
+                          : ` ${voucherUnitOf(voucherCfg.currency)}`}
                       </p>
                     ) : (
                       <ProductPrice

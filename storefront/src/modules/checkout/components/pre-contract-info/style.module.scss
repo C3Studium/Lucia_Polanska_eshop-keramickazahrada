@@ -10,6 +10,8 @@
   --pci-ink: var(--ink-05);
   --pci-label: var(--olive-04);
   --pci-rule: rgb(var(--ink-05-rgb) / .18);
+  /* Linka MEZI údaji — slabší než rámeček bloku, ať dělí a nerámuje. */
+  --pci-divider: rgb(var(--ink-05-rgb) / .12);
 
   margin-bottom: clamp(1rem, 2.37vh, 2rem);
   padding-bottom: clamp(1rem, 2.22vh, 1.85rem);
@@ -28,13 +30,28 @@
 .rows {
   display: grid;
   margin: 0;
-  gap: clamp(.55rem, 1.02vh, .85rem);
+  gap: 0;
 }
 
+/*
+ * Linka mezi řádky, ne jen mezera.
+ *
+ * „Zakázka" a „Dodací lhůta" jsou víceřádkové odstavce, takže se při pouhé
+ * mezeře slily do jednoho bloku textu a nebylo poznat, kde jeden údaj končí
+ * a druhý začíná (30. 10. 2026). Vlasová linka to rozdělí, aniž by z bloku
+ * udělala tabulku: první řádek ji nahoře nemá a svislý rytmus se o ni opírá.
+ */
 .rows > div {
   display: grid;
+  padding: clamp(.55rem, 1.02vh, .85rem) 0;
+  border-top: 1px solid var(--pci-divider);
   grid-template-columns: minmax(7.5rem, 11rem) 1fr;
   gap: 1.125rem;
+}
+
+.rows > div:first-child {
+  padding-top: 0;
+  border-top: 0;
 }
 
 .rows dt {
