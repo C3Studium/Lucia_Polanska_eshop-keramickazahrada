@@ -35,6 +35,7 @@ import { SubTabs } from "../../components/work-tabs";
 import {
   formatCzk,
   stageColors,
+  stageLabel,
   stageLabels,
 } from "../../lib/workbench";
 import { formatDateTime } from "../../lib/format";
@@ -1623,7 +1624,9 @@ const OrdersInner = () => {
                       size="2xsmall"
                       color={stageColors[order.stage] ?? "grey"}
                     >
-                      {stageLabels[order.stage] ?? order.stage}
+                      {/* Odběr nic neodesílá — „K odeslání" je tam
+                          „Připraveno k vyzvednutí" (admin/lib/stage-words). */}
+                      {stageLabel(order.stage, order.is_personal_pickup)}
                     </Badge>
                   ) : (
                     <Text size="xsmall" className="text-ui-fg-muted">

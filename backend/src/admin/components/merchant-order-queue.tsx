@@ -20,6 +20,12 @@ import { otevritStitek, type StitekZasilky } from "../lib/stitky";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
 import { ceskaChyba, ceskyText } from "../lib/ceska-chyba";
+import {
+  NEXT_STEP_LABELS,
+  STAGE_LABELS,
+  nextStepLabel,
+  stageLabel,
+} from "../lib/stage-words";
 
 export type MerchantOrderStage =
   | "received"
@@ -68,6 +74,9 @@ export type MerchantOrder = {
   /** Collected in person at the workshop, paid at the counter. */
   is_personal_pickup: boolean;
 
+  /** Osobní odběr, u kterého peníze z pultu ještě nikdo nezapsal. */
+  pickup_payment_due: boolean;
+
   /** Dobírka whose parcel left and whose money hasn't been recorded yet. */
   dobirka_waiting: boolean;
 
@@ -88,16 +97,20 @@ export type MerchantOrdersResponse = {
   summary?: Partial<Record<MerchantOrderStage, number>>;
 };
 
+/**
+ * Barva fáze; slovo si každé místo bere přes `stageLabel(stage, pickup)` —
+ * u osobního odběru zní „K odeslání" jinak (`admin/lib/stage-words`).
+ */
 export const stageMeta: Record<
   MerchantOrderStage,
   { label: string; color: "blue" | "orange" | "green" | "red" | "grey" }
 > = {
-  received: { label: "Nové", color: "blue" },
-  working: { label: "Připravujeme", color: "orange" },
-  shipping: { label: "K odeslání", color: "orange" },
-  shipped: { label: "Odesláno", color: "green" },
-  payment_problem: { label: "Problém s platbou", color: "red" },
-  cancelled: { label: "Zrušeno", color: "grey" },
+  received: { label: STAGE_LABELS.received, color: "blue" },
+  working: { label: STAGE_LABELS.working, color: "orange" },
+  shipping: { label: STAGE_LABELS.shipping, color: "orange" },
+  shipped: { label: STAGE_LABELS.shipped, color: "green" },
+  payment_problem: { label: STAGE_LABELS.payment_problem, color: "red" },
+  cancelled: { label: STAGE_LABELS.cancelled, color: "grey" },
 };
 
 /** Sidebar order and route slug for every queue that has its own page. */
@@ -146,11 +159,8 @@ export const nextStage: Partial<
   shipping: "shipped",
 };
 
-export const nextStageLabel: Partial<Record<MerchantOrderStage, string>> = {
-  received: "Začít připravovat",
-  working: "Připraveno k odeslání",
-  shipping: "Označit jako odeslané",
-};
+export const nextStageLabel: Partial<Record<MerchantOrderStage, string>> =
+  NEXT_STEP_LABELS;
 
 /**
  * Medusa's native payment statuses, in Czech. The value is always computed server-side by
@@ -447,6 +457,39 @@ export const OrderRow = ({
     },
   });
 
+  /*
+   * „Objednávka zaplacena" — peníze z pultu (hotovost, převod, karta v
+   * ateliéru) zapsané zvlášť od výdeje zboží. Zachytí autorizovanou platbu
+   * „zaplatíte při vyzvednutí", takže na ni navazuje všechno ostatní samo:
+   * stav platby, statistiky i faktura z iDokladu, kterou zákazník dostane
+   * e-mailem. Přání majitelky 30. 10. 2026 — platí se často dřív, než si
+   * zákazník zboží odnese, a do té doby nebylo kam to zapsat.
+   */
+  const pickupPaid = useMutation<{ captured: boolean; message?: string }>({
+    mutationFn: () =>
+      sdk.client.fetch(`/admin/merchant-orders/${order.order_id}/pickup-paid`, {
+        method: "POST",
+      }),
+    onSuccess: async (result) => {
+      setLastFailure(null);
+      await queryClient.invalidateQueries({ queryKey: ["merchant-orders"] });
+      if (result?.captured) {
+        toast.success(
+          "Platba na místě je zapsaná. Fakturu posíláme zákazníkovi e-mailem."
+        );
+      } else {
+        toast.info(
+          ceskyText(result?.message, "Tahle objednávka už je zaplacená.")
+        );
+      }
+    },
+    onError: (error) => {
+      const message = ceskaChyba(error, "Platbu se nepodařilo zapsat");
+      setLastFailure(message);
+      toast.error(message);
+    },
+  });
+
   const targetStage = nextStage[order.stage];
   // The reason comes from the server, computed by the same rules the ship
   // workflow enforces — so the button is hidden for exactly the orders the
@@ -496,11 +539,11 @@ export const OrderRow = ({
 
       <div>
         <Badge color={stageMeta[order.stage].color}>
-          {stageMeta[order.stage].label}
+          {stageLabel(order.stage, order.is_personal_pickup)}
         </Badge>
         <Text size="small" className="text-ui-fg-subtle mt-2">
           {targetStage
-            ? `Další krok: ${nextStageLabel[order.stage]}`
+            ? `Další krok: ${nextStepLabel(order.stage, order.is_personal_pickup)}`
             : "Bez dalšího kroku"}
         </Text>
         {(order.requires_attention || order.attention_reason) && (
@@ -659,9 +702,28 @@ export const OrderRow = ({
           )}
 
         {/*
+          Peníze u pultu dřív než zboží z ruky: zapíše se platba, zákazník
+          dostane fakturu e-mailem a výdej se pak potvrzuje už jen jako
+          „Vyzvednuto".
+        */}
+        {order.is_personal_pickup &&
+          order.pickup_payment_due &&
+          !["cancelled"].includes(order.stage) && (
+            <Button
+              variant="secondary"
+              size="small"
+              isLoading={pickupPaid.isPending}
+              onClick={() => pickupPaid.mutate()}
+            >
+              Objednávka zaplacena
+            </Button>
+          )}
+
+        {/*
           Personal collection never ships: the customer arrives, pays and
           leaves with it. One action records both facts — see
           `complete-personal-pickup.ts` for why the money is taken first.
+          Zaplacenou objednávku už tlačítko jen vydává.
         */}
         {order.is_personal_pickup &&
           !["shipped", "cancelled"].includes(order.stage) && (
@@ -671,7 +733,7 @@ export const OrderRow = ({
               isLoading={pickup.isPending}
               onClick={() => pickup.mutate()}
             >
-              Vyzvednuto a zaplaceno
+              {order.pickup_payment_due ? "Vyzvednuto a zaplaceno" : "Vyzvednuto"}
             </Button>
           )}
 

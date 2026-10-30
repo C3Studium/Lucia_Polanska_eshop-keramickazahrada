@@ -16,7 +16,8 @@ import {
 } from "../components/merchant-order-queue";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
-import { ceskaChyba } from "../lib/ceska-chyba";
+import { ceskaChyba, ceskyText } from "../lib/ceska-chyba";
+import { nextStepLabel, stageLabel } from "../lib/stage-words";
 import {
   agreedPriceConfirmBlock,
   agreedPriceStartBlock,
@@ -110,22 +111,63 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
   });
 
   const transition = useMutation({
-    mutationFn: (target: MerchantOrderStage) =>
+    /*
+     * `pickup_collected` není fáze, ale sloveso („Vyzvednuto" = zachytit
+     * platbu, vyskladnit, dokončit) — route ho bere na témže PATCHi, viz
+     * `api/admin/merchant-orders/[orderId]/route.ts`.
+     */
+    mutationFn: (target: MerchantOrderStage | "pickup_collected") =>
       sdk.client.fetch(`/admin/merchant-orders/${order.id}`, {
         method: "PATCH",
         body: { stage: target },
       }),
-    onSuccess: async () => {
+    onSuccess: async (_data, target) => {
       await cache.invalidateQueries({
         queryKey: ["merchant-order-state", order.id],
       });
       await cache.invalidateQueries({ queryKey: ["merchant-orders"] });
-      toast.success("Stav objednávky byl změněn");
+      toast.success(
+        target === "pickup_collected"
+          ? "Vyzvednutí je zapsané"
+          : target === "shipping" && merchantOrder?.is_personal_pickup
+            ? "Zákazník dostal e-mail, že si může přijít pro objednávku."
+            : "Stav objednávky byl změněn"
+      );
     },
     onError: (error) =>
       toast.error(
         ceskaChyba(error, "Stav se nepodařilo změnit")
       ),
+  });
+
+  /*
+   * „Objednávka zaplacena" — hotovost (nebo převod) z pultu zapsaná zvlášť od
+   * výdeje zboží; zachycení autorizované platby „zaplatíte při vyzvednutí"
+   * rozjede fakturu v iDokladu i e-mail s ní. Stejné tlačítko má fronta
+   * Denní práce, aby obě místa uměla totéž.
+   */
+  const pickupPaid = useMutation<{ captured: boolean; message?: string }>({
+    mutationFn: () =>
+      sdk.client.fetch(`/admin/merchant-orders/${order.id}/pickup-paid`, {
+        method: "POST",
+      }),
+    onSuccess: async (result) => {
+      await cache.invalidateQueries({
+        queryKey: ["merchant-order-state", order.id],
+      });
+      await cache.invalidateQueries({ queryKey: ["merchant-orders"] });
+      if (result?.captured) {
+        toast.success(
+          "Platba na místě je zapsaná. Fakturu posíláme zákazníkovi e-mailem."
+        );
+      } else {
+        toast.info(
+          ceskyText(result?.message, "Tahle objednávka už je zaplacená.")
+        );
+      }
+    },
+    onError: (error) =>
+      toast.error(ceskaChyba(error, "Platbu se nepodařilo zapsat")),
   });
 
   if (stateQuery.isLoading) {
@@ -143,6 +185,8 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
   }
 
   const target = nextStage[merchantOrder.stage];
+  /** Osobní odběr mluví jinak: nic se neposílá, zákazník si přijede. */
+  const pickup = Boolean(merchantOrder.is_personal_pickup);
 
   if (productionMode && production) {
     const next = productionStep[production.stage];
@@ -172,7 +216,9 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
           <Text size="small" className="text-ui-fg-subtle">
             {next
               ? `Zakázka na míru — další krok: ${next.label}`
-              : "Zakázka je hotová a čeká na doplatek. Výzvu k doplacení pošlete ve Výrobě na zakázku; po zaplacení tu bude Připraveno k odeslání."}
+              : `Zakázka je hotová a čeká na doplatek. Výzvu k doplacení pošlete ve Výrobě na zakázku; po zaplacení tu bude ${
+                  pickup ? "Připraveno k vyzvednutí" : "Připraveno k odeslání"
+                }.`}
           </Text>
 
           {next && (
@@ -201,7 +247,7 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
       <div className="flex items-center justify-between gap-x-2 px-6 py-4">
         <Heading level="h2">Denní práce</Heading>
         <Badge color={stageMeta[merchantOrder.stage].color}>
-          {stageMeta[merchantOrder.stage].label}
+          {stageLabel(merchantOrder.stage, pickup)}
         </Badge>
       </div>
 
@@ -214,19 +260,67 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
 
         <Text size="small" className="text-ui-fg-subtle">
           {target
-            ? `Další krok: ${nextStageLabel[merchantOrder.stage]}`
+            ? `Další krok: ${nextStepLabel(merchantOrder.stage, pickup)}`
             : "Tato objednávka už po vás nic nechce."}
         </Text>
 
-        {target && merchantOrder.stage !== "payment_problem" && (
-          <Button
-            variant="primary"
-            size="small"
-            isLoading={transition.isPending}
-            onClick={() => transition.mutate(target)}
-          >
-            {nextStageLabel[merchantOrder.stage]}
-          </Button>
+        {/*
+          Osobní odběr se nikam neposílá — místo „Označit jako odeslané" tu
+          jsou kroky od pultu: pozvat si zákazníka, zapsat peníze, vydat
+          zboží. Stejná trojice jako ve frontě Denní práce.
+        */}
+        {pickup ? (
+          <div className="flex flex-wrap gap-2">
+            {["received", "working"].includes(merchantOrder.stage) && (
+              <Button
+                variant="primary"
+                size="small"
+                isLoading={transition.isPending}
+                onClick={() => transition.mutate("shipping")}
+              >
+                Připraveno k vyzvednutí
+              </Button>
+            )}
+
+            {merchantOrder.pickup_payment_due &&
+              merchantOrder.stage !== "cancelled" && (
+                <Button
+                  variant="secondary"
+                  size="small"
+                  isLoading={pickupPaid.isPending}
+                  onClick={() => pickupPaid.mutate()}
+                >
+                  Objednávka zaplacena
+                </Button>
+              )}
+
+            {!["shipped", "cancelled"].includes(merchantOrder.stage) && (
+              <Button
+                variant={
+                  merchantOrder.stage === "shipping" ? "primary" : "secondary"
+                }
+                size="small"
+                isLoading={transition.isPending}
+                onClick={() => transition.mutate("pickup_collected")}
+              >
+                {merchantOrder.pickup_payment_due
+                  ? "Vyzvednuto a zaplaceno"
+                  : "Vyzvednuto"}
+              </Button>
+            )}
+          </div>
+        ) : (
+          target &&
+          merchantOrder.stage !== "payment_problem" && (
+            <Button
+              variant="primary"
+              size="small"
+              isLoading={transition.isPending}
+              onClick={() => transition.mutate(target)}
+            >
+              {nextStageLabel[merchantOrder.stage]}
+            </Button>
+          )
         )}
       </div>
     </Container>
