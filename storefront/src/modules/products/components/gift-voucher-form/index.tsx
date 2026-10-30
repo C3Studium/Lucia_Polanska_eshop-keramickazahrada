@@ -4,7 +4,6 @@ import { useId, useState } from "react"
 
 import {
   VOUCHER_DEDICATION_MAX,
-  VOUCHER_LINE_KEYS,
   isValidVoucherEmail,
   type VoucherKind,
 } from "@lib/util/gift-voucher-code"
@@ -12,13 +11,13 @@ import {
 import styles from "./style.module.scss"
 
 /**
- * Formulář dárkového poukazu na stránce produktu — podoba, pro koho, e-mail
- * obdarovaného a věnování. Hodnoty jdou do košíku jako metadata položky
- * (`voucherLineMetadata`) a backend z nich po zaplacení založí poukaz
- * (`backend/src/lib/gift-voucher-orders.ts`, klíče `VOUCHER_LINE_KEYS`).
+ * Formulář dárkového poukazu — podoba, pro koho, e-mail obdarovaného
+ * a věnování.
  *
- * Dva stejné poukazy pro dva lidi jsou dvě položky: Medusa slučuje řádky jen
- * při shodných metadatech (`getLineItemActionsStep`).
+ * Od 30. 10. 2026 stojí v KOŠÍKU (`modules/cart/components/gift-voucher-setup`),
+ * ne na stránce produktu: na produktu zákazník jen vybere poukaz a přidá ho do
+ * košíku. Uložené hodnoty si drží položka košíku v metadatech a backend z nich
+ * po zaplacení založí poukaz (`backend/src/lib/gift-voucher-orders.ts`).
  */
 
 export type GiftVoucherFormValue = {
@@ -50,23 +49,6 @@ export const giftVoucherFormError = (value: GiftVoucherFormValue): string | null
   return null
 }
 
-/**
- * Metadata položky. Prázdná pole se neposílají — a kind vždycky, takže dva
- * poukazy se stejným vyplněním se v košíku sečtou a s jiným ne.
- */
-export const voucherLineMetadata = (
-  value: GiftVoucherFormValue
-): Record<string, string> => {
-  const out: Record<string, string> = { [VOUCHER_LINE_KEYS.kind]: value.kind }
-  const name = value.recipientName.trim()
-  const email = value.kind === "electronic" ? value.recipientEmail.trim() : ""
-  const dedication = value.dedication.trim().slice(0, VOUCHER_DEDICATION_MAX)
-  if (name) out[VOUCHER_LINE_KEYS.recipientName] = name
-  if (email) out[VOUCHER_LINE_KEYS.recipientEmail] = email
-  if (dedication) out[VOUCHER_LINE_KEYS.dedication] = dedication
-  return out
-}
-
 type Props = {
   value: GiftVoucherFormValue
   onChange: (value: GiftVoucherFormValue) => void
@@ -76,8 +58,10 @@ type Props = {
 }
 
 const KINDS: Array<{ value: VoucherKind; title: string; note: string }> = [
-  { value: "electronic", title: "Elektronický", note: "pošlu ho e-mailem" },
-  { value: "physical", title: "Vytištěný", note: "pošlu poštou spolu s objednávkou" },
+  { value: "electronic", title: "Elektronický", note: "pošlu ho e-mailem jako PDF" },
+  /* Samotný poukaz se dopravcem neposílá (lib/util/fragile.ts) — vyzvedává se
+     v ateliéru. Ve smíšeném košíku jede poštou se zbytkem objednávky. */
+  { value: "physical", title: "Vytištěný", note: "přibalím ho k objednávce, nebo si ho vyzvednete" },
 ]
 
 export default function GiftVoucherForm({

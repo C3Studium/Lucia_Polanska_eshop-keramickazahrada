@@ -135,6 +135,41 @@
  * a tlačítko uvnitř panelu je zbytečné, protože „Pokračovat k pokladně" nese
  * plovoucí pruh nad spodní lištou — ten je od téhle stopy i na tabletech.
  */
+/*
+ * Nenastavený dárkový poukaz místo tlačítka k pokladně (30. 10. 2026).
+ * Tvar drží tlačítko, barvu ne: je to překážka, ne cesta dál. Stojí nad
+ * portrétovými pravidly, aby je `display: none` v nich mohlo přebít.
+ */
+.blocked {
+  display: grid;
+  gap: .5rem;
+}
+
+.blockedLink {
+  display: grid;
+  min-height: 2.75rem;
+  height: clamp(2.75rem, 5.2vh, 3.5rem);
+  padding: 0 1.75rem;
+  border: 1px dashed var(--clay-41);
+  border-radius: 1.5625rem;
+  color: var(--clay-41);
+  font: 400 clamp(.9rem, 1.05vw, 1rem)/1 "Sansation-Regular", sans-serif;
+  place-items: center;
+  text-align: center;
+  text-decoration: none;
+}
+
+.blockedLink:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 4px;
+}
+
+.blockedNote {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / .72);
+  font: 400 clamp(.82rem, .95vw, .92rem)/1.45 "Sansation-Regular", sans-serif;
+}
+
 @media (orientation: portrait) and (max-width: 1179.98px) {
   /* Od horní hrany, ne na střed: rozbalené pole pro kód řádek vpravo natáhne
      a nadpis by s ním sjížděl doprostřed. Odsazení nadpisu ho opticky srovná
@@ -189,7 +224,9 @@
    * pruh nade spodní lištou, který je vidět pořád (viz checkout-bar). Dvě
    * stejné cesty pod sebou jen prodlužují to, co má být kratší.
    */
-  .LinkButton {
+  .LinkButton,
+  /* Zámek nenastaveného poukazu je na jeho místě — a nese ho i ten pruh. */
+  .blocked {
     display: none;
   }
 }

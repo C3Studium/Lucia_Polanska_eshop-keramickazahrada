@@ -653,6 +653,27 @@
   padding-top: clamp(2.375rem, 6vh, 4rem);
 }
 
+/* Dárkový poukaz s vlastní částkou — stojí na místě ceny, protože cenu
+   dostane až v košíku, kde si zákazník zvolí hodnotu. Drží rytmus ceny
+   (vpravo, patkové číslo), jen menší: je to mez, ne částka. */
+.product__voucherPrice {
+  margin: 0;
+  padding-bottom: 1.25rem;
+  color: var(--pdp-cream);
+  font: 400 clamp(1.4rem, 2vw, 2.1rem)/1 "Sentient-Regular", serif;
+  letter-spacing: -0.02em;
+  text-align: right;
+}
+
+/* Věta pod cenou poukazu: kde se poukaz doopravdy nastaví. */
+.product__voucherNote {
+  max-width: 42ch;
+  margin: 0 0 clamp(0.75rem, 1.6vh, 1.1rem);
+  color: rgb(var(--cream-06-rgb) / .72);
+  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
+  line-height: 1.45;
+}
+
 .product__details__cta__price {
   display: flex;
   align-items: flex-start;

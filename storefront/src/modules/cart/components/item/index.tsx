@@ -9,6 +9,7 @@ import { isMadeToOrderLine, type ProductionLeadTime } from "@lib/util/commission
 import { madeToOrderBadgeText } from "@lib/util/made-to-order"
 import { isPackagingLine } from "@lib/util/packaging"
 import { voucherLineSummary } from "@lib/util/gift-voucher-code"
+import { isGiftVoucherProductLine } from "@lib/util/gift-voucher-setup"
 import { LEGAL_LINKS } from "@modules/checkout/components/legal-consent/labels"
 import PackagingLine, { PackagingNote } from "@modules/common/components/packaging-line"
 import CartQuantityStepper from "@modules/cart/components/cart-quantity-stepper"
@@ -68,6 +69,10 @@ const Item = ({
   const voucherSummary = voucherLineSummary(
     item.metadata as Record<string, unknown> | null
   )
+  /* Poukaz se nastavuje až v košíku, pod souhrnem — dokud to zákazník
+     neudělá, řádek stojí 0 a nikam dál to nepustí. Ať je to vidět přímo
+     u položky, ne až u zamčeného tlačítka. */
+  const voucherTodo = !voucherSummary && isGiftVoucherProductLine(item as never)
   const madeToOrderLabel = madeToOrder
     ? madeToOrderBadgeText({
         depositPercentage: madeToOrderTerms?.deposit_percentage,
@@ -143,6 +148,11 @@ const Item = ({
           {voucherSummary && (
             <span className={s.voucherSummary} data-testid="cart-gift-voucher-summary">
               {voucherSummary}
+            </span>
+          )}
+          {voucherTodo && (
+            <span className={s.voucherTodo} data-testid="cart-gift-voucher-todo">
+              Zatím nenastavený — hodnotu a podobu zvolíte u souhrnu
             </span>
           )}
         </div>

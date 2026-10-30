@@ -18,13 +18,10 @@ import { useParams } from "next/navigation"
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import styles from "./style.module.scss"
 import { addToCart } from "@lib/data/cart"
-import { isGiftVoucherProduct } from "@lib/util/gift-voucher-code"
+
 import Cart from "@modules/common/icons/cart"
 import WishlistToggle from "@modules/products/components/wishlist-toggle"
-import {
-  isCustomAmountVoucher,
-  voucherConfig,
-} from "@modules/products/components/voucher-amount"
+import { isCustomAmountVoucher, voucherConfig } from "@lib/util/voucher-amount"
 import {
   availabilityLabel,
   hasEmptyShelf,
@@ -235,21 +232,17 @@ function ProductCard({
    * které se píše na stránce produktu — v obou případech je poctivější poslat
    * člověka na detail, což karta stejně nabízí.
    */
-  /* Dárkový poukaz s vlastní částkou: částku zákazník zadává na stránce
-     poukazu (cena řádku = zvolená částka), takže rychlé přidání nemá co
-     přidat a katalogová cena (1 Kč) se na kartě neukazuje. */
+  /* Dárkový poukaz s vlastní částkou: hodnotu zákazník volí až v košíku, takže
+     katalogová cena (1 Kč) se na kartě neukazuje — místo ní „Vlastní částka od". */
   const customVoucher = isCustomAmountVoucher(
     product.metadata as Record<string, unknown> | null | undefined
   )
 
-  /* Každý dárkový poukaz (i s pevnou hodnotou): podoba a obdarovaný se
-     vyplňují na stránce produktu, rychlé přidání by je nemělo odkud vzít. */
-  const giftVoucher = isGiftVoucherProduct(
-    product.metadata as Record<string, unknown> | null | undefined
-  )
+  /* Poukaz se od 30. 10. 2026 nastavuje až v košíku (hodnota, podoba,
+     obdarovaný), takže rychlé přidání z karty dává smysl — přidá holý poukaz
+     a košík k pokladně nepustí, dokud ho zákazník nenastaví. */
 
   const quickAddVariant = useMemo(() => {
-    if (customVoucher || giftVoucher) return null
     /* Zakázka (týž signál jako štítek „Na zakázku" níž): zadání a potvrzení,
        že ji nelze vrátit do 14 dnů, patří ke kusu na stránce produktu. */
     if (isMadeToOrder) return null
@@ -258,7 +251,7 @@ function ProductCard({
     if (variants.length !== 1) return null
 
     return maxPurchasableQuantity(variants[0]) > 0 ? variants[0] : null
-  }, [customVoucher, giftVoucher, isMadeToOrder, priceOnRequest, product.variants])
+  }, [isMadeToOrder, priceOnRequest, product.variants])
 
   /* Oblíbené se ukládají po variantě, takže platí totéž omezení jako u košíku —
      u vícevariantního kusu by karta hádala, který se má uložit. Sklad se tu

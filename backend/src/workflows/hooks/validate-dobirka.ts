@@ -8,7 +8,11 @@ import { DOBIRKA_PICKUP_POINT_MESSAGE } from "../../lib/balikovna-point"
 import { productsHaveMadeToOrder } from "../../lib/made-to-order-detection"
 import { getMerchantSetting } from "../../lib/merchant-settings"
 import { DOBIRKA_PROVIDER_ID, isPayLaterPaymentProvider } from "../../lib/ship-gate"
-import { VOUCHER_LINE_KEYS, isGiftVoucherProduct } from "../../lib/gift-voucher-orders"
+import {
+  VOUCHER_LINE_KEYS,
+  giftVoucherSetupProblem,
+  isGiftVoucherProduct,
+} from "../../lib/voucher"
 
 /**
  * Server-side dobírka rules, enforced where the order is born.
@@ -48,11 +52,34 @@ completeCartWorkflow.hooks.validate(
         "items.title",
         "items.quantity",
         "items.metadata",
+        // Nastavení poukazu se čte z metadat položky proti mezím z produktu.
+        "items.unit_price",
+        "items.product.metadata",
       ],
       filters: { id: cartId },
     })
     const fullCart = carts[0] as any
     if (!fullCart) return
+
+    /*
+     * Dárkový poukaz musí být nastavený (30. 10. 2026). Hodnotu i podobu volí
+     * zákazník až v košíku, takže nenastavený poukaz tam reálně leží — stojí 0
+     * a do objednávky nesmí: bez podoby by se nevědělo, jestli se má poslat
+     * e-mailem, a bez hodnoty by vznikl poukaz na nulu. Košík to hlídá taky;
+     * tohle je brána pro ručně složený požadavek — a jediné místo, kde se
+     * zvolená hodnota porovná s cenou řádku.
+     */
+    for (const item of (fullCart.items ?? []) as any[]) {
+      const problem = giftVoucherSetupProblem({
+        productMetadata: item?.product?.metadata,
+        itemMetadata: item?.metadata,
+        unitPrice: item?.unit_price,
+        currencyCode: fullCart.currency_code,
+      })
+      if (problem) {
+        throw new MedusaError(MedusaError.Types.NOT_ALLOWED, problem)
+      }
+    }
 
     const sessions = fullCart.payment_collection?.payment_sessions ?? []
     const usesDobirka = sessions.some(

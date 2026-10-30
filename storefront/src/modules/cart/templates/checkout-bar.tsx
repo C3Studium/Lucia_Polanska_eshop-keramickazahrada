@@ -1,6 +1,10 @@
 "use client"
 
 import { cartNeedsShipping } from "@lib/util/needs-shipping"
+import {
+  cartNeedsVoucherSetup,
+  GIFT_VOUCHER_SETUP_ID,
+} from "@lib/util/gift-voucher-setup"
 import { convertToLocale } from "@lib/util/money"
 import DiscountCode from "@modules/checkout/components/discount-code"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -106,13 +110,25 @@ export default function CheckoutBar({
         </strong>
       </span>
 
-      <LocalizedClientLink
-        href={`/checkout?step=${getCheckoutStep(cart)}`}
-        className={s.cta}
-        data-testid="checkout-bar-button"
-      >
-        K pokladně
-      </LocalizedClientLink>
+      {/* Nenastavený dárkový poukaz zamyká i tuhle cestu — pruh je na telefonu
+          jediná cesta k pokladně, takže by ji jinak obešel. */}
+      {cartNeedsVoucherSetup(cart as never) ? (
+        <a
+          href={`#${GIFT_VOUCHER_SETUP_ID}`}
+          className={s.ctaBlocked}
+          data-testid="checkout-bar-blocked"
+        >
+          Nastavit poukaz
+        </a>
+      ) : (
+        <LocalizedClientLink
+          href={`/checkout?step=${getCheckoutStep(cart)}`}
+          className={s.cta}
+          data-testid="checkout-bar-button"
+        >
+          K pokladně
+        </LocalizedClientLink>
+      )}
     </div>
   )
 }

@@ -10,7 +10,11 @@ import { CopyProvider } from "@modules/common/components/cms-text/copy-context"
 import { getPageCopy } from "@lib/data/site-copy"
 import { itemFieldPath, itemText } from "@lib/util/site-copy"
 import { Metadata } from "next"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
+import {
+  cartNeedsVoucherSetup,
+  GIFT_VOUCHER_SETUP_ID,
+} from "@lib/util/gift-voucher-setup"
 import styles from "./page.module.scss"
 import { productLines } from "@lib/util/packaging"
 
@@ -25,6 +29,16 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
   const { countryCode } = params
   if (!cart) {
     return notFound()
+  }
+
+  /*
+   * Nenastavený dárkový poukaz patří zpátky do košíku (30. 10. 2026). Hodnotu
+   * a podobu volí zákazník tam, pod souhrnem; pokladna na to pole nemá a
+   * backend by takový košík stejně nedokončil. Košík cestu sem zamyká, tohle
+   * je pro přímý odkaz a pro zapamatovanou adresu.
+   */
+  if (cartNeedsVoucherSetup(cart as never)) {
+    redirect(`/${countryCode}/cart#${GIFT_VOUCHER_SETUP_ID}`)
   }
 
   const customer = await retrieveCustomer()

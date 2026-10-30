@@ -4,6 +4,7 @@ import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
 import {
   isCustomAmountVoucher,
   validateVoucherAmount,
+  voucherAmountPending,
   VOUCHER_AMOUNT_KEY,
   voucherConfig,
 } from "../../lib/voucher"
@@ -44,6 +45,15 @@ export const getCustomPriceStep = createStep(
       return new StepResponse(0)
     }
     if (isCustomAmountVoucher(variant.product?.metadata as Record<string, unknown>)) {
+      /*
+       * Poukaz se přidává do košíku nenastavený — hodnotu zvolí zákazník až
+       * tam (`/store/carts/:id/line-items/:line_id/gift-voucher`, které cenu
+       * přepíše). Do té doby stojí 0: k pokladně ho nepustí brána před
+       * dokončením košíku, takže nulová cena nikam neuteče.
+       */
+      if (voucherAmountPending(metadata)) {
+        return new StepResponse(0)
+      }
       const result = validateVoucherAmount(
         metadata[VOUCHER_AMOUNT_KEY],
         voucherConfig(variant.product?.metadata as Record<string, unknown>),

@@ -87,6 +87,27 @@
       outline-offset: 3px;
     }
   }
+
+  /* Nenastavený dárkový poukaz — tvar tlačítka, ale zjevně překážka. */
+  .ctaBlocked {
+    display: inline-flex;
+    min-height: 2.75rem;
+    flex: 0 0 auto;
+    align-items: center;
+    padding: 0 1.25rem;
+    border: 1px dashed var(--clay-41);
+    border-radius: 999px;
+    color: var(--clay-41);
+    font-size: 0.9375rem;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid var(--focus-ring);
+      outline-offset: 3px;
+    }
+  }
 }
 
 /*
@@ -217,7 +238,8 @@
     justify-self: start;
   }
 
-  .cta {
+  .cta,
+  .ctaBlocked {
     grid-row: 2;
     grid-column: 2;
     margin-left: 1rem;

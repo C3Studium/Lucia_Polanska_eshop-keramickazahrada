@@ -1,9 +1,11 @@
 import {
+  cartHasVoucherPromotion,
   isPackagingLine,
   packagingPriceCzkOf,
   packagingUnitPrice,
   planPackaging,
   roundUpToHalf,
+  voucherCodeCandidates,
 } from "../packaging"
 import { withPackagingUnderProducts } from "../packaging-lines"
 import { refundAllLines, shippingStateOf } from "../claims/refund-lines"
@@ -81,7 +83,7 @@ describe("planPackaging", () => {
   it("přidá balné ke každému výrobku se stejným počtem kusů", () => {
     const plan = planPackaging({ items: [product("a", "v1", 2, "Pítko")], unitPriceFor: price50 })
     expect(plan.add).toEqual([
-      { variant_id: "v1", product_id: "prod_v1", title: "Balné — Pítko", quantity: 2, unit_price: 50 },
+      { variant_id: "v1", product_id: "prod_v1", title: "Balné — Pítko", quantity: 2, unit_price: 50, is_discountable: false },
     ])
     expect(plan.update).toEqual([])
     expect(plan.remove_ids).toEqual([])
@@ -101,7 +103,7 @@ describe("planPackaging", () => {
       unitPriceFor: price50,
     })
     expect(plan.update).toEqual([
-      { id: "p1", quantity: 3, unit_price: 50, title: "Balné — Pítko", quantity_changed: true },
+      { id: "p1", quantity: 3, unit_price: 50, title: "Balné — Pítko", is_discountable: false, quantity_changed: true },
     ])
   })
 
@@ -121,7 +123,7 @@ describe("planPackaging", () => {
   it("výrobek bez ceny balení má balné za 0,- (položka je vždy)", () => {
     const fresh = planPackaging({ items: [product("a", "v1", 2, "Zvonek")], unitPriceFor: () => 0 })
     expect(fresh.add).toEqual([
-      { variant_id: "v1", product_id: "prod_v1", title: "Balné — Zvonek", quantity: 2, unit_price: 0 },
+      { variant_id: "v1", product_id: "prod_v1", title: "Balné — Zvonek", quantity: 2, unit_price: 0, is_discountable: false },
     ])
     // Lucie cenu balení smaže → existující balné zůstane, jen za 0.
     const cleared = planPackaging({
@@ -130,7 +132,7 @@ describe("planPackaging", () => {
     })
     expect(cleared.remove_ids).toEqual([])
     expect(cleared.update).toEqual([
-      { id: "p1", quantity: 1, unit_price: 0, title: "Balné — Zvonek", quantity_changed: false },
+      { id: "p1", quantity: 1, unit_price: 0, title: "Balné — Zvonek", is_discountable: false, quantity_changed: false },
     ])
   })
 
@@ -241,3 +243,86 @@ describe("detail objednávky v adminu", () => {
     ])
   })
 })
+
+/**
+ * Balné a dárkový poukaz (30. 10. 2026). Slevový kód balné nepokrývá, poukaz
+ * ano — jsou to peníze zaplacené dopředu. Medusa to rozlišit neumí, tak se
+ * `is_discountable` překlápí podle toho, co v košíku leží.
+ */
+describe("balné a dárkový poukaz", () => {
+  const price50 = () => 50
+
+  it("kandidáty na poukaz vybírá podle tvaru kódu, ne podle počtu znaků", () => {
+    // Písmena mimo abecedu poukazů (O, I, S, L, 0, 1, 5) → slevový kód.
+    expect(voucherCodeCandidates({ promotions: [{ code: "PODZIM10" }] })).toEqual([])
+    expect(voucherCodeCandidates({ promotions: [{ code: "7HQ4M2XP" }] })).toEqual(["7HQ4M2XP"])
+    expect(voucherCodeCandidates({ promotions: [] })).toEqual([])
+    expect(voucherCodeCandidates({})).toEqual([])
+  })
+
+  it("o balném rozhoduje tabulka poukazů, ne tvar kódu", async () => {
+    const container = (vouchers: unknown[]) =>
+      ({ resolve: () => ({ listGiftVouchers: async () => vouchers }) }) as never
+
+    // Kód tvarem sedí, ale poukaz to není (Lucie si takový kód může vymyslet).
+    await expect(
+      cartHasVoucherPromotion(container([]), { promotions: [{ code: "HRNEK234" }] })
+    ).resolves.toBe(false)
+    await expect(
+      cartHasVoucherPromotion(container([{ id: "gv_1" }]), { promotions: [{ code: "7HQ4M2XP" }] })
+    ).resolves.toBe(true)
+    // Bez kandidáta se modul vůbec neptá.
+    await expect(
+      cartHasVoucherPromotion(null as never, { promotions: [{ code: "PODZIM10" }] })
+    ).resolves.toBe(false)
+  })
+
+  it("s poukazem vzniká balné, na které akce dosáhne", () => {
+    const plan = planPackaging({
+      items: [product("a", "v1", 1, "Pítko")],
+      unitPriceFor: price50,
+      discountable: true,
+    })
+    expect(plan.add[0].is_discountable).toBe(true)
+  })
+
+  it("přibylý poukaz balné přepne, odebraný ho vrátí zpátky", () => {
+    const items = [
+      product("a", "v1", 1, "Pítko"),
+      { ...packaging("p1", "v1", 1, 50, "Balné — Pítko"), is_discountable: false },
+    ]
+    const withVoucher = planPackaging({ items, unitPriceFor: price50, discountable: true })
+    expect(withVoucher.update).toEqual([
+      {
+        id: "p1",
+        quantity: 1,
+        unit_price: 50,
+        title: "Balné — Pítko",
+        is_discountable: true,
+        quantity_changed: false,
+      },
+    ])
+
+    const back = planPackaging({
+      items: [
+        product("a", "v1", 1, "Pítko"),
+        { ...packaging("p1", "v1", 1, 50, "Balné — Pítko"), is_discountable: true },
+      ],
+      unitPriceFor: price50,
+    })
+    expect(back.update[0].is_discountable).toBe(false)
+  })
+
+  it("správný košík s poukazem je pořád prázdný plán (idempotence)", () => {
+    const plan = planPackaging({
+      items: [
+        product("a", "v1", 1, "Pítko"),
+        { ...packaging("p1", "v1", 1, 50, "Balné — Pítko"), is_discountable: true },
+      ],
+      unitPriceFor: price50,
+      discountable: true,
+    })
+    expect(plan).toEqual({ add: [], update: [], remove_ids: [] })
+  })
+})
+
