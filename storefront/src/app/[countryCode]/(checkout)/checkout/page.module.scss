@@ -185,6 +185,11 @@
   --order-halo: clamp(6.5rem, 9.5vw, 14rem);
   position: relative;
   min-width: 0;
+  /* Mřížka zarovnává na `start`, takže sloupec byl vysoký přesně jako souhrn —
+     a lepkavý souhrn v rodiči své vlastní výšky nemá kam jet (scrolloval pryč).
+     Natažený na výšku řádku dostane dráhu podél celého formuláře. Stejná
+     oprava jako `.right` v cart/templates/index.module.scss. */
+  align-self: stretch;
   animation: orderReveal .9s .18s cubic-bezier(.22,1,.36,1) both;
 }
 

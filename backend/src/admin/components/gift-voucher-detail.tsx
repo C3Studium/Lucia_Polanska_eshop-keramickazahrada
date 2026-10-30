@@ -31,6 +31,7 @@ import {
   looksLikeEmail,
   openVoucherPage,
   pageUrlIsRelative,
+  stahnoutPoukazPdf,
   todayInput,
   useVoucherAction,
   validUntilInput,
@@ -195,8 +196,9 @@ const VoucherDetail = ({
             >
               Poslat e-mailem
             </Button>
+            <PoukazPdfButton voucherId={voucher.id} />
             <Button variant="secondary" onClick={() => openVoucherPage(voucher)}>
-              Otevřít / vytisknout poukaz
+              Otevřít stránku poukazu
             </Button>
           </div>
           {pageUrlIsRelative(voucher) && (
@@ -449,6 +451,34 @@ const PaymentBlock = ({
 /* ------------------------------------------------------------------ */
 /* Zaplacený: uplatnit, poslat                                         */
 /* ------------------------------------------------------------------ */
+
+/**
+ * Vystavit poukaz jako PDF — hotová kartička k vytištění nebo přeposlání.
+ * Je to tentýž soubor, který dostane obdarovaný v e-mailu, takže vytištěný
+ * poukaz z dílny a ten elektronický vypadají stejně.
+ */
+export const PoukazPdfButton = ({
+  voucherId,
+  variant = "secondary",
+}: {
+  voucherId: string;
+  variant?: "primary" | "secondary";
+}) => {
+  const [vystavuje, setVystavuje] = useState(false);
+  return (
+    <Button
+      variant={variant}
+      isLoading={vystavuje}
+      onClick={async () => {
+        setVystavuje(true);
+        await stahnoutPoukazPdf(voucherId);
+        setVystavuje(false);
+      }}
+    >
+      Stáhnout poukaz (PDF)
+    </Button>
+  );
+};
 
 const RedeemPanel = ({ voucher, onDone }: { voucher: AdminGiftVoucher; onDone: () => void }) => {
   const [amount, setAmount] = useState("");

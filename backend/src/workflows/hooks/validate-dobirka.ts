@@ -8,6 +8,7 @@ import { DOBIRKA_PICKUP_POINT_MESSAGE } from "../../lib/balikovna-point"
 import { productsHaveMadeToOrder } from "../../lib/made-to-order-detection"
 import { getMerchantSetting } from "../../lib/merchant-settings"
 import { DOBIRKA_PROVIDER_ID, isPayLaterPaymentProvider } from "../../lib/ship-gate"
+import { VOUCHER_LINE_KEYS, isGiftVoucherProduct } from "../../lib/gift-voucher-orders"
 
 /**
  * Server-side dobírka rules, enforced where the order is born.
@@ -162,6 +163,28 @@ completeCartWorkflow.hooks.validate(
       throw new MedusaError(MedusaError.Types.NOT_ALLOWED, DOBIRKA_PICKUP_POINT_MESSAGE)
     }
 
+    /*
+     * Dárkový poukaz na dobírku nejde (30. 10. 2026): peníze by dorazily až
+     * při předání zásilky, takže by poukaz do té doby nebyl platný
+     * a elektronický by obdarovanému nepřišel vůbec — ten se posílá až po
+     * zaplacení (`subscribers/gift-voucher-payment.ts`). Pokladna dobírku
+     * u poukazu nenabízí; tohle je pojistka pro ručně složený požadavek.
+     *
+     * Rozhodují metadata řádku, a to před načtením produktů: poukaz s vlastní
+     * částkou nese svou podobu na položce a kontrola nesmí propadnout ani
+     * u košíku, ze kterého se žádný produkt nevyčte.
+     */
+    const voucherLine = items.some((item: any) => {
+      const kind = item?.metadata?.[VOUCHER_LINE_KEYS.kind]
+      return kind === "electronic" || kind === "physical"
+    })
+    if (voucherLine) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "Dárkový poukaz se na dobírku neposílá — platí se předem, jinak by do převzetí zásilky nebyl platný. Zvolte prosím platbu kartou."
+      )
+    }
+
     // The fee line is ours, not a product: it has no product_id, but the
     // explicit marker filter keeps the intent readable and future-proof.
     const productIds = [
@@ -180,12 +203,13 @@ completeCartWorkflow.hooks.validate(
       filters: { id: productIds },
     })
     // Dobírka je VÝCHOZÍ (Matěj 12. 10. 2026): blokuje jen výslovně vypnutá
-    // (`cod_allowed: false`) a zakázka (kategorie Zakázková výroba nebo
-    // značka; profil výroby hlídá kontrola výš).
+    // (`cod_allowed: false`), zakázka (kategorie Zakázková výroba nebo
+    // značka; profil výroby hlídá kontrola výš) a dárkový poukaz.
     const blocked = (products as any[]).filter(
       (product) =>
         product?.metadata?.cod_allowed === false ||
         Boolean(product?.metadata?.made_to_order) ||
+        isGiftVoucherProduct(product?.metadata) ||
         ((product?.categories ?? []) as any[]).some(
           (category) => category?.handle === "zakazkova-vyroba"
         )

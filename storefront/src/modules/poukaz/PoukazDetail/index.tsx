@@ -52,10 +52,13 @@ export default function PoukazDetail({
   initialVoucher,
   token,
   outcome,
+  pdfUrl = null,
 }: {
   initialVoucher: PublicGiftVoucher
   token: string
   outcome?: string
+  /** Vystavený poukaz v PDF (jen u zaplaceného), nebo null. */
+  pdfUrl?: string | null
 }) {
   const [voucher, setVoucher] = useState(initialVoucher)
   const paid = voucher.payment_status === "paid"
@@ -169,12 +172,21 @@ export default function PoukazDetail({
               title="Nakupovat"
               className={styles.button}
             />
-            <WebButton
-              Kind="Button"
-              title="Vytisknout"
-              onClickAction={() => window.print()}
-              className={styles.button}
-            />
+            {pdfUrl ? (
+              <WebButton
+                Kind="Link"
+                href={pdfUrl}
+                title="Stáhnout poukaz (PDF)"
+                className={styles.button}
+              />
+            ) : (
+              <WebButton
+                Kind="Button"
+                title="Vytisknout"
+                onClickAction={() => window.print()}
+                className={styles.button}
+              />
+            )}
           </div>
         </section>
       </main>

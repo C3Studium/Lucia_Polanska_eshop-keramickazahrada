@@ -365,7 +365,7 @@ export async function startExpressBuyNow({
     if (type === "pickup") return false
     if (isBalikovnaOption(option)) return false
     if (!fold(option.name ?? "").includes("ceska posta")) return false
-    if (restriction && !deliveryAllowedUnder(option, false)) return false
+    if (restriction && !deliveryAllowedUnder(option, false, restriction)) return false
     return true
   })
 

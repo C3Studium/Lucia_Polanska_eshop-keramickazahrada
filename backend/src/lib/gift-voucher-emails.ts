@@ -1,10 +1,13 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { GIFT_VOUCHER_MODULE } from "../modules/gift-voucher"
 import type GiftVoucherModuleService from "../modules/gift-voucher/service"
 import { sendCustomerEmail } from "./customer-email"
 import { giftVoucherLink } from "./gift-voucher-link"
 import { formatVoucherCode } from "../modules/gift-voucher/code"
 import { formatVoucherCzk, formatVoucherDate } from "./gift-voucher-view"
+import { giftVoucherPdfInputFor, storeGiftVoucherPdf } from "./gift-voucher-pdf"
+import { checkAttachmentUrls, type EmailAttachmentRef } from "./legal/order-legal"
 
 /**
  * E-maily poukazů:
@@ -16,6 +19,35 @@ import { formatVoucherCzk, formatVoucherDate } from "./gift-voucher-view"
 /** Komu poslat elektronický poukaz: obdarovanému, jinak kupujícímu. */
 export const voucherRecipientEmail = (voucher: any): string | null =>
   (voucher.recipient_email || voucher.buyer_email || "").trim() || null
+
+/**
+ * Poukaz jako PDF do přílohy — elektronický poukaz se „vystaví online“ právě
+ * tímhle. Selže-li vystavení nebo soubor nejde stáhnout, e-mail přesto odejde:
+ * kód v těle zprávy a odkaz na stránku poukazu stačí k uplatnění, kdežto
+ * neodeslaný e-mail by zákazníka nechal bez čehokoli.
+ */
+export const giftVoucherAttachment = async (
+  container: MedusaContainer,
+  voucher: any
+): Promise<EmailAttachmentRef | null> => {
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+  try {
+    const pdf = await storeGiftVoucherPdf(container, await giftVoucherPdfInputFor(container, voucher))
+    if (!pdf) return null
+    const { reachable, failed } = await checkAttachmentUrls([pdf])
+    for (const miss of failed) {
+      logger.warn(
+        `[poukazy] PDF poukazu ${voucher.code} (${miss.url}) nejde stáhnout (${miss.reason}) — e-mail půjde bez přílohy.`
+      )
+    }
+    return reachable[0] ?? null
+  } catch (error) {
+    logger.warn(
+      `[poukazy] PDF poukazu ${voucher.code} se nepodařilo vystavit: ${(error as Error)?.message ?? error}`
+    )
+    return null
+  }
+}
 
 export const sendGiftVoucherEmail = async (
   container: MedusaContainer,
@@ -32,11 +64,16 @@ export const sendGiftVoucherEmail = async (
       ? `gift-voucher:paid:${voucher.id}`
       : `gift-voucher:manual:${voucher.id}:${to}:${Date.now()}`
 
+  const attachment = await giftVoucherAttachment(container, voucher)
+
   const sent = await sendCustomerEmail(container, {
     template: "gift-voucher",
     to,
     key,
+    ...(attachment ? { attachments: [attachment] } : {}),
     data: {
+      /* Šablona o příloze ví — bez ní odkazuje na stránku poukazu. */
+      pdfUrl: attachment?.url ?? null,
       // „7HQ4 M2XP" — čte se líp; do pole v košíku jde zadat i s mezerou.
       code: formatVoucherCode(voucher.code),
       value: formatVoucherCzk(voucher.initial_value),

@@ -1,6 +1,7 @@
 "use client"
 
 import { RadioGroup } from "@headlessui/react"
+import { cartNeedsShipping } from "@lib/util/needs-shipping"
 import {
   isComgate,
   isDobirkaPayment,
@@ -10,9 +11,8 @@ import {
   paymentInfoMap,
 } from "@lib/constants"
 import {
-  isZeroPriceOnRequestCart,
-  PRICE_ON_REQUEST_ZERO_NOTE,
-  ZERO_PAYMENT_TITLE,
+  isZeroChargeCart,
+  zeroChargeCopy,
 } from "@lib/util/price-on-request"
 import { initiatePaymentSession, syncPaymentChoice } from "@lib/data/cart"
 import { isDobirkaFeeLine } from "@lib/util/dobirka"
@@ -102,7 +102,8 @@ const Payment = ({
    * a rovnou do Přehledu. Jakmile je k úhradě víc (běžné zboží, doprava),
    * platí se normálně kartou jako u každé zakázky.
    */
-  const zeroCharge = isZeroPriceOnRequestCart(cart)
+  const zeroCharge = isZeroChargeCart(cart)
+  const zeroCopy = zeroChargeCopy(cart)
 
   /*
    * "Zaplatím při vyzvednutí" exists only for Osobní odběr — the customer collects from the
@@ -211,7 +212,8 @@ const Payment = ({
   const paidByGiftcard =
     cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0
   const paymentReady =
-    (activeSession && (cart?.shipping_methods?.length ?? 0) !== 0) ||
+    (activeSession &&
+      (!cartNeedsShipping(cart as any) || (cart?.shipping_methods?.length ?? 0) !== 0)) ||
     paidByGiftcard
 
   const createQueryString = useCallback(
@@ -374,8 +376,8 @@ const Payment = ({
               když košík zakázku opravdu obsahuje (říká API, neodhadujeme). */}
           {zeroCharge && (
             <div className={styles.methodIntro} data-testid="zero-charge-payment">
-              <span>Teď nic neplatíte</span>
-              <p>{PRICE_ON_REQUEST_ZERO_NOTE}</p>
+              <span>{zeroCopy.heading}</span>
+              <p>{zeroCopy.note}</p>
             </div>
           )}
           {zeroCharge && (
@@ -511,7 +513,7 @@ const Payment = ({
                 <Text className={styles.sectionTitle}>Způsob platby</Text>
                 <Text className={styles.sectionText}>
                   {(zeroCharge && isManual(activeSession?.provider_id)
-                    ? ZERO_PAYMENT_TITLE
+                    ? zeroCopy.title
                     : null) ||
                     activeComgateInfo?.name_short ||
                     activeComgateInfo?.name ||

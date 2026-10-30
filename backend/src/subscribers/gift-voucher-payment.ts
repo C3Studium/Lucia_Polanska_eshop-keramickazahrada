@@ -75,7 +75,8 @@ export default async function giftVoucherPaymentCapturedHandler({
       ? `Elektronický poukaz odešel na ${outcome.to}.`
       : "Elektronický poukaz se NEPODAŘILO poslat — pošlete ho ze stránky Poukazy."
   } else {
-    mailLine = "Je to vytištěný poukaz — vytiskněte ho na stránce Poukazy a pošlete nebo předejte."
+    mailLine =
+      "Je to vytištěný poukaz — stáhněte si ho jako PDF na stránce Poukazy, vytiskněte a předejte."
   }
 
   await notifyMerchant(container, {

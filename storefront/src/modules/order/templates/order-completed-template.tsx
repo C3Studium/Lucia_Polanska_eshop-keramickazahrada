@@ -40,6 +40,8 @@ import {
   hasPriceOnRequestLine,
   isPriceOnRequestLine,
   isZeroPayment,
+  zeroPaymentTitle,
+  VOUCHER_PAYMENT_TITLE,
   PRICE_ON_REQUEST_LINE_LABEL,
   PRICE_ON_REQUEST_ORDER_NOTE,
   ZERO_PAYMENT_STATUS,
@@ -144,7 +146,7 @@ export default async function OrderCompletedTemplate({
   )
   const paymentTitle = payment
     ? isZeroPayment(payment)
-      ? ZERO_PAYMENT_TITLE
+      ? zeroPaymentTitle(order as any)
       : paymentMethodTitle(payment.provider_id)
     : "Čeká na přiřazení"
 
@@ -189,10 +191,16 @@ export default async function OrderCompletedTemplate({
      nic nezaplatilo, „Zaplaceno" by lhalo. */
   const priceOnRequestOrder = hasPriceOnRequestLine(order.items as any)
   const awaitingAgreedPrice = priceOnRequestOrder && paidNow <= 0.005
+  /* Celou objednávku pokryl dárkový poukaz: k úhradě 0, platba za 0 Kč se
+     v Meduse jako záznam nezaloží — bez téhle větve „Čeká na přiřazení". */
+  const paidByVoucher =
+    !priceOnRequestOrder && Number(order.total ?? 0) <= 0.005 && (order.items?.length ?? 0) > 0
   const paymentStatusLabel = showDeposit
     ? "Záloha zaplacena"
     : awaitingAgreedPrice
       ? ZERO_PAYMENT_STATUS
+      : paidByVoucher
+        ? "Zaplaceno"
       : paysLater
         ? payLaterLabel
         : paymentStatus
@@ -458,7 +466,11 @@ export default async function OrderCompletedTemplate({
                   <div>
                     <span>Metoda</span>
                     <strong data-testid="payment-method">
-                      {!payment && awaitingAgreedPrice ? ZERO_PAYMENT_TITLE : paymentTitle}
+                      {!payment && awaitingAgreedPrice
+                        ? ZERO_PAYMENT_TITLE
+                        : !payment && paidByVoucher
+                          ? VOUCHER_PAYMENT_TITLE
+                          : paymentTitle}
                     </strong>
                   </div>
                   <div>

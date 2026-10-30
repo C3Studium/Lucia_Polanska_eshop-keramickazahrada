@@ -35,6 +35,8 @@ export interface GiftVoucherEmailProps {
   dedication?: string | null
   toRecipient?: boolean
   voucherUrl?: string
+  /** Vystavené PDF poukazu (příloha téhož e-mailu), nebo null. */
+  pdfUrl?: string | null
 }
 
 function GiftVoucherEmailComponent({
@@ -48,6 +50,7 @@ function GiftVoucherEmailComponent({
   dedication = "K narozeninám, ať ti na zahradě kvete i v zimě.",
   toRecipient = true,
   voucherUrl = "https://keramickazahrada.cz/cz/poukaz/gv_123?token=abc",
+  pdfUrl = "https://img.matejforejt.com/gift-vouchers/gv_123/poukaz-1a2b3c4d.pdf",
 }: GiftVoucherEmailProps) {
   const shopUrl = storeLink()
   return (
@@ -62,15 +65,17 @@ function GiftVoucherEmailComponent({
             {buyerName ? `${buyerName} vám posílá` : "dostáváte"} dárkový poukaz do mé dílny
             Keramická zahrada. Můžete si za něj vybrat keramiku z obchodu, nebo si u mě nechat
             vyrobit kousek na zakázku.
+            {pdfUrl ? " Samotný poukaz najdete v příloze jako PDF — na vytištění i na ukázání v telefonu." : ""}
           </P>
         </>
       ) : (
         <>
           <Greeting name={buyerName} />
           <P>
-            děkuji, posílám dárkový poukaz{recipientName ? ` pro ${recipientName}` : ""}. Můžete ho
-            přeposlat, nebo vytisknout — tlačítko „Zobrazit a vytisknout“ níž otevře poukaz
-            v podobě pro tisk.
+            děkuji, posílám dárkový poukaz{recipientName ? ` pro ${recipientName}` : ""}.
+            {pdfUrl
+              ? " Hotový poukaz máte v příloze jako PDF — můžete ho přeposlat, nebo vytisknout a darovat."
+              : " Můžete ho přeposlat, nebo vytisknout — tlačítko „Zobrazit a vytisknout“ níž otevře poukaz v podobě pro tisk."}
           </P>
         </>
       )}
@@ -129,7 +134,11 @@ function GiftVoucherEmailComponent({
 
       <ButtonRow>
         {shopUrl ? <EmailButton href={shopUrl}>Vybrat keramiku</EmailButton> : null}
-        {voucherUrl ? (
+        {pdfUrl ? (
+          <EmailButton href={pdfUrl} variant="ghost">
+            Stáhnout poukaz (PDF)
+          </EmailButton>
+        ) : voucherUrl ? (
           <EmailButton href={voucherUrl} variant="ghost">
             Zobrazit a vytisknout
           </EmailButton>

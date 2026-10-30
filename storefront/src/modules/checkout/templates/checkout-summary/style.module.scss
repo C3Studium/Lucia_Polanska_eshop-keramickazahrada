@@ -5,19 +5,24 @@
   width: 100%;
   color: var(--cream-07);
 
-  // Odstup od navbaru, když souhrn drží. VELIKOST patří sem na základ, do
-  // breakpointu jde už jen DRUH (sticky). 9vh je živé mezi 711 a 1244 px výšky:
-  // na 1366×768 sedne na 69px místo pevných 92, na 1080 vyroste na 97.
-  --summary-sticky-top: clamp(4rem, 9vh, 7rem);
+  // Odstup od navbaru, když souhrn drží: 10vh, podlaha 4.5rem drží nad
+  // navbarem (max 56px) i na nízkém okně, strop 7rem na velkých monitorech.
+  --summary-sticky-top: clamp(4.5rem, 10vh, 7rem);
 
-  @include v(lg) {
+  // Drží jen tam, kde souhrn stojí ve vlastním sloupci vedle formuláře (od
+  // 1021px, viz below-px(1020px) v checkout/page.module.scss). Dřív to bylo
+  // v(lg)/h(sm) — to zapínalo lepkavost i na telefonu na šířku, kde souhrn
+  // stojí pod formulářem a lepkavost nemá smysl.
+  // Souhrn bývá vyšší než okno (5 položek + součty ≈ 760px), a lepkavý blok
+  // vyšší než okno ukáže spodek až na konci stránky — proto strop výšky
+  // a posuv uvnitř, aby celková částka byla vždycky na obrazovce.
+  @include from-px(1021px) {
     position: sticky;
     top: var(--summary-sticky-top);
-  }
-
-  @include h(sm) {
-    position: sticky;
-    top: var(--summary-sticky-top);
+    max-height: calc(100svh - var(--summary-sticky-top) - 1rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
   }
 }
 

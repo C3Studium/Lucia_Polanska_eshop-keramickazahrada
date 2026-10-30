@@ -19,7 +19,8 @@ import {
   readCommissionBrief,
 } from "@lib/util/made-to-order"
 import CheckoutCommissionBriefs from "../commission-briefs"
-import { isZeroPriceOnRequestCart } from "@lib/util/price-on-request"
+import { isZeroChargeCart, zeroChargeCopy } from "@lib/util/price-on-request"
+import { cartNeedsShipping } from "@lib/util/needs-shipping"
 
 import CheckoutConsent from "../legal-consent"
 import { ORDER_BUTTON_LABEL } from "../legal-consent/labels"
@@ -146,11 +147,12 @@ const Review = ({
   /* Cena po domluvě a k úhradě 0 (jen takový kus + osobní odběr): žádná brána,
      objednávka se dokončí s relací `pp_system_default` (lib/util/price-on-request).
      Případná zbylá volba `?method=` z dřívějška se pak nepoužije. */
-  const zeroCharge = isZeroPriceOnRequestCart(cart)
+  const zeroCharge = isZeroChargeCart(cart)
+  const zeroCopy = zeroChargeCopy(cart)
 
   const previousStepsCompleted =
     cart.shipping_address &&
-    (cart.shipping_methods?.length ?? 0) > 0 &&
+    (!cartNeedsShipping(cart) || (cart.shipping_methods?.length ?? 0) > 0) &&
     (cart.payment_collection || paidByGiftcard || comgateMethod || zeroCharge)
 
   /* Čím se platí — ComGate cesta ještě nemá platební relaci (zakládá se až
@@ -158,8 +160,8 @@ const Review = ({
      (tatáž, podle které `PaymentButton` volí svou variantu). */
   const payment = zeroCharge
     ? {
-        label: "Teď se nic neplatí",
-        note: "cenu výrobku po domluvě vám pošlu e-mailem, pak zaplatíte zálohu nebo celou částku online",
+        label: zeroCopy.reviewLabel,
+        note: zeroCopy.reviewNote,
       }
     : describePayment({
     comgateOptionId: comgateMethod,

@@ -2,6 +2,7 @@ import {
   cartHasCommissionCategory,
   deliveryAllowsCommission,
 } from "./commission"
+import { cartIsVoucherOnly } from "./gift-voucher-cart"
 
 /**
  * Which deliveries may carry this basket, and why.
@@ -22,7 +23,14 @@ import {
  * arrives as pieces, and then everyone loses — she remakes it, they wait again.
  */
 
-export type DeliveryRestriction = "fragile" | "commission" | null
+/**
+ * Třetí důvod přibyl 30. 10. 2026: **dárkový poukaz**. Košík, ve kterém není
+ * nic než poukazy, se neposílá dopravcem — elektronický chodí e-mailem (to je
+ * položka bez dopravy a krok Doručení se přeskočí úplně, viz
+ * `lib/util/needs-shipping.ts`) a vytištěný se předává v dílně. Posílat
+ * kartičku za 500 Kč křehkým balíkem nedává smysl ani jí, ani zákazníkovi.
+ */
+export type DeliveryRestriction = "fragile" | "commission" | "voucher" | null
 
 type LineLike = {
   product?: {
@@ -48,16 +56,25 @@ export const deliveryRestrictionFor = (
   cart: { items?: LineLike[] | null } | null,
   hasCommissionProfile: boolean
 ): DeliveryRestriction => {
+  /* Poukaz vyhrává: v takovém košíku žádný křehký kus ani zakázka není, a kdyby
+     byl, nebyl by to košík jen s poukazy. */
+  if (cartIsVoucherOnly(cart as never)) return "voucher"
   if (cartHasFragile(cart)) return "fragile"
   if (cartHasCommissionCategory(cart) || hasCommissionProfile) return "commission"
   return null
 }
 
-/** Both restrictions permit exactly the same two deliveries. */
+/**
+ * Co smí takový košík odvézt. Křehké i zakázka dovolí totéž (křehký balík
+ * nebo osobní odběr); u poukazu zbývá jen osobní odběr — posílat ho dopravcem
+ * se nenabízí vůbec.
+ */
 export const deliveryAllowedUnder = (
   option: { name?: string | null } | null | undefined,
-  isPickup: boolean
-) => deliveryAllowsCommission(option, isPickup)
+  isPickup: boolean,
+  restriction: DeliveryRestriction = null
+) =>
+  restriction === "voucher" ? isPickup : deliveryAllowsCommission(option, isPickup)
 
 export const restrictionNotice: Record<
   NonNullable<DeliveryRestriction>,
@@ -67,6 +84,8 @@ export const restrictionNotice: Record<
     "Vybrali jste křehký kus. Aby dorazil v pořádku, posíláme ho jen jako křehký balík Českou poštou — nebo si pro něj můžete přijet do ateliéru.",
   commission:
     "Zakázkovou výrobu posíláme jen jako křehký balík. Nebo si pro ni můžete přijet do ateliéru.",
+  voucher:
+    "V košíku máte jen dárkový poukaz. Vytištěný si ho vyzvednete v ateliéru — elektronický vám pošlu e-mailem a žádnou dopravu nepotřebuje.",
 }
 
 export const restrictionRowHint: Record<
@@ -75,4 +94,5 @@ export const restrictionRowHint: Record<
 > = {
   fragile: "U křehkých kusů to bohužel nejde",
   commission: "U zakázkové výroby to bohužel nejde",
+  voucher: "Samotný poukaz dopravcem neposíláme",
 }

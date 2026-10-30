@@ -159,7 +159,14 @@ export const syncPurchasedVouchers = async (container: MedusaContainer, orderId:
       key: `mn:gift-voucher-order:${order.id}`,
       title: `Objednávka #${order.display_id}: ${created.length === 1 ? "dárkový poukaz" : `${created.length} dárkové poukazy`}`,
       description: created
-        .map((v) => `${v.code} · ${formatVoucherCzk(v.initial_value)} · ${v.kind === "electronic" ? `elektronický → ${v.recipient_email || v.buyer_email}` : "vytištěný — vytiskněte ho na stránce Poukazy a přibalte"}`)
+        .map(
+          (v) =>
+            `${v.code} · ${formatVoucherCzk(v.initial_value)} · ${
+              v.kind === "electronic"
+                ? `elektronický → ${v.recipient_email || v.buyer_email}`
+                : "vytištěný — stáhněte si ho jako PDF u objednávky (nebo v Poukazech), vytiskněte a přibalte"
+            }`
+        )
         .join("\n"),
       audience: "owner",
       email: true,

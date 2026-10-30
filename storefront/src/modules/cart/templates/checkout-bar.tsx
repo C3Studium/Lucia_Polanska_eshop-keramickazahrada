@@ -1,5 +1,6 @@
 "use client"
 
+import { cartNeedsShipping } from "@lib/util/needs-shipping"
 import { convertToLocale } from "@lib/util/money"
 import DiscountCode from "@modules/checkout/components/discount-code"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -38,7 +39,8 @@ export default function CheckoutBar({
   /** Nejlevnější doprava, dokud není zvolená („od …") — jako v Summary. */
   shippingFrom?: ShippingFrom | null
 }) {
-  const shippingChosen = (cart.shipping_methods?.length ?? 0) > 0
+  const shippingChosen =
+    (cart.shipping_methods?.length ?? 0) > 0 || !cartNeedsShipping(cart)
   return (
     <div className={s.root}>
       {/* Souhrn, který na svislém tabletu stojí místo panelu pod výpisem.

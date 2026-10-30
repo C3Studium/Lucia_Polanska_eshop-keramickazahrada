@@ -73,6 +73,26 @@ export const getGiftVoucher = async (
     .catch(() => null)
 
 /**
+ * Poukaz jako PDF — tatáž kartička, jaká chodí e-mailem. Backend ji vystaví
+ * a vrátí adresu v úložišti, takže stažení už nepotřebuje token ani klíč
+ * obchodu a odkaz jde přeposlat obdarovanému.
+ *
+ * Nezaplacený nebo zrušený poukaz se nevystavuje (backend vrátí 409) —
+ * odtud přijde `null` a tlačítko se neukáže.
+ */
+export const getGiftVoucherPdfUrl = async (
+  voucherId: string,
+  token: string
+): Promise<string | null> =>
+  sdk.client
+    .fetch<{ url: string }>(
+      `/store/gift-vouchers/${encodeURIComponent(voucherId)}/pdf?token=${encodeURIComponent(token)}`,
+      { cache: "no-store" }
+    )
+    .then(({ url }) => url || null)
+    .catch(() => null)
+
+/**
  * Platební odkaz ComGate — „Zaplatit" i „Zkusit znovu". Backend je
  * idempotentní: platný odkaz vrátí beze změny, zrušená platba dostane nový.
  */

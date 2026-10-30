@@ -231,6 +231,40 @@ export const openVoucherPage = (voucher: Pick<AdminGiftVoucher, "page_url">) => 
 export const pageUrlIsRelative = (voucher: Pick<AdminGiftVoucher, "page_url">) =>
   Boolean(voucher.page_url) && voucher.page_url.startsWith("/");
 
+/**
+ * Vystavení poukazu jako PDF ke stažení.
+ *
+ * Soubor chodí z routy v base64 a tady se z něj udělá blob — nové okno
+ * v administraci nenese přihlášení, takže přímý odkaz na chráněnou routu by
+ * skončil na 401 (stejně to řeší podací štítek, `admin/lib/stitky.ts`).
+ *
+ * Vystavuje se načerstvo při každém kliknutí: po opravě věnování nebo
+ * prodloužení platnosti musí mít majitelka v ruce opravený poukaz.
+ */
+export const stahnoutPoukazPdf = async (voucherId: string): Promise<boolean> => {
+  try {
+    const { pdf_base64, filename } = await sdk.client.fetch<{
+      pdf_base64: string;
+      filename: string;
+    }>(`/admin/gift-vouchers/${voucherId}/pdf`);
+    const bytes = Uint8Array.from(atob(pdf_base64), (znak) => znak.charCodeAt(0));
+    const href = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+    const odkaz = document.createElement("a");
+    odkaz.href = href;
+    odkaz.download = filename || "darkovy-poukaz.pdf";
+    odkaz.rel = "noopener,noreferrer";
+    document.body.appendChild(odkaz);
+    odkaz.click();
+    odkaz.remove();
+    // Prohlížeč si obsah drží, dokud stahování běží; URL po chvíli uklidíme.
+    window.setTimeout(() => URL.revokeObjectURL(href), 60_000);
+    return true;
+  } catch (error) {
+    toast.error(ceskaChyba(error, "Poukaz se nepodařilo vystavit."));
+    return false;
+  }
+};
+
 /** Toasty po zápisu: co odešlo e-mailem (zeleně) a co se nepovedlo (oranžově). */
 export const announceOutcome = (outcome: Partial<GiftVoucherOutcome>, success?: string) => {
   if (success) toast.success(success);

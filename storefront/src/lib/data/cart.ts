@@ -478,6 +478,30 @@ export async function syncPaymentChoice(providerId: string): Promise<void> {
 }
 
 /**
+ * Košík bez zboží k odeslání (jen elektronický poukaz) nesmí nést dopravu
+ * zvolenou dřív — backend ji smaže, jen když opravdu nic dopravu nepotřebuje.
+ */
+export async function dropShippingIfNotNeeded(cartId: string): Promise<boolean> {
+  try {
+    const headers = {
+      ...(await getAuthHeaders()),
+    }
+    const { dropped } = await sdk.client.fetch<{ dropped: number }>(
+      `/store/carts/${cartId}/drop-shipping`,
+      { method: "POST", headers }
+    )
+    if (dropped) {
+      const cartCacheTag = await getCacheTag("carts")
+      if (cartCacheTag) revalidateTag(cartCacheTag)
+    }
+    return dropped > 0
+  } catch (e: any) {
+    console.error(`[doprava] zbytečnou dopravu se nepodařilo odebrat: ${e?.message ?? e}`)
+    return false
+  }
+}
+
+/**
  * Attempts to capture a payment on the backend. Expects a store API route to handle capture.
  * If the route is not available, this will fail gracefully and the caller can fallback to placeOrder.
  */

@@ -47,7 +47,7 @@ export const shippingFromOptions = (
   )
 
   const usable = options.filter(
-    (option) => !restriction || deliveryAllowedUnder(option, isPickupOption(option))
+    (option) => !restriction || deliveryAllowedUnder(option, isPickupOption(option), restriction)
   )
 
   const priced = (option: OptionLike) =>

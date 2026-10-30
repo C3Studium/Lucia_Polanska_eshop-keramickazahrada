@@ -77,8 +77,55 @@ export const isZeroPriceOnRequestCart = (
   Number(cart?.total ?? 0) <= 0.005 &&
   hasPriceOnRequestLine(cart?.items)
 
+/**
+ * Košík, ve kterém je k úhradě 0 — cena po domluvě, nebo celou částku pokryl
+ * dárkový poukaz. ComGate 0 Kč nevezme a kartu tu chtít nemá smysl: relace
+ * `pp_system_default` (backend ji pustí jen na kolekci za 0 Kč, viz
+ * `backend/src/lib/zero-payment-guard.ts`) a objednávka se rovnou odešle.
+ */
+export const isZeroChargeCart = (
+  cart: { total?: number | null; items?: LineLike[] | null } | null | undefined
+): boolean =>
+  Boolean(cart) &&
+  (cart?.items?.length ?? 0) > 0 &&
+  Number(cart?.total ?? 0) <= 0.005
+
+/** Věta u tlačítka, když celou objednávku pokryl dárkový poukaz. */
+export const VOUCHER_ZERO_NOTE =
+  "Celou objednávku hradí dárkový poukaz — nic dalšího neplatíte."
+
+/** Název platby u objednávky zaplacené celou dárkovým poukazem. */
+export const VOUCHER_PAYMENT_TITLE = "Uhrazeno dárkovým poukazem"
+
+/** Texty kroku Platba / Přehled pro objednávku za 0 — podle toho, proč je 0. */
+export const zeroChargeCopy = (
+  cart: { items?: LineLike[] | null } | null | undefined
+) =>
+  hasPriceOnRequestLine(cart?.items)
+    ? {
+        heading: "Teď nic neplatíte",
+        note: PRICE_ON_REQUEST_ZERO_NOTE,
+        title: "Bez platby při objednání",
+        reviewLabel: "Teď se nic neplatí",
+        reviewNote:
+          "cenu výrobku po domluvě vám pošlu e-mailem, pak zaplatíte zálohu nebo celou částku online",
+      }
+    : {
+        heading: "Zaplaceno dárkovým poukazem",
+        note: VOUCHER_ZERO_NOTE,
+        title: VOUCHER_PAYMENT_TITLE,
+        reviewLabel: VOUCHER_PAYMENT_TITLE,
+        reviewNote: "k úhradě nezbývá nic",
+      }
+
 /** Název platby u objednávky, ve které se při objednání nic neplatilo. */
 export const ZERO_PAYMENT_TITLE = "Bez platby při objednání"
+
+/** Název platby objednávky za 0: cena po domluvě, jinak celou pokryl poukaz. */
+export const zeroPaymentTitle = (
+  order: { items?: LineLike[] | null } | null | undefined
+): string =>
+  hasPriceOnRequestLine(order?.items) ? ZERO_PAYMENT_TITLE : VOUCHER_PAYMENT_TITLE
 
 /** Stav platby, dokud cena po domluvě není zaplacená. */
 export const ZERO_PAYMENT_STATUS = "Cenu pošlu e-mailem"

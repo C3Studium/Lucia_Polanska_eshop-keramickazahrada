@@ -1,3 +1,5 @@
+import { cartNeedsShipping } from "@lib/util/needs-shipping"
+
 export type ComgatePaymentMethod = {
   id: string
   group: string
@@ -105,7 +107,12 @@ export const buildComgateSessionPayload = (cart: any, optionId: string) => {
       shipping_city: shippingAddress?.city,
       shipping_street: shippingAddress?.address_1,
       shipping_postal_code: shippingAddress?.postal_code,
-      delivery: isPickup ? "PICKUP" : "HOME_DELIVERY",
+      // Jen elektronický poukaz → nic se nevozí (ComGate pak nechce doručovací adresu).
+      delivery: !cartNeedsShipping(cart)
+        ? "ELECTRONIC_DELIVERY"
+        : isPickup
+          ? "PICKUP"
+          : "HOME_DELIVERY",
       lang: "cs",
     },
   }

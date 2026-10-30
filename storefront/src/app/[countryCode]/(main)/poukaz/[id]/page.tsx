@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 
-import { getGiftVoucher } from "@lib/data/gift-vouchers"
+import { getGiftVoucher, getGiftVoucherPdfUrl } from "@lib/data/gift-vouchers"
 import PoukazDetail from "@modules/poukaz/PoukazDetail"
 import PoukazNenalezen from "@modules/poukaz/PoukazNenalezen"
 
@@ -35,5 +35,17 @@ export default async function PoukazPage(props: {
     return <PoukazNenalezen />
   }
 
-  return <PoukazDetail initialVoucher={voucher} token={token} outcome={vysledek} />
+  /* PDF se vystavuje jen u zaplaceného poukazu — jinak by se o něj stránka
+     hlásila při každém dotazu na stav během čekání na platbu. */
+  const pdfUrl =
+    voucher.payment_status === "paid" ? await getGiftVoucherPdfUrl(id, token) : null
+
+  return (
+    <PoukazDetail
+      initialVoucher={voucher}
+      token={token}
+      outcome={vysledek}
+      pdfUrl={pdfUrl}
+    />
+  )
 }

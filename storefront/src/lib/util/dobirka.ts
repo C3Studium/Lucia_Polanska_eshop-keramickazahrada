@@ -16,6 +16,7 @@
  */
 
 import { isCommissionLine } from "./commission"
+import { isGiftVoucherLine } from "./gift-voucher-code"
 import { isPackagingLine } from "./packaging"
 
 export const DOBIRKA_COUNTRIES = new Set(["cz"])
@@ -34,12 +35,16 @@ type LineLike = {
  * Dobírka je VÝCHOZÍ (Matěj 12. 10. 2026): jde u každého kusu, kromě
  * - zakázky (kategorie Zakázková výroba, značka `made_to_order`; profil
  *   výroby hlídá pokladna přes `productionMode`),
- * - kusu, kde ji Lucie výslovně vypnula (`cod_allowed: false`).
+ * - kusu, kde ji Lucie výslovně vypnula (`cod_allowed: false`),
+ * - dárkového poukazu (30. 10. 2026): peníze za něj by dorazily až při
+ *   předání zásilky, takže by do té doby nebyl platný a elektronický by
+ *   obdarovanému nepřišel vůbec. Poukaz se platí předem.
  * Zahraničí hlídá `countryAllowsDobirka`.
  */
 export const lineAllowsDobirka = (item: LineLike) =>
   item?.product?.metadata?.cod_allowed !== false &&
   !isCommissionLine(item) &&
+  !isGiftVoucherLine(item) &&
   !item?.metadata?.made_to_order &&
   !item?.product?.metadata?.made_to_order
 

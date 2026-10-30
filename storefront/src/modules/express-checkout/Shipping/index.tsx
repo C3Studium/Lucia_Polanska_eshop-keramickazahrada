@@ -14,8 +14,8 @@ import {
   isMadeToOrderLine,
 } from "@lib/util/commission"
 import {
-  cartHasFragile,
   deliveryAllowedUnder,
+  deliveryRestrictionFor,
   restrictionNotice,
   type DeliveryRestriction,
 } from "@lib/util/fragile"
@@ -65,19 +65,19 @@ export const Shipping = ({
 }: ShippingProps) => {
   const current = cart.shipping_address
 
-  /* Zakázka i křehký kus smí jen křehkým balíkem nebo osobním odběrem — stejné
-     omezení jako v běžném checkoutu (express ho dosud neměl, ukazoval všechny
-     dopravy). Nepovolené se odfiltrují pryč. */
-  const restriction: DeliveryRestriction = cartHasFragile(cart)
-    ? "fragile"
-    : (cart.items ?? []).some(isMadeToOrderLine)
-      ? "commission"
-      : null
+  /* Zakázka, křehký kus i samotný dárkový poukaz smí jen podmnožinu dopravy —
+     stejné omezení jako v běžném checkoutu (express ho dosud neměl, ukazoval
+     všechny dopravy). Nepovolené se odfiltrují pryč. Rozhoduje táž funkce co
+     v pokladně, aby se oba vchody nemohly rozejít. */
+  const restriction: DeliveryRestriction = deliveryRestrictionFor(
+    cart as never,
+    (cart.items ?? []).some(isMadeToOrderLine)
+  )
   const shownMethods = useMemo(
     () =>
       restriction
         ? shippingMethods.filter((method) =>
-            deliveryAllowedUnder(method, isPickupOption(method))
+            deliveryAllowedUnder(method, isPickupOption(method), restriction)
           )
         : shippingMethods,
     [shippingMethods, restriction]
