@@ -20,7 +20,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { EmptyState, pieces } from "../../../components/empty-state";
 import {
@@ -91,6 +91,8 @@ type NativeProduct = {
   collection?: { id: string; title: string } | null;
   images?: { id?: string; url: string }[];
   categories?: { id: string; name: string }[];
+  /** Prodejní kanály — obchod vidí jen produkty v kanálu svého klíče. */
+  sales_channels?: { id: string; name: string }[];
   options?: NativeOption[];
   variants?: NativeVariant[];
 };
@@ -154,7 +156,7 @@ const PRODUCT_FIELDS = [
   "id", "title", "subtitle", "description", "handle", "status", "thumbnail",
   "weight", "length", "height", "width", "material", "collection_id", "metadata",
   "created_at", "updated_at",
-  "*collection", "*images", "*categories", "*options", "*variants",
+  "*collection", "*images", "*categories", "*sales_channels", "*options", "*variants",
   "*variants.prices", "variants.metadata", "*options.values", "*variants.options",
 ].join(",");
 
@@ -854,9 +856,16 @@ const AddVariantRow = ({
 const ReadinessCard = ({
   product,
   detail,
+  inShop,
+  onAddToShop,
+  addingToShop,
 }: {
   product: NativeProduct;
   detail: WorkbenchDetail | undefined;
+  /** Je kus v kanálu, ze kterého čte obchod? `null` = ještě se načítá. */
+  inShop: boolean | null;
+  onAddToShop: () => void;
+  addingToShop: boolean;
 }) => {
   const variants = product.variants ?? [];
   // „Cena po domluvě“ je platný stav bez ceny (stejně jako product-completeness).
@@ -871,7 +880,37 @@ const ReadinessCard = ({
     !detail.production?.enabled &&
     !anyBackorder;
 
-  const checks = [
+  const checks: {
+    label: string;
+    ok: boolean;
+    why: string;
+    action?: React.ReactNode;
+  }[] = [
+    /*
+     * Obchod čte jen kanál svého publikovatelného klíče. Kus mimo něj je
+     * „publikovaný", a přesto pro obchod neexistuje — stránka „nenalezeno",
+     * v seznamu chybí (Domovní znamení, 28. 10.). Stav publikace to neukáže.
+     */
+    ...(inShop === null
+      ? []
+      : [
+          {
+            label: "Viditelné v obchodě",
+            ok: inShop,
+            why: "Kus není v prodejním kanálu obchodu — zákazník ho nenajde ani podle odkazu, i když je publikovaný.",
+            action: (
+              <Button
+                size="small"
+                variant="secondary"
+                className="mt-2"
+                isLoading={addingToShop}
+                onClick={onAddToShop}
+              >
+                Přidat do obchodu
+              </Button>
+            ),
+          },
+        ]),
     {
       label: "Fotografie",
       ok: Boolean(product.thumbnail || (product.images ?? []).length),
@@ -935,6 +974,7 @@ const ReadinessCard = ({
                   {check.why}
                 </Text>
               )}
+              {!check.ok && check.action}
             </div>
             <Badge size="2xsmall" color={check.ok ? "green" : "orange"}>
               {check.ok ? "Hotovo" : "Chybí"}
@@ -990,6 +1030,45 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
       sdk.client.fetch(
         `/admin/product-categories?limit=100&fields=id,name,is_active,metadata`
       ),
+    staleTime: 5 * 60_000,
+  });
+
+  /*
+   * Kanály, ze kterých čte obchod = kanály jeho (nezrušených) publikovatelných
+   * klíčů. Ne výchozí kanál obchodu — rozhoduje klíč, který storefront posílá.
+   */
+  const shopChannelsQuery = useQuery<{
+    api_keys: {
+      id: string;
+      revoked_at: string | null;
+      sales_channels?: { id: string }[];
+    }[];
+  }>({
+    queryKey: ["produkt-shop-channels"],
+    queryFn: () =>
+      sdk.client.fetch(
+        `/admin/api-keys?type=publishable&limit=50&fields=id,revoked_at,*sales_channels`
+      ),
+    staleTime: 5 * 60_000,
+  });
+  const shopChannelIds = useMemo(
+    () =>
+      shopChannelsQuery.data
+        ? new Set(
+            shopChannelsQuery.data.api_keys
+              .filter((key) => !key.revoked_at)
+              .flatMap((key) => (key.sales_channels ?? []).map((sc) => sc.id))
+          )
+        : null,
+    [shopChannelsQuery.data]
+  );
+
+  const salesChannelsQuery = useQuery<{
+    sales_channels: { id: string; name: string; is_disabled: boolean }[];
+  }>({
+    queryKey: ["produkt-sales-channels"],
+    queryFn: () =>
+      sdk.client.fetch(`/admin/sales-channels?limit=50&fields=id,name,is_disabled`),
     staleTime: 5 * 60_000,
   });
 
@@ -1318,6 +1397,21 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
 
   const isPublished = product.status === "published";
   const archived = flagOf(product, "archived");
+  const productChannelIds = (product.sales_channels ?? []).map((sc) => sc.id);
+  const inShop = shopChannelIds
+    ? productChannelIds.some((id) => shopChannelIds.has(id))
+    : null;
+  const setChannels = (ids: string[]) =>
+    saveProduct.mutate({ sales_channels: ids.map((id) => ({ id })) });
+  const addToShop = () => {
+    const target = shopChannelIds ? [...shopChannelIds][0] : undefined;
+    if (!target) {
+      toast.error("Obchod nemá žádný prodejní kanál — zkontrolujte publikovatelný klíč.");
+      return;
+    }
+    setChannels([...new Set([...productChannelIds, target])]);
+  };
+
   const clearance = flagOf(product, "clearance");
   const production = detail?.production ?? null;
   const isBundle = (detail?.memberships.bundles ?? []).length > 0;
@@ -2149,7 +2243,60 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
 
         {/* ————— Pravý sloupec: nastavení kusu a jak se mu daří ————— */}
         <div className="divide-y border-t xl:border-l xl:border-t-0">
-          <ReadinessCard product={product} detail={detail} />
+          <ReadinessCard
+            product={product}
+            detail={detail}
+            inShop={inShop}
+            onAddToShop={addToShop}
+            addingToShop={saveProduct.isPending}
+          />
+
+          {/*
+            Prodejní kanály — v Produkty+ jinak nikde. Jen v expertním režimu:
+            běžně je kus ve výchozím kanálu a řeší ho kontrola „Viditelné
+            v obchodě" výš; tady jde nastavit ručně (i odebrat).
+          */}
+          {expert && (
+            <Section
+              title="Prodejní kanály"
+              hint="Obchod ukazuje jen kusy v kanálu označeném „obchod“. Přepínače platí hned."
+            >
+              <div className="divide-y">
+                {(salesChannelsQuery.data?.sales_channels ?? []).map((channel) => {
+                  const checked = productChannelIds.includes(channel.id);
+                  const isShop = shopChannelIds?.has(channel.id) ?? false;
+                  return (
+                    <FlagRow
+                      key={channel.id}
+                      label={channel.name}
+                      description={[
+                        isShop
+                          ? "Čte z něj obchod — kus v tomto kanálu je vidět na webu."
+                          : "Obchod z tohoto kanálu nečte.",
+                        channel.is_disabled ? "Kanál je vypnutý." : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      checked={checked}
+                      disabled={saveProduct.isPending}
+                      onChange={(next) =>
+                        setChannels(
+                          next
+                            ? [...productChannelIds, channel.id]
+                            : productChannelIds.filter((id) => id !== channel.id)
+                        )
+                      }
+                    />
+                  );
+                })}
+                {salesChannelsQuery.isLoading && (
+                  <Text size="small" className="text-ui-fg-subtle py-3">
+                    Načítám kanály…
+                  </Text>
+                )}
+              </div>
+            </Section>
+          )}
 
           <Section
             title="Vlastnosti prodeje"
