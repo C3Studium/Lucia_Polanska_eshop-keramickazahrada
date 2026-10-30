@@ -50,6 +50,55 @@ export const isAgreedPriceCommission = (productionOrder: any): boolean =>
 
 export const SEND_AGREED_PRICE_STAGES = ["specification_pending", "confirmed"]
 
+/**
+ * Záloha, kterou Lucie se zákazníkem domluvila.
+ *
+ * Do 30. 10. 2026 se zadávalo jen procento a částka z něj vyšla. Jenže
+ * domluva u telefonu zní „dáte mi tisícovku", ne „dáte mi 38,4 %", takže se
+ * teď zadává částka a procento se z ní dopočítá (ukládá se obojí — procento
+ * nese zrušení zakázky a potvrzení zakázky).
+ *
+ * Strop drží na ceně VÝROBKU (Z2, § 1814 odst. 1 písm. l) OZ): poštovné ani
+ * balné zálohu nezvyšují — jsou to náklady, ne část ceny díla.
+ */
+export const resolveAgreedDeposit = (input: {
+  agreedTotal: number
+  depositAmount?: number | null
+  depositPercentage?: number | null
+  storedPercentage?: unknown
+}): { amount: number; percentage: number } => {
+  const agreed = round2(Number(input.agreedTotal))
+  const explicit = input.depositAmount
+
+  if (explicit !== null && explicit !== undefined) {
+    const amount = round2(Number(explicit))
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "Záloha musí být kladná částka."
+      )
+    }
+    const cap = round2(agreed / 2)
+    if (amount > cap + 0.005) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        `Záloha může být nejvýš polovina ceny výrobku, tedy ${formatMoney(cap, "czk")}.`
+      )
+    }
+    // Procento jen pro záznam — platí částka. Dolů na celé číslo v mezích
+    // 1–50, ať uložený profil zůstane v tom, co dovolí DB check.
+    return {
+      amount,
+      percentage: clampContractPercentage(Math.round((amount / agreed) * 100)),
+    }
+  }
+
+  const percentage = clampContractPercentage(
+    input.depositPercentage ?? input.storedPercentage
+  )
+  return { amount: round2((agreed * percentage) / 100), percentage }
+}
+
 export const sendAgreedPrice = async (
   container: MedusaContainer,
   input: {
@@ -57,8 +106,18 @@ export const sendAgreedPrice = async (
     productionOrder: any
     agreedTotal: number
     depositPercentage?: number | null
+    /** Domluvená záloha v penězích — vyhrává nad procentem. */
+    depositAmount?: number | null
+    /** Poštovné, když se zákazník rozhodne nechat si kus poslat. */
+    shippingTotal?: number | null
+    /** Balné k té zásilce. */
+    packagingTotal?: number | null
   }
-): Promise<{ productionOrder: any; emailed: boolean; depositAmount: number }> => {
+): Promise<{
+  productionOrder: any
+  emailed: boolean
+  depositAmount: number
+}> => {
   const madeToOrder = container.resolve<MadeToOrderModuleService>(MADE_TO_ORDER_MODULE)
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const po = input.productionOrder
@@ -73,14 +132,31 @@ export const sendAgreedPrice = async (
   if (!Number.isFinite(agreed) || agreed <= 0) {
     throw new MedusaError(MedusaError.Types.INVALID_DATA, "Domluvená cena musí být kladná částka.")
   }
-  const percentage = clampContractPercentage(input.depositPercentage ?? po.deposit_percentage)
-  const depositAmount = round2((agreed * percentage) / 100)
+  const extra = (value: unknown, label: string): number => {
+    if (value === null || value === undefined || value === "") return 0
+    const amount = round2(Number(value))
+    if (!Number.isFinite(amount) || amount < 0) {
+      throw new MedusaError(MedusaError.Types.INVALID_DATA, `${label} nemůže být záporné.`)
+    }
+    return amount
+  }
+  const shipping = extra(input.shippingTotal, "Poštovné")
+  const packaging = extra(input.packagingTotal, "Balné")
+
+  const { amount: depositAmount, percentage } = resolveAgreedDeposit({
+    agreedTotal: agreed,
+    depositAmount: input.depositAmount,
+    depositPercentage: input.depositPercentage,
+    storedPercentage: po.deposit_percentage,
+  })
 
   const updated = await madeToOrder.updateProductionOrders({
     id: po.id,
     agreed_total: agreed,
     deposit_percentage: percentage,
     deposit_amount: depositAmount,
+    shipping_total: shipping,
+    packaging_total: packaging,
     final_total_confirmed_at: new Date(),
   } as never)
 
@@ -122,10 +198,13 @@ export const sendAgreedPrice = async (
   }
 
   const currency = order.currency_code || "czk"
+  const total = round2(agreed + shipping + packaging)
   const emailed = await sendCustomerEmail(container, {
     template: "commission-price-agreed",
     to: order.email,
-    key: `agreed-price:${po.id}:${agreed}`,
+    // Klíč nese všechny částky: opravené poštovné je nová zpráva, dvojklik
+    // na totéž pořád jedna.
+    key: `agreed-price:${po.id}:${agreed}:${shipping}:${packaging}:${depositAmount}`,
     orderId: order.id,
     data: {
       customerName: customerName(order),
@@ -135,6 +214,15 @@ export const sendAgreedPrice = async (
       agreedPrice: formatMoney(agreed, currency),
       depositAmount: formatMoney(depositAmount, currency),
       depositPercentage: `${percentage} %`,
+      // Doprava a balné se v e-mailu ukážou, jen když nějaké jsou —
+      // u osobního odběru by řádky „0 Kč" jen mátly.
+      shippingAmount: shipping > 0.005 ? formatMoney(shipping, currency) : null,
+      packagingAmount: packaging > 0.005 ? formatMoney(packaging, currency) : null,
+      totalAmount: formatMoney(total, currency),
+      balanceAmount:
+        total - depositAmount > 0.005
+          ? formatMoney(round2(total - depositAmount), currency)
+          : null,
       payDepositUrl: balancePaymentUrl(order.id, po.id, "deposit"),
       payFullUrl: balancePaymentUrl(order.id, po.id, "full"),
     },

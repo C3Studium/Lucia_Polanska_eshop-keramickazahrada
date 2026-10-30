@@ -292,6 +292,8 @@ const LIST_PRODUCTION_FIELDS = [
   "agreed_total",
   "original_total",
   "surcharge",
+  "shipping_total",
+  "packaging_total",
   // Smluvní záloha a fáze zrušení (LEGAL_AUDIT.md § 0) — čte je `productionBlockOf`.
   "deposit_percentage",
   "deposit_amount",

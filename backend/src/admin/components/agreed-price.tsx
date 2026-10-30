@@ -1,4 +1,4 @@
-import { Badge, Button, Input, Label, Text, toast } from "@medusajs/ui";
+import { Badge, Button, Checkbox, Input, Label, Text, toast } from "@medusajs/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ceskaChyba } from "../lib/ceska-chyba";
@@ -8,12 +8,19 @@ import { sdk } from "../lib/sdk";
 /**
  * Cena po domluvě u zakázky — blok „Domluvená cena" (24. 10. 2026, Matěj).
  *
- * Výrobek s cenou po domluvě se objedná za 0 Kč; zakázka (= jedna POLOŽKA
- * objednávky) pak čeká, až Lucie zadá domluvenou cenu a % zálohy a klikne
- * „Poslat domluvenou cenu" (`send_agreed_price`). Zákazník dostane e-mail
+ * Výrobek s cenou po domluvě se objedná za 0 Kč a na osobní odběr (v pokladně
+ * není z čeho spočítat dopravu). Zakázka (= jedna POLOŽKA objednávky) pak
+ * čeká, až se Lucie se zákazníkem domluví na čtyřech číslech — cena výrobku,
+ * záloha v Kč, a jestli se posílá, tak poštovné a balné — a klikne „Poslat
+ * e-mail k zaplacení" (`send_agreed_price`). Zákazník dostane e-mail
  * „Zaplatit zálohu / Zaplatit celé". Výroba nezačne, dokud není zaplacená
  * aspoň záloha — backend to hlídá (`assertDepositPaidForAgreedPrice`), tady
  * se to jen ukazuje dopředu (zakázané tlačítko s vysvětlením).
+ *
+ * Záloha se od 30. 10. 2026 zadává v korunách, ne v procentech: u telefonu
+ * se domlouvá částka. Procento si backend dopočítá pro záznam (nese ho
+ * zrušení zakázky i Potvrzení zakázky) a hlídá na něm strop 50 % ceny
+ * VÝROBKU — poštovné ani balné zálohu nezvyšují.
  *
  * Sdílí ho widget na detailu objednávky, Denní práce i Přehled → Zakázky,
  * všechny nad jednou odpovědí `GET /admin/made-to-order/orders/:orderId`
@@ -32,6 +39,9 @@ export type AgreedPriceCommission = {
   agreed_total?: number | string | null;
   deposit_percentage?: number | string | null;
   deposit_amount?: number | string | null;
+  /** Poštovné a balné domluvené spolu s cenou (0 u osobního odběru). */
+  shipping_total?: number | string | null;
+  packaging_total?: number | string | null;
   paid_amount?: number | string | null;
   outstanding_amount?: number | string | null;
   price_on_request?: boolean;
@@ -73,6 +83,10 @@ export const useCommissionsOfOrder = (orderId: string, enabled = true) =>
 export const agreedPriceState = (commission: AgreedPriceCommission) => {
   const agreed = toNum(commission.agreed_total);
   const sent = agreed > 0.005;
+  const shipping = toNum(commission.shipping_total);
+  const packaging = toNum(commission.packaging_total);
+  /** Co zákazník dluží celkem: cena výrobku + poštovné + balné. */
+  const total = round2(agreed + shipping + packaging);
   const deposit = toNum(commission.deposit_amount);
   const paid = toNum(commission.paid_amount);
   const outstanding = toNum(commission.outstanding_amount);
@@ -91,7 +105,19 @@ export const agreedPriceState = (commission: AgreedPriceCommission) => {
             color: "green",
           }
         : { label: "Čeká na zálohu", color: "orange" };
-  return { agreed, sent, deposit, paid, outstanding, fullyPaid, depositPaid, status };
+  return {
+    agreed,
+    shipping,
+    packaging,
+    total,
+    sent,
+    deposit,
+    paid,
+    outstanding,
+    fullyPaid,
+    depositPaid,
+    status,
+  };
 };
 
 /**
@@ -154,24 +180,64 @@ export const AgreedPriceBlock = ({
   const currency = commission.currency_code || "czk";
   const editable = AGREED_PRICE_EDITABLE_STAGES.includes(commission.stage);
 
-  const initialPercent = (() => {
-    const stored = toNum(commission.deposit_percentage);
-    return stored > 0 ? Math.min(50, Math.round(stored)) : 25;
+  /*
+   * Čtyři čísla, která se se zákazníkem domlouvají (30. 10. 2026): cena
+   * výrobku, poštovné (jen když si ho nechá poslat — objednával na osobní
+   * odběr, protože v pokladně nebylo z čeho dopravu spočítat), balné k té
+   * zásilce a záloha. Záloha se zadává v KORUNÁCH, protože tak se domlouvá
+   * („dáte mi tisícovku"), ne v procentech; procento si backend dopočítá
+   * pro záznam a hlídá na nich strop 50 % ceny výrobku (Z2).
+   */
+  const initialDeposit = (() => {
+    const stored = toNum(commission.deposit_amount);
+    return state.sent && stored > 0 ? String(round2(stored)) : "";
   })();
   const [price, setPrice] = useState(state.sent ? String(state.agreed) : "");
-  const [percent, setPercent] = useState(String(initialPercent));
+  const [deposit, setDeposit] = useState(initialDeposit);
+  const [byPost, setByPost] = useState(state.shipping > 0.005);
+  const [shipping, setShipping] = useState(
+    state.shipping > 0.005 ? String(round2(state.shipping)) : ""
+  );
+  const [packaging, setPackaging] = useState(
+    state.packaging > 0.005 ? String(round2(state.packaging)) : ""
+  );
 
-  const parsedPrice = Number(price.replace(",", "."));
-  const parsedPercent = Number(percent);
+  const num = (value: string) => Number(value.replace(",", "."));
+  /** Prázdné pole = nula, ne chyba: balné nemusí být vždycky. */
+  const optional = (value: string): number | null => {
+    if (value.trim() === "") return 0;
+    const parsed = num(value);
+    return Number.isFinite(parsed) && parsed >= 0 ? round2(parsed) : null;
+  };
+
+  const parsedPrice = num(price);
   const priceValid = price.trim() !== "" && Number.isFinite(parsedPrice) && parsedPrice > 0;
-  const percentValid =
-    Number.isInteger(parsedPercent) && parsedPercent >= 1 && parsedPercent <= 50;
-  const depositPreview = priceValid && percentValid ? round2((parsedPrice * parsedPercent) / 100) : null;
+  const parsedShipping = byPost ? optional(shipping) : 0;
+  const parsedPackaging = byPost ? optional(packaging) : 0;
+  const extrasValid = parsedShipping !== null && parsedPackaging !== null;
+
+  const parsedDeposit = num(deposit);
+  const depositCap = priceValid ? round2(parsedPrice / 2) : 0;
+  const depositValid =
+    deposit.trim() !== "" &&
+    Number.isFinite(parsedDeposit) &&
+    parsedDeposit > 0 &&
+    parsedDeposit <= depositCap + 0.005;
+
+  const totalPreview =
+    priceValid && extrasValid
+      ? round2(parsedPrice + (parsedShipping ?? 0) + (parsedPackaging ?? 0))
+      : null;
   const unchanged =
     state.sent &&
     priceValid &&
+    depositValid &&
+    extrasValid &&
     round2(parsedPrice) === round2(state.agreed) &&
-    parsedPercent === toNum(commission.deposit_percentage);
+    round2(parsedDeposit) === round2(state.deposit) &&
+    (parsedShipping ?? 0) === round2(state.shipping) &&
+    (parsedPackaging ?? 0) === round2(state.packaging);
+  const formValid = priceValid && depositValid && extrasValid;
 
   const send = useMutation({
     mutationFn: () =>
@@ -181,7 +247,9 @@ export const AgreedPriceBlock = ({
           action: "send_agreed_price",
           production_order_id: commission.id,
           agreed_total: round2(parsedPrice),
-          deposit_percentage: parsedPercent,
+          deposit_amount: round2(parsedDeposit),
+          shipping_total: parsedShipping ?? 0,
+          packaging_total: parsedPackaging ?? 0,
         },
       }),
     onSuccess: async () => {
@@ -228,7 +296,16 @@ export const AgreedPriceBlock = ({
 
       {state.sent && (
         <div className="flex flex-wrap gap-x-6 gap-y-2">
-          <Fact label="Domluvená cena" value={formatAmount(state.agreed, currency)} />
+          <Fact label="Cena výrobku" value={formatAmount(state.agreed, currency)} />
+          {state.shipping > 0.005 && (
+            <Fact label="Poštovné" value={formatAmount(state.shipping, currency)} />
+          )}
+          {state.packaging > 0.005 && (
+            <Fact label="Balné" value={formatAmount(state.packaging, currency)} />
+          )}
+          {state.total > state.agreed + 0.005 && (
+            <Fact label="Celkem" value={formatAmount(state.total, currency)} />
+          )}
           <Fact
             label="Záloha"
             value={`${formatAmount(state.deposit, currency)} (${toNum(commission.deposit_percentage)} %)`}
@@ -245,19 +322,20 @@ export const AgreedPriceBlock = ({
           className="flex flex-col gap-2"
           onSubmit={(event) => {
             event.preventDefault();
-            if (priceValid && percentValid && !unchanged) send.mutate();
+            if (formValid && !unchanged) send.mutate();
           }}
         >
           {!state.sent && (
             <Text size="small" className="text-ui-fg-subtle">
-              Zákazník objednal za 0 Kč. Až se domluvíte, zadejte cenu — pošleme
-              mu e-mail, kde zaplatí zálohu nebo rovnou celé.
+              Zákazník objednal za 0 Kč a na osobní odběr. Až se domluvíte,
+              zadejte cenu a zálohu — a jestli mu kus máte poslat, i poštovné
+              a balné. E-mailem pak zaplatí zálohu, nebo rovnou celé.
             </Text>
           )}
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-col gap-y-1">
               <Label size="xsmall" htmlFor={`agreed-price-${commission.id}`}>
-                Částka (Kč)
+                Domluvená cena (Kč)
               </Label>
               <Input
                 id={`agreed-price-${commission.id}`}
@@ -272,44 +350,103 @@ export const AgreedPriceBlock = ({
             </div>
             <div className="flex flex-col gap-y-1">
               <Label size="xsmall" htmlFor={`agreed-deposit-${commission.id}`}>
-                Záloha %
+                Záloha (Kč)
               </Label>
               <Input
                 id={`agreed-deposit-${commission.id}`}
                 type="number"
-                min={1}
-                max={50}
+                min={0}
                 step="1"
-                className="w-20"
-                value={percent}
-                onChange={(event) => setPercent(event.target.value)}
+                className="w-28"
+                placeholder={depositCap > 0 ? `max ${depositCap}` : "např. 1000"}
+                value={deposit}
+                onChange={(event) => setDeposit(event.target.value)}
               />
             </div>
+          </div>
+
+          {/*
+            Poštovné se nabízí jako volba, ne jako prázdné políčko: výchozí
+            stav je osobní odběr (tak si zákazník objednal) a teprve
+            „Poslat poštou" otevře obě částky.
+          */}
+          <label className="mt-1 flex items-center gap-x-2">
+            <Checkbox
+              id={`agreed-by-post-${commission.id}`}
+              checked={byPost}
+              onCheckedChange={(next) => setByPost(next === true)}
+            />
+            <Text size="small">Poslat poštou (jinak si pro kus přijde)</Text>
+          </label>
+
+          {byPost && (
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex flex-col gap-y-1">
+                <Label size="xsmall" htmlFor={`agreed-shipping-${commission.id}`}>
+                  Poštovné (Kč)
+                </Label>
+                <Input
+                  id={`agreed-shipping-${commission.id}`}
+                  type="number"
+                  min={0}
+                  step="1"
+                  className="w-28"
+                  placeholder="např. 150"
+                  value={shipping}
+                  onChange={(event) => setShipping(event.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-y-1">
+                <Label size="xsmall" htmlFor={`agreed-packaging-${commission.id}`}>
+                  Balné (Kč)
+                </Label>
+                <Input
+                  id={`agreed-packaging-${commission.id}`}
+                  type="number"
+                  min={0}
+                  step="1"
+                  className="w-28"
+                  placeholder="např. 100"
+                  value={packaging}
+                  onChange={(event) => setPackaging(event.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               size="small"
               type="submit"
               isLoading={send.isPending}
-              disabled={!priceValid || !percentValid || unchanged}
+              disabled={!formValid || unchanged}
             >
-              {state.sent ? "Poslat opravenou cenu" : "Poslat domluvenou cenu"}
+              {state.sent ? "Poslat opravený e-mail" : "Poslat e-mail k zaplacení"}
             </Button>
+            {totalPreview !== null && depositValid && (
+              <Text size="small" className="text-ui-fg-subtle tabular-nums">
+                Celkem {formatAmount(totalPreview, currency)} — záloha{" "}
+                {formatAmount(round2(parsedDeposit), currency)} teď, zbytek{" "}
+                {formatAmount(round2(totalPreview - parsedDeposit), currency)} po
+                dokončení.
+              </Text>
+            )}
           </div>
-          {depositPreview !== null && (
-            <Text size="small" className="text-ui-fg-subtle tabular-nums">
-              Záloha {formatAmount(depositPreview, currency)}, zbytek{" "}
-              {formatAmount(round2(parsedPrice - depositPreview), currency)} doplatí
-              po výrobě.
+          {deposit.trim() !== "" && priceValid && !depositValid && (
+            <Text size="small" className="text-ui-fg-error">
+              Záloha musí být kladná a nejvýš polovina ceny výrobku (
+              {formatAmount(depositCap, currency)}).
             </Text>
           )}
-          {!percentValid && percent.trim() !== "" && (
+          {!extrasValid && (
             <Text size="small" className="text-ui-fg-error">
-              Záloha může být 1 až 50 % (celé číslo).
+              Poštovné ani balné nemůže být záporné.
             </Text>
           )}
           {state.sent && (
             <Text size="xsmall" className="text-ui-fg-muted">
-              Dokud nezačne výroba, jde cenu opravit — zákazník dostane nový
-              e-mail s novou částkou.
+              Dokud nezačne výroba, jdou částky opravit — zákazník dostane nový
+              e-mail s novými čísly.
             </Text>
           )}
         </form>

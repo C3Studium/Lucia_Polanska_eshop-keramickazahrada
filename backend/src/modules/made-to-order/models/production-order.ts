@@ -54,6 +54,18 @@ export const ProductionOrder = model.define("production_order", {
   /** Smluvní záloha v penězích (měna `currency_code`) — `deposit_percentage` z nezlevněné ceny zakázkových řádků, nejvýš jejich cena. Null u zakázek z doby před 20. 10. 2026. */
   deposit_amount: model.bigNumber().nullable(),
   agreed_total: model.bigNumber().nullable(),
+  /*
+   * Poštovné a balné domluvené u ceny po domluvě (30. 10. 2026).
+   *
+   * Takový kus se objedná s osobním odběrem za 0 Kč, protože v pokladně
+   * není z čeho dopravu spočítat. Když se pak zákazník s Lucií domluví, že
+   * mu ho pošle, připíše poštovné a balné k domluvené ceně — stejně jako
+   * příplatek navyšují, co zákazník dluží, ale cenu výrobku nemění, takže
+   * se z nich NEPOČÍTÁ záloha (Z2: nejvýš 50 % ceny výrobku) ani se
+   * nepletou do toho, co se při zrušení nevrací.
+   */
+  shipping_total: model.bigNumber().nullable(),
+  packaging_total: model.bigNumber().nullable(),
   // Příplatek — vlastní částka navíc nad domluvenou/původní cenu (např. víc práce,
   // než se čekalo). Vlastní „entita" vedle ceny: cenu nemění, jen navyšuje, co
   // zákazník dluží (outstanding = (agreed_total ?? original_total) + surcharge − paid).

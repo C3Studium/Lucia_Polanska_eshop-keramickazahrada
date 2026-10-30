@@ -99,6 +99,8 @@ export const shipMerchantOrderWorkflow = createWorkflow(
         "original_total",
         // Příplatek — brána ho započítá do dluhu (ship-gate.productionOutstanding).
         "surcharge",
+        "shipping_total",
+        "packaging_total",
         "payment_requests.status",
         "payment_requests.amount",
       ],
