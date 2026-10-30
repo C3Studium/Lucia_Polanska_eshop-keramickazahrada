@@ -14,6 +14,10 @@ import { giftVoucherPdfInputFor, storeGiftVoucherPdf } from "../../../../../lib/
  * Bez platného tokenu 404 — stejně jako samotný detail poukazu, ať se nedá
  * zkoušet, jestli id existuje. Nezaplacený poukaz se nevystavuje vůbec:
  * uplatnit ho nejde a kód z něj se dá opsat.
+ *
+ * `?format=print` vrátí list k oboustrannému tisku (dvě stránky A4, líc
+ * a rub kartičky) místo shrnujícího poukazu — obojí vzniká z týchž údajů,
+ * liší se jen tím, co je na papíře.
  */
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   if (!verifyGiftVoucherToken(req.params.id, req.query.token)) {
@@ -32,7 +36,12 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
   }
 
   try {
-    const stored = await storeGiftVoucherPdf(req.scope, await giftVoucherPdfInputFor(req.scope, voucher))
+    const variant = req.query.format === "print" ? "print" : "summary"
+    const stored = await storeGiftVoucherPdf(
+      req.scope,
+      await giftVoucherPdfInputFor(req.scope, voucher),
+      variant
+    )
     if (!stored) {
       res.status(502).json({ message: "Poukaz se teď nepodařilo vystavit." })
       return

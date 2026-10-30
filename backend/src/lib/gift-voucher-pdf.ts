@@ -40,6 +40,13 @@ export type GiftVoucherPdfInput = {
   balance?: string | null
   /** Platnost („30. 10. 2027“). */
   validUntil: string
+  /**
+   * Kdy poukaz vznikl (ISO). Razí se do PDF jako datum vytvoření — MUSÍ být
+   * odvozené z poukazu, ne z hodin: `doc.save()` jinak zapíše „teď“ a tentýž
+   * poukaz vystavený dvakrát má jiné bajty. A protože klíč v úložišti nese
+   * otisk obsahu, přibyla by při každém vystavení další kopie téhož souboru.
+   */
+  issuedAt?: string | null
   recipientName?: string | null
   buyerName?: string | null
   dedication?: string | null
@@ -198,34 +205,27 @@ const drawOrnament = (
   }
 }
 
-export const generateGiftVoucherPdf = async (
-  input: GiftVoucherPdfInput
-): Promise<Uint8Array> => {
-  const doc = await PDFDocument.create()
-  doc.registerFontkit(fontkit)
-  const fonts: Fonts = {
-    regular: await doc.embedFont(Buffer.from(SANSATION_REGULAR_BASE64, "base64"), { subset: true }),
-    bold: await doc.embedFont(Buffer.from(SANSATION_BOLD_BASE64, "base64"), { subset: true }),
-  }
-  doc.setTitle(`Dárkový poukaz ${input.code}`)
-  doc.setAuthor(input.sellerName)
-  doc.setCreator("Keramická zahrada")
-  doc.setProducer("Keramická zahrada")
-  doc.setLanguage("cs-CZ")
+/** Rozměr karty v bodech — poměr vytištěné kartičky 210 × 99 mm. */
+const CARD_W = CONTENT_W
+const CARD_H = Math.round(CARD_W * (99 / 210))
 
-  const page: PDFPage = doc.addPage([PAGE_W, PAGE_H])
-  page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: PAPER })
-
-  /* ---- Karta (poměr vytištěné kartičky 210 × 99 mm) ---- */
-  const cardW = CONTENT_W
-  const cardH = Math.round(cardW * (99 / 210))
-  const cardX = MARGIN
-  const cardY = PAGE_H - MARGIN - cardH
+/**
+ * Přední strana kartičky: nadpis, hodnota, dílna, kód a platnost, vpravo
+ * ornament. Kreslí se do zadaného obdélníku, takže ji umí jak shrnující
+ * jednostránkový poukaz, tak list k oboustrannému tisku — jedna kresba, aby
+ * se obě podoby nemohly rozejít.
+ */
+const drawVoucherFront = (
+  page: PDFPage,
+  fonts: Fonts,
+  input: GiftVoucherPdfInput,
+  box: { x: number; y: number; w: number; h: number }
+) => {
   page.drawRectangle({
-    x: cardX,
-    y: cardY,
-    width: cardW,
-    height: cardH,
+    x: box.x,
+    y: box.y,
+    width: box.w,
+    height: box.h,
     color: CARD,
     borderColor: HAIR,
     borderWidth: 0.6,
@@ -237,14 +237,14 @@ export const generateGiftVoucherPdf = async (
    * kartičce ornament do kraje splývá, tady by vypadal jako chyba tisku.
    */
   drawOrnament(page, {
-    cx: cardX + cardW - cardH * 0.52,
-    cy: cardY + cardH / 2,
-    radius: cardH * 0.38,
+    cx: box.x + box.w - box.h * 0.52,
+    cy: box.y + box.h / 2,
+    radius: box.h * 0.38,
   })
 
-  const textX = cardX + 30
-  const textW = cardW - cardH - 30
-  let y = cardY + cardH - 42
+  const textX = box.x + 30
+  const textW = box.w - box.h - 30
+  let y = box.y + box.h - 42
 
   page.drawText("Dárkový poukaz", { x: textX, y, size: 24, font: fonts.bold, color: INK })
   y -= 27
@@ -259,7 +259,7 @@ export const generateGiftVoucherPdf = async (
     color: INK,
   })
 
-  y = cardY + 76
+  y = box.y + 76
   const dilna = (input.sellerNameGenitive || "").trim() || dilnaGenitive(input.sellerName)
   for (const row of [
     `v keramické dílně ${dilna}`,
@@ -273,17 +273,265 @@ export const generateGiftVoucherPdf = async (
   }
 
   /* Kód a platnost — to, co vytištěná kartička nemá a elektronická mít musí. */
-  page.drawText(input.code, { x: textX, y: cardY + 24, size: 15, font: fonts.bold, color: TEXT })
+  page.drawText(input.code, { x: textX, y: box.y + 24, size: 15, font: fonts.bold, color: TEXT })
   page.drawText(`platí do ${input.validUntil}`, {
     x: textX + fonts.bold.widthOfTextAtSize(input.code, 15) + 14,
-    y: cardY + 26,
+    y: box.y + 26,
     size: 9,
     font: fonts.regular,
     color: MUTED,
   })
+}
 
+/**
+ * Rubová strana kartičky: komu, od koho, věnování a jak se poukaz uplatní.
+ *
+ * Má smysl jen u listu k tisku — na jednostránkovém poukazu tohle všechno
+ * stojí pod kartou a nikdo nic neotáčí. Dlouhé věnování se tu nesmí
+ * rozlézt přes okraj, takže se pod podlahou přestane kreslit.
+ */
+const drawVoucherBack = (
+  page: PDFPage,
+  fonts: Fonts,
+  input: GiftVoucherPdfInput,
+  box: { x: number; y: number; w: number; h: number }
+) => {
+  page.drawRectangle({
+    x: box.x,
+    y: box.y,
+    width: box.w,
+    height: box.h,
+    color: CARD,
+    borderColor: HAIR,
+    borderWidth: 0.6,
+  })
+
+  const padX = 30
+  const innerX = box.x + padX
+  const innerW = box.w - padX * 2
+
+  /*
+   * Návod, jak poukaz uplatnit, se sází ZDOLA.
+   *
+   * Nahoře je věnování, které píše zákazník a může být dlouhé (až 500
+   * znaků). Kdyby se kreslilo shora dolů a návod po něm, dlouhé věnování by
+   * návod vytlačilo z kartičky — a bez něj je z poukazu jen papír s číslem.
+   * Proto se nejdřív spočítá, kolik místa návod potřebuje, a věnování
+   * dostane to, co zbude.
+   */
+  const bottom: Array<{ text: string; size: number; font: PDFFont; color: RGB }> = []
+  const push = (text: string, size: number, font: PDFFont, color: RGB) => {
+    for (const part of wrap(text, font, size, innerW)) {
+      bottom.push({ text: part, size, font, color })
+    }
+  }
+  push(
+    `Kód ${input.code} zadejte v košíku do pole pro slevový kód; jeho hodnota se odečte od ceny nákupu. ` +
+      "Uplatnit ho jde i přímo v dílně.",
+    9.5,
+    fonts.regular,
+    TEXT
+  )
+  if (input.balance) {
+    push(`Zbývá ${input.balance} z ${input.value}.`, 9.5, fonts.bold, TEXT)
+  }
+  if (input.remainderNote) {
+    push(`Když nákup nedosáhne hodnoty poukazu, ${input.remainderNote}.`, 8.5, fonts.regular, MUTED)
+  }
+  push(`Poukaz platí do ${input.validUntil}.`, 8.5, fonts.regular, MUTED)
+
+  const LEAD = 1.45
+  const bottomH = bottom.reduce((sum, row) => sum + row.size * LEAD, 0) + 13
+  /* Spodek karty: kontakt, nad ním návod — a teprve nad tím smí být věnování. */
+  const bottomTop = box.y + 30 + bottomH
+  const floor = bottomTop + 8
+  let y = box.y + box.h - 34
+
+  const line = (value: string, size: number, font: PDFFont, color: RGB, lead = LEAD) => {
+    for (const part of wrap(value, font, size, innerW)) {
+      if (y < floor) return
+      page.drawText(part, { x: innerX, y, size, font, color })
+      y -= size * lead
+    }
+  }
+  const label = (value: string) => {
+    if (y < floor) return
+    page.drawText(value.toUpperCase(), {
+      x: innerX,
+      y,
+      size: 7.5,
+      font: fonts.regular,
+      color: MUTED,
+    })
+    y -= 13
+  }
+
+  if (input.recipientName) {
+    label("Pro")
+    line(input.recipientName, 13, fonts.bold, TEXT)
+    y -= 4
+  }
+  if (input.buyerName) {
+    label("Od")
+    line(input.buyerName, 11, fonts.regular, TEXT)
+    y -= 4
+  }
+  if (input.dedication) {
+    label("Věnování")
+    line(input.dedication, 11, fonts.regular, TEXT, 1.5)
+    y -= 4
+  }
+
+  if (input.recipientName || input.buyerName || input.dedication) {
+    page.drawLine({
+      start: { x: innerX, y: bottomTop + 2 },
+      end: { x: innerX + innerW, y: bottomTop + 2 },
+      thickness: 0.6,
+      color: HAIR,
+    })
+  }
+
+  /* Spodní blok: nadpis a za ním předpočítané řádky návodu. */
+  y = bottomTop
+  page.drawText("JAK POUKAZ UPLATNIT", {
+    x: innerX,
+    y,
+    size: 7.5,
+    font: fonts.regular,
+    color: MUTED,
+  })
+  y -= 13
+  for (const row of bottom) {
+    page.drawText(row.text, { x: innerX, y, size: row.size, font: row.font, color: row.color })
+    y -= row.size * LEAD
+  }
+
+  /* Kontakt dole, ať je karta použitelná i sama o sobě. */
+  const contact = [input.sellerName, input.sellerPhone, input.sellerWeb]
+    .filter(Boolean)
+    .join("  ·  ")
+  page.drawText(wrap(contact, fonts.regular, 8, innerW)[0] ?? "", {
+    x: innerX,
+    y: box.y + 18,
+    size: 8,
+    font: fonts.regular,
+    color: MUTED,
+  })
+}
+
+/**
+ * Značky pro střih — čtyři rohy, krátké vlasové čárky kousek od karty.
+ * Bez nich se karta na A4 stříhá od oka a hrana nikdy nesedí.
+ */
+const drawCropMarks = (
+  page: PDFPage,
+  box: { x: number; y: number; w: number; h: number }
+) => {
+  const gap = 6
+  const len = 12
+  const corners = [
+    { x: box.x, y: box.y, sx: -1, sy: -1 },
+    { x: box.x + box.w, y: box.y, sx: 1, sy: -1 },
+    { x: box.x, y: box.y + box.h, sx: -1, sy: 1 },
+    { x: box.x + box.w, y: box.y + box.h, sx: 1, sy: 1 },
+  ]
+  for (const corner of corners) {
+    page.drawLine({
+      start: { x: corner.x + corner.sx * gap, y: corner.y },
+      end: { x: corner.x + corner.sx * (gap + len), y: corner.y },
+      thickness: 0.5,
+      color: HAIR,
+    })
+    page.drawLine({
+      start: { x: corner.x, y: corner.y + corner.sy * gap },
+      end: { x: corner.x, y: corner.y + corner.sy * (gap + len) },
+      thickness: 0.5,
+      color: HAIR,
+    })
+  }
+}
+
+const embedFonts = async (doc: PDFDocument): Promise<Fonts> => ({
+  regular: await doc.embedFont(Buffer.from(SANSATION_REGULAR_BASE64, "base64"), { subset: true }),
+  bold: await doc.embedFont(Buffer.from(SANSATION_BOLD_BASE64, "base64"), { subset: true }),
+})
+
+/** Když poukaz datum vzniku nenese, ať je aspoň stálé (viz `issuedAt`). */
+const FALLBACK_STAMP = new Date("2026-10-30T00:00:00.000Z")
+
+const setMeta = (doc: PDFDocument, input: GiftVoucherPdfInput, title: string) => {
+  doc.setTitle(title)
+  doc.setAuthor(input.sellerName)
+  doc.setCreator("Keramická zahrada")
+  doc.setProducer("Keramická zahrada")
+  doc.setLanguage("cs-CZ")
+  const issued = input.issuedAt ? new Date(input.issuedAt) : null
+  const stamp = issued && !Number.isNaN(issued.getTime()) ? issued : FALLBACK_STAMP
+  doc.setCreationDate(stamp)
+  doc.setModificationDate(stamp)
+}
+
+/**
+ * Poukaz k oboustrannému tisku — dvě stránky A4, na každé jedna strana
+ * kartičky (30. 10. 2026, přání majitelky).
+ *
+ * Shrnující poukaz výš má kartu nahoře a pod ní vysvětlení pro kupujícího;
+ * tenhle soubor je naopak rovnou dárek: vytisknout oboustranně, vystřihnout
+ * podle značek a je z toho kartička s kódem, jakou má dílna vytištěnou.
+ *
+ * Karta je na obou stránkách přesně uprostřed — svisle i vodorovně. Tím
+ * sedne rub na líc bez ohledu na to, jestli tiskárna otáčí po delší, nebo
+ * po kratší hraně; kdyby byla jen vycentrovaná vodorovně, jedno z těch
+ * dvou nastavení by rub posunulo.
+ */
+export const generateGiftVoucherPrintPdf = async (
+  input: GiftVoucherPdfInput
+): Promise<Uint8Array> => {
+  const doc = await PDFDocument.create({ updateMetadata: false })
+  doc.registerFontkit(fontkit)
+  const fonts = await embedFonts(doc)
+  setMeta(doc, input, `Dárkový poukaz ${input.code} — k tisku`)
+
+  const box = {
+    x: (PAGE_W - CARD_W) / 2,
+    y: (PAGE_H - CARD_H) / 2,
+    w: CARD_W,
+    h: CARD_H,
+  }
+
+  const front = doc.addPage([PAGE_W, PAGE_H])
+  drawCropMarks(front, box)
+  drawVoucherFront(front, fonts, input, box)
+
+  const back = doc.addPage([PAGE_W, PAGE_H])
+  drawCropMarks(back, box)
+  drawVoucherBack(back, fonts, input, box)
+
+  return doc.save({ useObjectStreams: false })
+}
+
+export const generateGiftVoucherPdf = async (
+  input: GiftVoucherPdfInput
+): Promise<Uint8Array> => {
+  const doc = await PDFDocument.create({ updateMetadata: false })
+  doc.registerFontkit(fontkit)
+  const fonts = await embedFonts(doc)
+  setMeta(doc, input, `Dárkový poukaz ${input.code}`)
+
+  const page: PDFPage = doc.addPage([PAGE_W, PAGE_H])
+  page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: PAPER })
+
+  /* ---- Karta (poměr vytištěné kartičky 210 × 99 mm) ---- */
+  const cardX = MARGIN
+  const cardY = PAGE_H - MARGIN - CARD_H
+  drawVoucherFront(page, fonts, input, {
+    x: cardX,
+    y: cardY,
+    w: CARD_W,
+    h: CARD_H,
+  })
   /* ---- Pod kartou: komu, od koho, věnování, jak uplatnit ---- */
-  y = cardY - 34
+  let y = cardY - 34
   /* Dlouhé věnování nesmí natéct do patičky — pod touhle hranicí se nekreslí. */
   const FLOOR = MARGIN + 70
   const line = (value: string, size: number, font: PDFFont, color: RGB, lead = 1.5) => {
@@ -390,6 +638,8 @@ export const giftVoucherPdfInputFor = async (
     /* Zůstatek jen když se liší — na nedotčeném poukazu by to byl šum. */
     balance: balance < value ? formatVoucherCzk(balance) : null,
     validUntil: formatVoucherDate(voucher.valid_until),
+    /* Datum vzniku poukazu, ne čas vystavení PDF — viz `issuedAt`. */
+    issuedAt: voucher.created_at ? new Date(voucher.created_at).toISOString() : null,
     recipientName: voucher.recipient_name ?? null,
     buyerName: voucher.buyer_name ?? null,
     dedication: voucher.dedication ?? null,
@@ -407,6 +657,10 @@ export const giftVoucherPdfInputFor = async (
 export const giftVoucherPdfFilename = (code: string): string =>
   `darkovy-poukaz-${String(code).replace(/[^0-9A-Za-z-]/g, "")}.pdf`
 
+/** Totéž pro list k oboustrannému tisku — poznat je musí na první pohled. */
+export const giftVoucherPrintPdfFilename = (code: string): string =>
+  `darkovy-poukaz-${String(code).replace(/[^0-9A-Za-z-]/g, "")}-k-tisku.pdf`
+
 /**
  * Uloží poukaz do úložiště a vrátí přílohu e-mailu, nebo null.
  *
@@ -416,11 +670,18 @@ export const giftVoucherPdfFilename = (code: string): string =>
  */
 export const storeGiftVoucherPdf = async (
   container: MedusaContainer,
-  input: GiftVoucherPdfInput
+  input: GiftVoucherPdfInput,
+  /** „print" = list k oboustrannému tisku; jinak shrnující poukaz. */
+  variant: "summary" | "print" = "summary"
 ): Promise<EmailAttachmentRef | null> => {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
-  const filename = giftVoucherPdfFilename(input.code)
-  const bytes = await generateGiftVoucherPdf(input)
+  const print = variant === "print"
+  const filename = print
+    ? giftVoucherPrintPdfFilename(input.code)
+    : giftVoucherPdfFilename(input.code)
+  const bytes = print
+    ? await generateGiftVoucherPrintPdf(input)
+    : await generateGiftVoucherPdf(input)
   const provider = resolveFixedKeyProvider(container)
   if (!provider) {
     const fileModule = container.resolve(Modules.FILE) as any
@@ -439,7 +700,8 @@ export const storeGiftVoucherPdf = async (
     return { filename, url: file.url }
   }
   const safeId = String(input.voucherId).replace(/[^0-9A-Za-z_-]/g, "")
-  const key = `gift-vouchers/${safeId}/poukaz-${sha256Hex(bytes).slice(0, 8)}.pdf`
+  const stem = print ? "poukaz-k-tisku" : "poukaz"
+  const key = `gift-vouchers/${safeId}/${stem}-${sha256Hex(bytes).slice(0, 8)}.pdf`
   const url = (await provider.objectExistsAtKey(key))
     ? provider.publicUrlForKey(key)
     : (await provider.putObjectAtKey(key, bytes, "application/pdf")).url

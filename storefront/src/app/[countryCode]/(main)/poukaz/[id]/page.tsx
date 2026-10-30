@@ -37,8 +37,13 @@ export default async function PoukazPage(props: {
 
   /* PDF se vystavuje jen u zaplaceného poukazu — jinak by se o něj stránka
      hlásila při každém dotazu na stav během čekání na platbu. */
-  const pdfUrl =
-    voucher.payment_status === "paid" ? await getGiftVoucherPdfUrl(id, token) : null
+  const [pdfUrl, printPdfUrl] =
+    voucher.payment_status === "paid"
+      ? await Promise.all([
+          getGiftVoucherPdfUrl(id, token),
+          getGiftVoucherPdfUrl(id, token, "print"),
+        ])
+      : [null, null]
 
   return (
     <PoukazDetail
@@ -46,6 +51,7 @@ export default async function PoukazPage(props: {
       token={token}
       outcome={vysledek}
       pdfUrl={pdfUrl}
+      printPdfUrl={printPdfUrl}
     />
   )
 }
