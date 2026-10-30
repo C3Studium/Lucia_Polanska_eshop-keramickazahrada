@@ -239,6 +239,10 @@ const MadeToOrderOrderWidgetInner = ({
     productionOrder.agreed_total ?? productionOrder.original_total
   );
   const surcharge = toNum(productionOrder.surcharge);
+  // Poštovné a balné domluvené u ceny po domluvě — v přehledové větě musí
+  // být vidět, jinak „cena 2 500" neodpovídá tomu, co zákazník platí.
+  const agreedShipping = toNum((productionOrder as any).shipping_total);
+  const agreedPackaging = toNum((productionOrder as any).packaging_total);
   const currency = productionOrder.currency_code;
 
   // Doplatek: tlačítko „Poslat výzvu k doplacení" se ukáže vždy, když něco
@@ -297,6 +301,12 @@ const MadeToOrderOrderWidgetInner = ({
               : formatAmount(basePrice, currency)}
             {surcharge > 0
               ? ` + příplatek ${formatAmount(surcharge, currency)}`
+              : ""}
+            {agreedShipping > 0
+              ? ` + poštovné ${formatAmount(agreedShipping, currency)}`
+              : ""}
+            {agreedPackaging > 0
+              ? ` + balné ${formatAmount(agreedPackaging, currency)}`
               : ""}
           </Text>
           {/* Z3 (LEGAL_AUDIT § 0): zahájení výroby platí od odeslaného e-mailu.

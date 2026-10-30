@@ -192,6 +192,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           "original_total",
           // Příplatek — brána (ship_block_reason) ho započítá do dluhu.
           "surcharge",
+          "shipping_total",
+          "packaging_total",
           "payment_requests.status",
           "payment_requests.amount",
         ],

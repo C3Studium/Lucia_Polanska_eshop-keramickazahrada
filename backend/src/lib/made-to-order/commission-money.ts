@@ -36,6 +36,9 @@ export type CommissionMoneySource = {
   original_total?: unknown
   agreed_total?: unknown
   surcharge?: unknown
+  /** Poštovné a balné domluvené u ceny po domluvě (ne z pokladny). */
+  shipping_total?: unknown
+  packaging_total?: unknown
   order_extras_paid?: unknown
 }
 
@@ -82,17 +85,33 @@ const paidOf = (requests: CommissionPaymentRequestLike[] | null | undefined, typ
       .reduce((sum, request) => sum + toNumber(request.amount), 0)
   )
 
-/** Doprava/balné/ostatní zboží nesené zakázkou: `original_total − line_total` (0 u legacy). */
-export const commissionExtrasTotal = (productionOrder: CommissionMoneySource): number => {
+/**
+ * „Navíc" zaplacené (nebo účtované) UŽ V POKLADNĚ: `original_total − line_total`
+ * (0 u legacy). Je to součást `original_total`, proto se od ceny položky
+ * odečítá.
+ */
+const checkoutExtrasTotal = (productionOrder: CommissionMoneySource): number => {
   if (isLegacyCommission(productionOrder)) return 0
   if (productionOrder.line_total === null || productionOrder.line_total === undefined) return 0
   return Math.max(0, round2(toNumber(productionOrder.original_total) - toNumber(productionOrder.line_total)))
 }
 
-/** Cena položky: (dohodnutá ?? původní) − nesené „navíc". */
+/**
+ * Poštovné a balné domluvené AŽ S CENOU (cena po domluvě, 30. 10. 2026).
+ * Vlastní sloupce vedle ceny, takže se od ceny položky NEodečítají — jen se
+ * k dluhu přičítají, stejně jako příplatek.
+ */
+export const agreedExtrasTotal = (productionOrder: CommissionMoneySource): number =>
+  round2(toNumber(productionOrder.shipping_total) + toNumber(productionOrder.packaging_total))
+
+/** Všechno „navíc", co zakázka nese za objednávku: z pokladny + domluvené. */
+export const commissionExtrasTotal = (productionOrder: CommissionMoneySource): number =>
+  round2(checkoutExtrasTotal(productionOrder) + agreedExtrasTotal(productionOrder))
+
+/** Cena položky: (dohodnutá ?? původní) − „navíc" z pokladny. */
 export const commissionItemTotal = (productionOrder: CommissionMoneySource): number => {
   const total = toNumber(productionOrder.agreed_total ?? productionOrder.original_total)
-  return Math.max(0, round2(total - commissionExtrasTotal(productionOrder)))
+  return Math.max(0, round2(total - checkoutExtrasTotal(productionOrder)))
 }
 
 export const commissionMoney = (

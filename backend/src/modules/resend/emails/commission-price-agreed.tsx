@@ -30,6 +30,13 @@ export interface CommissionPriceAgreedEmailProps {
   agreedPrice?: string
   depositAmount?: string
   depositPercentage?: string
+  /** Poštovné a balné — jen když si zákazník nechává kus poslat. */
+  shippingAmount?: string | null
+  packagingAmount?: string | null
+  /** Cena + poštovné + balné. */
+  totalAmount?: string
+  /** Co zbude po zálohě; null = záloha pokrývá všechno. */
+  balanceAmount?: string | null
   payDepositUrl?: string | null
   payFullUrl?: string | null
 }
@@ -42,6 +49,10 @@ function CommissionPriceAgreedEmailComponent({
   agreedPrice = "6 800 Kč",
   depositAmount = "1 700 Kč",
   depositPercentage = "25 %",
+  shippingAmount = "150 Kč",
+  packagingAmount = "100 Kč",
+  totalAmount = "7 050 Kč",
+  balanceAmount = "5 350 Kč",
   payDepositUrl = "https://dev.matejforejt.com/made-to-order/order_1/pay-balance?token=abc&castka=zaloha",
   payFullUrl = "https://dev.matejforejt.com/made-to-order/order_1/pay-balance?token=abc",
 }: CommissionPriceAgreedEmailProps) {
@@ -59,8 +70,22 @@ function CommissionPriceAgreedEmailComponent({
       </P>
 
       {productTitle ? <LedgerRow label="Výrobek" value={productTitle} /> : null}
-      <LedgerRow label="Domluvená cena" value={agreedPrice} strong />
-      <LedgerRow label={`Záloha (${depositPercentage})`} value={depositAmount} />
+      <LedgerRow
+        label={shippingAmount || packagingAmount ? "Cena výrobku" : "Domluvená cena"}
+        value={agreedPrice}
+        strong={!shippingAmount && !packagingAmount}
+      />
+      {/* Poštovné a balné jen u zásilky — u osobního odběru by řádky s nulou
+          jen mátly a zákazník by hledal, co platí navíc. */}
+      {shippingAmount ? <LedgerRow label="Poštovné" value={shippingAmount} /> : null}
+      {packagingAmount ? <LedgerRow label="Balné" value={packagingAmount} /> : null}
+      {shippingAmount || packagingAmount ? (
+        <LedgerRow label="Celkem" value={totalAmount} strong />
+      ) : null}
+      <LedgerRow label="Záloha" value={depositAmount} tone="clay" />
+      {balanceAmount ? (
+        <LedgerRow label="Doplatek po dokončení" value={balanceAmount} />
+      ) : null}
       <LedgerEnd />
 
       <ButtonRow>
@@ -69,7 +94,7 @@ function CommissionPriceAgreedEmailComponent({
           <>
             <span style={{ display: "inline-block", width: "12px" }} />
             <EmailButton href={payFullUrl} variant="ghost">
-              Zaplatit celé {agreedPrice}
+              Zaplatit celé {totalAmount}
             </EmailButton>
           </>
         ) : null}

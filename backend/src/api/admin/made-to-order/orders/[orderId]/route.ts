@@ -81,9 +81,16 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       .filter((payment: any) => payment.status === "paid")
       .reduce((sum: number, payment: any) => sum + toNumber(payment.amount), 0)
     const surcharge = toNumber(productionOrder.surcharge)
+    // Poštovné a balné domluvené u ceny po domluvě — stejně jako příplatek
+    // navyšují, co se má doplatit, a cenu výrobku nemění. Musí tu být:
+    // `outstanding_amount` z téhle projekce čte admin i blok Domluvená cena.
+    const agreedExtras =
+      toNumber(productionOrder.shipping_total) + toNumber(productionOrder.packaging_total)
     // Příplatek navyšuje, co se má doplatit — cenu samotnou nemění.
     const finalTotal =
-      toNumber(productionOrder.agreed_total ?? productionOrder.original_total) + surcharge
+      toNumber(productionOrder.agreed_total ?? productionOrder.original_total) +
+      surcharge +
+      agreedExtras
     const outstandingAmount = Math.max(0, finalTotal - paidAmount)
     const canFulfill =
       ["ready_to_ship", "completed"].includes(productionOrder.stage) &&

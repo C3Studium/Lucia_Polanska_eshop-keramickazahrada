@@ -33,7 +33,14 @@ const CheckoutSummary = async ({
     : null
 
   return (
-    <div className={styles.root}>
+    /*
+      data-lenis-prevent: od 1021px je tenhle sloupec lepkavý a má vlastní
+      posuv (`max-height` + `overflow-y`), jenže stránka jede na Lenisu —
+      ten kolečko sebere pro stránku a uvnitř se neposune nic. U zakázky je
+      souhrn nejvyšší (položky + součty + záloha + brief), takže se spodek
+      bez tohohle atributu nedal dorolovat vůbec.
+    */
+    <div className={styles.root} data-lenis-prevent>
       <div className={styles.summary}>
         <CmsText as="p" className={styles.eyebrow} doc={doc} field={itemFieldPath(copy, "oboci")}>
           {itemText(copy, "oboci", "Přehled objednávky")}

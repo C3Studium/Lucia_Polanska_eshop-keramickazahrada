@@ -83,6 +83,13 @@ export type ShipGateProductionOrder = {
   original_total?: unknown
   /** Příplatek (modul zakázky) — navyšuje, co zákazník dluží. */
   surcharge?: unknown
+  /**
+   * Poštovné a balné domluvené u ceny po domluvě (30. 10. 2026). Navyšují
+   * dluh stejně jako příplatek — kus se objednal na osobní odběr za 0 Kč
+   * a „pošlete mi to" se domlouvá až s cenou.
+   */
+  shipping_total?: unknown
+  packaging_total?: unknown
   payment_requests?: Array<{ status?: string | null; amount?: unknown }> | null
 }
 
@@ -154,10 +161,15 @@ const pendingDifferenceOf = (summary: ShipGateInput["summary"]): number => {
  * What the customer still owes on a commission, from the module's own snapshots.
  *
  * JEDNA definice „co zákazník dluží": (dohodnutá ?? původní cena) + příplatek
- * − zaplacené žádosti. Doplatek (`balance-payment.outstandingFor`), výzva k
- * doplacení i fronta zakázek počítají přes tuhle funkci. Dřív brána příplatek
- * ignorovala — zakázka s nezaplaceným příplatkem šla odeslat, zatímco e-mail
- * zákazníkovi tvrdil, že ještě dluží.
+ * + poštovné + balné − zaplacené žádosti. Doplatek
+ * (`balance-payment.outstandingFor`), výzva k doplacení i fronta zakázek
+ * počítají přes tuhle funkci. Dřív brána příplatek ignorovala — zakázka
+ * s nezaplaceným příplatkem šla odeslat, zatímco e-mail zákazníkovi tvrdil,
+ * že ještě dluží.
+ *
+ * POZOR volajícím: kdo si vybírá pole výslovně (ne `*`), musí přibrat
+ * `shipping_total` a `packaging_total` — bez nich vyjde dluh nižší, než je,
+ * a brána by pustila nezaplacené poštovné.
  *
  * ZRUŠENÁ zakázka nedluží nic: u smíšené objednávky (běžné zboží + zakázka,
  * docs/reklamace-a-zruseni.md §12.4) se zakázka zruší a běžné položky jedou
@@ -172,7 +184,9 @@ export const productionOutstanding = (
   }
   const total =
     toAmount(production.agreed_total ?? production.original_total) +
-    toAmount(production.surcharge)
+    toAmount(production.surcharge) +
+    toAmount(production.shipping_total) +
+    toAmount(production.packaging_total)
   const paid = (production.payment_requests || [])
     .filter((request) => request?.status === "paid")
     .reduce((sum, request) => sum + toAmount(request.amount), 0)

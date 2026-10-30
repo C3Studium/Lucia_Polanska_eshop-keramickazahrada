@@ -9,7 +9,6 @@ import {
 } from "@lib/constants"
 import { initiatePaymentSession, placeOrder } from "@lib/data/cart"
 import {
-  PRICE_ON_REQUEST_ZERO_BUTTON,
   zeroChargeCopy,
   ZERO_PAYMENT_PROVIDER,
 } from "@lib/util/price-on-request"
@@ -68,7 +67,10 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
     return (
       <DirectPlaceOrderButton
         notReady={notReady}
-        label={PRICE_ON_REQUEST_ZERO_BUTTON}
+        /* Cena po domluvě se objednává závazně a platí až potom; košík
+           pokrytý poukazem se prostě odesílá. Znění drží `zeroChargeCopy`,
+           ať tlačítko a věta pod ním mluví o témže. */
+        label={zeroChargeCopy(cart as any).button}
         note={zeroChargeCopy(cart as any).note}
         onBeforePlaceAction={async () => {
           await onBeforePlaceAction?.()

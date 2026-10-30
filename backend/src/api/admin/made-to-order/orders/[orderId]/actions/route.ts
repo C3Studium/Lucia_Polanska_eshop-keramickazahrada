@@ -73,6 +73,15 @@ type ActionBody = {
   agreed_total?: number
   /** send_agreed_price: procento zálohy (výchozí z profilu, nejvýš 50). */
   deposit_percentage?: number | null
+  /**
+   * send_agreed_price: domluvená záloha v Kč. Vyhrává nad procentem — u pultu
+   * se domlouvá částka, ne podíl. Nejvýš polovina ceny výrobku (Z2).
+   */
+  deposit_amount?: number | null
+  /** send_agreed_price: poštovné, když se kus posílá (jinak 0 = osobní odběr). */
+  shipping_total?: number | null
+  /** send_agreed_price: balné k té zásilce. */
+  packaging_total?: number | null
   /** adjust_surcharge: příplatek v Kč (hlavní jednotka). Navyšuje doplatek. */
   surcharge?: number
   /** notify_surcharge: nepovinný důvod příplatku, uvidí ho zákazník v e-mailu. */
@@ -468,6 +477,9 @@ export const POST = async (
       productionOrder,
       agreedTotal: Number(body.agreed_total),
       depositPercentage: body.deposit_percentage ?? null,
+      depositAmount: body.deposit_amount ?? null,
+      shippingTotal: body.shipping_total ?? null,
+      packagingTotal: body.packaging_total ?? null,
     })
     productionOrder = sent.productionOrder
   }
