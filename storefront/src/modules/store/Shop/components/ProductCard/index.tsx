@@ -6,7 +6,10 @@ import {
   getProductPrice,
 } from "@lib/util/get-product-price"
 import { COMMISSION_CATEGORY_HANDLE } from "@lib/util/commission"
-import { madeToOrderBadgeText } from "@lib/util/made-to-order"
+import {
+  MADE_TO_ORDER_NO_RETURN_SHORT,
+  madeToOrderBadgeText,
+} from "@lib/util/made-to-order"
 import { convertToLocale } from "@lib/util/money"
 import { isPriceOnRequest } from "@lib/util/price-on-request"
 import { usePriceReference } from "@modules/products/ProductPage/product/details/Cta/Price/use-price-reference"
@@ -403,7 +406,7 @@ function ProductCard({
               >
                 Na zakázku
                 <span className={styles.badgeNote}>
-                  {" "}· nelze vrátit do 14 dnů
+                  {" "}· {MADE_TO_ORDER_NO_RETURN_SHORT}
                 </span>
               </span>
             )}

@@ -17,6 +17,12 @@ import { withdrawalUrlFor } from "../lib/claims/withdrawal-link"
 import { refundHistoryOf, toNumber } from "../lib/claims/refund-rules"
 import { lineQuantityOf } from "../lib/order-quantity"
 import { isServiceLine } from "../lib/packaging-lines"
+import {
+  DOBIRKA_PROVIDER_ID,
+  epsilonFor,
+  isPayLaterPaymentProvider,
+  toAmount,
+} from "../lib/ship-gate"
 import { ensureMadeToOrderInvoices } from "../lib/idoklad-invoice"
 import { commissionImageOf, commissionTitleOf } from "../lib/made-to-order/commission-line"
 import { commissionMoney } from "../lib/made-to-order/commission-money"
@@ -209,7 +215,13 @@ const onPaymentCaptured = async ({
     data: {
       ...common(order),
       paymentAmount: formatMoney(payment.amount, payment.currency_code),
-      paymentMethod: "Online platba",
+      /*
+       * Způsob platby podle poskytovatele, ne natvrdo „Online platba":
+       * u osobního odběru zapisuje peníze majitelka tlačítkem „Objednávka
+       * zaplacena" (hotovost nebo převod u pultu) a dobírku vybere pošta —
+       * ani jedno online neproběhlo a e-mail to tvrdit nesmí.
+       */
+      paymentMethod: capturedPaymentMethod(payment?.provider_id),
       /* Za co platba byla (lib/email-items) — bez výpisu e-mail potvrzoval
          peníze a nechával zákazníka hádat, které objednávky se týkají. */
       paidFor: emailLineItems(order),
@@ -391,6 +403,55 @@ const isPickupOrder = (order: any): boolean =>
   (order.shipping_methods || []).some(
     (method: any) => method?.data?.personal_pickup === true
   )
+
+/**
+ * Co na objednávce ještě není zaplacené — `0`, když je vyrovnaná.
+ *
+ * Součet přes platební kolekce (částka − zachyceno), zrušené a neúspěšné
+ * vynechané, stejně jako je počítá brána odeslání. Tady se z toho stává jedna
+ * věta v e-mailu, takže nepřesnost na haléře se zahodí přes `epsilonFor`.
+ */
+const pickupOutstanding = async (
+  container: SubscriberArgs["container"],
+  orderId: string
+): Promise<number> => {
+  const query = container.resolve(ContainerRegistrationKeys.QUERY)
+  const { data } = await query.graph({
+    entity: "order",
+    fields: [
+      "id",
+      "currency_code",
+      "payment_collections.status",
+      "payment_collections.amount",
+      "payment_collections.captured_amount",
+    ],
+    filters: { id: orderId },
+  })
+  const order = (data[0] as any) ?? null
+  if (!order) {
+    return 0
+  }
+  const due = ((order.payment_collections ?? []) as any[])
+    .filter(
+      (collection: any) =>
+        !["canceled", "failed"].includes(String(collection?.status ?? ""))
+    )
+    .reduce(
+      (sum: number, collection: any) =>
+        sum + (toAmount(collection?.amount) - toAmount(collection?.captured_amount)),
+      0
+    )
+
+  return due > epsilonFor(order.currency_code) ? due : 0
+}
+
+/** Čím zákazník zaplatil — do e-mailu „Platba přijata". */
+const capturedPaymentMethod = (providerId?: string | null): string => {
+  const id = String(providerId ?? "")
+  if (id === DOBIRKA_PROVIDER_ID) return "Dobírka"
+  if (isPayLaterPaymentProvider(id)) return "Platba na místě"
+  return "Online platba"
+}
 
 /**
  * Dopravce + sledování do e-mailu „předáno dopravci" (docs/sledovani-zasilek.md §3).
@@ -1035,6 +1096,13 @@ const onMerchantStageChanged = async ({
     // proto právní údaj z administrace. Bez něj zůstává dosavadní adresa:
     // e-mail „přijďte si" bez adresy by byl k ničemu.
     const { facts } = await getLegalFacts(container)
+    /*
+     * Kolik zbývá zaplatit. U osobního odběru se platí až na místě (platba
+     * „zaplatíte při vyzvednutí" se jen autorizuje), takže pozvánka „přijďte
+     * si" musí říct i s čím přijít — jinak zákazník dorazí bez peněz a
+     * hotovost ani převod nemá jak připravit (přání majitelky 30. 10. 2026).
+     */
+    const outstanding = await pickupOutstanding(container, order.id)
     await sendCustomerEmail(container, {
       template: "order-ready-pickup",
       to: order.email,
@@ -1045,6 +1113,12 @@ const onMerchantStageChanged = async ({
         pickupLocation: "Dílna Keramická zahrada, Písek",
         pickupAddress: facts["seller.address"] || "Putim 229, 397 01 Písek",
         readyDate: new Date().toLocaleDateString("cs-CZ"),
+        amountDue: outstanding
+          ? formatMoney(outstanding, order.currency_code)
+          : null,
+        // Číslo účtu jen když ho majitelka v Právních údajích vyplnila —
+        // e-mail nesmí poslat peníze na účet, který neexistuje (§16).
+        bankAccount: facts["bank.account"] || null,
       },
     })
     return

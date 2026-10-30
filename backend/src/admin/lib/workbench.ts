@@ -23,15 +23,14 @@ export const formatCount = (value: number, one: string, few: string, many: strin
   return `${value} ${many}`;
 };
 
-/** The merchant stages, in the owner's words — mirrors Denní práce. */
-export const stageLabels: Record<string, string> = {
-  received: "Nové",
-  working: "Připravujeme",
-  shipping: "K odeslání",
-  shipped: "Odesláno",
-  payment_problem: "Problém s platbou",
-  cancelled: "Zrušeno",
-};
+/**
+ * The merchant stages, in the owner's words — mirrors Denní práce.
+ *
+ * Slova mají jediný zdroj (`admin/lib/stage-words`), protože osobní odběr dvě
+ * z nich čte jinak („Připraveno k vyzvednutí", „Vyzvednuto"). Kdo má po ruce
+ * `is_personal_pickup`, sáhne rovnou po `stageLabel(stage, pickup)`.
+ */
+export { stageLabel, STAGE_LABELS as stageLabels } from "./stage-words";
 
 /**
  * Production-order stages (made-to-order module) in her words. Distinct from

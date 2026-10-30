@@ -3,13 +3,13 @@ import { Badge, Button, Container, Heading, Skeleton, Text, toast } from "@medus
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   nextStage,
-  nextStageLabel,
   stageMeta,
   type MerchantOrder,
   type MerchantOrderStage,
 } from "./merchant-order-queue";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba } from "../lib/ceska-chyba";
+import { nextStepLabel, stageLabel } from "../lib/stage-words";
 
 type MerchantOrderDetailResponse = {
   merchant_order: MerchantOrder | null;
@@ -70,7 +70,7 @@ export const MerchantStatePanel = ({ order }: { order: AdminOrder }) => {
       <div className="flex items-center justify-between gap-x-2 px-6 py-4">
         <Heading level="h2">Denní práce</Heading>
         <Badge color={stageMeta[merchantOrder.stage].color}>
-          {stageMeta[merchantOrder.stage].label}
+          {stageLabel(merchantOrder.stage, merchantOrder.is_personal_pickup)}
         </Badge>
       </div>
 
@@ -83,7 +83,10 @@ export const MerchantStatePanel = ({ order }: { order: AdminOrder }) => {
 
         <Text size="small" className="text-ui-fg-subtle">
           {target
-            ? `Další krok: ${nextStageLabel[merchantOrder.stage]}`
+            ? `Další krok: ${nextStepLabel(
+                merchantOrder.stage,
+                merchantOrder.is_personal_pickup
+              )}`
             : "Tato objednávka už po vás nic nechce."}
         </Text>
 
@@ -94,7 +97,7 @@ export const MerchantStatePanel = ({ order }: { order: AdminOrder }) => {
             isLoading={transition.isPending}
             onClick={() => transition.mutate(target)}
           >
-            {nextStageLabel[merchantOrder.stage]}
+            {nextStepLabel(merchantOrder.stage, merchantOrder.is_personal_pickup)}
           </Button>
         )}
       </div>

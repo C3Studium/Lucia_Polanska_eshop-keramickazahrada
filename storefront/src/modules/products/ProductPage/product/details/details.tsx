@@ -538,6 +538,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                             : selectedVariant?.calculated_price?.calculated_amount ?? null
                         }
                         currencyCode={region?.currency_code ?? "czk"}
+                        priceOnRequest={priceOnRequestFlag}
                       />
                     )}
                     {/* Poukaz s vlastní částkou nemá cenu, dokud si ji zákazník
@@ -561,6 +562,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                       <MadeToOrderBadge
                         depositPercentage={madeToOrderDeposit}
                         maxDays={madeToOrderMaxDays}
+                        priceOnRequest={priceOnRequestFlag}
                       />
                     )}
                     {isGiftVoucher && !priceOnRequest && (

@@ -23,6 +23,10 @@ interface OrderReadyPickupEmailProps {
   pickupDeadline?: string;
   orderLink?: string;
   pickupInstructions?: string;
+  /** Co se platí až na místě; `null`, když je objednávka zaplacená. */
+  amountDue?: string | null;
+  /** Číslo účtu z Právních údajů — jen když ho majitelka vyplnila. */
+  bankAccount?: string | null;
 }
 
 /**
@@ -39,7 +43,9 @@ function OrderReadyPickupEmailComponent({
   readyDate,
   pickupDeadline,
   orderLink = "",
-  pickupInstructions
+  pickupInstructions,
+  amountDue,
+  bankAccount
 }: OrderReadyPickupEmailProps) {
   const orderUrl = orderLink || storeLink()
   return (
@@ -65,9 +71,29 @@ function OrderReadyPickupEmailComponent({
       {pickupDeadline ? (
         <LedgerRow label="Vyzvednout do" value={pickupDeadline} tone="clay" />
       ) : null}
+      {amountDue ? (
+        <LedgerRow label="Zaplatíte na místě" value={amountDue} tone="clay" strong />
+      ) : null}
       <LedgerEnd />
 
-      <Note tone="olive">Objednávka na vás čeká u mě v dílně.</Note>
+      {/*
+        Osobní odběr se platí až u pultu, a ateliér není obchod s terminálem:
+        bez téhle věty zákazník přijel s kartou a nebylo čím zaplatit
+        (30. 10. 2026). Účet jen tehdy, když je v Právních údajích vyplněný.
+      */}
+      {amountDue ? (
+        <Note tone="clay">
+          Objednávku budete platit až při vyzvednutí — připravte si prosím{" "}
+          {amountDue} v hotovosti
+          {bankAccount
+            ? `, nebo mi částku pošlete převodem na účet ${bankAccount} ještě před vyzvednutím (do zprávy pro příjemce napište ${orderNumber}).`
+            : ", nebo se se mnou předem domluvte na převodu na účet."}
+        </Note>
+      ) : (
+        <Note tone="olive">
+          Objednávka je zaplacená, stačí si pro ni přijít.
+        </Note>
+      )}
 
       {orderUrl ? (
         <ButtonRow>
@@ -98,6 +124,9 @@ const mockOrderReadyPickup: OrderReadyPickupEmailProps = {
   pickupAddress: "Putim 229, 397 01 Písek",
   readyDate: new Date().toLocaleDateString('cs-CZ'),
   orderLink: "https://keramickazahrada.cz/cz/order/order_12345/confirmed",
+  // Náhled ukazuje ten horší případ — nezaplacenou objednávku.
+  amountDue: "1 290 Kč",
+  bankAccount: "1234567890/2010",
 }
 
 export default () => <OrderReadyPickupEmailComponent {...mockOrderReadyPickup} />

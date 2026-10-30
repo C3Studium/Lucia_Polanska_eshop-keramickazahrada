@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/frame
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
 import { validateProductionProfile } from "../../../../../lib/made-to-order/profile-validation"
+import { mergeProductionProfile } from "../../../../../lib/made-to-order/profile-payload"
 
 /**
  * Zrcadlo „je to zakázka" do product.metadata.made_to_order.
@@ -109,17 +110,16 @@ export const PATCH = async (
   validateProfile(input)
 
   const existing = await service.listProductProductionProfiles({ product_id: productId })
-  const profilePayload = {
-    enabled: input.enabled ?? true,
-    specification_required: input.specification_required ?? true,
-    specification_prompt: input.specification_prompt?.trim() || null,
-    production_time_min_days: input.production_time_min_days ?? 14,
-    production_time_max_days: input.production_time_max_days ?? 42,
-    default_deposit_percentage: input.default_deposit_percentage ?? 25,
-    contact_customer_after_order: input.contact_customer_after_order ?? true,
-    allow_final_price_adjustment: input.allow_final_price_adjustment ?? true,
-    allow_full_prepayment: input.allow_full_prepayment ?? true,
-  }
+  /*
+   * Co přišlo > co už je uložené > výchozí (`lib/made-to-order/profile-payload`).
+   * Přepínač „Na zakázku" ve Vlastnostech prodeje posílá jediné pole, takže
+   * bez tohohle slučování by vypnutí a zapnutí smazalo domluvenou zálohu
+   * i lhůtu. Editor podmínek posílá celý profil — pro něj se nic nemění.
+   */
+  const profilePayload = mergeProductionProfile(
+    input,
+    (existing[0] ?? null) as Record<string, unknown> | null
+  )
   const profile = existing[0]
     ? await service.updateProductProductionProfiles({
         id: existing[0].id,

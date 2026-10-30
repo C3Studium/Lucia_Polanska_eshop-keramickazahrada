@@ -19,6 +19,11 @@ type MadeToOrderPanelProps = {
   /** Unit price of the selected variant, so the deposit can be shown as an amount. */
   unitAmount?: number | null
   currencyCode: string
+  /**
+   * Cena po domluvě: kus jde do košíku za 0 Kč a cenu Lucie pošle e-mailem
+   * až po objednávce. Procento zálohy se pak neuvádí — počítalo by se z nuly.
+   */
+  priceOnRequest?: boolean
 }
 
 /**
@@ -35,6 +40,7 @@ export default function MadeToOrderPanel({
   variantId,
   unitAmount,
   currencyCode,
+  priceOnRequest = false,
 }: MadeToOrderPanelProps) {
   const fieldId = useId()
   const leadTime = productionTimeLabel(profile)
@@ -62,14 +68,27 @@ export default function MadeToOrderPanel({
         leadTime && <p className={styles.lead}>Hotovo zhruba za {leadTime}.</p>
       )}
 
-      {depositPercentage != null && (
-        <p className={styles.deposit}>
-          Platí se záloha {depositPercentage} %
-          {depositAmount != null && (
-            <> — {convertToLocale({ amount: depositAmount, currency_code: currencyCode })}</>
-          )}
-          . Zbytek doplatíte, až bude hotovo. Po zahájení výroby se záloha nevrací.
+      {/*
+        Cena po domluvě: procento ani částka zálohy tu nemají co dělat —
+        obojí vychází z ceny, kterou teprve domluvíme. Místo toho se řekne
+        pořadí: nejdřív cena, pak záloha (nebo rovnou celá částka).
+      */}
+      {priceOnRequest ? (
+        <p className={styles.deposit} data-testid="made-to-order-deposit-on-request">
+          Zálohu domluvíme spolu s cenou — pošlu vám ji e-mailem po objednávce.
+          Zaplatíte buď zálohu, nebo rovnou celou částku; zbytek doplatíte,
+          až bude hotovo. Po zahájení výroby se záloha nevrací.
         </p>
+      ) : (
+        depositPercentage != null && (
+          <p className={styles.deposit}>
+            Platí se záloha {depositPercentage} %
+            {depositAmount != null && (
+              <> — {convertToLocale({ amount: depositAmount, currency_code: currencyCode })}</>
+            )}
+            . Zbytek doplatíte, až bude hotovo. Po zahájení výroby se záloha nevrací.
+          </p>
+        )
       )}
 
       <p className={styles.lead}>

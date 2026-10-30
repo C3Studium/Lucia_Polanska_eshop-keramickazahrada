@@ -144,3 +144,61 @@ describe("toMerchantOrderRow — claim a cancel_reason v řádku", () => {
     expect(toMerchantOrderRow(state, order, null, [], []).claim).toBeNull()
   })
 })
+
+/**
+ * „Objednávka zaplacena" u osobního odběru — tlačítko se smí nabídnout jen
+ * tam, kde je co zachytit, protože server je podle téhož pravidla pustí dál
+ * (`lib/pickup-capture`).
+ */
+describe("toMerchantOrderRow — platba u pultu", () => {
+  const state = { id: "mos_1", order_id: "order_1", stage: "shipping" }
+  const pickupOrder = (payment: Record<string, unknown>, stav = "awaiting") => ({
+    ...order,
+    shipping_methods: [{ data: { personal_pickup: true } }],
+    payment_collections: [
+      {
+        status: stav,
+        amount: 2000,
+        captured_amount: payment.captured_at ? 2000 : 0,
+        payments: [payment],
+      },
+    ],
+  })
+  const authorized = {
+    id: "pay_pickup",
+    provider_id: "pp_osobni-odber_pickup",
+    captured_at: null,
+    canceled_at: null,
+  }
+
+  it("autorizovaná platba u pultu si říká o zápis", () => {
+    const row = toMerchantOrderRow(state, pickupOrder(authorized), null, [], [])
+    expect(row.is_personal_pickup).toBe(true)
+    expect(row.pickup_payment_due).toBe(true)
+  })
+
+  it("zapsaná platba, zrušená objednávka ani zásilka tlačítko nenabídnou", () => {
+    const zapsano = toMerchantOrderRow(
+      state,
+      pickupOrder({ ...authorized, captured_at: "2026-10-30T18:30:00Z" }, "completed"),
+      null,
+      [],
+      []
+    )
+    expect(zapsano.pickup_payment_due).toBe(false)
+
+    const zruseno = toMerchantOrderRow(
+      { ...state, stage: "cancelled" },
+      pickupOrder(authorized),
+      null,
+      [],
+      []
+    )
+    expect(zruseno.pickup_payment_due).toBe(false)
+
+    // Běžná objednávka na poštu: platba kartou se u pultu nezapisuje.
+    expect(toMerchantOrderRow(state, order, null, [], []).pickup_payment_due).toBe(
+      false
+    )
+  })
+})

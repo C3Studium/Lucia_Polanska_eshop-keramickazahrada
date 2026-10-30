@@ -295,24 +295,43 @@ export const MADE_TO_ORDER_CANCEL_SENTENCE =
   "Zrušíte-li zakázku před zahájením výroby (poznáte to z e-mailu „Zakázka je ve výrobě“), vrátíme vám všechno; po zahájení se záloha nevrací, zbytek ano."
 
 /**
- * Štítek pod cenou: „Na zakázku · záloha 25 % · výroba do 42 dnů · nelze
- * vrátit do 14 dnů". Co profil nedá, se vynechá — bez profilu (zakázka jen
- * kategorií) zůstane „Na zakázku · nelze vrátit do 14 dnů". Nic se nevymýšlí.
+ * Zkratka poučení § 1837 písm. d) OZ do štítku.
+ *
+ * Dřív tu stálo „nelze vrátit do 14 dnů", což se čte dvojsmyslně — jako by
+ * kus nešlo vrátit prvních 14 dnů a potom už ano. Zákon říká opak: u věci
+ * vyrobené na míru 14denní lhůta na vrácení bez udání důvodu NEPLATÍ vůbec.
+ * Reklamace vady tím dotčená není, proto „na vrácení", ne „na reklamaci".
+ */
+export const MADE_TO_ORDER_NO_RETURN_SHORT = "bez 14denní lhůty na vrácení"
+
+/**
+ * Štítek pod cenou: „Na zakázku · záloha 25 % · výroba do 42 dnů · bez
+ * 14denní lhůty na vrácení". Co profil nedá, se vynechá — bez profilu
+ * (zakázka jen kategorií) zůstane „Na zakázku · bez 14denní lhůty na
+ * vrácení". Nic se nevymýšlí.
+ *
+ * `priceOnRequest`: u kusu s cenou po domluvě se procento NEUVÁDÍ — záloha
+ * se počítá z ceny, kterou teprve domluvíte, takže „záloha 25 %" by bylo
+ * procento z nuly.
  */
 export const madeToOrderBadgeText = ({
   depositPercentage,
   maxDays,
+  priceOnRequest = false,
 }: {
   depositPercentage?: number | null
   maxDays?: number | null
+  priceOnRequest?: boolean
 } = {}) =>
   [
     "Na zakázku",
-    depositPercentage != null && depositPercentage > 0
-      ? `záloha ${depositPercentage} %`
-      : null,
+    priceOnRequest
+      ? "záloha po domluvě ceny"
+      : depositPercentage != null && depositPercentage > 0
+        ? `záloha ${depositPercentage} %`
+        : null,
     maxDays != null && maxDays > 0 ? `výroba do ${maxDays} dnů` : null,
-    "nelze vrátit do 14 dnů",
+    MADE_TO_ORDER_NO_RETURN_SHORT,
   ]
     .filter(Boolean)
     .join(" · ")

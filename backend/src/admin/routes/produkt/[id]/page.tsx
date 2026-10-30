@@ -1147,6 +1147,38 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
       toast.error(ceskaChyba(error, "Změna se nepodařila.")),
   });
 
+  /*
+   * Přepínač „Na zakázku" ve Vlastnostech prodeje.
+   *
+   * Zakázka se do té doby zapínala jen dialogem s osmi poli („Nastavit
+   * zakázku"), takže ze 27 kusů, co mají „na zakázku" v názvu, ji měl
+   * doopravdy jeden — zbytek se prodával jako běžné zboží, bez zálohy.
+   * Jedno kliknutí zakázku zapne na výchozích podmínkách (záloha 25 %,
+   * 14–42 dní), podrobnosti zůstávají v oddílu Zakázková výroba níž.
+   * Vypnutí podmínky NEMAŽE — backend je při částečném PATCHi zachová,
+   * takže opětovné zapnutí vrátí, co bylo domluvené.
+   */
+  const toggleMadeToOrder = useMutation({
+    mutationFn: (next: boolean) =>
+      sdk.client.fetch(`/admin/made-to-order/products/${productId}`, {
+        method: "PATCH",
+        body: { enabled: next },
+      }),
+    onSuccess: async (_data, next) => {
+      await invalidate();
+      await queryClient.invalidateQueries({ queryKey: ["production-profile", productId] });
+      await queryClient.invalidateQueries({ queryKey: ["product-type-tools", productId] });
+      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+      toast.success(
+        next
+          ? "Kus je teď zakázka — zákazník zaplatí zálohu a počká na výrobu."
+          : "Zakázková výroba vypnutá — kus se prodává ze skladu."
+      );
+    },
+    onError: (error) =>
+      toast.error(ceskaChyba(error, "Zakázku se nepodařilo přepnout.")),
+  });
+
   // One switch for the whole piece: backorder is a per-variant fact in the
   // catalog, but the merchant thinks per product — so the toggle writes every
   // variant at once through the native batch endpoint.
@@ -2303,6 +2335,25 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
             hint="Přepínače platí hned — žádné ukládání navíc."
           >
             <div className="divide-y">
+              {/*
+                Jedno kliknutí = zakázka. Podrobné podmínky zůstávají
+                v oddílu Zakázková výroba níž; tenhle přepínač je jen zapne
+                na výchozích hodnotách (nebo na tom, co u kusu bylo
+                domluvené dřív — vypnutí podmínky nemaže).
+              */}
+              <FlagRow
+                label="Na zakázku"
+                description={
+                  priceOnRequest
+                    ? "Zapnuto automaticky, protože kus má cenu po domluvě. Vypnout jde vypnutím ceny po domluvě."
+                    : production?.enabled
+                      ? "Kus se vyrábí až po objednání — zákazník zaplatí zálohu a počká. Záloha, lhůta a „co mi pošlete“ jsou níž v Zakázkové výrobě."
+                      : "Zapněte, když se kus vyrábí až po objednání. Zákazník zaplatí zálohu (výchozí 25 %, lhůta 14–42 dní) a doplatí před odesláním."
+                }
+                checked={Boolean(production?.enabled)}
+                disabled={toggleMadeToOrder.isPending || priceOnRequest}
+                onChange={(next) => toggleMadeToOrder.mutate(next)}
+              />
               <FlagRow
                 label="Výprodej"
                 description="Poškozený nebo jedinečný kousek. Po vyprodání se sám skryje z obchodu."
