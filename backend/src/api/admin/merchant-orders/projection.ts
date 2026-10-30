@@ -2,6 +2,7 @@ import { isDamageCause } from "../../../lib/claims/constants"
 import { suggestedRefundAmount } from "../../../lib/claims/line-items"
 import { customerEditsOf } from "../../../lib/order-edit/log"
 import { isPersonalPickupOrder } from "../../../lib/personal-pickup"
+import { pickPickupPayment } from "../../../lib/pickup-capture"
 import {
   moneyState,
   requestRefundedTotal,
@@ -90,6 +91,14 @@ export type MerchantOrderRow = {
 
   /** Collected in person at the workshop — money and goods meet at the counter. */
   is_personal_pickup: boolean
+
+  /**
+   * Osobní odběr, u kterého peníze z pultu ještě nikdo nezapsal — tlačítko
+   * „Objednávka zaplacena". Odvozené toutéž funkcí, kterou pak běží i samotné
+   * zapsání (`lib/pickup-capture.pickPickupPayment`), takže fronta nikdy
+   * nenabídne akci, kterou by server odmítl.
+   */
+  pickup_payment_due: boolean
 
   /**
    * Dobírka whose parcel already left, waiting for Česká pošta to settle the
@@ -287,6 +296,12 @@ export const toMerchantOrderRow = (
     ),
 
     is_personal_pickup: isPersonalPickupOrder(order),
+
+    // Platba u pultu, která ještě čeká na zapsání. Zrušená objednávka nic
+    // nechce; vydaná ano — zaplatit se může i při převzetí.
+    pickup_payment_due:
+      state.stage !== "cancelled" &&
+      Boolean(pickPickupPayment(order).payment_id),
 
     // Only once the parcel is gone: before that the carrier holds nothing,
     // so there is no money that could have arrived.

@@ -8,6 +8,7 @@ import { PaymentRefundedEmail } from "../emails/payment-refunded"
 import { OrderRefundedEmail } from "../emails/order-refunded"
 import { OrderDeliveredEmail } from "../emails/order-delivered"
 import { OrderShipmentEmail } from "../emails/order-shipment"
+import { OrderReadyPickupEmail } from "../emails/order-ready-pickup"
 import { CP_CLAIM_FORM_URL } from "../../../lib/claims/constants"
 
 /**
@@ -515,6 +516,40 @@ describe("customer e-mail templates after the audit", () => {
       expect(
         renderToStaticMarkup(OrderShipmentEmail({ orderNumber: "#42" }) as React.ReactElement)
       ).not.toContain("online přes tlačítko")
+    })
+  })
+
+  /*
+   * Osobní odběr se platí až u pultu a ateliér není obchod s terminálem:
+   * pozvánka „přijďte si" musí říct, s čím přijít (30. 10. 2026).
+   */
+  describe("order-ready-pickup (pozvánka do dílny)", () => {
+    const render = (props: Record<string, unknown>) =>
+      renderToStaticMarkup(
+        OrderReadyPickupEmail({ orderNumber: "#56", ...props }) as React.ReactElement
+      )
+
+    it("u nezaplacené objednávky řekne, s čím přijít", () => {
+      const html = render({ amountDue: "600 Kč", bankAccount: "1234567890/2010" })
+      expect(html).toContain("Zaplatíte na místě")
+      expect(html).toContain("600 Kč")
+      expect(html).toContain("v hotovosti")
+      expect(html).toContain("1234567890/2010")
+      expect(html).toContain("#56")
+    })
+
+    it("bez vyplněného účtu nabídne domluvu, nikdy účet do prázdna", () => {
+      const html = render({ amountDue: "600 Kč" })
+      expect(html).toContain("v hotovosti")
+      expect(html).toContain("domluvte na převodu")
+      expect(html).not.toContain("na účet ")
+    })
+
+    it("zaplacenou objednávku o peníze neprosí", () => {
+      const html = render({})
+      expect(html).toContain("Objednávka je zaplacená")
+      expect(html).not.toContain("v hotovosti")
+      expect(html).not.toContain("Zaplatíte na místě")
     })
   })
 })

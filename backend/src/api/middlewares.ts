@@ -493,6 +493,13 @@ export default defineMiddlewares({
       methods: ["POST"],
       middlewares: [authenticate("user", ["bearer", "session"])],
     },
+    // „Objednávka zaplacena" u osobního odběru — peníze z pultu. Stejně jako
+    // dobírka výš: výslovné přihlášení, bez těla, celá částka.
+    {
+      matcher: "/admin/merchant-orders/:orderId/pickup-paid",
+      methods: ["POST"],
+      middlewares: [authenticate("user", ["bearer", "session"])],
+    },
     // Odkazy zákaznické samoobsluhy (úprava / reklamace) — jen pro admina.
     {
       matcher: "/admin/merchant-orders/:orderId/self-service",
