@@ -16,6 +16,8 @@ import { isMadeToOrderLine, type ProductionLeadTime } from "@lib/util/commission
 import {
   allMadeToOrderAcked,
   madeToOrderAckItems,
+  commissionPieceFilled,
+  commissionPiecesOf,
   readCommissionBrief,
 } from "@lib/util/made-to-order"
 import CheckoutCommissionBriefs from "../commission-briefs"
@@ -102,11 +104,13 @@ const Review = ({
      sloupci (na širokém) i v toku (na mobilu), a obě kopie ukládají na tutéž
      položku. Po uložení se košík revaliduje → tenhle výpočet se přepočítá a gate
      se otevře. (Jen zakázky; běžný košík pole `commissionLines` nemá.) */
-  const briefHasContent = (b: ReturnType<typeof readCommissionBrief>) =>
-    Boolean(b.specification || b.note || (b.photos?.length ?? 0))
-  const allCommissionsComplete = commissionLines.every((line) =>
-    briefHasContent(line.brief)
-  )
+  /* Po KUSECH, ne po řádku: „Domovní znamení · 2 ks" jsou dva kusy a každý má
+     své zadání. Složený pohled na řádku (`specification`) je neprázdný už
+     s jedním vyplněným kusem, takže by brána pustila objednávku, u které
+     druhý kus nikdo nepopsal. */
+  const allCommissionsComplete = ((cart?.items ?? []) as any[])
+    .filter(isMadeToOrderLine)
+    .every((item) => commissionPiecesOf(item).every(commissionPieceFilled))
 
   /* Zakázka v košíku → povinné zaškrtnutí poučení (§ 1837 písm. d) OZ, Z10)
      — jedno NA KAŽDOU zakázkovou položku (Z-A); objednávka jde dál, až jsou

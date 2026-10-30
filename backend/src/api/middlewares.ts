@@ -17,6 +17,7 @@ import { GetAdminReviewsSchema } from "./admin/reviews/route";
 import { PostAdminUpdateReviewsStatusSchema } from "./admin/reviews/status/route";
 import { PostAddCustomLineItemSchema } from "./store/carts/[id]/line-items-custom/route";
 import { PostGiftVoucherLineSchema } from "./store/carts/[id]/line-items/[line_id]/gift-voucher/route";
+import { PostCommissionBriefSchema } from "./store/carts/[id]/line-items/[line_id]/brief/route";
 import { PostBundledProductsSchema } from "./admin/bundled-products/route";
 import { PostDamagedProductSchema } from "./admin/damaged-products/route";
 import { PatchBundledProductsSchema } from "./admin/bundled-products/[id]/route";
@@ -598,6 +599,14 @@ export default defineMiddlewares({
       matcher: "/store/carts/:id/line-items/:line_id/gift-voucher",
       methods: ["POST"],
       middlewares: [validateAndTransformBody(PostGiftVoucherLineSchema)],
+    },
+    // Zadání zakázky („co si představujete") — vlastní cesta, protože
+    // nativní úprava položky ověřuje cenu varianty a kus s cenou po domluvě
+    // žádnou nemá. Viz hlavička route.
+    {
+      matcher: "/store/carts/:id/line-items/:line_id/brief",
+      methods: ["POST"],
+      middlewares: [validateAndTransformBody(PostCommissionBriefSchema)],
     },
     // „Cena po domluvě" (lib/price-on-request.ts) — i nativní přidání do
     // košíku, které storefront nepoužívá, ale API ano.

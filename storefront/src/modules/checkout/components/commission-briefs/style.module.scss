@@ -7,89 +7,128 @@
 }
 
 /*
- * Přepínač mezi zakázkami. Vykresluje se jen od dvou nahoru — jedno číslo
+ * Listování mezi kusy. Vykresluje se jen od dvou nahoru — jedna položka
  * není volba.
+ *
+ * Šipky samy by neřekly, mezi čím se listuje, takže vedle nich stojí fotka
+ * a jméno kusu; u řádku s víc kusy ještě „kus 2 ze 2". Tečky pod tím nesou
+ * stav vyplnění, protože na něm visí brána k platbě.
  */
 .prepinac {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  /* Vodorovně mezi čísly a popiskem; svisle k boxu pod ním. */
   gap: clamp(.5rem, 1.6vw, 1rem);
   margin-bottom: clamp(.625rem, 1.4vh, .875rem);
-  flex-wrap: wrap;
+}
 
-  ol {
-    display: flex;
-    margin: 0;
-    padding: 0;
-    gap: .375rem;
-    list-style: none;
-  }
+.kus {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: .625rem;
+}
 
+.nahled {
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  border-radius: .5rem;
+  object-fit: cover;
+}
+
+.popis {
+  min-width: 0;
+}
+
+.nazev {
+  overflow: hidden;
+  margin: 0;
+  color: var(--ink-05);
+  font: 400 clamp(.875rem, 1vw, .9375rem)/1.25 "Sansation-Regular", sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.poradi {
+  margin: .125rem 0 0;
+  color: rgb(var(--ink-05-rgb) / .62);
+  font: 400 .8125rem/1.2 "Sansation-Regular", sans-serif;
+}
+
+.ovladani {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.sipka {
+  display: grid;
+  /* Dotyková podlaha. Šipka je malá, prst ne. */
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  padding: 0;
+  border: 1px solid rgb(var(--ink-05-rgb) / .18);
+  border-radius: 999px;
+  background: transparent;
+  color: rgb(var(--ink-05-rgb) / .62);
+  cursor: pointer;
+  font: 400 1.25rem/1 "Sansation-Regular", sans-serif;
+  place-items: center;
+  transition: border-color .2s ease, color .2s ease;
+}
+
+.sipka:hover {
+  border-color: rgb(var(--ink-05-rgb) / .38);
+  color: var(--ink-05);
+}
+
+.sipka:focus-visible,
+.tecky button:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.tecky {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  gap: .3125rem;
+  list-style: none;
+
+  /*
+   * Plná tečka = vyplněno, prázdná s obrysem = ještě ne. Nejde jen o barvu:
+   * rozdíl plná/prázdná je vidět i tomu, kdo zelenou od hliněné nerozezná,
+   * a totéž nese `aria-label`.
+   */
   button {
-    position: relative;
-    display: grid;
-    place-items: center;
-    /* Dotyková podlaha. Číslice je malá, prst ne. */
-    width: 2.75rem;
-    height: 2.75rem;
+    display: block;
+    width: .5625rem;
+    height: .5625rem;
     padding: 0;
-    border: 1px solid rgb(var(--ink-05-rgb) / .18);
-    border-radius: 999px;
+    border: 1px solid rgb(var(--ink-05-rgb) / .45);
+    border-radius: 50%;
     background: transparent;
-    color: rgb(var(--ink-05-rgb) / .62);
-    font: 400 .9375rem/1 "Sansation-Regular", sans-serif;
     cursor: pointer;
-    transition: border-color .2s ease, background-color .2s ease, color .2s ease;
+    transition: border-color .2s ease, background-color .2s ease, transform .2s ease;
   }
 
-  button:hover {
-    border-color: rgb(var(--ink-05-rgb) / .38);
-    color: var(--ink-05);
+  button[data-done="true"] {
+    border-color: var(--olive-15);
+    background: var(--olive-15);
   }
 
   button[data-active="true"] {
     border-color: var(--ink-05);
     background: var(--ink-05);
-    color: var(--cream-10);
+    transform: scale(1.25);
   }
 
-  button:focus-visible {
-    outline: var(--focus-ring-width) solid var(--focus-ring);
-    outline-offset: 2px;
-  }
-
-  /*
-   * Tečka stavu. Plná = vyplněno, prázdná s obrysem = ještě ne.
-   *
-   * Nejde jen o barvu: rozdíl plná/prázdná je vidět i tomu, kdo zelenou od
-   * hliněné nerozezná, a totéž nese `aria-label` tlačítka.
-   */
-  button i {
-    position: absolute;
-    top: .3125rem;
-    right: .3125rem;
-    width: .4375rem;
-    height: .4375rem;
-    border: 1px solid rgb(var(--ink-05-rgb) / .45);
-    border-radius: 50%;
-    background: transparent;
-  }
-
-  button[data-done="true"] i {
+  button[data-active="true"][data-done="true"] {
     border-color: var(--olive-15);
     background: var(--olive-15);
-  }
-
-  /* Na tmavém tlačítku by obrys z inkoustu zmizel. */
-  button[data-active="true"] i {
-    border-color: rgb(var(--cream-10-rgb) / .55);
-  }
-
-  button[data-active="true"][data-done="true"] i {
-    border-color: var(--sage-01);
-    background: var(--sage-01);
   }
 }
 
@@ -97,4 +136,5 @@
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .62);
   font: 400 .8125rem/1.3 "Sansation-Regular", sans-serif;
+  white-space: nowrap;
 }
