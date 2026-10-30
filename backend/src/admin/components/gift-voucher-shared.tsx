@@ -240,13 +240,22 @@ export const pageUrlIsRelative = (voucher: Pick<AdminGiftVoucher, "page_url">) =
  *
  * Vystavuje se načerstvo při každém kliknutí: po opravě věnování nebo
  * prodloužení platnosti musí mít majitelka v ruce opravený poukaz.
+ *
+ * `podoba: "print"` stáhne list k oboustrannému tisku — dvě stránky A4,
+ * líc a rub kartičky, k vystřižení podle značek (30. 10. 2026). Tatáž data,
+ * jiný papír.
  */
-export const stahnoutPoukazPdf = async (voucherId: string): Promise<boolean> => {
+export const stahnoutPoukazPdf = async (
+  voucherId: string,
+  podoba: "summary" | "print" = "summary"
+): Promise<boolean> => {
   try {
     const { pdf_base64, filename } = await sdk.client.fetch<{
       pdf_base64: string;
       filename: string;
-    }>(`/admin/gift-vouchers/${voucherId}/pdf`);
+    }>(
+      `/admin/gift-vouchers/${voucherId}/pdf${podoba === "print" ? "?format=print" : ""}`
+    );
     const bytes = Uint8Array.from(atob(pdf_base64), (znak) => znak.charCodeAt(0));
     const href = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
     const odkaz = document.createElement("a");

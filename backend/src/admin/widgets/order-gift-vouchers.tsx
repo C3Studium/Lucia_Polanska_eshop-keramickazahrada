@@ -107,16 +107,29 @@ const OrderGiftVouchersWidget = ({ data: order }: DetailWidgetProps<AdminOrder>)
 }
 
 const PoukazPdf = ({ voucherId }: { voucherId: string }) => {
-  const vystavit = useMutation({ mutationFn: () => stahnoutPoukazPdf(voucherId) })
+  const vystavit = useMutation({
+    mutationFn: (podoba: "summary" | "print") => stahnoutPoukazPdf(voucherId, podoba),
+  })
   return (
-    <Button
-      size="small"
-      variant="secondary"
-      isLoading={vystavit.isPending}
-      onClick={() => vystavit.mutate()}
-    >
-      Stáhnout poukaz (PDF)
-    </Button>
+    <>
+      <Button
+        size="small"
+        variant="secondary"
+        isLoading={vystavit.isPending && vystavit.variables === "summary"}
+        onClick={() => vystavit.mutate("summary")}
+      >
+        Stáhnout poukaz (PDF)
+      </Button>
+      {/* Druhá podoba: dvě stránky A4 k oboustrannému tisku kartičky. */}
+      <Button
+        size="small"
+        variant="secondary"
+        isLoading={vystavit.isPending && vystavit.variables === "print"}
+        onClick={() => vystavit.mutate("print")}
+      >
+        Kartička k tisku (PDF)
+      </Button>
+    </>
   )
 }
 

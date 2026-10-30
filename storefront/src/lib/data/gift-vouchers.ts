@@ -82,11 +82,14 @@ export const getGiftVoucher = async (
  */
 export const getGiftVoucherPdfUrl = async (
   voucherId: string,
-  token: string
+  token: string,
+  /** „print" = dvě stránky A4 k oboustrannému tisku kartičky. */
+  format: "summary" | "print" = "summary"
 ): Promise<string | null> =>
   sdk.client
     .fetch<{ url: string }>(
-      `/store/gift-vouchers/${encodeURIComponent(voucherId)}/pdf?token=${encodeURIComponent(token)}`,
+      `/store/gift-vouchers/${encodeURIComponent(voucherId)}/pdf?token=${encodeURIComponent(token)}` +
+        (format === "print" ? "&format=print" : ""),
       { cache: "no-store" }
     )
     .then(({ url }) => url || null)

@@ -4,8 +4,10 @@ import { GIFT_VOUCHER_MODULE } from "../../../../../modules/gift-voucher"
 import type GiftVoucherModuleService from "../../../../../modules/gift-voucher/service"
 import {
   generateGiftVoucherPdf,
+  generateGiftVoucherPrintPdf,
   giftVoucherPdfFilename,
   giftVoucherPdfInputFor,
+  giftVoucherPrintPdfFilename,
   storeGiftVoucherPdf,
 } from "../../../../../lib/gift-voucher-pdf"
 
@@ -35,15 +37,25 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
 
   try {
     const input = await giftVoucherPdfInputFor(req.scope, voucher)
-    const bytes = await generateGiftVoucherPdf(input)
-    const stored = await storeGiftVoucherPdf(req.scope, input).catch((error) => {
+    /* `?format=print` = list k oboustrannému tisku (líc a rub kartičky). */
+    const print = req.query.format === "print"
+    const bytes = print
+      ? await generateGiftVoucherPrintPdf(input)
+      : await generateGiftVoucherPdf(input)
+    const stored = await storeGiftVoucherPdf(
+      req.scope,
+      input,
+      print ? "print" : "summary"
+    ).catch((error) => {
       logger.warn(
         `[poukazy] PDF poukazu ${voucher.code} se nepodařilo uložit: ${(error as Error)?.message ?? error}`
       )
       return null
     })
     res.json({
-      filename: giftVoucherPdfFilename(input.code),
+      filename: print
+        ? giftVoucherPrintPdfFilename(input.code)
+        : giftVoucherPdfFilename(input.code),
       pdf_base64: Buffer.from(bytes).toString("base64"),
       url: stored?.url ?? null,
     })

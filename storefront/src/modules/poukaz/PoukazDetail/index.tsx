@@ -53,12 +53,15 @@ export default function PoukazDetail({
   token,
   outcome,
   pdfUrl = null,
+  printPdfUrl = null,
 }: {
   initialVoucher: PublicGiftVoucher
   token: string
   outcome?: string
   /** Vystavený poukaz v PDF (jen u zaplaceného), nebo null. */
   pdfUrl?: string | null
+  /** Kartička k oboustrannému tisku (dvě stránky A4). */
+  printPdfUrl?: string | null
 }) {
   const [voucher, setVoucher] = useState(initialVoucher)
   const paid = voucher.payment_status === "paid"
@@ -187,6 +190,15 @@ export default function PoukazDetail({
                 className={styles.button}
               />
             )}
+            {/* Druhá podoba: vytisknout oboustranně a vystřihnout. */}
+            {printPdfUrl ? (
+              <WebButton
+                Kind="Link"
+                href={printPdfUrl}
+                title="Kartička k tisku (PDF)"
+                className={styles.button}
+              />
+            ) : null}
           </div>
         </section>
       </main>

@@ -197,6 +197,8 @@ const VoucherDetail = ({
               Poslat e-mailem
             </Button>
             <PoukazPdfButton voucherId={voucher.id} />
+            {/* Druhá podoba téhož poukazu — k oboustrannému tisku a vystřižení. */}
+            <PoukazPdfButton voucherId={voucher.id} podoba="print" />
             <Button variant="secondary" onClick={() => openVoucherPage(voucher)}>
               Otevřít stránku poukazu
             </Button>
@@ -456,13 +458,18 @@ const PaymentBlock = ({
  * Vystavit poukaz jako PDF — hotová kartička k vytištění nebo přeposlání.
  * Je to tentýž soubor, který dostane obdarovaný v e-mailu, takže vytištěný
  * poukaz z dílny a ten elektronický vypadají stejně.
+ *
+ * `podoba: "print"` je druhá příloha téhož e-mailu: dvě stránky A4 k
+ * oboustrannému tisku, k vystřižení podle značek.
  */
 export const PoukazPdfButton = ({
   voucherId,
   variant = "secondary",
+  podoba = "summary",
 }: {
   voucherId: string;
   variant?: "primary" | "secondary";
+  podoba?: "summary" | "print";
 }) => {
   const [vystavuje, setVystavuje] = useState(false);
   return (
@@ -471,11 +478,11 @@ export const PoukazPdfButton = ({
       isLoading={vystavuje}
       onClick={async () => {
         setVystavuje(true);
-        await stahnoutPoukazPdf(voucherId);
+        await stahnoutPoukazPdf(voucherId, podoba);
         setVystavuje(false);
       }}
     >
-      Stáhnout poukaz (PDF)
+      {podoba === "print" ? "Kartička k tisku (PDF)" : "Stáhnout poukaz (PDF)"}
     </Button>
   );
 };

@@ -26,26 +26,61 @@ export const voucherRecipientEmail = (voucher: any): string | null =>
  * kód v těle zprávy a odkaz na stránku poukazu stačí k uplatnění, kdežto
  * neodeslaný e-mail by zákazníka nechal bez čehokoli.
  */
-export const giftVoucherAttachment = async (
+export type GiftVoucherAttachments = {
+  /** Shrnující poukaz: kartička nahoře, pod ní komu/od koho a jak uplatnit. */
+  summary: EmailAttachmentRef | null
+  /** Dvě stránky A4 k oboustrannému tisku — rovnou kartička s kódem. */
+  print: EmailAttachmentRef | null
+}
+
+/**
+ * Obě podoby poukazu do e-mailu (30. 10. 2026).
+ *
+ * Jedna je ke čtení (s vysvětlením, co s tím), druhá k darování: vytisknout
+ * oboustranně, vystřihnout podle značek a je z toho kartička jako z dílny.
+ * Přání majitelky — kdo poukaz kupuje jako dárek, nechce posílat e-mail,
+ * chce ho dát do ruky.
+ *
+ * Když se některá nevystaví nebo nejde stáhnout, e-mail odejde i tak, třeba
+ * jen s jednou nebo bez obou: kód v těle zprávy a odkaz na stránku poukazu
+ * k uplatnění stačí, kdežto neodeslaný e-mail by zákazníka nechal bez
+ * čehokoli.
+ */
+export const giftVoucherAttachments = async (
   container: MedusaContainer,
   voucher: any
-): Promise<EmailAttachmentRef | null> => {
+): Promise<GiftVoucherAttachments> => {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   try {
-    const pdf = await storeGiftVoucherPdf(container, await giftVoucherPdfInputFor(container, voucher))
-    if (!pdf) return null
-    const { reachable, failed } = await checkAttachmentUrls([pdf])
+    const input = await giftVoucherPdfInputFor(container, voucher)
+    const [summary, print] = await Promise.all([
+      storeGiftVoucherPdf(container, input, "summary"),
+      storeGiftVoucherPdf(container, input, "print").catch((error) => {
+        logger.warn(
+          `[poukazy] Poukaz ${voucher.code} k tisku se nepodařilo vystavit: ${(error as Error)?.message ?? error}`
+        )
+        return null
+      }),
+    ])
+    const candidates = [summary, print].filter(Boolean) as EmailAttachmentRef[]
+    if (!candidates.length) return { summary: null, print: null }
+
+    const { reachable, failed } = await checkAttachmentUrls(candidates)
     for (const miss of failed) {
       logger.warn(
-        `[poukazy] PDF poukazu ${voucher.code} (${miss.url}) nejde stáhnout (${miss.reason}) — e-mail půjde bez přílohy.`
+        `[poukazy] PDF poukazu ${voucher.code} (${miss.url}) nejde stáhnout (${miss.reason}) — e-mail půjde bez něj.`
       )
     }
-    return reachable[0] ?? null
+    const ok = new Set(reachable.map((ref) => ref.url))
+    return {
+      summary: summary && ok.has(summary.url) ? summary : null,
+      print: print && ok.has(print.url) ? print : null,
+    }
   } catch (error) {
     logger.warn(
       `[poukazy] PDF poukazu ${voucher.code} se nepodařilo vystavit: ${(error as Error)?.message ?? error}`
     )
-    return null
+    return { summary: null, print: null }
   }
 }
 
@@ -64,16 +99,19 @@ export const sendGiftVoucherEmail = async (
       ? `gift-voucher:paid:${voucher.id}`
       : `gift-voucher:manual:${voucher.id}:${to}:${Date.now()}`
 
-  const attachment = await giftVoucherAttachment(container, voucher)
+  const { summary, print } = await giftVoucherAttachments(container, voucher)
+  const attachments = [summary, print].filter(Boolean) as EmailAttachmentRef[]
 
   const sent = await sendCustomerEmail(container, {
     template: "gift-voucher",
     to,
     key,
-    ...(attachment ? { attachments: [attachment] } : {}),
+    ...(attachments.length ? { attachments } : {}),
     data: {
       /* Šablona o příloze ví — bez ní odkazuje na stránku poukazu. */
-      pdfUrl: attachment?.url ?? null,
+      pdfUrl: summary?.url ?? null,
+      /* Druhá příloha: list k oboustrannému tisku. */
+      printPdfUrl: print?.url ?? null,
       // „7HQ4 M2XP" — čte se líp; do pole v košíku jde zadat i s mezerou.
       code: formatVoucherCode(voucher.code),
       value: formatVoucherCzk(voucher.initial_value),
