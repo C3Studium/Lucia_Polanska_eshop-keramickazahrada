@@ -7,6 +7,8 @@ import {
 import { DOBIRKA_PICKUP_POINT_MESSAGE } from "../../lib/balikovna-point"
 import { productsHaveMadeToOrder } from "../../lib/made-to-order-detection"
 import { getMerchantSetting } from "../../lib/merchant-settings"
+import { isPersonalPickupOrder } from "../../lib/personal-pickup"
+import { isPriceOnRequest } from "../../lib/price-on-request"
 import { DOBIRKA_PROVIDER_ID, isPayLaterPaymentProvider } from "../../lib/ship-gate"
 import {
   VOUCHER_LINE_KEYS,
@@ -79,6 +81,30 @@ completeCartWorkflow.hooks.validate(
       if (problem) {
         throw new MedusaError(MedusaError.Types.NOT_ALLOWED, problem)
       }
+    }
+
+    /*
+     * Cena po domluvě = jen osobní odběr (30. 10. 2026).
+     *
+     * Takový kus se objedná za 0 Kč a cenu — a s ní poštovné — Lucie domluví
+     * až po objednávce. Doprava zvolená v pokladně by se tedy účtovala
+     * k nule a skutečné poštovné by se muselo doúčtovat zvlášť. Pokladna
+     * proto u takového košíku nabízí jen odběr (`lib/util/fragile.ts`);
+     * tohle je brána pro ručně složený požadavek. Poslání poštou se
+     * domlouvá v administraci spolu s cenou.
+     */
+    const hasPriceOnRequest = ((fullCart.items ?? []) as any[]).some((item) =>
+      isPriceOnRequest(item?.product?.metadata)
+    )
+    if (
+      hasPriceOnRequest &&
+      (fullCart.shipping_methods ?? []).length > 0 &&
+      !isPersonalPickupOrder(fullCart)
+    ) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "U výrobku s cenou po domluvě zvolte prosím osobní odběr — poštovné domluvíme spolu s cenou a pošleme ho v e-mailu k zaplacení."
+      )
     }
 
     const sessions = fullCart.payment_collection?.payment_sessions ?? []

@@ -3,6 +3,7 @@ import {
   deliveryAllowsCommission,
 } from "./commission"
 import { cartIsVoucherOnly } from "./gift-voucher-cart"
+import { hasPriceOnRequestLine } from "./price-on-request"
 
 /**
  * Which deliveries may carry this basket, and why.
@@ -30,7 +31,20 @@ import { cartIsVoucherOnly } from "./gift-voucher-cart"
  * `lib/util/needs-shipping.ts`) a vytištěný se předává v dílně. Posílat
  * kartičku za 500 Kč křehkým balíkem nedává smysl ani jí, ani zákazníkovi.
  */
-export type DeliveryRestriction = "fragile" | "commission" | "voucher" | null
+/**
+ * Čtvrtý důvod, 30. 10. 2026: **cena po domluvě**. Takový kus se objedná za
+ * 0 Kč a cenu — a s ní i poštovné — Lucie domluví až po objednávce. V pokladně
+ * proto není z čeho dopravu spočítat: zákazník by si vybral balík za 150 Kč
+ * k výrobku za nula, a skutečné poštovné by se pak muselo doúčtovat zvlášť.
+ * Zbývá tedy osobní odběr; poslat poštou se domlouvá spolu s cenou
+ * (administrace, blok „Domluvená cena").
+ */
+export type DeliveryRestriction =
+  | "fragile"
+  | "commission"
+  | "voucher"
+  | "price_on_request"
+  | null
 
 type LineLike = {
   product?: {
@@ -59,6 +73,11 @@ export const deliveryRestrictionFor = (
   /* Poukaz vyhrává: v takovém košíku žádný křehký kus ani zakázka není, a kdyby
      byl, nebyl by to košík jen s poukazy. */
   if (cartIsVoucherOnly(cart as never)) return "voucher"
+  /* Cena po domluvě hned za ním, PŘED křehkým: obojí u takového kusu platí,
+     ale tohle omezení je přísnější (jen odběr) a jiný důvod. Stačí jediný
+     takový kus v košíku — dělit zásilku na „tohle pošlu a pro zbytek si
+     přijďte" pokladna neumí. */
+  if (hasPriceOnRequestLine(cart?.items as never)) return "price_on_request"
   if (cartHasFragile(cart)) return "fragile"
   if (cartHasCommissionCategory(cart) || hasCommissionProfile) return "commission"
   return null
@@ -74,7 +93,9 @@ export const deliveryAllowedUnder = (
   isPickup: boolean,
   restriction: DeliveryRestriction = null
 ) =>
-  restriction === "voucher" ? isPickup : deliveryAllowsCommission(option, isPickup)
+  restriction === "voucher" || restriction === "price_on_request"
+    ? isPickup
+    : deliveryAllowsCommission(option, isPickup)
 
 export const restrictionNotice: Record<
   NonNullable<DeliveryRestriction>,
@@ -86,6 +107,8 @@ export const restrictionNotice: Record<
     "Zakázkovou výrobu posíláme jen jako křehký balík. Nebo si pro ni můžete přijet do ateliéru.",
   voucher:
     "V košíku máte jen dárkový poukaz. Vytištěný si ho vyzvednete v ateliéru — elektronický vám pošlu e-mailem a žádnou dopravu nepotřebuje.",
+  price_on_request:
+    "V košíku máte výrobek s cenou po domluvě. Objednáte ho teď za 0 Kč a cenu vám pošlu e-mailem — a s ní i poštovné, pokud si necháte kus poslat. Tady proto vyberte osobní odběr; jestli ho mám poslat, napište mi to k objednávce.",
 }
 
 export const restrictionRowHint: Record<
@@ -95,4 +118,5 @@ export const restrictionRowHint: Record<
   fragile: "U křehkých kusů to bohužel nejde",
   commission: "U zakázkové výroby to bohužel nejde",
   voucher: "Samotný poukaz dopravcem neposíláme",
+  price_on_request: "Poštovné domluvíme spolu s cenou",
 }
