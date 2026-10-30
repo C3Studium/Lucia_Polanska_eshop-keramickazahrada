@@ -4,13 +4,11 @@ import { revalidateTag } from "next/cache"
 
 import { sdk } from "@lib/config"
 import { getAuthHeaders, getCacheTag, getCartId } from "./cookies"
-import { retrieveCart } from "./cart"
 import {
   addCommissionNote,
   listCommissionNotes,
   uploadCommissionMedia,
 } from "./made-to-order"
-import { madeToOrderMetadata, readCommissionBrief } from "@lib/util/made-to-order"
 import type { CommissionNote, CommissionUpload } from "@lib/util/made-to-order"
 import { toCzechErrorMessage } from "@lib/util/error-messages"
 
@@ -37,6 +35,8 @@ export async function saveCommissionBrief(
     note: string
     keepPhotos: string[]
     newPhotos: CommissionUpload[]
+    /** Který kus řádku (0-based); řádek s množstvím 1 ho neposílá. */
+    piece?: number
   },
   /**
    * Explicit cart id. Express checkout drží košík v jiném cookie
@@ -66,34 +66,29 @@ export async function saveCommissionBrief(
     const headers = { ...(await getAuthHeaders()) }
 
     /*
-     * Medusa u update položky vyžaduje `quantity` — jen `{ metadata }` padá na
-     * 400. Vezmeme aktuální množství řádku, ať ho tímhle uložením nezměníme.
+     * Vlastní cesta, ne nativní úprava položky.
+     *
+     * ZMĚŘENO 30. 10. 2026: `sdk.store.cart.updateLineItem` jede přes
+     * `updateLineItemInCartWorkflow`, který ověřuje cenu varianty — a výrobek
+     * s cenou po domluvě ji schválně nemá. Zákazník tak napsal zadání,
+     * přiložil fotky a dostal „Něco se nepovedlo"; bez zadání ho brána
+     * nepustila dál, takže zakázka s cenou po domluvě nešla objednat vůbec.
+     *
+     * Brief jsou metadata a s cenou nemají co do činění. Backend je zapíše
+     * přímo (`/store/carts/:id/line-items/:line_id/brief`), zachová `ack_at`
+     * a složí pohled přes kusy; `quantity` se nikam posílat nemusí.
      */
-    const cart = await retrieveCart(cartId)
-    const line = ((cart?.items ?? []) as any[]).find(
-      (item) => item.id === lineId
-    )
-    const quantity = Number(line?.quantity) > 0 ? Number(line.quantity) : 1
-    /* Poučení Z10 zaškrtnuté k téhle položce (`ack_at`) se nese dál — klik na
-       tlačítko platby odfoukne kurzor z textarey a samoukládání briefu by
-       jinak čas zaškrtnutí přepsalo. */
-    const ackAt = readCommissionBrief(line ?? {}).ack_at ?? null
-
-    await sdk.store.cart.updateLineItem(
-      cartId,
-      lineId,
+    await sdk.client.fetch(
+      `/store/carts/${cartId}/line-items/${lineId}/brief`,
       {
-        quantity,
-        /*
-         * Celý objekt `{ made_to_order: {...} }`, ne jen jeho vnitřek: backend
-         * (detail objednávky, order-edit guard, merchant fronta) i storefront
-         * (`readCommissionBrief`) čtou `metadata.made_to_order`. Uložení plochých
-         * klíčů by brief nikde nezobrazilo.
-         */
-        metadata: madeToOrderMetadata(input.note, { photos, ack_at: ackAt }),
-      } as never,
-      {},
-      headers
+        method: "POST",
+        body: {
+          note: input.note,
+          photos,
+          ...(input.piece === undefined ? {} : { piece: input.piece }),
+        },
+        headers,
+      }
     )
 
     const cartCacheTag = await getCacheTag("carts")

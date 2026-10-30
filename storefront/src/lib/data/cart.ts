@@ -25,7 +25,6 @@ import {
 import { getProductionProfile } from "./made-to-order"
 import {
   latestAckAt,
-  madeToOrderMetadata,
   readCommissionBrief,
   type ProductionProfile,
 } from "@lib/util/made-to-order"
@@ -779,21 +778,18 @@ export async function recordCheckoutConsent(input: {
         if (!ackAt) return
         const brief = readCommissionBrief(line)
         if (brief.ack_at === ackAt) return
-        const quantity = Number(line?.quantity) > 0 ? Number(line.quantity) : 1
-        /* Celý objekt `made_to_order` znovu (brief + ack_at) — Medusa vnořený
-           objekt nahradí, nesloučí; `quantity` je u update řádku povinná. */
-        await sdk.store.cart.updateLineItem(
-          id,
-          line.id,
-          {
-            quantity,
-            metadata: madeToOrderMetadata(brief.specification || brief.note || "", {
-              photos: brief.photos,
-              ack_at: ackAt,
-            }),
-          } as never,
-          {},
-          headers
+        /*
+         * Jen čas zaškrtnutí, přes vlastní cestu briefu.
+         *
+         * Dvě pasti najednou (30. 10. 2026): nativní úprava položky ověřuje
+         * cenu varianty, a výrobek s cenou po domluvě žádnou nemá — souhlas
+         * by u něj spadl a objednávka nevznikla. A skládat `made_to_order`
+         * znovu ze `specification` by u řádku s víc kusy smazalo zadání
+         * všech kusů. Backend si zápis poskládá sám a kusů se nedotkne.
+         */
+        await sdk.client.fetch(
+          `/store/carts/${id}/line-items/${line.id}/brief`,
+          { method: "POST", body: { ack_at: ackAt }, headers }
         )
       })
     )
