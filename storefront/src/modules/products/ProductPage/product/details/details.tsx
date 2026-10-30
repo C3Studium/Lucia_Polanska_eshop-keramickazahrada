@@ -9,17 +9,12 @@ import {
 } from "@modules/products/components/made-to-order-notice"
 import SafetyNotice from "@modules/products/components/safety-notice"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import VoucherAmountField, {
-  checkVoucherAmount,
+import {
+  formatVoucherInt,
   isCustomAmountVoucher,
   voucherConfig,
-} from "@modules/products/components/voucher-amount"
-import GiftVoucherForm, {
-  EMPTY_GIFT_VOUCHER_FORM,
-  giftVoucherFormError,
-  voucherLineMetadata,
-  type GiftVoucherFormValue,
-} from "@modules/products/components/gift-voucher-form"
+  voucherUnitOf,
+} from "@lib/util/voucher-amount"
 import { isGiftVoucherProduct } from "@lib/util/gift-voucher-code"
 import {
   depositPercentageFor,
@@ -228,16 +223,16 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
     ? productionMaxDaysFor(productionProfile, selectedVariant?.id)
     : null
 
-  /* Dárkový poukaz s vlastní částkou: pole místo ceny, částka jde do košíku
-     jako `metadata.voucher_amount` a backend z ní udělá cenu řádku. */
+  /*
+   * Dárkový poukaz (30. 10. 2026): na stránce produktu se jen VYBERE a přidá
+   * do košíku. Hodnotu, podobu, obdarovaného a věnování zákazník nastaví až
+   * v košíku, pod souhrnem (`modules/cart/components/gift-voucher-setup`) —
+   * dřív tu pod cenou stálo šest polí, kterými musel projít dřív, než vůbec
+   * věděl, že poukaz chce. Do té doby je řádek nenastavený a k pokladně
+   * neprojde.
+   */
   const isVoucher = !pick && !bundle && isCustomAmountVoucher(productMeta)
-  /* Jakýkoli dárkový poukaz (pevná hodnota i vlastní částka): formulář
-     podoby a obdarovaného, hodnoty jdou do metadat položky. */
   const isGiftVoucher = !pick && !bundle && isGiftVoucherProduct(productMeta)
-  const [giftVoucher, setGiftVoucher] = useState<GiftVoucherFormValue>(
-    EMPTY_GIFT_VOUCHER_FORM
-  )
-  const [giftVoucherTouched, setGiftVoucherTouched] = useState(false)
   /* Výrobek prostě bez ceny (a BEZ vlajky „Cena po domluvě"): nejde do
      košíku, vede na poptávku na stránce Výroba s předvyplněným výrobkem —
      bez ceny by řádek v košíku nešel ocenit. Kus s vlajkou do košíku jde
@@ -248,9 +243,6 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
     Boolean(selectedVariant) &&
     selectedVariant?.calculated_price?.calculated_amount == null
   const voucherCfg = useMemo(() => voucherConfig(productMeta), [productMeta])
-  const [voucherAmount, setVoucherAmount] = useState("")
-  const [voucherTouched, setVoucherTouched] = useState(false)
-  const currencyCode = region?.currency_code ?? "czk"
 
   const availability = useMemo(
     () => variantAvailability(selectedVariant),
@@ -297,21 +289,6 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   const handleAddToCart = async () => {
     if (!selectedVariant?.id || isAdding) return
 
-    // Poukaz bez platné částky do košíku nejde — chybu ukáže pole samo.
-    const voucherCheck = isVoucher
-      ? checkVoucherAmount(voucherAmount, voucherCfg, currencyCode)
-      : null
-    if (voucherCheck && !voucherCheck.ok) {
-      setVoucherTouched(true)
-      return
-    }
-    const giftVoucherError = isGiftVoucher ? giftVoucherFormError(giftVoucher) : null
-    if (giftVoucherError) {
-      setGiftVoucherTouched(true)
-      setAddState({ kind: "error", message: giftVoucherError })
-      return
-    }
-
     window.clearTimeout(resetTimer.current)
     setAddState({ kind: "adding" })
 
@@ -323,16 +300,8 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
         quantity,
         countryCode,
         ...(isMadeToOrder ? { metadata: madeToOrderMetadata("") } : {}),
-        /* Poukaz: vlastní částka i podoba/obdarovaný v jednom objektu — oba
-           jdou přes `line-items-custom`, kde se z `voucher_amount` počítá cena. */
-        ...(isGiftVoucher || voucherCheck?.ok
-          ? {
-              metadata: {
-                ...(voucherCheck?.ok ? { voucher_amount: voucherCheck.amount } : {}),
-                ...(isGiftVoucher ? voucherLineMetadata(giftVoucher) : {}),
-              },
-            }
-          : {}),
+        /* Poukaz jde do košíku holý — hodnota i podoba se doplní až tam
+           (`/store/carts/:id/line-items/:line_id/gift-voucher`). */
       })
 
       if (!result?.success) {
@@ -571,18 +540,16 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                         currencyCode={region?.currency_code ?? "czk"}
                       />
                     )}
+                    {/* Poukaz s vlastní částkou nemá cenu, dokud si ji zákazník
+                        nezvolí — katalogová (1 Kč) by lhala. Místo ní dolní mez. */}
                     {isVoucher ? (
-                      <VoucherAmountField
-                        config={voucherCfg}
-                        currencyCode={currencyCode}
-                        value={voucherAmount}
-                        onChange={(value) => {
-                          setVoucherAmount(value)
-                          if (addState.kind === "error") setAddState({ kind: "idle" })
-                        }}
-                        showError={voucherTouched}
-                        disabled={isAdding}
-                      />
+                      <p
+                        className="product__voucherPrice"
+                        data-testid="voucher-price-from"
+                      >
+                        Vlastní částka od {formatVoucherInt(voucherCfg.min)}{" "}
+                        {voucherUnitOf(voucherCfg.currency)}
+                      </p>
                     ) : (
                       <ProductPrice
                         product={product}
@@ -597,15 +564,14 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                       />
                     )}
                     {isGiftVoucher && !priceOnRequest && (
-                      <GiftVoucherForm
-                        value={giftVoucher}
-                        onChange={(value) => {
-                          setGiftVoucher(value)
-                          if (addState.kind === "error") setAddState({ kind: "idle" })
-                        }}
-                        showErrors={giftVoucherTouched}
-                        disabled={isAdding}
-                      />
+                      <p
+                        className="product__voucherNote"
+                        data-testid="voucher-setup-note"
+                      >
+                        {isVoucher ? "Hodnotu poukazu, jeho podobu" : "Podobu poukazu"}{" "}
+                        (elektronický e-mailem, nebo vytištěný), komu je a věnování
+                        nastavíte v košíku.
+                      </p>
                     )}
                     {priceOnRequest ? (
                       <div className="product__details__cta__buy" data-testid="price-on-request">

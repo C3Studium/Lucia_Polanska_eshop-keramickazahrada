@@ -10,7 +10,7 @@ import { lineQuantityOf, LINE_QUANTITY_FIELDS } from "./order-quantity"
 import { sendGiftVoucherEmail } from "./gift-voucher-emails"
 import { formatVoucherCzk } from "./gift-voucher-view"
 import { syncVoucherPromotionSafe } from "./gift-voucher-promotion"
-import { isCustomAmountVoucher } from "./voucher"
+import { VOUCHER_LINE_KEYS, isGiftVoucherProduct } from "./voucher"
 
 /**
  * Poukazy a objednávky z obchodu — oba směry:
@@ -31,16 +31,12 @@ import { isCustomAmountVoucher } from "./voucher"
  * objednávky), protože události chodí „aspoň jednou“ a v libovolném pořadí.
  */
 
-/** Klíče metadat položky košíku z formuláře poukazu (storefront musí psát stejné). */
-export const VOUCHER_LINE_KEYS = {
-  kind: "gift_voucher_kind",
-  recipientName: "gift_voucher_recipient_name",
-  recipientEmail: "gift_voucher_recipient_email",
-  dedication: "gift_voucher_dedication",
-} as const
-
-export const isGiftVoucherProduct = (metadata: Record<string, unknown> | null | undefined): boolean =>
-  metadata?.gift_voucher === true || metadata?.gift_voucher === "true" || isCustomAmountVoucher(metadata)
+/*
+ * Klíče metadat položky a poznání poukazu bydlí v `lib/voucher.ts` — vedle
+ * pravidel, podle kterých se poukaz nastavuje v košíku. Tady se jen přeposílají
+ * dál, ať se volající nemusí přepisovat.
+ */
+export { VOUCHER_LINE_KEYS, isGiftVoucherProduct }
 
 const ORDER_FIELDS = [
   "id",

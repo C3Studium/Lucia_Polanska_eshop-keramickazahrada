@@ -208,6 +208,13 @@
   overflow-wrap: anywhere;
 }
 
+/* Poukaz bez nastavení — hlína, ne krémová: je to úkol, ne popis. */
+.voucherTodo {
+  display: block;
+  color: var(--clay-41);
+  overflow-wrap: anywhere;
+}
+
 /* Štítek zakázky pod variantou (audit § 0) — tlumená krémová pilulka na
    inkoustové ploše řádku; odkaz na článek OP, ne tlačítko. */
 .madeToOrder {

@@ -12,7 +12,8 @@ import { getBundleProduct, listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { getPageCopy } from "@lib/data/site-copy"
 import { Router } from "@modules/express-checkout/Router"
-import { notFound } from "next/navigation"
+import { isGiftVoucherProduct } from "@lib/util/gift-voucher-code"
+import { notFound, redirect } from "next/navigation"
 
 type Params = {
   params: Promise<{ handle: string; countryCode: string }>
@@ -34,6 +35,13 @@ export default async function ExpressCheckoutPage({ params }: Params) {
   }).then(({ response }) => response.products[0])
 
   if (!product) notFound()
+
+  /* Dárkový poukaz expresní pokladnou neprojde: hodnotu, podobu a obdarovaného
+     si zákazník nastavuje v košíku a express ta pole nemá — rovnou zpátky na
+     poukaz. „Koupit ihned" se u něj nenabízí, tohle je pro přímý odkaz. */
+  if (isGiftVoucherProduct(product.metadata as Record<string, unknown> | null)) {
+    redirect(`/${countryCode}/products/${handle}`)
+  }
 
   const bundle = product.bundle
     ? await getBundleProduct(product.bundle.id, {

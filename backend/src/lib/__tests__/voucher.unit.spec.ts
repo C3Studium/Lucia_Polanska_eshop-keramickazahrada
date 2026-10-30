@@ -1,4 +1,6 @@
 import {
+  giftVoucherSetup,
+  giftVoucherSetupProblem,
   isCustomAmountVoucher,
   validateVoucherAmount,
   VOUCHER_DEFAULTS,
@@ -149,14 +151,141 @@ describe("voucher — voucherLineProblem", () => {
     ).toContain("nesouhlasí")
   })
 
-  it("refuses a missing amount", () => {
+  /*
+   * Od 30. 10. 2026 jde poukaz do košíku bez částky — zvolí ji zákazník až
+   * tam. Takový řádek smí projít JEN za nulu; kdyby držel cenu, byl by to
+   * poukaz za cizí peníze.
+   */
+  it("lets a not-yet-set voucher into the cart at zero", () => {
     expect(
       voucherLineProblem({
         productMetadata,
         itemMetadata: {},
-        unitPrice: 1,
+        unitPrice: 0,
         currencyCode: "czk",
       })
-    ).toContain("Zadejte prosím částku")
+    ).toBeNull()
+  })
+
+  it("refuses a not-yet-set voucher that still carries a price", () => {
+    expect(
+      voucherLineProblem({
+        productMetadata,
+        itemMetadata: {},
+        unitPrice: 1000,
+        currencyCode: "czk",
+      })
+    ).toContain("nesouhlasí")
+  })
+})
+
+/**
+ * Nastavení poukazu v košíku (30. 10. 2026) — brána před dokončením košíku
+ * a normalizace vstupu z formuláře. Obojí rozhoduje o penězích: první pustí
+ * jen poukaz, jehož cena sedí se zvolenou hodnotou, druhé tu cenu nastaví.
+ */
+describe("voucher — nastavení v košíku", () => {
+  const custom = { voucher_custom_amount: true }
+  const fixed = { gift_voucher: true }
+
+  it("ignoruje řádky, které poukaz nejsou", () => {
+    expect(
+      giftVoucherSetupProblem({ productMetadata: { title: "hrnek" }, itemMetadata: {} })
+    ).toBeNull()
+  })
+
+  it("chce podobu, pak hodnotu", () => {
+    expect(giftVoucherSetupProblem({ productMetadata: custom, itemMetadata: {} })).toContain(
+      "podobu"
+    )
+    expect(
+      giftVoucherSetupProblem({
+        productMetadata: custom,
+        itemMetadata: { gift_voucher_kind: "electronic" },
+      })
+    ).toContain("hodnotu")
+  })
+
+  it("poukaz s pevnou hodnotou stačí mít podobu", () => {
+    expect(
+      giftVoucherSetupProblem({
+        productMetadata: fixed,
+        itemMetadata: { gift_voucher_kind: "physical" },
+      })
+    ).toBeNull()
+  })
+
+  it("odmítne rozpor mezi zvolenou hodnotou a cenou řádku", () => {
+    const itemMetadata = { gift_voucher_kind: "electronic", voucher_amount: 1000 }
+    expect(
+      giftVoucherSetupProblem({ productMetadata: custom, itemMetadata, unitPrice: 1000, currencyCode: "czk" })
+    ).toBeNull()
+    // Metadata umí přepsat i nativní routa — tohle je jediná brána, která to chytí.
+    expect(
+      giftVoucherSetupProblem({ productMetadata: custom, itemMetadata, unitPrice: 0, currencyCode: "czk" })
+    ).toContain("nesouhlasí")
+  })
+
+  it("odmítne nesmyslný e-mail obdarovaného", () => {
+    expect(
+      giftVoucherSetupProblem({
+        productMetadata: fixed,
+        itemMetadata: { gift_voucher_kind: "electronic", gift_voucher_recipient_email: "jana(at)example" },
+      })
+    ).toContain("E-mail")
+  })
+
+  it("z formuláře udělá metadata, cenu a potřebu dopravy", () => {
+    const result = giftVoucherSetup(
+      {
+        kind: "electronic",
+        amount: "1000",
+        recipient_name: "  Jana Nováková  ",
+        recipient_email: "jana@example.cz",
+        dedication: " Hodně radosti ",
+      },
+      { productMetadata: custom, currencyCode: "czk" }
+    )
+    expect(result).toEqual({
+      ok: true,
+      kind: "electronic",
+      unitPrice: 1000,
+      requiresShipping: false,
+      metadata: {
+        gift_voucher_kind: "electronic",
+        gift_voucher_recipient_name: "Jana Nováková",
+        gift_voucher_recipient_email: "jana@example.cz",
+        gift_voucher_dedication: "Hodně radosti",
+        voucher_amount: 1000,
+      },
+    })
+  })
+
+  it("vytištěný poukaz potřebuje dopravu a e-mail obdarovaného zahodí", () => {
+    const result = giftVoucherSetup(
+      { kind: "physical", amount: 500, recipient_email: "jana@example.cz" },
+      { productMetadata: custom, currencyCode: "czk" }
+    )
+    expect(result).toMatchObject({ ok: true, requiresShipping: true })
+    // Prázdný řetězec, ne vynechaný klíč: Medusa metadata slučuje.
+    expect((result as any).metadata.gift_voucher_recipient_email).toBe("")
+  })
+
+  it("poukaz s pevnou hodnotou cenu řádku nemění", () => {
+    expect(
+      giftVoucherSetup({ kind: "electronic" }, { productMetadata: fixed, currencyCode: "czk" })
+    ).toMatchObject({ ok: true, unitPrice: null })
+  })
+
+  it("odmítne chybějící podobu i částku mimo meze", () => {
+    expect(
+      giftVoucherSetup({ kind: "cosi" }, { productMetadata: custom, currencyCode: "czk" })
+    ).toMatchObject({ ok: false })
+    expect(
+      giftVoucherSetup(
+        { kind: "electronic", amount: 150 },
+        { productMetadata: custom, currencyCode: "czk" }
+      )
+    ).toMatchObject({ ok: false })
   })
 })

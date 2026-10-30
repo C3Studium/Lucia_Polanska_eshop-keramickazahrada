@@ -36,7 +36,7 @@ export const formatVoucherCode = (code: string | null | undefined): string => {
  * Je produkt dárkový poukaz? Stejné pravidlo jako `isGiftVoucherProduct`
  * v `backend/src/lib/gift-voucher-orders.ts`: vlajka `gift_voucher`, nebo
  * poukaz s vlastní částkou (`voucher_custom_amount`, viz
- * `isCustomAmountVoucher` v `modules/products/components/voucher-amount`).
+ * `isCustomAmountVoucher` v `lib/util/voucher-amount.ts`).
  */
 export const isGiftVoucherProduct = (
   metadata: Record<string, unknown> | null | undefined

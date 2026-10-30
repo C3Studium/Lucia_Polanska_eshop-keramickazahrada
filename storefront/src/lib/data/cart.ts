@@ -221,6 +221,59 @@ export async function addToCart({
 }
 
 /**
+ * Nastavení dárkového poukazu, který už leží v košíku (30. 10. 2026).
+ *
+ * Hodnota, podoba a obdarovaný se vyplňují až tady — na stránce produktu je
+ * jen „Přidat do košíku". Cenu řádku, metadata i potřebu dopravy srovná
+ * backend (`/store/carts/:id/line-items/:line_id/gift-voucher`); tady se jen
+ * zahodí mezipaměť a — když v košíku zbyl jen elektronický poukaz — smaže
+ * doprava zvolená dřív, aby se neplatilo poštovné za e-mail.
+ */
+export async function setGiftVoucherLine(input: {
+  lineId: string
+  kind: "electronic" | "physical"
+  /** Jen u poukazu s vlastní částkou. */
+  amount?: string | number | null
+  recipientName?: string | null
+  recipientEmail?: string | null
+  dedication?: string | null
+}): Promise<{ success: boolean; message?: string }> {
+  const cartId = await getCartId()
+  if (!cartId) {
+    return { success: false, message: "Košík už není k dispozici." }
+  }
+
+  const headers = { ...(await getAuthHeaders()) }
+
+  try {
+    await sdk.client.fetch(`/store/carts/${cartId}/line-items/${input.lineId}/gift-voucher`, {
+      method: "POST",
+      body: {
+        kind: input.kind,
+        amount: input.amount ?? null,
+        recipient_name: input.recipientName ?? "",
+        recipient_email: input.recipientEmail ?? "",
+        dedication: input.dedication ?? "",
+      },
+      headers,
+    })
+  } catch (error: any) {
+    console.error(`[poukaz] nastavení poukazu selhalo: ${error?.message ?? error}`)
+    return { success: false, message: toCzechErrorMessage(error?.message) }
+  }
+
+  const cartCacheTag = await getCacheTag("carts")
+  if (cartCacheTag) revalidateTag(cartCacheTag)
+  const fulfillmentCacheTag = await getCacheTag("fulfillment")
+  if (fulfillmentCacheTag) revalidateTag(fulfillmentCacheTag)
+
+  // Elektronický poukaz dopravu nepotřebuje — zvolenou odjinud je nutné zrušit.
+  await dropShippingIfNotNeeded(cartId).catch(() => false)
+
+  return { success: true }
+}
+
+/**
  * Košík už byl dokončen do objednávky. Objednávku teď zakládá server z ověřené
  * platby, takže prohlížeč `removeCartId` nemusí nikdy spustit — cookie dál
  * ukazuje na dokončený (neměnitelný) košík. Operace na něj (smazat/změnit

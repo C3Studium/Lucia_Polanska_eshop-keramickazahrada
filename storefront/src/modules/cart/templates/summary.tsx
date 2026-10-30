@@ -7,6 +7,12 @@ import Divider from "@modules/common/components/divider"
 import DiscountCode from "@modules/checkout/components/discount-code"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import {
+  cartNeedsVoucherSetup,
+  GIFT_VOUCHER_SETUP_ID,
+  VOUCHER_SETUP_BLOCK_NOTE,
+} from "@lib/util/gift-voucher-setup"
+import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
+import {
   PREMIUM_BUTTON_ACTIVE,
   PREMIUM_BUTTON_REST,
   premiumButtonFillTransition,
@@ -50,6 +56,7 @@ const Summary = ({ cart, shippingFrom, copy }: SummaryProps) => {
   /* Souhrn se po zapnutí editace sám nepřekreslí. Viz hook. */
   useEditRerender()
   const step = getCheckoutStep(cart)
+  const voucherPending = cartNeedsVoucherSetup(cart as never)
 
   return (
     <div className={s.root}>
@@ -89,13 +96,40 @@ const Summary = ({ cart, shippingFrom, copy }: SummaryProps) => {
         <Divider />
         <CartTotals totals={cart} shippingFrom={shippingFrom} />
       </div>
-      {/* Text tlačítka bez anotace v místě — vnitřek si animuje tlačítko samo. */}
-      <LinkButton
-        text={itemText(copy, "souhrn.tlacitko", "Pokračovat k pokladně")}
-        href={"/checkout?step=" + step}
-        buttonClassName={s.button}
-        dataTestId="checkout-button"
-      />
+      {/*
+        * Nenastavený dárkový poukaz zamyká cestu k pokladně (30. 10. 2026).
+        * Bez zvolené hodnoty a podoby by vznikl poukaz na nulu a nevědělo by
+        * se, jestli má jít e-mailem — backend takový košík stejně nedokončí
+        * (`giftVoucherSetupProblem`), tak ať se o tom zákazník doví tady,
+        * o dva kroky dřív. Odkaz vede na panel hned pod souhrnem.
+        */}
+      {voucherPending ? (
+        <div className={s.blocked} data-testid="checkout-blocked">
+          {/* Stránka jede na Lenisu, takže skok z adresy by se s ním popral —
+              odkaz zůstává (funguje bez JS), scroll si vezme Lenis. */}
+          <a
+            className={s.blockedLink}
+            href={`#${GIFT_VOUCHER_SETUP_ID}`}
+            onClick={(event) => {
+              const panel = document.getElementById(GIFT_VOUCHER_SETUP_ID)
+              if (!panel) return
+              event.preventDefault()
+              scrollWithLenis(panel)
+            }}
+          >
+            Nastavit dárkový poukaz
+          </a>
+          <p className={s.blockedNote}>{VOUCHER_SETUP_BLOCK_NOTE}</p>
+        </div>
+      ) : (
+        /* Text tlačítka bez anotace v místě — vnitřek si animuje tlačítko samo. */
+        <LinkButton
+          text={itemText(copy, "souhrn.tlacitko", "Pokračovat k pokladně")}
+          href={"/checkout?step=" + step}
+          buttonClassName={s.button}
+          dataTestId="checkout-button"
+        />
+      )}
     </div>
   )
 }
