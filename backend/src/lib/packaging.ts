@@ -46,11 +46,16 @@ import type {
   MedusaResponse,
 } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
-import { refreshPaymentCollectionForCartWorkflow } from "@medusajs/medusa/core-flows"
+import {
+  refreshCartItemsWorkflow,
+  refreshPaymentCollectionForCartWorkflow,
+} from "@medusajs/medusa/core-flows"
 import { decimalDigitsFor, fetchCnbRates, type CnbRateSheet } from "./cnb-rates"
 import { toNumber } from "./order-quantity"
 
 import { isPriceOnRequest } from "./price-on-request"
+import { looksLikeVoucherCode } from "../modules/gift-voucher/code"
+import { GIFT_VOUCHER_MODULE } from "../modules/gift-voucher"
 import {
   isPackagingLine,
   PACKAGING_MARKER,
@@ -78,10 +83,65 @@ export type PackagingLineLike = {
   product_title?: string | null
   quantity?: unknown
   unit_price?: unknown
+  is_discountable?: boolean | null
   metadata?: Record<string, unknown> | null
   variant_id?: string | null
   product_id?: string | null
   product?: { title?: string | null; metadata?: Record<string, unknown> | null } | null
+}
+
+/**
+ * Balné a dárkový poukaz (30. 10. 2026, Matěj).
+ *
+ * Slevové kódy se balného netýkat nemají — proto má řádek balného
+ * `is_discountable: false`. Jenže poukaz je v Meduse taky slevová akce, a ten
+ * balné krýt MÁ: jsou to peníze zaplacené dopředu, ne sleva. Zákazník s
+ * poukazem na 840 Kč a košíkem za 890 (840 zboží + 50 balné) jinak zůstal
+ * s padesátikorunou k doplacení a pokladna po něm chtěla platbu za něco, co
+ * dávno zaplatil.
+ *
+ * Medusa to rozlišit neumí — `is_discountable: false` vyřadí řádek ze VŠECH
+ * akcí (`@medusajs/promotion`, compute-actions/line-items). Vlajka se proto
+ * překlápí podle košíku: je-li v něm uplatněný poukaz, balné na akce slyší;
+ * jakmile poukaz zmizí, vrátí se zpátky. Srovnává to tatáž synchronizace,
+ * která balné zakládá, takže to projde při každém čtení košíku.
+ *
+ * Cena: poukaz s uplatněným slevovým kódem naráz by balné pustil i tomu kódu.
+ * Je to pár desetikorun ve vzácné kombinaci — proti tomu, že poukaz jinak
+ * nikdy nepokryje celou objednávku.
+ */
+export const voucherCodeCandidates = (cart: {
+  promotions?: Array<{ code?: string | null } | null> | null
+}): string[] => [
+  ...new Set(
+    (cart?.promotions ?? [])
+      .map((promotion) => String(promotion?.code ?? ""))
+      .filter((code) => looksLikeVoucherCode(code))
+  ),
+]
+
+/**
+ * Leží v košíku uplatněný poukaz? Tvar kódu sám nestačí — osmiznakový kód
+ * z abecedy poukazů si může Lucie vymyslet i jako slevový („HRNEK234"), a ten
+ * by balné krýt neměl. Rozhodne tedy tabulka poukazů; dotaz jde jen tehdy,
+ * když v košíku nějaký takový kód vůbec je.
+ */
+export const cartHasVoucherPromotion = async (
+  container: MedusaContainer,
+  cart: { promotions?: Array<{ code?: string | null } | null> | null }
+): Promise<boolean> => {
+  const candidates = voucherCodeCandidates(cart)
+  if (!candidates.length) return false
+  try {
+    const service = container.resolve(GIFT_VOUCHER_MODULE) as {
+      listGiftVouchers: (filters: unknown) => Promise<unknown[]>
+    }
+    const found = await service.listGiftVouchers({ code: candidates })
+    return (found ?? []).length > 0
+  } catch {
+    // Modul nedostupný — radši balné nechat jako dosud než rozdávat slevu.
+    return false
+  }
 }
 
 /** Cena balení produktu v Kč; nevyplněná / nesmysl = 0. */
@@ -128,9 +188,18 @@ export type PackagingPlan = {
     title: string
     quantity: number
     unit_price: number
+    /** Smí na balné slevová akce? Jen s uplatněným poukazem — viz `cartHasVoucherPromotion`. */
+    is_discountable: boolean
   }>
   /** `quantity_changed` = nesedí počet kusů (strukturální vada, ne jen cena/název). */
-  update: Array<{ id: string; quantity: number; unit_price: number; title: string; quantity_changed: boolean }>
+  update: Array<{
+    id: string
+    quantity: number
+    unit_price: number
+    title: string
+    is_discountable: boolean
+    quantity_changed: boolean
+  }>
   remove_ids: string[]
 }
 
@@ -147,8 +216,11 @@ export type PackagingPlan = {
 export const planPackaging = (input: {
   items: PackagingLineLike[]
   unitPriceFor: (item: PackagingLineLike) => number | null
+  /** Košík má uplatněný dárkový poukaz → balné smí krýt (výchozí ne). */
+  discountable?: boolean
 }): PackagingPlan => {
   const items = input.items ?? []
+  const discountable = Boolean(input.discountable)
   const products = new Map<
     string,
     { variant_id: string; product_id: string | null; title: string; quantity: number; unit: number | null }
@@ -187,12 +259,16 @@ export const planPackaging = (input: {
     const quantityOk = Math.round(toNumber(line.quantity)) === product.quantity
     const priceOk = Math.abs(toNumber(line.unit_price) - product.unit) < 0.005
     const titleOk = (line.title ?? "") === product.title
-    if (!quantityOk || !priceOk || !titleOk) {
+    // Poukaz přibyl nebo zmizel — balné musí přepnout, jinak na něj akce
+    // nedosáhne (nebo naopak dosáhne i obyčejný slevový kód).
+    const discountOk = (line.is_discountable ?? false) === discountable
+    if (!quantityOk || !priceOk || !titleOk || !discountOk) {
       plan.update.push({
         id: String(line.id),
         quantity: product.quantity,
         unit_price: product.unit,
         title: product.title,
+        is_discountable: discountable,
         quantity_changed: !quantityOk,
       })
     }
@@ -206,6 +282,7 @@ export const planPackaging = (input: {
       title: product.title,
       quantity: product.quantity,
       unit_price: product.unit,
+      is_discountable: discountable,
     })
   }
   return plan
@@ -244,11 +321,15 @@ const CART_FIELDS = [
   "items.product_title",
   "items.quantity",
   "items.unit_price",
+  "items.is_discountable",
   "items.metadata",
   "items.variant_id",
   "items.product_id",
   "items.product.title",
   "items.product.metadata",
+  // Poukaz v košíku rozhoduje o tom, jestli smí akce na balné — viz
+  // `cartHasVoucherPromotion`.
+  "promotions.code",
 ]
 
 const cartLocks = new Map<string, Promise<unknown>>()
@@ -288,6 +369,7 @@ export const planPackagingForCart = async (
     ),
     unitPriceFor: (item) =>
       packagingUnitPrice(packagingPriceCzkOf(item.product?.metadata), currency, sheet),
+    discountable: await cartHasVoucherPromotion(container, cart),
   })
   return { cart, plan }
 }
@@ -315,6 +397,7 @@ export const syncPackagingForCart = async (
         quantity: entry.quantity,
         unit_price: entry.unit_price,
         title: entry.title,
+        is_discountable: entry.is_discountable,
       })
     }
     if (plan.add.length) {
@@ -326,8 +409,9 @@ export const syncPackagingForCart = async (
           unit_price: entry.unit_price,
           // Bez varianty — přepočty košíku ji nesmí zkoušet přecenit.
           is_custom_price: true,
-          // Slevové kódy se balného netýkají.
-          is_discountable: false,
+          // Slevové kódy se balného netýkají — jen dárkový poukaz, a ten
+          // vlajku překlápí (viz `cartHasVoucherPromotion`).
+          is_discountable: entry.is_discountable,
           // Nic se nebalí zvlášť — mimo seznamy k vyskladnění.
           requires_shipping: false,
           metadata: {
@@ -337,6 +421,21 @@ export const syncPackagingForCart = async (
           },
         }))
       )
+    }
+
+    /*
+     * S uplatněnou akcí (slevový kód, dárkový poukaz) nestačí srovnat částku
+     * platby: změna řádků mění i to, jak se akce rozpouští — a u poukazu se
+     * navíc právě překlopilo `is_discountable` balného, takže bez přepočtu by
+     * zůstala stará sleva a zákazník by viděl doplatek za něco, co poukaz
+     * kryje. `refreshCartItemsWorkflow` je tatáž cesta, kterou volá Medusa po
+     * přidání položky — srovná akce, daně i platební kolekci.
+     */
+    if ((planned.cart?.promotions ?? []).length) {
+      await refreshCartItemsWorkflow(container)
+        .run({ input: { cart_id: cartId, force_refresh: true } })
+        .catch(() => undefined)
+      return { changed: true }
     }
 
     await refreshPaymentCollectionForCartWorkflow(container)
