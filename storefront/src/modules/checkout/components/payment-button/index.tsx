@@ -1,5 +1,6 @@
 "use client"
 
+import { cartNeedsShipping } from "@lib/util/needs-shipping"
 import {
   isComgate,
   isDobirkaPayment,
@@ -9,7 +10,7 @@ import {
 import { initiatePaymentSession, placeOrder } from "@lib/data/cart"
 import {
   PRICE_ON_REQUEST_ZERO_BUTTON,
-  PRICE_ON_REQUEST_ZERO_NOTE,
+  zeroChargeCopy,
   ZERO_PAYMENT_PROVIDER,
 } from "@lib/util/price-on-request"
 import { HttpTypes } from "@medusajs/types"
@@ -58,7 +59,7 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
     !cart.shipping_address ||
     !cart.billing_address ||
     !cart.email ||
-    (cart.shipping_methods?.length ?? 0) < 1
+    (cartNeedsShipping(cart as any) && (cart.shipping_methods?.length ?? 0) < 1)
 
   const amount = amountLabel ? ` ${amountLabel}` : ""
   const paymentSession = cart.payment_collection?.payment_sessions?.[0]
@@ -68,7 +69,7 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
       <DirectPlaceOrderButton
         notReady={notReady}
         label={PRICE_ON_REQUEST_ZERO_BUTTON}
-        note={PRICE_ON_REQUEST_ZERO_NOTE}
+        note={zeroChargeCopy(cart as any).note}
         onBeforePlaceAction={async () => {
           await onBeforePlaceAction?.()
           if (paymentSession?.provider_id !== ZERO_PAYMENT_PROVIDER) {

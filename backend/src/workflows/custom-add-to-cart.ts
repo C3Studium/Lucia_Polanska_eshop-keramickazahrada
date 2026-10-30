@@ -1,6 +1,7 @@
 import { createWorkflow, transform, WorkflowResponse } from "@medusajs/framework/workflows-sdk"
 import { addToCartWorkflow, useQueryGraphStep } from "@medusajs/medusa/core-flows"
 import { getCustomPriceWorkflow } from "./get-custom-price"
+import { VOUCHER_LINE_KEYS } from "../lib/gift-voucher-orders"
 
 type CustomAddToCartWorkflowInput = {
   item: {
@@ -36,11 +37,20 @@ export const customAddToCartWorkflow = createWorkflow(
       item: input.item,
       price,
     }, (data) => {
+      /*
+       * Elektronický dárkový poukaz chodí e-mailem — položka nepotřebuje
+       * dopravu. Medusa pak košík bez jiného zboží dokončí bez zvolené dopravy
+       * (validateShippingStep hlídá jen položky s requires_shipping) a pokladna
+       * krok Doručení přeskočí. Vytištěný poukaz se posílá poštou jako zboží.
+       */
+      const electronicVoucher =
+        data.item.metadata?.[VOUCHER_LINE_KEYS.kind] === "electronic"
       return {
         variant_id: data.item.variant_id,
         quantity: data.item.quantity || 1,
         metadata: data.item.metadata,
         unit_price: data.price,
+        ...(electronicVoucher ? { requires_shipping: false } : {}),
       }
     })
 

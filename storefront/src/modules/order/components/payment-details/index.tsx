@@ -6,7 +6,12 @@ import { translateStatus } from "@lib/i18n/statuses"
 import Divider from "@modules/common/components/divider"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
-import { isZeroPayment, ZERO_PAYMENT_TITLE } from "@lib/util/price-on-request"
+import {
+  hasPriceOnRequestLine,
+  isZeroPayment,
+  VOUCHER_PAYMENT_TITLE,
+  zeroPaymentTitle,
+} from "@lib/util/price-on-request"
 import styles from "../styles/payment-details.module.scss"
 
 type PaymentDetailsProps = {
@@ -36,13 +41,26 @@ const PaymentDetails = ({ order }: PaymentDetailsProps) => {
     <div className={styles.root}>
       <h2 className={styles.title}>Platba</h2>
       <div>
+        {/* Celou objednávku pokryl dárkový poukaz — platba za 0 Kč nemá záznam. */}
+        {!payment &&
+          Number(order.total ?? 0) <= 0.005 &&
+          !hasPriceOnRequestLine(order.items as any) && (
+            <div className={styles.row}>
+              <div className={styles.colLeft}>
+                <p className={styles.label}>Způsob platby</p>
+                <p className={styles.value} data-testid="payment-method">
+                  {VOUCHER_PAYMENT_TITLE}
+                </p>
+              </div>
+            </div>
+          )}
         {payment && (
           <div className={styles.row}>
             <div className={styles.colLeft}>
               <p className={styles.label}>Způsob platby</p>
               <p className={styles.value} data-testid="payment-method">
                 {isZeroPayment(payment)
-                  ? ZERO_PAYMENT_TITLE
+                  ? zeroPaymentTitle(order as any)
                   : paymentMethodTitle(payment.provider_id)}
               </p>
             </div>

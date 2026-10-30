@@ -182,7 +182,7 @@
   position: sticky;
   /* Podlaha 4.5rem = 72px, tedy nad --nav-height (clamp(2.875rem, 4.6vh, 3.5rem), max 56px)
      i na nejnižším laptopu. Živé pásmo 800–1200 px výšky okna. */
-  top: clamp(4.5rem, 9vh, 6.75rem);
+  top: clamp(4.5rem, 10vh, 7rem);
 }
 
 .summaryBox {

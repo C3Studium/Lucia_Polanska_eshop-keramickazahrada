@@ -4,7 +4,8 @@ import styles from "./style.module.scss"
 
 import { RadioGroup, Radio } from "@headlessui/react"
 import { createPortal } from "react-dom"
-import { mergeCartMetadata, setShippingMethod } from "@lib/data/cart"
+import { dropShippingIfNotNeeded, mergeCartMetadata, setShippingMethod } from "@lib/data/cart"
+import { cartNeedsShipping } from "@lib/util/needs-shipping"
 import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
 import { convertToLocale } from "@lib/util/money"
 import {
@@ -461,7 +462,7 @@ const Shipping: React.FC<ShippingProps> = ({
         option.price_type === "calculated" &&
         typeof calculatedPricesMap[option.id] !== "number"
       const blocked =
-        Boolean(restriction) && !deliveryAllowedUnder(option, isPickup)
+        Boolean(restriction) && !deliveryAllowedUnder(option, isPickup, restriction)
       return !hasNoPrice && !blocked && !option.insufficient_inventory
     })
     if (enabled.length !== 1) return
@@ -491,6 +492,49 @@ const Shipping: React.FC<ShippingProps> = ({
   useEffect(() => {
     setError(null)
   }, [isOpen])
+
+  /*
+   * Nic k odeslání (jen elektronický dárkový poukaz): krok Doručení se
+   * přeskočí rovnou na Platbu a doprava zvolená dřív (zákazník pak zboží
+   * odebral) se z košíku smaže, ať ji neplatí.
+   */
+  const needsShipping = cartNeedsShipping(cart as any)
+  const staleShipping = !needsShipping && (cart.shipping_methods?.length ?? 0) > 0
+  useEffect(() => {
+    if (needsShipping) return
+    let cancelled = false
+    ;(async () => {
+      if (staleShipping) {
+        const dropped = await dropShippingIfNotNeeded(cart.id)
+        if (dropped && !cancelled) router.refresh()
+      }
+      if (isOpen && !cancelled) {
+        const params = new URLSearchParams(searchParams)
+        params.set("step", "payment")
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [needsShipping, staleShipping, isOpen, cart.id, pathname, router, searchParams])
+
+  if (!needsShipping) {
+    return (
+      <div className={styles.root} data-testid="delivery-not-needed">
+        <div className={styles.header}>
+          <h2 className={styles.heading}>
+            Doručení
+            <CheckCircleSolid />
+          </h2>
+        </div>
+        <p className={styles.radioAddress}>
+          Doprava není potřeba — elektronický poukaz pošleme e-mailem.
+        </p>
+        <Divider className="mt-8" />
+      </div>
+    )
+  }
 
   return (
     <div className={styles.root}>
@@ -565,7 +609,7 @@ const Shipping: React.FC<ShippingProps> = ({
                       // Dřív se zobrazovaly zašedlé s hláškou, což mátlo.
                       if (!restriction) return true
                       const isPickup = getFulfillmentType(option) === "pickup"
-                      return deliveryAllowedUnder(option, isPickup)
+                      return deliveryAllowedUnder(option, isPickup, restriction)
                     })
                     .map((option) => {
                     const isPickup = getFulfillmentType(option) === "pickup"
@@ -581,7 +625,7 @@ const Shipping: React.FC<ShippingProps> = ({
                       typeof calculatedPricesMap[option.id] !== "number"
                     const blockedByRestriction =
                       Boolean(restriction) &&
-                      !deliveryAllowedUnder(option, isPickup)
+                      !deliveryAllowedUnder(option, isPickup, restriction)
                     const isDisabled =
                       hasNoPrice ||
                       blockedByRestriction ||

@@ -65,6 +65,27 @@ export const VOUCHER_DEDICATION_MAX = 500
 export const isValidVoucherEmail = (value: string): boolean =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
 
+type VoucherLineLike = {
+  metadata?: Record<string, unknown> | null
+  product?: { metadata?: Record<string, unknown> | null } | null
+  requires_shipping?: boolean | null
+}
+
+/**
+ * Je ten řádek dárkový poukaz?
+ *
+ * Poznává se podle produktu (vlajka v katalogu) i podle metadat položky
+ * z formuláře poukazu. Druhá cesta je tu proto, že řádek v košíku nemusí mít
+ * produkt načtený — a poukaz s vlastní částkou chodí do košíku zvláštní
+ * cestou (`/line-items-custom`).
+ */
+export const isGiftVoucherLine = (item: VoucherLineLike | null | undefined): boolean => {
+  if (!item) return false
+  const kind = item.metadata?.[VOUCHER_LINE_KEYS.kind]
+  if (kind === "electronic" || kind === "physical") return true
+  return isGiftVoucherProduct(item.product?.metadata)
+}
+
 /** „Elektronický pro Janu · jana@example.cz" — popis položky v košíku. */
 export const voucherLineSummary = (
   metadata: Record<string, unknown> | null | undefined

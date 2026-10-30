@@ -4,6 +4,7 @@ import { convertToLocale } from "@lib/util/money"
 import { PLATCE_DPH } from "@lib/util/dph"
 import { dobirkaFeeSubtotal, packagingSubtotal } from "@lib/util/packaging"
 import { discountRowLabel } from "@lib/util/gift-voucher-code"
+import { cartNeedsShipping } from "@lib/util/needs-shipping"
 import {
   hasPriceOnRequestLine,
   PRICE_ON_REQUEST_SUMMARY_NOTE,
@@ -53,6 +54,8 @@ type CartTotalsProps = {
     shipping_subtotal?: number | null
     /** Položky košíku — z nich se mezisoučet rozloží na výrobky a balné. */
     items?: Array<{
+      /** `false` = nic k odeslání (elektronický poukaz, balné). */
+      requires_shipping?: boolean | null
       metadata?: Record<string, unknown> | null
       variant_id?: string | null
       product_id?: string | null
@@ -124,8 +127,13 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
   /* Bez zvolené dopravy je `shipping_total` 0 — to není „zdarma", to je
      „ještě nevíme". `shipping_methods` neposílá každý volající; kdo ho
      nemá, chová se jako dřív. */
+  /* Jen elektronický poukaz → žádný řádek Doprava ani „bez dopravy". */
+  const noShipping =
+    Array.isArray(totals.items) && totals.items.length > 0 && !cartNeedsShipping(totals)
   const shippingChosen =
-    !Array.isArray(totals.shipping_methods) || totals.shipping_methods.length > 0
+    noShipping ||
+    !Array.isArray(totals.shipping_methods) ||
+    totals.shipping_methods.length > 0
   return (
     <div className={styles.root}>
       <div className={styles.totalsList}>
@@ -199,6 +207,7 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
           </div>
         )}
         <Divider />
+        {!noShipping && (
         <div className={styles.taxRow}>
           <span className={styles.label}>Doprava</span>
           {/* Po slevě: doprava zdarma se ukáže jako nula tady, ne jako další
@@ -221,6 +230,7 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
             )}
           </span>
         </div>
+        )}
         {!shippingChosen && shippingFrom?.pickupFree && (shippingFrom.amount ?? 0) > 0 && (
           <div className={styles.breakdown}>
             <div className={styles.subRow}>

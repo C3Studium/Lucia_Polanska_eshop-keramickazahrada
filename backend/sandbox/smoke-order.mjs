@@ -6,6 +6,9 @@
 //                        [--shipping=pickup|cz_address|cz_fragile|cz_balikovna|sk_address|sk_fragile]
 //                        [--provider=pickup|system|comgate|dobirka] [--country=cz|sk]
 //                        [--email=zakaznik@sandbox.test] [--voucher-amount=1500]
+//                        [--voucher-kind=electronic|physical]  (poukaz z obchodu; electronic = bez dopravy)
+//                        [--shipping=none]                     (košík bez zboží k odeslání)
+//                        [--redeem=<hodnota Kč>]               (založí poukaz v adminu a uplatní jeho kód)
 //
 // Výchozí: běžný výrobek, osobní odběr, „Zaplatím při vyzvednutí“ (pp_osobni-odber_pickup), CZ.
 // Výsledek: .artifacts/smoke-<order>.json + výpis do konzole.
@@ -33,6 +36,8 @@ const providerKey = arg("provider", "pickup")
 const country = arg("country", shippingKey.startsWith("sk_") ? "sk" : "cz")
 const email = arg("email", `zakaznik+${Date.now()}@sandbox.test`)
 const voucherAmount = Number(arg("voucher-amount", "1500"))
+const voucherKind = arg("voucher-kind", "")
+const redeemValue = Number(arg("redeem", "0"))
 // Verze právních dokumentů, jak je zapisuje storefront (recordCheckoutConsent).
 const termsVersion = arg("terms-version", "2026-10-15")
 
@@ -53,12 +58,21 @@ async function main() {
   log(`košík ${cartId} (${country}, ${created.currency_code})`)
 
   // 2) Položka přes vlastní route jako storefront (line-items-custom)
-  const itemMetadata =
-    productKey === "made_to_order"
+  const itemMetadata = {
+    ...(productKey === "made_to_order"
       ? { made_to_order: { specification: "" } }
       : productKey === "voucher_custom"
         ? { voucher_amount: voucherAmount }
-        : {}
+        : {}),
+    // Formulář poukazu ve storefrontu (VOUCHER_LINE_KEYS).
+    ...(voucherKind
+      ? {
+          gift_voucher_kind: voucherKind,
+          gift_voucher_recipient_name: "Jana",
+          ...(voucherKind === "electronic" ? { gift_voucher_recipient_email: "jana@sandbox.test" } : {}),
+        }
+      : {}),
+  }
   await store.post(`/store/carts/${cartId}/line-items-custom`, {
     variant_id: product.variant_id,
     quantity: 1,
@@ -98,7 +112,29 @@ async function main() {
     log("zadání zakázky uloženo")
   }
 
+  {
+    const { cart } = await store.get(`/store/carts/${cartId}?fields=*items`)
+    log(`položky: ${cart.items.map((i) => `${i.title} (requires_shipping=${i.requires_shipping})`).join(", ")}`)
+  }
+
+  // 3c) Uplatnit dárkový poukaz (storefront: applyPromotions)
+  if (redeemValue > 0) {
+    const adminForVoucher = await adminApi()
+    const { gift_voucher } = await adminForVoucher.post("/admin/gift-vouchers", {
+      kind: "physical",
+      value: redeemValue,
+      buyer_name: "Sandbox kupující",
+      payment: "cash",
+      paid: true,
+      send: false,
+    })
+    await store.post(`/store/carts/${cartId}/promotions`, { promo_codes: [gift_voucher.code] })
+    const { cart } = await store.get(`/store/carts/${cartId}?fields=total,discount_total,*promotions`)
+    log(`poukaz ${gift_voucher.code} (${redeemValue} Kč) uplatněn → k úhradě ${cart.total}, sleva ${cart.discount_total}`)
+  }
+
   // 4) Doprava
+  if (shippingKey !== "none") {
   const { shipping_options } = await store.get(
     `/store/shipping-options?cart_id=${cartId}&fields=+service_zone.fulfillment_set.type`
   )
@@ -111,6 +147,9 @@ async function main() {
   }
   await store.post(`/store/carts/${cartId}/shipping-methods`, { option_id: option.id })
   log(`doprava „${option.name}“`)
+  } else {
+    log("doprava: žádná (nic k odeslání)")
+  }
 
   // 5) Zakázka: režim platby (záloha) + platební kolekce na zálohu
   const madeToOrder = productKey === "made_to_order"
