@@ -177,8 +177,8 @@ export const Payment = ({
     ? "Než objednávku odešlete, potvrďte prosím souhlas s obchodními podmínkami."
     : !consentReady
       ? ackItems.length > 1
-        ? "Potvrďte prosím poučení u každého výrobku na zakázku — že ho nelze vrátit do 14 dnů a že záloha se po zahájení výroby nevrací."
-        : "Potvrďte prosím ještě, že berete na vědomí, že výrobek podle vašeho zadání nelze vrátit do 14 dnů a že záloha se po zahájení výroby nevrací."
+        ? "Potvrďte prosím poučení u každého výrobku na zakázku — že ho nelze vrátit ve 14denní lhůtě a že záloha se po zahájení výroby nevrací."
+        : "Potvrďte prosím ještě, že berete na vědomí, že výrobek podle vašeho zadání nelze vrátit ve 14denní lhůtě a že záloha se po zahájení výroby nevrací."
       : charge.later > 0
         ? `Teď zaplatíte zálohu ${money(charge.now)} online (${payment?.label ?? "ComGate"}, platební brána ComGate). Zbytek ${money(charge.later)} doplatíte po dokončení zakázky.`
         : `Zaplatíte ${money(charge.now)} hned online (${payment?.label ?? "ComGate"}, platební brána ComGate).`

@@ -7,6 +7,7 @@ import { maxPurchasableQuantity } from "@lib/util/availability"
 import { isDobirkaFeeLine } from "@lib/util/dobirka"
 import { isMadeToOrderLine, type ProductionLeadTime } from "@lib/util/commission"
 import { madeToOrderBadgeText } from "@lib/util/made-to-order"
+import { isPriceOnRequestLine } from "@lib/util/price-on-request"
 import { isPackagingLine } from "@lib/util/packaging"
 import { voucherLineSummary } from "@lib/util/gift-voucher-code"
 import { isGiftVoucherProductLine } from "@lib/util/gift-voucher-setup"
@@ -63,8 +64,10 @@ const Item = ({
   const quantityLimit = Math.min(maxQuantity, 10)
 
   /* Zakázka (audit § 0): štítek „Na zakázku · záloha N % · výroba do N dnů ·
-     nelze vrátit do 14 dnů" pod názvem — tatáž slova jako u ceny na stránce
-     produktu; co profil nedá, se vynechá. Odkaz vede na článek OP. */
+     bez 14denní lhůty na vrácení" pod názvem — tatáž slova jako u ceny na
+     stránce produktu; co profil nedá, se vynechá. Odkaz vede na článek OP.
+     U ceny po domluvě se procento vynechá vždycky: záloha se počítá až
+     z ceny, kterou Lucie pošle e-mailem. */
   const madeToOrder = isMadeToOrderLine(item as any)
   const voucherSummary = voucherLineSummary(
     item.metadata as Record<string, unknown> | null
@@ -77,6 +80,7 @@ const Item = ({
     ? madeToOrderBadgeText({
         depositPercentage: madeToOrderTerms?.deposit_percentage,
         maxDays: madeToOrderTerms?.production_time_max_days,
+        priceOnRequest: isPriceOnRequestLine(item as never),
       })
     : null
 

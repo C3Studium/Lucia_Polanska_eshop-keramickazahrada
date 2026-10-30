@@ -104,7 +104,7 @@ export default async function VyrobaInquiry({ product }: Props = {}) {
 
           <aside className={styles.notice} aria-label="Důležité k zakázce na míru">
             <p>
-              <strong>Zakázku na míru nelze vrátit do 14 dnů.</strong> Jde o zboží
+              <strong>Zakázku na míru nelze vrátit ve 14denní lhůtě.</strong> Jde o zboží
               vyrobené podle vašeho zadání, u kterého zákon odstoupení od smlouvy
               ve 14denní lhůtě vylučuje (§ 1837 písm. d) občanského zákoníku). Výši
               zálohy (nejvýš 50 % ceny) uvidíte v nabídce — ještě než se rozhodnete.

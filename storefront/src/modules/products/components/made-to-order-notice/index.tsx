@@ -25,10 +25,19 @@ type TermsProps = {
   depositPercentage?: number | null
   /** Nejdelší lhůta ve dnech od zahájení výroby (Z9). */
   maxDays?: number | null
+  /** Cena po domluvě — procento zálohy se neuvádí, není z čeho počítat. */
+  priceOnRequest?: boolean
 }
 
-/** Štítek pod cenou: „Na zakázku · záloha 25 % · výroba do 42 dnů · nelze vrátit do 14 dnů". */
-export function MadeToOrderBadge({ depositPercentage, maxDays }: TermsProps) {
+/**
+ * Štítek pod cenou: „Na zakázku · záloha 25 % · výroba do 42 dnů · bez
+ * 14denní lhůty na vrácení".
+ */
+export function MadeToOrderBadge({
+  depositPercentage,
+  maxDays,
+  priceOnRequest,
+}: TermsProps) {
   return (
     <LocalizedClientLink
       href={TERMS_ANCHOR}
@@ -38,7 +47,7 @@ export function MadeToOrderBadge({ depositPercentage, maxDays }: TermsProps) {
       rel="noopener"
       data-testid="made-to-order-badge"
     >
-      {madeToOrderBadgeText({ depositPercentage, maxDays })}
+      {madeToOrderBadgeText({ depositPercentage, maxDays, priceOnRequest })}
     </LocalizedClientLink>
   )
 }
