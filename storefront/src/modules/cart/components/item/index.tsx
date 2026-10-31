@@ -9,6 +9,7 @@ import { isMadeToOrderLine, type ProductionLeadTime } from "@lib/util/commission
 import { madeToOrderBadgeText } from "@lib/util/made-to-order"
 import { isPriceOnRequestLine } from "@lib/util/price-on-request"
 import { isPackagingLine } from "@lib/util/packaging"
+import { GiftVoucherLineSetup } from "../gift-voucher-setup"
 import { voucherLineSummary } from "@lib/util/gift-voucher-code"
 import { isGiftVoucherProductLine } from "@lib/util/gift-voucher-setup"
 import { LEGAL_LINKS } from "@modules/checkout/components/legal-consent/labels"
@@ -167,10 +168,21 @@ const Item = ({
           )}
           {voucherTodo && (
             <span className={s.voucherTodo} data-testid="cart-gift-voucher-todo">
-              Zatím nenastavený — hodnotu a podobu zvolíte u souhrnu
+              Zatím nenastavený — hodnotu a podobu zvolte níž
             </span>
           )}
         </div>
+
+        {/* Nastavení poukazu rovnou pod jeho řádkem (31. 10. 2026): hodnota,
+            podoba, pro koho a věnování. Dřív stálo v pravém sloupci pod
+            souhrnem, kde se do úzkého lepkavého bloku nevešlo — a k souhrnu
+            stejně nepatřilo. V náhledu (pokladna) se nekreslí. */}
+        {type !== "preview" && isGiftVoucherProductLine(item as never) && (
+          <GiftVoucherLineSetup
+            line={item as never}
+            currencyCode={currencyCode}
+          />
+        )}
         {madeToOrderLabel && (
           <LocalizedClientLink
             href={LEGAL_LINKS.termsMadeToOrder}

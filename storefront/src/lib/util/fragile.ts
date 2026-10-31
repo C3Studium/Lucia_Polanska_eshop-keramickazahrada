@@ -2,7 +2,6 @@ import {
   cartHasCommissionCategory,
   deliveryAllowsCommission,
 } from "./commission"
-import { cartIsVoucherOnly } from "./gift-voucher-cart"
 import { hasPriceOnRequestLine } from "./price-on-request"
 
 /**
@@ -42,7 +41,6 @@ import { hasPriceOnRequestLine } from "./price-on-request"
 export type DeliveryRestriction =
   | "fragile"
   | "commission"
-  | "voucher"
   | "price_on_request"
   | null
 
@@ -70,9 +68,15 @@ export const deliveryRestrictionFor = (
   cart: { items?: LineLike[] | null } | null,
   hasCommissionProfile: boolean
 ): DeliveryRestriction => {
-  /* Poukaz vyhrává: v takovém košíku žádný křehký kus ani zakázka není, a kdyby
-     byl, nebyl by to košík jen s poukazy. */
-  if (cartIsVoucherOnly(cart as never)) return "voucher"
+  /*
+   * Poukaz dopravu NEOMEZUJE (31. 10. 2026).
+   *
+   * Do té doby šel košík jen s poukazy vyzvednout osobně: vytištěnou
+   * kartičku předávala majitelka v dílně. Rozhodla jinak — kartička se dá
+   * poslat jako cokoli jiného, takže se nabízí všechny dopravy a volba je
+   * na zákazníkovi. Elektronický poukaz dopravu nepotřebuje vůbec
+   * (`requires_shipping: false`), takže se ho to netýká.
+   */
   /* Cena po domluvě hned za ním, PŘED křehkým: obojí u takového kusu platí,
      ale tohle omezení je přísnější (jen odběr) a jiný důvod. Stačí jediný
      takový kus v košíku — dělit zásilku na „tohle pošlu a pro zbytek si
@@ -93,7 +97,7 @@ export const deliveryAllowedUnder = (
   isPickup: boolean,
   restriction: DeliveryRestriction = null
 ) =>
-  restriction === "voucher" || restriction === "price_on_request"
+  restriction === "price_on_request"
     ? isPickup
     : deliveryAllowsCommission(option, isPickup)
 
@@ -105,8 +109,6 @@ export const restrictionNotice: Record<
     "Vybrali jste křehký kus. Aby dorazil v pořádku, posíláme ho jen jako křehký balík Českou poštou — nebo si pro něj můžete přijet do ateliéru.",
   commission:
     "Zakázkovou výrobu posíláme jen jako křehký balík. Nebo si pro ni můžete přijet do ateliéru.",
-  voucher:
-    "V košíku máte jen dárkový poukaz. Vytištěný si ho vyzvednete v ateliéru — elektronický vám pošlu e-mailem a žádnou dopravu nepotřebuje.",
   price_on_request:
     "V košíku máte výrobek s cenou po domluvě. Objednáte ho teď za 0 Kč a cenu vám pošlu e-mailem — a s ní i poštovné, pokud si necháte kus poslat. Tady proto vyberte osobní odběr; jestli ho mám poslat, napište mi to k objednávce.",
 }
@@ -117,6 +119,5 @@ export const restrictionRowHint: Record<
 > = {
   fragile: "U křehkých kusů to bohužel nejde",
   commission: "U zakázkové výroby to bohužel nejde",
-  voucher: "Samotný poukaz dopravcem neposíláme",
   price_on_request: "Poštovné domluvíme spolu s cenou",
 }

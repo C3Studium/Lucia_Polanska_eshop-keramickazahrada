@@ -152,3 +152,42 @@
   color: var(--clay-41);
   font: 400 clamp(.85rem, 1vw, .95rem)/1.45 "Sansation-Regular", sans-serif;
 }
+
+/*
+ * Nastavení poukazu vložené pod jeho řádkem ve výpisu košíku (31. 10. 2026).
+ *
+ * Výpis stojí na tmavém papíru, kdežto karta se kreslila pro světlý sloupec
+ * souhrnu — `--voucher-ink` ji proto přebarví zpátky na krém. Oproti bloku
+ * v souhrnu nemá vlastní rámeček ani stín: je to součást položky, ne další
+ * panel vedle ní.
+ */
+.inline {
+  --voucher-ink: var(--cream-06);
+  --voucher-ink-rgb: var(--cream-06-rgb);
+
+  margin-top: clamp(.75rem, 1.6vh, 1.125rem);
+  padding-top: clamp(.75rem, 1.6vh, 1.125rem);
+  border-top: 1px solid rgb(var(--cream-06-rgb) / .2);
+  color: var(--clay-37);
+}
+
+.inline .cardTitle,
+.inline .recap dd {
+  color: var(--cream-06);
+}
+
+.inline .card {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.inline .save {
+  border-color: var(--cream-06);
+  background: var(--cream-06);
+  color: var(--ink-05);
+}
+
+.inline .ghost {
+  border-color: rgb(var(--cream-06-rgb) / .35);
+  color: var(--cream-06);
+}
