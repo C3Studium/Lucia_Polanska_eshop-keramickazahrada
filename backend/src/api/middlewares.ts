@@ -45,6 +45,7 @@ import {
   syncPackagingOnPaymentSession,
 } from "../lib/packaging";
 import { requireShipGate } from "../lib/require-ship-gate";
+import { syncVoucherKindOnCartRead } from "../lib/voucher-kind-shipping";
 import { rejectPriceOnRequestLine } from "../lib/price-on-request";
 import { requireZeroAmountForSystemProvider } from "../lib/zero-payment-guard";
 import { requireShippableCart } from "../lib/require-shippable-cart";

@@ -17,6 +17,7 @@ import { withdrawalUrlFor } from "../lib/claims/withdrawal-link"
 import { refundHistoryOf, toNumber } from "../lib/claims/refund-rules"
 import { lineQuantityOf } from "../lib/order-quantity"
 import { isServiceLine } from "../lib/packaging-lines"
+import { VOUCHER_LINE_KEYS } from "../lib/voucher"
 import {
   DOBIRKA_PROVIDER_ID,
   epsilonFor,
@@ -1113,6 +1114,16 @@ const onMerchantStageChanged = async ({
         pickupLocation: "Dílna Keramická zahrada, Písek",
         pickupAddress: facts["seller.address"] || "Putim 229, 397 01 Písek",
         readyDate: new Date().toLocaleDateString("cs-CZ"),
+        /*
+         * Vytištěný dárkový poukaz se jen vyzvedává (31. 10. 2026) — kartičku
+         * dává majitelka do ruky v dílně. Zákazník, který si ho koupil, žádný
+         * e-mail s kódem nedostane (ten chodí jen u elektronického), takže
+         * tohle je jediná zpráva, která mu řekne, že je objednávka vyřízená
+         * a poukaz čeká. Bez téhle věty by četl obecné „zboží je zabalené".
+         */
+        printedVoucher: ((order.items ?? []) as any[]).some(
+          (item) => (item?.metadata as any)?.[VOUCHER_LINE_KEYS.kind] === "physical"
+        ),
         amountDue: outstanding
           ? formatMoney(outstanding, order.currency_code)
           : null,
