@@ -135,6 +135,9 @@ export const mergeCommissionBrief = (input: {
 
   const mto = (input.current?.made_to_order ?? null) as Record<string, unknown> | null
   const ackAt = asString(input.ackAt ?? mto?.ack_at)
+  /* Rozlišovací značka kusu (`custom-add-to-cart`) — bez ní by se dva
+     jinak shodné zakázkové řádky mohly zase slít v jeden. */
+  const pieceKey = asString(mto?.piece_key)
 
   return {
     made_to_order: {
@@ -143,6 +146,7 @@ export const mergeCommissionBrief = (input: {
       // Pole jen tam, kde má smysl — jeden kus vypadá přesně jako dřív.
       ...(count > 1 ? { pieces } : {}),
       ...(ackAt ? { ack_at: ackAt } : {}),
+      ...(pieceKey ? { piece_key: pieceKey } : {}),
     },
   }
 }

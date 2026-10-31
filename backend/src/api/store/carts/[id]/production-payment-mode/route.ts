@@ -1,7 +1,8 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/framework/utils"
 import { z } from "@medusajs/framework/zod"
-import { splitChargeNow } from "../../../../../lib/deposit-split"
+import { shippingTiming, splitChargeNow } from "../../../../../lib/deposit-split"
+import { isServiceLine } from "../../../../../lib/packaging-lines"
 import { clampContractPercentage } from "../../../../../lib/made-to-order/contract-deposit"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
@@ -120,10 +121,14 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
   // prepayment contributes zero headroom — the slider cannot route money to
   // it beyond the owner's minimum.
   const splitLines: { floor: number; ceiling: number }[] = []
+  /* Je v košíku i běžné zboží? Rozhoduje, kdy se platí poštovné
+     (`shippingTiming`). Balné ani doběrečné zboží nejsou. */
+  let hasPlainGoods = false
 
   for (const item of items as any[]) {
     const profile = byProduct.get(item.product_id)
     if (!profile?.enabled) {
+      if (!isServiceLine(item)) hasPlainGoods = true
       continue
     }
     hasProduction = true
@@ -173,14 +178,18 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
   const goodsNonProductionNow = roundMoney(
     cartTotal - productionTotal - shippingNow
   )
+  /* Poštovné hned (je i běžné zboží), nebo až v doplatku (jen zakázka). */
+  const postage = shippingTiming(shippingNow, hasPlainGoods)
+  /* Co se platí vždycky teď: zboží mimo zakázku + poštovné, pokud je na řadě. */
+  const alwaysNow = roundMoney(goodsNonProductionNow + postage.now)
   const ceilingSum = splitLines.reduce((sum, line) => sum + line.ceiling, 0)
-  // „Jen zálohu" = zboží mimo zakázku + Σzáloh, bez poštovného.
+  // „Jen zálohu" = zboží mimo zakázku (+ poštovné u míchaného košíku) + Σzáloh.
   const depositNow = hasProduction
-    ? roundMoney(goodsNonProductionNow + depositTotal)
+    ? roundMoney(alwaysNow + depositTotal)
     : cartTotal
   // „Zaplatit vše" = vše vč. poštovného; kdo platí celé, nemá co doplácet.
   const sliderCeiling = hasProduction
-    ? roundMoney(goodsNonProductionNow + ceilingSum + shippingNow)
+    ? roundMoney(alwaysNow + ceilingSum + postage.deferred)
     : cartTotal
 
   // The stored custom choice, re-clamped against today's cart — items may
@@ -189,7 +198,7 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
   const storedAmount = toNumber(metadata?.production_payment_amount)
   const customNow =
     mode === "custom" && storedAmount > 0
-      ? splitChargeNow(splitLines, shippingNow, goodsNonProductionNow, storedAmount)
+      ? splitChargeNow(splitLines, postage.deferred, alwaysNow, storedAmount)
           .chargeNow
       : null
 
@@ -220,6 +229,27 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
           minimum: depositNow,
           maximum: sliderCeiling,
           amount: customNow ?? depositNow,
+        }
+      : null,
+    /**
+     * Totéž, ale JEN ZA ZAKÁZKU (31. 10. 2026).
+     *
+     * Panel „Kolik chcete zaplatit hned?" se ptá na zakázku, ne na košík —
+     * jenže čísla výš jsou částky k úhradě celkem, takže u míchaného košíku
+     * stálo u zakázky za 4 300 „nejméně 3 295" (v tom 2 220 za ostatní
+     * zboží) a vypadalo to jako nesmyslně vysoká záloha. Běžné zboží
+     * a poštovné se mají sečíst až v celkové částce, ne v posuvníku.
+     *
+     * `always_now` je to, co se platí vždycky (zboží mimo zakázku a
+     * poštovné, když je na řadě) — pokladna si tím dopočítá celkovou
+     * úhradu, aniž by znovu počítala košík.
+     */
+    production_only: hasProduction
+      ? {
+          minimum: depositTotal,
+          maximum: roundMoney(ceilingSum + postage.deferred),
+          amount: roundMoney((customNow ?? depositNow) - alwaysNow),
+          always_now: alwaysNow,
         }
       : null,
   }

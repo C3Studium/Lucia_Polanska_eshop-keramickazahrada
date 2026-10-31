@@ -2,7 +2,6 @@ import CheckoutBar from "./checkout-bar"
 import ItemsTemplate from "./items"
 import Summary from "./summary"
 import EmptyCartMessage from "../components/empty-cart-message"
-import GiftVoucherSetup from "../components/gift-voucher-setup"
 import SignInPrompt from "../components/sign-in-prompt"
 import Divider from "@modules/common/components/divider"
 import CmsText from "@modules/common/components/cms-text"
@@ -119,11 +118,9 @@ const CartTemplate = async ({
                       />
                     </div>
                   )}
-                  {/* Dárkový poukaz se nastavuje až tady (30. 10. 2026):
-                      hodnota, podoba a obdarovaný pod souhrnem, každý poukaz
-                      ve vlastní kartě. Dokud není hotový, souhrn k pokladně
-                      nepustí. Prázdné to vrátí, když v košíku poukaz není. */}
-                  <GiftVoucherSetup cart={cart as any} />
+                  {/* Nastavení poukazu se od 31. 10. 2026 kreslí přímo pod
+                      jeho řádkem ve výpisu — tady se nevešlo (úzký lepkavý
+                      sloupec) a k souhrnu stejně nepatřilo. */}
                 </div>
               </div>
             </div>

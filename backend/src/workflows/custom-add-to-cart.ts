@@ -33,9 +33,17 @@ export const customAddToCartWorkflow = createWorkflow(
       },
     })
 
+    /* Je to zakázka? Rozhoduje produkt varianty, ne značka na řádku. */
+    const { data: variants } = useQueryGraphStep({
+      entity: "variant",
+      fields: ["id", "product.metadata"],
+      filters: { id: input.item.variant_id },
+    }).config({ name: "get-variant-product" })
+
     const itemData = transform({
       item: input.item,
       price,
+      variants,
     }, (data) => {
       /*
        * Elektronický dárkový poukaz chodí e-mailem — položka nepotřebuje
@@ -45,19 +53,52 @@ export const customAddToCartWorkflow = createWorkflow(
        */
       const electronicVoucher =
         data.item.metadata?.[VOUCHER_LINE_KEYS.kind] === "electronic"
-      return {
+      const quantity = Math.max(1, Math.floor(Number(data.item.quantity) || 1))
+      const base = {
         variant_id: data.item.variant_id,
-        quantity: data.item.quantity || 1,
         metadata: data.item.metadata,
         unit_price: data.price,
         ...(electronicVoucher ? { requires_shipping: false } : {}),
       }
+
+      /*
+       * Zakázka = JEDEN KUS NA ŘÁDEK (31. 10. 2026).
+       *
+       * Každý kus výroby na míru má vlastní zadání, vlastní domluvenou cenu
+       * i vlastní zálohu — a zakázka v modulu vzniká jedna na řádek
+       * objednávky. Dva kusy na jednom řádku tedy znamenaly jednu cenu pro
+       * oba a jedno zadání, ze kterého se pak v administraci nedalo poznat,
+       * co patří ke kterému kusu.
+       *
+       * „2 kusy" se proto rozpadnou na dva samostatné řádky. Aby je Medusa
+       * při přidání nesloučila zpátky (slučuje podle varianty a metadat),
+       * nese každý vlastní `piece_key` — jen rozlišovací značka, nic ji
+       * nečte. Běžné zboží se nedělí: tam je množství prostě množství.
+       */
+      const madeToOrder = Boolean(
+        (data.variants?.[0] as any)?.product?.metadata?.made_to_order
+      )
+      if (!madeToOrder || quantity === 1) {
+        return [{ ...base, quantity }]
+      }
+      const razitko = `${Date.now().toString(36)}`
+      return Array.from({ length: quantity }, (_, index) => ({
+        ...base,
+        quantity: 1,
+        metadata: {
+          ...(data.item.metadata ?? {}),
+          made_to_order: {
+            ...((data.item.metadata?.made_to_order as Record<string, unknown>) ?? {}),
+            piece_key: `${razitko}-${index}`,
+          },
+        },
+      }))
     })
 
     addToCartWorkflow.runAsStep({
       input: {
         cart_id: input.cart_id,
-        items: [itemData],
+        items: itemData,
       },
     })
 

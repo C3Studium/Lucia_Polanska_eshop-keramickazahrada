@@ -46,6 +46,13 @@ import styles from "./style.module.scss"
  */
 
 /** Text NEBO fotka — táž podmínka, na které stojí brána u obou pokladen. */
+/**
+ * Kotva panelu zadání — pokladna na něj skáče, když zákazník zmáčkne
+ * platbu a zadání chybí (31. 10. 2026). Tlačítko totiž nemá být zamčené:
+ * zamčené tlačítko nic nevysvětlí, kdežto skok rovnou do pole ano.
+ */
+export const COMMISSION_BRIEFS_ID = "zadani-zakazky"
+
 export const briefHasContent = (
   brief: ReturnType<typeof readCommissionBrief>
 ): boolean => Boolean(brief.specification || brief.note || (brief.photos?.length ?? 0))
@@ -149,7 +156,7 @@ export default function CheckoutCommissionBriefs({
     })
 
   return (
-    <div className={styles.root}>
+    <div className={styles.root} id={COMMISSION_BRIEFS_ID}>
       {slots.length > 1 && (
         <nav className={styles.prepinac} aria-label="Zakázky v objednávce">
           {/* Fotka + jméno: šipky samy by nikomu neřekly, mezi čím listuje. */}

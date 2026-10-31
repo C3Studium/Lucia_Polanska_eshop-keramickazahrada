@@ -1,7 +1,7 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { Gift, MagnifyingGlass } from "@medusajs/icons";
-import { Badge, Button, Container, Heading, Input, Skeleton, Text, Toaster } from "@medusajs/ui";
-import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { Badge, Button, Container, Heading, Input, Label, Skeleton, Text, Toaster, toast } from "@medusajs/ui";
+import { QueryClientProvider, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../../components/empty-state";
 import { SubTabs } from "../../components/work-tabs";
@@ -249,6 +249,8 @@ const PoukazyInner = () => {
         </Button>
       </header>
 
+      <VoucherLimits />
+
       {!noVouchersAtAll && (
         <div className="grid gap-3 px-6 py-4 sm:grid-cols-3">
           {summary ? (
@@ -392,5 +394,117 @@ export const config = defineRouteConfig({
   icon: Gift,
   rank: 75,
 });
+
+/**
+ * Meze poukazu s vlastní částkou — „od kolika do kolika" a po jakém kroku.
+ *
+ * Do 31. 10. 2026 se daly změnit jedině skriptem, takže zvednout strop
+ * znamenalo napsat vývojáři. Hodnoty bydlí v metadatech toho produktu
+ * (odtud je čte obchod i pokladna), tohle je jen políčko k nim.
+ */
+const VoucherLimits = () => {
+  const queryClient = useQueryClient();
+  const { data } = useQuery<{
+    product: { id: string; title: string } | null;
+    limits: { min: number; max: number; step: number; currency: string };
+  }>({
+    queryKey: ["gift-voucher-limits"],
+    queryFn: () => sdk.client.fetch("/admin/gift-vouchers/limits"),
+    retry: false,
+  });
+
+  const [draft, setDraft] = useState<{ min: string; max: string; step: string } | null>(null);
+  const limits = data?.limits;
+  const hodnoty = draft ?? {
+    min: String(limits?.min ?? ""),
+    max: String(limits?.max ?? ""),
+    step: String(limits?.step ?? ""),
+  };
+
+  const ulozit = useMutation({
+    mutationFn: () =>
+      sdk.client.fetch("/admin/gift-vouchers/limits", {
+        method: "POST",
+        body: {
+          min: Number(hodnoty.min),
+          max: Number(hodnoty.max),
+          step: Number(hodnoty.step),
+        },
+      }),
+    onSuccess: async () => {
+      setDraft(null);
+      await queryClient.invalidateQueries({ queryKey: ["gift-voucher-limits"] });
+      toast.success("Meze poukazu uložené.");
+    },
+    onError: (error) => toast.error(ceskaChyba(error, "Meze se nepodařilo uložit.")),
+  });
+
+  if (!data) return null;
+  if (!data.product) {
+    return (
+      <div className="px-6 py-4">
+        <Text size="small" className="text-ui-fg-subtle">
+          V katalogu není poukaz s vlastní částkou, takže není co nastavovat.
+        </Text>
+      </div>
+    );
+  }
+
+  const cisla = [hodnoty.min, hodnoty.max, hodnoty.step].map((v) => Number(v));
+  const platne =
+    cisla.every((v) => Number.isInteger(v) && v > 0) && cisla[1] >= cisla[0];
+  const zmeneno =
+    cisla[0] !== limits?.min || cisla[1] !== limits?.max || cisla[2] !== limits?.step;
+
+  return (
+    <div className="flex flex-col gap-y-2 px-6 py-4">
+      <Text size="small" weight="plus">
+        Poukaz s vlastní částkou — od kolika do kolika
+      </Text>
+      <Text size="xsmall" className="text-ui-fg-subtle">
+        Platí pro „{data.product.title}" v obchodě: zákazník si zvolí částku
+        v těchhle mezích a po tomhle kroku.
+      </Text>
+      <div className="flex flex-wrap items-end gap-3">
+        {([
+          ["min", "Od (Kč)"],
+          ["max", "Do (Kč)"],
+          ["step", "Po (Kč)"],
+        ] as const).map(([klic, popisek]) => (
+          <div key={klic} className="flex flex-col gap-y-1">
+            <Label size="xsmall" htmlFor={`voucher-${klic}`}>
+              {popisek}
+            </Label>
+            <Input
+              id={`voucher-${klic}`}
+              type="number"
+              min={1}
+              step="1"
+              className="w-28"
+              value={hodnoty[klic]}
+              onChange={(event) =>
+                setDraft({ ...hodnoty, [klic]: event.target.value })
+              }
+            />
+          </div>
+        ))}
+        <Button
+          size="small"
+          variant="secondary"
+          isLoading={ulozit.isPending}
+          disabled={!platne || !zmeneno || ulozit.isPending}
+          onClick={() => ulozit.mutate()}
+        >
+          Uložit meze
+        </Button>
+      </div>
+      {!platne && (
+        <Text size="xsmall" className="text-ui-fg-error">
+          Zadejte celá kladná čísla; horní mez nemůže být nižší než dolní.
+        </Text>
+      )}
+    </div>
+  );
+};
 
 export default PoukazyPage;

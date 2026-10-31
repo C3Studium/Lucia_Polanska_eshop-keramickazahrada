@@ -65,6 +65,14 @@ export type ProductionPaymentMode = {
   balance_later: number
   currency_code?: string
   custom: ProductionPaymentBounds | null
+  /**
+   * Totéž, ale JEN ZA ZAKÁZKU — panel „Kolik chcete zaplatit hned?" se ptá
+   * na ni, ne na celý košík. `always_now` je zboží mimo zakázku (a poštovné,
+   * když je na řadě), které se platí vždycky; pokladna si tím dopočítá
+   * celkovou úhradu. Starší backend ho neposílá → panel spadne na částky
+   * za celý košík jako dřív.
+   */
+  production_only?: (ProductionPaymentBounds & { always_now: number }) | null
   /** Rozpis po zakázkových řádcích — volitelný, viz `ProductionPaymentLine`. */
   production_lines?: ProductionPaymentLine[] | null
 }

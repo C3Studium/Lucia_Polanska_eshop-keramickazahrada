@@ -18,6 +18,7 @@ import { PostAdminUpdateReviewsStatusSchema } from "./admin/reviews/status/route
 import { PostAddCustomLineItemSchema } from "./store/carts/[id]/line-items-custom/route";
 import { PostGiftVoucherLineSchema } from "./store/carts/[id]/line-items/[line_id]/gift-voucher/route";
 import { PostCommissionBriefSchema } from "./store/carts/[id]/line-items/[line_id]/brief/route";
+import { PostVoucherLimitsSchema } from "./admin/gift-vouchers/limits/route";
 import { PostBundledProductsSchema } from "./admin/bundled-products/route";
 import { PostDamagedProductSchema } from "./admin/damaged-products/route";
 import { PatchBundledProductsSchema } from "./admin/bundled-products/[id]/route";
@@ -45,7 +46,6 @@ import {
   syncPackagingOnPaymentSession,
 } from "../lib/packaging";
 import { requireShipGate } from "../lib/require-ship-gate";
-import { syncVoucherKindOnCartRead } from "../lib/voucher-kind-shipping";
 import { rejectPriceOnRequestLine } from "../lib/price-on-request";
 import { requireZeroAmountForSystemProvider } from "../lib/zero-payment-guard";
 import { requireShippableCart } from "../lib/require-shippable-cart";
@@ -501,6 +501,13 @@ export default defineMiddlewares({
       matcher: "/admin/merchant-orders/:orderId/pickup-paid",
       methods: ["POST"],
       middlewares: [authenticate("user", ["bearer", "session"])],
+    },
+    // Meze poukazu s vlastní částkou („od kolika do kolika") — zapisují se
+    // do metadat produktu, takže ověřený tvar a přihlášení.
+    {
+      matcher: "/admin/gift-vouchers/limits",
+      methods: ["POST"],
+      middlewares: [validateAndTransformBody(PostVoucherLimitsSchema)],
     },
     // Odkazy zákaznické samoobsluhy (úprava / reklamace) — jen pro admina.
     {

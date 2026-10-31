@@ -42,6 +42,36 @@ import s from "./style.module.scss"
 
 type CartLike = HttpTypes.StoreCart
 
+/**
+ * Nastavení JEDNOHO poukazu, k vykreslení přímo pod jeho řádkem v košíku
+ * (31. 10. 2026).
+ *
+ * Dřív stálo celé nastavení v pravém sloupci pod souhrnem. Tam se ale
+ * nevešlo — sloupec je úzký a lepkavý, takže u poukazu s vlastní částkou
+ * přetékal mimo obrazovku a nešel dorolovat. A hlavně: patří k té položce,
+ * ne k souhrnu, takže pod ní je i logicky doma.
+ */
+export function GiftVoucherLineSetup({
+  line,
+  currencyCode,
+}: {
+  line: HttpTypes.StoreCartLineItem
+  currencyCode: string
+}) {
+  return (
+    <div className={s.inline} data-testid="gift-voucher-line-setup">
+      <VoucherCard
+        /* Po uložení přijde položka s novými metadaty — jiný klíč = karta
+           se nasadí znovu a políčka ukážou, co je opravdu uložené. */
+        key={`${line.id}:${JSON.stringify(line.metadata ?? {})}`}
+        line={line}
+        currencyCode={currencyCode}
+        position={null}
+      />
+    </div>
+  )
+}
+
 export default function GiftVoucherSetup({ cart }: { cart: CartLike }) {
   const lines = giftVoucherLinesOf(cart as never) as HttpTypes.StoreCartLineItem[]
   if (!lines.length) return null

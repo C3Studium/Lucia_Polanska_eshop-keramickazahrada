@@ -20,7 +20,10 @@ import {
   commissionPiecesOf,
   readCommissionBrief,
 } from "@lib/util/made-to-order"
-import CheckoutCommissionBriefs from "../commission-briefs"
+import CheckoutCommissionBriefs, {
+  COMMISSION_BRIEFS_ID,
+} from "../commission-briefs"
+import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import { isZeroChargeCart, zeroChargeCopy } from "@lib/util/price-on-request"
 import { cartNeedsShipping } from "@lib/util/needs-shipping"
 
@@ -232,6 +235,27 @@ const Review = ({
     }
   }
 
+  /*
+   * Chybějící zadání zakázku NEZAMYKÁ tlačítko (31. 10. 2026).
+   *
+   * Zamčené tlačítko nic nevysvětlí — zákazník na něj klikne, nic se
+   * nestane a hledá proč. Tlačítko proto jde zmáčknout a místo platby
+   * odroluje k poli, které chybí, a postaví do něj kurzor.
+   *
+   * Panel je na stránce DVAKRÁT (v pravém sloupci na širokém okně a v toku
+   * na telefonu); jedna z kopií je vždycky skrytá, takže se vybírá ta, která
+   * je zrovna vidět.
+   */
+  const scrollToBriefs = () => {
+    const panels = Array.from(
+      document.querySelectorAll<HTMLElement>(`#${COMMISSION_BRIEFS_ID}`)
+    )
+    const panel = panels.find((node) => node.offsetParent !== null) ?? panels[0]
+    if (!panel) return
+    scrollWithLenis(panel)
+    panel.querySelector("textarea")?.focus({ preventScroll: true })
+  }
+
   const gateHint = !allCommissionsComplete
     ? null
     : !accepted
@@ -348,7 +372,18 @@ const Review = ({
                 <p className={styles.commissionGate}>{COMMISSION_GATE_HINT}</p>
               )}
               {zeroCharge ? (
-                consentReady && allCommissionsComplete ? (
+                /* Bez zadání tlačítko nezamykáme — zmáčknutí odroluje k poli,
+                   které chybí (viz `scrollToBriefs`). */
+                consentReady && !allCommissionsComplete ? (
+                  <button
+                    type="button"
+                    className={styles.payButton}
+                    onClick={scrollToBriefs}
+                    data-testid="submit-order-button"
+                  >
+                    {ORDER_BUTTON_LABEL}
+                  </button>
+                ) : consentReady && allCommissionsComplete ? (
                   <PaymentButton
                     cart={cart}
                     data-testid="submit-order-button"
@@ -364,8 +399,10 @@ const Review = ({
                   <button
                     type="button"
                     className={styles.payButton}
-                    onClick={payWithComgate}
-                    disabled={!consentReady || !allCommissionsComplete || isPaying}
+                    onClick={
+                      allCommissionsComplete ? payWithComgate : scrollToBriefs
+                    }
+                    disabled={!consentReady || isPaying}
                     data-testid="submit-order-button"
                   >
                     {isPaying ? "Přesměrováváme k platbě…" : ORDER_BUTTON_LABEL}
@@ -375,6 +412,15 @@ const Review = ({
                   </p>
                   {gateHint ? <p className={styles.gateHint}>{gateHint}</p> : null}
                 </>
+              ) : consentReady && !allCommissionsComplete ? (
+                <button
+                  type="button"
+                  className={styles.payButton}
+                  onClick={scrollToBriefs}
+                  data-testid="submit-order-button"
+                >
+                  {ORDER_BUTTON_LABEL}
+                </button>
               ) : consentReady && allCommissionsComplete ? (
                 <PaymentButton
                   cart={cart}

@@ -9,6 +9,7 @@ import { isMadeToOrderLine, type ProductionLeadTime } from "@lib/util/commission
 import { madeToOrderBadgeText } from "@lib/util/made-to-order"
 import { isPriceOnRequestLine } from "@lib/util/price-on-request"
 import { isPackagingLine } from "@lib/util/packaging"
+import { GiftVoucherLineSetup } from "../gift-voucher-setup"
 import { voucherLineSummary } from "@lib/util/gift-voucher-code"
 import { isGiftVoucherProductLine } from "@lib/util/gift-voucher-setup"
 import { LEGAL_LINKS } from "@modules/checkout/components/legal-consent/labels"
@@ -61,7 +62,18 @@ const Item = ({
   // Was a literal 10 on both branches, so a one-of-a-kind piece could be set to 10 and only
   // failed at the backend — the worst possible place to learn it (spec §4).
   const maxQuantity = maxPurchasableQuantity(item.variant, 10)
-  const quantityLimit = Math.min(maxQuantity, 10)
+  /*
+   * Zakázka je VŽDY jeden kus na řádek (31. 10. 2026).
+   *
+   * Každý kus má vlastní zadání, vlastní domluvenou cenu i vlastní zálohu —
+   * dva kusy na jednom řádku by sdílely jednu cenu pro oba, což u výroby na
+   * míru nedává smysl. Košík proto u zakázky množství nezvedá; další kus se
+   * přidává ze stránky výrobku a vznikne z něj samostatný řádek
+   * (`workflows/custom-add-to-cart.ts`).
+   */
+  const quantityLimit = isMadeToOrderLine(item as any)
+    ? 1
+    : Math.min(maxQuantity, 10)
 
   /* Zakázka (audit § 0): štítek „Na zakázku · záloha N % · výroba do N dnů ·
      bez 14denní lhůty na vrácení" pod názvem — tatáž slova jako u ceny na
@@ -156,10 +168,21 @@ const Item = ({
           )}
           {voucherTodo && (
             <span className={s.voucherTodo} data-testid="cart-gift-voucher-todo">
-              Zatím nenastavený — hodnotu a podobu zvolíte u souhrnu
+              Zatím nenastavený — hodnotu a podobu zvolte níž
             </span>
           )}
         </div>
+
+        {/* Nastavení poukazu rovnou pod jeho řádkem (31. 10. 2026): hodnota,
+            podoba, pro koho a věnování. Dřív stálo v pravém sloupci pod
+            souhrnem, kde se do úzkého lepkavého bloku nevešlo — a k souhrnu
+            stejně nepatřilo. V náhledu (pokladna) se nekreslí. */}
+        {type !== "preview" && isGiftVoucherProductLine(item as never) && (
+          <GiftVoucherLineSetup
+            line={item as never}
+            currencyCode={currencyCode}
+          />
+        )}
         {madeToOrderLabel && (
           <LocalizedClientLink
             href={LEGAL_LINKS.termsMadeToOrder}

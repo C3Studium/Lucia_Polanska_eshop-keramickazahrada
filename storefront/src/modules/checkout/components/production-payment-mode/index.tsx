@@ -84,6 +84,25 @@ export default function ProductionPaymentModeChoice({
   const currency_code = state.currency_code ?? "czk"
   const money = (amount: number) => convertToLocale({ amount, currency_code })
 
+  /*
+   * Panel se ptá na ZAKÁZKU, ne na košík (31. 10. 2026).
+   *
+   * Uvnitř (a na serveru) je `draft` pořád částka k úhradě CELKEM — tak ji
+   * pokladna účtuje a tak se ukládá do košíku. Zákazníkovi se ale ukazují
+   * čísla jen za zakázku: u míchaného košíku stálo u zakázky za 4 300
+   * „nejméně 3 295", protože v tom bylo 2 220 za ostatní zboží, a vypadalo
+   * to jako nesmyslně vysoká záloha. Běžné zboží a poštovné se sečtou až
+   * v celkové částce.
+   *
+   * `alwaysNow` je právě ten zbytek. Starší backend ho neposílá → nula a
+   * panel ukazuje částky za celý košík jako dřív.
+   */
+  const alwaysNow = Math.max(0, state.production_only?.always_now ?? 0)
+  /** Částka k úhradě → částka za zakázku (co se ukazuje). */
+  const zaZakazku = (chargeNow: number) => Math.max(0, chargeNow - alwaysNow)
+  /** A zpátky — co se zapíše do košíku a účtuje. */
+  const kUhrade = (commissionOnly: number) => commissionOnly + alwaysNow
+
   const span = Math.max(0, bounds.maximum - bounds.minimum)
   const outstanding = Math.max(0, state.full_amount - draft)
   const atFloor = draft <= bounds.minimum
@@ -136,7 +155,8 @@ export default function ProductionPaymentModeChoice({
     const parsed = Math.round(Number(typed.replace(/\s+/g, "")))
     setTyped(null)
     if (!typed.trim() || Number.isNaN(parsed)) return
-    jump(Math.min(bounds.maximum, Math.max(bounds.minimum, parsed)))
+    /* Napsané číslo je za zakázku; meze jsou k úhradě celkem. */
+    jump(Math.min(bounds.maximum, Math.max(bounds.minimum, kUhrade(parsed))))
   }
 
   /**
@@ -154,7 +174,10 @@ export default function ProductionPaymentModeChoice({
       pendingAmount.current = null
       return
     }
-    const clamped = Math.min(bounds.maximum, Math.max(bounds.minimum, parsed))
+    const clamped = Math.min(
+      bounds.maximum,
+      Math.max(bounds.minimum, kUhrade(parsed))
+    )
     pendingAmount.current = clamped
     commitTimer.current = window.setTimeout(() => {
       setTyped(null)
@@ -187,7 +210,9 @@ export default function ProductionPaymentModeChoice({
       )}
 
       <output className={styles.amount} htmlFor={sliderId}>
-        <strong data-testid="production-payment-amount">{money(draft)}</strong>
+        <strong data-testid="production-payment-amount">
+          {money(zaZakazku(draft))}
+        </strong>
         <span>
           {outstanding > 0
             ? `zbývá ${money(outstanding)} — doplatíte, až bude hotovo`
@@ -205,7 +230,7 @@ export default function ProductionPaymentModeChoice({
         value={draft}
         disabled={isPending || span === 0}
         aria-labelledby={`${sliderId}-label`}
-        aria-valuetext={money(draft)}
+        aria-valuetext={money(zaZakazku(draft))}
         onChange={(event) => onSlide(Number(event.target.value))}
         data-testid="production-payment-slider"
       />
@@ -263,7 +288,7 @@ export default function ProductionPaymentModeChoice({
             type="text"
             inputMode="numeric"
             autoComplete="off"
-            value={typed ?? String(draft)}
+            value={typed ?? String(zaZakazku(draft))}
             disabled={isPending || span === 0}
             onChange={(event) => onTypeExact(event.target.value)}
             onBlur={commitTyped}
@@ -273,9 +298,9 @@ export default function ProductionPaymentModeChoice({
                 commitTyped()
               }
             }}
-            aria-label={`Přesná částka — mezi ${money(bounds.minimum)} a ${money(
-              bounds.maximum
-            )}`}
+            aria-label={`Přesná částka za zakázku — mezi ${money(
+              zaZakazku(bounds.minimum)
+            )} a ${money(zaZakazku(bounds.maximum))}`}
             data-testid="production-payment-input"
           />
           <span aria-hidden="true">
