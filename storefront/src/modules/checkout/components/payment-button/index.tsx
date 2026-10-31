@@ -165,7 +165,14 @@ const DirectPlaceOrderButton = ({
     setErrorMessage(null)
     try {
       await onBeforePlaceAction?.()
-      await placeOrder()
+      /* Neúspěch se VRACÍ, ne hází — Next by vyhozenou chybu ze server
+         action zamaskoval a zákazník by místo důvodu četl anglickou větu
+         o „Server Components render" (viz `placeOrder`). */
+      const vysledek = await placeOrder()
+      if (vysledek && "ok" in vysledek && vysledek.ok === false) {
+        setErrorMessage(vysledek.message)
+        setSubmitting(false)
+      }
     } catch (err) {
       setErrorMessage(
         err instanceof Error ? err.message : "Objednávku se nepodařilo dokončit."

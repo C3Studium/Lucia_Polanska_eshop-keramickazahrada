@@ -1590,7 +1590,7 @@ export async function placeOrder(cartId?: string) {
     ...(await getAuthHeaders()),
   }
 
-  const cartRes = await sdk.store.cart
+  const vysledek = await sdk.store.cart
     .complete(id, {}, headers)
     .then(async (cartRes) => {
       const cartCacheTag = await getCacheTag("carts")
@@ -1601,8 +1601,35 @@ export async function placeOrder(cartId?: string) {
       // Nejdřív stav platby, teprve pak překlad — `medusaError` totiž vyhodí
       // výjimku a za ním už se nic nevypíše.
       await logStavPlatby(id, headers as Record<string, string>)
-      return medusaError(chyba)
+      /*
+       * VRACÍME, neházíme.
+       *
+       * Next.js v produkci maskuje chyby vyhozené ze server action: na
+       * tlačítku se pak místo „Tenhle výrobek teď nejde objednat" objevilo
+       * „An error occurred in the Server Components render. The specific
+       * message is omitted in production builds…" (změřeno 31. 10. 2026 na
+       * objednávce s cenou po domluvě). Zákazník tedy neví, co se stalo, a
+       * my taky ne, dokud nekoukneme do logu. Hláška přeložená do češtiny
+       * (`toCzechErrorMessage`) proto jde zpátky jako NÁVRATOVÁ HODNOTA —
+       * tu Next nemaskuje. Logování zůstává přes `medusaError`.
+       */
+      try {
+        medusaError(chyba)
+      } catch (prelozena: any) {
+        return {
+          ok: false as const,
+          message:
+            (prelozena instanceof Error && prelozena.message) ||
+            "Objednávku se nepodařilo dokončit.",
+        }
+      }
+      return { ok: false as const, message: "Objednávku se nepodařilo dokončit." }
     })
+
+  if (vysledek && "ok" in vysledek && vysledek.ok === false) {
+    return vysledek
+  }
+  const cartRes = vysledek as HttpTypes.StoreCompleteCartResponse
 
   if (cartRes?.type === "order") {
     console.info(`[objednávka] ${id} → ${cartRes.order.id} hotovo`)

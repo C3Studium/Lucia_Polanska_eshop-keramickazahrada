@@ -45,6 +45,24 @@ const Inner = ({ productId }: { productId: string }) => {
     queryFn: () => sdk.client.fetch("/admin/shipping-profiles?limit=100"),
   });
 
+  /*
+   * Kolik dopravy na kterém profilu leží.
+   *
+   * ZMĚŘENO 31. 10. 2026 na „Domovním znamení": produkt byl přiřazený
+   * k profilu „Česká Pošta - Křehké", pod kterým není ŽÁDNÁ volba dopravy —
+   * všechny čtyři leží na výchozím profilu. Profil tedy byl vyplněný, odznak
+   * hlásil „Lze objednat", a objednávka přesto spadla až při dokončení, po
+   * vyplněné adrese a zvolené dopravě. Prázdný profil je stejně fatální jako
+   * žádný, takže se počítá a je vidět.
+   */
+  const { data: dopravy } = useQuery<any>({
+    queryKey: ["shipping-options-per-profile"],
+    queryFn: () =>
+      sdk.client.fetch(
+        "/admin/shipping-options?limit=1000&fields=id,name,shipping_profile_id"
+      ),
+  });
+
   const soucasny = produkt?.product?.shipping_profile?.id ?? "";
 
   // Až po načtení: dokud se neví, co produkt má, není co předvybrat.
@@ -73,11 +91,21 @@ const Inner = ({ productId }: { productId: string }) => {
   const nabidka: any[] = profily?.shipping_profiles ?? [];
   const zmeneno = vybrany !== soucasny && Boolean(vybrany);
 
+  /** Počet dopravy na profilu; `null` = ještě se načítá, tak nic netvrdíme. */
+  const pocetDopravy = (profileId: string): number | null => {
+    const vsechny: any[] | undefined = dopravy?.shipping_options;
+    if (!vsechny) return null;
+    return vsechny.filter((o) => o?.shipping_profile_id === profileId).length;
+  };
+  const dopravNaSoucasnem = soucasny ? pocetDopravy(soucasny) : null;
+  const prazdnyProfil = dopravNaSoucasnem === 0;
+  const lzeObjednat = Boolean(soucasny) && dopravNaSoucasnem !== 0;
+
   return (
     <Container className="flex flex-col gap-y-3 p-4">
       <div className="flex items-center justify-between">
         <Heading level="h2">Doprava</Heading>
-        {soucasny ? (
+        {lzeObjednat ? (
           <Badge size="2xsmall" color="green">Lze objednat</Badge>
         ) : (
           <Badge size="2xsmall" color="red">Nelze objednat</Badge>
@@ -91,16 +119,29 @@ const Inner = ({ productId }: { productId: string }) => {
         </Text>
       )}
 
+      {prazdnyProfil && (
+        <Text size="xsmall" className="text-ui-fg-error">
+          Na tomhle profilu není žádná doprava, takže objednávka spadne až při
+          dokončení — zákazník vyplní adresu, vybere dopravu a teprve pak se to
+          odmítne. Přepněte prosím na profil, pod kterým doprava je (obvykle
+          výchozí).
+        </Text>
+      )}
+
       <Select value={vybrany} onValueChange={setVybrany}>
         <Select.Trigger>
           <Select.Value placeholder="Bez profilu" />
         </Select.Trigger>
         <Select.Content>
-          {nabidka.map((profil: any) => (
-            <Select.Item key={profil.id} value={profil.id}>
-              {profil.name}
-            </Select.Item>
-          ))}
+          {nabidka.map((profil: any) => {
+            const pocet = pocetDopravy(profil.id);
+            return (
+              <Select.Item key={profil.id} value={profil.id}>
+                {profil.name}
+                {pocet === 0 ? " — bez dopravy, nelze objednat" : ""}
+              </Select.Item>
+            );
+          })}
         </Select.Content>
       </Select>
 
