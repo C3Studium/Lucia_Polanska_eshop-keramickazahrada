@@ -163,6 +163,25 @@
   border-left: 1px solid rgb(var(--cream-06-rgb) / .1);
 }
 
+/*
+ * Nastavení dárkového poukazu — vlastní pruh pod celým řádkem.
+ *
+ * Patří k položce, ale do buňky s názvem se nevešlo: ta má na širokém košíku
+ * 337 px z 955, takže se formulář skládal do vysokého sloupce (naměřeno 276 px
+ * zavřený, 529 rozbalený), zatímco vedle něj zůstávalo prázdno. Přes všechny
+ * sloupce se popisky vejdou vedle polí.
+ *
+ * Implicitní čtvrtá řada: `grid-row: 1 / -1` u náhledu a názvu míří na konec
+ * EXPLICITNÍ mřížky (tři řady), takže se do tohohle pruhu neroztáhnou.
+ */
+.cellVoucher {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  grid-column: 1 / -1;
+  padding: 0 clamp(1.5rem, 3vw, 3.625rem) clamp(1.1rem, 2.4vh, 1.75rem);
+}
+
 .kicker,
 .controlLabel {
   /* Column headings of the price table (Množství / Cena za kus / Celkem) —

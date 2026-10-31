@@ -5,6 +5,7 @@ import { HttpTypes } from "@medusajs/types"
 import { Item } from "@modules/cart/components/item"
 import PackagingLine, { packagingFor } from "@modules/common/components/packaging-line"
 import { isPackagingLine, withPackagingUnderProducts } from "@lib/util/packaging"
+import { giftVoucherLinesOf, voucherLineNeedsSetup } from "@lib/util/gift-voucher-setup"
 import type { ProductionLeadTime } from "@lib/util/commission"
 import SkeletonLineItem from "@modules/skeletons/components/skeleton-line-item"
 import { useEditRerender } from "@lib/hooks/use-edit-rerender"
@@ -24,6 +25,15 @@ type ItemsTemplateProps = {
 const ItemsTemplate = ({ cart, copy, madeToOrderTerms = [] }: ItemsTemplateProps) => {
   useEditRerender()
   const items = cart?.items
+
+  /* Kotva `#nastaveni-poukazu` — zamčené tlačítko k pokladně i spodní lišta na
+     ni odkazují. Dostane ji PRVNÍ nenastavený poukaz, protože právě k němu ten
+     odkaz posílá; když je všechno nastavené, zůstane u prvního poukazu, ať
+     odkaz (a návrat na starou adresu s `#`) někam vede. */
+  const voucherLines = giftVoucherLinesOf(cart as never)
+  const anchorLineId =
+    (voucherLines.find((line) => voucherLineNeedsSetup(line, cart?.currency_code)) ??
+      voucherLines[0])?.id ?? null
 
   return (
     <div className={s.root}>
@@ -71,6 +81,7 @@ const ItemsTemplate = ({ cart, copy, madeToOrderTerms = [] }: ItemsTemplateProps
                       madeToOrderTerms={
                         madeToOrderTerms.find((lead) => lead.line_id === item.id) ?? null
                       }
+                      voucherAnchor={Boolean(anchorLineId) && item.id === anchorLineId}
                     />
                   )
                 })

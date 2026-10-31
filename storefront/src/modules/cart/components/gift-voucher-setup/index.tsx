@@ -3,11 +3,9 @@
 import { useState } from "react"
 
 import { setGiftVoucherLine } from "@lib/data/cart"
-import { convertToLocale } from "@lib/util/money"
 import { VOUCHER_LINE_KEYS } from "@lib/util/gift-voucher-code"
 import {
   GIFT_VOUCHER_SETUP_ID,
-  giftVoucherLinesOf,
   voucherLineAmount,
   voucherLineKind,
   voucherLineNeedsSetup,
@@ -28,95 +26,58 @@ import type { HttpTypes } from "@medusajs/types"
 import s from "./style.module.scss"
 
 /**
- * Nastavení dárkového poukazu — pod souhrnem v košíku (30. 10. 2026).
+ * Nastavení JEDNOHO dárkového poukazu, přímo pod jeho řádkem v košíku.
  *
- * Dřív se hodnota, podoba a obdarovaný vyplňovali na stránce produktu, pod
- * cenou. Zákazník tak musel projít pět polí dřív, než vůbec věděl, že poukaz
- * chce, a dva poukazy pro dva lidi znamenaly projít je dvakrát. Teď se poukaz
- * jen přidá do košíku a nastaví se tady, vedle částky, které se to týká —
- * každý poukaz ve vlastní kartě pod sebou.
+ * Zákazník přidá poukaz do košíku holý a hodnotu, podobu i obdarovaného zvolí
+ * až tady — vedle částky, které se to týká. Dokud to neudělá, košík k pokladně
+ * nepustí (`Summary`, `CheckoutBar`); poslední slovo má backend
+ * (`giftVoucherSetupProblem`).
  *
- * Dokud zůstane nenastavený, košík k pokladně nepustí (`Summary`,
- * `CheckoutBar`); poslední slovo má backend (`giftVoucherSetupProblem`).
+ * 31. 10. 2026 se to celé smrsklo. Předtím to byla karta s vlastním nadpisem,
+ * cenou v serifu přes dva řádky, pěti poli pod sebou a shrnutím v popisném
+ * seznamu — dohromady vyšší než celý zbytek položky, a na širokém okně to
+ * stálo v jednom úzkém sloupci s prázdnem vedle sebe. Teď: popisek vlevo,
+ * pole vpravo, nepovinné údaje až na vyžádání. Nadpis ani shrnutí se tu
+ * nekreslí vůbec — obojí stojí o pár řádků výš v samotné položce.
  */
 
-type CartLike = HttpTypes.StoreCart
-
-/**
- * Nastavení JEDNOHO poukazu, k vykreslení přímo pod jeho řádkem v košíku
- * (31. 10. 2026).
- *
- * Dřív stálo celé nastavení v pravém sloupci pod souhrnem. Tam se ale
- * nevešlo — sloupec je úzký a lepkavý, takže u poukazu s vlastní částkou
- * přetékal mimo obrazovku a nešel dorolovat. A hlavně: patří k té položce,
- * ne k souhrnu, takže pod ní je i logicky doma.
- */
 export function GiftVoucherLineSetup({
   line,
   currencyCode,
+  anchor = false,
 }: {
   line: HttpTypes.StoreCartLineItem
   currencyCode: string
+  /**
+   * Nese tenhle blok kotvu `#nastaveni-poukazu`? Zamčené tlačítko k pokladně
+   * na ni odkazuje, takže ji dostane PRVNÍ nenastavený poukaz v košíku —
+   * a v celém dokumentu smí být jen jednou.
+   */
+  anchor?: boolean
 }) {
   return (
-    <div className={s.inline} data-testid="gift-voucher-line-setup">
+    <div
+      className={s.inline}
+      id={anchor ? GIFT_VOUCHER_SETUP_ID : undefined}
+      data-testid="gift-voucher-line-setup"
+    >
       <VoucherCard
         /* Po uložení přijde položka s novými metadaty — jiný klíč = karta
            se nasadí znovu a políčka ukážou, co je opravdu uložené. */
         key={`${line.id}:${JSON.stringify(line.metadata ?? {})}`}
         line={line}
         currencyCode={currencyCode}
-        position={null}
       />
     </div>
-  )
-}
-
-export default function GiftVoucherSetup({ cart }: { cart: CartLike }) {
-  const lines = giftVoucherLinesOf(cart as never) as HttpTypes.StoreCartLineItem[]
-  if (!lines.length) return null
-
-  return (
-    <section
-      id={GIFT_VOUCHER_SETUP_ID}
-      className={s.root}
-      aria-label="Nastavení dárkového poukazu"
-      data-testid="gift-voucher-setup"
-    >
-      <p className={s.eyebrow}>Ještě jedna věc</p>
-      <h2 className={s.title}>
-        {lines.length > 1 ? "Dárkové poukazy" : "Dárkový poukaz"}
-      </h2>
-      <p className={s.lede}>
-        {lines.length > 1
-          ? "U každého poukazu zvolte hodnotu a podobu. Bez toho nejde pokračovat k pokladně."
-          : "Zvolte hodnotu a podobu poukazu. Bez toho nejde pokračovat k pokladně."}
-      </p>
-
-      <div className={s.cards}>
-        {lines.map((line, index) => (
-          <VoucherCard
-            /* Po uloženi přijde položka s novými metadaty — jiný klíč = karta
-               se nasadí znovu a políčka ukážou, co je opravdu uložené. */
-            key={`${line.id}:${JSON.stringify(line.metadata ?? {})}`}
-            line={line}
-            currencyCode={cart.currency_code}
-            position={lines.length > 1 ? index + 1 : null}
-          />
-        ))}
-      </div>
-    </section>
   )
 }
 
 function VoucherCard({
   line,
   currencyCode,
-  position,
 }: {
   line: HttpTypes.StoreCartLineItem
   currencyCode: string
-  position: number | null
 }) {
   const productMetadata = (line as any).product?.metadata as
     | Record<string, unknown>
@@ -141,10 +102,6 @@ function VoucherCard({
   const [touched, setTouched] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  const heading = position
-    ? `${position}. ${line.product_title ?? line.title}`
-    : (line.product_title ?? line.title)
 
   const save = async () => {
     setError(null)
@@ -182,69 +139,38 @@ function VoucherCard({
     setOpen(false)
   }
 
+  /* Nastavený poukaz: hodnota i podoba stojí v samotné položce o kus výš
+     (cena vpravo, „Elektronický pro Janu" pod variantou), takže se tu
+     neopakují. Zbývá věnování — to jinde v košíku vidět není — a cesta zpět
+     do polí. */
   if (!open) {
     return (
-      <article className={s.card} data-testid="gift-voucher-card">
-        <h3 className={s.cardTitle}>{heading}</h3>
-        <dl className={s.recap}>
-          <div>
-            <dt>Hodnota</dt>
-            <dd>
-              {savedAmount !== null
-                ? convertToLocale({ amount: savedAmount, currency_code: currencyCode })
-                : convertToLocale({
-                    amount: line.unit_price ?? 0,
-                    currency_code: currencyCode,
-                  })}
-            </dd>
-          </div>
-          <div>
-            <dt>Podoba</dt>
-            <dd>{savedKind === "electronic" ? "Elektronický — e-mailem" : "Vytištěný"}</dd>
-          </div>
-          {form.recipientName ? (
-            <div>
-              <dt>Pro koho</dt>
-              <dd>{form.recipientName}</dd>
-            </div>
-          ) : null}
-          {savedKind === "electronic" && form.recipientEmail ? (
-            <div>
-              <dt>E-mail</dt>
-              <dd>{form.recipientEmail}</dd>
-            </div>
-          ) : null}
-          {form.dedication ? (
-            <div>
-              <dt>Věnování</dt>
-              <dd className={s.dedication}>{form.dedication}</dd>
-            </div>
-          ) : null}
-        </dl>
+      <div className={s.saved} data-testid="gift-voucher-card">
+        {form.dedication ? (
+          <p className={s.dedication}>&bdquo;{form.dedication}&ldquo;</p>
+        ) : null}
         <button
           type="button"
-          className={s.ghost}
+          className={s.link}
           onClick={() => setOpen(true)}
           data-testid="gift-voucher-edit"
         >
           Upravit poukaz
         </button>
-      </article>
+      </div>
     )
   }
 
   return (
-    <article className={s.card} data-testid="gift-voucher-card">
-      <h3 className={s.cardTitle}>{heading}</h3>
-      {needsSetup && <p className={s.todo}>Zatím nenastavený</p>}
+    <div className={s.card} data-testid="gift-voucher-card">
       {/* Dva holé poukazy se v košíku slijí do jednoho řádku (Medusa slučuje
           položky se shodnými metadaty), takže jedno nastavení platí pro oba.
           Kdo chce dva různé, nastaví první a druhý přidá potom — ten už se
           s nastaveným nesleje. */}
       {line.quantity > 1 && (
         <p className={s.hint}>
-          Nastavení platí pro všechny {line.quantity} kusy. Chcete každý jinak? Dejte
-          sem 1 kus, uložte, a pak přidejte další poukaz z obchodu.
+          Nastavení platí pro všech {line.quantity} kusů. Každý jinak? Nechte tu 1 kus,
+          uložte a další poukaz přidejte z obchodu.
         </p>
       )}
 
@@ -291,7 +217,7 @@ function VoucherCard({
         {!needsSetup && (
           <button
             type="button"
-            className={s.ghost}
+            className={s.link}
             onClick={() => setOpen(false)}
             disabled={saving}
           >
@@ -299,6 +225,6 @@ function VoucherCard({
           </button>
         )}
       </div>
-    </article>
+    </div>
   )
 }

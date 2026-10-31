@@ -6,6 +6,7 @@ import {
   GIFT_VOUCHER_SETUP_ID,
 } from "@lib/util/gift-voucher-setup"
 import { convertToLocale } from "@lib/util/money"
+import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import DiscountCode from "@modules/checkout/components/discount-code"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import type { HttpTypes } from "@medusajs/types"
@@ -117,6 +118,14 @@ export default function CheckoutBar({
           href={`#${GIFT_VOUCHER_SETUP_ID}`}
           className={s.ctaBlocked}
           data-testid="checkout-bar-blocked"
+          /* Stránka jede na Lenisu, takže skok z adresy by se s ním popral —
+             odkaz zůstává (funguje bez JS), scroll si vezme Lenis. */
+          onClick={(event) => {
+            const panel = document.getElementById(GIFT_VOUCHER_SETUP_ID)
+            if (!panel) return
+            event.preventDefault()
+            scrollWithLenis(panel)
+          }}
         >
           Nastavit poukaz
         </a>

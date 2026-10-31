@@ -1,5 +1,6 @@
 "use client"
 
+import { clx } from "@medusajs/ui"
 import { useId, useState } from "react"
 
 import {
@@ -14,10 +15,14 @@ import styles from "./style.module.scss"
  * Formulář dárkového poukazu — podoba, pro koho, e-mail obdarovaného
  * a věnování.
  *
- * Od 30. 10. 2026 stojí v KOŠÍKU (`modules/cart/components/gift-voucher-setup`),
+ * Stojí pod řádkem poukazu v KOŠÍKU (`modules/cart/components/gift-voucher-setup`),
  * ne na stránce produktu: na produktu zákazník jen vybere poukaz a přidá ho do
  * košíku. Uložené hodnoty si drží položka košíku v metadatech a backend z nich
  * po zaplacení založí poukaz (`backend/src/lib/gift-voucher-orders.ts`).
+ *
+ * Od 31. 10. 2026 je NÍZKÝ: podoba jsou dvě pilulky na jedné lince a tři
+ * nepovinná pole se otevřou až na vyžádání. Pět polí pod sebou dělalo
+ * z jedné položky košíku půl obrazovky, a čtyři z nich vyplňuje málokdo.
  */
 
 export type GiftVoucherFormValue = {
@@ -58,10 +63,10 @@ type Props = {
 }
 
 const KINDS: Array<{ value: VoucherKind; title: string; note: string }> = [
-  { value: "electronic", title: "Elektronický", note: "pošlu ho e-mailem jako PDF" },
-  /* Samotný poukaz se dopravcem neposílá (lib/util/fragile.ts) — vyzvedává se
-     v ateliéru. Ve smíšeném košíku jede poštou se zbytkem objednávky. */
-  { value: "physical", title: "Vytištěný", note: "přibalím ho k objednávce, nebo si ho vyzvednete" },
+  { value: "electronic", title: "Elektronický", note: "e-mailem" },
+  /* Vytištěný poukaz se od 31. 10. 2026 posílá i dopravcem — majitelka ho
+     přibalí k objednávce, nebo si ho zákazník vyzvedne v ateliéru. */
+  { value: "physical", title: "Vytištěný", note: "poštou i osobně" },
 ]
 
 export default function GiftVoucherForm({
@@ -72,6 +77,11 @@ export default function GiftVoucherForm({
 }: Props) {
   const id = useId()
   const [emailTouched, setEmailTouched] = useState(false)
+  /* Nepovinná pole: otevřená jen tomu, kdo si je vyžádal — nebo tomu, kdo
+     v nich už něco uloženého má (úprava poukazu). */
+  const [more, setMore] = useState(
+    () => Boolean(value.recipientName || value.recipientEmail || value.dedication)
+  )
   const set = (patch: Partial<GiftVoucherFormValue>) => onChange({ ...value, ...patch })
 
   const emailInvalid =
@@ -81,100 +91,135 @@ export default function GiftVoucherForm({
   /* E-mail se hlídá až po opuštění pole nebo po pokusu o přidání — uprostřed
      psaní je každá adresa „špatně". */
   const showEmailError = emailInvalid && (showErrors || emailTouched)
+  /* Chybu nejde nechat za zavřeným blokem — kdo ji má opravit, musí na to
+     pole vidět. */
+  const open = more || showEmailError
   const dedicationLeft = VOUCHER_DEDICATION_MAX - value.dedication.length
 
   return (
     <div className={styles.root} data-testid="gift-voucher-form">
-      <fieldset className={styles.kinds} disabled={disabled}>
-        <legend className={styles.label}>Podoba</legend>
-        {KINDS.map((kind) => (
-          <label key={kind.value} className={styles.kind}>
-            <input
-              type="radio"
-              name={`${id}-kind`}
-              value={kind.value}
-              checked={value.kind === kind.value}
-              onChange={() => set({ kind: kind.value })}
-              data-testid={`gift-voucher-kind-${kind.value}`}
-            />
-            <span>
-              <strong>{kind.title}</strong> — {kind.note}
-            </span>
-          </label>
-        ))}
-      </fieldset>
-
-      <div className={styles.field}>
-        <label htmlFor={`${id}-name`} className={styles.label}>
-          Pro koho <span className={styles.optional}>(nepovinné)</span>
-        </label>
-        <input
-          id={`${id}-name`}
-          type="text"
-          className={styles.input}
-          value={value.recipientName}
-          maxLength={120}
-          autoComplete="off"
-          placeholder="Jméno obdarovaného"
-          onChange={(event) => set({ recipientName: event.target.value })}
-          disabled={disabled}
-          data-testid="gift-voucher-recipient-name"
-        />
+      <div className={styles.row}>
+        <span className={styles.label} id={`${id}-kind-label`}>
+          Podoba
+        </span>
+        <div className={styles.kinds} role="radiogroup" aria-labelledby={`${id}-kind-label`}>
+          {KINDS.map((kind) => (
+            <label key={kind.value} className={styles.kind}>
+              <input
+                type="radio"
+                className={styles.radio}
+                name={`${id}-kind`}
+                value={kind.value}
+                checked={value.kind === kind.value}
+                onChange={() => set({ kind: kind.value })}
+                disabled={disabled}
+                data-testid={`gift-voucher-kind-${kind.value}`}
+              />
+              <span className={styles.chip}>
+                {kind.title} <small>{kind.note}</small>
+              </span>
+            </label>
+          ))}
+        </div>
       </div>
 
-      {value.kind === "electronic" && (
+      <div className={styles.row}>
+        {/* Jen zarovnání s popiskem „Podoba“ — ve sloupci pod sebou by to byl
+            nadpis nad tlačítkem, které se samo umí pojmenovat. */}
+        <span className={clx(styles.label, styles.labelGhost)} aria-hidden="true">
+          Komu
+        </span>
+        <div className={styles.moreWrap}>
+          <button
+            type="button"
+            className={styles.more}
+            onClick={() => setMore((open) => !open)}
+            aria-expanded={open}
+            aria-controls={`${id}-optional`}
+            disabled={disabled}
+            data-testid="gift-voucher-more"
+          >
+            {open ? "Skrýt" : "Jméno, e-mail a věnování"}
+            <span className={styles.optionalTag}>nepovinné</span>
+          </button>
+        </div>
+      </div>
+
+      <div id={`${id}-optional`} className={styles.optional} hidden={!open}>
         <div className={styles.field}>
-          <label htmlFor={`${id}-email`} className={styles.label}>
-            E-mail obdarovaného <span className={styles.optional}>(nepovinné)</span>
+          <label htmlFor={`${id}-name`} className={styles.subLabel}>
+            Pro koho
           </label>
           <input
-            id={`${id}-email`}
-            type="email"
-            inputMode="email"
+            id={`${id}-name`}
+            type="text"
             className={styles.input}
-            value={value.recipientEmail}
-            maxLength={320}
+            value={value.recipientName}
+            maxLength={120}
             autoComplete="off"
-            placeholder="jana@example.cz"
-            onChange={(event) => set({ recipientEmail: event.target.value })}
-            onBlur={() => setEmailTouched(true)}
+            placeholder="Jméno obdarovaného"
+            onChange={(event) => set({ recipientName: event.target.value })}
             disabled={disabled}
-            aria-invalid={showEmailError || undefined}
-            aria-describedby={`${id}-email-hint`}
-            data-testid="gift-voucher-recipient-email"
+            data-testid="gift-voucher-recipient-name"
           />
-          <p
-            id={`${id}-email-hint`}
-            className={showEmailError ? styles.error : styles.hint}
-            role={showEmailError ? "alert" : undefined}
-          >
-            {showEmailError
-              ? "Tenhle e-mail nevypadá správně — zkontrolujte ho prosím."
-              : "Když ho nevyplníte, poukaz přijde vám."}
-          </p>
         </div>
-      )}
 
-      <div className={styles.field}>
-        <label htmlFor={`${id}-dedication`} className={styles.label}>
-          Věnování <span className={styles.optional}>(nepovinné)</span>
-        </label>
-        <textarea
-          id={`${id}-dedication`}
-          className={styles.textarea}
-          value={value.dedication}
-          maxLength={VOUCHER_DEDICATION_MAX}
-          rows={3}
-          placeholder="Pár slov, která na poukazu budou"
-          onChange={(event) => set({ dedication: event.target.value })}
-          disabled={disabled}
-          aria-describedby={`${id}-dedication-hint`}
-          data-testid="gift-voucher-dedication"
-        />
-        <p id={`${id}-dedication-hint`} className={styles.hint}>
-          {dedicationLeft < 100
-            ? `Zbývá ${dedicationLeft} znaků.`
-            : `Napíšu ho na poukaz. Nejvýš ${VOUCHER_DEDICATION_MAX} znaků.`}
+        {value.kind === "electronic" && (
+          <div className={styles.field}>
+            <label htmlFor={`${id}-email`} className={styles.subLabel}>
+              E-mail obdarovaného
+            </label>
+            <input
+              id={`${id}-email`}
+              type="email"
+              inputMode="email"
+              className={styles.input}
+              value={value.recipientEmail}
+              maxLength={320}
+              autoComplete="off"
+              placeholder="jana@example.cz"
+              onChange={(event) => set({ recipientEmail: event.target.value })}
+              onBlur={() => setEmailTouched(true)}
+              disabled={disabled}
+              aria-invalid={showEmailError || undefined}
+              aria-describedby={`${id}-hint`}
+              data-testid="gift-voucher-recipient-email"
+            />
+          </div>
+        )}
+
+        <div className={clx(styles.field, styles.wide)}>
+          <label htmlFor={`${id}-dedication`} className={styles.subLabel}>
+            Věnování
+          </label>
+          <textarea
+            id={`${id}-dedication`}
+            className={styles.textarea}
+            value={value.dedication}
+            maxLength={VOUCHER_DEDICATION_MAX}
+            rows={2}
+            placeholder="Pár slov, která na poukazu budou"
+            onChange={(event) => set({ dedication: event.target.value })}
+            disabled={disabled}
+            aria-describedby={`${id}-hint`}
+            data-testid="gift-voucher-dedication"
+          />
+        </div>
+
+        {/* Jedna věta pro obě pole — dvě nápovědy pod dvěma poli byly dva
+            řádky navíc za totéž. */}
+        <p
+          id={`${id}-hint`}
+          className={clx(styles.wide, showEmailError ? styles.error : styles.hint)}
+          role={showEmailError ? "alert" : undefined}
+        >
+          {showEmailError
+            ? "Tenhle e-mail nevypadá správně — zkontrolujte ho prosím."
+            : dedicationLeft < 100
+              ? `Zbývá ${dedicationLeft} znaků věnování.`
+              : value.kind === "electronic"
+                ? "Bez e-mailu přijde poukaz vám. Věnování na něj vytisknu."
+                : "Věnování na poukaz vytisknu."}
         </p>
       </div>
     </div>
