@@ -3,7 +3,7 @@
  *
  * Od 30. 10. 2026 se poukaz přidává do košíku holý: stránka produktu nabízí
  * jen „Přidat do košíku" a hodnotu, podobu i obdarovaného zvolí zákazník až
- * v košíku, vedle souhrnu. Dokud to neudělá, košík k pokladně nepustí.
+ * v košíku, pod jeho řádkem. Dokud to neudělá, košík k pokladně nepustí.
  *
  * ZRCADLÍ `giftVoucherSetupProblem` v `backend/src/lib/voucher.ts` — ten
  * rozhoduje (brána před dokončením košíku), tohle je jen pro to, aby zákazník
@@ -86,9 +86,9 @@ export const giftVoucherLinesOf = (cart: CartLike | null | undefined): VoucherLi
 export const cartNeedsVoucherSetup = (cart: CartLike | null | undefined): boolean =>
   giftVoucherLinesOf(cart).some((item) => voucherLineNeedsSetup(item, cart?.currency_code))
 
-/** Kotva panelu pod souhrnem — zamčené tlačítko na něj odkazuje. */
+/** Kotva u prvního nenastaveného poukazu — zamčené tlačítko na ni odkazuje. */
 export const GIFT_VOUCHER_SETUP_ID = "nastaveni-poukazu"
 
 /** Věta nad zamčeným tlačítkem k pokladně. */
 export const VOUCHER_SETUP_BLOCK_NOTE =
-  "Nejdřív prosím nastavte dárkový poukaz — hodnotu a podobu zvolíte pod souhrnem."
+  "Nejdřív prosím nastavte dárkový poukaz — hodnotu a podobu zvolíte u něj v košíku."

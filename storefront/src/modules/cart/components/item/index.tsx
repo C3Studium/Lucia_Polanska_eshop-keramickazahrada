@@ -39,6 +39,12 @@ type ItemProps = {
    * nich — náhled v pokladně, zakázka jen kategorií — zůstane krátký štítek.
    */
   madeToOrderTerms?: ProductionLeadTime | null
+  /**
+   * Nese nastavení poukazu u TÉHLE položky kotvu `#nastaveni-poukazu`?
+   * Zamčené tlačítko k pokladně na ni odkazuje a v dokumentu smí být jen
+   * jedna, takže ji výpis dává prvnímu nenastavenému poukazu (`items.tsx`).
+   */
+  voucherAnchor?: boolean
 }
 
 const Item = ({
@@ -47,6 +53,7 @@ const Item = ({
   currencyCode,
   packaging = null,
   madeToOrderTerms = null,
+  voucherAnchor = false,
 }: ItemProps) => {
   const [updating, setUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -173,16 +180,6 @@ const Item = ({
           )}
         </div>
 
-        {/* Nastavení poukazu rovnou pod jeho řádkem (31. 10. 2026): hodnota,
-            podoba, pro koho a věnování. Dřív stálo v pravém sloupci pod
-            souhrnem, kde se do úzkého lepkavého bloku nevešlo — a k souhrnu
-            stejně nepatřilo. V náhledu (pokladna) se nekreslí. */}
-        {type !== "preview" && isGiftVoucherProductLine(item as never) && (
-          <GiftVoucherLineSetup
-            line={item as never}
-            currencyCode={currencyCode}
-          />
-        )}
         {madeToOrderLabel && (
           <LocalizedClientLink
             href={LEGAL_LINKS.termsMadeToOrder}
@@ -303,6 +300,22 @@ const Item = ({
           )}
         </span>
       </div>
+
+      {/* Nastavení poukazu pod celým řádkem (31. 10. 2026): hodnota, podoba,
+          pro koho a věnování. Vlastní buňka přes všechny sloupce, ne vnitřek
+          buňky s názvem — tam měl formulář 337 px z 955 a skládal se do
+          vysokého sloupce, zatímco vedle něj zůstávalo prázdno. Přes celou
+          šířku se popisky vejdou vedle polí a z pěti linek jsou dvě.
+          V náhledu (pokladna) se nekreslí. */}
+      {type !== "preview" && isGiftVoucherProductLine(item as never) && (
+        <div className={s.cellVoucher}>
+          <GiftVoucherLineSetup
+            line={item as never}
+            currencyCode={currencyCode}
+            anchor={voucherAnchor}
+          />
+        </div>
+      )}
     </article>
   )
 }
