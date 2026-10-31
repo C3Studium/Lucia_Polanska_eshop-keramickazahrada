@@ -9,6 +9,10 @@ import { productsHaveMadeToOrder } from "../../lib/made-to-order-detection"
 import { getMerchantSetting } from "../../lib/merchant-settings"
 import { isPersonalPickupOrder } from "../../lib/personal-pickup"
 import { isPriceOnRequest } from "../../lib/price-on-request"
+import {
+  printedVoucherLines,
+  shippingForcesElectronic,
+} from "../../lib/voucher-kind-shipping"
 import { DOBIRKA_PROVIDER_ID, isPayLaterPaymentProvider } from "../../lib/ship-gate"
 import {
   VOUCHER_LINE_KEYS,
@@ -104,6 +108,25 @@ completeCartWorkflow.hooks.validate(
       throw new MedusaError(
         MedusaError.Types.NOT_ALLOWED,
         "U výrobku s cenou po domluvě zvolte prosím osobní odběr — poštovné domluvíme spolu s cenou a pošleme ho v e-mailu k zaplacení."
+      )
+    }
+
+    /*
+     * Vytištěný poukaz se jen vyzvedává (31. 10. 2026).
+     *
+     * Kartička jde z ruky do ruky v dílně, do balíku se nepřikládá. Při
+     * čtení košíku se podoba sama překlopí na elektronickou, jakmile je
+     * zvolená jiná doprava (`lib/voucher-kind-shipping.ts`), takže sem
+     * reálný zákazník nedojde — tohle je brána pro ručně složený požadavek,
+     * aby nevznikla objednávka, kterou nejde vyřídit.
+     */
+    if (
+      shippingForcesElectronic(fullCart) &&
+      printedVoucherLines(fullCart).length > 0
+    ) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "Vytištěný dárkový poukaz předávám osobně v dílně. Zvolte prosím osobní odběr, nebo v košíku přepněte poukaz na elektronický — pošlu ho e-mailem."
       )
     }
 

@@ -203,6 +203,18 @@ const VoucherDetail = ({
               Otevřít stránku poukazu
             </Button>
           </div>
+          {/*
+            Podoba poukazu (elektronický / vytištěný) říká jen to, jak se
+            PRODAL — ne co se s ním smí dělat potom. Elektronický jde
+            vytisknout, vytištěný poslat e-mailem; obojí umí tlačítka výš
+            u každého poukazu. Bez téhle věty to z panelu nebylo poznat
+            (30. 10. 2026).
+          */}
+          <Text size="xsmall" className="text-ui-fg-subtle">
+            {voucher.kind === "electronic"
+              ? "Elektronický poukaz si můžete i vytisknout — „Kartička k tisku“ je líc a rub na dvou stránkách A4, k vystřižení podle značek."
+              : "Vytištěný poukaz jde poslat i e-mailem — zákazník dostane tentýž kód a obě PDF jako přílohu."}
+          </Text>
           {pageUrlIsRelative(voucher) && (
             <Text size="xsmall" className="text-ui-fg-subtle">
               Pozor: server nezná adresu obchodu, odkaz na poukaz se nemusí

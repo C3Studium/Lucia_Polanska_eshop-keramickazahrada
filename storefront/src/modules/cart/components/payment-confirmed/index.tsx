@@ -69,7 +69,13 @@ export default function PaymentConfirmed({
         try {
           // Capture happens server-side via the ComGate webhook; the storefront
           // used to also call a /store/payment/capture route that never existed.
-          await placeOrder(id)
+          /* `placeOrder` neúspěch VRACÍ (Next maskuje chyby ze server action,
+             viz tam) — tady se z něj zase udělá výjimka, ať opakování
+             a hláška fungují jako dřív. */
+          const vysledek = await placeOrder(id)
+          if (vysledek && "ok" in vysledek && vysledek.ok === false) {
+            throw new Error(vysledek.message)
+          }
           return
         } catch (error) {
           if (isRedirectSignal(error)) {

@@ -27,6 +27,8 @@ interface OrderReadyPickupEmailProps {
   amountDue?: string | null;
   /** Číslo účtu z Právních údajů — jen když ho majitelka vyplnila. */
   bankAccount?: string | null;
+  /** V objednávce je vytištěný dárkový poukaz — ten se jen vyzvedává. */
+  printedVoucher?: boolean;
 }
 
 /**
@@ -45,7 +47,8 @@ function OrderReadyPickupEmailComponent({
   orderLink = "",
   pickupInstructions,
   amountDue,
-  bankAccount
+  bankAccount,
+  printedVoucher = false
 }: OrderReadyPickupEmailProps) {
   const orderUrl = orderLink || storeLink()
   return (
@@ -57,8 +60,9 @@ function OrderReadyPickupEmailComponent({
 
       <Greeting name={customerName} />
       <P>
-        vaši objednávku {orderNumber} mám zabalenou a čeká na vás u mě
-        v dílně. Kde a kdy si ji můžete vyzvednout, najdete níže.
+        {printedVoucher
+          ? `vaše objednávka ${orderNumber} je vyřízená — dárkový poukaz mám vytištěný a čeká na vás u mě v dílně. Kde a kdy si ho můžete vyzvednout, najdete níže.`
+          : `vaši objednávku ${orderNumber} mám zabalenou a čeká na vás u mě v dílně. Kde a kdy si ji můžete vyzvednout, najdete níže.`}
       </P>
 
       <LedgerRow label="Objednávka" value={orderNumber} />

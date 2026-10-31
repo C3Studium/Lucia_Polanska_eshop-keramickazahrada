@@ -10,10 +10,9 @@ import {
 import SafetyNotice from "@modules/products/components/safety-notice"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import {
-  formatVoucherInt,
   isCustomAmountVoucher,
   voucherConfig,
-  voucherUnitOf,
+  voucherFromLabel,
 } from "@lib/util/voucher-amount"
 import { isGiftVoucherProduct } from "@lib/util/gift-voucher-code"
 import {
@@ -548,10 +547,9 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                         className="product__voucherPrice"
                         data-testid="voucher-price-from"
                       >
-                        Možnost od {formatVoucherInt(voucherCfg.min)}
-                        {voucherCfg.currency === "czk"
-                          ? ",-"
-                          : ` ${voucherUnitOf(voucherCfg.currency)}`}
+                        {/* Totéž znění jako na kartě v obchodě
+                            (`lib/util/voucher-amount`). */}
+                        {voucherFromLabel(voucherCfg)}
                       </p>
                     ) : (
                       <ProductPrice

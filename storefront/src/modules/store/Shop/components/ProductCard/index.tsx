@@ -24,7 +24,11 @@ import { addToCart } from "@lib/data/cart"
 
 import Cart from "@modules/common/icons/cart"
 import WishlistToggle from "@modules/products/components/wishlist-toggle"
-import { isCustomAmountVoucher, voucherConfig } from "@lib/util/voucher-amount"
+import {
+  isCustomAmountVoucher,
+  voucherConfig,
+  voucherFromLabel,
+} from "@lib/util/voucher-amount"
 import {
   availabilityLabel,
   hasEmptyShelf,
@@ -488,12 +492,11 @@ function ProductCard({
         <div className={styles.price}>
           <strong>
             {customVoucher
-              ? `Vlastní částka od ${convertToLocale({
-                  amount: voucherConfig(
+              ? voucherFromLabel(
+                  voucherConfig(
                     product.metadata as Record<string, unknown> | null | undefined
-                  ).min,
-                  currency_code: "czk",
-                })}`
+                  )
+                )
               : priceOnRequest
                 ? "Cena po domluvě"
                 : cheapestPrice?.calculated_price || "Cena na dotaz"}

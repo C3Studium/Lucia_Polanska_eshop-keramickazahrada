@@ -14,6 +14,7 @@ import {
 } from "react"
 
 import { useDismiss } from "@lib/hooks/use-dismiss"
+import { countryEndonym } from "@lib/util/country-endonym"
 import ReactCountryFlag from "react-country-flag"
 
 type CountryOption = {
@@ -110,7 +111,9 @@ export default function RegionsSelect({
                   {
                     country: country.iso_2,
                     region: region.id,
-                    label: country.display_name ?? country.iso_2.toUpperCase(),
+                    /* V jazyce té země, ne anglicky z Medusy: kdo hledá svou
+                       zem, hledá ji tak, jak se jmenuje doma. */
+                    label: countryEndonym(country.iso_2, country.display_name),
                   },
                 ]
               : []

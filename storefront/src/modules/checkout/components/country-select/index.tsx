@@ -4,6 +4,7 @@ import NativeSelect, {
   NativeSelectProps,
 } from "@modules/common/components/native-select"
 import { HttpTypes } from "@medusajs/types"
+import { countryEndonym } from "@lib/util/country-endonym"
 
 const CountrySelect = forwardRef<
   HTMLSelectElement,
@@ -25,7 +26,9 @@ const CountrySelect = forwardRef<
 
     return region.countries?.map((country) => ({
       value: country.iso_2,
-      label: country.display_name,
+      /* Stejně jako přepínač zemí v navigaci: v jazyce té země, ne anglicky
+         z Medusy (`lib/util/country-endonym`). */
+      label: countryEndonym(country.iso_2, country.display_name),
     }))
   }, [region])
 

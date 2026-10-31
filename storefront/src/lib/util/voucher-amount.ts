@@ -46,6 +46,20 @@ export const voucherUnitOf = (currency: string) =>
 export const formatVoucherInt = (value: number) =>
   String(value).replace(/\B(?=(\d{3})+(?!\d))/g, " ")
 
+/**
+ * „Možnost od 100,-" — co stojí místo ceny u poukazu s vlastní částkou.
+ *
+ * Hodnotu si zákazník volí až v košíku, takže katalogová cena (1 Kč) by
+ * lhala; ukazuje se dolní mez. Znění je JEDNO pro kartu v obchodě i pro
+ * stránku výrobku — do 31. 10. 2026 měla každá svoje („Vlastní částka od…"
+ * na kartě, „Možnost od…" na stránce) a týž poukaz se tak jmenoval dvakrát
+ * jinak. V korunách se píše „100,-", jako obchod píše ceny všude jinde.
+ */
+export const voucherFromLabel = (config: VoucherConfig): string =>
+  `Možnost od ${formatVoucherInt(config.min)}${
+    config.currency === "czk" ? ",-" : ` ${voucherUnitOf(config.currency)}`
+  }`
+
 export type VoucherCheck = { ok: true; amount: number } | { ok: false; message: string }
 
 /** Stejná pravidla i hlášky jako `validateVoucherAmount` v backendu. */

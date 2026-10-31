@@ -40,6 +40,20 @@ const RULES: ErrorRule[] = [
   },
 
   // --- shipping ---------------------------------------------------------------
+  /*
+   * ZMĚŘENO 31. 10. 2026 na „Domovní znamení": produkt byl přiřazený
+   * k profilu dopravy („Česká Pošta - Křehké"), pod kterým není ŽÁDNÁ volba
+   * dopravy — všechny leží na výchozím profilu. Medusa takovou objednávku
+   * odmítne až při dokončení, tedy úplně na konci pokladny, a nikdo se
+   * nedoví proč. Hláška proto říká, že chyba je na naší straně, ne u
+   * zákazníka: ten s tím nic neudělá, musí to spravit majitelka
+   * (produkt → „Profil dopravy" → Výchozí).
+   */
+  {
+    match: ["shipping profiles that are not satisfied"],
+    message:
+      "Tenhle výrobek teď nejde objednat — máme u něj špatně nastavenou dopravu. Napište nám prosím, rychle to spravíme.",
+  },
   {
     match: ["shipping options", "do not have a price"],
     message:
