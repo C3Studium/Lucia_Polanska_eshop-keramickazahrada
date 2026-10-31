@@ -10,6 +10,7 @@ import {
 import { LINE_QUANTITY_FIELDS } from "../../../../../lib/order-quantity"
 import { isPersonalPickupOrder } from "../../../../../lib/personal-pickup"
 import { isAgreedPriceCommission } from "../../../../../lib/made-to-order/agreed-price"
+import { readCommissionPieces } from "../../../../../lib/commission-brief"
 
 const toNumber = (value: unknown): number => {
   if (typeof value === "number") return value
@@ -107,6 +108,16 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       : ((order?.items ?? []) as any[])
     const customerPhotos: string[] = []
     let customerSpecification: string | null = null
+    /*
+     * Zadání PO KUSECH (31. 10. 2026).
+     *
+     * „Domovní znamení · 2 ks" je jeden řádek, ale dva kusy, a každý má
+     * vlastní zadání i fotky (`lib/commission-brief.ts`). Složený text
+     * („Kus 1: … / Kus 2: …") a jedna hromada fotek stačily, dokud se v
+     * administraci jen četly — jakmile se mezi kusy přepíná, musí přijít
+     * rozdělené, jinak se u druhého kusu ukazují fotky prvního.
+     */
+    const customerPieces: Array<{ specification: string; photos: string[] }> = []
     for (const item of sourceItems) {
       const mto = (item?.metadata as any)?.made_to_order
       if (!mto || typeof mto !== "object") continue
@@ -123,6 +134,16 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           : null
       if (spec && spec.trim() && !customerSpecification) {
         customerSpecification = spec.trim()
+      }
+      /* Kusy toho řádku; u množství 1 vyjde jeden a chová se jako dřív. */
+      for (const piece of readCommissionPieces(
+        item?.metadata as Record<string, unknown>,
+        Number(item?.quantity ?? 1)
+      )) {
+        customerPieces.push({
+          specification: piece.specification ?? "",
+          photos: piece.photos ?? [],
+        })
       }
     }
 
@@ -149,6 +170,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       order_extras_outstanding: money.extras_outstanding,
       carries_order_extras: money.carries_order_extras,
       customer_photos: customerPhotos,
+      customer_pieces: customerPieces,
       customer_specification:
         customerSpecification ?? productionOrder.customer_note ?? null,
       pure_commission: pureCommission,
