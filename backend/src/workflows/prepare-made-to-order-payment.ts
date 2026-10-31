@@ -13,7 +13,8 @@ import {
   releaseLockStep,
   updatePaymentCollectionStep,
 } from "@medusajs/medusa/core-flows"
-import { splitChargeNow } from "../lib/deposit-split"
+import { shippingTiming, splitChargeNow } from "../lib/deposit-split"
+import { isServiceLine } from "../lib/packaging-lines"
 import { clampContractPercentage } from "../lib/made-to-order/contract-deposit"
 import {
   MADE_TO_ORDER_MODULE,

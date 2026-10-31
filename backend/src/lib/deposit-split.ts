@@ -189,3 +189,29 @@ export const splitChargeNow = (
     chargeNow: round(base + split.applied + shippingPaidNow),
   }
 }
+
+/**
+ * Kdy se platí poštovné (31. 10. 2026, rozhodnutí majitelky).
+ *
+ * Záloha je jen za zakázku, poštovné do ní nepatří nikdy. Kdy se ale zaplatí,
+ * záleží na tom, co je v košíku:
+ *
+ * - **jen zakázka** — zásilka odejde, až bude kus hotový, takže poštovné
+ *   počká na doplatek. Platit dopravu měsíc dopředu nedává smysl ani
+ *   zákazníkovi, ani účetně.
+ * - **zakázka a běžné zboží** — běžné zboží se platí celé hned a jede v téže
+ *   zásilce, takže poštovné je součástí toho, co se platí teď. Dřív padalo
+ *   i tady do doplatku: zákazník zaplatil zboží, ale ne jeho poštovné, a
+ *   objednávka zůstala viset s dluhem 150 Kč za dopravu, kterou nikdo
+ *   nečekal.
+ *
+ * Vrací obě čísla, ať se volající nemusí rozhodovat sám — a hlavně ať se
+ * pokladna a samotná platba nemůžou rozejít.
+ */
+export const shippingTiming = (
+  shipping: number,
+  hasPlainGoods: boolean
+): { now: number; deferred: number } => {
+  const postage = round(Math.max(0, shipping))
+  return hasPlainGoods ? { now: postage, deferred: 0 } : { now: 0, deferred: postage }
+}
