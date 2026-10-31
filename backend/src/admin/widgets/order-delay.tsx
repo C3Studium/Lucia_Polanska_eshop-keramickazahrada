@@ -41,6 +41,12 @@ const Inner = ({ order }: { order: AdminOrder }) => {
   const cache = useQueryClient();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
+  /*
+   * Kolik kusů se z řádku zdrží (id → počet). U „3 ks" se často dodělává
+   * jen jeden a zákazník má vědět, že zbylé dva přijdou podle plánu
+   * (31. 10. 2026). Co tu není, znamená celý řádek.
+   */
+  const [counts, setCounts] = useState<Record<string, number>>({});
   const [date, setDate] = useState("");
   const [reason, setReason] = useState("");
 
@@ -58,7 +64,16 @@ const Inner = ({ order }: { order: AdminOrder }) => {
     mutationFn: () =>
       sdk.client.fetch(`/admin/orders/${order.id}/delay`, {
         method: "POST",
-        body: { item_ids: selected, new_date: date, reason: reason.trim() || null },
+        body: {
+          item_ids: selected,
+          item_quantities: Object.fromEntries(
+            selected
+              .map((id) => [id, counts[id]])
+              .filter(([, count]) => Number(count) > 0)
+          ),
+          new_date: date,
+          reason: reason.trim() || null,
+        },
       }),
     onSuccess: async (result) => {
       toast.success(
@@ -71,6 +86,7 @@ const Inner = ({ order }: { order: AdminOrder }) => {
       );
       setOpen(false);
       setSelected([]);
+      setCounts({});
       setDate("");
       setReason("");
       await cache.invalidateQueries({ queryKey: ["order-delays", order.id] });
@@ -121,23 +137,63 @@ const Inner = ({ order }: { order: AdminOrder }) => {
         >
           <div className="flex flex-col gap-y-2">
             <Text size="small" weight="plus">Které výrobky je potřeba dodělat?</Text>
-            {goods.map((item: any) => (
-              <label key={item.id} className="flex cursor-pointer items-start gap-x-2">
-                <Checkbox
-                  checked={selected.includes(item.id)}
-                  onCheckedChange={() => toggle(item.id)}
-                  className="mt-0.5"
-                />
-                <span className="txt-small">
-                  {item.title}
-                  {item.variant_title && item.variant_title !== "Default variant" ? ` — ${item.variant_title}` : ""}
-                  {Number(item.quantity) > 1 ? ` · ${item.quantity} ks` : ""}
-                  {item.metadata?.made_to_order ? (
-                    <span className="text-ui-fg-subtle"> (zakázka — posune se i termín výroby)</span>
-                  ) : null}
-                </span>
-              </label>
-            ))}
+            {goods.map((item: any) => {
+              const naRadku = Math.max(1, Math.round(Number(item.quantity) || 1));
+              const vybrano = selected.includes(item.id);
+              const kolik = Math.min(naRadku, Math.max(1, counts[item.id] ?? naRadku));
+              return (
+                <div key={item.id} className="flex flex-col gap-y-1">
+                  <label className="flex cursor-pointer items-start gap-x-2">
+                    <Checkbox
+                      checked={vybrano}
+                      onCheckedChange={() => toggle(item.id)}
+                      className="mt-0.5"
+                    />
+                    <span className="txt-small">
+                      {item.title}
+                      {item.variant_title && item.variant_title !== "Default variant" ? ` — ${item.variant_title}` : ""}
+                      {naRadku > 1 ? ` · ${naRadku} ks` : ""}
+                      {item.metadata?.made_to_order ? (
+                        <span className="text-ui-fg-subtle"> (zakázka — posune se i termín výroby)</span>
+                      ) : null}
+                    </span>
+                  </label>
+
+                  {/* Kolik kusů z řádku se dodělává — jen tam, kde je z čeho
+                      vybírat, a jen u zaškrtnutého řádku. */}
+                  {vybrano && naRadku > 1 && (
+                    <div className="ml-6 flex items-center gap-x-2">
+                      <Label size="xsmall" htmlFor={`delay-qty-${item.id}`}>
+                        Čeká se na
+                      </Label>
+                      <Input
+                        id={`delay-qty-${item.id}`}
+                        type="number"
+                        min={1}
+                        max={naRadku}
+                        className="w-20"
+                        value={String(kolik)}
+                        onChange={(event) =>
+                          setCounts((current) => ({
+                            ...current,
+                            [item.id]: Math.min(
+                              naRadku,
+                              Math.max(1, Math.round(Number(event.target.value) || 1))
+                            ),
+                          }))
+                        }
+                      />
+                      <Text size="xsmall" className="text-ui-fg-subtle">
+                        z {naRadku} ks
+                        {kolik < naRadku
+                          ? ` — zbylé ${naRadku - kolik} ks pošlete podle plánu`
+                          : ""}
+                      </Text>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
             {goods.length > 1 && (
               <button
                 type="button"

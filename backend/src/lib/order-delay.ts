@@ -30,7 +30,12 @@ export type OrderDelayEntry = {
   new_date: string
   previous_date: string | null
   reason: string | null
-  items: Array<{ id: string; title: string; quantity: number }>
+  /**
+   * Co se dodělává. `quantity` = kolik kusů se zdrží, `of` = kolik jich
+   * na řádku je (31. 10. 2026): u „3 ks" se může zdržet jen jeden a
+   * zákazník má vědět, že zbylé dva přijdou podle plánu.
+   */
+  items: Array<{ id: string; title: string; quantity: number; of?: number }>
   /** Komu odešel e-mail (null = objednávka nemá e-mail). */
   emailed_to: string | null
 }
@@ -39,12 +44,22 @@ export const ORDER_DELAYS_KEY = "order_delays"
 
 const DELAY_STAGES = ["confirmed", "in_production", "awaiting_balance"]
 
-const itemLabel = (item: { title: string; quantity: number }) =>
-  item.quantity > 1 ? `${item.title} · ${item.quantity} ks` : item.title
+const itemLabel = (item: { title: string; quantity: number; of?: number }) => {
+  const of = item.of ?? item.quantity
+  if (of > item.quantity) return `${item.title} · ${item.quantity} z ${of} ks`
+  return item.quantity > 1 ? `${item.title} · ${item.quantity} ks` : item.title
+}
 
 export const announceOrderDelay = async (
   container: MedusaContainer,
-  input: { orderId: string; itemIds: string[]; newDate: string; reason?: string | null }
+  input: {
+    orderId: string
+    itemIds: string[]
+    /** Kolik kusů z řádku se zdrží; co chybí, bere se jako celý řádek. */
+    itemQuantities?: Record<string, number> | null
+    newDate: string
+    reason?: string | null
+  }
 ): Promise<{ entry: OrderDelayEntry; commissionsMoved: number; emailed: boolean }> => {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const { data } = await query.graph({
@@ -120,13 +135,22 @@ export const announceOrderDelay = async (
       ? commissionPrevious.toISOString().slice(0, 10)
       : null
 
-  const items = selected.map((item: any) => ({
-    id: item.id,
-    title: [item.title, item.variant_title && item.variant_title !== "Default variant" ? item.variant_title : null]
-      .filter(Boolean)
-      .join(" — "),
-    quantity: Math.max(1, Math.round(lineQuantityOf(item))),
-  }))
+  const items = selected.map((item: any) => {
+    const of = Math.max(1, Math.round(lineQuantityOf(item)))
+    /* Kolik kusů se zdrží — nejvýš tolik, kolik jich na řádku je. */
+    const wantedQty = Number(input.itemQuantities?.[item.id])
+    const quantity = Number.isFinite(wantedQty)
+      ? Math.min(of, Math.max(1, Math.round(wantedQty)))
+      : of
+    return {
+      id: item.id,
+      title: [item.title, item.variant_title && item.variant_title !== "Default variant" ? item.variant_title : null]
+        .filter(Boolean)
+        .join(" — "),
+      quantity,
+      of,
+    }
+  })
   const reason = input.reason?.trim() || null
   const allCommission = commissionsMoved > 0 && commissionsMoved === selected.length && selected.length === goods.length
 
@@ -134,7 +158,12 @@ export const announceOrderDelay = async (
     template: "order-delayed",
     to: order.email,
     // Nový termín + výrobky: totéž ohlášení dvakrát = jeden e-mail, jiný termín = nový.
-    key: `order-delay:${order.id}:${input.newDate}:${items.map((i) => i.id).sort().join(",")}`,
+    // Počty jsou v klíči taky: „zdrží se 2 ze 3" je jiné ohlášení než „zdrží
+    // se celé 3", i když je termín a seznam položek stejný.
+    key: `order-delay:${order.id}:${input.newDate}:${items
+      .map((i) => `${i.id}x${i.quantity}`)
+      .sort()
+      .join(",")}`,
     orderId: order.id,
     data: {
       customerName: customerName(order),

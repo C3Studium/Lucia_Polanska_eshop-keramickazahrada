@@ -13,6 +13,8 @@ import { ORDER_DELAYS_KEY, announceOrderDelay } from "../../../../../lib/order-d
  */
 const Body = z.object({
   item_ids: z.array(z.string().min(1)).min(1, { message: "Vyberte aspoň jeden výrobek." }),
+  /* Kolik kusů z řádku se zdrží (id → počet); co chybí, je celý řádek. */
+  item_quantities: z.record(z.string(), z.number().int().min(1).max(999)).optional(),
   new_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Nový termín zadejte jako datum." }),
   reason: z.string().trim().max(500).optional().nullable(),
 })
@@ -35,6 +37,7 @@ export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse)
     const result = await announceOrderDelay(req.scope, {
       orderId: req.params.id,
       itemIds: parsed.data.item_ids,
+      itemQuantities: parsed.data.item_quantities ?? null,
       newDate: parsed.data.new_date,
       reason: parsed.data.reason ?? null,
     })
