@@ -198,7 +198,7 @@ export default function ProductionPaymentModeChoice({
           Kolik chcete zaplatit hned?
         </h3>
         <p className={styles.lede}>
-          Nejméně {money(bounds.minimum)} — z toho nakoupím materiál a pustím se
+          Nejméně {money(zaZakazku(bounds.minimum))} — z toho nakoupím materiál a pustím se
           do práce. Víc je jen na vás.
         </p>
       </header>
@@ -229,6 +229,11 @@ export default function ProductionPaymentModeChoice({
         step={1}
         value={draft}
         disabled={isPending || span === 0}
+        /* Posuvník počítá v částce K ÚHRADĚ (běžné zboží se platí vždy celé),
+           ale ukazuje se ZA ZAKÁZKU — ať čtečka hlásí hodnotu i meze v jednom
+           základu, jako je vidí oko (věta výš, škála níž, ruční pole). */
+        aria-valuemin={zaZakazku(bounds.minimum)}
+        aria-valuemax={zaZakazku(bounds.maximum)}
         aria-labelledby={`${sliderId}-label`}
         aria-valuetext={money(zaZakazku(draft))}
         onChange={(event) => onSlide(Number(event.target.value))}
@@ -236,8 +241,8 @@ export default function ProductionPaymentModeChoice({
       />
 
       <div className={styles.scale} aria-hidden="true">
-        <span>{money(bounds.minimum)}</span>
-        <span>{money(bounds.maximum)}</span>
+        <span>{money(zaZakazku(bounds.minimum))}</span>
+        <span>{money(zaZakazku(bounds.maximum))}</span>
       </div>
 
       {/* Předvolby + ruční částka na JEDNÉ řadě (dřív tři bloky pod sebou).
