@@ -34,3 +34,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# pracovni kopie agentu (git worktree) - nikdy se neverzuji
+.claude/worktrees/
