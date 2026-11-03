@@ -39,6 +39,7 @@ import {
 import { emailLocaleOf } from "./email-locale"
 import { notifyMerchant } from "./notify"
 import { jeZkusebniRezim } from "./test-mode"
+import { isDepositRequest } from "./made-to-order/payment-kind"
 import { epsilonFor, toAmount } from "./ship-gate"
 import { outstandingFor } from "./balance-payment"
 
@@ -521,11 +522,17 @@ export const ensureMadeToOrderInvoices = async (
     } as never)) as any[]
 
     const round2 = (value: number) => Math.round(value * 100) / 100
+    /*
+     * Záloha u ceny po domluvě má `type: "balance"` (jinak by se zaplacení
+     * nezapsalo — viz made-to-order/payment-kind). Bez tohohle rozlišení
+     * nepadla ani mezi zálohy, ani mezi doplatky, a zakázka zůstala bez
+     * faktury (3. 11. 2026).
+     */
     const paidDeposits = requests.filter(
-      (r) => r.type === "deposit" && r.status === "paid"
+      (r) => r.status === "paid" && isDepositRequest(r)
     )
     const paidBalances = requests.filter(
-      (r) => r.type === "balance" && r.status === "paid"
+      (r) => r.status === "paid" && !isDepositRequest(r)
     )
     const sumAmounts = (rows: any[]) =>
       round2(rows.reduce((sum, row) => sum + toAmount(row.amount), 0))

@@ -39,6 +39,8 @@ import {
 type ProductionPayment = {
   id: string;
   type: "deposit" | "balance";
+  /** Záloha, i když je uložená jako „balance" — rozhoduje projekce, ne typ. */
+  is_deposit?: boolean;
   status: "draft" | "pending" | "sent" | "paid" | "failed" | "expired" | "cancelled";
   amount: number | string;
   currency_code: string;
@@ -125,6 +127,28 @@ const toNum = (value: unknown): number => {
     return Number(v.value ?? v.numeric_ ?? v.raw_ ?? 0) || 0;
   }
   return 0;
+};
+
+/**
+ * Záloha u ceny po domluvě se ukládá s typem „balance" (dohled ani vypořádání
+ * jiný typ neumí, lib/balance-payment), takže se v „Platbách zakázky"
+ * ukazovala zaplacená záloha jako „Doplatek". Rozhoduje příznak z projekce.
+ */
+const jeZaloha = (payment: ProductionPayment): boolean =>
+  payment.is_deposit ?? payment.type === "deposit";
+
+/** Stav platby česky — „pending" majitelce nic neříká. */
+const stavPlatby: Record<
+  ProductionPayment["status"],
+  { label: string; color: "green" | "orange" | "red" | "grey" }
+> = {
+  draft: { label: "Rozepsaná", color: "grey" },
+  pending: { label: "Čeká na zaplacení", color: "orange" },
+  sent: { label: "Odeslaná zákazníkovi", color: "orange" },
+  paid: { label: "Zaplaceno", color: "green" },
+  failed: { label: "Nepodařilo se", color: "red" },
+  expired: { label: "Platnost vypršela", color: "red" },
+  cancelled: { label: "Zrušená", color: "grey" },
 };
 
 /** „Domovní znamení · velké" — jak zakázku v záhlaví karty pojmenovat. */
@@ -642,14 +666,14 @@ const CommissionCard = ({
               >
                 <div>
                   <Text size="small" weight="plus">
-                    {payment.type === "deposit" ? "Záloha" : "Doplatek"}
+                    {jeZaloha(payment) ? "Záloha" : "Doplatek"}
                   </Text>
                   <Text size="xsmall" className="text-ui-fg-muted">
                     {formatAmount(payment.amount, payment.currency_code)}
                   </Text>
                 </div>
-                <Badge color={payment.status === "paid" ? "green" : "grey"}>
-                  {payment.status === "paid" ? "Zaplaceno" : payment.status}
+                <Badge color={stavPlatby[payment.status]?.color ?? "grey"}>
+                  {stavPlatby[payment.status]?.label ?? "Čeká na zaplacení"}
                 </Badge>
               </div>
             ))

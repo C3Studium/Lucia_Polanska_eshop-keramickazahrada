@@ -14,6 +14,7 @@ import {
 } from "../customer-email"
 import { localizedCommissionTitle } from "./commission-title-i18n"
 import { clampContractPercentage } from "./contract-deposit"
+import { buildCommissionConfirmation } from "../potvrzeni-zakazky"
 
 /**
  * Cena po domluvě u zakázky — „Poslat domluvenou cenu" (24. 10. 2026, Matěj).
@@ -214,6 +215,35 @@ export const sendAgreedPrice = async (
   const total = round2(agreed + shipping + packaging)
   const locale = await emailLocaleForOrder(container, order)
   const money = (value: number) => formatMoney(value, currency, locale)
+  /*
+   * Smlouva o dílo (Potvrzení zakázky) k domluvené ceně.
+   *
+   * Potvrzení z objednávky vzniklo, když cena ještě nebyla — kus se objednává
+   * za 0 Kč a domlouvá se až tady. Dokument, který zákazník dostal, tedy
+   * neobsahoval to hlavní: cenu, zálohu, poštovné a balné. Proto se k e-mailu
+   * s domluvenou cenou přiloží potvrzení vyrobené ZNOVU, už s čísly, na
+   * kterých jste se domluvili. Původní se nepřepíše — úložiště uloží pod
+   * pevný klíč jen shodný obsah, jinak vznikne verze vedle (3. 11. 2026).
+   *
+   * Selhání PDF nesmí zastavit e-mail: bez ceny a platebního odkazu zákazník
+   * neví, co má dělat; příloha je k tomu doklad navíc.
+   */
+  let smlouva: { filename: string; url: string } | null = null
+  try {
+    const built = await buildCommissionConfirmation(container, order.id, {
+      productionOrderId: po.id,
+    })
+    smlouva = built.attachment
+  } catch (error) {
+    container
+      .resolve(ContainerRegistrationKeys.LOGGER)
+      .warn(
+        `[zakázka] Potvrzení zakázky k domluvené ceně u ${order.id} se nepodařilo vyrobit: ${
+          (error as Error)?.message ?? error
+        } — e-mail jde bez něj.`
+      )
+  }
+
   const emailed = await sendCustomerEmail(container, {
     template: "commission-price-agreed",
     to: order.email,
@@ -222,10 +252,13 @@ export const sendAgreedPrice = async (
     key: `agreed-price:${po.id}:${agreed}:${shipping}:${packaging}:${depositAmount}`,
     orderId: order.id,
     locale,
+    ...(smlouva ? { attachments: [smlouva] } : {}),
     data: {
       customerName: customerName(order),
       orderNumber: orderNumber(order),
       orderLink: orderLink(order),
+      /* Šablona podle toho může říct, že je potvrzení v příloze. */
+      contractAttached: Boolean(smlouva),
       productTitle: localizedCommissionTitle(order, updated, locale) ?? undefined,
       agreedPrice: money(agreed),
       depositAmount: money(depositAmount),

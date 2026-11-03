@@ -9,6 +9,8 @@
  * z doplatku jen vyčlení — stejně jako na faktuře (`issuePhase`).
  */
 
+import { isDepositRequest } from "./made-to-order/payment-kind"
+
 const round2 = (value: number) => Math.round(value * 100) / 100
 
 const amountOf = (value: unknown): number => {
@@ -33,15 +35,23 @@ export type CommissionPayments = {
 }
 
 export const splitCommissionPayments = (input: {
-  requests: Array<{ type?: string | null; status?: string | null; amount?: unknown }>
+  requests: Array<{
+    type?: string | null
+    /** Záloha u ceny po domluvě se pozná jen podle klíče (payment-kind). */
+    idempotency_key?: string | null
+    status?: string | null
+    amount?: unknown
+  }>
   surcharge?: unknown
 }): CommissionPayments => {
   const paid = input.requests.filter((request) => request?.status === "paid")
   const deposit = round2(
-    paid.filter((r) => r.type === "deposit").reduce((sum, r) => sum + amountOf(r.amount), 0)
+    paid.filter(isDepositRequest).reduce((sum, r) => sum + amountOf(r.amount), 0)
   )
   const balanceTotal = round2(
-    paid.filter((r) => r.type === "balance").reduce((sum, r) => sum + amountOf(r.amount), 0)
+    paid
+      .filter((request) => !isDepositRequest(request))
+      .reduce((sum, r) => sum + amountOf(r.amount), 0)
   )
   const surcharge = round2(Math.min(Math.max(0, amountOf(input.surcharge)), balanceTotal))
   return {

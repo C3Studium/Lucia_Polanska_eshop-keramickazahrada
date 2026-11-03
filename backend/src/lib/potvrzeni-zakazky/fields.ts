@@ -8,6 +8,7 @@ import {
 } from "../legal"
 import { orderDocumentVersion } from "../legal/order-legal"
 import { commissionMoney } from "../made-to-order/commission-money"
+import { isDepositRequest } from "../made-to-order/payment-kind"
 import { isServiceLine } from "../packaging-lines"
 
 /**
@@ -558,8 +559,9 @@ export const confirmationFieldsFor = ({
     .filter(Boolean)
   const shipping = { method: shippingNames.join(", ") || NEUVEDENO }
 
-  const depositRequest = (productionOrder?.payment_requests ?? []).find(
-    (request) => request?.type === "deposit"
+  /* Záloha u ceny po domluvě má typ „balance" — payment-kind. */
+  const depositRequest = (productionOrder?.payment_requests ?? []).find((request) =>
+    isDepositRequest(request)
   )
   /*
    * U zakázky je to pokladní kolekce označená `made_to_order` (zálohová),
