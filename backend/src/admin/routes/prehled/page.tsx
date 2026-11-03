@@ -6,6 +6,7 @@ import {
   Badge,
   Button,
   Container,
+  DropdownMenu,
   Heading,
   Skeleton,
   Text,
@@ -15,6 +16,7 @@ import {
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   OrderRow,
@@ -66,6 +68,37 @@ type OperationsSummary = {
     automatic_discounts: number;
   };
   next_up: MerchantOrder[];
+};
+
+/**
+ * Jak se skládá „Na řadě" (rozbalovačka nad seznamem). Hodnoty zrcadlí
+ * `api/admin/operations/summary`, který řadí i vybírá — v Přehledu je vidět
+ * jen pět řádků, takže nad nimi by se řadit nedalo.
+ */
+type Razeni = "oldest" | "newest";
+type Vyber =
+  | "all"
+  | "commissions"
+  | "payment_problem"
+  | "received"
+  | "shipping";
+
+const razeniLabel: Record<Razeni, string> = {
+  oldest: "Nejdéle čekající",
+  newest: "Od nejnovější",
+};
+
+const vyberLabel: Record<Vyber, string> = {
+  all: "Všechno, co čeká",
+  commissions: "Jen zakázky na míru",
+  payment_problem: "Jen potíže s platbou",
+  received: "Jen nové objednávky",
+  shipping: "Jen k odeslání",
+};
+
+const razeniPopis: Record<Razeni, string> = {
+  oldest: "Nejdéle čekající objednávky, u kterých je na tahu někdo z vás.",
+  newest: "Od té, se kterou se hýbalo naposledy — a pořád na někoho čeká.",
 };
 
 type Tone = "default" | "warning" | "critical";
@@ -537,14 +570,24 @@ const VitrinaCard = () => {
 };
 
 const PrehledInner = () => {
+  /* Volba platí do zavření stránky — ne do nastavení, je to pohled, ne nastavení. */
+  const [razeni, setRazeni] = useState<Razeni>("oldest");
+  const [vyber, setVyber] = useState<Vyber>("all");
+
   const { data, isLoading, isError, refetch, isFetching } =
     useQuery<OperationsSummary>({
-      queryKey: ["operations-summary"],
-      queryFn: () => sdk.client.fetch("/admin/operations/summary"),
+      queryKey: ["operations-summary", razeni, vyber],
+      queryFn: () =>
+        sdk.client.fetch("/admin/operations/summary", {
+          query: { next_up_sort: razeni, next_up_only: vyber },
+        }),
       // The dashboard is left open on a workbench all day; stale counts here
       // would send her to an empty queue.
       refetchInterval: 30_000,
       refetchOnWindowFocus: true,
+      // Přepnutí volby nesmí shodit celou stránku do kostry — než dojdou nová
+      // čísla, zůstanou na ní ta předchozí.
+      placeholderData: (previous) => previous,
     });
 
   if (isLoading) {
@@ -677,19 +720,62 @@ const PrehledInner = () => {
           do řádku dole; zůstala jedna zóna dlaždic, a ta má smysl.
         */}
         <section className="divide-y">
-          <header className="px-6 pb-4 pt-6">
-            <Heading level="h2">Na řadě</Heading>
-            <Text size="small" className="text-ui-fg-subtle mt-2">
-              Nejdéle čekající objednávky, u kterých je na tahu někdo z vás.
-            </Text>
+          <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
+            <div className="min-w-0">
+              <Heading level="h2">Na řadě</Heading>
+              <Text size="small" className="text-ui-fg-subtle mt-2">
+                {razeniPopis[razeni]}
+              </Text>
+            </div>
+
+            {/* Řazení a výběr v jedné rozbalovačce — pět řádků si zaslouží
+                jedno tlačítko, ne řádek pilulek. Počítá to server. */}
+            <DropdownMenu>
+              <DropdownMenu.Trigger asChild>
+                <Button size="small" variant="secondary" isLoading={isFetching}>
+                  {razeniLabel[razeni]}
+                  {vyber === "all" ? "" : ` · ${vyberLabel[vyber]}`} ▾
+                </Button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Content>
+                <DropdownMenu.Label>Řadit</DropdownMenu.Label>
+                <DropdownMenu.RadioGroup
+                  value={razeni}
+                  onValueChange={(value) => setRazeni(value as Razeni)}
+                >
+                  <DropdownMenu.RadioItem value="oldest">
+                    {razeniLabel.oldest}
+                  </DropdownMenu.RadioItem>
+                  <DropdownMenu.RadioItem value="newest">
+                    {razeniLabel.newest}
+                  </DropdownMenu.RadioItem>
+                </DropdownMenu.RadioGroup>
+
+                <DropdownMenu.Separator />
+
+                <DropdownMenu.Label>Ukázat</DropdownMenu.Label>
+                <DropdownMenu.RadioGroup
+                  value={vyber}
+                  onValueChange={(value) => setVyber(value as Vyber)}
+                >
+                  {(Object.keys(vyberLabel) as Vyber[]).map((key) => (
+                    <DropdownMenu.RadioItem key={key} value={key}>
+                      {vyberLabel[key]}
+                    </DropdownMenu.RadioItem>
+                  ))}
+                </DropdownMenu.RadioGroup>
+              </DropdownMenu.Content>
+            </DropdownMenu>
           </header>
 
           {data.next_up.length === 0 ? (
             <div className="flex min-h-32 flex-col items-center justify-center gap-y-2 px-6 py-8 text-center">
               <Text size="small" className="text-ui-fg-subtle max-w-md">
-                {allClear
-                  ? "Všechno zvládnuto — nic nečeká. 🎉"
-                  : "Žádná objednávka nečeká na vás."}
+                {vyber !== "all"
+                  ? "V tomhle výběru nic nečeká — zkuste ho rozbalovačkou rozšířit."
+                  : allClear
+                    ? "Všechno zvládnuto — nic nečeká. 🎉"
+                    : "Žádná objednávka nečeká na vás."}
               </Text>
             </div>
           ) : (

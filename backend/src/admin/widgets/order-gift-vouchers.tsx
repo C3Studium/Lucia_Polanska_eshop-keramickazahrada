@@ -38,6 +38,20 @@ const OrderGiftVouchersWidget = ({ data: order }: DetailWidgetProps<AdminOrder>)
       ),
   })
 
+  /*
+   * Poukazy UPLATNĚNÉ v téhle objednávce. V souhrnu se ukazuje jen „Sleva
+   * celkem" — podle ní se nepozná, že zákazník platil dárkovým poukazem, ani
+   * kterým a kolik z něj ubylo (3. 11. 2026).
+   */
+  const { data: pouzito } = useQuery({
+    queryKey: ["gift-vouchers", "used-in-order", orderId],
+    enabled: Boolean(orderId),
+    queryFn: () =>
+      sdk.client.fetch<{ gift_vouchers: AdminGiftVoucher[] }>(
+        `/admin/gift-vouchers?used_in_order_id=${encodeURIComponent(orderId)}`
+      ),
+  })
+
   const send = useMutation({
     mutationFn: (voucherId: string) =>
       sdk.client.fetch<{ email?: string }>(`/admin/gift-vouchers/${voucherId}/actions`, {
@@ -52,14 +66,67 @@ const OrderGiftVouchersWidget = ({ data: order }: DetailWidgetProps<AdminOrder>)
   })
 
   const vouchers = data?.gift_vouchers ?? []
-  if (isLoading || !vouchers.length) {
+  const uplatnene = pouzito?.gift_vouchers ?? []
+  if (isLoading || (!vouchers.length && !uplatnene.length)) {
     return null
   }
 
   return (
+    <div className="flex flex-col gap-y-3">
+      {uplatnene.length > 0 && (
+        <Container className="divide-y p-0">
+          <div className="flex items-center justify-between px-6 py-4">
+            <Heading level="h2">Zaplaceno dárkovým poukazem</Heading>
+            <Badge size="2xsmall">{uplatnene.length}</Badge>
+          </div>
+          <div className="divide-y">
+            {uplatnene.map((voucher) => {
+              const tady = (voucher.redemptions ?? []).filter(
+                (redemption) => redemption.order_id === orderId
+              )
+              const odecteno = tady
+                .filter((redemption) => !redemption.reversed_at)
+                .reduce((soucet, redemption) => soucet + redemption.amount, 0)
+              const vracene = tady
+                .filter((redemption) => redemption.reversed_at)
+                .reduce((soucet, redemption) => soucet + redemption.amount, 0)
+              return (
+                <div key={voucher.id} className="flex flex-col gap-y-2 px-6 py-4">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <Text size="small" weight="plus" className="font-mono">
+                      {voucher.code}
+                    </Text>
+                    <StateBadge voucher={voucher} />
+                    <Text size="small" className="text-ui-fg-subtle">
+                      {KIND_LABEL[voucher.kind]} · hodnota{" "}
+                      {formatCzk(voucher.initial_value)} · platí do{" "}
+                      {formatValidUntil(voucher.valid_until)}
+                    </Text>
+                  </div>
+                  <Text size="small">
+                    Z této objednávky odečteno {formatCzk(odecteno)} · na poukazu
+                    zbývá {formatCzk(voucher.balance)}
+                  </Text>
+                  {vracene > 0 && (
+                    <Text size="xsmall" className="text-ui-fg-subtle">
+                      Vráceno zpátky na poukaz: {formatCzk(vracene)}
+                    </Text>
+                  )}
+                  <Text size="xsmall" className="text-ui-fg-subtle">
+                    Koupil {voucher.buyer_name}
+                    {voucher.recipient_name ? ` · pro ${voucher.recipient_name}` : ""}
+                  </Text>
+                </div>
+              )
+            })}
+          </div>
+        </Container>
+      )}
+
+      {vouchers.length > 0 && (
     <Container className="divide-y p-0">
       <div className="flex items-center justify-between px-6 py-4">
-        <Heading level="h2">Dárkové poukazy</Heading>
+        <Heading level="h2">Dárkové poukazy koupené v objednávce</Heading>
         <Badge size="2xsmall">{vouchers.length}</Badge>
       </div>
       <div className="divide-y">
@@ -103,6 +170,8 @@ const OrderGiftVouchersWidget = ({ data: order }: DetailWidgetProps<AdminOrder>)
         ))}
       </div>
     </Container>
+      )}
+    </div>
   )
 }
 

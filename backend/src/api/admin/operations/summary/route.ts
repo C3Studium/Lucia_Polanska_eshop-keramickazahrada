@@ -93,6 +93,39 @@ const NEXT_UP_STAGES: MerchantOrderStage[] = [
 
 const NEXT_UP_LIMIT = 5
 
+/**
+ * Volby rozbalovačky „Na řadě" v Přehledu. Řadí a vybírá SERVER: klient má
+ * jen pět řádků, takže „od nejnovější" by nad nimi vrátilo nejnovější z pěti
+ * nejdéle čekajících — tedy nesmysl (3. 11. 2026).
+ */
+const NEXT_UP_SORTS = ["oldest", "newest"] as const
+const NEXT_UP_ONLY = [
+  "all",
+  "commissions",
+  "payment_problem",
+  "received",
+  "shipping",
+] as const
+type NextUpSort = (typeof NEXT_UP_SORTS)[number]
+type NextUpOnly = (typeof NEXT_UP_ONLY)[number]
+
+/**
+ * Kolik řádků se smí projít, než se z nich vybere pět. „Jen zakázky" se pozná
+ * až nad načtenými řádky (zakázka visí na jiné tabulce), takže se jich načte
+ * víc a ořeže se to na konci.
+ */
+const NEXT_UP_SCAN = 60
+
+/** Hodnota z dotazu, jen když je v seznamu — jinak výchozí. */
+const volbaZDotazu = <T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  fallback: T
+): T =>
+  typeof value === "string" && (allowed as readonly string[]).includes(value)
+    ? (value as T)
+    : fallback
+
 const PRODUCTION_TERMINAL_STAGES = ["completed", "cancelled"]
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
@@ -276,21 +309,60 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     (a, b) => new Date(a.ends_at).getTime() - new Date(b.ends_at).getTime()
   )
 
-  // ---- „Na řadě" — the five oldest orders that still owe an action ---------
-  const nextUpStates: any[] = []
-  for (const stage of NEXT_UP_STAGES) {
-    if (nextUpStates.length >= NEXT_UP_LIMIT) {
-      break
-    }
-    const states = await merchantOrders.listMerchantOrderStates(
-      { stage } as never,
-      {
-        take: NEXT_UP_LIMIT - nextUpStates.length,
-        order: { stage_changed_at: "ASC" },
-      }
+  // ---- „Na řadě" — pět objednávek, které na někoho čekají -----------------
+  // Výchozí pořadí je to, co tu bylo vždycky: nejdéle čekající, a potíže
+  // s platbou napřed. Rozbalovačka v Přehledu umí přepnout na nejnovější
+  // a omezit výběr (jen zakázky, jen nové, jen k odeslání…).
+  const nextUpSort = volbaZDotazu<NextUpSort>(
+    req.query.next_up_sort,
+    NEXT_UP_SORTS,
+    "oldest"
+  )
+  const nextUpOnly = volbaZDotazu<NextUpOnly>(
+    req.query.next_up_only,
+    NEXT_UP_ONLY,
+    "all"
+  )
+  const commissionOrderIds = new Set(
+    (productionOrders as any[]).map((production) => production.order_id)
+  )
+  const nextUpWantedStages: MerchantOrderStage[] =
+    nextUpOnly === "all" || nextUpOnly === "commissions"
+      ? NEXT_UP_STAGES
+      : [nextUpOnly as MerchantOrderStage]
+  const nextUpScan = nextUpOnly === "commissions" ? NEXT_UP_SCAN : NEXT_UP_LIMIT
+
+  const scannedStates: any[] = []
+  if (nextUpSort === "newest") {
+    // Od nejnovější: čas vyhrává nad pořadím fází, takže jeden dotaz přes
+    // všechny — jinak by se napřed vyčerpaly potíže s platbou.
+    scannedStates.push(
+      ...(await merchantOrders.listMerchantOrderStates(
+        { stage: nextUpWantedStages } as never,
+        { take: nextUpScan, order: { stage_changed_at: "DESC" } }
+      ))
     )
-    nextUpStates.push(...states)
+  } else {
+    for (const stage of nextUpWantedStages) {
+      if (scannedStates.length >= nextUpScan) {
+        break
+      }
+      const states = await merchantOrders.listMerchantOrderStates(
+        { stage } as never,
+        {
+          take: nextUpScan - scannedStates.length,
+          order: { stage_changed_at: "ASC" },
+        }
+      )
+      scannedStates.push(...states)
+    }
   }
+
+  const nextUpStates = (
+    nextUpOnly === "commissions"
+      ? scannedStates.filter((state) => commissionOrderIds.has(state.order_id))
+      : scannedStates
+  ).slice(0, NEXT_UP_LIMIT)
 
   let nextUpOrders: any[] = []
   if (nextUpStates.length) {
