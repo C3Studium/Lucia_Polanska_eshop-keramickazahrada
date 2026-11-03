@@ -28,11 +28,22 @@ const fold = (value: string) =>
 const methodsOf = (order: OrderWithShipping): ShippingMethodLike[] =>
   (order.shipping_methods ?? []) as ShippingMethodLike[];
 
-/** Osobní odběr — žádný dopravce, žádný štítek, žádné sledování. */
+/**
+ * Osobní odběr — žádný dopravce, žádný štítek, žádné sledování.
+ *
+ * Kód služby přebíjí příznak odběru: Medusa data metody dopravy slučuje,
+ * takže po výměně osobního odběru za Českou poštu zůstane v datech
+ * `personal_pickup: true` vedle `service_code: "DR"` (objednávka #69,
+ * 3. 11. 2026). Ten kód zapsal dopravce — platí on. Totéž pravidlo má
+ * backend v `lib/personal-pickup.ts`; sdílet ho nejde, administrace
+ * z backendu importovat nesmí.
+ */
 export const isPersonalPickup = (order: OrderWithShipping): boolean =>
   methodsOf(order).some((method) => {
     const data = method?.data || {};
-    return data.personal_pickup === true || data.service_code === "PICKUP";
+    const code = String(data.service_code ?? "");
+    if (code && code !== "PICKUP") return false;
+    return data.personal_pickup === true || code === "PICKUP";
   });
 
 /** Zásilka České pošty (Balíkovna NB nebo Balík Do ruky DR). */
