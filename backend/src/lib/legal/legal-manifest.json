@@ -5,7 +5,7 @@
     "name": "Lucie Polanská",
     "address": "Putim 229, 397 01 Písek",
     "ico": "03441482",
-    "email": "info@keramickazahrada.cz",
+    "email": "lucie.polanska@gmail.com",
     "phone": "+420 775 211 578",
     "web": "keramickazahrada.cz",
     "webUrl": "https://keramickazahrada.cz"
@@ -38,7 +38,20 @@
             "url": "/legal/obchodni-podminky-2026-10-15.pdf",
             "sha256": "fe0ded1534fd55f701cbb4f4f401063fbd27b87968dd336b94756e6a71099aac",
             "bytes": 253378,
-            "draft": true
+            "draft": false
+          }
+        },
+        {
+          "version": "2026-11-03",
+          "effectiveFrom": "2026-11-03",
+          "title": "Obchodní podmínky",
+          "archived": false,
+          "pdf": {
+            "file": "obchodni-podminky-2026-11-03.pdf",
+            "url": "/legal/obchodni-podminky-2026-11-03.pdf",
+            "sha256": "1fdac5139c6975a4e845184d4d99eacaa1000a0876087021b5d60356a695be32",
+            "bytes": 254062,
+            "draft": false
           }
         }
       ]
@@ -57,6 +70,19 @@
             "url": "https://img.matejforejt.com/legal/reklamacni-rad-2026-10-15.pdf",
             "sha256": "397da3ea5e57eef5aab2117a1c619d430c3c93fb8a73c3cc4ad7e20cb9113f8e",
             "bytes": 116653,
+            "draft": false
+          }
+        },
+        {
+          "version": "2026-11-03",
+          "effectiveFrom": "2026-11-03",
+          "title": "Reklamační řád",
+          "archived": false,
+          "pdf": {
+            "file": "reklamacni-rad-2026-11-03.pdf",
+            "url": "/legal/reklamacni-rad-2026-11-03.pdf",
+            "sha256": "3a4e2879b23a5f675ba8e5b628e7cde5914587cb0ed99ae1e085485ccfc9b9c3",
+            "bytes": 118790,
             "draft": false
           }
         }
@@ -78,6 +104,19 @@
             "bytes": 100221,
             "draft": false
           }
+        },
+        {
+          "version": "2026-11-03",
+          "effectiveFrom": "2026-11-03",
+          "title": "Reklamační protokol",
+          "archived": false,
+          "pdf": {
+            "file": "reklamacni-protokol-2026-11-03.pdf",
+            "url": "/legal/reklamacni-protokol-2026-11-03.pdf",
+            "sha256": "199f9af263ac2100e6a77ece9aedc7061da4526077dfeb6ac0222fc64f160f7d",
+            "bytes": 99858,
+            "draft": false
+          }
         }
       ]
     },
@@ -95,7 +134,20 @@
             "url": "/legal/odstoupeni-od-smlouvy-2026-10-15.pdf",
             "sha256": "a82934626a977bd4530a215277665caaaa1cba982cec62d98054d43592580cb0",
             "bytes": 131377,
-            "draft": true
+            "draft": false
+          }
+        },
+        {
+          "version": "2026-11-03",
+          "effectiveFrom": "2026-11-03",
+          "title": "Odstoupení od smlouvy",
+          "archived": false,
+          "pdf": {
+            "file": "odstoupeni-od-smlouvy-2026-11-03.pdf",
+            "url": "/legal/odstoupeni-od-smlouvy-2026-11-03.pdf",
+            "sha256": "e2cc68040711c70443f928d5f256b1a3be34bb5d7a55b25ac80ad8320e8fd461",
+            "bytes": 121566,
+            "draft": false
           }
         }
       ]
@@ -114,7 +166,20 @@
             "url": "/legal/ochrana-osobnich-udaju-2026-10-15.pdf",
             "sha256": "88e54bb462d677aeb82b94e15b8921bee7d2df5d984abea0211c36bbccecef3f",
             "bytes": 173857,
-            "draft": true
+            "draft": false
+          }
+        },
+        {
+          "version": "2026-11-03",
+          "effectiveFrom": "2026-11-03",
+          "title": "Ochrana osobních údajů",
+          "archived": false,
+          "pdf": {
+            "file": "ochrana-osobnich-udaju-2026-11-03.pdf",
+            "url": "/legal/ochrana-osobnich-udaju-2026-11-03.pdf",
+            "sha256": "ea3b368c6a0ebc66ba3b085b282a3ce70b35b0c4f35e4df587789be9da294cfa",
+            "bytes": 172170,
+            "draft": false
           }
         }
       ]
@@ -129,6 +194,13 @@
           "title": "Používání cookies",
           "archived": false,
           "pdf": null
+        },
+        {
+          "version": "2026-11-03",
+          "effectiveFrom": "2026-11-03",
+          "title": "Používání cookies",
+          "archived": false,
+          "pdf": null
         }
       ]
     },
@@ -139,6 +211,13 @@
         {
           "version": "2026-10-15",
           "effectiveFrom": "2026-10-15",
+          "title": "Doprava a platba",
+          "archived": false,
+          "pdf": null
+        },
+        {
+          "version": "2026-11-03",
+          "effectiveFrom": "2026-11-03",
           "title": "Doprava a platba",
           "archived": false,
           "pdf": null

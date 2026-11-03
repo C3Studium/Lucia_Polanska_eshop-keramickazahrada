@@ -25,8 +25,10 @@ import {
 } from "../components/agreed-price";
 import {
   isProductionPhase,
+  leastAdvancedStage,
   productionStageMeta,
   productionStep,
+  productionStepPlacement,
   type ProductionStage,
   type ProductionStepAction,
 } from "../lib/production-stage";
@@ -38,12 +40,15 @@ type MerchantOrderDetailResponse = {
 };
 
 /** Sdílený dotaz s widgetem „Výroba na zakázku" (stejný klíč = jedna odpověď). */
+type ProductionCommission = AgreedPriceCommission & {
+  stage: ProductionStage;
+  pure_commission?: boolean;
+  outstanding_amount?: number | string;
+};
 type ProductionResponse = {
-  production_order?: (AgreedPriceCommission & {
-    stage: ProductionStage;
-    pure_commission?: boolean;
-    outstanding_amount?: number | string;
-  }) | null;
+  production_order?: ProductionCommission | null;
+  /** Všechny zakázky objednávky — jedna na zakázkovou položku (§ 0c). */
+  production_orders?: ProductionCommission[];
 };
 
 const stepSuccess: Record<ProductionStepAction, string> = {
@@ -81,6 +86,8 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
     enabled: Boolean(merchantOrder?.is_made_to_order),
   });
   const production = productionQuery.data?.production_order ?? null;
+  const commissions =
+    productionQuery.data?.production_orders ?? (production ? [production] : []);
 
   /*
    * Čistá zakázka ve výrobě: Denní práce ovládá výrobu (Potvrdit zadání →
@@ -90,12 +97,24 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
   const productionMode = Boolean(
     production?.pure_commission && isProductionPhase(production.stage)
   );
+  /*
+   * Tlačítko tu je jen u JEDINÉ zakázky. Jedno tlačítko nad víc zakázkami by
+   * neumělo říct, které se krok týká — a tím ani o které zakázce půjde
+   * zákazníkovi e-mail; u víc zakázek ho proto má každá ve své kartě
+   * „Výroba na zakázku" (3. 11. 2026, lib/production-stage).
+   */
+  const stepHere =
+    productionStepPlacement({
+      pureCommission: Boolean(production?.pure_commission),
+      commissionCount: commissions.length,
+    }) === "daily-work";
 
   const step = useMutation({
     mutationFn: (action: ProductionStepAction) =>
       sdk.client.fetch(`/admin/made-to-order/orders/${order.id}/actions`, {
         method: "POST",
-        body: { action },
+        // Krok patří TÉ zakázce (§ 0c); tlačítko je tu jen u jediné.
+        body: { action, production_order_id: production?.id },
       }),
     onSuccess: async (_data, action) => {
       await Promise.all([
@@ -189,8 +208,15 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
   const pickup = Boolean(merchantOrder.is_personal_pickup);
 
   if (productionMode && production) {
-    const next = productionStep[production.stage];
-    const meta = productionStageMeta[production.stage];
+    const next = stepHere ? productionStep[production.stage] : undefined;
+    // U víc zakázek odznak ukazuje tu nejméně rozpracovanou — Denní práce
+    // říká, co ještě čeká, ne co je nejdál hotové.
+    const meta =
+      productionStageMeta[
+        stepHere
+          ? production.stage
+          : leastAdvancedStage(commissions.map((commission) => commission.stage))
+      ];
     // Cena po domluvě: potvrzení až po poslané ceně, výroba až po záloze
     // (cenu Lucie posílá ve „Výrobě na zakázku" u položky).
     const blocked =
@@ -213,13 +239,34 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
             </Text>
           )}
 
-          <Text size="small" className="text-ui-fg-subtle">
-            {next
-              ? `Zakázka na míru — další krok: ${next.label}`
-              : `Zakázka je hotová a čeká na doplatek. Výzvu k doplacení pošlete ve Výrobě na zakázku; po zaplacení tu bude ${
-                  pickup ? "Připraveno k vyzvednutí" : "Připraveno k odeslání"
-                }.`}
-          </Text>
+          {stepHere ? (
+            <Text size="small" className="text-ui-fg-subtle">
+              {next
+                ? `Zakázka na míru — další krok: ${next.label}`
+                : `Zakázka je hotová a čeká na doplatek. Výzvu k doplacení pošlete ve Výrobě na zakázku; po zaplacení tu bude ${
+                    pickup ? "Připraveno k vyzvednutí" : "Připraveno k odeslání"
+                  }.`}
+            </Text>
+          ) : (
+            <div className="flex flex-col gap-y-1">
+              <Text size="small" className="text-ui-fg-subtle">
+                Zakázek na míru je {commissions.length}. Další krok má každá ve
+                své kartě „Výroba na zakázku“ — e-mail pak zákazníkovi odejde
+                jen o té jedné.
+              </Text>
+              {commissions.map((commission, index) => (
+                <Text
+                  key={commission.id}
+                  size="small"
+                  className="text-ui-fg-subtle"
+                >
+                  {commission.line_title || `Zakázka ${index + 1}`} —{" "}
+                  {productionStep[commission.stage]?.label ??
+                    productionStageMeta[commission.stage].label}
+                </Text>
+              ))}
+            </div>
+          )}
 
           {next && (
             <Button

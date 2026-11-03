@@ -8,6 +8,7 @@ import {
 } from "./auto-cancel"
 import { cancelOrderNatively } from "./cancel-order-action"
 import { kindLabel, resolutionLabel } from "./constants"
+import { autoCancelledSubject, loadClaimEmailContext, nothingPaidText } from "./email-copy"
 
 /**
  * Auto-zrušení (docs/reklamace-a-zruseni.md §13.1) — orchestrace po
@@ -89,18 +90,21 @@ export const autoCancelClaim = async (
       },
     })
   } else {
+    // Jazyk objednávky (lib/claims/email-copy) — důvod zákazníka zůstává jeho.
+    const emailContext = await loadClaimEmailContext(container, order.id)
     await sendCustomerEmail(container, {
       template: "return-approved",
       to: order.email,
       key: `return-approved:req:${updated.id}`,
       orderId: order.id,
+      locale: emailContext.locale,
       data: {
-        subject: "Objednávku jsem na vaši žádost zrušila",
-        ...claimEmailBase(updated, protocol.url),
+        subject: autoCancelledSubject(emailContext.locale),
+        ...claimEmailBase(updated, protocol.url, emailContext),
         returnReason: updated.reason,
         goodsReturnRequired: false,
         nothingToReturn: true,
-        returnDeadline: "nebylo zaplaceno — není co vracet",
+        returnDeadline: nothingPaidText(emailContext.locale),
       },
     })
   }

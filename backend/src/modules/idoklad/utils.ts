@@ -1,8 +1,13 @@
 import { withPackagingUnderProducts } from "../../lib/packaging-lines"
+import { emailLocaleOf } from "../../lib/email-locale"
 import { toAmount } from "../../lib/ship-gate"
 import {
   ITEM_TYPE_NORMAL,
   PRICE_TYPE_WITH_VAT,
+  REPORT_LANGUAGE_CZ,
+  REPORT_LANGUAGE_DE,
+  REPORT_LANGUAGE_EN,
+  REPORT_LANGUAGE_SK,
   VAT_RATE_TYPE_BASIC,
   VAT_RATE_TYPE_ZERO,
   type IdokladContactPayload,
@@ -468,6 +473,46 @@ type InvoicePayloadInput = {
   description?: string
 }
 
+/**
+ * Česká, nebo evropská faktura.
+ *
+ * iDoklad jinak než česky neumí přeložit položky — umí jen tiskovou sestavu
+ * (nadpisy, popisky: cs, sk, en, de) a účet. Zákazník mimo Česko (podle jazyka
+ * objednávky, tedy země z přepínače) nebo platba v cizí měně proto dostane
+ * „evropskou" fakturu: sestavu v jeho jazyce (polsky iDoklad neumí → anglicky)
+ * a účet ve tvaru IBAN + SWIFT. Účet se bere z `IDOKLAD_EU_IBAN` /
+ * `IDOKLAD_EU_SWIFT` (eurový účet, pokud ho Lucie má), jinak z výchozího
+ * účtu agendy. Názvy položek zůstávají česky.
+ */
+export const invoiceFlavourFor = (
+  order: Pick<InvoiceOrderInput, "metadata" | "billing_address" | "shipping_address" | "currency_code">
+): { european: boolean; reportLanguage: number } => {
+  const locale = emailLocaleOf(order as any)
+  const foreignCurrency = String(order.currency_code ?? "czk").toLowerCase() !== "czk"
+  const european = locale !== "cs" || foreignCurrency
+  const reportLanguage = !european
+    ? REPORT_LANGUAGE_CZ
+    : locale === "sk"
+      ? REPORT_LANGUAGE_SK
+      : locale === "de"
+        ? REPORT_LANGUAGE_DE
+        : locale === "cs"
+          ? REPORT_LANGUAGE_CZ
+          : REPORT_LANGUAGE_EN
+  return { european, reportLanguage }
+}
+
+const europeanAccount = (
+  defaults: IdokladInvoiceDefault
+): Pick<IdokladInvoicePayload, "Iban" | "Swift"> => {
+  const iban = (process.env.IDOKLAD_EU_IBAN || defaults.Iban || "").replace(/\s+/g, "")
+  const swift = (process.env.IDOKLAD_EU_SWIFT || defaults.Swift || "").trim()
+  return {
+    ...(iban ? { Iban: truncate(iban, 50) } : {}),
+    ...(swift ? { Swift: truncate(swift, 11) } : {}),
+  }
+}
+
 export const buildInvoicePayload = (
   input: InvoicePayloadInput
 ): IdokladInvoicePayload => {
@@ -495,6 +540,18 @@ export const buildInvoicePayload = (
     PaymentOptionId: input.paymentOptionId ?? defaults.PaymentOptionId,
     ...(variableSymbol ? { VariableSymbol: variableSymbol } : {}),
     Note: "Vystaveno automaticky e-shopem Keramická zahrada.",
+    ...invoiceFlavourPayload(order, defaults),
+  }
+}
+
+const invoiceFlavourPayload = (
+  order: InvoiceOrderInput,
+  defaults: IdokladInvoiceDefault
+): Partial<IdokladInvoicePayload> => {
+  const flavour = invoiceFlavourFor(order)
+  return {
+    ReportLanguage: flavour.reportLanguage,
+    ...(flavour.european ? europeanAccount(defaults) : {}),
   }
 }
 

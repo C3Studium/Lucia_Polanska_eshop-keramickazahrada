@@ -9,6 +9,8 @@ import { listNavigationCollections } from "@lib/data/navigation"
 import { getMerchantIdentity } from "@lib/data/merchant"
 import { ContactDialogProvider } from "@modules/layout/ContactDialog"
 import { getPageCopy } from "@lib/data/site-copy"
+import { ContactEmailsProvider } from "@lib/context/contact-emails"
+import { CONTACT_EMAILS_BLOCK, contactEmailsFrom } from "@lib/constants/contact"
 import EditModeRemount from "@modules/common/components/cms-text/edit-remount"
 import GlobalLiquidEther from "@modules/layout/components/global-liquid-ether"
 import Scrollbar from "@modules/layout/scrollbar"
@@ -33,10 +35,14 @@ export default async function CheckoutLayout({
     getFooterDownloads(),
   ])
 
-  // Texty kontaktního okna — totéž okno jako na zbytku webu (`global.kontaktni-okno`).
-  const dialogCopy = (await getPageCopy("global"))["global.kontaktni-okno"]
+  // Texty kontaktního okna — totéž okno jako na zbytku webu (`global.kontaktni-okno`)
+  // — a kontaktní e-maily ze Studia (hlášky platby, patička).
+  const globalCopy = await getPageCopy("global")
+  const dialogCopy = globalCopy["global.kontaktni-okno"]
+  const contactEmails = contactEmailsFrom(globalCopy[CONTACT_EMAILS_BLOCK])
 
   return (
+    <ContactEmailsProvider emails={contactEmails}>
     <ContactDialogProvider merchant={merchant} copy={dialogCopy}>
       <div className={styles.root}>
         <GlobalLiquidEther />
@@ -57,5 +63,6 @@ export default async function CheckoutLayout({
         </div>
       </div>
     </ContactDialogProvider>
+    </ContactEmailsProvider>
   )
 }

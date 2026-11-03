@@ -1,5 +1,6 @@
 import { getLegalFacts } from "@lib/data/legal-facts"
 import { getPublishedLegalRegistry } from "@lib/data/legal-registry"
+import { getContactEmails } from "@lib/data/site-copy"
 import { fact } from "@lib/legal/facts"
 import { LEGAL_PATHS } from "@lib/legal/registry"
 
@@ -55,11 +56,17 @@ type Props = {
 }
 
 export default async function VyrobaInquiry({ product }: Props = {}) {
-  const [registry, facts] = await Promise.all([getPublishedLegalRegistry(), getLegalFacts()])
+  const [registry, facts, emails] = await Promise.all([
+    getPublishedLegalRegistry(),
+    getLegalFacts(),
+    getContactEmails(),
+  ])
   const termsVersion = registry.currentTermsVersion()
   const termsHref = `${LEGAL_PATHS["obchodni-podminky"]}#vyroba-na-zakazku`
   const privacyHref = LEGAL_PATHS["ochrana-osobnich-udaju"]
-  const email = fact("seller.email", facts) ?? ""
+  // Poptávka zakázky → e-mail pro objednávky a zakázky ze Studia
+  // (`global.kontakty`), ne adresa prodávající z Právních údajů.
+  const email = emails.objednavky
   const phone = fact("seller.phone", facts)
 
   return (

@@ -4,9 +4,16 @@ import { MADE_TO_ORDER_MODULE } from "../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../modules/made-to-order/service"
 import { ensureBalanceCollection, outstandingFor } from "../balance-payment"
 import { balancePaymentUrl } from "../balance-payment-link"
-import { customerName, formatMoney, orderLink, orderNumber, sendCustomerEmail } from "../customer-email"
+import {
+  customerName,
+  emailLocaleForOrder,
+  formatMoney,
+  orderLink,
+  orderNumber,
+  sendCustomerEmail,
+} from "../customer-email"
+import { localizedCommissionTitle } from "./commission-title-i18n"
 import { clampContractPercentage } from "./contract-deposit"
-import { commissionTitleOf } from "./commission-line"
 
 /**
  * Cena po domluvě u zakázky — „Poslat domluvenou cenu" (24. 10. 2026, Matěj).
@@ -175,6 +182,12 @@ export const sendAgreedPrice = async (
       "items.id",
       "items.title",
       "items.variant_title",
+      // Jazyk zákazníka a přeložený název výrobku (lib/email-locale).
+      "metadata",
+      "shipping_address.country_code",
+      "billing_address.country_code",
+      "items.product_title",
+      "items.product.metadata",
       "payment_collections.id",
       "payment_collections.status",
       "payment_collections.amount",
@@ -199,6 +212,8 @@ export const sendAgreedPrice = async (
 
   const currency = order.currency_code || "czk"
   const total = round2(agreed + shipping + packaging)
+  const locale = await emailLocaleForOrder(container, order)
+  const money = (value: number) => formatMoney(value, currency, locale)
   const emailed = await sendCustomerEmail(container, {
     template: "commission-price-agreed",
     to: order.email,
@@ -206,22 +221,23 @@ export const sendAgreedPrice = async (
     // na totéž pořád jedna.
     key: `agreed-price:${po.id}:${agreed}:${shipping}:${packaging}:${depositAmount}`,
     orderId: order.id,
+    locale,
     data: {
       customerName: customerName(order),
       orderNumber: orderNumber(order),
       orderLink: orderLink(order),
-      productTitle: commissionTitleOf(order, updated) ?? undefined,
-      agreedPrice: formatMoney(agreed, currency),
-      depositAmount: formatMoney(depositAmount, currency),
+      productTitle: localizedCommissionTitle(order, updated, locale) ?? undefined,
+      agreedPrice: money(agreed),
+      depositAmount: money(depositAmount),
       depositPercentage: `${percentage} %`,
       // Doprava a balné se v e-mailu ukážou, jen když nějaké jsou —
       // u osobního odběru by řádky „0 Kč" jen mátly.
-      shippingAmount: shipping > 0.005 ? formatMoney(shipping, currency) : null,
-      packagingAmount: packaging > 0.005 ? formatMoney(packaging, currency) : null,
-      totalAmount: formatMoney(total, currency),
+      shippingAmount: shipping > 0.005 ? money(shipping) : null,
+      packagingAmount: packaging > 0.005 ? money(packaging) : null,
+      totalAmount: money(total),
       balanceAmount:
         total - depositAmount > 0.005
-          ? formatMoney(round2(total - depositAmount), currency)
+          ? money(round2(total - depositAmount))
           : null,
       payDepositUrl: balancePaymentUrl(order.id, po.id, "deposit"),
       payFullUrl: balancePaymentUrl(order.id, po.id, "full"),

@@ -25,7 +25,15 @@ import {
   toAmount,
 } from "../lib/ship-gate"
 import { ensureMadeToOrderInvoices } from "../lib/idoklad-invoice"
-import { commissionImageOf, commissionTitleOf } from "../lib/made-to-order/commission-line"
+import { commissionImageOf } from "../lib/made-to-order/commission-line"
+import { localizedCommissionTitle } from "../lib/made-to-order/commission-title-i18n"
+import {
+  emailLocaleOf,
+  localizedLineTitle,
+  piecesLabel,
+  pick,
+  type EmailLocale,
+} from "../lib/email-locale"
 import { commissionMoney } from "../lib/made-to-order/commission-money"
 import { listCommissionsOfOrder } from "../lib/made-to-order/orders-of"
 import {
@@ -69,10 +77,15 @@ const ORDER_FIELDS = [
   "total",
   "metadata",
   "items.*",
+  // Přeložený název výrobku (lib/email-locale, `product.metadata.title_xx`).
+  "items.product.metadata",
   "customer.first_name",
   "customer.last_name",
   "shipping_address.first_name",
   "shipping_address.last_name",
+  // Jazyk e-mailu, když objednávka nemá `metadata.locale` (starší objednávky).
+  "shipping_address.country_code",
+  "billing_address.country_code",
   "shipping_methods.name",
   "shipping_methods.data",
 ]
@@ -92,6 +105,76 @@ const common = (order: any) => ({
   orderNumber: orderNumber(order),
   orderLink: orderLink(order),
 })
+
+/**
+ * Texty, které se skládají tady (ne v šabloně) — v jazyce objednávky
+ * (lib/email-locale). Šablona je zobrazí, jak přijdou, takže česká věta by
+ * se ve slovenském e-mailu objevila doslova.
+ */
+const TEXTS = {
+  cardOrTransfer: {
+    cs: "Platební karta nebo převod",
+    sk: "Platobná karta alebo prevod",
+    pl: "Karta płatnicza lub przelew",
+    de: "Karte oder Überweisung",
+    en: "Card or bank transfer",
+  },
+  confirmTime: {
+    cs: "Platba se obvykle potvrdí do několika minut.",
+    sk: "Platba sa zvyčajne potvrdí do niekoľkých minút.",
+    pl: "Płatność jest zwykle potwierdzana w ciągu kilku minut.",
+    de: "Die Zahlung wird in der Regel innerhalb weniger Minuten bestätigt.",
+    en: "Payments are usually confirmed within a few minutes.",
+  },
+  balance: { cs: "Doplatek", sk: "Doplatok", pl: "Dopłata", de: "Restzahlung", en: "Balance payment" },
+  cod: { cs: "Dobírka", sk: "Dobierka", pl: "Za pobraniem", de: "Nachnahme", en: "Cash on delivery" },
+  payOnSite: {
+    cs: "Platba na místě",
+    sk: "Platba na mieste",
+    pl: "Płatność na miejscu",
+    de: "Zahlung vor Ort",
+    en: "Payment on collection",
+  },
+  online: {
+    cs: "Online platba",
+    sk: "Online platba",
+    pl: "Płatność online",
+    de: "Online-Zahlung",
+    en: "Online payment",
+  },
+  refundMethod: {
+    cs: "Zpět na účet, ze kterého platba přišla",
+    sk: "Späť na účet, z ktorého platba prišla",
+    pl: "Z powrotem na konto, z którego wpłynęła płatność",
+    de: "Zurück auf das Konto, von dem die Zahlung kam",
+    en: "Back to the account the payment came from",
+  },
+  refundTime: {
+    cs: "Peníze se obvykle vrátí do několika pracovních dnů.",
+    sk: "Peniaze sa zvyčajne vrátia do niekoľkých pracovných dní.",
+    pl: "Pieniądze wracają zwykle w ciągu kilku dni roboczych.",
+    de: "Das Geld ist in der Regel innerhalb weniger Werktage zurück.",
+    en: "The money usually arrives back within a few working days.",
+  },
+  returnMethod: {
+    cs: "Zásilka na adresu ateliéru",
+    sk: "Zásielka na adresu ateliéru",
+    pl: "Przesyłka na adres pracowni",
+    de: "Paket an die Adresse der Werkstatt",
+    en: "Parcel sent to the studio address",
+  },
+  pickupLocation: {
+    cs: "Dílna Keramická zahrada, Písek",
+    sk: "Dielňa Keramická zahrada, Písek",
+    pl: "Pracownia Keramická zahrada, Písek",
+    de: "Werkstatt Keramická zahrada, Písek",
+    en: "Keramická zahrada studio, Písek",
+  },
+} satisfies Record<string, Record<EmailLocale, string>>
+
+/** Název výrobku řádku v jazyce e-mailu (snímek řádku je český). */
+const itemTitle = (item: any, locale: EmailLocale): string =>
+  localizedLineTitle(item, locale) || item?.title || ""
 
 /**
  * Náhledový obrázek zakázky = obrázek objednaného produktu (ne fotka, kterou
@@ -207,25 +290,27 @@ const onPaymentCaptured = async ({
   if (!order) {
     return
   }
+  const locale = emailLocaleOf(order)
 
   await sendCustomerEmail(container, {
     template: "payment-received",
     to: order.email,
     key: `payment-received:${payment.id}`,
     orderId: order.id,
+    locale,
     data: {
       ...common(order),
-      paymentAmount: formatMoney(payment.amount, payment.currency_code),
+      paymentAmount: formatMoney(payment.amount, payment.currency_code, locale),
       /*
        * Způsob platby podle poskytovatele, ne natvrdo „Online platba":
        * u osobního odběru zapisuje peníze majitelka tlačítkem „Objednávka
        * zaplacena" (hotovost nebo převod u pultu) a dobírku vybere pošta —
        * ani jedno online neproběhlo a e-mail to tvrdit nesmí.
        */
-      paymentMethod: capturedPaymentMethod(payment?.provider_id),
+      paymentMethod: capturedPaymentMethod(payment?.provider_id, locale),
       /* Za co platba byla (lib/email-items) — bez výpisu e-mail potvrzoval
          peníze a nechával zákazníka hádat, které objednávky se týkají. */
-      paidFor: emailLineItems(order),
+      paidFor: emailLineItems(order, locale),
     },
   })
 }
@@ -289,6 +374,7 @@ const onBalanceRequested = async ({
     typeof meta.idoklad_invoice_number === "string"
       ? meta.idoklad_invoice_number
       : null
+  const locale = emailLocaleOf(order)
 
   await sendCustomerEmail(container, {
     template: "payment-pending",
@@ -300,23 +386,24 @@ const onBalanceRequested = async ({
       ? `paylink:${request.id}:${data.reminder_token}`
       : `paylink:${request.id}`,
     orderId: order.id,
+    locale,
     data: {
       ...common(order),
-      paymentAmount: formatMoney(request.amount, request.currency_code),
-      paymentMethod: "Platební karta nebo převod",
+      paymentAmount: formatMoney(request.amount, request.currency_code, locale),
+      paymentMethod: pick(locale, TEXTS.cardOrTransfer),
       // The link she generated, or the signed one (per zakázka) that works from any inbox.
       paymentLink:
         request.payment_url ||
         balancePaymentUrl(order.id, request.production_order_id) ||
         orderLink(order),
-      estimatedConfirmationTime: "Platba se obvykle potvrdí do několika minut.",
+      estimatedConfirmationTime: pick(locale, TEXTS.confirmTime),
       // Název a obrázek objednaného produktu TÉTO zakázky (ne fotka od zákazníka).
-      productTitle: commissionTitleOf(order, production),
+      productTitle: localizedCommissionTitle(order, production, locale),
       makingPhotoUrl: commissionProductImage(order, production),
       // Co už je zaplaceno (záloha) a první faktura — ať je jasné, co a za co.
       depositPaid:
         depositPaid > 0
-          ? formatMoney(depositPaid, request.currency_code)
+          ? formatMoney(depositPaid, request.currency_code, locale)
           : null,
       depositInvoiceUrl,
       depositInvoiceNumber,
@@ -341,6 +428,7 @@ const onBalancePaid = async ({
   if (!order) {
     return
   }
+  const locale = emailLocaleOf(order)
 
   // Rozpis záloha · doplatek · příplatek · celkem (14. 10. 2026) — samotné
   // „Částka 3 775 Kč" neříkalo, že v ní je příplatek a že záloha už je
@@ -358,7 +446,7 @@ const onBalancePaid = async ({
       const meta = (order.metadata ?? {}) as Record<string, unknown>
       commissionPayments = commissionPaymentsText(
         splitCommissionPayments({ requests, surcharge: production.surcharge }),
-        (amount) => formatMoney(amount, order.currency_code),
+        (amount) => formatMoney(amount, order.currency_code, locale),
         typeof meta.idoklad_invoice_number === "string" ? meta.idoklad_invoice_number : null
       )
     }
@@ -371,12 +459,15 @@ const onBalancePaid = async ({
     to: order.email,
     key: `balpaid:${data.payment_request_id}`,
     orderId: order.id,
+    locale,
     data: {
       ...common(order),
-      paymentAmount: formatMoney(data.amount, data.currency_code),
-      paymentMethod: production
-        ? `Doplatek${commissionTitleOf(order, production) ? ` — ${commissionTitleOf(order, production)}` : ""}`
-        : "Doplatek",
+      paymentAmount: formatMoney(data.amount, data.currency_code, locale),
+      paymentMethod: (() => {
+        const nazev = production ? localizedCommissionTitle(order, production, locale) : null
+        const doplatek = pick(locale, TEXTS.balance)
+        return nazev ? `${doplatek} — ${nazev}` : doplatek
+      })(),
       /*
        * Za co doplatek byl: TEN kus, ne celá objednávka (zakázka = položka),
        * s fotkou objednaného produktu. Bez částky schválně — řádek položky
@@ -385,12 +476,12 @@ const onBalancePaid = async ({
        */
       paidFor: production
         ? (() => {
-            const nazev = commissionTitleOf(order, production)
+            const nazev = localizedCommissionTitle(order, production, locale)
             return nazev
               ? [{ title: nazev, thumbnail: commissionProductImage(order, production) }]
-              : emailLineItems(order)
+              : emailLineItems(order, locale)
           })()
-        : emailLineItems(order),
+        : emailLineItems(order, locale),
       commissionPayments,
     },
   })
@@ -446,12 +537,12 @@ const pickupOutstanding = async (
   return due > epsilonFor(order.currency_code) ? due : 0
 }
 
-/** Čím zákazník zaplatil — do e-mailu „Platba přijata". */
-const capturedPaymentMethod = (providerId?: string | null): string => {
+/** Čím zákazník zaplatil — do e-mailu „Platba přijata" (v jazyce objednávky). */
+const capturedPaymentMethod = (providerId?: string | null, locale: EmailLocale = "cs"): string => {
   const id = String(providerId ?? "")
-  if (id === DOBIRKA_PROVIDER_ID) return "Dobírka"
-  if (isPayLaterPaymentProvider(id)) return "Platba na místě"
-  return "Online platba"
+  if (id === DOBIRKA_PROVIDER_ID) return pick(locale, TEXTS.cod)
+  if (isPayLaterPaymentProvider(id)) return pick(locale, TEXTS.payOnSite)
+  return pick(locale, TEXTS.online)
 }
 
 /**
@@ -542,6 +633,7 @@ const onShipmentCreated = async ({
       to: order.email,
       key: `ship:${fulfillment.id}`,
       orderId: order.id,
+      locale: emailLocaleOf(order),
       data: { ...common(order), withdrawalUrl },
     })
     return
@@ -558,6 +650,7 @@ const onShipmentCreated = async ({
     // zásilka.
     key: `ship:${order.id}`,
     orderId: order.id,
+    locale: emailLocaleOf(order),
     data: {
       ...common(order),
       // Číslo z metadat objednávky, jinak ze štítku fulfillmentu; bez obojího
@@ -594,6 +687,7 @@ const onDeliveryCreated = async ({
     to: order.email,
     key: `deliver:${fulfillment.id}`,
     orderId: order.id,
+    locale: emailLocaleOf(order),
     // Převzetím začíná 14denní lhůta — odkaz „Odstoupit od smlouvy" (§ 1830a).
     data: {
       ...common(order),
@@ -643,17 +737,19 @@ const onOrderCanceled = async ({
     (sum, entry) => sum + toNumber(entry.amount),
     0
   )
+  const locale = emailLocaleOf(order)
 
   await sendCustomerEmail(container, {
     template: "order-cancelled",
     to: order.email,
     key: `cancel:${order.id}`,
     orderId: order.id,
+    locale,
     data: {
       ...common(order),
       refundRecorded: refunded > 0,
       ...(refunded > 0
-        ? { refundAmount: formatMoney(refunded, order.currency_code) }
+        ? { refundAmount: formatMoney(refunded, order.currency_code, locale) }
         : {}),
     },
   })
@@ -719,21 +815,23 @@ const onPaymentRefunded = async ({
     (sum: number, refund: any) => sum + toNumber(refund?.amount),
     0
   )
+  const locale = emailLocaleOf(order)
 
   await sendCustomerEmail(container, {
     template: "payment-refunded",
     to: order.email,
     key: `refund:${payment.id}`,
     orderId: order.id,
+    locale,
     data: {
       ...common(order),
-      refundAmount: formatMoney(refunded, payment.currency_code),
-      originalPaymentAmount: formatMoney(payment.amount, payment.currency_code),
+      refundAmount: formatMoney(refunded, payment.currency_code, locale),
+      originalPaymentAmount: formatMoney(payment.amount, payment.currency_code, locale),
       /* Čeho se peníze týkají. Není to výpis vráceného zboží — tahle
          refundace může být částečná a šablona to tak i pojmenuje. */
-      paidFor: emailLineItems(order),
-      refundMethod: "Zpět na účet, ze kterého platba přišla",
-      estimatedRefundTime: "Peníze se obvykle vrátí do několika pracovních dnů.",
+      paidFor: emailLineItems(order, locale),
+      refundMethod: pick(locale, TEXTS.refundMethod),
+      estimatedRefundTime: pick(locale, TEXTS.refundTime),
     },
   })
 }
@@ -746,7 +844,8 @@ const onPaymentRefunded = async ({
 const commissionFacts = async (
   container: SubscriberArgs["container"],
   production: any | null,
-  currencyCode: string
+  currencyCode: string,
+  locale: EmailLocale = "cs"
 ) => {
   try {
     if (!production) return null
@@ -759,11 +858,15 @@ const commissionFacts = async (
     const money = commissionMoney(production, requests)
     const total = money.item_total + money.surcharge
     return {
-      totalPrice: total > 0 ? formatMoney(total, currencyCode) : null,
-      depositPaid: money.deposit_paid > 0 ? formatMoney(money.deposit_paid, currencyCode) : null,
-      balanceDue: money.item_outstanding > 0.005 ? formatMoney(money.item_outstanding, currencyCode) : null,
+      totalPrice: total > 0 ? formatMoney(total, currencyCode, locale) : null,
+      depositPaid:
+        money.deposit_paid > 0 ? formatMoney(money.deposit_paid, currencyCode, locale) : null,
+      balanceDue:
+        money.item_outstanding > 0.005
+          ? formatMoney(money.item_outstanding, currencyCode, locale)
+          : null,
       estimatedCompletion: production.estimated_completion_at
-        ? formatDate(production.estimated_completion_at)
+        ? formatDate(production.estimated_completion_at, locale)
         : null,
     }
   } catch {
@@ -771,9 +874,15 @@ const commissionFacts = async (
   }
 }
 
-/** Název položky zakázky (bez balného), pro řádek „Zakázka" v e-mailu. */
-const commissionTitle = (order: any, production?: any | null): string | null =>
-  commissionTitleOf(order, production ?? null)
+/**
+ * Název položky zakázky (bez balného), pro řádek „Zakázka" v e-mailu —
+ * v jazyce objednávky (překlad z `product.metadata`, jinak český snímek).
+ */
+const commissionTitle = (
+  order: any,
+  production?: any | null,
+  locale: EmailLocale = "cs"
+): string | null => localizedCommissionTitle(order, production ?? null, locale)
 
 /**
  * #6 „Zadání je potvrzené" — potvrzení zadání zakázky. Dřív sem šel
@@ -793,17 +902,19 @@ const onSpecificationConfirmed = async ({
     return
   }
   const production = await commissionFor(container, order.id, data.production_order_id)
-  const facts = await commissionFacts(container, production, order.currency_code)
+  const locale = emailLocaleOf(order)
+  const facts = await commissionFacts(container, production, order.currency_code, locale)
 
   await sendCustomerEmail(container, {
     template: "commission-confirmed",
     to: order.email,
     key: `spec-ok:${data.production_order_id ?? order.id}`,
     orderId: order.id,
+    locale,
     data: {
       ...common(order),
       ...(facts ?? {}),
-      productTitle: commissionTitle(order, production),
+      productTitle: commissionTitle(order, production, locale),
       productImageUrl: commissionProductImage(order, production),
     },
   })
@@ -843,6 +954,7 @@ const onSurchargeNotified = async ({
     return
   }
   const production = await commissionFor(container, order.id, data.production_order_id)
+  const locale = emailLocaleOf(order)
   await sendCustomerEmail(container, {
     // Písemné potvrzení příplatku dohodnutého jinou cestou (telefon/e-mail) —
     // ne oznámení ceny z čista jasna. Viz `emails/surcharge-confirmed`.
@@ -852,11 +964,13 @@ const onSurchargeNotified = async ({
       data.token ?? data.surcharge
     }`,
     orderId: order.id,
+    locale,
     data: {
       ...common(order),
-      productTitle: commissionTitle(order, production),
-      surchargeAmount: formatMoney(data.surcharge, order.currency_code),
-      newBalance: formatMoney(data.outstanding, order.currency_code),
+      productTitle: commissionTitle(order, production, locale),
+      surchargeAmount: formatMoney(data.surcharge, order.currency_code, locale),
+      newBalance: formatMoney(data.outstanding, order.currency_code, locale),
+      // Důvod píše majitelka v adminu česky — zůstává, jak ho napsala.
       reason: data.reason?.trim() || undefined,
     },
   })
@@ -885,7 +999,8 @@ const onDelayAnnounced = async ({
     return
   }
   const production = await commissionFor(container, order.id, data.production_order_id)
-  const title = commissionTitleOf(order, production)
+  const locale = emailLocaleOf(order)
+  const title = localizedCommissionTitle(order, production, locale)
 
   await sendCustomerEmail(container, {
     template: "order-delayed",
@@ -894,15 +1009,17 @@ const onDelayAnnounced = async ({
     // second slip to a *different* date is genuinely new information.
     key: `delay:${data.production_order_id}:${data.new_completion_at.slice(0, 10)}`,
     orderId: order.id,
+    locale,
     data: {
       ...common(order),
       // Tlačítko u zakázky (Přehled → Zakázky) = zpoždění zakázky, ne celé objednávky.
       isCommission: true,
       ...(title ? { delayedItems: [title] } : {}),
       ...(data.original_completion_at
-        ? { originalDeliveryDate: formatDate(data.original_completion_at) }
+        ? { originalDeliveryDate: formatDate(data.original_completion_at, locale) }
         : {}),
-      newDeliveryDate: formatDate(data.new_completion_at),
+      newDeliveryDate: formatDate(data.new_completion_at, locale),
+      // Důvod zpoždění píše majitelka česky — jde, jak ho napsala.
       ...(data.reason ? { delayReason: data.reason } : {}),
     },
   })
@@ -952,6 +1069,7 @@ const onReturnRequested = async ({
 
   // Which objects are coming back, by name — return items point at order line
   // items. Best-effort: a return with no resolvable items just omits the row.
+  const locale = emailLocaleOf(order)
   let approvedItems = ""
   try {
     const query = container.resolve(ContainerRegistrationKeys.QUERY)
@@ -974,8 +1092,8 @@ const onReturnRequested = async ({
         }
         const quantity = lineQuantityOf(returnItem)
         return quantity > 1
-          ? `${item.product_title ?? item.title} (${quantity} ks)`
-          : item.product_title ?? item.title
+          ? `${itemTitle(item, locale)} (${quantity} ${piecesLabel(locale)})`
+          : itemTitle(item, locale)
       })
       .filter(Boolean)
       .join(", ")
@@ -991,12 +1109,14 @@ const onReturnRequested = async ({
     to: order.email,
     key: `return-approved:${data.return_id}`,
     orderId: order.id,
+    locale,
     data: {
       ...common(order),
       ...(approvedItems ? { approvedItems } : {}),
       resolution: "refund",
       goodsReturnRequired: true,
-      returnMethod: "Zásilka na adresu ateliéru",
+      returnMethod: pick(locale, TEXTS.returnMethod),
+      // Adresa a pokyny z nastavení obchodu jsou česky (píše je majitelka).
       returnAddress:
         settings?.return_address || "Keramická zahrada\nPutim 229\n397 01 Písek",
       ...(settings?.return_instructions?.trim()
@@ -1031,6 +1151,7 @@ const onMerchantStageChanged = async ({
   if (!order) {
     return
   }
+  const locale = emailLocaleOf(order)
 
   // „Připravujeme" — běžná skladová objednávka vstoupila do fáze „working"
   // (merchantská fáze s popiskem „Připravujeme", zabalení před předáním).
@@ -1056,6 +1177,7 @@ const onMerchantStageChanged = async ({
       // (např. z „payment_problem") neposílá znovu.
       key: `working:${order.id}`,
       orderId: order.id,
+      locale,
       data: { ...common(order) },
     })
     return
@@ -1078,6 +1200,7 @@ const onMerchantStageChanged = async ({
       to: order.email,
       key: `ship:${order.id}`,
       orderId: order.id,
+      locale,
       data: {
         ...common(order),
         ...shipmentTracking(order),
@@ -1109,11 +1232,12 @@ const onMerchantStageChanged = async ({
       to: order.email,
       key: `ready-pickup:${order.id}`,
       orderId: order.id,
+      locale,
       data: {
         ...common(order),
-        pickupLocation: "Dílna Keramická zahrada, Písek",
+        pickupLocation: pick(locale, TEXTS.pickupLocation),
         pickupAddress: facts["seller.address"] || "Putim 229, 397 01 Písek",
-        readyDate: new Date().toLocaleDateString("cs-CZ"),
+        readyDate: formatDate(new Date(), locale),
         /*
          * Vytištěný dárkový poukaz se jen vyzvedává (31. 10. 2026) — kartičku
          * dává majitelka do ruky v dílně. Zákazník, který si ho koupil, žádný
@@ -1125,7 +1249,7 @@ const onMerchantStageChanged = async ({
           (item) => (item?.metadata as any)?.[VOUCHER_LINE_KEYS.kind] === "physical"
         ),
         amountDue: outstanding
-          ? formatMoney(outstanding, order.currency_code)
+          ? formatMoney(outstanding, order.currency_code, locale)
           : null,
         // Číslo účtu jen když ho majitelka v Právních údajích vyplnila —
         // e-mail nesmí poslat peníze na účet, který neexistuje (§16).
@@ -1152,6 +1276,7 @@ const onMerchantStageChanged = async ({
     // At-least-once: klíč na objednávku, ať návrat do „K odeslání" neposílá znovu.
     key: `ready:${order.id}`,
     orderId: order.id,
+    locale,
     data: { ...common(order) },
   })
 }
@@ -1182,6 +1307,7 @@ const onProductionCompleted = async ({
   const outstanding =
     typeof data.outstanding === "number" ? data.outstanding : 0
   const production = await commissionFor(container, order.id, data.production_order_id)
+  const locale = emailLocaleOf(order)
 
   /*
    * Závěrečné potvrzení zakázky v příloze.
@@ -1218,6 +1344,7 @@ const onProductionCompleted = async ({
     key: `mto-done:${data.production_order_id ?? order.id}`,
     orderId: order.id,
     ...(contract ? { attachments: [contract] } : {}),
+    locale,
     data: {
       ...common(order),
       /* Šablona podle toho může říct, že je potvrzení v příloze. */
@@ -1225,10 +1352,10 @@ const onProductionCompleted = async ({
       fullyPaid,
       balanceDue:
         !fullyPaid && outstanding > 0
-          ? formatMoney(outstanding, order.currency_code)
+          ? formatMoney(outstanding, order.currency_code, locale)
           : null,
       // Název a obrázek objednaného produktu TÉTO zakázky (ne fotka od zákazníka).
-      productTitle: commissionTitle(order, production),
+      productTitle: commissionTitle(order, production, locale),
       makingPhotoUrl: commissionProductImage(order, production),
     },
   })

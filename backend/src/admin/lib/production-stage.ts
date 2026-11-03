@@ -53,3 +53,52 @@ export const isProductionPhase = (stage: string | null | undefined): boolean =>
   ["specification_pending", "confirmed", "in_production", "awaiting_balance"].includes(
     String(stage ?? "")
   );
+
+/**
+ * Kde se ovládá postup výroby — a tím i odkud zákazníkovi odejde e-mail
+ * o zahájení a průběhu TÉ JEDNÉ zakázky (přání majitelky 3. 11. 2026):
+ *
+ * - jedna zakázka a nic jiného v objednávce → Denní práce (nahoře), jak to
+ *   je od 14. 10. 2026;
+ * - jedna zakázka a k ní běžné zboží → karta zakázky (tam, kde je příplatek);
+ *   zboží si Denní práce vede po svém (balení, odeslání);
+ * - víc zakázek (s zbožím i bez) → karta KAŽDÉ zakázky zvlášť. Jedno tlačítko
+ *   nahoře by neumělo říct, které zakázky se krok týká — a server by ho bez
+ *   `production_order_id` u víc zakázek odmítl (§ 0c).
+ */
+export const productionStepPlacement = ({
+  pureCommission,
+  commissionCount,
+}: {
+  /** Objednávka je jen zakázka (zakázky), žádné běžné zboží. */
+  pureCommission: boolean;
+  commissionCount: number;
+}): "daily-work" | "commission-card" =>
+  pureCommission && commissionCount <= 1 ? "daily-work" : "commission-card";
+
+/** Pořadí fází od nejranější — pro souhrnný odznak nad víc zakázkami. */
+const STAGE_ORDER: ProductionStage[] = [
+  "specification_pending",
+  "confirmed",
+  "in_production",
+  "awaiting_balance",
+  "ready_to_ship",
+  "completed",
+  "cancelled",
+];
+
+/**
+ * Nejméně rozpracovaná fáze ze zakázek objednávky. Denní práce ukazuje, co
+ * ještě čeká — ne co je nejdál hotové. Zrušená zakázka je poslední, aby
+ * neodznačila ostatní, které se pořád vyrábějí.
+ */
+export const leastAdvancedStage = (
+  stages: Array<string | null | undefined>
+): ProductionStage => {
+  let best = STAGE_ORDER.length - 1;
+  for (const stage of stages) {
+    const index = STAGE_ORDER.indexOf(stage as ProductionStage);
+    if (index >= 0 && index < best) best = index;
+  }
+  return STAGE_ORDER[best];
+};

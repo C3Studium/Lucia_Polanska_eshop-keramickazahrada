@@ -14,6 +14,14 @@ import {
   type Resolution,
 } from "../../../../../lib/claims/constants"
 import { claimItemsText } from "../../../../../lib/claims/line-items"
+import {
+  approvedDeadlineText,
+  approvedSubject,
+  claimItemsTextIn,
+  loadClaimEmailContext,
+  rejectedSubject,
+  returnMethodText,
+} from "../../../../../lib/claims/email-copy"
 import { goodsShipped, loadOrderMoney } from "../../../../../lib/claims/money"
 import { MONEY_EPSILON } from "../../../../../lib/claims/refund-rules"
 import { refundClaim } from "../../../../../lib/claims/refund-action"
@@ -150,6 +158,12 @@ export const POST = async (
           "Objednávka neodešla a nebylo nic zaplaceno — není co vracet; zbývá zrušit objednávku.",
       })
     }
+    // Jazyk objednávky (lib/claims/email-copy) — důvod zákazníka, adresa
+    // a pokyny z nastavení jdou, jak jsou napsané.
+    const emailContext = await loadClaimEmailContext(req.scope, request.order_id)
+    const { locale } = emailContext
+    const emailItemsText =
+      locale === "cs" ? itemsText : claimItemsTextIn(request, locale, emailContext.titleOf)
     // NOTE: if she ALSO creates a native Medusa return for this order, the
     // `order.return_requested` subscriber sends its own „return-approved"
     // under a different key — it checks for a decided request here and skips.
@@ -158,13 +172,13 @@ export const POST = async (
       to: request.email,
       key: `return-approved:req:${request.id}`,
       orderId: request.order_id,
+      locale,
       data: {
-        subject:
-          request.kind === "reklamace" ? "Reklamace uznána" : "Vrácení schváleno",
-        ...claimEmailBase(updated, protocol.url),
+        subject: approvedSubject(request.kind ?? null, locale),
+        ...claimEmailBase(updated, protocol.url, emailContext),
         returnReason: request.reason,
-        ...(itemsText ? { approvedItems: itemsText } : {}),
-        returnMethod: "Zásilka na adresu ateliéru",
+        ...(emailItemsText ? { approvedItems: emailItemsText } : {}),
+        returnMethod: returnMethodText(locale),
         // Zboží se vrací vždy kromě slevy — ta ho nechává u zákazníka — a kromě
         // odstoupení před odesláním, kde nikdy neodešlo.
         goodsReturnRequired: effective !== "discount" && !nothingToReturn,
@@ -174,29 +188,36 @@ export const POST = async (
         ...(settings?.return_instructions?.trim()
           ? { returnInstructions: settings.return_instructions.trim() }
           : {}),
-        returnDeadline: nothingToReturn
-          ? nothingToRefund
-            ? "nebylo zaplaceno — není co vracet"
-            : "peníze vrátíme do 14 dnů"
-          : deadlineCopy(request.kind ?? null, effective),
+        returnDeadline:
+          locale === "cs" && !nothingToReturn
+            ? deadlineCopy(request.kind ?? null, effective)
+            : approvedDeadlineText(
+                request.kind ?? null,
+                effective,
+                { nothingToReturn, nothingToRefund },
+                locale
+              ),
       },
     })
   } else {
     // Only what is real: items only when the customer named them, and the
     // rejection reason is her note, verbatim. ČOI věta je v šabloně natvrdo.
+    // Jazyk objednávky (lib/claims/email-copy); důvod zamítnutí je její text.
+    const emailContext = await loadClaimEmailContext(req.scope, request.order_id)
+    const { locale } = emailContext
+    const emailItemsText =
+      locale === "cs" ? itemsText : claimItemsTextIn(request, locale, emailContext.titleOf)
     await sendCustomerEmail(req.scope, {
       template: "return-rejected",
       to: request.email,
       key: `return-rejected:${request.id}`,
       orderId: request.order_id,
+      locale,
       data: {
-        subject:
-          request.kind === "reklamace"
-            ? "Reklamaci nemůžeme uznat"
-            : "Žádost o vrácení nemůžeme přijmout",
-        ...claimEmailBase(updated, protocol.url),
+        subject: rejectedSubject(request.kind ?? null, locale),
+        ...claimEmailBase(updated, protocol.url, emailContext),
         rejectionReason: note,
-        ...(itemsText ? { rejectedItems: itemsText } : {}),
+        ...(emailItemsText ? { rejectedItems: emailItemsText } : {}),
       },
     })
   }

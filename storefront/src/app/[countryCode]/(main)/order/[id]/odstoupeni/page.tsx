@@ -1,5 +1,6 @@
 import { getOrderClaims } from "@lib/data/claims"
 import { retrieveCustomer } from "@lib/data/customer"
+import { getContactEmails } from "@lib/data/site-copy"
 import { getLegalFacts } from "@lib/data/legal-facts"
 import { getOrderAccessToken } from "@lib/data/orders"
 import OrderStateShell from "@modules/order/components/order-state-shell"
@@ -39,6 +40,9 @@ export default async function OrderWithdrawalPage(props: Props) {
     searchParams.token || (await getOrderAccessToken(params.id).catch(() => null))
   const claims = token ? await getOrderClaims(params.id, token) : null
   const customer = await retrieveCustomer().catch(() => null)
+  // Hlášky k objednávce vedou na e-mail pro objednávky a zakázky (Studio,
+  // `global.kontakty`), ne na obecné dotazy.
+  const { objednavky: orderEmail } = await getContactEmails()
   const myOrdersAction = customer
     ? { href: "/account/orders", label: "Moje objednávky" }
     : undefined
@@ -51,8 +55,8 @@ export default async function OrderWithdrawalPage(props: Props) {
         title={token ? "Teď to nejde načíst." : "Odkaz nejde otevřít."}
         description={
           token
-            ? "Formulář se nám teď nepodařilo načíst. Zkuste to prosím za chvíli znovu. Od smlouvy můžete odstoupit vždy i e-mailem na info@keramickazahrada.cz — stačí napsat číslo objednávky a že odstupujete."
-            : "Odkaz je neplatný nebo vypršel. Otevřete prosím ten z posledního e-mailu, nebo se přihlaste. Od smlouvy můžete odstoupit vždy i e-mailem na info@keramickazahrada.cz — stačí napsat číslo objednávky a že odstupujete."
+            ? `Formulář se nám teď nepodařilo načíst. Zkuste to prosím za chvíli znovu. Od smlouvy můžete odstoupit vždy i e-mailem na ${orderEmail} — stačí napsat číslo objednávky a že odstupujete.`
+            : `Odkaz je neplatný nebo vypršel. Otevřete prosím ten z posledního e-mailu, nebo se přihlaste. Od smlouvy můžete odstoupit vždy i e-mailem na ${orderEmail} — stačí napsat číslo objednávky a že odstupujete.`
         }
         status="pending"
         primary={myOrdersAction}

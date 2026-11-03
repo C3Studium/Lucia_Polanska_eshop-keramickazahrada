@@ -11,6 +11,7 @@ import {
 } from "../../../../../lib/customer-email"
 import { toNumber } from "../../../../../lib/order-quantity"
 import { emailLineItems } from "../../../../../lib/email-items"
+import { emailLocaleOf, intlLocale, pick } from "../../../../../lib/email-locale"
 
 /**
  * „Pošlete zákazníkovi výzvu k zaplacení."
@@ -55,6 +56,11 @@ const ORDER_FIELDS = [
   "total",
   /* Za co se platí — výpis položek do e-mailu (lib/email-items). */
   "items.*",
+  // Jazyk e-mailu a přeložené názvy výrobků (lib/email-locale).
+  "items.product.metadata",
+  "metadata",
+  "shipping_address.country_code",
+  "billing_address.country_code",
   "shipping_address.first_name",
   "shipping_address.last_name",
   "payment_collections.amount",
@@ -117,6 +123,8 @@ export async function POST(
   const celkem = toNumber(order.total)
   const zaplaceno = zaplacenoZObjednavky(order)
   const zbyva = Math.max(celkem - zaplaceno, 0)
+  // Výzva jde v jazyce objednávky (zvolená země obchodu, lib/email-locale).
+  const locale = emailLocaleOf(order)
 
   const odeslano = await sendCustomerEmail(req.scope, {
     template: "payment-pending",
@@ -129,23 +137,35 @@ export async function POST(
      */
     key: `paylink:manual:${order.id}:${Date.now()}`,
     orderId: order.id,
+    locale,
     data: {
       customerName: customerName(order),
       orderNumber: orderNumber(order),
       orderLink: orderLink(order),
-      paymentAmount: new Intl.NumberFormat("cs-CZ", {
+      paymentAmount: new Intl.NumberFormat(intlLocale(locale), {
         style: "currency",
         currency: (order.currency_code ?? "czk").toUpperCase(),
         maximumFractionDigits: 0,
       }).format(zbyva > 0 ? zbyva : celkem),
-      paymentMethod: "Platební karta nebo převod",
+      paymentMethod: pick(locale, {
+        cs: "Platební karta nebo převod",
+        sk: "Platobná karta alebo prevod",
+        pl: "Karta płatnicza lub przelew",
+        de: "Karte oder Überweisung",
+        en: "Card or bank transfer",
+      }),
       /* Na objednávku, ne na bránu — viz hlavička souboru. */
       paymentLink: orderLink(order),
-      estimatedConfirmationTime:
-        "Platba se obvykle potvrdí do několika minut. Jakmile dorazí, ozveme se s potvrzením.",
+      estimatedConfirmationTime: pick(locale, {
+        cs: "Platba se obvykle potvrdí do několika minut. Jakmile dorazí, ozveme se s potvrzením.",
+        sk: "Platba sa zvyčajne potvrdí do niekoľkých minút. Hneď ako dorazí, ozveme sa s potvrdením.",
+        pl: "Płatność jest zwykle potwierdzana w ciągu kilku minut. Gdy tylko dotrze, odezwiemy się z potwierdzeniem.",
+        de: "Die Zahlung wird in der Regel innerhalb weniger Minuten bestätigt. Sobald sie eingegangen ist, melden wir uns mit einer Bestätigung.",
+        en: "Payments are usually confirmed within a few minutes. As soon as yours arrives, we'll be in touch to confirm it.",
+      }),
       makingPhotoUrl: null,
       /* Celá objednávka — výzva chce peníze, tak musí říct za co. */
-      paidFor: emailLineItems(order),
+      paidFor: emailLineItems(order, locale),
     },
   })
 

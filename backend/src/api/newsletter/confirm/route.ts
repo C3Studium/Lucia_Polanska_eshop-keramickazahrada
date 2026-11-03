@@ -2,10 +2,13 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { sendCustomerEmail, storefrontBase } from "../../../lib/customer-email"
 import {
+  newsletterCountryFrom,
   newsletterUnsubscribeUrl,
   normalizeEmail,
   verifyConfirmToken,
+  withNewsletterCountry,
 } from "../../../lib/newsletter-link"
+import { formatEmailDate, localeForCountry } from "../../../lib/email-locale"
 import { NEWSLETTER_MODULE } from "../../../modules/newsletter"
 import type NewsletterModuleService from "../../../modules/newsletter/service"
 
@@ -114,21 +117,21 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
        * zopakovat. Selhání pošty nesmí shodit potvrzení: souhlas je zapsaný
        * a stránka to musí potvrdit tak jako tak.
        */
-      const unsubscribeLink = newsletterUnsubscribeUrl(email)
+      // Země z potvrzovacího odkazu (`c=sk`) → jazyk uvítacího e-mailu; jede
+      // dál i v odhlašovacím odkazu, ať je česky jen to, co česky být má.
+      const country = newsletterCountryFrom(req.query.c)
+      const locale = localeForCountry(country)
+      const unsubscribeLink = withNewsletterCountry(newsletterUnsubscribeUrl(email), country)
 
       await sendCustomerEmail(req.scope, {
         template: "newsletter-welcome",
         to: email,
         key: `nl-welcome:${email}`,
+        locale,
         data: {
           email,
           unsubscribeLink: unsubscribeLink ?? "",
-          confirmedOn: new Intl.DateTimeFormat("cs-CZ", {
-            timeZone: "Europe/Prague",
-            day: "numeric",
-            month: "numeric",
-            year: "numeric",
-          }).format(confirmedAt),
+          confirmedOn: formatEmailDate(confirmedAt, locale),
         },
       }).catch((error) =>
         req.scope

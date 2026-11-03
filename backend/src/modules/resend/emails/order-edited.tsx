@@ -13,6 +13,99 @@ import {
   Signature,
 } from "../components/email-ui"
 import { storeLink } from "../../../lib/storefront-url"
+import { useCopy } from "../components/email-i18n"
+import type { Localized } from "../../../lib/email-locale"
+
+/** Texty po jazycích (lib/email-locale) — čeština je původní znění. */
+const COPY: Localized<{
+  preview: (orderNumber: string) => string
+  eyebrow: string
+  title: string
+  accent: string
+  intro: (orderNumber: string) => string
+  order: string
+  contents: string
+  before: string
+  total: string
+  viewOrder: string
+  notYou: string
+}> = {
+  cs: {
+    preview: (n) => `Úpravu objednávky ${n} mám uloženou.`,
+    eyebrow: "Úprava objednávky",
+    title: "Vaši úpravu",
+    accent: "mám uloženou.",
+    intro: (n) =>
+      `vaši úpravu objednávky ${n} mám uloženou a dál se řídím už jen podle ní. Takhle teď objednávka vypadá:`,
+    order: "Objednávka",
+    contents: "Obsah",
+    before: "Původně",
+    total: "Celkem",
+    viewOrder: "Zobrazit objednávku",
+    notYou:
+      "Pokud jste úpravu nedělali vy, napište mi prosím na info@keramickazahrada.cz — dám to do pořádku.",
+  },
+  sk: {
+    preview: (n) => `Úpravu objednávky ${n} mám uloženú.`,
+    eyebrow: "Úprava objednávky",
+    title: "Vašu úpravu",
+    accent: "mám uloženú.",
+    intro: (n) =>
+      `vašu úpravu objednávky ${n} mám uloženú a ďalej sa riadim už len podľa nej. Takto teraz objednávka vyzerá:`,
+    order: "Objednávka",
+    contents: "Obsah",
+    before: "Pôvodne",
+    total: "Celkom",
+    viewOrder: "Zobraziť objednávku",
+    notYou:
+      "Ak ste úpravu nerobili vy, napíšte mi, prosím, na info@keramickazahrada.cz — dám to do poriadku.",
+  },
+  pl: {
+    preview: (n) => `Zmiana zamówienia ${n} została zapisana.`,
+    eyebrow: "Zmiana zamówienia",
+    title: "Państwa zmiana",
+    accent: "jest zapisana.",
+    intro: (n) =>
+      `Zapisałam zmianę zamówienia ${n} i od teraz kieruję się już tylko nią. Tak wygląda teraz zamówienie:`,
+    order: "Zamówienie",
+    contents: "Zawartość",
+    before: "Pierwotnie",
+    total: "Razem",
+    viewOrder: "Zobacz zamówienie",
+    notYou:
+      "Jeśli to nie Państwo wprowadzili zmianę, proszę napisać na info@keramickazahrada.cz — wszystko naprawię.",
+  },
+  de: {
+    preview: (n) => `Die Änderung von Bestellung ${n} ist gespeichert.`,
+    eyebrow: "Bestelländerung",
+    title: "Ihre Änderung",
+    accent: "ist gespeichert.",
+    intro: (n) =>
+      `Ihre Änderung der Bestellung ${n} habe ich gespeichert und richte mich ab jetzt nur noch danach. So sieht die Bestellung jetzt aus:`,
+    order: "Bestellung",
+    contents: "Inhalt",
+    before: "Vorher",
+    total: "Gesamt",
+    viewOrder: "Bestellung ansehen",
+    notYou:
+      "Falls Sie die Änderung nicht selbst vorgenommen haben, schreiben Sie mir bitte an info@keramickazahrada.cz – ich bringe das in Ordnung.",
+  },
+  en: {
+    preview: (n) => `I've saved the changes to order ${n}.`,
+    eyebrow: "Order change",
+    title: "Your changes",
+    accent: "are saved.",
+    intro: (n) =>
+      `I've saved the changes to your order ${n}, and from now on I'll go only by the updated version. This is how your order looks now:`,
+    order: "Order",
+    contents: "Contents",
+    before: "Previously",
+    total: "Total",
+    viewOrder: "View order",
+    notYou:
+      "If you didn't make this change yourself, please write to me at info@keramickazahrada.cz — I'll put it right.",
+  },
+}
 
 interface OrderEditedEmailProps {
   customerName?: string;
@@ -41,38 +134,33 @@ function OrderEditedEmailComponent({
   totalAfter,
   moneySentence,
 }: OrderEditedEmailProps) {
+  const t = useCopy(COPY)
   const orderUrl = orderLink || storeLink()
   return (
-    <EmailLayout preview={`Úpravu objednávky ${orderNumber} mám uloženou.`}>
-      <Eyebrow>Úprava objednávky</Eyebrow>
-      <EmailH1 accent="mám uloženou.">Vaši úpravu</EmailH1>
+    <EmailLayout preview={t.preview(orderNumber)}>
+      <Eyebrow>{t.eyebrow}</Eyebrow>
+      <EmailH1 accent={t.accent}>{t.title}</EmailH1>
 
       <Greeting name={customerName} />
-      <P>
-        vaši úpravu objednávky {orderNumber} mám uloženou a dál se řídím už
-        jen podle ní. Takhle teď objednávka vypadá:
-      </P>
+      <P>{t.intro(orderNumber)}</P>
 
-      {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
-      {items ? <LedgerRow label="Obsah" value={<MultiLine value={items} />} /> : null}
+      {orderNumber ? <LedgerRow label={t.order} value={orderNumber} /> : null}
+      {items ? <LedgerRow label={t.contents} value={<MultiLine value={items} />} /> : null}
       {totalBefore && totalBefore !== totalAfter ? (
-        <LedgerRow label="Původně" value={totalBefore} />
+        <LedgerRow label={t.before} value={totalBefore} />
       ) : null}
-      {totalAfter ? <LedgerRow label="Celkem" value={totalAfter} strong /> : null}
+      {totalAfter ? <LedgerRow label={t.total} value={totalAfter} strong /> : null}
       <LedgerEnd />
 
       {moneySentence ? <Note tone="olive">{moneySentence}</Note> : null}
 
       {orderUrl ? (
         <ButtonRow>
-          <EmailButton href={orderUrl}>Zobrazit objednávku</EmailButton>
+          <EmailButton href={orderUrl}>{t.viewOrder}</EmailButton>
         </ButtonRow>
       ) : null}
 
-      <P>
-        Pokud jste úpravu nedělali vy, napište mi prosím na info@keramickazahrada.cz —
-        dám to do pořádku.
-      </P>
+      <P>{t.notYou}</P>
 
       <Signature />
     </EmailLayout>
@@ -91,7 +179,6 @@ const mockOrderEdited: OrderEditedEmailProps = {
   items: "3× Dekorativní tyčky a zápichy\n1× Keramické pítko pro ptáčky",
   totalBefore: "1 130 Kč",
   totalAfter: "1 160 Kč",
-  moneySentence: "Rozdíl 30 Kč jste zaplatili kartou.",
 }
 
 export default () => <OrderEditedEmailComponent {...mockOrderEdited} />

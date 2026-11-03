@@ -54,6 +54,8 @@ import { decimalDigitsFor, fetchCnbRates, type CnbRateSheet } from "./cnb-rates"
 import { toNumber } from "./order-quantity"
 
 import { isPriceOnRequest } from "./price-on-request"
+import { isClearanceProduct } from "./clearance"
+import { isCustomAmountVoucher } from "./voucher"
 import { looksLikeVoucherCode } from "../modules/gift-voucher/code"
 import { GIFT_VOUCHER_MODULE } from "../modules/gift-voucher"
 import {
@@ -327,6 +329,7 @@ const CART_FIELDS = [
   "items.product_id",
   "items.product.title",
   "items.product.metadata",
+  "items.product.id",
   // Poukaz v košíku rozhoduje o tom, jestli smí akce na balné — viz
   // `cartHasVoucherPromotion`.
   "promotions.code",
@@ -346,11 +349,40 @@ const withCartLock = async <T>(cartId: string, fn: () => Promise<T>): Promise<T>
   }
 }
 
+/**
+ * Výrobky s „Bez slev. kódů" (`metadata.no_promo`) a dárkový poukaz
+ * (2. 11. 2026, Matěj: „dárkový poukaz lze, ale všechny slevy jinak ne").
+ *
+ * Stejný problém jako u balného: `no_promo` vypíná `product.discountable`,
+ * řádek košíku má `is_discountable: false` a Medusa ho vynechá ze VŠECH akcí
+ * — i z poukazu, který jsou peníze zaplacené předem, ne sleva. Proto se
+ * vlajka na řádcích těchto výrobků překlápí podle košíku stejně jako u balného.
+ * Výprodej a poukaz samotný zůstávají vyloučené (OP čl. XI: poukaz se
+ * neodečítá ze zboží ve slevě; poukazem se nekupuje poukaz).
+ *
+ * Cena je stejná jako u balného: poukaz a slevový kód naráz pustí na takový
+ * výrobek i ten kód. Vzácná kombinace, vědomě.
+ */
+const noPromoFlipsFor = (
+  items: any[],
+  voucher: boolean
+): { id: string; is_discountable: boolean }[] =>
+  (items ?? [])
+    .filter((item) => {
+      const product = item?.product
+      const meta = (product?.metadata ?? {}) as Record<string, unknown>
+      if (meta.no_promo !== true) return false
+      if (isClearanceProduct(product)) return false
+      if (meta.gift_voucher === true || meta.gift_voucher === "true" || isCustomAmountVoucher(meta)) return false
+      return (item?.is_discountable ?? false) !== voucher
+    })
+    .map((item) => ({ id: String(item.id), is_discountable: voucher }))
+
 /** Plán pro košík (bez zápisu) — sdílí ho synchronizace i kontrola dokončení. */
 export const planPackagingForCart = async (
   container: MedusaContainer,
   cartId: string
-): Promise<{ cart: any; plan: PackagingPlan } | null> => {
+): Promise<{ cart: any; plan: PackagingPlan; noPromoFlips: { id: string; is_discountable: boolean }[] } | null> => {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const { data } = await query.graph({
     entity: "cart",
@@ -361,6 +393,7 @@ export const planPackagingForCart = async (
   if (!cart || cart.completed_at) return null
   const currency = String(cart.currency_code ?? "czk").toLowerCase()
   const sheet = currency === "czk" ? null : await cnbSheetCached()
+  const voucher = await cartHasVoucherPromotion(container, cart)
   const plan = planPackaging({
     // Cena po domluvě (lib/price-on-request.ts): balné je součástí domluvené
     // ceny, v košíku za 0 Kč se neúčtuje. Bez řádku zboží plán jeho balné odebere.
@@ -369,9 +402,9 @@ export const planPackagingForCart = async (
     ),
     unitPriceFor: (item) =>
       packagingUnitPrice(packagingPriceCzkOf(item.product?.metadata), currency, sheet),
-    discountable: await cartHasVoucherPromotion(container, cart),
+    discountable: voucher,
   })
-  return { cart, plan }
+  return { cart, plan, noPromoFlips: noPromoFlipsFor(cart.items ?? [], voucher) }
 }
 
 /**
@@ -385,10 +418,15 @@ export const syncPackagingForCart = async (
 ): Promise<{ changed: boolean }> =>
   withCartLock(cartId, async () => {
     const planned = await planPackagingForCart(container, cartId)
-    if (!planned || isEmptyPlan(planned.plan)) return { changed: false }
+    if (!planned || (isEmptyPlan(planned.plan) && !planned.noPromoFlips.length)) {
+      return { changed: false }
+    }
     const { plan } = planned
 
     const cartModule = container.resolve<ICartModuleService>(Modules.CART)
+    for (const flip of planned.noPromoFlips) {
+      await cartModule.updateLineItems(flip.id, { is_discountable: flip.is_discountable })
+    }
     if (plan.remove_ids.length) {
       await cartModule.deleteLineItems(plan.remove_ids)
     }

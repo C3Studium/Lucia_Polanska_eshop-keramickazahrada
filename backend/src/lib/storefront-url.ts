@@ -11,7 +11,8 @@
  * `MEDUSA_STOREFRONT_URL` with a hard-coded fallback, another reading
  * `STOREFRONT_PUBLIC_URL` first. They agree today and would not have for long.
  *
- * This file has no imports, so anything can use it, and there is exactly one
+ * This file has no imports (except Node's AsyncLocalStorage for the e-mail
+ * country, see `withStorefrontCountry`), so anything can use it, and there is exactly one
  * answer to what a customer-facing URL looks like.
  *
  * ## About the country segment
@@ -28,6 +29,11 @@
  * there fails the build over here.
  */
 
+import { AsyncLocalStorage } from "node:async_hooks"
+
+/** Země odkazů pro právě odesílaný e-mail (`withStorefrontCountry`). */
+const linkCountry = new AsyncLocalStorage<string>()
+
 /** Base URL including the country segment, or `""` when unconfigured. */
 export const storefrontBase = (): string => {
   const base = (
@@ -40,7 +46,9 @@ export const storefrontBase = (): string => {
     return ""
   }
 
-  const country = (process.env.STOREFRONT_COUNTRY || "cz").toLowerCase()
+  // Uvnitř odesílání cizojazyčného e-mailu země jeho jazyka (viz
+  // `withStorefrontCountry` dole), jinak výchozí země obchodu.
+  const country = (linkCountry.getStore() || process.env.STOREFRONT_COUNTRY || "cz").toLowerCase()
   return `${base}/${country}`
 }
 
@@ -177,3 +185,98 @@ export const storefrontOrigin = (): string =>
     process.env.MEDUSA_STOREFRONT_URL ||
     ""
   ).replace(/\/+$/, "")
+
+/** Země obchodu pro jazyk e-mailu — kam má vést odkaz cizojazyčného e-mailu. */
+const LOCALE_COUNTRY: Record<string, string> = { sk: "sk", pl: "pl", de: "de" }
+
+/**
+ * Země odkazů v e-mailu: země obchodu, ve které zákazník nakupoval
+ * (`country` — `order.metadata.country_code` ze storefrontu, jinak země
+ * doručení), a když ji neznáme, země jazyka e-mailu. Angličtina žádnou „svoji"
+ * zemi nemá (jde Francouzům, Italům…), takže bez známé země odkaz zůstane
+ * ve výchozí zemi obchodu.
+ */
+export const linkCountryFor = (
+  locale: string | null | undefined,
+  country?: string | null
+): string | undefined => {
+  const code = typeof country === "string" ? country.trim().toLowerCase() : ""
+  if (/^[a-z]{2}$/.test(code)) return code
+  return locale ? LOCALE_COUNTRY[locale] : undefined
+}
+
+/** Totéž nad načtenou objednávkou (nebo daty e-mailu s `order`). */
+export const storefrontCountryOf = (order: any): string | null => {
+  const candidates = [
+    order?.metadata?.country_code,
+    order?.shipping_address?.country_code,
+    order?.billing_address?.country_code,
+  ]
+  for (const value of candidates) {
+    const code = typeof value === "string" ? value.trim().toLowerCase() : ""
+    if (/^[a-z]{2}$/.test(code)) return code
+  }
+  return null
+}
+
+/**
+ * Šablony si část odkazů staví až při vykreslení (`storeLink()`,
+ * `orderLink(order)`), a to Resend dělá uvnitř `emails.send`. Provider proto
+ * odeslání obalí zemí jazyka e-mailu a `storefrontBase()` si ji odsud
+ * přečte — jedna změna místo úprav v každé šabloně. AsyncLocalStorage drží
+ * zemi jen pro tenhle asynchronní běh, souběžné e-maily se nepletou.
+ */
+export const withStorefrontCountry = <T>(
+  locale: string | null | undefined,
+  run: () => T,
+  countryCode?: string | null
+): T => {
+  const country = linkCountryFor(locale, countryCode)
+  return country ? linkCountry.run(country, run) : run()
+}
+
+/**
+ * Odkazy na storefront v datech e-mailu přepíše z výchozí země (`/cz/…`) na
+ * zemi jazyka e-mailu (`/sk/…`).
+ *
+ * Proč: všechny odkazy výše staví `storefrontBase()` s jednou zemí. Slovák,
+ * který klikne na „Zobraziť objednávku", by skončil v českém obchodě
+ * s korunami — a košík by se mu mohl přepnout do českého regionu. Přepis se
+ * dělá v provideru nad celými daty (i u potvrzení objednávky, které jde mimo
+ * `sendCustomerEmail`, a u opakovaného odeslání), takže jednotlivé odkazy
+ * o jazyku vědět nemusí. Mění se jen segment země, nic jiného — podepsané
+ * tokeny v query zůstávají, jak jsou.
+ */
+export const localizeStorefrontLinks = <T>(
+  data: T,
+  locale: string | null | undefined,
+  countryCode?: string | null
+): T => {
+  const country = linkCountryFor(locale, countryCode)
+  const base = storefrontBase()
+  if (!country || !base) {
+    return data
+  }
+  const origin = base.slice(0, base.lastIndexOf("/"))
+  const from = `${base}/`
+  const to = `${origin}/${country}/`
+  if (from === to) {
+    return data
+  }
+  const walk = (value: unknown, depth: number): unknown => {
+    if (depth > 8) return value
+    if (typeof value === "string") {
+      return value.startsWith(from) ? to + value.slice(from.length) : value
+    }
+    if (Array.isArray(value)) return value.map((item) => walk(item, depth + 1))
+    if (value && typeof value === "object") {
+      const out: Record<string, unknown> = {}
+      for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+        out[key] = walk(item, depth + 1)
+      }
+      return out
+    }
+    return value
+  }
+  return walk(data, 0) as T
+}

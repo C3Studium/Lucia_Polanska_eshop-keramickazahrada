@@ -78,7 +78,7 @@ export const LEGAL_FACT_DEFAULTS: Readonly<LegalFactValues> = Object.freeze({
    * Městským úřadem Písek"). Sedmý pád schválně — dokument skládá větu
    * „…rejstříku vedeném {hodnota}" (lib/potvrzeni-zakazky/fields.ts).
    */
-  "seller.register": "Městským úřadem Písek",
+  "seller.register": "Městským úřadem Písek (Jihočeský kraj)",
   /*
    * Kontaktní adresa prodávající v právních dokumentech (24. 10. 2026).
    *
@@ -109,7 +109,7 @@ export const LEGAL_FACT_DEFAULTS: Readonly<LegalFactValues> = Object.freeze({
     "150 až 250 Kč za křehký balík Českou poštou",
   // Odpovědi Lucie z 20. 10. 2026; odhad nákladů na vrácení potvrdil Matěj 24. 10.
   "course.minAge":
-    "6 let (mladší děti s doprovodem rodiče)",
+    "doporučujeme od 6 let, mladší děti mohou přijít s doprovodem rodiče",
   // Odpovědi Lucie z 20. 10. 2026; odhad nákladů na vrácení potvrdil Matěj 24. 10.
   "course.pickupDeadline":
     "1 měsíce od kurzu, termín si domluvíme; mimo Písek je můžu poslat poštou",
@@ -179,7 +179,7 @@ export const LEGAL_FACT_META: Record<LegalFactKey, LegalFactMeta> = {
     label: "Zápis v rejstříku — úřad",
     help:
       "Který živnostenský úřad vede zápis, například Městský úřad Písek. § 435 občanského zákoníku chce na obchodních listinách — a potvrzení smlouvy jí je — údaj o zápisu do veřejného rejstříku. Bez tohoto údaje uvede dokument zápis bez úřadu.",
-    example: "Městský úřad Písek",
+    example: "Městským úřadem Písek (Jihočeský kraj)",
     group: "Prodávající",
     multiline: false,
     maxLength: 120,
@@ -288,13 +288,13 @@ export const LEGAL_FACT_META: Record<LegalFactKey, LegalFactMeta> = {
     maxLength: 2000,
   },
   "course.minAge": {
-    label: "Minimální věk dítěte na kurzu",
+    label: "Věk dítěte na kurzu",
     help:
-      "Od kolika let může dítě na kurz. V obchodních podmínkách, na stránce Kurzy a v častých dotazech: „Minimální věk dítěte: ….“",
-    example: "6 let",
+      "Od kolika let je kurz pro děti vhodný. V obchodních podmínkách, na stránce Kurzy a v častých dotazech: „Věk dítěte: ….“",
+    example: "doporučujeme od 6 let, mladší děti mohou přijít s doprovodem rodiče",
     group: "Kurzy",
     multiline: false,
-    maxLength: 60,
+    maxLength: 120,
   },
   "course.pickupDeadline": {
     label: "Lhůta na vyzvednutí výrobků z kurzu",

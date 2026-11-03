@@ -5,6 +5,7 @@ import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/re
 import type { EditableItem, OrderEditMode } from "@lib/data/order-edit"
 import { canSwapTo } from "@lib/util/order-edit-draft"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import ContactEmailLink from "@modules/common/components/contact-email"
 
 import { czk, signedCzk } from "./shared"
 import s from "./style.module.scss"
@@ -178,7 +179,7 @@ export default function SwapSheet({
                 tiles.length <= 1 && (
                   <p className={s.sheetNote}>
                     Jiné provedení teď vybrat nejde. Kdybyste potřebovali něco
-                    jiného, napište nám na info@keramickazahrada.cz.
+                    jiného, napište nám na <ContactEmailLink role="objednavky" />.
                   </p>
                 )
               )}

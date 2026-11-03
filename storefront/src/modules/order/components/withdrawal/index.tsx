@@ -14,6 +14,7 @@ import {
 } from "@lib/util/claims"
 import { convertToLocale } from "@lib/util/money"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import ContactEmailLink from "@modules/common/components/contact-email"
 import Thumbnail from "@modules/products/components/thumbnail"
 
 import WithdrawalEntry from "./entry"
@@ -130,7 +131,10 @@ export default function WithdrawalFlow({
         {!withdrawal && claims.can_withdraw && (
           <p className={styles.hint}>
             Formulář se teď nepodařilo načíst. Odstoupit můžete i e-mailem na{" "}
-            <a href={`mailto:${SELLER.email}`}>{SELLER.email}</a> — stačí napsat
+            {/* Kontakt, ne adresát prohlášení: e-mail pro objednávky ze Studia,
+                stejný jako ve větě stránky odstoupení. Adresát v samotném
+                prohlášení níž zůstává z Právních údajů (`SELLER`). */}
+            <ContactEmailLink role="objednavky" /> — stačí napsat
             číslo objednávky a že od smlouvy odstupujete.
           </p>
         )}

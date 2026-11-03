@@ -17,6 +17,8 @@ import { getMerchantIdentity } from "@lib/data/merchant"
 import { getButtons, getPageCopy } from "@lib/data/site-copy"
 import { ContactDialogProvider } from "@modules/layout/ContactDialog"
 import { CopyProvider } from "@modules/common/components/cms-text/copy-context"
+import { ContactEmailsProvider } from "@lib/context/contact-emails"
+import { CONTACT_EMAILS_BLOCK, contactEmailsFrom } from "@lib/constants/contact"
 import EditModeRemount from "@modules/common/components/cms-text/edit-remount"
 import AdminBar from "@modules/layout/AdminBar"
 
@@ -73,7 +75,15 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
     "global.hledani": globalCopy["global.hledani"],
   }
 
+  /*
+   * Kontaktní e-maily ze Studia (dotazy × objednávky a zakázky) pro klientské
+   * komponenty — úprava objednávky, odstoupení, kontaktní okno, patička.
+   * Z téhož čtení bloku `global` jako zbytek layoutu, žádný dotaz navíc.
+   */
+  const contactEmails = contactEmailsFrom(globalCopy[CONTACT_EMAILS_BLOCK])
+
   return (
+    <ContactEmailsProvider emails={contactEmails}>
     <ContactDialogProvider merchant={merchant} copy={globalCopy["global.kontaktni-okno"]}>
       <CopyProvider blocks={chromeCopy}>
         <ShopBanner status={shopStatus} />
@@ -108,5 +118,6 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
         <AdminBar />
       </CopyProvider>
     </ContactDialogProvider>
+    </ContactEmailsProvider>
   )
 }

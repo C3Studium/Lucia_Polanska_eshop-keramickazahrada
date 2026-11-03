@@ -39,6 +39,8 @@ import {
   zkontrolujFirmu,
 } from "@lib/util/firma"
 import { looksLikeVoucherCode } from "@lib/util/gift-voucher-code"
+import { localeForCountry } from "@lib/util/email-locale"
+import { getContactEmails } from "./site-copy"
 
 /**
  * Retrieves a cart by its ID. If no ID is provided, it will use the cart ID from the cookies.
@@ -112,7 +114,13 @@ export async function getOrSetCart(countryCode: string) {
 
   if (!cart) {
     const cartResp = await sdk.store.cart.create(
-      { region_id: region.id },
+      // Jazyk e-mailů podle zvolené země (lib/util/email-locale) — Medusa
+      // metadata košíku zkopíruje do objednávky a backend podle nich píše
+      // zákazníkovi. Země zvlášť, protože region „Europe" jich má víc.
+      {
+        region_id: region.id,
+        metadata: { locale: localeForCountry(countryCode), country_code: countryCode.toLowerCase() },
+      },
       {},
       headers
     )
@@ -130,7 +138,34 @@ export async function getOrSetCart(countryCode: string) {
   if (cartCacheTag) revalidateTag(cartCacheTag)
   }
 
+  // Země se v rámci regionu změnit dá i bez změny regionu (sk → de v „Europe").
+  if (cart) {
+    await stampCartLocale(countryCode, cart)
+  }
+
   return cart
+}
+
+/**
+ * Zapíše na košík jazyk e-mailů a zemi obchodu, když se liší od zvolené
+ * země. Nikdy nevyhodí — jazyk e-mailu nesmí zastavit nákup; backend má
+ * záložní odvození z doručovací adresy.
+ */
+async function stampCartLocale(
+  countryCode: string | null | undefined,
+  cart?: HttpTypes.StoreCart | null
+): Promise<void> {
+  const country = (countryCode ?? "").trim().toLowerCase()
+  if (!country) return
+  const locale = localeForCountry(country)
+  const meta = (cart?.metadata ?? {}) as Record<string, unknown>
+  if (cart && meta.locale === locale && meta.country_code === country) return
+  try {
+    // Sloučení proti čerstvému košíku — update metadata nahrazuje celé.
+    await mergeCartMetadata({ locale, country_code: country }, cart?.id)
+  } catch {
+    // Bez košíku nebo při chybě nic — viz komentář nahoře.
+  }
 }
 
 export async function updateCart(
@@ -747,6 +782,13 @@ export async function recordCheckoutConsent(input: {
    * zaškrtnutí za celý košík (zakázka jen z režimu platby, bez řádku).
    */
   madeToOrderAcks?: Record<string, string | undefined>
+  /**
+   * Země obchodu, ve které zákazník objednává — poslední slovo o jazyku
+   * e-mailů (`metadata.locale`). Express checkout zakládá vlastní košík
+   * mimo `getOrSetCart`, proto se jazyk zapisuje i tady, těsně před
+   * objednávkou, na každé platební cestě.
+   */
+  countryCode?: string
 }): Promise<void> {
   const id = input.cartId || (await getCartId())
   if (!id) {
@@ -807,11 +849,14 @@ export async function recordCheckoutConsent(input: {
     madeToOrderAckAt: sharedAckAt,
   })
 
+  const country = (input.countryCode ?? "").trim().toLowerCase()
+
   await updateCart(
     {
       metadata: {
         ...((fresh.metadata as Record<string, unknown>) ?? {}),
         ...patch,
+        ...(country ? { locale: localeForCountry(country), country_code: country } : {}),
       },
     },
     id
@@ -989,14 +1034,17 @@ const kc = (castka: number): string =>
     Math.round(castka)
   )} Kč`
 
-const POUKAZ_NEPROSEL =
-  "Poukaz se nepodařilo uplatnit. Zkuste to prosím ještě jednou, nebo mi napište na info@keramickazahrada.cz."
+/* Poukaz v košíku je věc objednávky → e-mail pro objednávky a zakázky ze
+   Studia (`global.kontakty`). Funkce, ne konstanta: adresa se čte za běhu. */
+const poukazNeprosel = (email: string) =>
+  `Poukaz se nepodařilo uplatnit. Zkuste to prosím ještě jednou, nebo mi napište na ${email}.`
 
 /** Proč poukaz nejde uplatnit — nebo jeho uplatnění a kolik se odečetlo. */
 async function uplatniPoukaz(
   poukaz: Extract<StavPoukazu, { is_voucher: true }>,
   currentCart: HttpTypes.StoreCart | null
 ): Promise<VysledekKodu | null> {
+  const { objednavky: email } = await getContactEmails()
   switch (poukaz.state) {
     case "pending_payment":
       return chyba("Tenhle poukaz ještě není zaplacený.")
@@ -1018,7 +1066,7 @@ async function uplatniPoukaz(
      prošel naprázdno. */
   if (String(currentCart.currency_code ?? "").toLowerCase() !== "czk") {
     return chyba(
-      "Poukaz jde uplatnit jen na objednávku v korunách. Napište mi na info@keramickazahrada.cz, domluvíme se."
+      `Poukaz jde uplatnit jen na objednávku v korunách. Napište mi na ${email}, domluvíme se.`
     )
   }
 
@@ -1050,8 +1098,8 @@ async function uplatniPoukaz(
          kódů). Lucie ho pak odečte ručně. */
       return chyba(
         uplatnen
-          ? "Poukaz jde uplatnit jen na zboží, které není ve slevě. Napište mi na info@keramickazahrada.cz, odečtu ho ručně."
-          : POUKAZ_NEPROSEL
+          ? `Poukaz jde uplatnit jen na zboží, které není ve slevě. Napište mi na ${email}, odečtu ho ručně.`
+          : poukazNeprosel(email)
       )
     }
 
@@ -1062,7 +1110,7 @@ async function uplatniPoukaz(
     )
   } catch {
     await vratKody(stavajici)
-    return chyba(POUKAZ_NEPROSEL)
+    return chyba(poukazNeprosel(email))
   }
 }
 
@@ -1696,6 +1744,8 @@ export async function updateRegion(countryCode: string, currentPath: string) {
     } catch {
       // Deliberately swallowed: the country change below must still happen.
     }
+    // Jazyk e-mailů jde se zemí, i když košík region změnit nešel.
+    await stampCartLocale(countryCode, await retrieveCart(cartId))
   }
 
   const regionCacheTag = await getCacheTag("regions")

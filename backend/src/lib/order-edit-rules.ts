@@ -18,6 +18,8 @@
  * 5. Limit: nejvýš 3 potvrzené úpravy na objednávku.
  */
 
+import { formatEmailMoney, type EmailLocale } from "./email-locale"
+
 export type EditAction =
   | { type: "swap"; item_id: string; variant_id: string }
   | { type: "remove"; item_id: string }
@@ -244,6 +246,64 @@ const czk = (value: number): string =>
     currency: "CZK",
     maximumFractionDigits: 0,
   }).format(value)
+
+/**
+ * Věta o penězích v jazyce e-mailu (lib/email-locale) — souhrn úpravy na
+ * webu je česky (`moneySentence` níž), e-mail „Objednávka upravena" chodí
+ * v jazyce objednávky. Částka v měně objednávky, ne natvrdo v korunách.
+ */
+export const moneySentenceIn = (
+  input: { difference: number; payment: PaymentKind; totalAfter: number; currencyCode?: string | null },
+  locale: EmailLocale
+): string => {
+  if (locale === "cs") return moneySentence(input)
+  const money = (value: number) => formatEmailMoney(value, input.currencyCode ?? "czk", locale)
+  const same = Math.abs(input.difference) <= 0.005
+  const settlement = decideSettlement(input.difference, input.payment)
+  const texts = {
+    sk: {
+      dobirkaSame: "Cena sa nemení — pri prevzatí zaplatíte rovnako ako doteraz.",
+      dobirka: (a: string) => `Pri prevzatí zaplatíte ${a}.`,
+      pickupSame: "Cena sa nemení — v ateliéri zaplatíte rovnako ako doteraz.",
+      pickup: (a: string) => `Pri vyzdvihnutí v ateliéri zaplatíte ${a}.`,
+      collect: (a: string) => `Doplatíte ${a} kartou — úprava platí, keď bude rozdiel zaplatený.`,
+      refund: (a: string) => `Rozdiel ${a} vám vrátime na kartu a pošleme k nemu opravný doklad.`,
+      none: "Cena sa nemení.",
+    },
+    pl: {
+      dobirkaSame: "Cena się nie zmienia — przy odbiorze zapłacą Państwo tyle samo co dotąd.",
+      dobirka: (a: string) => `Przy odbiorze zapłacą Państwo ${a}.`,
+      pickupSame: "Cena się nie zmienia — w pracowni zapłacą Państwo tyle samo co dotąd.",
+      pickup: (a: string) => `Przy odbiorze w pracowni zapłacą Państwo ${a}.`,
+      collect: (a: string) => `Dopłacą Państwo ${a} kartą — zmiana obowiązuje po zapłaceniu różnicy.`,
+      refund: (a: string) => `Różnicę ${a} zwrócimy na kartę i prześlemy do niej fakturę korygującą.`,
+      none: "Cena się nie zmienia.",
+    },
+    de: {
+      dobirkaSame: "Der Preis bleibt gleich – bei der Zustellung zahlen Sie so viel wie bisher.",
+      dobirka: (a: string) => `Bei der Zustellung zahlen Sie ${a}.`,
+      pickupSame: "Der Preis bleibt gleich – in der Werkstatt zahlen Sie so viel wie bisher.",
+      pickup: (a: string) => `Bei der Abholung in der Werkstatt zahlen Sie ${a}.`,
+      collect: (a: string) => `Sie zahlen ${a} per Karte nach – die Änderung gilt, sobald die Differenz bezahlt ist.`,
+      refund: (a: string) => `Die Differenz von ${a} erstatten wir auf Ihre Karte und schicken Ihnen eine Rechnungskorrektur.`,
+      none: "Der Preis bleibt gleich.",
+    },
+    en: {
+      dobirkaSame: "The price stays the same — you'll pay the same amount on delivery as before.",
+      dobirka: (a: string) => `You'll pay ${a} on delivery.`,
+      pickupSame: "The price stays the same — you'll pay the same amount at the studio as before.",
+      pickup: (a: string) => `You'll pay ${a} when you collect your order at the studio.`,
+      collect: (a: string) => `You'll pay the extra ${a} by card — the change applies once the difference has been paid.`,
+      refund: (a: string) => `We'll refund the difference of ${a} to your card and send you a corrective invoice.`,
+      none: "The price stays the same.",
+    },
+  }[locale]
+  if (input.payment === "dobirka") return same ? texts.dobirkaSame : texts.dobirka(money(input.totalAfter))
+  if (input.payment === "pickup") return same ? texts.pickupSame : texts.pickup(money(input.totalAfter))
+  if (settlement.kind === "collect") return texts.collect(money(settlement.amount))
+  if (settlement.kind === "refund_due") return texts.refund(money(settlement.amount))
+  return texts.none
+}
 
 /** Jedna věta pro souhrn: co se po uložení stane s penězi. */
 export const moneySentence = (input: {

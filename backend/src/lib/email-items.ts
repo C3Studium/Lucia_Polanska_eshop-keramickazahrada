@@ -3,10 +3,49 @@ import { lineQuantityOf, toNumber } from "./order-quantity"
 import {
   isPackagingLine,
   isServiceLine,
+  PACKAGING_TITLE,
   packagingTitleFor,
   packagingVariantOf,
   withPackagingUnderProducts,
 } from "./packaging-lines"
+import { localizedLineTitle, pick, type EmailLocale } from "./email-locale"
+
+/**
+ * Servisní řádky jsou v objednávce česky („Balné", „Doběrečné"); do
+ * cizojazyčného e-mailu se přeloží podle známých názvů. Neznámý název
+ * (ruční služba) zůstane, jak je.
+ */
+const SERVICE_TITLES: Record<string, Record<EmailLocale, string>> = {
+  [PACKAGING_TITLE]: { cs: "Balné", sk: "Balné", pl: "Opakowanie", de: "Verpackung", en: "Packaging fee" },
+  "Doběrečné": { cs: "Doběrečné", sk: "Poplatok za dobierku", pl: "Opłata za pobranie", de: "Nachnahmegebühr", en: "Cash on delivery fee" },
+  "Poštovné": { cs: "Poštovné", sk: "Poštovné", pl: "Wysyłka", de: "Versand", en: "Postage" },
+  "Doprava": { cs: "Doprava", sk: "Doprava", pl: "Wysyłka", de: "Versand", en: "Shipping" },
+  "Záloha": { cs: "Záloha", sk: "Záloha", pl: "Zaliczka", de: "Anzahlung", en: "Deposit" },
+  "Služba": { cs: "Služba", sk: "Služba", pl: "Usługa", de: "Leistung", en: "Service" },
+  "Položka": { cs: "Položka", sk: "Položka", pl: "Pozycja", de: "Position", en: "Item" },
+}
+
+const serviceTitle = (title: string, locale: EmailLocale | null | undefined): string => {
+  if (!locale || locale === "cs") return title
+  const known = SERVICE_TITLES[title.trim()]
+  if (known) return pick(locale, known)
+  // „Balné — Keramické pítko" z řádku refundace: přeloží se aspoň „Balné".
+  const prefix = `${PACKAGING_TITLE} — `
+  return title.startsWith(prefix)
+    ? `${pick(locale, SERVICE_TITLES[PACKAGING_TITLE])} — ${title.slice(prefix.length)}`
+    : title
+}
+
+/** „Balné — Keramické pítko" v jazyce e-mailu. */
+const packagingTitleIn = (productTitle: string | null, locale: EmailLocale | null | undefined) =>
+  !locale || locale === "cs"
+    ? packagingTitleFor(productTitle)
+    : productTitle
+      ? `${serviceTitle(PACKAGING_TITLE, locale)} — ${productTitle}`
+      : serviceTitle(PACKAGING_TITLE, locale)
+
+/** Výchozí české provedení — v cizojazyčném e-mailu nic neříká, vynechá se. */
+const CESKE_VYCHOZI_PROVEDENI = /^(standardní|standard|výchozí)$/i
 
 /**
  * „Za co ta platba byla" — položky objednávky nebo košíku do e-mailu.
@@ -53,6 +92,8 @@ type LineLike = {
   metadata?: Record<string, unknown> | null
   variant_id?: string | null
   product_id?: string | null
+  /** Pro překlad názvu (`items.product.metadata` v dotazu). */
+  product?: { metadata?: Record<string, unknown> | null } | null
 }
 
 /** Provedení se nevypisuje, když je to jen Medusí výchozí „Default variant". */
@@ -70,7 +111,9 @@ export const emailLineItems = (
         currency_code?: string | null
       }
     | null
-    | undefined
+    | undefined,
+  /** Jazyk e-mailu — názvy z `product.metadata.title_xx`, částky podle jazyka. */
+  locale?: EmailLocale | null
 ): EmailLineItem[] => {
   const currency = source?.currency_code ?? null
   const items = ((source?.items ?? []) as LineLike[]).filter(Boolean)
@@ -84,7 +127,7 @@ export const emailLineItems = (
   const nazevVarianty = new Map<string, string>()
   for (const item of items) {
     if (item.variant_id) {
-      const nazev = (item.product_title ?? item.title ?? "").trim()
+      const nazev = localizedLineTitle(item, locale)
       if (nazev) nazevVarianty.set(item.variant_id, nazev)
     }
   }
@@ -96,17 +139,19 @@ export const emailLineItems = (
     /* Doběrečné a jiné servisní řádky mají jen vlastní `title`. */
     const title = service
       ? isPackagingLine(item)
-        ? packagingTitleFor(nazevVarianty.get(packagingVariantOf(item) ?? "") ?? null)
-        : (item.title ?? "").trim() || "Služba"
-      : (item.product_title ?? item.title ?? "").trim() || "Položka"
-    const variant = (item.variant_title ?? "").trim()
+        ? packagingTitleIn(nazevVarianty.get(packagingVariantOf(item) ?? "") ?? null, locale)
+        : serviceTitle((item.title ?? "").trim() || "Služba", locale)
+      : localizedLineTitle(item, locale) || serviceTitle("Položka", locale)
+    const variantRaw = (item.variant_title ?? "").trim()
+    const variant =
+      locale && locale !== "cs" && CESKE_VYCHOZI_PROVEDENI.test(variantRaw) ? "" : variantRaw
 
     return {
       title,
       subtitle:
         !service && variant && !VYCHOZI_PROVEDENI.test(variant) ? variant : null,
       quantity: quantity > 0 ? quantity : null,
-      amount: Number.isFinite(total) ? formatMoney(total, currency) : null,
+      amount: Number.isFinite(total) ? formatMoney(total, currency, locale) : null,
       thumbnail: service ? null : (item.thumbnail ?? null),
       ...(service ? { service: true } : {}),
     }
@@ -134,7 +179,9 @@ export const refundEmailLineItems = (
       }>
     | null
     | undefined,
-  currency: string | null | undefined
+  currency: string | null | undefined,
+  /** Jazyk e-mailu — viz `emailLineItems`. */
+  locale?: EmailLocale | null
 ): EmailLineItem[] => {
   const items = ((order?.items ?? []) as (LineLike & { id?: string })[]).filter(Boolean)
   const podleId = new Map(items.filter((item) => item.id).map((item) => [item.id, item]))
@@ -145,14 +192,24 @@ export const refundEmailLineItems = (
       const zbozi = line.type === "item" || line.type === "component"
       const item = line.line_item_id ? podleId.get(line.line_item_id) : undefined
       const amount = toNumber(line.amount)
+      /* Řádek refundace nese český název z objednávky; u zboží se v jiném
+         jazyce vezme překlad produktu, servisní řádky přes známé názvy. */
+      const czech =
+        (line.title ?? "").trim() || (item?.product_title ?? item?.title ?? "").trim()
+      const title =
+        locale && locale !== "cs"
+          ? zbozi && item
+            ? localizedLineTitle(item, locale) || czech
+            : serviceTitle(czech || "Položka", locale)
+          : czech || "Položka"
+      const variant = (item?.variant_title ?? "").trim()
       return {
-        title:
-          (line.title ?? "").trim() ||
-          (item?.product_title ?? item?.title ?? "").trim() ||
-          "Položka",
-        subtitle: zbozi ? ((item?.variant_title ?? "").trim() || null) : null,
+        title,
+        subtitle: zbozi
+          ? (locale && locale !== "cs" && CESKE_VYCHOZI_PROVEDENI.test(variant) ? null : variant || null)
+          : null,
         quantity: line.quantity && line.quantity > 0 ? line.quantity : null,
-        amount: Number.isFinite(amount) && amount !== 0 ? formatMoney(amount, currency) : null,
+        amount: Number.isFinite(amount) && amount !== 0 ? formatMoney(amount, currency, locale) : null,
         thumbnail: zbozi ? (item?.thumbnail ?? null) : null,
         ...(zbozi ? {} : { service: true }),
       }

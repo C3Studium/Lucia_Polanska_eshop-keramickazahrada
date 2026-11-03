@@ -39,7 +39,7 @@ const voucherAmount = Number(arg("voucher-amount", "1500"))
 const voucherKind = arg("voucher-kind", "")
 const redeemValue = Number(arg("redeem", "0"))
 // Verze právních dokumentů, jak je zapisuje storefront (recordCheckoutConsent).
-const termsVersion = arg("terms-version", "2026-10-15")
+const termsVersion = arg("terms-version", "2026-11-03")
 
 const log = (...a) => console.log("[smoke]", ...a)
 

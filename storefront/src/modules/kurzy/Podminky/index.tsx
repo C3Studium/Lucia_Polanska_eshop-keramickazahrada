@@ -27,7 +27,7 @@ const TERMS: { term: string; text: string }[] = [
   },
   {
     term: "Děti",
-    text: "Rezervaci dělá rodič nebo jiný zákonný zástupce. Minimální věk: {{course.minAge}}. Mimo vedenou práci (příchod, přestávky, odchod) za dítě odpovídá rodič.",
+    text: "Rezervaci dělá rodič nebo jiný zákonný zástupce. Věk: {{course.minAge}}. Mimo vedenou práci (příchod, přestávky, odchod) za dítě odpovídá rodič.",
   },
   {
     term: "Výrobky",

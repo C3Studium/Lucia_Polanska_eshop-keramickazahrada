@@ -2,6 +2,11 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { v4 as uuidv4 } from "uuid"
 import { Modules } from "@medusajs/framework/utils"
 import { verifyEmailLink } from "../../../../lib/storefront-url"
+import {
+  customerCountryOf,
+  customerLocaleOf,
+  withCustomerCountry,
+} from "../../../../lib/customer-locale"
 
 /**
  * Resend the e-mail verification link.
@@ -71,7 +76,13 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
       })
     }
 
-    const verificationUrl = verifyEmailLink(token, email)
+    // Odkaz do obchodu v zemi, ze které se zákazník registroval.
+    const verificationUrl = withCustomerCountry(
+      verifyEmailLink(token, email),
+      customerCountryOf(customer)
+    )
+    // Jazyk z registrace (customer.metadata.locale), jinak česky.
+    const locale = customerLocaleOf(customer)
     if (!verificationUrl) {
       console.error(
         "[resend-verification] STOREFRONT_PUBLIC_URL/MEDUSA_STOREFRONT_URL not set — cannot build the verification link."
@@ -89,6 +100,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
       data: {
         verification_url: verificationUrl,
         email,
+        ...(locale && locale !== "cs" ? { locale } : {}),
       },
     })
 

@@ -9,6 +9,7 @@ import {
   sendCustomerEmail,
 } from "./customer-email"
 import { emailLineItems } from "./email-items"
+import { emailLocaleOf, type EmailLocale } from "./email-locale"
 
 /**
  * „Platba neprošla" — e-mail zákazníkovi s odkazem na opakování, když platba
@@ -68,6 +69,86 @@ export const duvodCesky = (kod: unknown): string | null => {
   return DUVODY[klic] ?? null
 }
 
+/**
+ * Důvody neúspěchu v jazyce e-mailu. Uložený důvod je česká věta
+ * (`duvodCesky`, `provider_error_reason` — čte ji i administrace), proto se
+ * překlad hledá podle ní; neznámá věta zůstane, jak je.
+ */
+const DUVODY_PREKLAD: Record<string, Record<Exclude<EmailLocale, "cs">, string>> = {
+  [DUVODY.NO_FUNDS]: {
+    sk: "na účte nebolo dosť prostriedkov",
+    pl: "na koncie zabrakło środków",
+    de: "auf dem Konto war nicht genug Guthaben",
+    en: "there weren't enough funds in the account",
+  },
+  [DUVODY.LIMIT_EXCEEDED]: {
+    sk: "bol prekročený limit karty",
+    pl: "przekroczono limit karty",
+    de: "das Kartenlimit wurde überschritten",
+    en: "the card limit was exceeded",
+  },
+  [DUVODY.REJECTED_BY_BANK]: {
+    sk: "platbu zamietla banka",
+    pl: "bank odrzucił płatność",
+    de: "die Bank hat die Zahlung abgelehnt",
+    en: "the bank declined the payment",
+  },
+  [DUVODY.INVALID_CARDNO_EXPIRY]: {
+    sk: "nesprávne zadané číslo karty alebo platnosť",
+    pl: "błędnie podany numer karty lub data ważności",
+    de: "Kartennummer oder Ablaufdatum falsch eingegeben",
+    en: "the card number or expiry date was entered incorrectly",
+  },
+  [DUVODY.INVALID_CVC]: {
+    sk: "nesprávne zadaný kód CVC",
+    pl: "błędnie podany kod CVC",
+    de: "CVC-Code falsch eingegeben",
+    en: "the CVC code was entered incorrectly",
+  },
+  [DUVODY.CUSTOMER_TIMEOUT]: {
+    sk: "vypršal časový limit platby",
+    pl: "upłynął czas na dokonanie płatności",
+    de: "das Zeitlimit für die Zahlung ist abgelaufen",
+    en: "the time limit for the payment ran out",
+  },
+  [DUVODY.ACS_TIMEOUT]: {
+    sk: "vypršal časový limit overenia",
+    pl: "upłynął czas na weryfikację płatności",
+    de: "das Zeitlimit für die Bestätigung ist abgelaufen",
+    en: "the time limit for verification ran out",
+  },
+  // Obecné důvody doplatku (jobs/reconcile-balance-payments, FAILURE_REASONS).
+  "Platba byla zrušena": {
+    sk: "Platba bola zrušená",
+    pl: "Płatność została anulowana",
+    de: "Die Zahlung wurde abgebrochen",
+    en: "The payment was cancelled",
+  },
+  "Platbu se nepodařilo dokončit": {
+    sk: "Platbu sa nepodarilo dokončiť",
+    pl: "Nie udało się dokończyć płatności",
+    de: "Die Zahlung konnte nicht abgeschlossen werden",
+    en: "The payment couldn't be completed",
+  },
+  "Platnost platebního odkazu vypršela": {
+    sk: "Platnosť platobného odkazu vypršala",
+    pl: "Link do płatności wygasł",
+    de: "Der Zahlungslink ist abgelaufen",
+    en: "The payment link has expired",
+  },
+}
+
+/** Uložený (český) důvod neúspěchu v jazyce e-mailu. */
+export const failureReasonIn = (
+  reason: string | null | undefined,
+  locale: EmailLocale
+): string | undefined => {
+  const text = (reason ?? "").trim()
+  if (!text) return undefined
+  if (locale === "cs") return text
+  return DUVODY_PREKLAD[text]?.[locale] ?? text
+}
+
 /** Kolekce, u které už je zaplaceno — „neprošla" by lhala. */
 const SETTLED_COLLECTION = ["authorized", "partially_authorized", "completed"]
 
@@ -92,16 +173,18 @@ const NAME_FIELDS = (prefix: string) => [
 const polozkyProEmail = async (
   container: MedusaContainer,
   entity: "cart" | "order",
-  id: string
+  id: string,
+  locale: EmailLocale
 ) => {
   try {
     const query = container.resolve(ContainerRegistrationKeys.QUERY)
     const { data } = await query.graph({
       entity,
-      fields: ["id", "currency_code", "items.*"],
+      // `items.product.metadata` = přeložený název výrobku (lib/email-locale).
+      fields: ["id", "currency_code", "items.*", "items.product.metadata"],
       filters: { id },
     })
-    return emailLineItems(data[0] as any)
+    return emailLineItems(data[0] as any, locale)
   } catch {
     return []
   }
@@ -138,11 +221,19 @@ export const emailFailedCheckoutPayment = async (
       "cart.id",
       "cart.email",
       "cart.completed_at",
+      // Jazyk košíku/objednávky (lib/email-locale): storefront ho zapisuje do
+      // metadat, starší mají jen zemi adresy.
+      "cart.metadata",
+      "cart.shipping_address.country_code",
+      "cart.billing_address.country_code",
       ...NAME_FIELDS("cart"),
       "order.id",
       "order.display_id",
       "order.email",
       "order.status",
+      "order.metadata",
+      "order.shipping_address.country_code",
+      "order.billing_address.country_code",
       ...NAME_FIELDS("order"),
     ],
     filters: { id: session.payment_collection_id },
@@ -152,10 +243,11 @@ export const emailFailedCheckoutPayment = async (
     return false
   }
 
-  const paymentAmount = formatMoney(session.amount, collection.currency_code)
-  const failureReason = reason || undefined
   const order = collection.order
   const cart = collection.cart
+  const locale = emailLocaleOf(order?.id ? order : cart)
+  const paymentAmount = formatMoney(session.amount, collection.currency_code, locale)
+  const failureReason = failureReasonIn(reason, locale)
 
   if (order?.id) {
     if (order.status === "canceled") {
@@ -166,11 +258,12 @@ export const emailFailedCheckoutPayment = async (
       to: order.email,
       key: `payfail:${session.id}`,
       orderId: order.id,
+      locale,
       data: {
         customerName: customerName(order),
         orderNumber: orderNumber(order),
         paymentAmount,
-        paidFor: await polozkyProEmail(container, "order", order.id),
+        paidFor: await polozkyProEmail(container, "order", order.id, locale),
         failureReason,
         retryLink: orderLink(order),
       },
@@ -183,12 +276,13 @@ export const emailFailedCheckoutPayment = async (
       template: "payment-failed",
       to: cart.email,
       key: `payfail:${session.id}`,
+      locale,
       data: {
         checkout: true,
         customerName: customerName(cart),
         paymentAmount,
         /* Obsah košíku, který odkaz obnoví — ať zákazník vidí, o co jde. */
-        paidFor: await polozkyProEmail(container, "cart", cart.id),
+        paidFor: await polozkyProEmail(container, "cart", cart.id, locale),
         failureReason,
         retryLink: recover ? `${recover}?step=payment` : "",
       },

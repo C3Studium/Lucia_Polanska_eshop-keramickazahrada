@@ -7,14 +7,14 @@
  * ke které je tady protokol. Stránka `/certifikaty` je vypisuje; FAQ a popisy
  * produktů na ni odkazují.
  *
- * Soubory jdou do R2 (`legal/certifikaty/<rok>-<glazura>.pdf`, veřejné URL
- * `https://img.matejforejt.com/...`) stejně jako právní PDF. Nový protokol =
- * nový záznam tady + nahrání souboru; bez protokolu glazuru NEPŘIDÁVAT.
+ * Od 2. 11. 2026 se protokoly nahrávají ve Studiu (typ `certifikat`,
+ * „Certifikáty a protokoly", `lib/data/certificates.ts`) — nový protokol
+ * nepotřebuje nasazení. Seznamy tady jsou jen záloha pro výpadek CMS;
+ * bez protokolu glazuru NEPŘIDÁVAT.
  *
- * Zatím prázdné: protokoly má Lucie u sebe (zpráva pro Lucii, otázka
- * „certifikáty“). Dokud nejsou nahrané, stránka říká, že se seznam doplňuje,
- * a skript `backend/src/scripts/food-claims.ts` umí tvrzení z popisů
- * odstranit / vrátit.
+ * Zatím prázdné: protokoly má Lucie u sebe. Dokud nejsou nahrané, stránka
+ * říká, že se seznam doplňuje, a skript `backend/src/scripts/food-claims.ts`
+ * umí tvrzení z popisů odstranit / vrátit.
  */
 
 export type GlazeCertificate = {
@@ -66,4 +66,3 @@ export const CONFORMITY_DECLARATIONS: readonly ConformityDeclaration[] = [
   },
 ]
 
-export const hasGlazeCertificates = (): boolean => GLAZE_CERTIFICATES.length > 0

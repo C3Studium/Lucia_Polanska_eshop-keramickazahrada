@@ -5,10 +5,12 @@ import { MADE_TO_ORDER_MODULE } from "../../../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../../../modules/made-to-order/service"
 import {
   customerName,
+  emailLocaleForOrder,
   orderLink,
   orderNumber,
   sendCustomerEmail,
 } from "../../../../../../lib/customer-email"
+import { localizedCommissionTitle } from "../../../../../../lib/made-to-order/commission-title-i18n"
 import {
   commissionIdFromRequest,
   listCommissionsOfOrder,
@@ -147,22 +149,36 @@ export const POST = async (
           "customer.last_name",
           "shipping_address.first_name",
           "shipping_address.last_name",
+          // Jazyk zákazníka a přeložený název výrobku (lib/email-locale).
+          "metadata",
+          "shipping_address.country_code",
+          "billing_address.country_code",
+          "items.*",
+          "items.product.metadata",
         ],
         filters: { id: req.params.orderId },
       })
       const order = orders[0] as any
       if (order?.email) {
+        const locale = await emailLocaleForOrder(req.scope, order)
         await sendCustomerEmail(req.scope, {
           template: "commission-message",
           to: order.email,
           key: `commission-msg:${note?.id ?? req.params.orderId}`,
           orderId: order.id,
+          locale,
           data: {
             customerName: customerName(order),
             orderNumber: orderNumber(order),
             orderLink: orderLink(order),
-            // Název položky — u objednávky s víc zakázkami zákazník pozná, ke které zpráva patří.
-            productTitle: typeof production.line_title === "string" ? production.line_title : null,
+            // Název položky — u objednávky s víc zakázkami zákazník pozná, ke které
+            // zpráva patří. V jazyce zákazníka, česky beze změny (snímek line_title).
+            productTitle:
+              locale === "cs"
+                ? typeof production.line_title === "string"
+                  ? production.line_title
+                  : null
+                : localizedCommissionTitle(order, production, locale),
             message: (parsed.data.text ?? "").trim() || "",
             photoUrl: parsed.data.image_url ?? "",
           },

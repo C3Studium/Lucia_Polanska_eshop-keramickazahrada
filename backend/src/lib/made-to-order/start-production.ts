@@ -6,17 +6,20 @@ import {
 } from "@medusajs/framework/utils"
 import {
   customerName,
+  emailLocaleForOrder,
   formatDate,
   formatMoney,
   orderLink,
   orderNumber,
   sendCustomerEmail,
 } from "../customer-email"
+import { formatEmailDate, pick, type EmailLocale } from "../email-locale"
 import { formatPragueDateTime } from "../claims/withdrawal"
 import { MADE_TO_ORDER_MODULE } from "../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../modules/made-to-order/service"
-import { commissionImageOf, commissionLineOf, commissionTitleOf } from "./commission-line"
+import { commissionImageOf, commissionLineOf } from "./commission-line"
 import { contractDepositAmountOf } from "./contract-deposit"
+import { localizedCommissionTitle } from "./commission-title-i18n"
 
 /**
  * Z3 (LEGAL_AUDIT.md § 0): zahájení výroby platí od E-MAILU „Zakázka je ve
@@ -60,7 +63,12 @@ const ORDER_FIELDS = [
   "display_id",
   "email",
   "currency_code",
+  // Jazyk zákazníka (lib/email-locale) a překlad názvu výrobku.
+  "metadata",
+  "shipping_address.country_code",
+  "billing_address.country_code",
   "items.*",
+  "items.product.metadata",
   "customer.first_name",
   "customer.last_name",
   "shipping_address.first_name",
@@ -98,16 +106,46 @@ export const productionMaxDaysOf = (
 export const estimatedCompletionText = (
   productionOrder: { estimated_completion_at?: unknown },
   maxDays: number | null,
-  startedAt: Date
+  startedAt: Date,
+  /** Jazyk e-mailu (lib/email-locale); bez něj česky. */
+  locale?: EmailLocale | null
 ): string | null => {
   if (productionOrder?.estimated_completion_at) {
-    return formatDate(productionOrder.estimated_completion_at)
+    return formatDate(productionOrder.estimated_completion_at, locale)
   }
   if (maxDays) {
-    const deadline = new Date(startedAt.getTime() + maxDays * DAY_MS)
-    return `do ${maxDays} dnů od zahájení výroby (nejpozději ${formatDate(deadline)})`
+    const deadline = formatDate(new Date(startedAt.getTime() + maxDays * DAY_MS), locale)
+    return pick(locale, {
+      cs: `do ${maxDays} dnů od zahájení výroby (nejpozději ${deadline})`,
+      sk: `do ${maxDays} dní od začatia výroby (najneskôr ${deadline})`,
+      pl: `w ciągu ${maxDays} dni od rozpoczęcia produkcji (najpóźniej ${deadline})`,
+      de: `innerhalb von ${maxDays} Tagen ab Herstellungsbeginn (spätestens ${deadline})`,
+      en: `within ${maxDays} days of the start of production (by ${deadline} at the latest)`,
+    })
   }
   return null
+}
+
+/**
+ * Okamžik zahájení výroby (pražský čas — od něj platí Z5) v jazyce
+ * e-mailu. Čeština beze změny přes `formatPragueDateTime`.
+ */
+export const startedAtTextFor = (at: Date, locale?: EmailLocale | null): string => {
+  if (!locale || locale === "cs") return formatPragueDateTime(at)
+  const date = formatEmailDate(at, locale)
+  const time = new Intl.DateTimeFormat("cs-CZ", {
+    timeZone: "Europe/Prague",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(at)
+  return pick(locale, {
+    cs: `${date} v ${time}`,
+    sk: `${date} o ${time}`,
+    pl: `${date}, godz. ${time}`,
+    de: `${date} um ${time} Uhr`,
+    en: `${date} at ${time}`,
+  })
 }
 
 export const startProduction = async (
@@ -165,6 +203,8 @@ export const startProduction = async (
   const depositAmount = contractDepositAmountOf(productionOrder)
   const depositPercentage = Number(productionOrder.deposit_percentage) || null
   const key = productionStartEmailKey(productionOrder.id)
+  // Jazyk objednávky — texty skládané tady (termín, čas) i šablona.
+  const locale = await emailLocaleForOrder(container, order)
 
   const rollback = async () => {
     await madeToOrder
@@ -183,21 +223,23 @@ export const startProduction = async (
       to: order.email,
       key,
       orderId: order.id,
+      locale,
       data: {
         customerName: customerName(order),
         orderNumber: orderNumber(order),
         orderLink: orderLink(order),
         // Název a obrázek TÉTO položky (zakázka = položka, § 0c).
-        productTitle: commissionTitleOf(order, productionOrder),
+        productTitle: localizedCommissionTitle(order, productionOrder, locale),
         productImageUrl: commissionImageOf(order, productionOrder),
         // Pražský čas — okamžik, od kterého platí Z5.
-        startedAtText: formatPragueDateTime(now),
-        depositAmount: formatMoney(depositAmount, currency),
+        startedAtText: startedAtTextFor(now, locale),
+        depositAmount: formatMoney(depositAmount, currency, locale),
         depositPercentage: depositPercentage !== null ? String(depositPercentage) : null,
         estimatedCompletion: estimatedCompletionText(
           productionOrder,
           productionMaxDaysOf(order, productionOrder),
-          startedAt
+          startedAt,
+          locale
         ),
       },
     })

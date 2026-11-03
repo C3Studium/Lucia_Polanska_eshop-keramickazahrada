@@ -1,14 +1,19 @@
 import { VOUCHER_STATE_LABEL, voucherState } from "../modules/gift-voucher/code"
 import { giftVoucherLink, giftVoucherPath } from "./gift-voucher-link"
+import { intlLocale, type EmailLocale } from "./email-locale"
 
 /**
  * Jak poukaz vidí administrace a jak zákazník — jedno místo, aby se stav
  * a popisky nerozcházely mezi stránkou Poukazy, stránkou poukazu a e-maily.
  */
 
-export const formatVoucherDate = (value: Date | string | null | undefined): string => {
+export const formatVoucherDate = (
+  value: Date | string | null | undefined,
+  /** Jazyk zákazníka (e-mail, PDF); bez něj česky jako v administraci. */
+  locale?: EmailLocale | null
+): string => {
   if (!value) return ""
-  return new Intl.DateTimeFormat("cs-CZ", {
+  return new Intl.DateTimeFormat(intlLocale(locale ?? "cs"), {
     timeZone: "Europe/Prague",
     day: "numeric",
     month: "numeric",
@@ -16,8 +21,20 @@ export const formatVoucherDate = (value: Date | string | null | undefined): stri
   }).format(new Date(value))
 }
 
-export const formatVoucherCzk = (amount: number): string =>
-  `${Math.round(Number(amount) || 0).toLocaleString("cs-CZ")} Kč`
+/**
+ * Hodnota poukazu (vždy v korunách, bez haléřů). Česky „1 500 Kč" jako
+ * dřív; v jiném jazyce podle něj s kódem měny („1 500 CZK", „1.500 CZK")
+ * — zkratka „Kč" je česká a polský nebo německý zákazník ji nemusí znát.
+ */
+export const formatVoucherCzk = (amount: number, locale?: EmailLocale | null): string =>
+  !locale || locale === "cs"
+    ? `${Math.round(Number(amount) || 0).toLocaleString("cs-CZ")} Kč`
+    : new Intl.NumberFormat(intlLocale(locale), {
+        style: "currency",
+        currency: "CZK",
+        currencyDisplay: "code",
+        maximumFractionDigits: 0,
+      }).format(Math.round(Number(amount) || 0))
 
 export const PAYMENT_METHOD_LABEL: Record<string, string> = {
   cash: "Hotově",

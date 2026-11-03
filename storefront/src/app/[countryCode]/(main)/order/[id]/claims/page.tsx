@@ -1,6 +1,7 @@
 import { getOrderClaims } from "@lib/data/claims"
 import { getGuestRefundContext } from "@lib/data/guest-refund"
 import { retrieveCustomer } from "@lib/data/customer"
+import { getContactEmails } from "@lib/data/site-copy"
 import { findOpenClaim, hasOpenClaim, orderCancelled } from "@lib/util/claims"
 import ClaimStatus from "@modules/order/components/claim-status"
 import OrderStateShell from "@modules/order/components/order-state-shell"
@@ -35,6 +36,9 @@ export default async function OrderClaimsPage(props: Props) {
       ])
     : [null, null]
   const customer = await retrieveCustomer().catch(() => null)
+  // Hlášky k objednávce vedou na e-mail pro objednávky a zakázky (Studio,
+  // `global.kontakty`), ne na obecné dotazy.
+  const { objednavky: orderEmail } = await getContactEmails()
   const myOrdersAction = customer
     ? { href: "/account/orders", label: "Moje objednávky" }
     : undefined
@@ -54,8 +58,8 @@ export default async function OrderClaimsPage(props: Props) {
         title={tokenOk ? "Teď to nejde načíst." : "Odkaz nejde otevřít."}
         description={
           tokenOk
-            ? "Stav žádostí se nám teď nepodařilo načíst. Zkuste to prosím za chvíli znovu, nebo nám napište na info@keramickazahrada.cz."
-            : "Odkaz je neplatný nebo vypršel. Otevřete prosím ten z posledního e-mailu, nebo nám napište na info@keramickazahrada.cz."
+            ? `Stav žádostí se nám teď nepodařilo načíst. Zkuste to prosím za chvíli znovu, nebo nám napište na ${orderEmail}.`
+            : `Odkaz je neplatný nebo vypršel. Otevřete prosím ten z posledního e-mailu, nebo nám napište na ${orderEmail}.`
         }
         status="pending"
         primary={myOrdersAction}
@@ -86,7 +90,7 @@ export default async function OrderClaimsPage(props: Props) {
           : openClaim
             ? "Každý krok, který se stane, tu uvidíte — a zároveň vám přijde e-mail. Peníze vracíme až po rozhodnutí, u vrácení zboží zpravidla po jeho přijetí."
             : cancelled
-              ? "Objednávka je zrušená — potvrzení máte v e-mailu. Kdybyste cokoli potřebovali, napište nám na info@keramickazahrada.cz."
+              ? `Objednávka je zrušená — potvrzení máte v e-mailu. Kdybyste cokoli potřebovali, napište nám na ${orderEmail}.`
               : "Všechny žádosti k této objednávce jsou uzavřené. Kdyby se objevilo něco dalšího, podejte novou."
       }
       status={openClaim ? "pending" : "success"}

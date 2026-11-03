@@ -104,7 +104,7 @@ const STATE_DEFAULTS: Record<
     stitek: "Rezervováno",
     nadpis: "Místo je vaše,",
     zvyrazneni: "zaplatíte na místě.",
-    text: "Potvrzení jsme poslali e-mailem. Kurz zaplatíte hotově nebo kartou před začátkem.",
+    text: "Potvrzení jsme poslali e-mailem. Kurz zaplatíte na místě hotově nebo převodem na účet před začátkem.",
   },
   zpracovava: {
     stitek: "Platba se zpracovává",

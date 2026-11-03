@@ -1,6 +1,7 @@
 "use client"
 
 import { useLegalFacts } from "@lib/legal/facts-context"
+import { useContactEmails } from "@lib/context/contact-emails"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import React from "react"
 import styles from "../styles/help.module.scss"
@@ -9,12 +10,14 @@ import styles from "../styles/help.module.scss"
 const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, "")}`
 
 const Help = () => {
-  // Kontakt z Právních údajů (administrace obchodu), ne napevno — změní-li
-  // Lucie telefon nebo e-mail, má se změnit i tady. Fakt může chybět
-  // (`null` = nevyplněno); pak se řádek vynechá místo prázdného odkazu.
+  // Telefon z Právních údajů (administrace obchodu), ne napevno — změní-li
+  // ho Lucie, má se změnit i tady. Fakt může chybět (`null` = nevyplněno);
+  // pak se řádek vynechá místo prázdného odkazu. E-mail je adresa pro
+  // objednávky a zakázky ze Studia (`global.kontakty`) — okénko visí u
+  // objednávky, ne u dokladu.
   const facts = useLegalFacts()
   const phone = facts["seller.phone"]
-  const email = facts["seller.email"]
+  const email = useContactEmails().objednavky
 
   return (
     <div className={styles.root}>

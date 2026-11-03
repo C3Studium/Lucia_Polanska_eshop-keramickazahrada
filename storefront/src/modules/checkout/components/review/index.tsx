@@ -195,6 +195,8 @@ const Review = ({
       madeToOrderAck: hasMadeToOrder && madeToOrderOk,
       // Čas zaškrtnutí ke každé zakázkové položce → `made_to_order.ack_at` řádku.
       madeToOrderAcks: hasMadeToOrder ? madeToOrderAcks : undefined,
+      // Jazyk e-mailů podle země obchodu (metadata.locale košíku).
+      countryCode,
     })
   }
 

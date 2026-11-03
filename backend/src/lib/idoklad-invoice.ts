@@ -12,6 +12,7 @@ import {
   buildContactPayload,
   buildInvoicePayload,
   pickPaymentOptionId,
+  invoiceFlavourFor,
   pragueDate,
   singleInvoiceLine,
   vatRateTypeFor,
@@ -35,6 +36,7 @@ import {
   orderNumber,
   sendCustomerEmail,
 } from "./customer-email"
+import { emailLocaleOf } from "./email-locale"
 import { notifyMerchant } from "./notify"
 import { jeZkusebniRezim } from "./test-mode"
 import { epsilonFor, toAmount } from "./ship-gate"
@@ -244,11 +246,13 @@ const storeInvoicePdf = async (
   container: MedusaContainer,
   idoklad: IdokladModuleService,
   invoiceId: number,
-  invoiceNumber: string
+  invoiceNumber: string,
+  /** Jazyk tiskové sestavy — u evropské faktury jazyk zákazníka. */
+  language?: number
 ): Promise<string | null> => {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   try {
-    const pdf = await idoklad.getInvoicePdf(invoiceId)
+    const pdf = await idoklad.getInvoicePdf(invoiceId, language)
     const fileModule = container.resolve(Modules.FILE)
     const [uploaded] = await fileModule.createFiles([
       {
@@ -274,18 +278,21 @@ const sendInvoiceEmail = async (
   order: any,
   state: IdokladInvoiceState
 ): Promise<void> => {
+  // Jazyk objednávky (lib/email-locale) — částku formátuje tenhle kód sám.
+  const locale = emailLocaleOf(order)
   await sendCustomerEmail(container, {
     template: "invoice-issued",
     to: order.email,
     key: `invoice:${state.invoice_id}`,
     orderId: order.id,
+    locale,
     data: {
       customerName: customerName(order),
       orderNumber: orderNumber(order),
       orderLink: orderLink(order),
       invoiceNumber: state.invoice_number ?? "",
       invoicePdfUrl: state.pdf_url ?? "",
-      totalAmount: formatMoney(order.total, order.currency_code),
+      totalAmount: formatMoney(order.total, order.currency_code, locale),
       // Celý rozpis objednávky do faktury — stejný obsah jako potvrzení.
       order,
       invoiceKind: "full",
@@ -435,7 +442,8 @@ export const ensureInvoiceForOrder = async (
         container,
         idoklad,
         invoice.Id,
-        invoice.DocumentNumber ?? String(invoice.Id)
+        invoice.DocumentNumber ?? String(invoice.Id),
+        invoiceFlavourFor(order).reportLanguage
       )
       if (pdfUrl) {
         await patchOrderMetadata(container, order, {
@@ -575,6 +583,10 @@ export const ensureMadeToOrderInvoices = async (
               .catch(() => undefined)
     }
 
+    // Jazyk e-mailu s fakturou (metadata košíku → země doručení) — částky
+    // v e-mailu formátuje tenhle kód, proto ho potřebuje dřív než provider.
+    const emailLocale = emailLocaleOf(order)
+
     const issuePhase = async (
       keys: {
         invoiceId: string
@@ -654,7 +666,8 @@ export const ensureMadeToOrderInvoices = async (
           container,
           idoklad,
           invoice.Id,
-          invoice.DocumentNumber ?? String(invoice.Id)
+          invoice.DocumentNumber ?? String(invoice.Id),
+          invoiceFlavourFor(order).reportLanguage
         )
         if (pdfUrl) {
           await patchOrderMetadata(container, order, { [keys.pdfUrl]: pdfUrl })
@@ -682,13 +695,14 @@ export const ensureMadeToOrderInvoices = async (
           to: order.email,
           key: `invoice:${invoice.Id}`,
           orderId: order.id,
+          locale: emailLocale,
           data: {
             customerName: customerName(order),
             orderNumber: orderNumber(order),
             orderLink: orderLink(order),
             invoiceNumber: invoice.DocumentNumber ?? "",
             invoicePdfUrl: pdfUrl ?? "",
-            totalAmount: formatMoney(rounded, order.currency_code),
+            totalAmount: formatMoney(rounded, order.currency_code, emailLocale),
             // Celý rozpis zakázky + (u zálohy) kolik ještě zbývá doplatit.
             order,
             invoiceKind: kind,
@@ -696,7 +710,7 @@ export const ensureMadeToOrderInvoices = async (
               kind === "deposit" &&
               typeof balanceRemaining === "number" &&
               balanceRemaining > 0
-                ? formatMoney(balanceRemaining, order.currency_code)
+                ? formatMoney(balanceRemaining, order.currency_code, emailLocale)
                 : undefined,
             commissionPayments: commissionPayments ?? null,
           },
@@ -752,7 +766,7 @@ export const ensureMadeToOrderInvoices = async (
           surcharge,
           commissionPaymentsText(
             splitCommissionPayments({ requests, surcharge: surchargeTotal }),
-            (amount) => formatMoney(amount, order.currency_code),
+            (amount) => formatMoney(amount, order.currency_code, emailLocale),
             depositInvoiceNumber
           )
         )) || created
@@ -919,7 +933,7 @@ export const issueCreditNoteForOrder = async (
 
       let pdfUrl: string | null = null
       try {
-        const pdf = await idoklad.getCreditNotePdf(creditId)
+        const pdf = await idoklad.getCreditNotePdf(creditId, invoiceFlavourFor(order).reportLanguage)
         const fileModule = container.resolve(Modules.FILE)
         const [uploaded] = await fileModule.createFiles([
           {
@@ -1102,7 +1116,7 @@ export const issueCreditNoteForRefund = async (
 
       let pdfUrl: string | null = null
       try {
-        const pdf = await idoklad.getCreditNotePdf(creditId)
+        const pdf = await idoklad.getCreditNotePdf(creditId, invoiceFlavourFor(order).reportLanguage)
         const fileModule = container.resolve(Modules.FILE)
         const [uploaded] = await fileModule.createFiles([
           {

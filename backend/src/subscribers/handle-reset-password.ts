@@ -5,6 +5,12 @@ import {
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { isPasswordResetSilent, setPasswordResetToken } from "lib/password-reset-silencer"
 import { resetPasswordLink } from "lib/storefront-url"
+import {
+  customerByEmail,
+  customerCountryOf,
+  customerLocaleOf,
+  withCustomerCountry,
+} from "lib/customer-locale"
 import { BACKEND_URL } from "lib/constants"
 
 /**
@@ -40,8 +46,14 @@ export default async function resetPasswordTokenHandler({
 
   let resetUrl: string
 
+  // Zákazník dostane e-mail v jazyce a s odkazem do země, ze které se
+  // registroval (customer.metadata); administrace zůstává česky.
+  let locale: string | null = null
+
   if (actor_type === "customer") {
-    resetUrl = resetPasswordLink(token, email)
+    const customer = await customerByEmail(container, email)
+    locale = customerLocaleOf(customer)
+    resetUrl = withCustomerCountry(resetPasswordLink(token, email), customerCountryOf(customer))
     if (!resetUrl) {
       logger.error(
         "Password-reset e-mail NOT sent: STOREFRONT_PUBLIC_URL is not configured, " +
@@ -66,6 +78,7 @@ export default async function resetPasswordTokenHandler({
       // The template shows which account the reset belongs to — useful for
       // anyone with more than one address in one inbox.
       email,
+      ...(locale && locale !== "cs" ? { locale } : {}),
     },
   })
 }

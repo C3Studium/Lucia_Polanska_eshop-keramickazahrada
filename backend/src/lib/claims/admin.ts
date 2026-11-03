@@ -15,13 +15,27 @@ import {
 import { RETURN_REQUEST_MODULE } from "../../modules/return-request"
 import type ReturnRequestModuleService from "../../modules/return-request/service"
 import { planClaimCase } from "./case"
-import { damageCauseSentence, resolutionLabel } from "./constants"
+import { resolutionLabel } from "./constants"
 import { CLAIM_FLAG_ORDER_FIELDS, claimFlagsOf } from "./flags"
 import { claimItemsText, suggestedRefundAmount } from "./line-items"
 import { goodsShipped, MONEY_STATE_FIELDS } from "./money"
 import { productionBlockOf } from "./production"
 import { refundLineText, requestRefundLinesText } from "./refund-lines"
 import { storedRefundAccount } from "./refund-account"
+import {
+  claimDamageSentence,
+  claimItemsTextIn,
+  claimResolutionText,
+  decisionOutcomeText,
+  refundLinesTextIn,
+  creditNotePrefix,
+  decidedRefundMethodText,
+  loadClaimEmailContext,
+  requestRefundLinesTextIn,
+  resolvedSubject,
+  type ClaimEmailContext,
+} from "./email-copy"
+import type { EmailLocale } from "../email-locale"
 import {
   moneyState,
   requestRefundedTotal,
@@ -59,6 +73,22 @@ export const retrieveClaim = async (
  * převod; s účtem ze žádosti (`refund_account`) ho zákazník vidí, ať ví, kam
  * peníze přijdou.
  */
+/**
+ * `refundMethodLabel` v jazyce zákazníka (lib/claims/email-copy) — česky
+ * beze změny.
+ */
+export const refundMethodLabelIn = (
+  method: unknown,
+  account: unknown,
+  locale?: EmailLocale | null
+): string =>
+  decidedRefundMethodText(
+    method,
+    storedRefundAccount(account)?.display ?? null,
+    refundMethodLabel(method, account),
+    locale
+  )
+
 export const refundMethodLabel = (method: unknown, account?: unknown): string => {
   if (method === "comgate") {
     // Ne „na kartu": ComGate bere i převod, Apple Pay a Google Pay a vrací
@@ -113,7 +143,9 @@ export const protocolRefundsOf = (
  */
 export const creditNoteEmailData = (
   refunds: RefundEntry[],
-  override?: RefundCreditNote | null
+  override?: RefundCreditNote | null,
+  /** Jazyk e-mailu — jen předpona věty; důvod z iDokladu (zkušební režim) zůstává. */
+  locale?: EmailLocale | null
 ): Record<string, unknown> => {
   const creditNote =
     override ??
@@ -127,7 +159,7 @@ export const creditNoteEmailData = (
     }
   }
   if (creditNote.status === "skipped" && creditNote.reason) {
-    return { creditNoteNote: `Opravný daňový doklad (dobropis): ${creditNote.reason}` }
+    return { creditNoteNote: `${creditNotePrefix(locale)}: ${creditNote.reason}` }
   }
   return {}
 }
@@ -170,7 +202,36 @@ export const regenerateProtocol = async (
     request.protocol_number ||
     protocolNumberFor(request.kind ?? null, request.order_display_id, createdAt)
 
+  /*
+   * Protokol jde v jazyce objednávky (lib/claims/email-copy) — zákazník ze
+   * Slovenska, Polska či Německa mu má rozumět. Česky beze změny. V cizím
+   * jazyce se výsledek a řádky refundací skládají znovu z žádosti (volající
+   * je posílá česky); vlastní český text výsledku (auto-zrušení s poznámkou
+   * „automaticky…") se tím zjednoduší na „Schválené — …".
+   */
+  const context = await loadClaimEmailContext(container, request.order_id)
+  const { locale } = context
+  const czech = locale === "cs"
+  const refunds = (options.refunds ?? []).map((refund, index) => {
+    if (czech) return refund
+    const entry = requestRefunds(request)[index]
+    const lines = entry?.lines?.length
+      ? refundLinesTextIn(entry.lines as never, refund.currency, locale, context.titleOf)
+      : null
+    // „č. 2026-0001" (creditNoteText) → zkratka čísla v jazyce protokolu.
+    const creditNote = refund.creditNote?.replace(
+      /^č\. /,
+      locale === "pl" ? "nr " : locale === "de" ? "Nr. " : locale === "en" ? "No. " : "č. "
+    )
+    return {
+      ...refund,
+      ...(lines ? { lines: lines.split("\n") } : {}),
+      ...(creditNote !== undefined ? { creditNote } : {}),
+    }
+  })
+
   const protocol = await buildAndStoreProtocol(container, {
+    locale,
     protocolNumber: number,
     kind: request.kind ?? null,
     orderDisplayId: request.order_display_id,
@@ -180,18 +241,18 @@ export const regenerateProtocol = async (
     reason: request.reason,
     // Položky přednostně z `line_items` (název · varianta · ks · částka), u
     // starých řádků text zákazníka (§11.5).
-    items: claimItemsText(request),
-    damageCause: damageCauseSentence(request.damage_cause),
+    items: czech ? claimItemsText(request) : claimItemsTextIn(request, locale, context.titleOf),
+    damageCause: claimDamageSentence(request.damage_cause, locale),
     requestedResolution:
       request.kind === "reklamace"
-        ? resolutionLabel(request.requested_resolution) || null
+        ? claimResolutionText(request.requested_resolution, locale) || null
         : null,
     resolution: {
-      outcome: options.outcome,
+      outcome: decisionOutcomeText(request, options.outcome, locale),
       note: options.note ?? null,
       decidedAt: options.decidedAt,
     },
-    refunds: options.refunds ?? [],
+    refunds,
     confirmation: options.confirmation ?? false,
   }).catch(() => ({ url: null as string | null, number }))
 
@@ -215,12 +276,20 @@ export const regenerateProtocol = async (
  */
 export const claimEmailBase = (
   request: any,
-  protocolUrl?: string | null
+  protocolUrl?: string | null,
+  /**
+   * Jazyk a překlady názvů (`loadClaimEmailContext`). Bez něj česky jako
+   * dřív — volající mimo modul (zrušení zakázky) se tím nerozbijí.
+   */
+  context?: ClaimEmailContext | null
 ): Record<string, unknown> => {
   const link = orderLink({ id: request.order_id })
   const claimsUrl = orderClaimsUrl(request.order_id)
-  const label = resolutionLabel(request.resolution)
-  const items = claimItemsText(request)
+  const locale = context?.locale ?? null
+  const label = locale ? claimResolutionText(request.resolution, locale) : resolutionLabel(request.resolution)
+  const items = locale
+    ? claimItemsTextIn(request, locale, context?.titleOf)
+    : claimItemsText(request)
   return {
     ...(request.customer_name ? { customerName: request.customer_name } : {}),
     orderNumber: `#${request.order_display_id}`,
@@ -233,6 +302,8 @@ export const claimEmailBase = (
     ...(link ? { orderLink: link } : {}),
     ...(claimsUrl ? { claimsUrl } : {}),
     ...(protocolUrl ? { protocolUrl } : {}),
+    // Jazyk do `data` rovnou — opakované odeslání z /prehled/emaily jde stejně.
+    ...(locale && locale !== "cs" ? { locale } : {}),
   }
 }
 
@@ -256,27 +327,29 @@ export const sendResolvedEmail = async (
   const total = requestRefundedTotal(request)
   const currency = options.currency ?? "czk"
   const refunds = requestRefunds(request)
-  const refundLines = requestRefundLinesText(request, currency)
+  // Jazyk objednávky + přeložené názvy řádků (lib/claims/email-copy).
+  const context = await loadClaimEmailContext(container, request.order_id)
+  const { locale } = context
+  const refundLines =
+    locale === "cs"
+      ? requestRefundLinesText(request, currency)
+      : requestRefundLinesTextIn(request, currency, locale, context.titleOf)
   await sendCustomerEmail(container, {
     template: "return-resolved",
     to: request.email,
     key: `return-resolved:${request.id}`,
     orderId: request.order_id,
+    locale,
     data: {
-      subject:
-        request.kind === "reklamace"
-          ? "Reklamace je vyřízená — potvrzení"
-          : request.kind === "uprava"
-            ? "Rozdíl po úpravě objednávky jsem vám vrátila"
-            : "Vrácení je vyřízené — potvrzení",
-      ...claimEmailBase(request, options.protocolUrl),
-      resolvedAt: formatDate(request.resolved_at ?? new Date()),
+      subject: resolvedSubject(request.kind ?? null, locale),
+      ...claimEmailBase(request, options.protocolUrl, context),
+      resolvedAt: formatDate(request.resolved_at ?? new Date(), locale),
       ...(total > 0
         ? {
-            refundAmount: formatMoney(total, currency),
-            refundMethod: refundMethodLabel(request.refund_method, request.refund_account),
+            refundAmount: formatMoney(total, currency, locale),
+            refundMethod: refundMethodLabelIn(request.refund_method, request.refund_account, locale),
             ...(refundLines ? { refundLines } : {}),
-            ...creditNoteEmailData(refunds, options.creditNote),
+            ...creditNoteEmailData(refunds, options.creditNote, locale),
           }
         : {}),
       ...(options.note ? { note: options.note } : {}),

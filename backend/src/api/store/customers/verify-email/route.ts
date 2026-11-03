@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { Modules } from "@medusajs/framework/utils"
 import { sendCustomerEmail } from "../../../../lib/customer-email"
+import { customerLocaleOf } from "../../../../lib/customer-locale"
 
 /**
  * Confirms an e-mail verification token.
@@ -87,6 +88,8 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
       template: "welcome",
       to: customer.email,
       key: `welcome:${customer.id}`,
+      // Jazyk z registrace (customer.metadata.locale), jinak česky.
+      locale: customerLocaleOf(customer),
       data: { customerName: customer.first_name || "" },
     })
   } catch (err) {

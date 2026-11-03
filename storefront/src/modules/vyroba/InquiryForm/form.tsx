@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { useParams } from "next/navigation"
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react"
 
 import { compressImage } from "@lib/util/compress-image"
@@ -148,6 +149,10 @@ export default function InquiryForm({
   const [preparing, setPreparing] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [submit, setSubmit] = useState<SubmitState>({ kind: "idle" })
+  // Země obchodu z URL (/sk/vyroba…) — backend podle ní napíše potvrzení
+  // poptávky v jazyce zákazníka (stránka sama zůstává česky).
+  const params = useParams<{ countryCode?: string }>()
+  const countryCode = typeof params?.countryCode === "string" ? params.countryCode : undefined
   /* Pole, na které po neúspěšném odeslání skočí fokus (efekt níž). */
   const [focusField, setFocusField] = useState<CommissionInquiryField | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
@@ -310,6 +315,7 @@ export default function InquiryForm({
       phone: optional(values.phone),
       terms_accepted: true,
       terms_version: termsVersion,
+      ...(countryCode ? { country_code: countryCode } : {}),
       ...(product ? { product_handle: product.handle, product_title: product.title } : {}),
       ...(drafts.length ? { photos: drafts.map((draft) => draft.upload) } : {}),
       ...(website ? { website } : {}),

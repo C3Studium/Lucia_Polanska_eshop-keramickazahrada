@@ -48,6 +48,8 @@ import {
 import { cancelProductionStage } from "../../../../../../lib/production-cancel"
 import type { MerchantOrderStage } from "../../../../../../modules/merchant-order/stages"
 import { transitionMerchantOrderWorkflow } from "../../../../../../workflows/transition-merchant-order"
+import { comgateLang } from "../../../../../../lib/email-locale"
+import { emailLocaleForOrder } from "../../../../../../lib/customer-email"
 
 type ProductionAction =
   | "confirm_specification"
@@ -699,7 +701,9 @@ export const POST = async (
                 country_code: "CZ",
                 label: `Obj. ${order.display_id || "doplatek"}`.slice(0, 16),
                 name: `Doplatek objednávky ${order.display_id || order.id}`,
-                lang: "cs",
+                // Brána v jazyce objednávky (lib/email-locale) — prohlížeč ji nepřeloží.
+
+                lang: comgateLang(await emailLocaleForOrder(req.scope, order)),
                 production_payment_request_id: request.id,
                 // Návrat z ComGate po doplatku na reálnou stránku objednávky,
                 // ne na neexistující /payment/{session}/confirmed (404).

@@ -8,6 +8,7 @@ import {
 } from "@medusajs/framework/workflows-sdk";
 import { useQueryGraphStep } from "@medusajs/medusa/core-flows";
 import { balancePaymentUrl } from "../lib/balance-payment-link";
+import { ensureOrderTitleTranslations } from "../lib/google-translate";
 import { LEGAL_MANIFEST } from "../lib/legal";
 import {
   checkAttachmentUrls,
@@ -23,7 +24,9 @@ import {
   orderWithdrawalUrl,
 } from "../lib/order-access-link";
 import { resolveBalanceStep } from "./steps/resolve-balance";
+import { fetchGlazeProtocols, glazeProtocolsForOrder } from "../lib/glaze-protocols"
 import { sendNotificationStep } from "./steps/send-notification";
+import { emailLocaleOf, pick } from "../lib/email-locale";
 
 type WorkflowInput = {
   id: string
@@ -66,7 +69,10 @@ const resolveOrderLegalStep = createStep(
     // Potvrzení zakázky první (jedno na každou zakázku objednávky) — je to
     // smlouva k téhle objednávce; OP a poučení za nimi.
     const commissionAttachments = (commissions ?? []).filter((item) => Boolean(item?.url))
-    const attachments = [...commissionAttachments, ...legalAttachments]
+    // Protokol o nezávadnosti glazury (ze Studia přes storefront) — jen když
+    // objednávka obsahuje výrobek, jehož popis nezávadnost tvrdí.
+    const glaze = glazeProtocolsForOrder(order, await fetchGlazeProtocols())
+    const attachments = [...commissionAttachments, ...legalAttachments, ...glaze.attachments]
     const { reachable, failed } = await checkAttachmentUrls(attachments)
 
     for (const miss of failed) {
@@ -107,8 +113,17 @@ const resolveOrderLegalStep = createStep(
       commissionAttachments,
       reachable
     )
+    const glazeReachable = new Set(
+      reachable.filter((item) => glaze.attachments.some((g) => g.url === item.url)).map((item) => item.url)
+    )
     return new StepResponse({
       legal: withCommission,
+      glaze_protocol: glaze.item_ids.length
+        ? {
+            item_ids: glaze.item_ids,
+            documents: glaze.documents.map((doc) => ({ ...doc, attached: glazeReachable.has(doc.url) })),
+          }
+        : null,
       attachments: reachable,
       commission_attached: Boolean(withCommission.commission_confirmation?.attached),
       // Které PDF Potvrzení zakázky opravdu šly v příloze — podle toho
@@ -120,9 +135,25 @@ const resolveOrderLegalStep = createStep(
   }
 )
 
+/**
+ * Názvy položek cizojazyčné objednávky přeloží Google a uloží na řádky
+ * (`item.metadata.title_<jazyk>`) — dřív, než se objednávka načte pro
+ * potvrzení; všechny další e-maily k objednávce je pak čtou odtud. Česká
+ * objednávka, chybějící klíč nebo výpadek Googlu: nic se nestane, názvy
+ * zůstanou česky (`lib/google-translate`).
+ */
+const translateOrderTitlesStep = createStep(
+  "translate-order-titles",
+  async ({ id }: { id: string }, { container }) => {
+    await ensureOrderTitleTranslations(container, id);
+    return new StepResponse(null);
+  }
+);
+
 export const sendOrderConfirmationWorkflow = createWorkflow(
   "send-order-confirmation",
   ({ id, commission_confirmation, commission_confirmations }: WorkflowInput) => {
+    translateOrderTitlesStep({ id });
     const { data: orders } = useQueryGraphStep({
       entity: "order",
       fields: [
@@ -137,6 +168,8 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
         // detekce jako modul reklamací (lib/claims/made-to-order).
         "items.product.metadata",
         "items.product.categories.handle",
+        // Tvrzení o nezávadnosti glazury v popisu → protokol v příloze.
+        "items.product.description",
         // Výdejna (Balíkovna) žije v metadatech — e-mail ji čte odsud, ať
         // „Doručovací adresa" neukazuje domácí adresu u zásilky na výdejnu.
         "metadata",
@@ -216,15 +249,32 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
           .filter((session: any) => session?.status !== "canceled")
           .map((session: any) => String(session?.provider_id ?? ""))
 
+        // Jazyk zákazníka (metadata košíku → země doručení, lib/email-locale).
+        // Způsob platby skládá tenhle kód, proto se tu musí přeložit sám;
+        // zbytek e-mailu přeloží provider podle `data.locale`.
+        const locale = emailLocaleOf(orders[0] as never)
+
         const payment_method = providerIds.some((providerId: string) =>
           providerId.startsWith("pp_dobirka")
         )
-          ? "Dobírka — zaplatíte při převzetí"
+          ? pick(locale, {
+              cs: "Dobírka — zaplatíte při převzetí",
+              sk: "Dobierka — zaplatíte pri prevzatí",
+              pl: "Za pobraniem — płatność przy odbiorze",
+              de: "Nachnahme – Sie bezahlen bei der Zustellung",
+              en: "Cash on delivery — you pay when the parcel arrives",
+            })
           : providerIds.some((providerId: string) =>
                 providerId.startsWith("pp_comgate")
               )
             ? // Brána bere i převod, Apple Pay a Google Pay — ne „kartou".
-              "Online platba přes platební bránu ComGate"
+              pick(locale, {
+                cs: "Online platba přes platební bránu ComGate",
+                sk: "Online platba cez platobnú bránu ComGate",
+                pl: "Płatność online przez bramkę płatniczą ComGate",
+                de: "Online-Zahlung über das Zahlungsportal ComGate",
+                en: "Online payment via the ComGate payment gateway",
+              })
             : undefined
 
         return [
@@ -242,6 +292,9 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
               balance_due: balance.outstanding,
               balance_currency: balance.currency_code,
               ...(payment_method ? { payment_method } : {}),
+              // Čeština je výchozí — klíč jen u jiného jazyka (staré řádky
+              // notifikací ho nemají a zůstávají česky).
+              ...(locale !== "cs" ? { locale } : {}),
               // Správa objednávky z e-mailu přes PODEPSANÝ TOKEN — funguje i
               // hostovi bez přihlášení: úprava (`/order/:id/edit`) a reklamace/
               // vrácení/odstoupení (`/order/:id/refund`, kde si vybere druh).
@@ -260,6 +313,7 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
               // je přepravní údaj (Resend provider ho z dat šablony vyjme) —
               // v `data`, protože opakované odeslání skládá e-mail jen z nich.
               legal: legalDocuments.legal,
+              glaze_protocol: legalDocuments.glaze_protocol,
               ...(legalDocuments.attachments.length
                 ? { __attachments: legalDocuments.attachments }
                 : {}),

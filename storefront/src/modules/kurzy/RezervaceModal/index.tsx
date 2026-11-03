@@ -1470,7 +1470,7 @@ function RezervaceModalPanel({
                           />
                           <span>
                             <strong>Zaplatím na místě</strong>
-                            <small>Hotově nebo kartou před začátkem kurzu.</small>
+                            <small>Hotově nebo převodem na účet před začátkem kurzu.</small>
                           </span>
                         </label>
                       </fieldset>

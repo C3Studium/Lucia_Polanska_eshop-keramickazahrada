@@ -1,4 +1,4 @@
-import { CONTACT_EMAIL } from "../format"
+import ContactEmailLink from "@modules/common/components/contact-email"
 import styles from "../panel.module.scss"
 
 /**
@@ -21,7 +21,7 @@ export default function PoukazNenalezen() {
           Zkontrolujte prosím odkaz z e-mailu — nejjistější je otevřít ho
           tlačítkem přímo v e-mailu, ať se nic neusekne. Kdyby to pořád
           nešlo, napište mi na{" "}
-          <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> a poukaz
+          <ContactEmailLink role="objednavky" /> a poukaz
           dohledám.
         </p>
       </section>

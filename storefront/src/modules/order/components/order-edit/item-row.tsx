@@ -7,6 +7,7 @@ import {
   type DraftLineChange,
 } from "@lib/util/order-edit-draft"
 import Thumbnail from "@modules/products/components/thumbnail"
+import ContactEmailLink from "@modules/common/components/contact-email"
 
 import { czk } from "./shared"
 import s from "./style.module.scss"
@@ -188,9 +189,9 @@ export function EditItemRow({
                     Napsat k zakázce
                   </button>
                 ) : (
-                  <a className={s.textButton} href="mailto:info@keramickazahrada.cz">
+                  <ContactEmailLink role="objednavky" className={s.textButton}>
                     Napsat nám
-                  </a>
+                  </ContactEmailLink>
                 )}
               </>
             )}

@@ -465,19 +465,48 @@ const TEXT_BLOCKS = [
                 item("neplatny-odkaz.nadpis", "Tenhle odkaz", "není platný."),
                 item(
                     "neplatny-odkaz.text",
-                    "Nejspíš se při kopírování nepřenesl celý. Zkuste jej otevřít z e-mailu znovu, nebo nám napište na info@keramickazahrada.cz a vyřešíme to ručně."
+                    "Nejspíš se při kopírování nepřenesl celý. Zkuste jej otevřít z e-mailu znovu, nebo nám napište na {email} a vyřešíme to ručně."
                 ),
                 item("chyba.stitek", "Něco se pokazilo"),
                 item("chyba.nadpis", "Tohle se", "nepovedlo."),
                 item(
                     "chyba.text",
-                    "Na naší straně se něco zadrhlo a změna se neuložila. Zkuste odkaz otevřít ještě jednou; kdyby to nepomohlo, napište nám na info@keramickazahrada.cz."
+                    "Na naší straně se něco zadrhlo a změna se neuložila. Zkuste odkaz otevřít ještě jednou; kdyby to nepomohlo, napište nám na {email}."
                 ),
             ],
         },
     },
 
     /* ------------------------------------------------------ Napříč webem -- */
+    {
+        /*
+         * Kontaktní e-maily (2. 11. 2026): dotazy × objednávky a zakázky.
+         * Hodnoty = zálohy v `src/lib/constants/contact.ts` (CONTACT_EMAILS);
+         * když se tam změní, patří změna i sem. Web je čte podle popisku,
+         * `mergeItems` doplní chybějící adresu do bloku, který už existuje.
+         * Zástupce `{email}` ve větách výš (newsletter) dosazuje adresu
+         * pro dotazy. `note` web nečte — je to nápověda pro Lucii ve Studiu,
+         * kde se která adresa ukazuje.
+         */
+        key: "global.kontakty",
+        page: "global",
+        title: "Kontaktní e-maily",
+        mergeItems: true,
+        data: {
+            items: [
+                item(
+                    "email.dotazy",
+                    "info@keramickazahrada.cz",
+                    "Obecné dotazy — kontaktní okno, patička, newsletter, účet"
+                ),
+                item(
+                    "email.objednavky",
+                    "lucie.polanska@gmail.com",
+                    "Objednávky a zakázky — úprava, reklamace, odstoupení, platba, poukaz"
+                ),
+            ],
+        },
+    },
     {
         key: "global.kontaktni-okno",
         page: "global",

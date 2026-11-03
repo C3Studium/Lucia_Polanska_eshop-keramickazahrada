@@ -3,6 +3,7 @@
 import { backendUrl, sdk } from "@lib/config"
 import medusaError from "@lib/util/medusa-error"
 import { toCzechErrorMessage } from "@lib/util/error-messages"
+import { getContactEmails } from "./site-copy"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
 import { headers } from "next/headers"
@@ -18,6 +19,7 @@ import {
   setAuthToken,
 } from "./cookies"
 import { v4 as uuidv4 } from "uuid"
+import { localeForCountry } from "@lib/util/email-locale"
 
 const getSafeAuthRedirect = (formData: FormData): string | null => {
   const redirectTo = formData.get("redirect_to")
@@ -161,6 +163,8 @@ export async function signup(_currentState: unknown, formData: FormData) {
 
   const token = uuidv4()
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString()
+  const rawCountry = String(formData.get("country_code") ?? "").trim().toLowerCase()
+  const signupCountry = /^[a-z]{2}$/.test(rawCountry) ? rawCountry : null
 
   try {
     // Existuje už REGISTROVANÝ účet? (Guest záznamy jsou tu neviditelné.)
@@ -203,6 +207,14 @@ export async function signup(_currentState: unknown, formData: FormData) {
           email_verified: false,
           email_verification_token: token,
           email_verification_expires_at: expiresAt,
+          /*
+           * Jazyk a země e-mailů k účtu (ověření adresy, nové heslo, vítejte)
+           * — podle přepínače zemí, ze kterého se zákazník registroval.
+           * Backend (lib/customer-locale) je čte; bez nich česky.
+           */
+          ...(signupCountry
+            ? { locale: localeForCountry(signupCountry), country_code: signupCountry }
+            : {}),
         },
       },
       {},
@@ -308,10 +320,12 @@ export async function login(_currentState: unknown, formData: FormData) {
      stránka účtu by mu vrátila 404. */
   if ((await overitZakaznika()) === "chybi") {
     await removeAuthToken()
+    // Účet je obecná věc → e-mail pro dotazy ze Studia (`global.kontakty`).
+    const { dotazy } = await getContactEmails()
 
     return (
       "Přihlášení k tomuto e-mailu existuje, ale účet k němu v obchodě chybí. " +
-      "Napište nám prosím na info@keramickazahrada.cz, obnovíme ho."
+      `Napište nám prosím na ${dotazy}, obnovíme ho.`
     )
   }
 

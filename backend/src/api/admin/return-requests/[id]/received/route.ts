@@ -6,6 +6,7 @@ import {
   claimService,
   retrieveClaim,
 } from "../../../../../lib/claims/admin"
+import { loadClaimEmailContext } from "../../../../../lib/claims/email-copy"
 
 /**
  * POST /admin/return-requests/:id/received — zboží dorazilo zpět / přijato
@@ -44,14 +45,17 @@ export const POST = async (
     goods_received_at: now,
   })
 
+  // Jazyk objednávky (lib/claims/email-copy); poznámka majitelky jde, jak ji napsala.
+  const emailContext = await loadClaimEmailContext(req.scope, request.order_id)
   await sendCustomerEmail(req.scope, {
     template: "return-received",
     to: request.email,
     key: `return-received:${request.id}`,
     orderId: request.order_id,
+    locale: emailContext.locale,
     data: {
-      ...claimEmailBase(updated, updated.protocol_url),
-      receivedAt: formatDate(now),
+      ...claimEmailBase(updated, updated.protocol_url, emailContext),
+      receivedAt: formatDate(now, emailContext.locale),
       ...(note ? { note } : {}),
     },
   })

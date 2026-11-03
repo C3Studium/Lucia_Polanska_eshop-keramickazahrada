@@ -40,6 +40,7 @@ import { useEffect, useState } from "react"
 import styles from "../style.module.scss"
 import { isPackagingLine, productLines, withPackagingUnderProducts } from "@lib/util/packaging"
 import PackagingLine, { PackagingNote, packagingFor } from "@modules/common/components/packaging-line"
+import { localeForCountry } from "@lib/util/email-locale"
 
 type PaymentProps = {
   cart: HttpTypes.StoreCart
@@ -209,6 +210,8 @@ export const Payment = ({
         madeToOrderAck: hasMadeToOrder && madeToOrderOk,
         // Čas zaškrtnutí ke každé zakázkové položce → `made_to_order.ack_at` řádku.
         madeToOrderAcks: hasMadeToOrder ? madeToOrderAcks : undefined,
+        // Jazyk e-mailů podle země obchodu (metadata.locale košíku).
+        countryCode,
       })
       const shippingName = String(
         cart.shipping_methods?.at(-1)?.name || ""
@@ -237,7 +240,8 @@ export const Payment = ({
             shippingName.includes("výdej")
               ? "PICKUP"
               : "HOME_DELIVERY",
-          lang: "cs",
+          // Brána v jazyce země obchodu (prohlížeč ji nepřeloží).
+          lang: localeForCountry(countryCode),
           source: "express-checkout",
           return_path: `/${countryCode}/express-checkout/${handle}`,
         } as any,

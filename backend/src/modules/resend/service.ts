@@ -70,6 +70,10 @@ import { GiftVoucherPaymentEmail } from "./emails/gift-voucher-payment";
 import { CommissionPriceAgreedEmail } from "./emails/commission-price-agreed";
 import { CONTACT_EMAIL, withEmailLegalFacts } from "./components/email-ui";
 import { loadEmailLegalFacts } from "./live-legal-facts";
+import { withEmailLocale } from "./components/email-i18n";
+import { localizedSubject } from "./subjects";
+import { parseEmailLocale, type EmailLocale } from "../../lib/email-locale";
+import { localizeStorefrontLinks, storefrontCountryOf, withStorefrontCountry } from "../../lib/storefront-url";
 import type { LiveLegalFacts } from "../../lib/legal";
 import {
 
@@ -517,9 +521,15 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
     return templates[template]
   }
 
-  getTemplateSubject(template: Templates) {
+  getTemplateSubject(template: Templates, locale?: EmailLocale | null) {
     if (this.options.html_templates?.[template]?.subject) {
       return this.options.html_templates[template].subject
+    }
+    // Jazyk zákazníka (`data.locale`, lib/email-locale) — překlady v
+    // ./subjects; co tam není (majitelka, kurzy), zůstává česky níž.
+    const translated = localizedSubject(template, locale)
+    if (translated) {
+      return translated
     }
     switch(template) {
       case Templates.ORDER_PLACED:
@@ -743,6 +753,14 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
     // behave exactly as before.
     const providedSubject = (notification.data as Record<string, unknown> | undefined)?.subject
 
+    // Jazyk zákazníka (`data.locale`, zapisuje `sendCustomerEmail` podle
+    // objednávky) — předmět i šablona. Bez něj česky, jako dřív; e-maily
+    // majitelce ho nenesou nikdy. Uložený v `data`, takže opakované odeslání
+    // z /prehled/emaily jde ve stejném jazyce.
+    const emailLocale = parseEmailLocale(
+      (notification.data as Record<string, unknown> | undefined)?.locale
+    )
+
     // Optional per-send Reply-To: the contact form routes the customer's own
     // address here, so the owner answers the person by hitting „Odpovědět"
     // instead of replying to her own shop.
@@ -768,7 +786,16 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
     // (§ 1827 odst. 2 OZ). Transport metadata like the tags: lifted out here,
     // never part of the template's props.
     const attachments = attachmentsFromData(notification.data)
-    const templateData = templateDataOf(notification.data)
+    // Odkazy na storefront do země jazyka e-mailu (`/cz/…` → `/sk/…`).
+    // Země odkazů: `data.link_country` (sendCustomerEmail), jinak země
+    // objednávky v datech (potvrzení objednávky jde mimo sendCustomerEmail).
+    const rawData = (notification.data ?? {}) as Record<string, unknown>
+    const linkCountry =
+      emailLocale && emailLocale !== "cs"
+        ? (typeof rawData.link_country === "string" ? rawData.link_country : null) ??
+          storefrontCountryOf(rawData.order)
+        : null
+    const templateData = localizeStorefrontLinks(templateDataOf(notification.data), emailLocale, linkCountry)
 
     // Živé právní údaje do patičky — čtou se při každém odeslání (i při
     // opakování z /prehled/emaily), takže e-mail ukáže to, co je teď
@@ -793,13 +820,13 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
      * Hlavičky se odvozují z dat šablony, ne z jejího jména — kdo přidá
      * odhlašovací odkaz do další šablony, dostane je rovnou.
      */
-    const unsubscribeLink =
-      typeof (notification.data as Record<string, unknown> | undefined)
-        ?.unsubscribeLink === "string"
-        ? String(
-            (notification.data as Record<string, unknown>).unsubscribeLink
-          ).trim()
-        : ""
+    // Newsletter posílá `unsubscribeLink`, e-maily z oprávněného zájmu
+    // (košík, recenze, pokles ceny) `unsubscribe_url` — obojí je odkaz
+    // s podepsaným tokenem, který umí GET i jednoklikový POST.
+    const unsubscribeSource = (notification.data ?? {}) as Record<string, unknown>
+    const unsubscribeLink = [unsubscribeSource.unsubscribeLink, unsubscribeSource.unsubscribe_url]
+      .map((value) => (typeof value === "string" ? value.trim() : ""))
+      .find(Boolean) ?? ""
 
     const unsubscribeHeaders =
       unsubscribeLink && /^https?:\/\//i.test(unsubscribeLink)
@@ -817,7 +844,7 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       subject:
         typeof providedSubject === "string" && providedSubject.trim().length
           ? providedSubject
-          : this.getTemplateSubject(notification.template as Templates),
+          : this.getTemplateSubject(notification.template as Templates, emailLocale),
       // Odesílá se z noreply adresy — bez Reply-To by odpověď zákazníka skončila
       // v prázdnu. Výchozí je adresa Lucie (CONTACT_EMAIL), kterou e-maily
       // nabízejí i v textu; kontaktní formulář posílá vlastní (zákazníkovu).
@@ -844,7 +871,11 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
           : {}
       return typeof template === "string"
         ? { ...commonOptions, ...files, html: template }
-        : { ...commonOptions, ...files, react: withEmailLegalFacts(template(data), legalFacts) }
+        : {
+            ...commonOptions,
+            ...files,
+            react: withEmailLocale(withEmailLegalFacts(template(data), legalFacts), emailLocale),
+          }
     }
 
     const emailOptions = buildEmailOptions(templateData, true)
@@ -882,7 +913,13 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
     let error: unknown = null
 
     try {
-      const response = await this.resendClient.emails.send(emailOptions)
+      // Odkazy, které šablona staví až při vykreslení (uvnitř `send`), do
+      // země jazyka e-mailu — lib/storefront-url `withStorefrontCountry`.
+      const response = await withStorefrontCountry(
+        emailLocale,
+        () => this.resendClient.emails.send(emailOptions),
+        linkCountry
+      )
       data = response.data
       error = response.error
     } catch (thrown) {
@@ -909,8 +946,10 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         attachments_failed: true,
       }
       try {
-        const response = await this.resendClient.emails.send(
-          buildEmailOptions(retryData, false)
+        const response = await withStorefrontCountry(
+          emailLocale,
+          () => this.resendClient.emails.send(buildEmailOptions(retryData, false)),
+          linkCountry
         )
         data = response.data
         error = response.error

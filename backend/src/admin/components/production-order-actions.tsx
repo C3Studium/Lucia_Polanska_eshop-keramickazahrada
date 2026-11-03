@@ -384,6 +384,7 @@ const AnnounceDelay = ({ order }: { order: ProductionOrderSummary }) => {
  */
 export const SettleBalanceOffline = ({
   orderId,
+  productionOrderId,
   displayId,
   outstanding,
   currencyCode,
@@ -391,6 +392,8 @@ export const SettleBalanceOffline = ({
   onSettled,
 }: {
   orderId: string;
+  /** Zakázka, jejíž doplatek se zapisuje — objednávka jich může mít víc (§ 0c). */
+  productionOrderId: string;
   displayId?: number | string | null;
   outstanding: number;
   currencyCode: string;
@@ -409,6 +412,7 @@ export const SettleBalanceOffline = ({
         method: "POST",
         body: {
           action: "settle_balance_offline",
+          production_order_id: productionOrderId,
           method,
           note: note.trim() || undefined,
         },
@@ -720,6 +724,7 @@ export const ProductionOrderActions = ({
         order.stage !== "cancelled" && (
         <SettleBalanceOffline
           orderId={order.order_id}
+          productionOrderId={order.id}
           displayId={order.display_id}
           outstanding={order.outstanding}
           currencyCode={order.currency_code}

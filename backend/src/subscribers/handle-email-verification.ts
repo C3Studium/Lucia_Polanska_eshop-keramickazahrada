@@ -4,6 +4,11 @@ import {
 } from "@medusajs/medusa"
 import { Modules } from "@medusajs/framework/utils"
 import { verifyEmailLink } from "../lib/storefront-url"
+import {
+  customerCountryOf,
+  customerLocaleOf,
+  withCustomerCountry,
+} from "../lib/customer-locale"
 
 /**
  * Sends the verification e-mail when a *registration* creates a customer.
@@ -36,7 +41,13 @@ export default async function emailVerificationHandler({
     return
   }
 
-  const verificationUrl = verifyEmailLink(token, customer.email)
+  // Odkaz do obchodu v zemi registrace; jazyk e-mailu z ní taky
+  // (storefront ho zapisuje do customer.metadata při registraci).
+  const verificationUrl = withCustomerCountry(
+    verifyEmailLink(token, customer.email),
+    customerCountryOf(customer)
+  )
+  const locale = customerLocaleOf(customer)
   if (!verificationUrl) {
     console.error(
       "[email-verification] STOREFRONT_PUBLIC_URL/MEDUSA_STOREFRONT_URL not set — cannot build the verification link."
@@ -51,6 +62,7 @@ export default async function emailVerificationHandler({
     data: {
       verification_url: verificationUrl,
       email: customer.email,
+      ...(locale && locale !== "cs" ? { locale } : {}),
     },
   })
 }

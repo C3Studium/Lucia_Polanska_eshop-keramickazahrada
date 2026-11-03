@@ -11,6 +11,8 @@ import {
   optedOutEmails,
 } from "../../lib/email-optout"
 import { emailOptOutUrl } from "../../lib/email-optout-link"
+import { emailLocaleOf, localizedLineTitle } from "../../lib/email-locale"
+import { translateTitles } from "../../lib/google-translate"
 
 type SendAbandonedNotificationsStepInput = {
   carts: (CartDTO & {
@@ -77,7 +79,11 @@ export const sendAbandonedNotificationsStep = createStep(
     // flag is only set after this step succeeds, so a failed send leaves the
     // cart eligible again tomorrow — the key makes that a retry of the same
     // e-mail instead of a second one.
-    const zprava = (cart: SendAbandonedNotificationsStepInput["carts"][number]) => ({
+    const zprava = (cart: SendAbandonedNotificationsStepInput["carts"][number]) => {
+      // Jazyk košíku: `metadata.locale` ze storefrontu (země přepínače),
+      // jinak země doručení; česky, když nevíme nic (lib/email-locale).
+      const locale = emailLocaleOf(cart as never)
+      return {
       to: cart.email!,
       channel: "email",
       template: EmailTemplates.ABANDONED_CART || "",
@@ -92,7 +98,11 @@ export const sendAbandonedNotificationsStep = createStep(
         // have to guess. Cart prices are major units (no cents conversion).
         currency_code: cart.currency_code,
         items: cart.items?.map((item) => ({
-          product_title: item.title,
+          // Název přeložený Googlem (viz `translateTitles` níž), jinak český.
+          product_title: localizedLineTitle(
+            { ...(item as any), product_title: item.title },
+            locale
+          ),
           quantity: item.quantity,
           unit_price: item.unit_price,
           thumbnail: item.thumbnail,
@@ -100,8 +110,10 @@ export const sendAbandonedNotificationsStep = createStep(
         // Odmítnutí dalších připomenutí jedním kliknutím (Zásady, § 7 odst. 3
         // zák. 480/2004 Sb.). Bez adresy backendu `null` → šablona řádek vynechá.
         unsubscribe_url: emailOptOutUrl(cart.email, "abandoned_cart"),
+        ...(locale !== "cs" ? { locale } : {}),
+      },
       }
-    })
+    }
 
     const vyrizeneKosiky: string[] = []
     const kZopakovaniKosiky: string[] = []
@@ -116,6 +128,14 @@ export const sendAbandonedNotificationsStep = createStep(
     )
     for (const cart of odmitnute) {
       vyrizeneKosiky.push(cart.id)
+    }
+
+    // Názvy položek cizojazyčných košíků přeloží Google dopředu (do paměti),
+    // `zprava` je pak už jen čte. Bez klíče nebo při chybě zůstanou česky.
+    for (const cart of kOdeslani) {
+      const locale = emailLocaleOf(cart as never)
+      if (locale === "cs") continue
+      await translateTitles((cart.items ?? []).map((item) => item.title), locale)
     }
     if (odmitnute.length) {
       logger.info(

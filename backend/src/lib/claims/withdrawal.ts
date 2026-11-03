@@ -208,6 +208,8 @@ export type TakeoverBasis =
   | "delivered"
   | "pickup"
   | "estimated"
+  /** Elektronický dárkový poukaz — „převzetí" = doručení e-mailem. */
+  | "electronic"
 
 export type WithdrawalTimingSource = {
   fulfillments?: Array<{
@@ -218,6 +220,14 @@ export type WithdrawalTimingSource = {
   shipping_methods?: unknown[] | null
   /** Řádek `parcel_tracking` objednávky (přibalí `attachParcelTracking`). */
   parcel_tracking?: { delivered_at?: unknown; done?: boolean | null } | null
+  /**
+   * Kdy odešel e-mailem poslední elektronický dárkový poukaz objednávky
+   * (přibalí `attachParcelTracking`). Rozhodne jen u objednávky, ve které nic
+   * nejde poštou (všechny řádky `requires_shipping: false`).
+   */
+  electronic_delivery_at?: unknown
+  /** Řádky objednávky — čte se jen `requires_shipping` (jiné tvary řádků projdou). */
+  items?: ReadonlyArray<unknown> | null
 }
 
 export type WithdrawalTiming = {
@@ -247,6 +257,23 @@ export const withdrawalTimingFor = (order: WithdrawalTimingSource): WithdrawalTi
       fulfillment && !fulfillment.canceled_at && toDate(fulfillment.shipped_at)
   ) as Array<{ shipped_at?: unknown; delivered_at?: unknown }>
   if (!shipped.length) {
+    /*
+     * Elektronický poukaz se nikam neveze, takže by lhůta podle zásilky nikdy
+     * nezačala. Rozhodnutí 2. 11. 2026 (Matěj, OP čl. XI): běží od doručení
+     * poukazu e-mailem — jen když v objednávce není nic k odeslání; smíšená
+     * objednávka čeká na převzetí zboží jako dřív (§ 1829 odst. 1 OZ, poslední
+     * část dodávky).
+     */
+    const electronicAt = toDate(order.electronic_delivery_at)
+    const items = (order.items ?? []).filter(Boolean) as Array<{ requires_shipping?: boolean | null }>
+    if (electronicAt && items.length && items.every((item) => item.requires_shipping === false)) {
+      return {
+        basis: "electronic",
+        takeover_at: electronicAt,
+        shipped_at: null,
+        deadline: withdrawalPeriodEndFor(electronicAt),
+      }
+    }
     return { basis: "not_shipped", takeover_at: null, shipped_at: null, deadline: null }
   }
 
@@ -324,6 +351,8 @@ export const takeoverTextFor = (timing: WithdrawalTiming): string => {
       return formatPragueDate(timing.takeover_at)
     case "pickup":
       return `${formatPragueDate(timing.takeover_at)} (osobní odběr)`
+    case "electronic":
+      return `${formatPragueDate(timing.takeover_at)} (poukaz doručen e-mailem)`
     case "estimated":
       return `převzetí nemáme potvrzené — zásilka odešla ${formatPragueDate(timing.shipped_at)}`
     case "in_transit":

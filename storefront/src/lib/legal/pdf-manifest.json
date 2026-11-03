@@ -48,6 +48,33 @@
       }
     },
     {
+      "slug": "obchodni-podminky",
+      "version": "2026-11-03",
+      "file": "obchodni-podminky-2026-11-03.pdf",
+      "url": "/legal/obchodni-podminky-2026-11-03.pdf",
+      "sha256": "1fdac5139c6975a4e845184d4d99eacaa1000a0876087021b5d60356a695be32",
+      "bytes": 254062,
+      "sourceHash": "b05d9818483226dc9be6ee7b5fd622e3bebe8a5f131d8d5ea75b802b4af62700",
+      "archived": false,
+      "facts": {
+        "bank.account": "2500675505/2010 (IBAN CZ92 2010 0000 0025 0067 5505, BIC FIOBCZPP); platby v eurech na účet 2701281289/2010 (IBAN CZ55 2010 0000 0027 0128 1289, BIC FIOBCZPP)",
+        "course.cancellation": "Rezervaci můžete zrušit v účtu nebo z e-mailu nejpozději 24 hodin před začátkem kurzu — vrátíme vám celou zaplacenou částku do 14 dnů stejným způsobem, jakým jste platili. Méně než 24 hodin před začátkem už online zrušit nejde; zavolejte nám a domluvíme se individuálně (přesun na jiný termín, náhradník).",
+        "course.minAge": "6 let (mladší děti s doprovodem rodiče)",
+        "course.pickupDeadline": "1 měsíce od kurzu, termín si domluvíme; mimo Písek je můžu poslat poštou",
+        "seller.address": "Putim 229, 397 01 Písek",
+        "seller.email": "lucie.polanska@gmail.com",
+        "seller.ico": "03441482",
+        "seller.name": "Lucie Polanská",
+        "seller.phone": "+420 775 211 578",
+        "seller.web": "keramickazahrada.cz",
+        "seller.webUrl": "https://keramickazahrada.cz",
+        "vat.status": "nejsme plátci DPH",
+        "voucher.remainder": "zbytek hodnoty zůstává na poukazu a můžete ho využít při dalším nákupu do konce jeho platnosti",
+        "voucher.validity": "1 rok od nákupu",
+        "withdrawal.returnCostEstimate": "150 až 250 Kč za křehký balík Českou poštou"
+      }
+    },
+    {
       "slug": "odstoupeni-od-smlouvy",
       "version": "2026-10-15",
       "file": "odstoupeni-od-smlouvy-2026-10-15.pdf",
@@ -68,6 +95,26 @@
       }
     },
     {
+      "slug": "odstoupeni-od-smlouvy",
+      "version": "2026-11-03",
+      "file": "odstoupeni-od-smlouvy-2026-11-03.pdf",
+      "url": "/legal/odstoupeni-od-smlouvy-2026-11-03.pdf",
+      "sha256": "e2cc68040711c70443f928d5f256b1a3be34bb5d7a55b25ac80ad8320e8fd461",
+      "bytes": 121566,
+      "sourceHash": "1eb6d1593da4c255ed04006a5c1f064112f0cef9acf39b606ca42179b063c1e5",
+      "archived": false,
+      "facts": {
+        "seller.address": "Putim 229, 397 01 Písek",
+        "seller.email": "lucie.polanska@gmail.com",
+        "seller.ico": "03441482",
+        "seller.name": "Lucie Polanská",
+        "seller.phone": "+420 775 211 578",
+        "seller.web": "keramickazahrada.cz",
+        "seller.webUrl": "https://keramickazahrada.cz",
+        "withdrawal.returnCostEstimate": "150 až 250 Kč za křehký balík Českou poštou"
+      }
+    },
+    {
       "slug": "ochrana-osobnich-udaju",
       "version": "2026-10-15",
       "file": "ochrana-osobnich-udaju-2026-10-15.pdf",
@@ -81,6 +128,27 @@
         "privacy.newsletterTool": null,
         "seller.address": "Putim 229, 397 01 Písek",
         "seller.email": "info@keramickazahrada.cz",
+        "seller.ico": "03441482",
+        "seller.name": "Lucie Polanská",
+        "seller.phone": "+420 775 211 578",
+        "seller.web": "keramickazahrada.cz",
+        "seller.webUrl": "https://keramickazahrada.cz"
+      }
+    },
+    {
+      "slug": "ochrana-osobnich-udaju",
+      "version": "2026-11-03",
+      "file": "ochrana-osobnich-udaju-2026-11-03.pdf",
+      "url": "/legal/ochrana-osobnich-udaju-2026-11-03.pdf",
+      "sha256": "ea3b368c6a0ebc66ba3b085b282a3ce70b35b0c4f35e4df587789be9da294cfa",
+      "bytes": 172170,
+      "sourceHash": "1bec449bd4cbd167de9f6944298f71ceaa6d275ee5695a0f02fc6562f63213fa",
+      "archived": false,
+      "facts": {
+        "privacy.hosting": "Railway Corporation, San Francisco, USA — aplikace obchodu a databáze běží v jejím datovém centru v Amsterdamu (Nizozemsko); Cloudflare, Inc., San Francisco, USA — soubory ukládá v úložišti R2 omezeném na Evropskou unii; Supabase Pte. Ltd., Singapur — obsah webu ukládá v datovém centru ve Frankfurtu nad Mohanem (Německo)",
+        "privacy.newsletterTool": "Resend (Plus Five Five, Inc., USA), přes který posíláme i ostatní e-maily; newsletter zatím nevychází — přihlášení jen uloží adresu a dáme vám vědět, až začne",
+        "seller.address": "Putim 229, 397 01 Písek",
+        "seller.email": "lucie.polanska@gmail.com",
         "seller.ico": "03441482",
         "seller.name": "Lucie Polanská",
         "seller.phone": "+420 775 211 578",
@@ -108,6 +176,25 @@
       }
     },
     {
+      "slug": "reklamacni-protokol",
+      "version": "2026-11-03",
+      "file": "reklamacni-protokol-2026-11-03.pdf",
+      "url": "/legal/reklamacni-protokol-2026-11-03.pdf",
+      "sha256": "199f9af263ac2100e6a77ece9aedc7061da4526077dfeb6ac0222fc64f160f7d",
+      "bytes": 99858,
+      "sourceHash": "a74eba24fb21af96024b454bd0aeda51ce638985b39a8d8e8d025174acc30249",
+      "archived": false,
+      "facts": {
+        "seller.address": "Putim 229, 397 01 Písek",
+        "seller.email": "lucie.polanska@gmail.com",
+        "seller.ico": "03441482",
+        "seller.name": "Lucie Polanská",
+        "seller.phone": "+420 775 211 578",
+        "seller.web": "keramickazahrada.cz",
+        "seller.webUrl": "https://keramickazahrada.cz"
+      }
+    },
+    {
       "slug": "reklamacni-rad",
       "version": "2026-10-15",
       "file": "reklamacni-rad-2026-10-15.pdf",
@@ -119,6 +206,25 @@
       "facts": {
         "seller.address": "Putim 229, 397 01 Písek",
         "seller.email": "info@keramickazahrada.cz",
+        "seller.ico": "03441482",
+        "seller.name": "Lucie Polanská",
+        "seller.phone": "+420 775 211 578",
+        "seller.web": "keramickazahrada.cz",
+        "seller.webUrl": "https://keramickazahrada.cz"
+      }
+    },
+    {
+      "slug": "reklamacni-rad",
+      "version": "2026-11-03",
+      "file": "reklamacni-rad-2026-11-03.pdf",
+      "url": "/legal/reklamacni-rad-2026-11-03.pdf",
+      "sha256": "3a4e2879b23a5f675ba8e5b628e7cde5914587cb0ed99ae1e085485ccfc9b9c3",
+      "bytes": 118790,
+      "sourceHash": "1e3eba0882d94b65a97e4a3c2db9c5ef8328753f95640046aa75ada788467abd",
+      "archived": false,
+      "facts": {
+        "seller.address": "Putim 229, 397 01 Písek",
+        "seller.email": "lucie.polanska@gmail.com",
         "seller.ico": "03441482",
         "seller.name": "Lucie Polanská",
         "seller.phone": "+420 775 211 578",

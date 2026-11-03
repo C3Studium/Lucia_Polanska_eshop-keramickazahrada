@@ -47,6 +47,38 @@ const bounce = (res: MedusaResponse, status: string, kind: string | null = null)
   res.redirect(302, `${base}/newsletter?stav=${status}${druh}`)
 }
 
+/**
+ * Jednoklikové odhlášení z poštovního klienta (RFC 8058): Gmail, Apple Mail
+ * a další pošlou na odkaz z hlavičky `List-Unsubscribe` POST s tělem
+ * `List-Unsubscribe=One-Click` — parametry jsou v adrese stejně jako u GET.
+ * Odpověď čte stroj, ne člověk: žádné přesměrování, jen stav.
+ */
+export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
+  const email = normalizeEmail(
+    typeof req.query.email === "string" ? req.query.email : ""
+  )
+  const kind = typeof req.query.kind === "string" ? req.query.kind : ""
+
+  if (!email || !isEmailOptOutKind(kind) || !verifyEmailOptOutToken(email, kind, req.query.token)) {
+    res.status(400).type("text/plain").send("Neplatný odkaz pro odhlášení.")
+    return
+  }
+
+  try {
+    await recordEmailOptOut(emailOptOutStore(req.scope), email, kind)
+    res.status(200).type("text/plain").send(fallbackText("odhlaseno-upozorneni", kind))
+  } catch (error) {
+    req.scope
+      .resolve(ContainerRegistrationKeys.LOGGER)
+      .error(
+        `[email-optout] Jednoklikové odmítnutí „${kind}" pro ${email} se nepodařilo uložit: ${
+          error instanceof Error ? error.message : "neznámá chyba"
+        }`
+      )
+    res.status(500).type("text/plain").send(fallbackText("chyba", kind))
+  }
+}
+
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const email = normalizeEmail(
     typeof req.query.email === "string" ? req.query.email : ""

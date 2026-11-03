@@ -150,7 +150,7 @@ test("registr: verze jen v CMS se přidá a začne platit svým dnem", () => {
   const future = { ...op, version: "2027-01-01", title: "Obchodní podmínky 2027" }
   const registry = createLegalRegistry({ cms: [future] })
   assert.equal(registry.listVersions("obchodni-podminky")[0].version, "2027-01-01")
-  assert.equal(registry.currentTermsVersion(new Date("2026-12-31T12:00:00Z")), "2026-10-15")
+  assert.equal(registry.currentTermsVersion(new Date("2026-12-31T12:00:00Z")), "2026-11-03")
   assert.equal(registry.currentTermsVersion(new Date("2027-01-01T12:00:00Z")), "2027-01-01")
   assert.equal(registry.upcomingVersion("obchodni-podminky", new Date("2026-12-01T12:00:00Z")).version, "2027-01-01")
 })

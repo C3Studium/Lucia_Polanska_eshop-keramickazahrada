@@ -7,6 +7,12 @@ import {
 import { z } from "@medusajs/framework/zod"
 import { storefrontBase } from "../../../../../../lib/customer-email"
 import { newsletterUnsubscribeUrl } from "../../../../../../lib/newsletter-link"
+import {
+  isEligibleRecipient,
+  type NewsletterRecipientCandidate,
+} from "../../../../../../lib/newsletter-recipients"
+import { NEWSLETTER_MODULE } from "../../../../../../modules/newsletter"
+import type NewsletterModuleService from "../../../../../../modules/newsletter/service"
 
 /**
  * „Poděkovat" — a one-time code for someone who keeps coming back.
@@ -78,6 +84,26 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     filters: { id: req.params.customerId },
   })
   const customer = customers[0] as any
+
+  /*
+   * Poděkování se slevovým kódem je obchodní sdělení. Rozhodnutí 2. 11. 2026
+   * (Matěj): posílá se jen potvrzeným odběratelům newsletteru — výjimku
+   * § 7 odst. 3 zákona č. 480/2004 Sb. pro dřívější zákazníky nevyužíváme.
+   * Kontrola je tady, ne až v tlačítku: tlačítko se dá obejít, routa ne.
+   */
+  if (customer?.email) {
+    const newsletter = req.scope.resolve<NewsletterModuleService>(NEWSLETTER_MODULE)
+    const [subscriber] = (await newsletter.listNewsletterSubscribers(
+      { email: String(customer.email).trim().toLowerCase() },
+      { take: 1 }
+    )) as NewsletterRecipientCandidate[]
+    if (!subscriber || !isEligibleRecipient(subscriber)) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "Zákazník neodebírá newsletter (nebo ho nepotvrdil či se odhlásil) — poděkování se slevovým kódem mu poslat nesmíme."
+      )
+    }
+  }
 
   if (!customer?.email) {
     throw new MedusaError(

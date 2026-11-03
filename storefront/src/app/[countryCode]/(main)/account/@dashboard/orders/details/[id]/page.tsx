@@ -1,7 +1,7 @@
 import { retrieveOrder, getOrderAccessToken } from "@lib/data/orders"
 import { getOrderClaims } from "@lib/data/claims"
 import OrderDetailsTemplate from "@modules/order/templates/order-details-template"
-import { CLAIM_FORM_KEY } from "@modules/order/components/carrier-damage"
+import { CLAIM_FORM_KEY } from "@lib/constants/documents"
 import { getSiteDocument } from "@lib/data/documents"
 import { getOrderEditContext } from "@lib/data/order-edit"
 import { ORDER_ITEM_EDITING_ENABLED } from "@modules/order/components/order-edit/shared"

@@ -4,6 +4,7 @@ import { AnimatePresence, cubicBezier, motion } from "framer-motion"
 import { useId, useState } from "react"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import ContactEmailLink from "@modules/common/components/contact-email"
 
 import styles from "./style.module.scss"
 
@@ -49,13 +50,6 @@ import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
  * it matters.
  */
 
-/**
- * Jméno dokumentu v modulu Dokumenty („Formulář k reklamaci"); prázdné místo
- * se ohlásí v Přehledu. Od 14. 10. 2026 se nabízí jen jako NEPOVINNÁ pomůcka
- * — reklamace jde podat online i bez něj, a není to formulář dopravce, který
- * by zákazník musel vyplnit.
- */
-export const CLAIM_FORM_KEY = "reklamacni-formular"
 
 /*
  * Rychle do tří čtvrtin, zbytek doplout.
@@ -168,9 +162,7 @@ export default function CarrierDamageNotice({
                   <strong>Napište nám</strong> — reklamaci podáte z odkazu
                   v e-mailu u objednávky
                   {orderNumber ? ` (objednávka ${orderNumber})` : ""}, nebo na{" "}
-                  <a href="mailto:info@keramickazahrada.cz">
-                    info@keramickazahrada.cz
-                  </a>
+                  <ContactEmailLink role="objednavky" />
                   .
                 </li>
                 <li>

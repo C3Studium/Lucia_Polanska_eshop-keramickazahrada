@@ -1,4 +1,5 @@
 import { cartNeedsShipping } from "@lib/util/needs-shipping"
+import { localeForCountry } from "@lib/util/email-locale"
 
 export type ComgatePaymentMethod = {
   id: string
@@ -113,7 +114,14 @@ export const buildComgateSessionPayload = (cart: any, optionId: string) => {
         : isPickup
           ? "PICKUP"
           : "HOME_DELIVERY",
-      lang: "cs",
+      // Platební brána v jazyce zákazníka — prohlížečový překladač na
+      // stránku brány nedosáhne. Jazyk zapsal košík podle zvolené země
+      // (lib/data/cart.ts); bez něj podle doručovací země, jinak česky.
+      lang:
+        (typeof (cart?.metadata as Record<string, unknown> | null)?.locale === "string"
+          ? String((cart?.metadata as Record<string, unknown>).locale)
+          : "") ||
+        localeForCountry(shippingAddress?.country_code || billingAddress?.country_code),
     },
   }
 }

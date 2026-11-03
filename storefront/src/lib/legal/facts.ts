@@ -28,7 +28,7 @@ export const FACTS = {
   /* Úřad vedoucí živnostenský rejstřík (§ 435 OZ — údaj o zápisu patří na
      obchodní listiny). Potvrzeno 24. 10. 2026 (OPEN_QUESTIONS N5); sedmý pád,
      dokument skládá větu „…rejstříku vedeném {hodnota}". */
-  "seller.register": "Městským úřadem Písek",
+  "seller.register": "Městským úřadem Písek (Jihočeský kraj)",
   /*
    * Kontakt prodávající v právních dokumentech (24. 10. 2026). Adresa pro
    * odstoupení od smlouvy a reklamaci — musí fungovat dnes, proto osobní
@@ -67,7 +67,7 @@ export const FACTS = {
   /** Minimální věk dítěte na kurzu. */
   // Odpovědi Lucie z 20. 10. 2026; odhad nákladů na vrácení potvrdil Matěj 24. 10.
   "course.minAge":
-    "6 let (mladší děti s doprovodem rodiče)",
+    "doporučujeme od 6 let, mladší děti mohou přijít s doprovodem rodiče",
   /** Do kdy si vyzvednout výrobek z kurzu po výpalu. */
   // Odpovědi Lucie z 20. 10. 2026; odhad nákladů na vrácení potvrdil Matěj 24. 10.
   "course.pickupDeadline":

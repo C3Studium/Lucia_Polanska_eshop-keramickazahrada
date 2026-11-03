@@ -1,3 +1,5 @@
+import type { Localized } from "../email-locale"
+
 /**
  * Modul „Reklamace a zrušení" — sdílené názvosloví (docs/reklamace-a-zruseni.md).
  *
@@ -343,3 +345,15 @@ export const CP_DAMAGE_REPORT_DEADLINE_TEXT =
  */
 export const CARRIER_DAMAGE_CUSTOMER_TEXT =
   "Poškození při přepravě řešíme s Českou poštou my — vy kvůli tomu nikam chodit ani nic podávat nemusíte. Pokud můžete, nechte si prosím obal a výplň, dokud se vám neozveme; fotky obalu i zboží nám pomohou. Kdyby Česká pošta potřebovala vaši součinnost (například sepsat záznam o poškození), dáme vám vědět — vaši reklamaci to nijak nepodmiňuje."
+
+/**
+ * Táž věta v jazyce zákazníka (e-mail „žádost přijata", lib/email-locale).
+ * Tady, a ne v šabloně, ať čeština zůstane jedna — sdílí ji i protokol.
+ */
+export const CARRIER_DAMAGE_CUSTOMER_TEXTS: Localized<string> = {
+  cs: CARRIER_DAMAGE_CUSTOMER_TEXT,
+  sk: "Poškodenie pri preprave riešime s Českou poštou my — vy kvôli tomu nikam chodiť ani nič podávať nemusíte. Ak môžete, nechajte si, prosím, obal a výplň, kým sa vám neozveme; fotky obalu aj tovaru nám pomôžu. Keby Česká pošta potrebovala vašu súčinnosť (napríklad spísať záznam o poškodení), dáme vám vedieť — vašu reklamáciu to nijako nepodmieňuje.",
+  pl: "Uszkodzenie w transporcie wyjaśniamy z Pocztą Czeską sami — nie muszą Państwo nigdzie chodzić ani niczego składać. Jeśli to możliwe, prosimy zachować opakowanie i wypełnienie, dopóki się nie odezwiemy; zdjęcia opakowania i towaru bardzo nam pomogą. Gdyby Poczta Czeska potrzebowała Państwa pomocy (na przykład spisania protokołu szkody), damy znać — nie jest to warunek rozpatrzenia reklamacji.",
+  de: "Den Transportschaden klären wir selbst mit der Tschechischen Post – Sie müssen dafür nirgendwohin gehen und nichts einreichen. Wenn möglich, bewahren Sie Verpackung und Füllmaterial bitte auf, bis wir uns melden; Fotos von Verpackung und Ware helfen uns sehr. Sollte die Tschechische Post Ihre Mitwirkung brauchen (zum Beispiel für ein Schadensprotokoll), sagen wir Bescheid – Ihre Reklamation hängt davon nicht ab.",
+  en: "We'll sort out the transit damage with Česká pošta ourselves — you don't need to go anywhere or file anything. If you can, please keep the box and the packing material until you hear from us; photos of the packaging and the goods will help a lot. Should Česká pošta need your help (for example, to write up a damage report), we'll let you know — your complaint doesn't depend on it in any way.",
+}

@@ -5,6 +5,8 @@ import { GIFT_VOUCHER_MODULE } from "../modules/gift-voucher"
 import type GiftVoucherModuleService from "../modules/gift-voucher/service"
 import { COMGATE_PROVIDER_ID, paymentUrlFromSession } from "./balance-payment"
 import { giftVoucherPath } from "./gift-voucher-link"
+import { comgateLang } from "./email-locale"
+import { giftVoucherLocale } from "./gift-voucher-pdf"
 
 /** Metadata platební kolekce, podle kterých se pozná platba za poukaz. */
 export const GIFT_VOUCHER_COLLECTION_KEY = "gift_voucher_id"
@@ -73,7 +75,8 @@ export const ensureGiftVoucherPaymentLink = async (
         country_code: "CZ",
         label: "Darkovy poukaz".slice(0, 16),
         name: `Dárkový poukaz ${voucher.code}`,
-        lang: "cs",
+        // Brána v jazyce objednávky (lib/email-locale) — prohlížeč ji nepřeloží.
+        lang: comgateLang(await giftVoucherLocale(container, voucher)),
         category: "OTHER",
         delivery: voucher.kind === "electronic" ? "ELECTRONIC_DELIVERY" : "HOME_DELIVERY",
         url_paid: giftVoucherPath(voucher.id, "paid"),

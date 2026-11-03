@@ -6,6 +6,7 @@ import {
 } from "@lib/data/guest-order-edit"
 import type { OrderEditCatalog } from "@lib/data/order-edit"
 import OrderStateShell from "@modules/order/components/order-state-shell"
+import { getContactEmails } from "@lib/data/site-copy"
 
 import type { PickSwapInfo } from "./pick-bar"
 import { editPath } from "./shared"
@@ -33,6 +34,8 @@ export async function resolvePickAccess(
       swap: PickSwapInfo | null
     }
 > {
+  // Úprava objednávky → e-mail pro objednávky a zakázky ze Studia.
+  const { objednavky: orderEmail } = await getContactEmails()
   const [context, catalog] = token
     ? await Promise.all([
         getGuestOrderEditContext(orderId, token),
@@ -85,7 +88,7 @@ export async function resolvePickAccess(
       swapItemId ? "Teď vyměnit nejde." : "Teď přidat nejde.",
       catalog.reason ??
         context.reason ??
-        "K téhle objednávce teď nic vybrat nejde. Kdybyste něco potřebovali, napište nám na info@keramickazahrada.cz."
+        `K téhle objednávce teď nic vybrat nejde. Kdybyste něco potřebovali, napište nám na ${orderEmail}.`
     )
   }
 
@@ -97,7 +100,7 @@ export async function resolvePickAccess(
       return blocked(
         "Tuhle položku teď vyměnit nejde.",
         catalog.reason ??
-          "Za jiný výrobek teď tuhle položku vyměnit nejde. Na stránce úpravy můžete vybrat jiné provedení, nebo nám napište na info@keramickazahrada.cz."
+          `Za jiný výrobek teď tuhle položku vyměnit nejde. Na stránce úpravy můžete vybrat jiné provedení, nebo nám napište na ${orderEmail}.`
       )
     }
     return {

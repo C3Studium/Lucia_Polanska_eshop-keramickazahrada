@@ -14,6 +14,7 @@ import {
   decisionOutcome,
   protocolRefundsOf,
   refundMethodLabel,
+  refundMethodLabelIn,
   regenerateProtocol,
   retrieveClaim,
   sendResolvedEmail,
@@ -27,6 +28,7 @@ import {
 } from "./comgate-confirmation"
 import { isEditRefundKind, kindLabel } from "./constants"
 import { refundEmailLineItems } from "../email-items"
+import { claimKindText, loadClaimEmailContext, refundLinesTextIn } from "./email-copy"
 import { storedRefundAccount } from "./refund-account"
 import { lineItemsTotal } from "./line-items"
 import { goodsShipped, loadOrderMoney } from "./money"
@@ -691,20 +693,32 @@ export const refundClaim = async (
       creditNote,
     })
   } else {
+    // Jazyk objednávky + přeložené názvy řádků (lib/claims/email-copy); česky
+    // beze změny. Řádky s fotkami se v cizím jazyce skládají z řádků
+    // načtených i s `product.metadata` (překlad názvu).
+    const emailContext = await loadClaimEmailContext(scope, request.order_id)
+    const { locale } = emailContext
+    const czech = locale === "cs"
+    const emailRefundLines = czech
+      ? refundLines
+      : refundLinesTextIn(lines as never, currency, locale, emailContext.titleOf)
     await sendCustomerEmail(scope, {
       template: "order-refunded",
       to: request.email,
       key: `return-refund:${request.id}:${refunds.length}`,
       orderId: request.order_id,
+      locale,
       data: {
-        ...claimEmailBase(updated, protocol.url),
-        refundAmount: fmt(amount),
-        refundReason: kindLabel(request.kind),
-        refundMethod: refundMethodLabel(method, request.refund_account),
-        ...(refundLines ? { refundLines } : {}),
+        ...claimEmailBase(updated, protocol.url, emailContext),
+        refundAmount: czech ? fmt(amount) : formatMoney(amount, currency, locale),
+        refundReason: claimKindText(request.kind, locale),
+        refundMethod: refundMethodLabelIn(method, request.refund_account, locale),
+        ...(emailRefundLines ? { refundLines: emailRefundLines } : {}),
         /* Týž košík vrácení s fotkami — šablona pak textový výpis vynechá. */
-        paidFor: refundEmailLineItems(order, lines, currency),
-        ...creditNoteEmailData(refunds, creditNote),
+        paidFor: czech
+          ? refundEmailLineItems(order, lines, currency)
+          : refundEmailLineItems(emailContext.order ?? order, lines, currency, locale),
+        ...creditNoteEmailData(refunds, creditNote, locale),
         orderLink: orderLink(order) || undefined,
       },
     })

@@ -2,6 +2,7 @@
 
 import { sdk } from "@lib/config"
 import { revalidateOrderPages } from "@lib/util/order-pages"
+import { getContactEmails } from "./site-copy"
 import type {
   EditAction,
   EditPreviewResponse,
@@ -95,10 +96,12 @@ export async function submitGuestOrderEdit(
     revalidateOrderPages()
     return result
   } catch (error: any) {
+    // Úprava objednávky → e-mail pro objednávky a zakázky ze Studia.
+    const { objednavky } = await getContactEmails()
     return {
       error: customerMessage(
         error,
-        "Úpravu se nepodařilo uložit. Zkuste to prosím znovu, nebo nám napište na info@keramickazahrada.cz."
+        `Úpravu se nepodařilo uložit. Zkuste to prosím znovu, nebo nám napište na ${objednavky}.`
       ),
     }
   }

@@ -23,6 +23,7 @@ import {
   type OrderEditDraft,
 } from "@lib/util/order-edit-draft"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { useContactEmails } from "@lib/context/contact-emails"
 
 import OrderDeliverySection from "./delivery-section"
 import EditSummary, { type EditConfirmation } from "./edit-summary"
@@ -72,6 +73,8 @@ export default function OrderEditor({
 }) {
   const router = useRouter()
   const headingId = useId()
+  // Úprava objednávky → e-mail pro objednávky a zakázky ze Studia.
+  const { objednavky: orderEmail } = useContactEmails()
   const { mode, items } = context
 
   /** Jdou teď upravovat položky? Čekající změna (platba) blokuje další. */
@@ -289,7 +292,7 @@ export default function OrderEditor({
   const statusText =
     statusTone === "closed"
       ? context.reason ??
-        "Tuhle objednávku už upravit nejde. Kdybyste něco potřebovali, napište nám na info@keramickazahrada.cz."
+        `Tuhle objednávku už upravit nejde. Kdybyste něco potřebovali, napište nám na ${orderEmail}.`
       : statusTone === "packed"
         ? "Zabaleno — vyměnit jde jen varianta za stejnou cenu."
         : "Upravit můžete, dokud nezačneme balit."

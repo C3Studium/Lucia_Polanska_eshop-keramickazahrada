@@ -14,6 +14,117 @@ import {
 } from "../components/email-ui"
 import { googleReviewUrl } from "../../../lib/google-review-url"
 import { storeLink } from "../../../lib/storefront-url"
+import { useCopy } from "../components/email-i18n"
+import type { Localized } from "../../../lib/email-locale"
+
+/** Texty po jazycích (lib/email-locale) — čeština je původní znění. */
+const COPY: Localized<{
+  preview: string
+  eyebrow: string
+  title: string
+  accent: string
+  intro: string
+  yourPiece: string
+  order: (n: string) => string
+  googleWhy: string
+  reviewGoogle: string
+  review: string
+  rateOnSite: string
+  viewProduct: string
+  problem: string
+  closing: string
+}> = {
+  cs: {
+    preview: "Kousek z mé dílny je u vás už týden — jak se vám s ním žije?",
+    eyebrow: "Vaše dojmy",
+    title: "Jak se vám",
+    accent: "s ním žije?",
+    intro:
+      "kousek z mé dílny je u vás už týden. Ráda bych věděla, jak se vám s ním žije — vaše dojmy pomůžou mně i lidem, kteří si keramiku teprve vybírají.",
+    yourPiece: "váš kousek",
+    order: (n) => `Objednávka ${n}`,
+    googleWhy:
+      "Pár slov na Googlu mi pomůže nejvíc — podle nich mě najdou další lidé, kterým by keramika z dílny udělala radost.",
+    reviewGoogle: "Napsat recenzi na Google",
+    review: "Napsat recenzi",
+    rateOnSite: "Ohodnotit na webu",
+    viewProduct: "Zobrazit výrobek",
+    problem: "Pokud něco nesedí, napište mi rovnou na info@keramickazahrada.cz a společně to vyřešíme.",
+    closing: "Mějte se krásně,",
+  },
+  sk: {
+    preview: "Kúsok z mojej dielne je u vás už týždeň — ako sa vám s ním žije?",
+    eyebrow: "Vaše dojmy",
+    title: "Ako sa vám",
+    accent: "s ním žije?",
+    intro:
+      "kúsok z mojej dielne je u vás už týždeň. Rada by som vedela, ako sa vám s ním žije — vaše dojmy pomôžu mne aj ľuďom, ktorí si keramiku ešte len vyberajú.",
+    yourPiece: "váš kúsok",
+    order: (n) => `Objednávka ${n}`,
+    googleWhy:
+      "Pár slov na Googli mi pomôže najviac — podľa nich ma nájdu ďalší ľudia, ktorým by keramika z dielne urobila radosť.",
+    reviewGoogle: "Napísať recenziu na Google",
+    review: "Napísať recenziu",
+    rateOnSite: "Ohodnotiť na webe",
+    viewProduct: "Zobraziť výrobok",
+    problem: "Ak niečo nesedí, napíšte mi rovno na info@keramickazahrada.cz a spoločne to vyriešime.",
+    closing: "Majte sa krásne,",
+  },
+  pl: {
+    preview: "Ceramika z mojej pracowni jest u Państwa już od tygodnia — jak się sprawdza?",
+    eyebrow: "Państwa wrażenia",
+    title: "Jak się",
+    accent: "sprawdza?",
+    intro:
+      "Egzemplarz z mojej pracowni jest u Państwa już od tygodnia. Chętnie dowiem się, jak się sprawdza — Państwa wrażenia pomogą mnie i osobom, które dopiero wybierają ceramikę.",
+    yourPiece: "Państwa egzemplarz",
+    order: (n) => `Zamówienie ${n}`,
+    googleWhy:
+      "Kilka słów w Google pomoże mi najbardziej — dzięki nim trafią do mnie kolejne osoby, którym ceramika z pracowni sprawi radość.",
+    reviewGoogle: "Napisz opinię w Google",
+    review: "Napisz opinię",
+    rateOnSite: "Oceń na stronie",
+    viewProduct: "Zobacz produkt",
+    problem: "Jeśli coś jest nie tak, proszę napisać bezpośrednio na info@keramickazahrada.cz — razem to rozwiążemy.",
+    closing: "Wszystkiego dobrego",
+  },
+  de: {
+    preview: "Ein Stück aus meiner Werkstatt ist seit einer Woche bei Ihnen – wie gefällt es Ihnen?",
+    eyebrow: "Ihre Eindrücke",
+    title: "Wie gefällt",
+    accent: "es Ihnen?",
+    intro:
+      "ein Stück aus meiner Werkstatt ist seit einer Woche bei Ihnen. Ich würde gern wissen, wie es Ihnen gefällt – Ihre Eindrücke helfen mir und allen, die sich gerade erst für Keramik entscheiden.",
+    yourPiece: "Ihr Stück",
+    order: (n) => `Bestellung ${n}`,
+    googleWhy:
+      "Ein paar Worte bei Google helfen mir am meisten – so finden mich weitere Menschen, denen Keramik aus der Werkstatt Freude machen würde.",
+    reviewGoogle: "Bewertung bei Google schreiben",
+    review: "Bewertung schreiben",
+    rateOnSite: "Auf der Website bewerten",
+    viewProduct: "Zum Produkt",
+    problem: "Wenn etwas nicht passt, schreiben Sie mir direkt an info@keramickazahrada.cz – wir finden gemeinsam eine Lösung.",
+    closing: "Alles Gute",
+  },
+  en: {
+    preview: "A piece from my studio has been with you for a week now — how are you getting on with it?",
+    eyebrow: "Your thoughts",
+    title: "How are you",
+    accent: "getting on with it?",
+    intro:
+      "A piece from my studio has been with you for a week now. I'd love to know how you're getting on with it — your impressions help me, and they help people who are still choosing their ceramics.",
+    yourPiece: "your piece",
+    order: (n) => `Order ${n}`,
+    googleWhy:
+      "A few words on Google help me most — that's how other people find me who would enjoy ceramics from the studio.",
+    reviewGoogle: "Write a Google review",
+    review: "Write a review",
+    rateOnSite: "Rate it on the website",
+    viewProduct: "View product",
+    problem: "If anything isn't right, write to me directly at info@keramickazahrada.cz and we'll sort it out together.",
+    closing: "All the very best,",
+  },
+}
 
 interface OrderReviewEmailProps {
   customerName?: string;
@@ -46,7 +157,7 @@ interface OrderReviewEmailProps {
 function OrderReviewEmailComponent({
   customerName,
   orderNumber = "",
-  productName = "váš kousek",
+  productName,
   productImage = "",
   productLink = "",
   reviewLink = "",
@@ -56,30 +167,28 @@ function OrderReviewEmailComponent({
 }: OrderReviewEmailProps) {
   // Job předává odkaz z env; když ho šablona dostane bez něj (náhled), zkusí
   // env sama — obojí přes jeden helper, ať existuje jen jedna pravda.
+  const t = useCopy(COPY)
+  const name = productName || t.yourPiece
   const googleUrl = googleReviewLink ?? googleReviewUrl() ?? ""
   const siteReviewUrl = reviewLink || productLink || ""
   const primaryUrl = googleUrl || siteReviewUrl || storeLink()
-  const primaryLabel = googleUrl ? "Napsat recenzi na Google" : "Napsat recenzi"
+  const primaryLabel = googleUrl ? t.reviewGoogle : t.review
 
   const secondary = googleUrl
     ? siteReviewUrl && siteReviewUrl !== primaryUrl
-      ? { href: siteReviewUrl, label: "Ohodnotit na webu" }
+      ? { href: siteReviewUrl, label: t.rateOnSite }
       : null
     : productLink && productLink !== primaryUrl
-      ? { href: productLink, label: "Zobrazit výrobek" }
+      ? { href: productLink, label: t.viewProduct }
       : null
 
   return (
-    <EmailLayout preview="Kousek z mé dílny je u vás už týden — jak se vám s ním žije?">
-      <Eyebrow>Vaše dojmy</Eyebrow>
-      <EmailH1 accent="s ním žije?">Jak se vám</EmailH1>
+    <EmailLayout preview={t.preview}>
+      <Eyebrow>{t.eyebrow}</Eyebrow>
+      <EmailH1 accent={t.accent}>{t.title}</EmailH1>
 
       <Greeting name={customerName} />
-      <P>
-        kousek z mé dílny je u vás už týden. Ráda bych věděla, jak se vám
-        s ním žije — vaše dojmy pomůžou mně i lidem, kteří si keramiku teprve
-        vybírají.
-      </P>
+      <P>{t.intro}</P>
 
       <Section style={{ margin: "8px 0 0" }}>
         <Row style={{ borderTop: `1px solid ${brand.line}` }}>
@@ -93,7 +202,7 @@ function OrderReviewEmailComponent({
             {productImage ? (
               <Img
                 src={productImage}
-                alt={productName}
+                alt={name}
                 width="56"
                 height="66"
                 style={{
@@ -123,7 +232,7 @@ function OrderReviewEmailComponent({
                 margin: 0,
               }}
             >
-              {productName}
+              {name}
             </Text>
             <Text
               style={{
@@ -134,7 +243,7 @@ function OrderReviewEmailComponent({
                 margin: "2px 0 0",
               }}
             >
-              Objednávka {orderNumber}
+              {t.order(orderNumber)}
             </Text>
           </Column>
         </Row>
@@ -142,10 +251,7 @@ function OrderReviewEmailComponent({
       </Section>
 
       {googleUrl ? (
-        <P small>
-          Pár slov na Googlu mi pomůže nejvíc — podle nich mě najdou další
-          lidé, kterým by keramika z dílny udělala radost.
-        </P>
+        <P small>{t.googleWhy}</P>
       ) : null}
 
       <ButtonRow>
@@ -162,10 +268,8 @@ function OrderReviewEmailComponent({
         ) : null}
       </ButtonRow>
 
-      <P small>
-        Pokud něco nesedí, napište mi rovnou na info@keramickazahrada.cz a společně to vyřešíme.
-      </P>
-      <Signature closing="Mějte se krásně," />
+      <P small>{t.problem}</P>
+      <Signature closing={t.closing} />
       <OptOutLine url={unsubscribe_url} />
     </EmailLayout>
   )

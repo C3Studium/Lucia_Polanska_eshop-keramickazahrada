@@ -384,6 +384,17 @@ const legalPages: ReturnType<typeof definePage>[] = [
     legalPage('/cz/ochrana-osobnich-udaju', 'Ochrana osobních údajů'),
     legalPage('/cz/cookies', 'Používání cookies'),
     legalPage('/cz/doprava-a-platba', 'Doprava a platba'),
+    /*
+     * Certifikáty — protokoly o nezávadnosti glazur a prohlášení o shodě
+     * (typ `certifikat`). Lucie je nahrává ve Studiu; publikace dokladu
+     * přegeneruje tuhle stránku. Bez `copy`: úvodní texty jsou zákonem
+     * vázané (co protokol musí pokrýt) a zůstávají v kódu.
+     */
+    definePage({
+        route: '/cz/certifikaty',
+        title: 'Certifikáty a protokoly',
+        sources: { certifikaty: { type: 'certifikat' } },
+    }),
 ]
 
 /* ------------------------------------------------------------- povrchy -- */
@@ -433,6 +444,10 @@ const surfaces = [
     modal('hledani', 'Hledání v menu', 'global.hledani'),
 
     // Seznamy.
+    // Kontaktní e-maily — dvě adresy, které web vypisuje na desítkách míst
+    // (dotazy × objednávky a zakázky). Na žádné stránce nejsou „doma", proto
+    // tady, nahoře, kde je Lucie najde.
+    form('kontakty', 'Kontaktní e-maily — dotazy a objednávky', 'global.kontakty'),
     // Nákup — od košíku po poděkování (bez košíku nebo objednávky nejsou vidět).
     form('kosik.uvod', 'Košík — úvod, když v něm něco je', 'kosik.uvod'),
     form('kosik.vypis', 'Košík — výpis a souhrn', 'kosik.vypis'),
@@ -571,5 +586,13 @@ export default defineSite({
     // s účtem `propojeni.*`),
     // `global.hledani` (hledání v menu: `prochazet`, `nic`, `prazdne`,
     // `prazdne.tlacitko`).
+    //
+    // `global.kontakty` (2. 11. 2026) — kontaktní e-maily, položky klíčované
+    // popiskem: `email.dotazy` (obecné otázky: kontaktní okno, patička,
+    // newsletter, účet) a `email.objednavky` (objednávka, zakázka, úprava,
+    // reklamace, odstoupení, platba, poukaz). Zálohy a čtečka
+    // v `@lib/constants/contact`; vlastní blok, protože `items` bloku
+    // `global.paticka` se čtou pozicí. Právní dokumenty berou dál
+    // `seller.email` z administrace — to je identita prodávající, ne kontakt.
     globals: defineGlobals({ copy: 'global', sources: {} }),
 })

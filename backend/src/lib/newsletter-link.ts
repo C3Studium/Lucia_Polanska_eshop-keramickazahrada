@@ -121,3 +121,29 @@ export const newsletterUnsubscribeUrl = (email: string): string | null =>
  */
 export const newsletterConfirmUrl = (email: string): string | null =>
   signedLink("/newsletter/confirm", email, signConfirmToken)
+
+/**
+ * Země přepínače, ze které se člověk k odběru přihlásil (`c=sk`) — přidá
+ * se k potvrzovacímu a odhlašovacímu odkazu, aby uvítací e-mail a potvrzení
+ * odhlášení přišly v jeho jazyce (lib/email-locale).
+ *
+ * V odkazu, ne v databázi: odběratel jazyk ukládat nemá kam (tabulka nemá
+ * metadata) a kvůli třem e-mailům to nestojí za migraci. Podpis tokenu
+ * pokrývá jen adresu — `c` měnit smí kdokoli, změní ale jen jazyk zprávy.
+ * Kampaně jdou česky (autorský obsah majitelky), takže jejich odhlašovací
+ * odkaz zemi nenese a potvrzení odhlášení z nich je česky.
+ */
+export const withNewsletterCountry = (
+  url: string | null,
+  country: string | null | undefined
+): string | null => {
+  const code = (country ?? "").trim().toLowerCase()
+  if (!url || !/^[a-z]{2}$/.test(code) || code === "cz") return url
+  return `${url}&c=${code}`
+}
+
+/** Země z odkazu (`?c=sk`), nebo `null`. */
+export const newsletterCountryFrom = (value: unknown): string | null => {
+  const code = typeof value === "string" ? value.trim().toLowerCase() : ""
+  return /^[a-z]{2}$/.test(code) ? code : null
+}

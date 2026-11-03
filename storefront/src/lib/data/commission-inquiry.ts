@@ -55,6 +55,8 @@ export type CommissionInquiryInput = {
   /** `currentTermsVersion()` — verze OP, kterou zákazník viděl. */
   terms_version: string
   photos?: CommissionInquiryPhoto[]
+  /** Země obchodu (`countryCode` z URL) — jazyk potvrzovacího e-mailu. */
+  country_code?: string
   /** Výrobek s cenou po domluvě, od kterého poptávka přišla. */
   product_handle?: string
   product_title?: string
