@@ -67,6 +67,10 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         "items.product.metadata",
         ...LINE_QUANTITY_FIELDS,
         "shipping_methods.data",
+        // Která doprava je na objednávce teď — blok „Domluvená cena" na ní
+        // staví výběr dopravy (lib/made-to-order/shipping-choice).
+        "shipping_methods.name",
+        "shipping_methods.shipping_option_id",
       ],
       filters: { id: req.params.orderId },
     })
@@ -180,6 +184,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         customerSpecification ?? productionOrder.customer_note ?? null,
       pure_commission: pureCommission,
       personal_pickup: personalPickup,
+      order_shipping_option_id:
+        ((order?.shipping_methods ?? []) as any[])[0]?.shipping_option_id ?? null,
+      order_shipping_name: ((order?.shipping_methods ?? []) as any[])[0]?.name ?? null,
       // Cena po domluvě (lib/made-to-order/agreed-price.ts): položka objednaná
       // za 0 Kč — admin ukáže „Domluvená cena" a „Poslat domluvenou cenu".
       price_on_request: isAgreedPriceCommission(productionOrder),

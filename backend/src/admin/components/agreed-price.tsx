@@ -1,4 +1,4 @@
-import { Badge, Button, Checkbox, Input, Label, Text, toast } from "@medusajs/ui";
+import { Badge, Button, Input, Label, Select, Text, toast } from "@medusajs/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ceskaChyba } from "../lib/ceska-chyba";
@@ -49,6 +49,18 @@ export type AgreedPriceCommission = {
   line_title?: string | null;
   line_variant_title?: string | null;
   line_thumbnail?: string | null;
+  /** Doprava, kterou objednávka nese teď (výchozí volba v bloku). */
+  order_shipping_option_id?: string | null;
+  order_shipping_name?: string | null;
+};
+
+/** Možnost dopravy z `GET /admin/made-to-order/shipping-options`. */
+export type ShippingChoiceRow = {
+  id: string;
+  name: string;
+  personal_pickup: boolean;
+  /** Ceník bez podmínek — jen napověda, u zakázky se poštovné domlouvá. */
+  price: number | null;
 };
 
 export type CommissionsOfOrderResponse = {
@@ -194,13 +206,51 @@ export const AgreedPriceBlock = ({
   })();
   const [price, setPrice] = useState(state.sent ? String(state.agreed) : "");
   const [deposit, setDeposit] = useState(initialDeposit);
-  const [byPost, setByPost] = useState(state.shipping > 0.005);
+  /*
+   * Doprava se VYBÍRÁ, ne píše.
+   *
+   * Kus s cenou po domluvě je objednaný na osobní odběr. Když si to zákazník
+   * rozmyslí, nestačí zapsat poštovné — objednávka musí dostat i tu dopravu,
+   * jinak k ní nejde vyrobit štítek České pošty, nerozběhne se sledování
+   * zásilky a e-maily mluví o vyzvednutí v ateliéru. Zvolená možnost se proto
+   * zapíše objednávce (lib/made-to-order/shipping-choice).
+   */
+  const [shippingOptionId, setShippingOptionId] = useState<string>(
+    commission.order_shipping_option_id ?? ""
+  );
   const [shipping, setShipping] = useState(
     state.shipping > 0.005 ? String(round2(state.shipping)) : ""
   );
   const [packaging, setPackaging] = useState(
     state.packaging > 0.005 ? String(round2(state.packaging)) : ""
   );
+
+  const { data: dopravaData } = useQuery<{ shipping_options: ShippingChoiceRow[] }>({
+    queryKey: ["made-to-order-shipping-options", commission.currency_code || "czk"],
+    queryFn: () =>
+      sdk.client.fetch(
+        `/admin/made-to-order/shipping-options?currency_code=${encodeURIComponent(
+          commission.currency_code || "czk"
+        )}`
+      ),
+    enabled: editable,
+    staleTime: 5 * 60_000,
+  });
+  const shippingOptions = dopravaData?.shipping_options ?? [];
+  const chosenOption =
+    shippingOptions.find((option) => option.id === shippingOptionId) ?? null;
+  /* Než se možnosti načtou, platí stav podle uloženého poštovného. */
+  const byPost = chosenOption ? !chosenOption.personal_pickup : state.shipping > 0.005;
+
+  /** Výběr dopravy: u zásilky napovíme poštovné z ceníku, pokud je pole prázdné. */
+  const vybratDopravu = (id: string) => {
+    setShippingOptionId(id);
+    const option = shippingOptions.find((candidate) => candidate.id === id);
+    if (!option || option.personal_pickup) return;
+    if (!shipping.trim() && option.price !== null) {
+      setShipping(String(round2(option.price)));
+    }
+  };
 
   const num = (value: string) => Number(value.replace(",", "."));
   /** Prázdné pole = nula, ne chyba: balné nemusí být vždycky. */
@@ -246,6 +296,9 @@ export const AgreedPriceBlock = ({
         body: {
           action: "send_agreed_price",
           production_order_id: commission.id,
+          // Doprava jde s cenou: server ji zapíše objednávce (stejná volba =
+          // nic se nemění), takže na ni naváže štítek, sledování i e-maily.
+          ...(shippingOptionId ? { shipping_option_id: shippingOptionId } : {}),
           agreed_total: round2(parsedPrice),
           deposit_amount: round2(parsedDeposit),
           shipping_total: parsedShipping ?? 0,
@@ -366,18 +419,38 @@ export const AgreedPriceBlock = ({
           </div>
 
           {/*
-            Poštovné se nabízí jako volba, ne jako prázdné políčko: výchozí
-            stav je osobní odběr (tak si zákazník objednal) a teprve
-            „Poslat poštou" otevře obě částky.
+            Doprava objednávky. Výchozí je ta, kterou objednávka nese (osobní
+            odběr — tak si zákazník objednal); výběr zásilky ji přepíše, a tím
+            se na objednávku navážou štítek, sledování i e-maily o odeslání.
           */}
-          <label className="mt-1 flex items-center gap-x-2">
-            <Checkbox
-              id={`agreed-by-post-${commission.id}`}
-              checked={byPost}
-              onCheckedChange={(next) => setByPost(next === true)}
-            />
-            <Text size="small">Poslat poštou (jinak si pro kus přijde)</Text>
-          </label>
+          <div className="flex flex-col gap-y-1">
+            <Label size="xsmall" htmlFor={`agreed-shipping-option-${commission.id}`}>
+              Doprava
+            </Label>
+            <Select value={shippingOptionId} onValueChange={vybratDopravu}>
+              <Select.Trigger
+                id={`agreed-shipping-option-${commission.id}`}
+                className="w-full max-w-sm"
+              >
+                <Select.Value placeholder="Vyberte dopravu" />
+              </Select.Trigger>
+              <Select.Content>
+                {shippingOptions.map((option) => (
+                  <Select.Item key={option.id} value={option.id}>
+                    {option.name}
+                    {!option.personal_pickup && option.price !== null
+                      ? ` — ${formatAmount(option.price, currency)}`
+                      : ""}
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select>
+            <Text size="xsmall" className="text-ui-fg-muted">
+              {byPost
+                ? "Kus posíláte — objednávka dostane tuhle dopravu, takže na ni naváže štítek i sledování zásilky. Zkontrolujte doručovací adresu, štítek se tiskne z ní."
+                : "Zákazník si pro kus přijde. Když se domluvíte na zásilce, vyberte ji tady — přepíše se i objednávce."}
+            </Text>
+          </div>
 
           {byPost && (
             <div className="flex flex-wrap items-end gap-3">
