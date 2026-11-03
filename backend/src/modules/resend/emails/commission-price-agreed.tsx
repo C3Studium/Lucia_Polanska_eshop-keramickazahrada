@@ -41,6 +41,10 @@ export interface CommissionPriceAgreedEmailProps {
   balanceAmount?: string | null
   payDepositUrl?: string | null
   payFullUrl?: string | null
+  /** Potvrzení zakázky s domluvenou cenou jde s e-mailem jako příloha. */
+  contractAttached?: boolean
+  /** Resend přílohu odmítl a e-mail odešel bez ní (doplní provider). */
+  attachments_failed?: boolean
 }
 
 /**
@@ -65,6 +69,7 @@ const COPY: Localized<{
   payDeposit: (amount: string) => string
   payFull: (amount: string) => string
   note: string
+  contract: string
   questions: (email: string, hasOrderLink: boolean) => string
   closing: string
 }> = {
@@ -87,6 +92,8 @@ const COPY: Localized<{
     payFull: (amount) => `Zaplatit celé ${amount}`,
     note:
       "Záloha je povinná — výrobu začnu, až dorazí. Když zaplatíte jen zálohu, o doplatek vás požádám, až bude kousek hotový. Až výrobu začnu, napíšu vám; od té chvíle se záloha při zrušení zakázky nevrací (ostatní ano).",
+    contract:
+      "V příloze posílám potvrzení zakázky s domluvenou cenou (PDF) — uschovejte si ho, prosím.",
     questions: (email, link) =>
       `Kdyby vám cena nebo cokoli jiného nesedělo, napište mi na ${email}${link ? " — objednávku najdete i ve svém účtu." : "."}`,
     closing: "Děkuji a těším se,",
@@ -110,6 +117,8 @@ const COPY: Localized<{
     payFull: (amount) => `Zaplatiť celé ${amount}`,
     note:
       "Záloha je povinná — výrobu začnem, keď dorazí. Ak zaplatíte len zálohu, o doplatok vás požiadam, keď bude kúsok hotový. Keď začnem s výrobou, napíšem vám; od tej chvíle sa záloha pri zrušení zákazky nevracia (ostatné áno).",
+    contract:
+      "V prílohe posielam potvrdenie zákazky s dohodnutou cenou (PDF) — uschovajte si ho, prosím.",
     questions: (email, link) =>
       `Keby vám cena alebo čokoľvek iné nesedelo, napíšte mi na ${email}${link ? " — objednávku nájdete aj vo svojom účte." : "."}`,
     closing: "Ďakujem a teším sa,",
@@ -134,6 +143,8 @@ const COPY: Localized<{
     payFull: (amount) => `Zapłać całość ${amount}`,
     note:
       "Zaliczka jest obowiązkowa — zacznę pracę, gdy tylko dotrze. Jeśli zapłacą Państwo tylko zaliczkę, o pozostałą kwotę poproszę, gdy wyrób będzie gotowy. Gdy rozpocznę produkcję, napiszę do Państwa; od tej chwili w razie anulowania zamówienia zaliczka nie podlega zwrotowi (pozostałe kwoty tak).",
+    contract:
+      "W załączniku przesyłam potwierdzenie zamówienia indywidualnego z uzgodnioną ceną (PDF) — proszę je zachować.",
     questions: (email, link) =>
       `Gdyby cena lub cokolwiek innego Państwu nie odpowiadało, proszę napisać na ${email}${link ? " — zamówienie znajdą Państwo także na swoim koncie." : "."}`,
     closing: "Dziękuję i serdecznie pozdrawiam",
@@ -158,6 +169,8 @@ const COPY: Localized<{
     payFull: (amount) => `Alles bezahlen (${amount})`,
     note:
       "Die Anzahlung ist verpflichtend – ich beginne mit der Herstellung, sobald sie eingegangen ist. Wenn Sie nur die Anzahlung bezahlen, bitte ich Sie um die Restzahlung, sobald das Stück fertig ist. Wenn ich mit der Herstellung beginne, schreibe ich Ihnen; ab diesem Moment wird die Anzahlung bei einer Stornierung der Auftragsarbeit nicht erstattet (alles Übrige schon).",
+    contract:
+      "Im Anhang sende ich Ihnen die Auftragsbestätigung mit dem vereinbarten Preis (PDF) – bitte bewahren Sie sie auf.",
     questions: (email, link) =>
       `Wenn Ihnen der Preis oder sonst etwas nicht passt, schreiben Sie mir an ${email}${link ? " – Ihre Bestellung finden Sie auch in Ihrem Kundenkonto." : "."}`,
     closing: "Vielen Dank und herzliche Grüße",
@@ -181,6 +194,8 @@ const COPY: Localized<{
     payFull: (amount) => `Pay in full (${amount})`,
     note:
       "The deposit is required — I'll start making your piece once it arrives. If you pay only the deposit, I'll ask you for the remaining balance when the piece is finished. I'll write to you when I start production; from that moment on, the deposit is non-refundable if the commission is cancelled (everything else is refundable).",
+    contract:
+      "Attached you'll find the commission confirmation with the agreed price (PDF) — please keep it for your records.",
     questions: (email, link) =>
       `If the price or anything else doesn't suit you, just write to me at ${email}${link ? " — you'll also find the order in your account." : "."}`,
     closing: "Thank you — I'm looking forward to it,",
@@ -201,6 +216,8 @@ function CommissionPriceAgreedEmailComponent({
   balanceAmount = "5 350 Kč",
   payDepositUrl = "https://dev.matejforejt.com/made-to-order/order_1/pay-balance?token=abc&castka=zaloha",
   payFullUrl = "https://dev.matejforejt.com/made-to-order/order_1/pay-balance?token=abc",
+  contractAttached = true,
+  attachments_failed = false,
 }: CommissionPriceAgreedEmailProps) {
   const t = useCopy(COPY)
   return (
@@ -243,6 +260,10 @@ function CommissionPriceAgreedEmailComponent({
       </ButtonRow>
 
       <Note>{t.note}</Note>
+
+      {/* O příloze mluvit jen tehdy, když opravdu odešla (service.ts posílá
+          `attachments_failed`, když ji Resend odmítl a e-mail šel bez ní). */}
+      {contractAttached && !attachments_failed ? <P small>{t.contract}</P> : null}
 
       <P small>{t.questions(CONTACT_EMAIL, Boolean(orderLink))}</P>
       <Signature closing={t.closing} />
