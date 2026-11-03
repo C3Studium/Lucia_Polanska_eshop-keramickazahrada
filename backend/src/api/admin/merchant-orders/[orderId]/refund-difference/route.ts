@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/frame
 import { refundPaymentWorkflow } from "@medusajs/medusa/core-flows"
 import { orderLink } from "../../../../../lib/storefront-url"
 import { formatMoney } from "../../../../../lib/customer-email"
+import { emailLocaleOf, pick } from "../../../../../lib/email-locale"
 
 /**
  * The „one click" the customer-edit flow promises: returns the recorded
@@ -27,6 +28,9 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
       "currency_code",
       "metadata",
       "customer.first_name",
+      // Jazyk e-mailu zákazníkovi (lib/email-locale).
+      "shipping_address.country_code",
+      "billing_address.country_code",
       "payment_collections.payments.id",
       "payment_collections.payments.provider_id",
       "payment_collections.payments.captured_at",
@@ -98,24 +102,40 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
 
   if (order.email) {
     const notifications = req.scope.resolve(Modules.NOTIFICATION)
+    // E-mail v jazyce objednávky; `locale` v `data` čte Resend provider.
+    const locale = emailLocaleOf(order)
     await notifications
       .createNotifications({
         to: order.email,
         channel: "email",
         template: "order-refunded",
         data: {
+          ...(locale !== "cs" ? { locale } : {}),
           customerName: order.customer?.first_name ?? undefined,
           orderNumber: `#${order.display_id}`,
           // The template renders strings — a raw `amount` number used to be
           // ignored and the mail fell back to a mock „1 250 Kč".
           refundAmount: formatMoney(
             amount,
-            due.currency_code ?? order.currency_code
+            due.currency_code ?? order.currency_code,
+            locale
           ),
           refundReason:
             due.reason === "mto_cancelled"
-              ? "Zrušená zakázka"
-              : "Vrácení rozdílu po úpravě objednávky",
+              ? pick(locale, {
+                  cs: "Zrušená zakázka",
+                  sk: "Zrušená zákazka",
+                  pl: "Anulowane zamówienie indywidualne",
+                  de: "Stornierte Auftragsarbeit",
+                  en: "Cancelled commission",
+                })
+              : pick(locale, {
+                  cs: "Vrácení rozdílu po úpravě objednávky",
+                  sk: "Vrátenie rozdielu po úprave objednávky",
+                  pl: "Zwrot różnicy po zmianie zamówienia",
+                  de: "Erstattung der Differenz nach Änderung der Bestellung",
+                  en: "Refund of the difference after your order was changed",
+                }),
           orderLink: orderLink(order) || undefined,
         },
         idempotency_key: `refund-difference:${order.id}:${history.length}`,

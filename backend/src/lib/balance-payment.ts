@@ -15,6 +15,8 @@ import { productionOutstanding } from "./ship-gate"
 import { orderConfirmedPath } from "./storefront-url"
 import { paymentStatusFromProvider } from "./payment-provider-status"
 import { duvodCesky } from "./payment-failure"
+import { comgateLang } from "./email-locale"
+import { emailLocaleForOrder } from "./customer-email"
 
 /**
  * Getting a customer a link to pay what they still owe on a commission.
@@ -374,7 +376,9 @@ export const ensureBalancePaymentLink = async (
           country_code: "CZ",
           label: `Obj. ${order.display_id || "doplatek"}`.slice(0, 16),
           name: `${depositOnly ? "Záloha" : "Doplatek"} objednávky ${order.display_id || order.id}`,
-          lang: "cs",
+          // Brána v jazyce objednávky (lib/email-locale) — prohlížeč ji nepřeloží.
+
+          lang: comgateLang(await emailLocaleForOrder(container, order)),
           production_payment_request_id: (request as any).id,
           // Návrat z ComGate po doplatku na reálnou stránku objednávky, ne na
           // neexistující /payment/{session}/confirmed (to byl ten 404).

@@ -40,6 +40,7 @@ import {
   assertDepositPaidForAgreedPrice,
   sendAgreedPrice,
 } from "../../../../../../lib/made-to-order/agreed-price"
+import { applyShippingChoice } from "../../../../../../lib/made-to-order/shipping-choice"
 import { isServiceLine } from "../../../../../../lib/packaging-lines"
 import {
   LINE_QUANTITY_FIELDS,
@@ -48,6 +49,8 @@ import {
 import { cancelProductionStage } from "../../../../../../lib/production-cancel"
 import type { MerchantOrderStage } from "../../../../../../modules/merchant-order/stages"
 import { transitionMerchantOrderWorkflow } from "../../../../../../workflows/transition-merchant-order"
+import { comgateLang } from "../../../../../../lib/email-locale"
+import { emailLocaleForOrder } from "../../../../../../lib/customer-email"
 
 type ProductionAction =
   | "confirm_specification"
@@ -80,6 +83,14 @@ type ActionBody = {
   deposit_amount?: number | null
   /** send_agreed_price: poštovné, když se kus posílá (jinak 0 = osobní odběr). */
   shipping_total?: number | null
+  /**
+   * send_agreed_price: zvolená doprava objednávky. U ceny po domluvě si
+   * zákazník objednal na osobní odběr; když se domluvíte na zásilce, musí se
+   * vyměnit i doprava objednávky, jinak nejde vyrobit štítek ČP, nerozběhne
+   * se sledování a e-maily mluví o vyzvednutí v ateliéru
+   * (lib/made-to-order/shipping-choice).
+   */
+  shipping_option_id?: string | null
   /** send_agreed_price: balné k té zásilce. */
   packaging_total?: number | null
   /** adjust_surcharge: příplatek v Kč (hlavní jednotka). Navyšuje doplatek. */
@@ -472,6 +483,18 @@ export const POST = async (
   }
 
   if (body.action === "send_agreed_price") {
+    /*
+     * Doprava napřed: Potvrzení zakázky v příloze e-mailu i jeho text berou
+     * způsob dopravy z objednávky, takže se musí vyměnit dřív, než e-mail
+     * odejde. Když výměna selže, cena se neposílá — zákazník by dostal
+     * poštovné za dopravu, která na objednávce není.
+     */
+    if (body.shipping_option_id) {
+      await applyShippingChoice(req.scope, {
+        orderId: req.params.orderId,
+        shippingOptionId: String(body.shipping_option_id),
+      })
+    }
     const sent = await sendAgreedPrice(req.scope, {
       orderId: req.params.orderId,
       productionOrder,
@@ -699,7 +722,9 @@ export const POST = async (
                 country_code: "CZ",
                 label: `Obj. ${order.display_id || "doplatek"}`.slice(0, 16),
                 name: `Doplatek objednávky ${order.display_id || order.id}`,
-                lang: "cs",
+                // Brána v jazyce objednávky (lib/email-locale) — prohlížeč ji nepřeloží.
+
+                lang: comgateLang(await emailLocaleForOrder(req.scope, order)),
                 production_payment_request_id: request.id,
                 // Návrat z ComGate po doplatku na reálnou stránku objednávky,
                 // ne na neexistující /payment/{session}/confirmed (404).

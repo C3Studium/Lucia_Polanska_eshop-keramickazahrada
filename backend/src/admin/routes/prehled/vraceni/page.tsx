@@ -27,7 +27,7 @@ import { formatCzk } from "../../../lib/workbench";
 import { ceskaChyba } from "../../../lib/ceska-chyba";
 
 /**
- * Přehled → Reklamace: krátký souhrn + odkaz do modulu „Reklamace a zrušení".
+ * Přehled → Reklamace: krátký souhrn + odkaz do modulu „Reklamace a vrácení".
  *
  * Dřív tu byla celá fronta s tlačítky Schválit / Vrátit peníze / Zamítnout.
  * Ta obcházela pravidla nového modulu (peníze až po zboží, refundace jen ve
@@ -68,12 +68,12 @@ const VraceniInner = () => {
           <Heading>Reklamace a vrácení</Heading>
           <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
             Reklamace, vrácení zboží a odstoupení od smlouvy se vyřizují v
-            modulu Reklamace a zrušení — tady je jen přehled, co čeká. Peníze se
+            modulu Reklamace a vrácení — tady je jen přehled, co čeká. Peníze se
             nikdy nevrací samy.
           </Text>
         </div>
         <Button size="base" asChild>
-          <Link to="/reklamace">Otevřít Reklamace a zrušení</Link>
+          <Link to="/reklamace">Otevřít Reklamace a vrácení</Link>
         </Button>
       </header>
 

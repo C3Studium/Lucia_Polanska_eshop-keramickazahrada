@@ -3,11 +3,13 @@ import {
   Badge,
   Button,
   Container,
+  Drawer,
   Heading,
   Input,
+  Label,
   Skeleton,
   Text,
-  Toaster,
+  Textarea,
   toast,
 } from "@medusajs/ui";
 import {
@@ -37,6 +39,14 @@ import { adminQueryClient } from "../../../lib/query-client";
 import { sdk } from "../../../lib/sdk";
 import { formatCzk } from "../../../lib/workbench";
 import { toastWithUndo } from "../../../lib/undo";
+import {
+  attendanceRows,
+  attendanceSummary,
+  formatKc,
+  messageRecipients,
+  persons,
+  type AttendanceRow,
+} from "../../../../lib/course-attendance";
 
 /**
  * Jeden termín kurzu — vlastní stránka, ne vysouvací panel.
@@ -69,6 +79,8 @@ type Reservation = {
   amount_due?: number;
   payment_method: "online" | "on_site";
   payment_status: "pending" | "paid" | "on_site";
+  /** Schválená žádost o místo — zákazník si platbu ještě nevybral. */
+  payment_choice_pending?: boolean;
   paid_at: string | null;
   status: "active" | "cancelled";
   cancel_reason: string | null;
@@ -434,6 +446,285 @@ const ParticipantRow = ({
 };
 
 /* ------------------------------------------------------------------ */
+/* Prezenční listina                                                   */
+/* ------------------------------------------------------------------ */
+
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+const formatPragueDateTime = (value: string): string =>
+  new Intl.DateTimeFormat("cs-CZ", {
+    timeZone: PRAGUE_TZ,
+    weekday: "long",
+    day: "numeric",
+    month: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+
+const formatMinutes = (minutes: number | null): string => {
+  if (!minutes || minutes <= 0) return "";
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (!hours) return `${rest} minut`;
+  const label = hours === 1 ? "hodina" : hours < 5 ? "hodiny" : "hodin";
+  return rest ? `${hours} ${label} ${rest} min` : `${hours} ${label}`;
+};
+
+/**
+ * Tisknutelná listina — stejné řádky jako PDF, které chodí e-mailem 12 h
+ * před začátkem (`lib/course-attendance.ts`). Tisk z prohlížeče umí i
+ * „Uložit jako PDF".
+ */
+const buildAttendanceDocument = (term: Term, rows: AttendanceRow[]): string => {
+  const summary = attendanceSummary(rows);
+  const when = [formatPragueDateTime(term.starts_at), formatMinutes(term.duration_minutes)]
+    .filter(Boolean)
+    .join(" · ");
+  const body = rows
+    .map(
+      (row) => `<tr>
+  <td class="check"><span></span></td>
+  <td><strong>${escapeHtml(row.name)}</strong></td>
+  <td>${escapeHtml(row.phone || "—")}</td>
+  <td class="email">${escapeHtml(row.email || "—")}</td>
+  <td class="num">${row.party_size}</td>
+  <td class="num">${row.paid > 0 ? escapeHtml(formatKc(row.paid)) : "—"}<small>${escapeHtml(row.payment_note)}</small></td>
+  <td class="num">${row.due > 0 ? `<strong>${escapeHtml(formatKc(row.due))}</strong>` : "—"}</td>
+  <td>${escapeHtml(row.note)}</td>
+  <td class="sign"></td>
+</tr>`
+    )
+    .join("\n");
+  return `<!doctype html>
+<html lang="cs"><head><meta charset="utf-8">
+<title>Prezenční listina — ${escapeHtml(term.title)}</title>
+<style>
+  @page { size: A4 landscape; margin: 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #1f1e1b; margin: 0; font-size: 11px; }
+  .eyebrow { font-size: 9px; letter-spacing: .08em; color: #6f7259; text-transform: uppercase; }
+  h1 { font-size: 20px; margin: 4px 0 2px; }
+  .meta { font-size: 12px; margin: 0 0 2px; }
+  .summary { color: #6b645c; margin: 0 0 10px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead { display: table-header-group; }
+  th { background: #f3ebe1; color: #6b645c; font-size: 9px; text-transform: uppercase; letter-spacing: .04em; text-align: left; padding: 5px 6px; }
+  td { border-bottom: 1px solid #b9ad9e; padding: 7px 6px; vertical-align: top; height: 34px; }
+  tr { page-break-inside: avoid; }
+  .num { text-align: right; white-space: nowrap; }
+  th.num { text-align: right; }
+  .email { word-break: break-all; }
+  small { display: block; color: #6b645c; font-size: 9px; }
+  .check { width: 26px; }
+  .check span { display: inline-block; width: 13px; height: 13px; border: 1px solid #1f1e1b; }
+  .sign { width: 130px; }
+  .empty { color: #6b645c; padding: 20px 0; }
+</style></head>
+<body>
+  <div class="eyebrow">Keramická zahrada · prezenční listina</div>
+  <h1>${escapeHtml(term.title)}</h1>
+  <p class="meta">${escapeHtml(when)}${term.location ? ` · ${escapeHtml(term.location)}` : ""}</p>
+  <p class="summary">${escapeHtml(persons(summary.people))} · ${summary.reservations} ${
+    summary.reservations >= 5 || summary.reservations === 0 ? "rezervací" : "rezervace"
+  } · vybrat na místě celkem ${summary.due_total > 0 ? escapeHtml(formatKc(summary.due_total)) : "nic"}</p>
+  ${
+    rows.length
+      ? `<table>
+    <thead><tr><th></th><th>Jméno</th><th>Telefon</th><th>E-mail</th><th class="num">Osob</th><th class="num">Zaplaceno</th><th class="num">Vybrat na místě</th><th>Poznámka</th><th>Podpis</th></tr></thead>
+    <tbody>${body}</tbody>
+  </table>`
+      : `<p class="empty">Na termín zatím není nikdo přihlášený.</p>`
+  }
+</body></html>`;
+};
+
+const AttendanceButton = ({ term }: { term: Term }) => (
+  <Button
+    size="small"
+    variant="secondary"
+    onClick={() => {
+      const rows = attendanceRows(term.reservations);
+      const win = window.open("", "_blank");
+      if (!win) {
+        toast.error(
+          "Prohlížeč zablokoval nové okno — povolte vyskakovací okna a zkuste to znovu."
+        );
+        return;
+      }
+      win.document.write(buildAttendanceDocument(term, rows));
+      win.document.close();
+      win.focus();
+      // Okno se musí nejdřív vykreslit, pak teprve tisk.
+      win.setTimeout(() => win.print(), 300);
+    }}
+  >
+    Prezenční listina
+  </Button>
+);
+
+/* ------------------------------------------------------------------ */
+/* Napsat všem účastníkům                                              */
+/* ------------------------------------------------------------------ */
+
+/** Klíč jedné dávky — dvojklik ani opakovaný požadavek nepošle zprávu dvakrát. */
+const newBatchKey = (): string => {
+  try {
+    if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+      return crypto.randomUUID();
+    }
+  } catch {
+    // Starší prohlížeč — náhradní klíč níž.
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+};
+
+const MessageDrawer = ({ term }: { term: Term }) => {
+  const [open, setOpen] = useState(false);
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [batchKey, setBatchKey] = useState(newBatchKey);
+
+  const { recipients, withoutEmail } = messageRecipients(term.reservations);
+
+  const send = useMutation({
+    mutationFn: () =>
+      sdk.client.fetch<{
+        sent: number;
+        failed: string[];
+        without_email: Array<{ name: string; phone: string }>;
+      }>(`/admin/courses/terms/${term.id}/message`, {
+        method: "POST",
+        body: {
+          message: message.trim(),
+          subject: subject.trim() || null,
+          idempotency_key: batchKey,
+        },
+      }),
+    onSuccess: (result) => {
+      if (result.failed.length) {
+        toast.warning(
+          `Odesláno ${result.sent}×. Nepodařilo se: ${result.failed.join(", ")} — zkuste to znovu v Přehled → Odeslané e-maily.`,
+          { duration: 15000 }
+        );
+      } else {
+        toast.success(
+          `Zpráva odešla ${result.sent === 1 ? "1 účastníkovi" : `${result.sent} účastníkům`}.`
+        );
+      }
+      if (result.without_email.length) {
+        toast.info(
+          `Bez e-mailu — zavolejte jim: ${result.without_email
+            .map((person) => (person.phone ? `${person.name} (${person.phone})` : person.name))
+            .join(", ")}`,
+          { duration: 15000 }
+        );
+      }
+      setOpen(false);
+      setSubject("");
+      setMessage("");
+      setBatchKey(newBatchKey());
+    },
+    onError: (error) =>
+      toast.error(ceskaChyba(error, "Zprávu se nepodařilo odeslat.")),
+  });
+
+  const count = recipients.length;
+  const valid = message.trim().length >= 3 && count > 0;
+
+  return (
+    <Drawer open={open} onOpenChange={setOpen}>
+      <Drawer.Trigger asChild>
+        <Button size="small" variant="secondary">
+          Napsat všem
+        </Button>
+      </Drawer.Trigger>
+      <Drawer.Content className="flex h-full flex-col">
+        <Drawer.Header>
+          <Drawer.Title>Napsat všem účastníkům</Drawer.Title>
+          <Drawer.Description>
+            Třeba „zpozdím se o 30 minut“ nebo „přineste si zástěru“. Každý
+            dostane e-mail s oslovením, údaji o kurzu a vaším podpisem.
+          </Drawer.Description>
+        </Drawer.Header>
+        <Drawer.Body className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="flex flex-col gap-y-5">
+            <div className="bg-ui-bg-subtle rounded-lg px-4 py-3">
+              <Text size="small" weight="plus">
+                {term.title}
+              </Text>
+              <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                {formatPragueDateTime(term.starts_at)} · {term.location}
+              </Text>
+            </div>
+            <div className="flex flex-col gap-y-2">
+              <Label htmlFor="course-message-text">Zpráva</Label>
+              <Textarea
+                id="course-message-text"
+                rows={7}
+                value={message}
+                placeholder="Omlouvám se, zdržím se asi o 30 minut — začneme v 10:30."
+                onChange={(event) => setMessage(event.target.value)}
+              />
+              <Text size="xsmall" className="text-ui-fg-muted">
+                Oslovení („Dobrý den, …“) a podpis doplníme sami.
+              </Text>
+            </div>
+            <div className="flex flex-col gap-y-2">
+              <Label htmlFor="course-message-subject">Předmět (nepovinné)</Label>
+              <Input
+                id="course-message-subject"
+                value={subject}
+                placeholder={`Zpráva ke kurzu ${term.title}`}
+                onChange={(event) => setSubject(event.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-y-1">
+              <Text size="small" weight="plus">
+                {count === 0
+                  ? "Nikdo z přihlášených nemá e-mail."
+                  : `Odejde ${count === 1 ? "1 člověku" : `${count} lidem`}:`}
+              </Text>
+              {count > 0 && (
+                <Text size="xsmall" className="text-ui-fg-subtle">
+                  {recipients.map((recipient) => recipient.name).join(", ")}
+                </Text>
+              )}
+              {withoutEmail.length > 0 && (
+                <Text size="xsmall" className="text-ui-fg-error mt-1">
+                  Bez e-mailu — těm zavolejte:{" "}
+                  {withoutEmail
+                    .map((person) => (person.phone ? `${person.name} (${person.phone})` : person.name))
+                    .join(", ")}
+                </Text>
+              )}
+            </div>
+          </div>
+        </Drawer.Body>
+        <Drawer.Footer>
+          <Button variant="secondary" onClick={() => setOpen(false)}>
+            Zavřít
+          </Button>
+          <Button
+            variant="primary"
+            isLoading={send.isPending}
+            disabled={!valid || send.isPending}
+            onClick={() => send.mutate()}
+          >
+            {count > 0 ? `Odeslat (${count})` : "Odeslat"}
+          </Button>
+        </Drawer.Footer>
+      </Drawer.Content>
+    </Drawer>
+  );
+};
+
+/* ------------------------------------------------------------------ */
 /* Stránka                                                             */
 /* ------------------------------------------------------------------ */
 
@@ -758,7 +1049,7 @@ const TermDetail = () => {
             <Pole label="Poznámka">
               <InlineTextarea
                 value={term.note ?? ""}
-                placeholder="jen pro vás — zákazník ji nevidí"
+                placeholder="co s sebou — přijde účastníkům v připomínce 3 dny předem"
                 onSave={(next) => patch.mutateAsync({ note: next || null })}
               />
             </Pole>
@@ -775,8 +1066,17 @@ const TermDetail = () => {
             </Heading>
             <Text size="small" className="text-ui-fg-subtle mt-1">
               Kdo přijde, kolik platí a jestli už zaplatil.
+              {!zruseny && aktivni.length > 0 && new Date(term.starts_at).getTime() > Date.now()
+                ? " Prezenční listina vám navíc přijde e-mailem 12 hodin před začátkem."
+                : ""}
             </Text>
           </div>
+          {!zruseny && aktivni.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <AttendanceButton term={term} />
+              <MessageDrawer term={term} />
+            </div>
+          )}
         </header>
 
         {aktivni.length === 0 ? (
@@ -859,7 +1159,6 @@ const TermDetail = () => {
         </Container>
       )}
 
-      <Toaster />
     </div>
   );
 };

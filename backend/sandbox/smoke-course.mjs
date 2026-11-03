@@ -45,7 +45,7 @@ async function main() {
           terms_accepted: true,
           exception_ack: true,
           photo_consent: false,
-          terms_version: arg("terms-version", "2026-10-15"),
+          terms_version: arg("terms-version", "2026-11-03"),
           client_accepted_at: new Date().toISOString(),
         }),
   }

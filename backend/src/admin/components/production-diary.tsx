@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { formatDateTime } from "../lib/format";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba } from "../lib/ceska-chyba";
+import { useCommissionsOfOrder } from "./agreed-price";
 
 /**
  * Deník výroby — photos and notes that live with the zakázka
@@ -75,11 +76,19 @@ const toDiaryMessages = (notes: DiaryNote[]): DiaryMessage[] =>
 
 export const ProductionDiary = ({
   orderId,
+  productionOrderId,
   label,
   trigger,
 }: {
   /** Medusa order id — the key every diary surface already holds. */
   orderId: string;
+  /**
+   * Zakázka, o které deník je (§ 0c: zakázka = položka). Objednávka jich může
+   * mít víc, každá má svoje vlákno — a zpráva „Ukázat zákazníkovi" je e-mail
+   * o průběhu TÉ JEDNÉ zakázky. Kdo id nemá (seznam objednávek), nechá ho
+   * prázdné a deník se na zakázku zeptá.
+   */
+  productionOrderId?: string | null;
   /** What to call the zakázka in the header, e.g. „#1042". */
   label: string;
   trigger: React.ReactNode;
@@ -90,13 +99,30 @@ export const ProductionDiary = ({
   const [uploading, setUploading] = useState(false);
   // Fotka otevřená přes celou obrazovku (zvětšení z vlákna).
   const [lightbox, setLightbox] = useState<string | null>(null);
+  /** Vybraná zakázka, když ji volající neurčil a objednávka jich má víc. */
+  const [picked, setPicked] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
+  /* Zakázky objednávky — dotáhnou se jen tam, kde se musí vybírat. */
+  const commissionsQuery = useCommissionsOfOrder(
+    orderId,
+    open && !productionOrderId
+  );
+  const commissions = commissionsQuery.data?.production_orders ?? [];
+  const activeId =
+    productionOrderId ??
+    picked ??
+    (commissions.length === 1 ? commissions[0].id : null);
+  /** Víc zakázek a žádná vybraná — zápis by server odmítl, tak se neposílá. */
+  const needsPick = !productionOrderId && commissions.length > 1 && !picked;
+
   const { data, isLoading, refetch } = useQuery<{ notes: DiaryNote[] }>({
-    queryKey: ["production-diary", orderId],
+    queryKey: ["production-diary", orderId, activeId],
     queryFn: () =>
-      sdk.client.fetch(`/admin/made-to-order/orders/${orderId}/notes`),
+      sdk.client.fetch(`/admin/made-to-order/orders/${orderId}/notes`, {
+        ...(activeId ? { query: { production_order_id: activeId } } : {}),
+      }),
     enabled: open,
   });
 
@@ -118,7 +144,11 @@ export const ProductionDiary = ({
     }) =>
       sdk.client.fetch(`/admin/made-to-order/orders/${orderId}/notes`, {
         method: "POST",
-        body: payload,
+        // Zápis patří TÉ zakázce — bez id by ho server u víc zakázek odmítl.
+        body: {
+          ...payload,
+          ...(activeId ? { production_order_id: activeId } : {}),
+        },
       }),
     onSuccess: async () => {
       setText("");
@@ -216,6 +246,28 @@ export const ProductionDiary = ({
           <Drawer.Title>Deník výroby — {label}</Drawer.Title>
         </Drawer.Header>
         <Drawer.Body className="flex flex-col gap-y-5 overflow-y-auto">
+          {/* Víc zakázek v objednávce: každá má svoje vlákno, ať zpráva
+              (a e-mail z ní) mluví jen o té jedné. */}
+          {!productionOrderId && commissions.length > 1 && (
+            <div className="flex flex-col gap-y-2">
+              <Text size="xsmall" className="text-ui-fg-subtle">
+                Které zakázky se zápis týká:
+              </Text>
+              <div className="flex flex-wrap gap-2">
+                {commissions.map((commission, index) => (
+                  <Button
+                    key={commission.id}
+                    size="small"
+                    variant={activeId === commission.id ? "primary" : "secondary"}
+                    onClick={() => setPicked(commission.id)}
+                  >
+                    {commission.line_title || `Zakázka ${index + 1}`}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="border-ui-border-base rounded-lg border p-3">
             <Textarea
               rows={2}
@@ -223,6 +275,12 @@ export const ProductionDiary = ({
               value={text}
               onChange={(event) => setText(event.target.value)}
             />
+            {needsPick && (
+              <Text size="xsmall" className="text-ui-fg-muted mt-2">
+                Nejdřív vyberte zakázku výš — zápis i e-mail z něj půjdou jen
+                o ní.
+              </Text>
+            )}
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
               <label className="flex items-center gap-2">
                 <Switch checked={share} onCheckedChange={setShare} />
@@ -246,6 +304,7 @@ export const ProductionDiary = ({
                   size="small"
                   variant="secondary"
                   isLoading={uploading}
+                  disabled={needsPick}
                   onClick={() => fileInput.current?.click()}
                 >
                   Vyfotit / nahrát
@@ -253,7 +312,7 @@ export const ProductionDiary = ({
                 <Button
                   size="small"
                   isLoading={addNote.isPending && !uploading}
-                  disabled={!text.trim()}
+                  disabled={!text.trim() || needsPick}
                   onClick={() =>
                     addNote.mutate({
                       text: text.trim(),

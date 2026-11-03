@@ -9,6 +9,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { useEffect, useId, useRef, useState, type FormEvent } from "react"
 
 import type { MerchantIdentity } from "@lib/data/merchant"
+import { useContactEmails } from "@lib/context/contact-emails"
 import { itemValue } from "@lib/util/site-copy"
 import type { CopyBlock } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
@@ -193,6 +194,17 @@ export default function ContactDialogPanel({
   const text = (label: string) => dialogText(copy, label)
   const edit = (label: string) => editableItem(copy, label)
   const [inquiry, setInquiry] = useState<Inquiry>(initialTopic)
+  /*
+   * Adresa ze Studia (`global.kontakty`), ne z „Právních údajů": okno je
+   * kontakt, ne doklad. Změna objednávky a témata Zakázka / Objednávka
+   * dostanou adresu pro objednávky a zakázky — na ni Lucie odpovídá sama;
+   * obecný dotaz a kurzy adresu pro dotazy.
+   */
+  const emails = useContactEmails()
+  const replyEmail =
+    orderChange || inquiry === "Zakázka" || inquiry === "Objednávka"
+      ? emails.objednavky
+      : emails.dotazy
   const [hoveredInquiry, setHoveredInquiry] = useState<Inquiry | null>(null)
   const [closeHovered, setCloseHovered] = useState(false)
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: "idle" })
@@ -429,7 +441,7 @@ export default function ContactDialogPanel({
 
             {submitState.kind === "sent" ? (
               <SentMessage
-                email={merchant.email}
+                email={replyEmail}
                 onClose={onClose}
                 orderChange={Boolean(orderChange)}
                 copy={copy}
@@ -497,7 +509,7 @@ export default function ContactDialogPanel({
                       exit="exit"
                     >
                       {submitState.message}{" "}
-                      <a href={`mailto:${merchant.email}`}>{merchant.email}</a>
+                      <a href={`mailto:${replyEmail}`}>{replyEmail}</a>
                     </motion.p>
                   )}
                 </AnimatePresence>
@@ -644,7 +656,7 @@ export default function ContactDialogPanel({
                       exit="exit"
                     >
                       {submitState.message}{" "}
-                      <a href={`mailto:${merchant.email}`}>{merchant.email}</a>
+                      <a href={`mailto:${replyEmail}`}>{replyEmail}</a>
                     </motion.p>
                   )}
                 </AnimatePresence>
@@ -716,7 +728,7 @@ export default function ContactDialogPanel({
             >
               <div>
                 <span>E-mail</span>
-                <a href={`mailto:${merchant.email}`}>{merchant.email}</a>
+                <a href={`mailto:${emails.dotazy}`}>{emails.dotazy}</a>
               </div>
               <div>
                 <span>Telefon</span>

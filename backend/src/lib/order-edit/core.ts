@@ -32,6 +32,7 @@ import {
   LOCK_REASON,
   lineLockFor,
   moneySentence,
+  moneySentenceIn,
   resolveShippingAmount,
   shippingNote,
   validateEditActions,
@@ -53,6 +54,8 @@ import {
   payLaterProviderOf,
   repairPaymentsAfterEdit,
 } from "./payments"
+import { comgateLang } from "../email-locale"
+import { emailLocaleForOrder } from "../customer-email"
 
 /**
  * Jádro zákaznické úpravy objednávky — sdílené tokenovou routou
@@ -868,7 +871,9 @@ export const runCustomerEdit = async (
             country_code: "CZ",
             label: `Obj. ${order.display_id}`.slice(0, 16),
             name: `Doplatek úpravy objednávky ${order.display_id}`,
-            lang: "cs",
+            // Brána v jazyce objednávky (lib/email-locale) — prohlížeč ji nepřeloží.
+
+            lang: comgateLang(await emailLocaleForOrder(container, order)),
             order_change_id: changeId,
             order_id: order.id,
             edit_difference: settlement.amount,
@@ -954,6 +959,9 @@ export const runCustomerEdit = async (
       changeId,
       difference,
       moneySentence: summary.money_sentence,
+      // Táž věta v jazyce objednávky (e-mail jde v jazyce zákazníka).
+      sentence: (locale, currencyCode) =>
+        moneySentenceIn({ difference, payment, totalAfter: after.total, currencyCode }, locale),
     }).catch((error) =>
       logger.warn(`[úprava] E-mail o úpravě #${order.display_id} neodešel: ${error?.message}`)
     )

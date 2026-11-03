@@ -7,7 +7,8 @@ import { notifyMerchant } from "../lib/notify"
 import { balancePaymentUrl } from "../lib/balance-payment-link"
 import { paymentStatusFromProvider } from "../lib/payment-provider-status"
 import { stageAfterBalancePaid } from "../lib/balance-payment"
-import { duvodCesky, failedPaymentEmailDue } from "../lib/payment-failure"
+import { duvodCesky, failedPaymentEmailDue, failureReasonIn } from "../lib/payment-failure"
+import { emailLocaleOf } from "../lib/email-locale"
 import {
   customerName,
   formatMoney,
@@ -96,6 +97,10 @@ const emailCustomerAboutFailure = async (
       "customer.last_name",
       "shipping_address.first_name",
       "shipping_address.last_name",
+      // Jazyk objednávky (lib/email-locale).
+      "metadata",
+      "shipping_address.country_code",
+      "billing_address.country_code",
     ],
     filters: { id: production.order_id },
   })
@@ -103,20 +108,25 @@ const emailCustomerAboutFailure = async (
   if (!order) {
     return
   }
+  const locale = emailLocaleOf(order)
 
   await sendCustomerEmail(container, {
     template: "payment-failed",
     to: order.email,
     key: `payfail:${request.id}`,
     orderId: order.id,
+    locale,
     data: {
       customerName: customerName(order),
       orderNumber: orderNumber(order),
-      paymentAmount: formatMoney(request.amount, request.currency_code),
-      failureReason:
+      paymentAmount: formatMoney(request.amount, request.currency_code, locale),
+      // Uložený důvod je česky (čte ho i administrace) — do e-mailu přeložený.
+      failureReason: failureReasonIn(
         request.provider_error_reason ||
-        FAILURE_REASONS[status] ||
-        FAILURE_REASONS.error,
+          FAILURE_REASONS[status] ||
+          FAILURE_REASONS.error,
+        locale
+      ),
       // Odkaz na doplatek TÉTO zakázky (objednávka jich může mít víc).
       retryLink: balancePaymentUrl(order.id, production.id) || orderLink(order),
     },

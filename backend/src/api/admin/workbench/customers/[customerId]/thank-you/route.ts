@@ -1,15 +1,16 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import {
-  ContainerRegistrationKeys,
-  MedusaError,
-  Modules,
-} from "@medusajs/framework/utils"
-import { z } from "@medusajs/framework/zod"
-import { storefrontBase } from "../../../../../../lib/customer-email"
-import { newsletterUnsubscribeUrl } from "../../../../../../lib/newsletter-link"
+import { getLoyaltySettings, issueManualLoyaltyCode } from "../../../../../../lib/loyalty-code"
+import { parseLoyaltyCodeBody } from "../loyalty-code/route"
 
 /**
- * „Poděkovat" — a one-time code for someone who keeps coming back.
+ * „Poděkovat" — starší adresa ručního slevového kódu.
+ *
+ * Od 3. 11. 2026 dělá totéž co `…/loyalty-code` (karta zákazníka →
+ * „Poslat slevový kód"): kód jen pro tohoto člověka (pravidlo `customer.id`),
+ * aktivní (dřív vznikal jako koncept a obchod ho odmítl), e-mail v jazyce
+ * zákazníka. Adresa zůstává, ať nic, co ji volá, nespadne.
+ *
+ * Původní úvaha (níž) platí dál pro to, proč je to jedna akce.
  *
  * ## Why it is one action and not three
  *
@@ -28,145 +29,25 @@ import { newsletterUnsubscribeUrl } from "../../../../../../lib/newsletter-link"
  * cannot be forwarded around and spent by a stranger — one code, one customer,
  * one use.
  *
- * ## What it does not do
+ * ## Kdo rozhoduje
  *
- * It does not decide *who* deserves thanking. That is hers: the workbench shows
- * orders and lifetime value, she reads the person behind them, she presses the
- * button. A rule that mails money automatically is a rule that eventually mails
- * money to the wrong person.
+ * Ručně ona: karta ukazuje nákupy a útratu, ona zná člověka za nimi. Automat
+ * „po N. zaplacené objednávce" existuje od 3. 11. 2026 jen jako vědomě
+ * zapnutá volba (výchozím vypnutý) a jen pro potvrzené odběratele newsletteru.
  */
-
-const PostThankYouSchema = z.object({
-  /** Percentage off. Bounded so a slip of the keyboard cannot give the shop away. */
-  percentage: z.number().min(1).max(50).default(10),
-  /** How long the code lives, in days. */
-  valid_days: z.number().min(1).max(365).default(60),
-})
-
-const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-
-/** Readable when typed off a phone: no O/0, no I/1. */
-const makeCode = () => {
-  let suffix = ""
-  for (let index = 0; index < 6; index += 1) {
-    suffix += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)]
-  }
-  return `DIKY-${suffix}`
-}
-
-const czechDate = (date: Date) =>
-  new Intl.DateTimeFormat("cs-CZ", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(date)
-
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
-  const parsed = PostThankYouSchema.safeParse(req.body ?? {})
-  if (!parsed.success) {
-    throw new MedusaError(
-      MedusaError.Types.INVALID_DATA,
-      parsed.error.issues[0]?.message ?? "Neplatné zadání."
-    )
-  }
-  const { percentage, valid_days } = parsed.data
-
-  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
-  const { data: customers } = await query.graph({
-    entity: "customer",
-    fields: ["id", "email", "first_name", "last_name"],
-    filters: { id: req.params.customerId },
+  const body = parseLoyaltyCodeBody(req.body)
+  const defaults = await getLoyaltySettings(req.scope)
+  const { code, sentTo } = await issueManualLoyaltyCode(req.scope, {
+    customerId: req.params.customerId,
+    percentage: body.percentage ?? defaults.percentage,
+    validDays: body.valid_days ?? defaults.valid_days,
   })
-  const customer = customers[0] as any
-
-  if (!customer?.email) {
-    throw new MedusaError(
-      MedusaError.Types.NOT_FOUND,
-      "Zákazník nebyl nalezen, nebo nemá e-mail."
-    )
-  }
-
-  const promotionModule = req.scope.resolve(Modules.PROMOTION)
-
-  const startsAt = new Date()
-  const endsAt = new Date(startsAt.getTime() + valid_days * 24 * 60 * 60 * 1000)
-
-  // Retried on collision: the code is short and random, so „taken" is rare but
-  // not impossible, and a 500 here would be a thank-you that silently failed.
-  let promotion: any = null
-  let code = ""
-  for (let attempt = 0; attempt < 5 && !promotion; attempt += 1) {
-    code = makeCode()
-    try {
-      const [created] = await promotionModule.createPromotions([
-        {
-          code,
-          type: "standard",
-          is_automatic: false,
-          application_method: {
-            type: "percentage",
-            target_type: "order",
-            allocation: "across",
-            value: percentage,
-          },
-          campaign: {
-            name: `Poděkování — ${customer.email}`,
-            campaign_identifier: `thank-you-${code}`,
-            starts_at: startsAt,
-            ends_at: endsAt,
-            budget: { type: "usage", limit: 1 },
-          },
-        },
-      ] as never)
-      promotion = created
-    } catch (error: any) {
-      const message = String(error?.message ?? "")
-      if (!/exists|duplicate|unique/i.test(message)) throw error
-    }
-  }
-
-  if (!promotion) {
-    throw new MedusaError(
-      MedusaError.Types.UNEXPECTED_STATE,
-      "Nepodařilo se vytvořit unikátní kód. Zkuste to prosím znovu."
-    )
-  }
-
-  const notifications = req.scope.resolve(Modules.NOTIFICATION)
-  const storefront = storefrontBase()
-  const name =
-    [customer.first_name, customer.last_name].filter(Boolean).join(" ") ||
-    undefined
-  // The promotional template's footer promises an unsubscribe link; without
-  // this it falls back to a dead placeholder. Signed for this recipient —
-  // if they are not on the newsletter list the handler shrugs politely.
-  const unsubscribeLink = newsletterUnsubscribeUrl(customer.email)
-
-  await notifications.createNotifications({
-    to: customer.email,
-    channel: "email",
-    template: "promotional",
-    data: {
-      // A personal thank-you must not arrive under the generic campaign
-      // subject, and its legal reason line has to be truthful — the customer
-      // may never have subscribed to the newsletter.
-      subject: "Malé poděkování z ateliéru",
-      receivingReason:
-        "Tuto zprávu vám posíláme jednorázově jako poděkování za vaše nákupy v Keramické zahradě.",
-      customerName: name,
-      discountCode: code,
-      discountPercentage: `${percentage} %`,
-      expiryDate: czechDate(endsAt),
-      ...(storefront ? { productLink: `${storefront}/store` } : {}),
-      ...(unsubscribeLink ? { unsubscribeLink } : {}),
-    },
-  })
-
   res.status(201).json({
-    code,
-    percentage,
-    expires_at: endsAt.toISOString(),
-    sent_to: customer.email,
-    promotion_id: promotion.id,
+    code: code.code,
+    percentage: code.percentage,
+    expires_at: code.endsAt.toISOString(),
+    sent_to: sentTo,
   })
 }
+

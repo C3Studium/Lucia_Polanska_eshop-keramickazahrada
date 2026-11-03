@@ -12,6 +12,8 @@
   --pci-rule: rgb(var(--ink-05-rgb) / .18);
   /* Linka MEZI údaji — slabší než rámeček bloku, ať dělí a nerámuje. */
   --pci-divider: rgb(var(--ink-05-rgb) / .12);
+  /* Linka mezi údaji UVNITŘ jednoho řádku (`.line + .line`) — ještě slabší. */
+  --pci-line-divider: rgb(var(--ink-05-rgb) / .08);
 
   margin-bottom: clamp(1rem, 2.37vh, 2rem);
   padding-bottom: clamp(1rem, 2.22vh, 1.85rem);
@@ -74,6 +76,18 @@
 
 .line {
   display: block;
+}
+
+/*
+ * Víc údajů v jednom řádku (Zakázka: cena po domluvě · záloha · výroba ·
+ * zrušení · odkaz; Dodací lhůta po výrobcích) — každý oddělený vlasovou
+ * linkou, slabší a s menší mezerou než linka mezi řádky, ať je poznat, co
+ * k sobě patří (3. 11. 2026).
+ */
+.line + .line {
+  margin-top: clamp(.3rem, .6vh, .45rem);
+  padding-top: clamp(.4rem, .8vh, .6rem);
+  border-top: 1px solid var(--pci-line-divider);
 }
 
 .rows a,

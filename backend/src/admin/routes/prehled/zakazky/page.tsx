@@ -3,14 +3,16 @@ import {
   Button,
   Container,
   Heading,
+  Input,
+  Select,
   Skeleton,
   Text,
-  Toaster,
 } from "@medusajs/ui";
 import {
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState } from "../../../components/empty-state";
 import { ProductionDiary } from "../../../components/production-diary";
@@ -97,6 +99,28 @@ const stages: Array<{ key: string; label: string; description: string }> = [
   },
 ];
 
+const stageLabel: Record<string, string> = Object.fromEntries(
+  stages.map((stage) => [stage.key, stage.label])
+);
+
+/** Pohled na seznam — volba platí do zavření stránky, není to nastavení. */
+type Razeni = "faze" | "termin";
+
+const casTerminu = (order: ProductionOrder): number => {
+  const time = order.estimated_completion_at
+    ? new Date(order.estimated_completion_at).getTime()
+    : NaN;
+  return Number.isFinite(time) ? time : Infinity;
+};
+
+/** Nejbližší termín napřed; bez termínu na konec, mezi sebou podle čísla objednávky. */
+const podleTerminu = (a: ProductionOrder, b: ProductionOrder): number => {
+  const rozdil = casTerminu(a) - casTerminu(b);
+  if (Number.isFinite(rozdil) && rozdil !== 0) return rozdil;
+  if (casTerminu(a) !== casTerminu(b)) return casTerminu(a) === Infinity ? 1 : -1;
+  return Number(a.display_id ?? 0) - Number(b.display_id ?? 0);
+};
+
 /**
  * Days a balance request has gone unanswered, once it passes a week.
  * `null` below that — a customer taking three days is not a problem.
@@ -164,22 +188,118 @@ const ZakazkyInner = () => {
     refetchOnWindowFocus: true,
   });
 
+  /* Vstup se mění hned; hledá se 350 ms po poslední klávese (jako Objednávky). */
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSearch(searchInput.trim()), 350);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
+  const [razeni, setRazeni] = useState<Razeni>("faze");
+
+  /*
+   * Jméno a e-mail zná objednávka, ne zakázka — řádek zakázky nese jen jméno,
+   * nebo e-mail, když jméno chybí. Proto se text pošle nativnímu hledání
+   * objednávek (e-mail, jméno, adresa) a zakázky se vyberou podle nalezených
+   * objednávek. Číslo objednávky stačí porovnat tady.
+   */
+  const hledaCislo = /^#?\d+$/.test(search);
+  const { data: matchedOrders, isFetching: searchingOrders } = useQuery<{
+    orders: { id: string }[];
+  }>({
+    queryKey: ["production-orders", "search", search],
+    queryFn: () =>
+      sdk.client.fetch("/admin/orders", {
+        query: { q: search, fields: "id", limit: 200 },
+      }),
+    enabled: search.length >= 2 && !hledaCislo,
+    placeholderData: (previous) => previous,
+  });
+  const matchedOrderIds = new Set(
+    (matchedOrders?.orders ?? []).map((order) => order.id)
+  );
+
   const all = data?.production_orders ?? [];
   const active = all.filter(
     (order) => !["completed", "cancelled"].includes(order.stage)
   );
+
+  const needle = search.toLowerCase();
+  const shoda = (order: ProductionOrder): boolean => {
+    if (!search) return true;
+    if (hledaCislo) {
+      return String(order.display_id ?? "") === search.replace(/^#/, "");
+    }
+    return (
+      matchedOrderIds.has(order.order_id) ||
+      [order.customer_name, order.line_title]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(needle))
+    );
+  };
+  const visible = active.filter(shoda);
+
+  /*
+   * Po fázích (výchozí) = sekce Nové zadání → … → Připraveno. Podle termínu
+   * = jeden seznam, nejbližší termín nahoře; zakázky bez termínu na konci,
+   * mezi sebou od nejstarší objednávky.
+   */
+  const sections: Array<{
+    key: string;
+    label: string;
+    description: string;
+    rows: ProductionOrder[];
+  }> =
+    razeni === "termin"
+      ? [
+          {
+            key: "termin",
+            label: "Podle termínu dokončení",
+            description: "Nejbližší slíbený termín nahoře, zakázky bez termínu na konci.",
+            rows: [...visible].sort(podleTerminu),
+          },
+        ]
+      : stages.map((stage) => ({
+          ...stage,
+          rows: visible.filter((order) => order.stage === stage.key),
+        }));
 
   return (
     <div className="flex flex-col gap-y-3">
       <Container className="p-0">
         <WorkTabs active="zakazky" />
 
-        <header className="px-6 pb-5 pt-6">
-          <Heading>Zakázky</Heading>
-          <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
-            Zakázky od zadání přes výrobu až po doplatek — vždy s jedním dalším
-            krokem.
-          </Text>
+        <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-5 pt-6">
+          <div className="min-w-0">
+            <Heading>Zakázky</Heading>
+            <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
+              Zakázky od zadání přes výrobu až po doplatek — vždy s jedním dalším
+              krokem.
+            </Text>
+          </div>
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <Input
+              size="small"
+              type="search"
+              placeholder="Hledat číslo, jméno nebo e-mail…"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              className="w-full sm:w-64"
+            />
+            <Select
+              size="small"
+              value={razeni}
+              onValueChange={(value) => setRazeni(value as Razeni)}
+            >
+              <Select.Trigger className="w-full sm:w-56">
+                <Select.Value />
+              </Select.Trigger>
+              <Select.Content>
+                <Select.Item value="faze">Po fázích</Select.Item>
+                <Select.Item value="termin">Podle termínu dokončení</Select.Item>
+              </Select.Content>
+            </Select>
+          </div>
         </header>
       </Container>
 
@@ -215,8 +335,8 @@ const ZakazkyInner = () => {
       {!isLoading &&
         !isError &&
         active.length > 0 &&
-        stages.map((stage) => {
-          const rows = all.filter((order) => order.stage === stage.key);
+        sections.map((stage) => {
+          const rows = stage.rows;
           if (!rows.length) {
             return null;
           }
@@ -243,6 +363,13 @@ const ZakazkyInner = () => {
                       <Text size="small" weight="plus">
                         #{order.display_id ?? "—"}
                       </Text>
+                      {/* Ve společném seznamu podle termínu chybí nadpis fáze —
+                          řádek ji proto nese sám. */}
+                      {razeni === "termin" && (
+                        <Badge size="2xsmall" className="mt-1">
+                          {stageLabel[order.stage] ?? order.stage}
+                        </Badge>
+                      )}
                       {order.estimated_completion_at && (
                         <Text size="xsmall" className="text-ui-fg-muted mt-1">
                           termín {formatDate(order.estimated_completion_at)}
@@ -351,7 +478,15 @@ const ZakazkyInner = () => {
                       </div>
                       <ProductionDiary
                         orderId={order.order_id}
-                        label={order.display_id ? `#${order.display_id}` : "zakázka"}
+                        productionOrderId={order.id}
+                        label={
+                          [
+                            order.display_id ? `#${order.display_id}` : "zakázka",
+                            order.line_title,
+                          ]
+                            .filter(Boolean)
+                            .join(" — ") || "zakázka"
+                        }
                         trigger={
                           <Button size="small" variant="secondary">
                             Deník
@@ -366,7 +501,15 @@ const ZakazkyInner = () => {
             </Container>
           );
         })}
-      <Toaster />
+
+      {!isLoading && !isError && active.length > 0 && visible.length === 0 && (
+        <Container className="p-0">
+          <EmptyState
+            title={searchingOrders ? "Hledám…" : "Nic nenalezeno"}
+            description="Žádná rozpracovaná zakázka neodpovídá hledání. Zkuste číslo objednávky, příjmení nebo e-mail."
+          />
+        </Container>
+      )}
     </div>
   );
 };

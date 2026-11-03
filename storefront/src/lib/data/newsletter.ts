@@ -16,13 +16,17 @@ import { sdk } from "@lib/config"
  */
 export const subscribeToNewsletter = async ({
   email,
+  countryCode,
 }: {
   email: string
+  /** Země z přepínače — backend podle ní zvolí jazyk potvrzovacího e-mailu. */
+  countryCode?: string | null
 }): Promise<{ ok: boolean }> => {
+  const country = (countryCode ?? "").trim().toLowerCase()
   try {
     await sdk.client.fetch(`/store/newsletter`, {
       method: "POST",
-      body: { email },
+      body: /^[a-z]{2}$/.test(country) ? { email, country_code: country } : { email },
       cache: "no-store",
     })
     return { ok: true }

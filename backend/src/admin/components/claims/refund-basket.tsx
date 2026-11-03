@@ -557,7 +557,7 @@ export const RefundAllPrompt = ({
           </Text>
         </div>
         <Prompt.Footer>
-          <Prompt.Cancel>Zpět</Prompt.Cancel>
+          <Prompt.Cancel>Ponechat</Prompt.Cancel>
           <Prompt.Action
             disabled={!canConfirm || mutation.isPending}
             onClick={() =>

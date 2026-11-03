@@ -2,9 +2,11 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { sendCustomerEmail, storefrontBase } from "../../../lib/customer-email"
 import {
+  newsletterCountryFrom,
   normalizeEmail,
   verifyUnsubscribeToken,
 } from "../../../lib/newsletter-link"
+import { localeForCountry } from "../../../lib/email-locale"
 import { NEWSLETTER_MODULE } from "../../../modules/newsletter"
 import type NewsletterModuleService from "../../../modules/newsletter/service"
 
@@ -87,6 +89,8 @@ const odhlas = async (
         template: "newsletter-unsubscribe",
         to: email,
         key: `nl-unsub:${email}:${day}`,
+        // Odkaz z uvítacího e-mailu nese zemi (`c=sk`); z kampaní (česky) ne.
+        locale: localeForCountry(newsletterCountryFrom(req.query.c)),
         data: { email },
       }).catch((error) =>
         req.scope

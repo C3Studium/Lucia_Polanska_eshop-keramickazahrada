@@ -1,13 +1,9 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { ExclamationCircle } from "@medusajs/icons";
 import {
   Badge,
-  Button,
   Container,
   Heading,
   Switch,
   Text,
-  Toaster,
   toast,
 } from "@medusajs/ui";
 import {
@@ -20,6 +16,8 @@ import { useEffect, useState } from "react";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client";
 import { ceskaChyba } from "../../lib/ceska-chyba";
+import { SaveBar } from "../../components/save-bar";
+import { movedTo } from "../../components/section-tabs";
 
 /**
  * Zkušební režim — stránka, na které se pozná, jestli obchod jede naostro.
@@ -100,7 +98,6 @@ const Inner = () => {
 
   return (
     <Container className="divide-y p-0">
-      <Toaster />
 
       <header className="px-6 pb-4 pt-6">
         <div className="flex flex-wrap items-center gap-3">
@@ -181,37 +178,26 @@ const Inner = () => {
         </dl>
       </section>
 
-      <footer className="flex items-center gap-3 px-6 py-4">
-        <Button
-          size="small"
-          disabled={!zmeneno}
-          isLoading={save.isPending}
-          onClick={() => save.mutate()}
-        >
-          Uložit
-        </Button>
-        {zmeneno && (
-          <Text size="small" className="text-ui-fg-subtle">
-            Neuložená změna.
-          </Text>
-        )}
-      </footer>
+      <SaveBar
+        dirty={zmeneno}
+        count={zmeneno ? 1 : 0}
+        saving={save.isPending}
+        onSave={() => save.mutate()}
+        onDiscard={() => setZkusebni(Boolean(settings?.settings?.test_mode_enabled))}
+      />
     </Container>
   );
 };
 
 const queryClient = adminQueryClient;
 
-const Page = () => (
+/** Obsah záložky Nastavení obchodu › Zkušební režim. */
+export const ZkusebniRezim = () => (
   <QueryClientProvider client={queryClient}>
     <Inner />
   </QueryClientProvider>
 );
 
-export const config = defineRouteConfig({
-  label: "Zkušební režim",
-  icon: ExclamationCircle,
-  rank: 101,
-});
-
-export default Page;
+/* Bez položky v menu — záložka Nastavení obchodu, vidět jen v expertním
+   režimu nebo když obchod jede nanečisto; stará adresa tam přesměruje. */
+export default movedTo("/nastaveni-obchodu/zkusebni-rezim");

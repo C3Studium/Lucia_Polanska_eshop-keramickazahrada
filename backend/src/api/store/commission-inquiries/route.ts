@@ -12,6 +12,7 @@ import {
   preparePhotos,
   sellerContactEmail,
 } from "../../../lib/commission-inquiry"
+import { attachStoredInquiry, buildStoredInquiry } from "../../../lib/commission-inquiry-records"
 import { sendCustomerEmail } from "../../../lib/customer-email"
 import { getLegalFacts } from "../../../lib/merchant-settings"
 import { notifyMerchant } from "../../../lib/notify"
@@ -34,6 +35,8 @@ import { storefrontBase } from "../../../lib/storefront-url"
  * Záznam poptávky = e-mail majitelce (zvonek + e-mail, Reply-To zákazník)
  * a potvrzení zákazníkovi (šablona `commission-inquiry-received`); obojí
  * i s daty (verze OP, serverový čas souhlasu) leží v tabulce notifikací.
+ * Položka zvonku nese navíc vyplněná pole a stav — z ní čte stránka
+ * Poptávky v adminu (`lib/commission-inquiry-records.ts`).
  *
  * Tělo s fotkami potřebuje vyšší limit — viz `api/middlewares.ts`
  * (`/store/commission-inquiries`, `bodyParser.sizeLimit`). Bez něj projde
@@ -148,6 +151,14 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     logger.error(`[poptávka] upozornění majitelce selhalo: ${error?.message ?? error}`)
     res.status(502).json({ message: SEND_FAILED })
     return
+  }
+
+  // Vyplněná pole k položce zvonku — z nich čte stránka Poptávky v adminu.
+  // Výpadek nevadí: stránka si poptávku přečte i z textu upozornění.
+  try {
+    await attachStoredInquiry(req.scope, owner.key, buildStoredInquiry(input, context))
+  } catch (error: any) {
+    logger.warn(`[poptávka] údaje k poptávce se nepodařilo uložit: ${error?.message ?? error}`)
   }
 
   // Potvrzení zákazníkovi je až druhé: poptávka už u majitelky je, takže

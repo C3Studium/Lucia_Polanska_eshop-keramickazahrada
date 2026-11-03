@@ -7,8 +7,11 @@ import { z } from "@medusajs/framework/zod"
 import { sendCustomerEmail } from "../../../lib/customer-email"
 import {
   newsletterConfirmUrl,
+  newsletterCountryFrom,
   normalizeEmail,
+  withNewsletterCountry,
 } from "../../../lib/newsletter-link"
+import { localeForCountry } from "../../../lib/email-locale"
 import { NEWSLETTER_MODULE } from "../../../modules/newsletter"
 import type NewsletterModuleService from "../../../modules/newsletter/service"
 import { PostStoreNewsletterSchema } from "./validators"
@@ -122,7 +125,11 @@ export async function POST(req: MedusaRequest<PostStoreNewsletter>, res: MedusaR
   }
 
   if (shouldAskToConfirm) {
-    const confirmLink = newsletterConfirmUrl(email)
+    // Jazyk podle země přepínače; země jede i v potvrzovacím odkazu, ať je
+    // uvítací e-mail po potvrzení ve stejném jazyce (lib/newsletter-link).
+    const country = newsletterCountryFrom(body?.country_code)
+    const locale = localeForCountry(country)
+    const confirmLink = withNewsletterCountry(newsletterConfirmUrl(email), country)
 
     if (!confirmLink) {
       req.scope
@@ -140,8 +147,10 @@ export async function POST(req: MedusaRequest<PostStoreNewsletter>, res: MedusaR
         template: "newsletter-signup",
         to: email,
         key: `nl-confirm:${email}:${day}`,
+        locale,
         data: {
-          subject: "Novinky z dílny — potvrďte prosím odběr",
+          // Český předmět jen česky — jinak ho provider vezme z překladů.
+          ...(locale === "cs" ? { subject: "Novinky z dílny — potvrďte prosím odběr" } : {}),
           confirmLink,
         },
       }).catch((error) =>

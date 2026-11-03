@@ -1,4 +1,4 @@
-import { Badge, Button, Label, Prompt, Text, Textarea, toast } from "@medusajs/ui";
+import { Badge, Button, Label, Text, Textarea, toast } from "@medusajs/ui";
 import { useState } from "react";
 import {
   asNumber,
@@ -11,6 +11,7 @@ import { formatCzk, productionStageLabels, stageColors } from "../../lib/workben
 import { PanelShell } from "./panels";
 import { DepositRefundPanel } from "./refund-panel";
 import { useReturnAction } from "./use-return-action";
+import { ConfirmDialog } from "../confirm-dialog";
 import { ceskyText } from "../../lib/ceska-chyba";
 
 /**
@@ -141,47 +142,36 @@ const CancelProductionPrompt = ({ request }: { request: ReturnRequest }) => {
   const mutation = useReturnAction<CancelProductionResponse>(request.id, "cancel-production");
 
   return (
-    <Prompt open={open} onOpenChange={setOpen}>
-      <Prompt.Trigger asChild>
+    <ConfirmDialog
+      open={open}
+      onOpenChange={setOpen}
+      trigger={
         <Button size="small" variant="danger">
           Zrušit zakázku
         </Button>
-      </Prompt.Trigger>
-      <Prompt.Content>
-        <Prompt.Header>
-          <Prompt.Title>Zrušit zakázku k objednávce #{request.order_display_id}?</Prompt.Title>
-          <Prompt.Description>
-            Zakázka se uzavře a výrobní příkaz skončí. Když objednávka nemá jiné
-            položky, zruší se celá; u smíšené objednávky se odebere jen zakázková
-            položka a zbytek zůstává.
-          </Prompt.Description>
-        </Prompt.Header>
-        <Prompt.Footer>
-          <Prompt.Cancel>Zpět</Prompt.Cancel>
-          <Prompt.Action
-            onClick={() =>
-              mutation.mutate(
-                {},
-                {
-                  onSuccess: (result) => {
-                    if (result?.cancelled === false) {
-                      toast.warning(
-                        ceskyText(result.message, "Zakázku se nepodařilo zrušit úplně — zkontrolujte detail.")
-                      );
-                    } else {
-                      toast.success(ceskyText(result?.message, "Zakázka byla zrušena."));
-                    }
-                    setOpen(false);
-                  },
-                }
-              )
-            }
-          >
-            Zrušit zakázku
-          </Prompt.Action>
-        </Prompt.Footer>
-      </Prompt.Content>
-    </Prompt>
+      }
+      title={`Zrušit zakázku k objednávce #${request.order_display_id}?`}
+      description="Zakázka se uzavře a výrobní příkaz skončí. Když objednávka nemá jiné položky, zruší se celá; u smíšené objednávky se odebere jen zakázková položka a zbytek zůstává."
+      confirmLabel="Zrušit zakázku"
+      isPending={mutation.isPending}
+      onConfirm={() =>
+        mutation.mutate(
+          {},
+          {
+            onSuccess: (result) => {
+              if (result?.cancelled === false) {
+                toast.warning(
+                  ceskyText(result.message, "Zakázku se nepodařilo zrušit úplně — zkontrolujte detail.")
+                );
+              } else {
+                toast.success(ceskyText(result?.message, "Zakázka byla zrušena."));
+              }
+              setOpen(false);
+            },
+          }
+        )
+      }
+    />
   );
 };
 

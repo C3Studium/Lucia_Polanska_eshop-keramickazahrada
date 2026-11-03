@@ -1,5 +1,4 @@
-import { defineWidgetConfig } from "@medusajs/admin-sdk"
-import type { AdminOrder, DetailWidgetProps } from "@medusajs/framework/types"
+import type { AdminOrder } from "@medusajs/framework/types"
 import { Badge, Button, Container, Heading, Text, toast } from "@medusajs/ui"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { sdk } from "../lib/sdk"
@@ -23,9 +22,11 @@ import {
  *
  * Poukazy vznikají až po `order.placed`, takže hned po dokončení objednávky
  * tu chvíli nemusí být — widget se pak prostě neukáže.
+ *
+ * Vykresluje ho „Práce s objednávkou" (`order-workspace-main.tsx`), 3. 11. 2026.
  */
 
-const OrderGiftVouchersWidget = ({ data: order }: DetailWidgetProps<AdminOrder>) => {
+export const OrderGiftVouchersPanel = ({ order }: { order: AdminOrder }) => {
   const queryClient = useQueryClient()
   const orderId = String(order?.id ?? "")
 
@@ -35,6 +36,20 @@ const OrderGiftVouchersWidget = ({ data: order }: DetailWidgetProps<AdminOrder>)
     queryFn: () =>
       sdk.client.fetch<{ gift_vouchers: AdminGiftVoucher[] }>(
         `/admin/gift-vouchers?order_id=${encodeURIComponent(orderId)}`
+      ),
+  })
+
+  /*
+   * Poukazy UPLATNĚNÉ v téhle objednávce. V souhrnu se ukazuje jen „Sleva
+   * celkem" — podle ní se nepozná, že zákazník platil dárkovým poukazem, ani
+   * kterým a kolik z něj ubylo (3. 11. 2026).
+   */
+  const { data: pouzito } = useQuery({
+    queryKey: ["gift-vouchers", "used-in-order", orderId],
+    enabled: Boolean(orderId),
+    queryFn: () =>
+      sdk.client.fetch<{ gift_vouchers: AdminGiftVoucher[] }>(
+        `/admin/gift-vouchers?used_in_order_id=${encodeURIComponent(orderId)}`
       ),
   })
 
@@ -52,14 +67,75 @@ const OrderGiftVouchersWidget = ({ data: order }: DetailWidgetProps<AdminOrder>)
   })
 
   const vouchers = data?.gift_vouchers ?? []
-  if (isLoading || !vouchers.length) {
+  /*
+   * Jen poukazy, které v TÉHLE objednávce opravdu něco odečetly. Backend bez
+   * podpory `used_in_order_id` (starší běžící verze) parametr přeskočí a vrátí
+   * všechny poukazy — v sandboxu se pak u každé objednávky ukázalo ~60
+   * „uplatněných" poukazů (3. 11. 2026).
+   */
+  const uplatnene = (pouzito?.gift_vouchers ?? []).filter((voucher) =>
+    (voucher.redemptions ?? []).some((redemption) => redemption.order_id === orderId)
+  )
+  if (isLoading || (!vouchers.length && !uplatnene.length)) {
     return null
   }
 
   return (
+    <div className="flex flex-col gap-y-3">
+      {uplatnene.length > 0 && (
+        <Container className="divide-y p-0">
+          <div className="flex items-center justify-between px-6 py-4">
+            <Heading level="h2">Zaplaceno dárkovým poukazem</Heading>
+            <Badge size="2xsmall">{uplatnene.length}</Badge>
+          </div>
+          <div className="divide-y">
+            {uplatnene.map((voucher) => {
+              const tady = (voucher.redemptions ?? []).filter(
+                (redemption) => redemption.order_id === orderId
+              )
+              const odecteno = tady
+                .filter((redemption) => !redemption.reversed_at)
+                .reduce((soucet, redemption) => soucet + redemption.amount, 0)
+              const vracene = tady
+                .filter((redemption) => redemption.reversed_at)
+                .reduce((soucet, redemption) => soucet + redemption.amount, 0)
+              return (
+                <div key={voucher.id} className="flex flex-col gap-y-2 px-6 py-4">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <Text size="small" weight="plus" className="font-mono">
+                      {voucher.code}
+                    </Text>
+                    <StateBadge voucher={voucher} />
+                    <Text size="small" className="text-ui-fg-subtle">
+                      {KIND_LABEL[voucher.kind]} · hodnota{" "}
+                      {formatCzk(voucher.initial_value)} · platí do{" "}
+                      {formatValidUntil(voucher.valid_until)}
+                    </Text>
+                  </div>
+                  <Text size="small">
+                    Z této objednávky odečteno {formatCzk(odecteno)} · na poukazu
+                    zbývá {formatCzk(voucher.balance)}
+                  </Text>
+                  {vracene > 0 && (
+                    <Text size="xsmall" className="text-ui-fg-subtle">
+                      Vráceno zpátky na poukaz: {formatCzk(vracene)}
+                    </Text>
+                  )}
+                  <Text size="xsmall" className="text-ui-fg-subtle">
+                    Koupil {voucher.buyer_name}
+                    {voucher.recipient_name ? ` · pro ${voucher.recipient_name}` : ""}
+                  </Text>
+                </div>
+              )
+            })}
+          </div>
+        </Container>
+      )}
+
+      {vouchers.length > 0 && (
     <Container className="divide-y p-0">
       <div className="flex items-center justify-between px-6 py-4">
-        <Heading level="h2">Dárkové poukazy</Heading>
+        <Heading level="h2">Dárkové poukazy koupené v objednávce</Heading>
         <Badge size="2xsmall">{vouchers.length}</Badge>
       </div>
       <div className="divide-y">
@@ -103,6 +179,8 @@ const OrderGiftVouchersWidget = ({ data: order }: DetailWidgetProps<AdminOrder>)
         ))}
       </div>
     </Container>
+      )}
+    </div>
   )
 }
 
@@ -132,9 +210,3 @@ const PoukazPdf = ({ voucherId }: { voucherId: string }) => {
     </>
   )
 }
-
-export const config = defineWidgetConfig({
-  zone: "order.details.after",
-})
-
-export default OrderGiftVouchersWidget

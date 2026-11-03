@@ -1,6 +1,7 @@
 import { createHash } from "crypto"
 import { z } from "zod"
 import { productLink } from "./storefront-url"
+import { formatEmailDate, localeForCountry, type EmailLocale } from "./email-locale"
 
 /**
  * Poptávka zakázky ze stránky Výroba (LEGAL_AUDIT.md §2, krok 1 doporučeného
@@ -136,6 +137,11 @@ export const CommissionInquirySchema = z.object({
    */
   product_handle: optionalText(INQUIRY_LIMITS.product, "Odkaz na výrobek"),
   product_title: optionalText(INQUIRY_LIMITS.product, "Název výrobku"),
+  /**
+   * Země obchodu (`countryCode` z URL storefrontu) — jen jazyk potvrzovacího
+   * e-mailu (lib/email-locale). Neznámá země = čeština, nic se neodmítá.
+   */
+  country_code: z.string().trim().max(8).optional(),
   /** Honeypot — člověk pole nevidí; vyplněné = robot. */
   website: z.string().max(400).optional(),
 })
@@ -578,6 +584,8 @@ export type CommissionInquiryEmailData = {
   privacyUrl: string | null
   /** Odpověď na potvrzení má jít do ateliéru, ne na odesílací adresu. */
   reply_to?: string
+  /** Jazyk e-mailu (lib/email-locale) — jen když není čeština. */
+  locale?: EmailLocale
 }
 
 export type InquiryCustomerEmail = {
@@ -597,6 +605,8 @@ export const buildInquiryCustomerEmail = (
   context: InquiryContext,
   links: { storefrontBase: string; replyTo?: string | null }
 ): InquiryCustomerEmail => {
+  // Poptávka nemá objednávku — jazyk je ze země, ze které formulář přišel.
+  const locale = localeForCountry(input.country_code)
   const echo = (value: string | undefined) => {
     const text = clean(value)
     return text ? truncateForEcho(neutralizeLinks(text), 300) : null
@@ -618,12 +628,23 @@ export const buildInquiryCustomerEmail = (
       phone: clean(input.phone) || null,
       photoCount: context.photoUrls.length,
       termsVersion: version,
-      termsVersionLabel: termsVersionLabel(version),
+      termsVersionLabel: localizedTermsVersionLabel(version, locale),
       consentedAt: context.receivedAt.toISOString(),
-      consentedAtLabel: formatPragueDateTime(context.receivedAt),
+      consentedAtLabel:
+        locale === "cs"
+          ? formatPragueDateTime(context.receivedAt)
+          : `${formatEmailDate(context.receivedAt, locale)} ${formatPragueDateTime(context.receivedAt).split(" ").pop()}`,
       termsUrl: base ? `${base}/smluvni-podminky#vyroba-na-zakazku` : null,
       privacyUrl: base ? `${base}/ochrana-osobnich-udaju` : null,
       ...(replyTo ? { reply_to: replyTo } : {}),
+      ...(locale !== "cs" ? { locale } : {}),
     },
   }
+}
+
+/** Datum účinnosti OP v jazyce e-mailu; česky beze změny (`termsVersionLabel`). */
+const localizedTermsVersionLabel = (version: string, locale: EmailLocale): string | null => {
+  const czech = termsVersionLabel(version)
+  if (!czech || locale === "cs") return czech
+  return formatEmailDate(`${version}T12:00:00.000Z`, locale)
 }

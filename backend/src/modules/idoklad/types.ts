@@ -118,8 +118,11 @@ export const VAT_RATE_TYPE_BASIC = 1
 export const VAT_RATE_TYPE_ZERO = 2
 /** ItemType: 0 = normal invoice line. */
 export const ITEM_TYPE_NORMAL = 0
-/** ReportLanguage / Pdf language: 1 = Czech. */
+/** ReportLanguage / Pdf language: 1 = Czech, 2 = Slovak, 3 = English, 4 = German. */
 export const REPORT_LANGUAGE_CZ = 1
+export const REPORT_LANGUAGE_SK = 2
+export const REPORT_LANGUAGE_EN = 3
+export const REPORT_LANGUAGE_DE = 4
 
 export type IdokladInvoiceItemPayload = {
   Name: string
@@ -148,6 +151,11 @@ export type IdokladInvoiceDefault = {
   IsEet?: boolean
   IsIncomeTax?: boolean
   VatRegime?: number
+  /** Účet z nastavení agendy (předvyplněný). */
+  AccountNumber?: string | null
+  BankId?: number | null
+  Iban?: string | null
+  Swift?: string | null
   [key: string]: unknown
 }
 
@@ -167,6 +175,13 @@ export type IdokladInvoicePayload = {
   PaymentOptionId: number
   VariableSymbol?: string
   Note?: string
+  /** Jazyk tiskové sestavy (viz REPORT_LANGUAGE_*). */
+  ReportLanguage?: number
+  /** Evropská faktura: účet ve tvaru IBAN + SWIFT. */
+  AccountNumber?: string
+  BankId?: number
+  Iban?: string
+  Swift?: string
 }
 
 export type IdokladIssuedInvoice = {

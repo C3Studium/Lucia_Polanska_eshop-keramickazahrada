@@ -59,8 +59,13 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     "customer.id",
     "customer.first_name",
     "customer.last_name",
-    "items.id",
-    "items.quantity",
+    // `total` potřebuje celé řádky, metody dopravy A `version` objednávky.
+    // Naměřeno 3. 11. 2026 proti sandboxu: s jen `items.id`/`shipping_methods.name`
+    // vycházel `total` 0 (seznam ukazoval „Celkem 0 Kč"), bez `version` Medusa
+    // 2.18 spadne na „Shipping method version is required to load adjustments".
+    "version",
+    "items.*",
+    "shipping_methods.*",
     "shipping_methods.name",
     "shipping_methods.shipping_option.provider_id",
     "fulfillments.id",

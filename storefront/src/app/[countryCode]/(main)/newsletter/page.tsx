@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 
-import { getPageCopy } from "@lib/data/site-copy"
-import { itemFieldPath, itemNote, itemValue } from "@lib/util/site-copy"
+import { getContactEmails, getPageCopy } from "@lib/data/site-copy"
+import { fillPlaceholders, itemFieldPath, itemNote, itemValue } from "@lib/util/site-copy"
 import type { CopyBlock } from "@lib/util/site-copy"
 import OrderStateShell from "@modules/order/components/order-state-shell"
 
@@ -74,7 +74,7 @@ const COPY: Record<string, StatusCopy> = {
     title: "Tenhle odkaz",
     accent: "není platný.",
     description:
-      "Nejspíš se při kopírování nepřenesl celý. Zkuste jej otevřít z e-mailu znovu, nebo nám napište na info@keramickazahrada.cz a vyřešíme to ručně.",
+      "Nejspíš se při kopírování nepřenesl celý. Zkuste jej otevřít z e-mailu znovu, nebo nám napište na {email} a vyřešíme to ručně.",
   },
   chyba: {
     status: "canceled",
@@ -82,7 +82,7 @@ const COPY: Record<string, StatusCopy> = {
     title: "Tohle se",
     accent: "nepovedlo.",
     description:
-      "Na naší straně se něco zadrhlo a změna se neuložila. Zkuste odkaz otevřít ještě jednou; kdyby to nepomohlo, napište nám na info@keramickazahrada.cz.",
+      "Na naší straně se něco zadrhlo a změna se neuložila. Zkuste odkaz otevřít ještě jednou; kdyby to nepomohlo, napište nám na {email}.",
   },
 }
 
@@ -117,6 +117,10 @@ type Props = {
  * (odstavec). Výchozí stránka bez `?stav` je `vychozi`. Stav, který blok
  * nemá, si nechá texty z kódu.
  *
+ * Adresa ve větách je zástupce `{email}` — e-mail pro dotazy ze Studia
+ * (`global.kontakty`), aby změna adresy nemusela obejít každou větu. Texty
+ * nasazené dřív mají adresu napsanou natvrdo; ty zůstanou, jak jsou.
+ *
  * Co v CMS není: odstavec u odmítnutí upozornění (`odhlaseno-upozorneni`).
  * Říká, které e-maily přestanou chodit a že potvrzení objednávek chodit dál
  * budou — je to odpověď na námitku proti zpracování, ne redakční text.
@@ -139,9 +143,18 @@ export default async function NewsletterStatusPage(props: Props) {
   // objektu (`?stav=constructor`).
   const own = (record: object, key?: string): key is string =>
     Boolean(key) && Object.prototype.hasOwnProperty.call(record, key as string)
-  const block = (await getPageCopy("newsletter"))["newsletter.stavy"]
+  const [blocks, emails] = await Promise.all([getPageCopy("newsletter"), getContactEmails()])
+  const block = blocks["newsletter.stavy"]
   const stateKey = own(COPY, stav) ? stav : "vychozi"
-  const base = fromCms(block, stateKey, own(COPY, stav) ? COPY[stav] : DEFAULT_COPY)
+  const fromBlock = fromCms(block, stateKey, own(COPY, stav) ? COPY[stav] : DEFAULT_COPY)
+  const base = {
+    ...fromBlock,
+    description: fillPlaceholders(fromBlock.description, { email: emails.dotazy }),
+  }
+  /* Věta se zástupcem se v místě needituje — editor by uložil dosazenou
+     adresu místo `{email}` (stejné pravidlo jako `fillPlaceholders`). */
+  const rawDescription = itemValue(block, `${stateKey}.text`) ?? ""
+  const descriptionEditable = !rawDescription.includes("{email}")
   const optOut = stav === "odhlaseno-upozorneni"
   const kindLabel = own(OPTOUT_KIND_LABEL, druh) ? OPTOUT_KIND_LABEL[druh] : undefined
   const copy: StatusCopy =
@@ -173,7 +186,8 @@ export default async function NewsletterStatusPage(props: Props) {
         kicker: itemFieldPath(block, `${stateKey}.stitek`),
         title: itemFieldPath(block, `${stateKey}.nadpis`),
         accent: itemFieldPath(block, `${stateKey}.nadpis`, "note"),
-        description: optOut ? undefined : itemFieldPath(block, `${stateKey}.text`),
+        description:
+          optOut || !descriptionEditable ? undefined : itemFieldPath(block, `${stateKey}.text`),
       }}
     />
   )

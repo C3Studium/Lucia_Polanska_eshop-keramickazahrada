@@ -306,7 +306,7 @@ export const SeasonalSaleEditor = ({
         <Drawer.Footer>
           <Drawer.Close asChild>
             <Button variant="secondary" size="small">
-              Zpět
+              Zavřít
             </Button>
           </Drawer.Close>
           <Button

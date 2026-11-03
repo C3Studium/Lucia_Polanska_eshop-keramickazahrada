@@ -351,6 +351,7 @@ const PRAVNI_DOKUMENTY = [
 const PRAVNI_UDAJE = [
     ['seller.name', 'jméno prodávající'],
     ['seller.address', 'adresa sídla'],
+    ['seller.register', 'úřad, který vede živnostenský rejstřík (sedmý pád: „Městským úřadem Písek“)'],
     ['seller.ico', 'IČO'],
     ['seller.email', 'e-mail'],
     ['seller.phone', 'telefon'],
@@ -360,7 +361,7 @@ const PRAVNI_UDAJE = [
     ['vat.status', 'plátce DPH ano/ne'],
     ['mto.deposit', 'výše zálohy u zakázky'],
     ['course.cancellation', 'storno podmínky kurzů'],
-    ['course.minAge', 'minimální věk dítěte na kurzu'],
+    ['course.minAge', 'věk dítěte na kurzu'],
     ['course.pickupDeadline', 'do kdy vyzvednout výrobek z kurzu'],
     ['voucher.validity', 'platnost dárkového poukazu'],
     ['voucher.remainder', 'co se stane se zůstatkem poukazu'],
@@ -794,6 +795,115 @@ const pravniDokument = defineType({
     ],
 })
 
+/**
+ * Certifikáty a protokoly — doklady na stránce /certifikaty.
+ *
+ * Protokoly o zdravotní nezávadnosti glazur (nařízení (ES) č. 1935/2004,
+ * vyhláška č. 38/2001 Sb. — olovo a kadmium) a prohlášení o shodě k elektru,
+ * které obchod prodává. Lucie je dostává jako PDF od laboratoře / výrobce
+ * a nahrává je sama: jeden doklad = jeden dokument, soubor jde do knihovny
+ * médií. Publikace přegeneruje /certifikaty (zdroj `certifikaty` v
+ * `valecms.config.ts`).
+ *
+ * Proč typ, a ne `soubor` („Soubory ke stažení"): doklad má datum, vydavatele,
+ * číslo a rozsah zkoušky, a stránka je vypisuje — holý odkaz na PDF by z ní
+ * udělal seznam souborů bez toho, co z nich dělá doklad.
+ *
+ * Záznamy v kódu (`lib/certificates.ts`) zůstávají jako záloha pro výpadek
+ * CMS; doklad ze Studia se stejným názvem a druhem je přebije.
+ *
+ * Pozor na tvrzení: „zdravotně nezávadné" / „vhodné pro potraviny" smí stát
+ * u výrobku jen s glazurou, ke které je tu publikovaný protokol.
+ */
+const DRUHY_CERTIFIKATU = [
+    { title: 'Protokol o nezávadnosti glazury', value: 'glazura' },
+    { title: 'Prohlášení o shodě (elektro)', value: 'shoda' },
+]
+
+const certifikat = defineType({
+    name: 'certifikat',
+    title: 'Certifikáty a protokoly',
+    description:
+        'Protokoly o nezávadnosti glazur a prohlášení o shodě — vypisují se na stránce Certifikáty. ' +
+        'Bez publikovaného protokolu nesmí žádný výrobek tvrdit, že je zdravotně nezávadný nebo vhodný na jídlo a pití.',
+    fields: [
+        defineField({
+            name: 'druh',
+            title: 'Druh dokladu',
+            type: 'select',
+            options: { list: DRUHY_CERTIFIKATU },
+            validation: (rule) => rule.required(),
+        }),
+        defineField({
+            name: 'nazev',
+            title: 'Glazura / výrobek',
+            type: 'string',
+            description:
+                'U protokolu název glazury tak, jak ho používáte v popisech výrobků („transparentní lesklá"). ' +
+                'U prohlášení o shodě název výrobku v obchodě.',
+            validation: (rule) => rule.required().max(120),
+        }),
+        defineField({
+            name: 'vydal',
+            title: 'Vydal',
+            type: 'string',
+            description: 'Laboratoř, která zkoušku dělala, nebo výrobce u prohlášení o shodě — opište z dokladu.',
+            validation: (rule) => rule.required().max(200),
+        }),
+        defineField({
+            name: 'datum',
+            title: 'Datum vystavení',
+            type: 'date',
+            description: 'Datum na dokladu.',
+            validation: (rule) => rule.required(),
+        }),
+        defineField({
+            name: 'cislo',
+            title: 'Číslo protokolu',
+            type: 'string',
+            description: 'Je-li na dokladu. Nepovinné.',
+            validation: (rule) => rule.max(80),
+        }),
+        defineField({
+            name: 'rozsah',
+            title: 'Co doklad pokrývá',
+            type: 'text',
+            description:
+                'Jedna věta — např. „uvolňování olova a kadmia, 4% kyselina octová, 24 h" nebo předpisy u prohlášení o shodě. Nepovinné.',
+        }),
+        defineField({
+            name: 'soubor',
+            title: 'Soubor',
+            type: 'file',
+            description: 'Sken nebo PDF dokladu.',
+            options: { accept: 'application/pdf,image/*' },
+            validation: (rule) => rule.required(),
+        }),
+        defineField({
+            name: 'produkt',
+            title: 'Adresa výrobku v obchodě',
+            type: 'string',
+            description:
+                'Jen u prohlášení o shodě: konec adresy výrobku, např. /products/bezdratovy-zvonek-bz8-113. Nepovinné.',
+            validation: (rule) => rule.max(200),
+        }),
+        defineField({
+            name: 'poradi',
+            title: 'Pořadí',
+            type: 'number',
+            description: 'Menší číslo je výš. Bez něj se řadí podle názvu.',
+        }),
+    ],
+    preview: (doc: Record<string, unknown>) => {
+        const druh = DRUHY_CERTIFIKATU.find((item) => item.value === doc?.druh)?.title ?? 'Doklad'
+        const datum = datumCesky(doc?.datum)
+        return {
+            title: String(doc?.nazev || 'Bez názvu'),
+            subtitle: datum ? `${druh} · ${datum}` : druh,
+        }
+    },
+})
+
 // Příklad vlastního typu — smaž ho nebo přepiš.
 const clanek = defineType({
     name: 'clanek',
@@ -809,7 +919,7 @@ const clanek = defineType({
     ],
 })
 
-export const types = [siteCopy, review, tlacitko, soubor, pravniDokument, qnaKategorie, qna, clanek]
+export const types = [siteCopy, review, tlacitko, soubor, pravniDokument, qnaKategorie, qna, certifikat, clanek]
 
 // Typ, o kterém se píšou recenze (např. 'consultant'), nebo null.
 export const reviewSubjectType = null

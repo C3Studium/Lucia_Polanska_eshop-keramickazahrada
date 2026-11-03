@@ -1,0 +1,32 @@
+diff --git a/src/studio/media/UploadZone.jsx b/src/studio/media/UploadZone.jsx
+index dfb1bd10da9a255042b9303596df295fd28aef80..1d7a12e77a348dfef631e341e150f3261e1211af 100644
+--- a/src/studio/media/UploadZone.jsx
++++ b/src/studio/media/UploadZone.jsx
+@@ -22,11 +22,16 @@ export default function UploadZone({ onUploaded, compact, children }) {
+ 
+   const upload = useCallback(
+     async (files) => {
+-      const images = Array.from(files).filter((file) => file.type.startsWith("image/"))
++      // PDF smí taky — server ho bere (ALLOWED_MIME v server/media.js) a pole
++      // typu `file` (doklady, soubory ke stažení) bez něj nejde vyplnit.
++      // Záplata e-shopu Keramická zahrada (patches/), patří do knihovny.
++      const images = Array.from(files).filter(
++        (file) => file.type.startsWith("image/") || file.type === "application/pdf"
++      )
+       const rejected = files.length - images.length
+       if (rejected > 0) {
+         toast.error(`${rejected} ${rejected === 1 ? "soubor nebyl" : "souborů nebylo"} nahráno`, {
+-          description: "Nahrát lze jen obrázky.",
++          description: "Nahrát lze jen obrázky a PDF.",
+         })
+       }
+       if (!images.length) return
+@@ -81,7 +86,7 @@ export default function UploadZone({ onUploaded, compact, children }) {
+       <input
+         ref={input}
+         type="file"
+-        accept="image/*"
++        accept="image/*,application/pdf"
+         multiple
+         hidden
+         onChange={(event) => {

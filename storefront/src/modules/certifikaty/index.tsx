@@ -1,4 +1,4 @@
-import { CONFORMITY_DECLARATIONS, GLAZE_CERTIFICATES, hasGlazeCertificates } from "@lib/certificates"
+import type { Certificates } from "@lib/data/certificates"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import styles from "./style.module.scss"
@@ -10,11 +10,19 @@ const formatDate = (iso: string): string => {
 
 /**
  * Stránka /certifikaty — protokoly o nezávadnosti glazur (LEGAL_AUDIT § 0b, N1).
- * Seznam je v kódu (`lib/certificates.ts`), ne ve Studiu: jde o doklad, který
- * má mít datum a soubor, ne o text k úpravě. Bez protokolů stránka neříká, že
- * něco je ověřené — jen kde se ptát.
+ * Doklady nahrává Lucie ve Studiu („Certifikáty a protokoly",
+ * `lib/data/certificates.ts`), záloha je v `lib/certificates.ts`. Úvodní
+ * a závěrečné texty jsou v kódu — říkají, co protokol musí pokrýt. Bez
+ * protokolů stránka neříká, že něco je ověřené — jen kde se ptát.
  */
-export default function Certifikaty({ email }: { email: string }) {
+export default function Certifikaty({
+  email,
+  certificates,
+}: {
+  email: string
+  certificates: Certificates
+}) {
+  const { glazes, declarations } = certificates
   return (
     <main className={styles.page}>
       <header className={styles.header}>
@@ -28,14 +36,15 @@ export default function Certifikaty({ email }: { email: string }) {
         </p>
       </header>
 
-      {hasGlazeCertificates() ? (
+      {glazes.length > 0 ? (
         <ul className={styles.list}>
-          {GLAZE_CERTIFICATES.map((certificate) => (
+          {glazes.map((certificate) => (
             <li key={`${certificate.glaze}-${certificate.issuedAt}`} className={styles.item}>
               <div className={styles.itemHead}>
                 <span className={styles.glaze}>{certificate.glaze}</span>
                 <span className={styles.meta}>
-                  {formatDate(certificate.issuedAt)} · {certificate.laboratory}
+                  {formatDate(certificate.issuedAt)}
+                  {certificate.laboratory ? ` · ${certificate.laboratory}` : ""}
                   {certificate.number ? ` · č. ${certificate.number}` : ""}
                 </span>
               </div>
@@ -56,30 +65,33 @@ export default function Certifikaty({ email }: { email: string }) {
         </section>
       )}
 
-      {CONFORMITY_DECLARATIONS.length > 0 && (
+      {declarations.length > 0 && (
         <section className={styles.notes}>
           <h2 className={styles.subtitle}>Prohlášení o shodě (elektro)</h2>
           <ul className={styles.list}>
-            {CONFORMITY_DECLARATIONS.map((declaration) => (
+            {declarations.map((declaration) => (
               <li key={declaration.product} className={styles.item}>
                 <div className={styles.itemHead}>
                   <span className={styles.glaze}>{declaration.product}</span>
                   <span className={styles.meta}>
-                    {formatDate(declaration.issuedAt)} · {declaration.manufacturer}
+                    {formatDate(declaration.issuedAt)}
+                    {declaration.manufacturer ? ` · ${declaration.manufacturer}` : ""}
                   </span>
                 </div>
                 <p className={styles.scope}>{declaration.scope}</p>
                 <p className={styles.scope}>
-                  <LocalizedClientLink href={declaration.productPath}>Výrobek v obchodě</LocalizedClientLink>
+                  {declaration.productPath && (
+                    <LocalizedClientLink href={declaration.productPath}>Výrobek v obchodě</LocalizedClientLink>
+                  )}
                   {declaration.url ? (
                     <>
-                      {" · "}
+                      {declaration.productPath ? " · " : ""}
                       <a className={styles.link} href={declaration.url} target="_blank" rel="noopener">
                         Prohlášení o shodě (PDF)
                       </a>
                     </>
                   ) : (
-                    " · prohlášení zveřejníme po nahrání"
+                    `${declaration.productPath ? " · " : ""}prohlášení zveřejníme po nahrání`
                   )}
                 </p>
               </li>

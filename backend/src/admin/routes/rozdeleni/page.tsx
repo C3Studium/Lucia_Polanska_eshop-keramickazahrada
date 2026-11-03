@@ -3,7 +3,13 @@ import {
   ArchiveBox, ExclamationCircle, EyeSlash, Folder, ListBullet, ListTree,
 } from "@medusajs/icons";
 import {
-  Badge, Button, Container, Heading, Input, Prompt, Text, Toaster, toast,
+  Badge,
+  Button,
+  Container,
+  Heading,
+  Input,
+  Text,
+  toast,
 } from "@medusajs/ui";
 import {
   QueryClientProvider, useMutation, useQuery, useQueryClient,
@@ -484,9 +490,8 @@ const Inner = () => {
 
   return (
     <Container className="p-0">
-      <Toaster />
       <header className="border-ui-border-base border-b px-6 pb-4 pt-6">
-        <Heading>Rozdělení</Heading>
+        <Heading>Kolekce a kategorie</Heading>
         <Text size="small" className="text-ui-fg-subtle mt-1 max-w-2xl">
           Kolekce, jejich kategorie a produkty vedle sebe. Klik vlevo otevře
           prostředek, klik uprostřed pravý sloupec.
@@ -546,14 +551,14 @@ const Inner = () => {
                         label={`kolekci ${collection.title}`}
                         hideText="Zákazníci ji přestanou vidět v menu Eshop produktů i v obchodě. Produkty v ní zůstanou dostupné jinými cestami."
                         showText="Kolekce se vrátí do menu a do obchodu."
-                        onToggle={() =>
+                        onToggle={(next) =>
                           sdk.client.fetch(`/admin/collections/${collection.id}`, {
                             method: "POST",
                             body: {
                               /* Metadata update REPLACES — always send merged. */
                               metadata: {
                                 ...(collection.metadata ?? {}),
-                                hidden: !(collection.metadata as any)?.hidden,
+                                hidden: !next,
                               },
                             },
                           })
@@ -565,28 +570,20 @@ const Inner = () => {
                         onClick={() => setRenaming(collection.title)}>
                         Přejmenovat
                       </button>
-                      <Prompt>
-                        <Prompt.Trigger asChild>
+                      <ConfirmDialog
+                        trigger={
                           <button type="button"
                             className="text-ui-fg-subtle txt-xsmall hover:underline">
                             Smazat
                           </button>
-                        </Prompt.Trigger>
-                        <Prompt.Content>
-                          <Prompt.Header>
-                            <Prompt.Title>Smazat kolekci?</Prompt.Title>
-                            <Prompt.Description>
-                              Produkty zůstanou v obchodě, jen přijdou o kolekci.
-                            </Prompt.Description>
-                          </Prompt.Header>
-                          <Prompt.Footer>
-                            <Prompt.Cancel>Zrušit</Prompt.Cancel>
-                            <Prompt.Action onClick={() => deleteCollection.mutate(collection.id)}>
-                              Smazat
-                            </Prompt.Action>
-                          </Prompt.Footer>
-                        </Prompt.Content>
-                      </Prompt>
+                        }
+                        title={`Smazat kolekci ${collection.title}?`}
+                        description="Produkty zůstanou v obchodě, jen přijdou o kolekci."
+                        consequence="Smazanou kolekci nejde vrátit."
+                        confirmLabel="Smazat kolekci"
+                        isPending={deleteCollection.isPending}
+                        onConfirm={() => deleteCollection.mutate(collection.id)}
+                      />
                     </>
                   ) : (
                     <span className="flex items-center gap-1">
@@ -721,12 +718,12 @@ const Inner = () => {
                             label={`kategorii ${category.name}`}
                             hideText="Zákazníci ji přestanou vidět v menu i ve filtrech obchodu. Produkty v ní zůstanou dostupné jinými cestami."
                             showText="Kategorie se vrátí do menu a filtrů obchodu."
-                            onToggle={() =>
+                            onToggle={(next) =>
                               sdk.client.fetch(
                                 `/admin/product-categories/${category.id}`,
                                 {
                                   method: "POST",
-                                  body: { is_active: categoryHidden(category) },
+                                  body: { is_active: next },
                                 }
                               )
                             }
@@ -737,68 +734,53 @@ const Inner = () => {
                               await invalidate();
                             }}
                           />
-                          <Prompt>
-                            <Prompt.Trigger asChild>
+                          <ConfirmDialog
+                            trigger={
                               <button type="button"
                                 title={categoryArchived(category) ? "Vrátit z archivu" : "Archivovat"}
                                 className="text-ui-fg-subtle hover:text-ui-fg-base">
                                 <ArchiveBox />
                               </button>
-                            </Prompt.Trigger>
-                            <Prompt.Content>
-                              <Prompt.Header>
-                                <Prompt.Title>
-                                  {categoryArchived(category)
-                                    ? `Vrátit kategorii ${category.name} z archivu?`
-                                    : `Archivovat kategorii ${category.name}?`}
-                                </Prompt.Title>
-                                <Prompt.Description>
-                                  {categoryArchived(category)
-                                    ? "Vrátí se do seznamů. V obchodě se ukáže, až ji zobrazíte očkem."
-                                    : "Zmizí z obchodu i ze seznamů, produkty o ni nepřijdou. Najdete ji v záložce archivu (ikona krabice)."}
-                                </Prompt.Description>
-                              </Prompt.Header>
-                              <Prompt.Footer>
-                                <Prompt.Cancel>Zrušit</Prompt.Cancel>
-                                <Prompt.Action
-                                  onClick={() =>
-                                    archiveCategory.mutate({
-                                      id: category.id,
-                                      archive: !categoryArchived(category),
-                                    })
-                                  }>
-                                  {categoryArchived(category) ? "Vrátit" : "Archivovat"}
-                                </Prompt.Action>
-                              </Prompt.Footer>
-                            </Prompt.Content>
-                          </Prompt>
+                            }
+                            destructive={!categoryArchived(category)}
+                            title={
+                              categoryArchived(category)
+                                ? `Vrátit kategorii ${category.name} z archivu?`
+                                : `Archivovat kategorii ${category.name}?`
+                            }
+                            description={
+                              categoryArchived(category)
+                                ? "Vrátí se do seznamů. V obchodě se ukáže, až ji zobrazíte očkem."
+                                : "Zmizí z obchodu i ze seznamů, produkty o ni nepřijdou. Najdete ji v záložce archivu (ikona krabice)."
+                            }
+                            confirmLabel={categoryArchived(category) ? "Vrátit z archivu" : "Archivovat"}
+                            isPending={archiveCategory.isPending}
+                            onConfirm={() =>
+                              archiveCategory.mutate({
+                                id: category.id,
+                                archive: !categoryArchived(category),
+                              })
+                            }
+                          />
                           <button type="button"
                             className="text-ui-fg-interactive txt-xsmall hover:underline"
                             onClick={() => setRenamingCategory({ id: category.id, name: category.name })}>
                             Přejmenovat
                           </button>
-                          <Prompt>
-                            <Prompt.Trigger asChild>
+                          <ConfirmDialog
+                            trigger={
                               <button type="button"
                                 className="text-ui-fg-subtle txt-xsmall hover:underline">
                                 Smazat
                               </button>
-                            </Prompt.Trigger>
-                            <Prompt.Content>
-                              <Prompt.Header>
-                                <Prompt.Title>Smazat kategorii?</Prompt.Title>
-                                <Prompt.Description>
-                                  Produkty zůstanou, jen přijdou o tuhle kategorii.
-                                </Prompt.Description>
-                              </Prompt.Header>
-                              <Prompt.Footer>
-                                <Prompt.Cancel>Zrušit</Prompt.Cancel>
-                                <Prompt.Action onClick={() => deleteCategory.mutate(category.id)}>
-                                  Smazat
-                                </Prompt.Action>
-                              </Prompt.Footer>
-                            </Prompt.Content>
-                          </Prompt>
+                            }
+                            title={`Smazat kategorii ${category.name}?`}
+                            description="Produkty zůstanou, jen přijdou o tuhle kategorii."
+                            consequence="Smazanou kategorii nejde vrátit — když ji chcete jen schovat, použijte Archivovat."
+                            confirmLabel="Smazat kategorii"
+                            isPending={deleteCategory.isPending}
+                            onConfirm={() => deleteCategory.mutate(category.id)}
+                          />
                         </span>
                       )}
                     </>
@@ -1112,15 +1094,10 @@ const Inner = () => {
                         label={`produkt ${product.title}`}
                         hideText="Zákazníci ho v obchodě neuvidí a nekoupí, dokud ho zase nezveřejníte."
                         showText="Produkt se vrátí do obchodu a půjde koupit."
-                        onToggle={() =>
+                        onToggle={(next) =>
                           sdk.client.fetch(`/admin/products/${product.id}`, {
                             method: "POST",
-                            body: {
-                              status:
-                                product.status === "published"
-                                  ? "draft"
-                                  : "published",
-                            },
+                            body: { status: next ? "published" : "draft" },
                           })
                         }
                         onDone={invalidate}
@@ -1255,13 +1232,10 @@ const Inner = () => {
                 label={`produkt ${product.title}`}
                 hideText="Zákazníci ho v obchodě neuvidí a nekoupí, dokud ho zase nezveřejníte."
                 showText="Produkt se vrátí do obchodu a půjde koupit."
-                onToggle={() =>
+                onToggle={(next) =>
                   sdk.client.fetch(`/admin/products/${product.id}`, {
                     method: "POST",
-                    body: {
-                      status:
-                        product.status === "published" ? "draft" : "published",
-                    },
+                    body: { status: next ? "published" : "draft" },
                   })
                 }
                 onDone={invalidate}
@@ -1301,8 +1275,10 @@ const Page = () => (
   <QueryClientProvider client={queryClient}><Inner /></QueryClientProvider>
 );
 export const config = defineRouteConfig({
-  label: "Rozdělení",
+  // „Rozdělení" nikomu neřeklo, co tu je; adresa /rozdeleni zůstává.
+  label: "Kolekce a kategorie",
   icon: ListTree,
-  rank: 40,
+  // Vedlejší, k produktům: za Produkty (20), před Sklad (30).
+  rank: 25,
 });
 export default Page;

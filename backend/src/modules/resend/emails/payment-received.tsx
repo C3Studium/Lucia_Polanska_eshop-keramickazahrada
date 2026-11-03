@@ -14,6 +14,152 @@ import {
 } from "../components/email-ui"
 import { storeLink } from "../../../lib/storefront-url"
 import type { CommissionPaymentsText } from "../../../lib/commission-breakdown"
+import { useCopy } from "../components/email-i18n"
+import type { Localized } from "../../../lib/email-locale"
+
+/** Texty po jazycích (lib/email-locale) — čeština je původní znění. */
+const COPY: Localized<{
+  preview: (orderNumber: string) => string
+  eyebrow: string
+  title: string
+  accent: string
+  introBalance: string
+  intro: string
+  order: string
+  method: string
+  deposit: string
+  depositInvoice: (invoice: string) => string
+  balance: string
+  surcharge: string
+  totalPaid: string
+  amount: string
+  paidForBalance: string
+  paidFor: string
+  viewOrder: string
+  footer: string
+  closing: string
+}> = {
+  cs: {
+    preview: (n) => `Platba za objednávku ${n} dorazila, děkuji.`,
+    eyebrow: "Platba",
+    title: "Platba",
+    accent: "dorazila.",
+    introBalance:
+      "doplatek za vaši zakázku dorazil, děkuji — zakázka je teď zaplacená celá. Kousek pečlivě zabalím a jakmile zásilku předám dopravci, pošlu vám další zprávu.",
+    intro:
+      "platba za vaši objednávku dorazila, děkuji. Teď je to na mně — kousky zabalím a jakmile zásilku předám dopravci, pošlu vám další zprávu.",
+    order: "Objednávka",
+    method: "Způsob platby",
+    deposit: "Záloha",
+    depositInvoice: (invoice) => `Záloha (faktura ${invoice})`,
+    balance: "Doplatek",
+    surcharge: "Příplatek",
+    totalPaid: "Celkem zaplaceno",
+    amount: "Částka",
+    paidForBalance: "Za co je doplatek",
+    paidFor: "Za co jste zaplatili",
+    viewOrder: "Zobrazit objednávku",
+    footer:
+      "Stav objednávky vidíte kdykoli ve svém účtu na webu. Kdyby cokoli, napište mi na info@keramickazahrada.cz — odpovídám sama.",
+    closing: "Děkuji a těším se,",
+  },
+  sk: {
+    preview: (n) => `Platba za objednávku ${n} dorazila, ďakujem.`,
+    eyebrow: "Platba",
+    title: "Platba",
+    accent: "dorazila.",
+    introBalance:
+      "doplatok za vašu zákazku dorazil, ďakujem — zákazka je teraz zaplatená celá. Kúsok starostlivo zabalím a hneď ako zásielku odovzdám prepravcovi, pošlem vám ďalšiu správu.",
+    intro:
+      "platba za vašu objednávku dorazila, ďakujem. Teraz je to na mne — kúsky zabalím a hneď ako zásielku odovzdám prepravcovi, pošlem vám ďalšiu správu.",
+    order: "Objednávka",
+    method: "Spôsob platby",
+    deposit: "Záloha",
+    depositInvoice: (invoice) => `Záloha (faktúra ${invoice})`,
+    balance: "Doplatok",
+    surcharge: "Príplatok",
+    totalPaid: "Celkom zaplatené",
+    amount: "Suma",
+    paidForBalance: "Za čo je doplatok",
+    paidFor: "Za čo ste zaplatili",
+    viewOrder: "Zobraziť objednávku",
+    footer:
+      "Stav objednávky vidíte kedykoľvek vo svojom účte na webe. Keby čokoľvek, napíšte mi na info@keramickazahrada.cz — odpovedám sama.",
+    closing: "Ďakujem a teším sa,",
+  },
+  pl: {
+    preview: (n) => `Płatność za zamówienie ${n} dotarła, dziękuję.`,
+    eyebrow: "Płatność",
+    title: "Płatność",
+    accent: "dotarła.",
+    introBalance:
+      "Dopłata za Państwa zamówienie indywidualne dotarła, dziękuję — zamówienie jest teraz w całości opłacone. Starannie je zapakuję, a gdy tylko przekażę przesyłkę przewoźnikowi, wyślę kolejną wiadomość.",
+    intro:
+      "Płatność za Państwa zamówienie dotarła, dziękuję. Teraz moja kolej — zapakuję ceramikę, a gdy tylko przekażę przesyłkę przewoźnikowi, wyślę kolejną wiadomość.",
+    order: "Zamówienie",
+    method: "Sposób płatności",
+    deposit: "Zaliczka",
+    depositInvoice: (invoice) => `Zaliczka (faktura ${invoice})`,
+    balance: "Dopłata",
+    surcharge: "Dopłata dodatkowa",
+    totalPaid: "Łącznie zapłacono",
+    amount: "Kwota",
+    paidForBalance: "Czego dotyczy dopłata",
+    paidFor: "Za co Państwo zapłacili",
+    viewOrder: "Zobacz zamówienie",
+    footer:
+      "Stan zamówienia mogą Państwo w każdej chwili sprawdzić na swoim koncie na stronie. W razie pytań proszę pisać na info@keramickazahrada.cz — odpowiadam osobiście.",
+    closing: "Dziękuję i pozdrawiam serdecznie",
+  },
+  de: {
+    preview: (n) => `Die Zahlung für Bestellung ${n} ist angekommen – vielen Dank.`,
+    eyebrow: "Zahlung",
+    title: "Ihre Zahlung",
+    accent: "ist angekommen.",
+    introBalance:
+      "die Restzahlung für Ihre Auftragsarbeit ist angekommen, vielen Dank – die Auftragsarbeit ist jetzt vollständig bezahlt. Ich verpacke das Stück sorgfältig und melde mich wieder, sobald ich das Paket dem Versanddienst übergeben habe.",
+    intro:
+      "die Zahlung für Ihre Bestellung ist angekommen, vielen Dank. Jetzt bin ich dran – ich verpacke die Stücke und melde mich wieder, sobald ich das Paket dem Versanddienst übergeben habe.",
+    order: "Bestellung",
+    method: "Zahlungsart",
+    deposit: "Anzahlung",
+    depositInvoice: (invoice) => `Anzahlung (Rechnung ${invoice})`,
+    balance: "Restzahlung",
+    surcharge: "Aufpreis",
+    totalPaid: "Insgesamt bezahlt",
+    amount: "Betrag",
+    paidForBalance: "Wofür die Restzahlung ist",
+    paidFor: "Wofür Sie bezahlt haben",
+    viewOrder: "Bestellung ansehen",
+    footer:
+      "Den Stand Ihrer Bestellung sehen Sie jederzeit in Ihrem Kundenkonto. Bei Fragen schreiben Sie mir an info@keramickazahrada.cz – ich antworte persönlich.",
+    closing: "Vielen Dank und herzliche Grüße",
+  },
+  en: {
+    preview: (n) => `Your payment for order ${n} has arrived — thank you.`,
+    eyebrow: "Payment",
+    title: "Your payment",
+    accent: "has arrived.",
+    introBalance:
+      "The balance payment for your commission has arrived — thank you. Your commission is now paid in full. I'll pack your piece carefully and write to you again as soon as I've handed the parcel over to the carrier.",
+    intro:
+      "The payment for your order has arrived — thank you. Now it's over to me: I'll pack your pieces and write to you again as soon as I've handed the parcel over to the carrier.",
+    order: "Order",
+    method: "Payment method",
+    deposit: "Deposit",
+    depositInvoice: (invoice) => `Deposit (invoice ${invoice})`,
+    balance: "Balance payment",
+    surcharge: "Surcharge",
+    totalPaid: "Total paid",
+    amount: "Amount",
+    paidForBalance: "What the balance covers",
+    paidFor: "What you paid for",
+    viewOrder: "View order",
+    footer:
+      "You can check the status of your order at any time in your account on the website. If anything comes up, write to me at info@keramickazahrada.cz — I answer every message myself.",
+    closing: "Thank you, and warm wishes,",
+  },
+}
 
 interface PaymentReceivedEmailProps {
   customerName?: string;
@@ -46,31 +192,20 @@ function PaymentReceivedEmailComponent({
   paidFor,
   commissionPayments,
 }: PaymentReceivedEmailProps) {
+  const t = useCopy(COPY)
   const orderUrl = orderLink || storeLink()
 
   return (
-    <EmailLayout preview={`Platba za objednávku ${orderNumber} dorazila, děkuji.`}>
-      <Eyebrow>Platba</Eyebrow>
-      <EmailH1 accent="dorazila.">Platba</EmailH1>
+    <EmailLayout preview={t.preview(orderNumber)}>
+      <Eyebrow>{t.eyebrow}</Eyebrow>
+      <EmailH1 accent={t.accent}>{t.title}</EmailH1>
 
       <Greeting name={customerName} />
-      {commissionPayments ? (
-        <P>
-          doplatek za vaši zakázku dorazil, děkuji — zakázka je teď zaplacená
-          celá. Kousek pečlivě zabalím a jakmile zásilku předám dopravci,
-          pošlu vám další zprávu.
-        </P>
-      ) : (
-        <P>
-          platba za vaši objednávku dorazila, děkuji. Teď je to na mně —
-          kousky zabalím a jakmile zásilku předám dopravci, pošlu vám další
-          zprávu.
-        </P>
-      )}
+      <P>{commissionPayments ? t.introBalance : t.intro}</P>
 
-      {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
+      {orderNumber ? <LedgerRow label={t.order} value={orderNumber} /> : null}
       {paymentMethod ? (
-        <LedgerRow label="Způsob platby" value={paymentMethod} />
+        <LedgerRow label={t.method} value={paymentMethod} />
       ) : null}
       {commissionPayments ? (
         <>
@@ -78,27 +213,27 @@ function PaymentReceivedEmailComponent({
             <LedgerRow
               label={
                 commissionPayments.depositInvoiceNumber
-                  ? `Záloha (faktura ${commissionPayments.depositInvoiceNumber})`
-                  : "Záloha"
+                  ? t.depositInvoice(commissionPayments.depositInvoiceNumber)
+                  : t.deposit
               }
               value={commissionPayments.deposit}
             />
           ) : null}
           {commissionPayments.balance ? (
-            <LedgerRow label="Doplatek" value={commissionPayments.balance} />
+            <LedgerRow label={t.balance} value={commissionPayments.balance} />
           ) : null}
           {commissionPayments.surcharge ? (
-            <LedgerRow label="Příplatek" value={commissionPayments.surcharge} />
+            <LedgerRow label={t.surcharge} value={commissionPayments.surcharge} />
           ) : null}
           <LedgerRow
-            label="Celkem zaplaceno"
+            label={t.totalPaid}
             value={commissionPayments.totalPaid}
             strong
             tone="olive"
           />
         </>
       ) : paymentAmount ? (
-        <LedgerRow label="Částka" value={paymentAmount} strong tone="olive" />
+        <LedgerRow label={t.amount} value={paymentAmount} strong tone="olive" />
       ) : null}
       <LedgerEnd />
 
@@ -108,20 +243,17 @@ function PaymentReceivedEmailComponent({
           tomu nikdo neotvírá. */}
       <PaidFor
         items={paidFor}
-        heading={commissionPayments ? "Za co je doplatek" : "Za co jste zaplatili"}
+        heading={commissionPayments ? t.paidForBalance : t.paidFor}
       />
 
       {orderUrl ? (
         <ButtonRow>
-          <EmailButton href={orderUrl}>Zobrazit objednávku</EmailButton>
+          <EmailButton href={orderUrl}>{t.viewOrder}</EmailButton>
         </ButtonRow>
       ) : null}
 
-      <P small>
-        Stav objednávky vidíte kdykoli ve svém účtu na webu. Kdyby cokoli,
-        napište mi na info@keramickazahrada.cz — odpovídám sama.
-      </P>
-      <Signature closing="Děkuji a těším se," />
+      <P small>{t.footer}</P>
+      <Signature closing={t.closing} />
     </EmailLayout>
   )
 }

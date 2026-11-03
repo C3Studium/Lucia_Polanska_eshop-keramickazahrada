@@ -8,12 +8,10 @@ import {
   Heading,
   Input,
   Label,
-  Prompt,
   Select,
   Skeleton,
   Text,
   Textarea,
-  Toaster,
   toast,
 } from "@medusajs/ui";
 import {
@@ -23,7 +21,8 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { ConfirmDialog } from "../../components/confirm-dialog";
 import { EmptyState } from "../../components/empty-state";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
 import { SubTabs } from "../../components/work-tabs";
@@ -433,7 +432,7 @@ const TermEditorDrawer = ({
         </Drawer.Body>
         <Drawer.Footer>
           <Button variant="secondary" onClick={() => setOpen(false)}>
-            Zrušit
+            Zavřít
           </Button>
           <Button
             variant="primary"
@@ -572,7 +571,7 @@ const ManualReservationDrawer = ({ term }: { term: AdminTerm }) => {
         </Drawer.Body>
         <Drawer.Footer>
           <Button variant="secondary" onClick={() => setOpen(false)}>
-            Zrušit
+            Zavřít
           </Button>
           <Button
             variant="primary"
@@ -734,36 +733,26 @@ const CancelTermPrompt = ({ term }: { term: AdminTerm }) => {
   });
 
   return (
-    <Prompt>
-      <Prompt.Trigger asChild>
+    <ConfirmDialog
+      trigger={
         <Button variant="danger" size="small">
           Zrušit termín
         </Button>
-      </Prompt.Trigger>
-      <Prompt.Content>
-        <Prompt.Header>
-          <Prompt.Title>Zrušit celý termín?</Prompt.Title>
-          <Prompt.Description>
-            {activeCount
-              ? `Termín má ${activeCount} ${activeCount === 1 ? "rezervaci" : activeCount < 5 ? "rezervace" : "rezervací"}. ` +
-                `Všem s e-mailem (${activeWithEmail}) odejde zpráva o zrušení.` +
-                (paidCount
-                  ? ` ${paidCount}× je zaplaceno kartou — peníze se pokusíme vrátit automaticky; pokud se to u někoho nepovede, hned se to dozvíte a vrátíte je ručně.`
-                  : "")
-              : "Termín nemá žádné rezervace. Jen zmizí z nabídky."}
-          </Prompt.Description>
-        </Prompt.Header>
-        <Prompt.Footer>
-          <Prompt.Cancel>Ponechat</Prompt.Cancel>
-          <Prompt.Action
-            onClick={() => cancel.mutate()}
-            disabled={cancel.isPending}
-          >
-            Zrušit termín
-          </Prompt.Action>
-        </Prompt.Footer>
-      </Prompt.Content>
-    </Prompt>
+      }
+      title="Zrušit celý termín?"
+      description={
+        activeCount
+          ? `Termín má ${activeCount} ${activeCount === 1 ? "rezervaci" : activeCount < 5 ? "rezervace" : "rezervací"}. ` +
+            `Všem s e-mailem (${activeWithEmail}) odejde zpráva o zrušení.` +
+            (paidCount
+              ? ` ${paidCount}× je zaplaceno kartou — peníze se pokusíme vrátit automaticky; pokud se to u někoho nepovede, hned se to dozvíte a vrátíte je ručně.`
+              : "")
+          : "Termín nemá žádné rezervace. Jen zmizí z nabídky."
+      }
+      confirmLabel="Zrušit termín"
+      isPending={cancel.isPending}
+      onConfirm={() => cancel.mutate()}
+    />
   );
 };
 
@@ -816,36 +805,24 @@ const CancelReservationPrompt = ({
   });
 
   return (
-    <Prompt>
-      <Prompt.Trigger asChild>
+    <ConfirmDialog
+      trigger={
         <Button variant="transparent" size="small" className="text-ui-fg-error">
           Zrušit
         </Button>
-      </Prompt.Trigger>
-      <Prompt.Content>
-        <Prompt.Header>
-          <Prompt.Title>Zrušit rezervaci?</Prompt.Title>
-          <Prompt.Description>
-            {`${reservation.name} — ${people(reservation.party_size)}. Místa se uvolní dalším zájemcům.`}
-            {paidOnline
-              ? " Rezervace je zaplacená kartou — peníze se pokusíme vrátit automaticky zpět na kartu. Pokud se to nepovede, hned se to dozvíte a částku vrátíte ručně."
-              : ""}
-            {reservation.email
-              ? " Zákazníkovi pošleme e-mail o zrušení."
-              : ""}
-          </Prompt.Description>
-        </Prompt.Header>
-        <Prompt.Footer>
-          <Prompt.Cancel>Ponechat</Prompt.Cancel>
-          <Prompt.Action
-            onClick={() => cancel.mutate()}
-            disabled={cancel.isPending}
-          >
-            Zrušit rezervaci
-          </Prompt.Action>
-        </Prompt.Footer>
-      </Prompt.Content>
-    </Prompt>
+      }
+      title="Zrušit rezervaci?"
+      description={
+        `${reservation.name} — ${people(reservation.party_size)}. Místa se uvolní dalším zájemcům.` +
+        (paidOnline
+          ? " Rezervace je zaplacená kartou — peníze se pokusíme vrátit automaticky zpět na kartu. Pokud se to nepovede, hned se to dozvíte a částku vrátíte ručně."
+          : "") +
+        (reservation.email ? " Zákazníkovi pošleme e-mail o zrušení." : "")
+      }
+      confirmLabel="Zrušit rezervaci"
+      isPending={cancel.isPending}
+      onConfirm={() => cancel.mutate()}
+    />
   );
 };
 
@@ -935,8 +912,9 @@ const TermCard = ({
   const editable = term.status !== "cancelled";
 
   return (
-    <article className="bg-ui-bg-component shadow-elevation-card-rest flex flex-col gap-y-4 rounded-xl p-5">
-      <div className="flex items-start justify-between gap-x-3">
+    <article className="bg-ui-bg-component shadow-elevation-card-rest flex min-w-0 flex-col gap-y-4 rounded-xl p-5">
+      {/* Na telefonu tlačítka pod název — jinak karta přetékala doprava. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <Heading level="h2" className="truncate">
@@ -1447,8 +1425,39 @@ const TermsCalendar = ({ terms }: { terms: AdminTerm[] }) => {
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
 
+/** Bez diakritiky a velikosti písmen — „novakova" najde „Nováková". */
+const bezDiakritiky = (value: string): string =>
+  value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+/**
+ * Hledání: název, místo, jméno / e-mail / telefon účastníka (i zrušené
+ * rezervace — majitelka hledá člověka, ať je v jakémkoli stavu) a čekací
+ * listina. Telefon se porovnává bez mezer.
+ */
+const termMatchesSearch = (term: AdminTerm, query: string): boolean => {
+  const needle = bezDiakritiky(query.trim());
+  if (!needle) return true;
+  const digits = needle.replace(/[\s+]/g, "");
+  const texts = [
+    term.title,
+    term.location,
+    ...term.reservations.flatMap((r) => [r.name, r.email ?? ""]),
+    ...term.waitlist.flatMap((entry) => [entry.name, entry.email ?? ""]),
+  ];
+  if (texts.some((value) => bezDiakritiky(value ?? "").includes(needle))) return true;
+  return (
+    /^\d{3,}$/.test(digits) &&
+    term.reservations.some((r) => (r.phone ?? "").replace(/[\s+]/g, "").includes(digits))
+  );
+};
+
 const KurzySpravaInner = () => {
-  const [tab, setTab] = useState<TermTab>("upcoming");
+  // Přehled › „Čeká na vás" otevírá rovnou žádosti (?zalozka=mista|zadosti).
+  const [searchParams] = useSearchParams();
+  const linkedTab = searchParams.get("zalozka");
+  const [tab, setTab] = useState<TermTab>(
+    linkedTab === "mista" || linkedTab === "zadosti" ? linkedTab : "upcoming"
+  );
 
   /* Žádosti o místo na plném termínu — jen počet do odznaku. */
   const { data: seatRequests } = useQuery<{ pending_count: number }>({
@@ -1480,9 +1489,16 @@ const KurzySpravaInner = () => {
     queryFn: () => sdk.client.fetch("/admin/courses/terms"),
   });
 
+  /* Hledání v seznamu — název, místo, jméno / e-mail / telefon účastníka.
+     Všechno je už načtené, hledá se v prohlížeči. */
+  const [search, setSearch] = useState("");
+  const hledani = search.trim();
+
   const { upcoming, past } = useMemo(() => {
     const now = Date.now();
-    const terms = termsQuery.data?.terms ?? [];
+    const terms = (termsQuery.data?.terms ?? []).filter((term) =>
+      termMatchesSearch(term, hledani)
+    );
     const upcomingTerms = terms
       .filter(
         (term) =>
@@ -1501,7 +1517,7 @@ const KurzySpravaInner = () => {
           new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime()
       );
     return { upcoming: upcomingTerms, past: pastTerms };
-  }, [termsQuery.data]);
+  }, [termsQuery.data, hledani]);
 
   const visible = tab === "upcoming" ? upcoming : past;
 
@@ -1518,7 +1534,8 @@ const KurzySpravaInner = () => {
     [termsQuery.data]
   );
 
-  const showCalendar = tab === "upcoming" && termsView === "kalendar";
+  // Při hledání vždy seznam — kalendář by výsledky nepoznal.
+  const showCalendar = tab === "upcoming" && termsView === "kalendar" && !hledani;
 
   /** Day key → how many terms already stand there, for the picker's dots. */
   const termCounts = useMemo(
@@ -1536,7 +1553,6 @@ const KurzySpravaInner = () => {
 
   return (
     <Container className="divide-y p-0">
-      <Toaster />
       <header className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-end md:justify-between">
         <div>
           <Heading>Kurzy</Heading>
@@ -1580,9 +1596,21 @@ const KurzySpravaInner = () => {
 
       {tab !== "zadosti" && tab !== "mista" && (
       <div className="px-6 py-6">
-        {tab === "upcoming" && !termsQuery.isError && (
-          <div className="mb-4 flex justify-end">
-            <TermsViewSwitch value={termsView} onChange={setTermsView} />
+        {!termsQuery.isError && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="w-full sm:w-96">
+              <Input
+                type="search"
+                size="small"
+                value={search}
+                placeholder="Hledat kurz nebo účastníka (jméno, e-mail, telefon)"
+                aria-label="Hledat kurz nebo účastníka"
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+            {tab === "upcoming" && (
+              <TermsViewSwitch value={termsView} onChange={setTermsView} />
+            )}
           </div>
         )}
 
@@ -1613,17 +1641,21 @@ const KurzySpravaInner = () => {
           !visible.length && (
           <EmptyState
             title={
-              tab === "upcoming"
+              hledani
+                ? "Nic nenalezeno"
+                : tab === "upcoming"
                 ? "Žádné nadcházející termíny"
                 : "Zatím nic neproběhlo"
             }
             description={
-              tab === "upcoming"
+              hledani
+                ? `Žádný termín ani účastník neodpovídá „${hledani}“. Zkuste to i v druhé záložce.`
+                : tab === "upcoming"
                 ? "Vypište termín a zákazníci si ho hned mohou rezervovat na webu v sekci Kurzy."
                 : "Sem se přesunou termíny, které už proběhly nebo byly zrušeny."
             }
             action={
-              tab === "upcoming" ? (
+              tab === "upcoming" && !hledani ? (
                 <CourseTermWizard
                   termCounts={termCounts}
                   trigger={<Button variant="primary">Nový termín</Button>}
@@ -2041,7 +2073,7 @@ const KurzySpravaPage = () => (
 export const config = defineRouteConfig({
   label: "Kurzy",
   icon: AcademicCap,
-  rank: 70,
+  rank: 40,
 });
 
 export default KurzySpravaPage;

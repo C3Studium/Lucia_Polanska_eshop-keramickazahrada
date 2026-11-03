@@ -1,5 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { SquaresPlus } from "@medusajs/icons";
+import { ChartBar } from "@medusajs/icons";
 import { Container, Heading, Skeleton, Text } from "@medusajs/ui";
 import {
   QueryClientProvider, useQuery,
@@ -13,7 +13,7 @@ import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
- * Statistiky+ — every measurement in one room (Matěj, 2026-08-06).
+ * Statistiky — every measurement in one room (Matěj, 2026-08-06).
  *
  * Souhrn answers „jak se obchodu daří" in one screen; the section tabs
  * mirror the + pages (Objednávky · Produkty · Zákazníci · Sklad · Slevy)
@@ -363,8 +363,9 @@ const Page = () => (
   <QueryClientProvider client={queryClient}><Inner /></QueryClientProvider>
 );
 export const config = defineRouteConfig({
-  label: "Statistiky+",
-  icon: SquaresPlus,
-  rank: 90,
+  label: "Statistiky",
+  icon: ChartBar,
+  // Poslední z vedlejších stránek: za Newsletterem (65), před Nastavením obchodu (80).
+  rank: 70,
 });
 export default Page;

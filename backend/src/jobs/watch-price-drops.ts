@@ -21,6 +21,9 @@ import {
   optedOutEmails,
 } from "../lib/email-optout"
 import { emailOptOutUrl } from "../lib/email-optout-link"
+import { customerLocaleOf } from "../lib/customer-locale"
+import { localizedProductName } from "../lib/email-locale"
+import { translateTitles } from "../lib/google-translate"
 import {
   addDays,
   lowestPriceBefore,
@@ -245,9 +248,17 @@ export default async function watchPriceDrops(container: MedusaContainer) {
             .join(" ")
             .trim()
 
+          // Jazyk z registrace (customer.metadata.locale), jinak česky.
+          // Ceny zůstávají v měně, kterou úloha sleduje (CURRENCY_CODE).
+          const locale = customerLocaleOf(customer)
+          // Název produktu přeloží Google (jen cizí jazyk; jinak česky).
+          if (locale && locale !== "cs" && productTitle) {
+            await translateTitles([productTitle], locale)
+          }
           const ok = await sendCustomerEmail(container, {
             template: "price-drop",
             to: customer.email,
+            locale,
             // A further drop to a new amount mails again; a re-run at the
             // same amount does not.
             key: `price-drop:${variant.id}:${current}:${customer.email}`,
@@ -257,14 +268,17 @@ export default async function watchPriceDrops(container: MedusaContainer) {
               ...(name ? { customerName: name } : {}),
               // „Objekt z ateliéru" is the template's own subtitle voice, for
               // the (unlikely) product without a title.
-              productName: productTitle ?? variant.title ?? "Objekt z ateliéru",
+              productName:
+                (productTitle ? localizedProductName(productTitle, locale) : null) ||
+                variant.title ||
+                "Objekt z ateliéru",
               ...(variant.product?.thumbnail
                 ? { productImage: variant.product.thumbnail }
                 : {}),
               // Nejnižší cena za 30 dní před snížením, ne poslední snímek
               // (§ 12a ZOS) — šablona ji tak i popíše.
-              originalPrice: formatMoney(reference.lowest, currencyCode),
-              newPrice: formatMoney(current, currencyCode),
+              originalPrice: formatMoney(reference.lowest, currencyCode, locale),
+              newPrice: formatMoney(current, currencyCode, locale),
               // Handle, not id — the storefront routes products by handle.
               productLink: productLink(variant.product?.handle ?? null),
               // The template defaults `timeLimited` to true with a mock date.

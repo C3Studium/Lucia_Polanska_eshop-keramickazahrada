@@ -11,6 +11,7 @@ import { LINE_QUANTITY_FIELDS } from "../../../../../lib/order-quantity"
 import { isPersonalPickupOrder } from "../../../../../lib/personal-pickup"
 import { isAgreedPriceCommission } from "../../../../../lib/made-to-order/agreed-price"
 import { readCommissionPieces } from "../../../../../lib/commission-brief"
+import { isDepositRequest } from "../../../../../lib/made-to-order/payment-kind"
 
 const toNumber = (value: unknown): number => {
   if (typeof value === "number") return value
@@ -66,6 +67,10 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         "items.product.metadata",
         ...LINE_QUANTITY_FIELDS,
         "shipping_methods.data",
+        // Která doprava je na objednávce teď — blok „Domluvená cena" na ní
+        // staví výběr dopravy (lib/made-to-order/shipping-choice).
+        "shipping_methods.name",
+        "shipping_methods.shipping_option_id",
       ],
       filters: { id: req.params.orderId },
     })
@@ -151,7 +156,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       ...productionOrder,
       surcharge,
       final_total: finalTotal,
-      payment_requests: payments,
+      payment_requests: payments.map((payment: any) => ({
+        ...payment,
+        /* Záloha u ceny po domluvě má typ „balance" — lib/made-to-order/payment-kind. */
+        is_deposit: isDepositRequest(payment),
+      })),
       paid_amount: paidAmount,
       outstanding_amount: outstandingAmount,
       can_fulfill: canFulfill,
@@ -175,6 +184,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         customerSpecification ?? productionOrder.customer_note ?? null,
       pure_commission: pureCommission,
       personal_pickup: personalPickup,
+      order_shipping_option_id:
+        ((order?.shipping_methods ?? []) as any[])[0]?.shipping_option_id ?? null,
+      order_shipping_name: ((order?.shipping_methods ?? []) as any[])[0]?.name ?? null,
       // Cena po domluvě (lib/made-to-order/agreed-price.ts): položka objednaná
       // za 0 Kč — admin ukáže „Domluvená cena" a „Poslat domluvenou cenu".
       price_on_request: isAgreedPriceCommission(productionOrder),

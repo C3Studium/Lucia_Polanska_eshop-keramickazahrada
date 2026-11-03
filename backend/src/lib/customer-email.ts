@@ -1,5 +1,16 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import {
+  emailLocaleOf,
+  formatEmailDate,
+  formatEmailMoney,
+  parseEmailLocale,
+  type EmailLocale,
+} from "./email-locale"
+
+import { storefrontCountryOf } from "./storefront-url"
+
+export type { EmailLocale } from "./email-locale"
 
 /**
  * Sending a customer e-mail (WorkflowPlan.md §16).
@@ -42,39 +53,90 @@ export type CustomerEmailInput = {
    * jen z `data` — viz `attachmentsFromData` v Resend provideru.
    */
   attachments?: Array<{ filename: string; url: string }>
+  /**
+   * Jazyk e-mailu (lib/email-locale). Bez něj se vezme `data.locale`, pak
+   * jazyk objednávky `orderId` (metadata košíku → země doručení), jinak
+   * čeština. Volající, který skládá texty do `data` sám (způsob platby,
+   * předmět…), si jazyk zjistí dřív přes `emailLocaleForOrder` a předá ho.
+   */
+  locale?: EmailLocale | null
 }
 
+/**
+ * Částka do e-mailu. Bez `locale` česky jako vždy; s ním podle jazyka
+ * zákazníka (měna je daná objednávkou, mění se jen zápis čísla).
+ */
 export const formatMoney = (
   amount: unknown,
-  currencyCode?: string | null
-): string => {
-  const numeric = Number(
-    amount && typeof amount === "object"
-      ? (amount as any).value ?? (amount as any).numeric_ ?? 0
-      : amount
-  )
-  if (!Number.isFinite(numeric)) {
-    return "—"
+  currencyCode?: string | null,
+  locale?: EmailLocale | null
+): string => formatEmailMoney(amount, currencyCode, locale ?? "cs")
+
+/** Datum do e-mailu („2. 11. 2026"; s `locale` podle jazyka zákazníka). */
+export const formatDate = (value: unknown, locale?: EmailLocale | null): string =>
+  formatEmailDate(value, locale ?? "cs")
+
+/**
+ * Země obchodu, ve které se objednávka udělala (`metadata.country_code` ze
+ * storefrontu), jinak země doručení nebo fakturace; `null`, když ji nejde
+ * zjistit. Nikdy nevyhodí.
+ */
+export const storefrontCountryForOrder = async (
+  container: MedusaContainer,
+  orderId: string
+): Promise<string | null> => {
+  try {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const { data } = await query.graph({
+      entity: "order",
+      fields: ["id", "metadata", "shipping_address.country_code", "billing_address.country_code"],
+      filters: { id: orderId },
+    })
+    return storefrontCountryOf((data as any[])[0])
+  } catch {
+    return null
   }
-  return new Intl.NumberFormat("cs-CZ", {
-    style: "currency",
-    currency: String(currencyCode || "CZK").toUpperCase(),
-  }).format(numeric)
 }
 
-export const formatDate = (value: unknown): string => {
-  if (!value) {
-    return "—"
+/**
+ * Jazyk objednávky pro e-mail — `metadata.locale` (storefront ho zapisuje
+ * na košík podle zvolené země), jinak země doručení/fakturace. Nikdy
+ * nevyhodí: když objednávku nejde přečíst, je e-mail česky.
+ */
+export const emailLocaleForOrder = async (
+  container: MedusaContainer,
+  orderOrId: string | { metadata?: unknown; shipping_address?: unknown; billing_address?: unknown } | null | undefined
+): Promise<EmailLocale> => {
+  if (!orderOrId) {
+    return "cs"
   }
-  const date = new Date(value as string)
-  if (Number.isNaN(date.getTime())) {
-    return "—"
+  if (typeof orderOrId === "object") {
+    const known = parseEmailLocale((orderOrId.metadata as any)?.locale)
+    if (known) return known
+    // Rozhodnout z objektu jde jen tehdy, když má země adres načtené —
+    // jinak (adresa jen se jménem) se objednávka dočte podle id níž.
+    const hasCountry = [orderOrId.shipping_address, orderOrId.billing_address].some(
+      (address) => typeof (address as any)?.country_code === "string"
+    )
+    if (hasCountry) {
+      return emailLocaleOf(orderOrId as never)
+    }
   }
-  return new Intl.DateTimeFormat("cs-CZ", {
-    day: "numeric",
-    month: "numeric",
-    year: "numeric",
-  }).format(date)
+  const id = typeof orderOrId === "string" ? orderOrId : (orderOrId as any).id
+  if (!id) {
+    return emailLocaleOf(orderOrId as never)
+  }
+  try {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const { data } = await query.graph({
+      entity: "order",
+      fields: ["id", "metadata", "shipping_address.country_code", "billing_address.country_code"],
+      filters: { id },
+    })
+    return emailLocaleOf((data?.[0] as never) ?? null)
+  } catch {
+    return "cs"
+  }
 }
 
 /** „Jana Nováková", or a polite fallback — never „undefined undefined". */
@@ -117,6 +179,9 @@ export {
  * Returns whether it was queued, so callers can log honestly rather than
  * assuming.
  */
+/** Šablony, které zůstávají česky i pro cizojazyčnou objednávku (kurzy jen na /cz). */
+const CZECH_ONLY_TEMPLATE = /^course-/
+
 export const sendCustomerEmail = async (
   container: MedusaContainer,
   input: CustomerEmailInput
@@ -133,6 +198,25 @@ export const sendCustomerEmail = async (
 
   const notifications = container.resolve(Modules.NOTIFICATION)
 
+  // Jazyk se ukládá do `data` (ne jen do vykreslení), aby opakované odeslání
+  // z /prehled/emaily šlo stejně. Kurzy jsou jen na /cz a jejich šablony
+  // česky — jazyk se jim nepřidává, ať nevznikne napůl přeložený e-mail.
+  const locale = CZECH_ONLY_TEMPLATE.test(input.template)
+    ? null
+    : input.locale ??
+      parseEmailLocale(input.data?.locale) ??
+      (input.orderId ? await emailLocaleForOrder(container, input.orderId) : null)
+  // Cizojazyčný e-mail k objednávce: odkazy do země obchodu, kde se nakupovalo
+  // (u angličtiny jinak nepoznáme, kam odkaz vést) — `linkCountryFor`.
+  const linkCountry =
+    locale && locale !== "cs" && input.orderId && !input.data?.link_country
+      ? await storefrontCountryForOrder(container, input.orderId)
+      : null
+  const data =
+    locale && locale !== "cs"
+      ? { ...input.data, locale, ...(linkCountry ? { link_country: linkCountry } : {}) }
+      : input.data
+
   await notifications.createNotifications({
     to: recipient,
     channel: "email",
@@ -143,8 +227,8 @@ export const sendCustomerEmail = async (
       ? { resource_id: input.orderId, resource_type: "order" }
       : {}),
     data: input.attachments?.length
-      ? { ...input.data, __attachments: input.attachments }
-      : input.data,
+      ? { ...data, __attachments: input.attachments }
+      : data,
   } as never)
 
   return true

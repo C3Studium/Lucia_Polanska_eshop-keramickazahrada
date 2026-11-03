@@ -1,24 +1,9 @@
-import { defineWidgetConfig } from "@medusajs/admin-sdk";
-import type { AdminOrder, DetailWidgetProps } from "@medusajs/framework/types";
-import {
-  Badge,
-  Button,
-  Container,
-  Heading,
-  Skeleton,
-  Text,
-  Toaster,
-  toast,
-} from "@medusajs/ui";
-import {
-  QueryClientProvider,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import type { AdminOrder } from "@medusajs/framework/types";
+import { Badge, Button, Skeleton, Text, toast } from "@medusajs/ui";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { OrderSection } from "../components/order-section";
 import { formatDateTime } from "../lib/format";
 import { sdk } from "../lib/sdk";
-import { adminQueryClient } from "../lib/query-client"
 import { ceskaChyba, ceskyText } from "../lib/ceska-chyba";
 
 /**
@@ -78,7 +63,12 @@ const statusMeta: Record<
   failure: { label: "Nepodařilo se", color: "red" },
 };
 
-const OrderEmailsInner = ({ order }: { order: AdminOrder }) => {
+/**
+ * Sbalená karta v „Práci s objednávkou" (3. 11. 2026): přehled je potřeba
+ * jen občas — když zákazník volá, že něco nedostal. Sama se otevře, když
+ * některý e-mail neodešel.
+ */
+export const OrderEmailsPanel = ({ order }: { order: AdminOrder }) => {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery<{ emails: EmailRow[] }>({
@@ -174,15 +164,36 @@ const OrderEmailsInner = ({ order }: { order: AdminOrder }) => {
     (email) => email.template === "order-placed" && email.status === "success"
   );
 
+  const failed = emails.filter((email) => email.status === "failure").length;
+  const lastEmail = emails[0];
+
   return (
-    <Container className="divide-y p-0">
-      <header className="flex flex-wrap items-start justify-between gap-3 px-6 py-4">
-        <div>
-          <Heading level="h2">Odeslané e-maily</Heading>
-          <Text size="small" className="text-ui-fg-subtle mt-1">
-            Co zákazník o této objednávce dostal.
-          </Text>
-        </div>
+    <OrderSection
+      title="Odeslané e-maily"
+      badge={
+        failed ? (
+          <Badge color="red">Neodešlo: {failed}</Badge>
+        ) : emails.length ? (
+          <Badge color="grey">{emails.length}</Badge>
+        ) : undefined
+      }
+      summary={
+        isLoading
+          ? undefined
+          : lastEmail
+            ? `Naposledy: ${
+                lastEmail.subject ??
+                templateLabels[lastEmail.template ?? ""] ??
+                "e-mail"
+              } · ${formatDateTime(lastEmail.created_at)}`
+            : "Zatím jsme k této objednávce nic neposlali."
+      }
+      attention={failed > 0}
+    >
+      <div className="flex flex-col gap-3 px-6 py-4">
+        <Text size="small" className="text-ui-fg-subtle">
+          Co zákazník o této objednávce dostal.
+        </Text>
         <div className="flex flex-wrap items-center gap-2">
           <Button
             size="small"
@@ -206,7 +217,7 @@ const OrderEmailsInner = ({ order }: { order: AdminOrder }) => {
             Poslat výzvu k zaplacení
           </Button>
         </div>
-      </header>
+      </div>
 
       {isLoading && (
         <div className="px-6 py-4">
@@ -259,25 +270,6 @@ const OrderEmailsInner = ({ order }: { order: AdminOrder }) => {
           ))}
         </div>
       )}
-
-      <Toaster />
-    </Container>
+    </OrderSection>
   );
 };
-
-const queryClient = adminQueryClient;
-
-const OrderEmailsWidget = ({ data }: DetailWidgetProps<AdminOrder>) => (
-  <QueryClientProvider client={queryClient}>
-    <OrderEmailsInner order={data} />
-  </QueryClientProvider>
-);
-
-export const config = defineWidgetConfig({
-  // Odeslané e-maily patří k „Aktivitě" → do pravého baru, ne na konec hlavního
-  // sloupce. (Majitelčino přání — přehlednější workflow.)
-  zone: "order.details.side.after",
-  id: "keramicka-zahrada:order-emails",
-});
-
-export default OrderEmailsWidget;

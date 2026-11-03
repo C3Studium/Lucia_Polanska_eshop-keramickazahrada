@@ -1,6 +1,7 @@
-import { defineWidgetConfig } from "@medusajs/admin-sdk"
-import type { AdminOrder, DetailWidgetProps } from "@medusajs/framework/types"
-import { Badge, Container, Heading, Text } from "@medusajs/ui"
+import type { AdminOrder } from "@medusajs/framework/types"
+import { Badge, Text } from "@medusajs/ui"
+import { OrderSection } from "../components/order-section"
+import { useExpertMode } from "../lib/expert-mode"
 import { formatDateTime } from "../lib/format"
 
 /**
@@ -42,22 +43,31 @@ const Row = ({ label, value }: { label: string; value: string }) => (
   </div>
 )
 
-const OrderConsentWidget = ({ data: order }: DetailWidgetProps<AdminOrder>) => {
+/**
+ * Právní důkaz, ne denní práce — od 3. 11. 2026 jen v expertním režimu, jako
+ * sbalená karta na konci „Práce s objednávkou". Data zůstávají v objednávce
+ * vždycky; skrývá se jen jejich zobrazení.
+ */
+export const OrderConsentPanel = ({ order }: { order: AdminOrder }) => {
+  const expert = useExpertMode()
   const meta = ((order as any)?.metadata ?? {}) as Meta
   const hasTerms = Boolean(text(meta.terms_version))
   const madeToOrderAt = text(meta.made_to_order_ack_at)
 
+  if (!expert) return null
+
   return (
-    <Container className="divide-y p-0">
-      <div className="flex items-center justify-between gap-x-2 px-6 py-4">
-        <Heading level="h2">Souhlas s podmínkami</Heading>
-        {hasTerms ? (
+    <OrderSection
+      title="Souhlas s podmínkami"
+      badge={
+        hasTerms ? (
           <Badge color="green">Zaznamenán</Badge>
         ) : (
           <Badge color="red">Chybí</Badge>
-        )}
-      </div>
-
+        )
+      }
+      summary={hasTerms ? versionLabel(meta.terms_version) : undefined}
+    >
       <div className="flex flex-col gap-y-2 px-6 py-4">
         {hasTerms ? (
           <>
@@ -103,12 +113,6 @@ const OrderConsentWidget = ({ data: order }: DetailWidgetProps<AdminOrder>) => {
           </Text>
         )}
       </div>
-    </Container>
+    </OrderSection>
   )
 }
-
-export const config = defineWidgetConfig({
-  zone: "order.details.side.after",
-})
-
-export default OrderConsentWidget

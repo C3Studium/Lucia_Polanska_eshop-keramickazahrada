@@ -11,7 +11,6 @@ import {
   Skeleton,
   Table,
   Text,
-  Toaster,
 } from "@medusajs/ui";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -45,7 +44,7 @@ import { formatCzk } from "../../lib/workbench";
 import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
- * Reklamace a zrušení — jeden modul pro reklamace, vrácení zboží a odstoupení
+ * Reklamace a vrácení — jeden modul pro reklamace, vrácení zboží a odstoupení
  * od smlouvy (docs/reklamace-a-zruseni.md, §8, §12).
  *
  * Tohle je seznam: taby podle stavu s počty, filtr druhu, hledání, stránkování.
@@ -153,10 +152,9 @@ const ReklamaceInner = () => {
 
   return (
     <Container className="divide-y p-0">
-      <Toaster />
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
         <div>
-          <Heading>Reklamace a zrušení</Heading>
+          <Heading>Reklamace a vrácení</Heading>
           <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
             Reklamace, vrácení zboží a odstoupení od smlouvy na jednom místě.
             Každá žádost jde cestou rozhodnutí → zboží zpět → vrácení peněz →
@@ -197,7 +195,7 @@ const ReklamaceInner = () => {
             placeholder="Hledat číslo objednávky, e-mail, jméno…"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            className="w-72"
+            className="w-72 max-w-full"
           />
           <label className="flex items-center gap-x-2">
             <Checkbox
@@ -427,8 +425,9 @@ const ReklamacePage = () => (
 );
 
 export const config = defineRouteConfig({
-  label: "Reklamace a zrušení",
+  label: "Reklamace a vrácení",
   icon: ArrowUturnLeft,
+  // Hlavní, denní: za Objednávkami (10), před Produkty (20).
   rank: 15,
 });
 

@@ -183,10 +183,35 @@ export default function CommissionBrief({
 
         const savedPhotos = result.photos ?? snap.kept
         saved.current = { text: snap.text, kept: savedPhotos }
+
+        /*
+         * Během ukládání mohl zákazník dál psát, přidat fotku nebo nějakou
+         * odebrat — nic z toho se nesmí přepsat výsledkem. Ponechané fotky
+         * jsou ty, které jsou v `latest` TEĎ, plus právě nahrané z konceptů,
+         * které mezitím neodebral (server vrací ponechané a za nimi nové ve
+         * stejném pořadí). Rozdíl proti uloženému stavu pošle další kolo.
+         */
+        const uploaded = savedPhotos.filter((url) => !snap.kept.includes(url))
+        const stillWanted = new Set(latest.current.drafts.map((draft) => draft.id))
+        const uploadedKept =
+          uploaded.length === snap.drafts.length
+            ? uploaded.filter((_, index) => stillWanted.has(snap.drafts[index].id))
+            : uploaded
+        const nextKept = [
+          ...latest.current.kept.filter((url) => savedPhotos.includes(url) || !snap.kept.includes(url)),
+          ...uploadedKept.filter((url) => !latest.current.kept.includes(url)),
+        ]
         const remainingDrafts = latest.current.drafts.filter((draft) => !sentDrafts.has(draft.id))
-        latest.current = { ...latest.current, kept: savedPhotos, drafts: remainingDrafts }
-        setKept(savedPhotos)
+        latest.current = { ...latest.current, kept: nextKept, drafts: remainingDrafts }
+        setKept(nextKept)
         setDrafts(remainingDrafts)
+        if (
+          remainingDrafts.length > 0 ||
+          latest.current.text !== saved.current.text ||
+          !sameList(nextKept, saved.current.kept)
+        ) {
+          again.current = true
+        }
         setStatus({ kind: "saved" })
         onCompletionChange?.(Boolean(snap.text.trim()) || savedPhotos.length > 0)
       } while (again.current)
@@ -204,7 +229,12 @@ export default function CommissionBrief({
     void runAutoSave()
   }
 
-  const busy = isPending || saving
+  /*
+   * Samoukládání v pokladně běží na pozadí a nic nezamyká (3. 11. 2026):
+   * zákazník po napsání textu čekal, než mohl přidat fotky. Změny za běhu
+   * zařadí fronta v `runAutoSave`. Zamyká jen ruční odeslání deníku (`order`).
+   */
+  const busy = isPending
 
   const pick = async (files: FileList | null) => {
     if (!files?.length) return

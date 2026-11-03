@@ -1,7 +1,12 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { DocumentText } from "@medusajs/icons";
 import {
-  Badge, Button, Container, Heading, Input, Label, Text, Toaster, toast,
+  Badge,
+  Button,
+  Container,
+  Heading,
+  Input,
+  Label,
+  Text,
+  toast,
 } from "@medusajs/ui";
 import {
   QueryClientProvider, useQuery, useQueryClient,
@@ -10,6 +15,7 @@ import { useRef, useState } from "react";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
+import { movedTo } from "../../components/section-tabs";
 
 /**
  * Dokumenty — PDF, na která web někde odkazuje.
@@ -288,22 +294,18 @@ const Inner = () => {
         )}
       </Container>
 
-      <Toaster />
     </div>
   );
 };
 
 const queryClient = adminQueryClient;
-const Page = () => (
+/** Obsah záložky Právní věci › Dokumenty ke stažení. */
+export const Dokumenty = () => (
   <QueryClientProvider client={queryClient}>
     <Inner />
   </QueryClientProvider>
 );
 
-export const config = defineRouteConfig({
-  label: "Dokumenty",
-  icon: DocumentText,
-  rank: 95,
-});
-
-export default Page;
+/* Bez položky v menu — stránka je záložkou „Právní věci";
+   stará adresa (odkaz z hlášky o chybějícím dokumentu) tam přesměruje. */
+export default movedTo("/pravni/dokumenty");

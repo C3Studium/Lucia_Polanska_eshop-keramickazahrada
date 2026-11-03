@@ -24,6 +24,7 @@ describe("merchant settings allowlist", () => {
       "legal_facts",
       "legal_facts_updated_at",
       "low_stock_default_threshold",
+      "loyalty_code",
       "onboarding_dismissals",
       "owner_notification_email",
       "production_started_email_enabled",

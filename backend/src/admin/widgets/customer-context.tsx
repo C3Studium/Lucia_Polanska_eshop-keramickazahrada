@@ -1,29 +1,25 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk";
 import type { AdminCustomer, DetailWidgetProps } from "@medusajs/framework/types";
 import {
-  Button,
   Container,
   Heading,
   Text,
-  Textarea,
-  Toaster,
-  toast,
 } from "@medusajs/ui";
 import {
   QueryClientProvider,
-  useMutation,
   useQuery,
 } from "@tanstack/react-query";
-import { useState } from "react";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
-import { ceskaChyba } from "../lib/ceska-chyba";
+import { CustomerCard } from "../components/customer-card";
 
 /**
  * Context about a person, on their own page (§14, P10-1).
  *
- * Native Medusa already shows their orders, so this adds only what it cannot:
- * a note she can keep, and how many reviews they have written.
+ * Native Medusa already shows their orders, so this adds only what it cannot.
+ * Od 3. 11. 2026 je to Karta zákazníka ze Zákazníci+ (hlavní čísla, odznak
+ * stálého zákazníka, slevový kód, poznámka, reklamace, kurzy a poukazy) —
+ * bez seznamu objednávek, ten nativní stránka má. Plus počet recenzí.
  *
  * ## No new storage
  *
@@ -33,11 +29,6 @@ import { ceskaChyba } from "../lib/ceska-chyba";
  * place to remember to delete from when somebody asks to be forgotten.
  */
 const CustomerContextInner = ({ customer }: { customer: AdminCustomer }) => {
-  const initial =
-    ((customer.metadata as Record<string, unknown> | null)?.note as string) ??
-    "";
-  const [note, setNote] = useState(initial);
-
   const { data: reviews } = useQuery<{ count: number }>({
     queryKey: ["customer-reviews", customer.id],
     queryFn: () =>
@@ -46,49 +37,17 @@ const CustomerContextInner = ({ customer }: { customer: AdminCustomer }) => {
       }),
   });
 
-  const save = useMutation({
-    mutationFn: () =>
-      sdk.admin.customer.update(customer.id, {
-        metadata: { ...(customer.metadata ?? {}), note },
-      }),
-    onSuccess: () => toast.success("Poznámka byla uložena"),
-    onError: (error) =>
-      toast.error(
-        ceskaChyba(error, "Poznámku se nepodařilo uložit")
-      ),
-  });
-
   return (
     <Container className="divide-y p-0">
       <header className="px-6 pb-3 pt-4">
-        <Heading level="h2">Poznámka</Heading>
+        <Heading level="h2">Karta zákazníka</Heading>
         <Text size="small" className="text-ui-fg-subtle mt-1">
-          Jen pro vás — zákazník ji nikdy neuvidí.
+          Nákupy, poznámka a slevový kód — jen pro vás, zákazník nic z toho neuvidí.
         </Text>
       </header>
 
-      <div className="flex flex-col gap-y-2 px-6 py-4">
-        <Textarea
-          rows={3}
-          value={note}
-          placeholder="Např. sbírá modrou sérii, chce vždy zabalit jako dárek…"
-          onChange={(event) => setNote(event.target.value)}
-        />
-        <div className="flex items-center gap-2">
-          <Button
-            size="small"
-            isLoading={save.isPending}
-            disabled={note === initial}
-            onClick={() => save.mutate()}
-          >
-            Uložit
-          </Button>
-          {customer.email && (
-            <Button size="small" variant="secondary" asChild>
-              <a href={`mailto:${customer.email}`}>Napsat zákazníkovi</a>
-            </Button>
-          )}
-        </div>
+      <div className="px-6 py-4">
+        <CustomerCard customerId={customer.id} showOrders={false} />
       </div>
 
       <div className="px-6 py-4">
@@ -97,7 +56,6 @@ const CustomerContextInner = ({ customer }: { customer: AdminCustomer }) => {
         </Text>
       </div>
 
-      <Toaster />
     </Container>
   );
 };

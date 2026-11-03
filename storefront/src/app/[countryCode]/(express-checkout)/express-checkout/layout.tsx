@@ -1,4 +1,6 @@
 import EditModeRemount from "@modules/common/components/cms-text/edit-remount"
+import { ContactEmailsProvider } from "@lib/context/contact-emails"
+import { getContactEmails } from "@lib/data/site-copy"
 import GlobalLiquidEther from "@modules/layout/components/global-liquid-ether"
 import Image from "next/image"
 import Link from "next/link"
@@ -12,9 +14,11 @@ export default async function Layout ({
   params: Promise<{ countryCode: string }>
 }) {
   const { countryCode } = await params
+  // Kontaktní e-maily ze Studia — hlášky platby a poděkování v rychlém nákupu.
+  const contactEmails = await getContactEmails()
 
   return (
-    <>
+    <ContactEmailsProvider emails={contactEmails}>
       <GlobalLiquidEther />
       <section className={styles.shell}>
         <div className={styles.frame}>
@@ -41,6 +45,6 @@ export default async function Layout ({
           </div>
         </div>
       </section>
-    </>
+    </ContactEmailsProvider>
   )
 }

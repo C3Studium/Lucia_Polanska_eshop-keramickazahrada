@@ -7,7 +7,6 @@ import {
   Label,
   Skeleton,
   Text,
-  Toaster,
   toast,
 } from "@medusajs/ui";
 import {
@@ -277,7 +276,6 @@ const AlertListInner = ({
         </div>
       )}
 
-      <Toaster />
     </Container>
   );
 };

@@ -22,6 +22,138 @@ import {
   type SellerFacts,
 } from "../../../lib/legal"
 import type { EmailLineItem } from "../../../lib/email-items"
+import { piecesLabel, type Localized } from "../../../lib/email-locale"
+import { useCopy, useEmailLocale } from "./email-i18n"
+
+/**
+ * Sdílené texty kabátu e-mailu po jazycích (viz `email-i18n.tsx`). Čeština
+ * je původní znění; ostatní jsou psané jako od Lucie — první osoba,
+ * vykání (PL „Państwo", DE „Sie").
+ */
+const UI_COPY: Localized<{
+  paidFor: string
+  hello: string
+  helloName: (name: string) => string
+  closing: string
+  optOutQuestion: string
+  optOutLink: string
+  optOutWritePrefix: string
+  optOutWriteSuffix: string
+  seller: string
+  terms: string
+  complaints: string
+  privacy: string
+  /** Právní dokumenty jsou jen česky — u PL/DE to patička řekne. */
+  docsLanguageNote: string | null
+  workshop: string
+  tagline: string
+  needHelp: string
+  rights: string
+}> = {
+  cs: {
+    paidFor: "Za co platíte",
+    hello: "Dobrý den,",
+    helloName: (name) => `Dobrý den, ${name},`,
+    closing: "Přeji hezký den,",
+    optOutQuestion: "Nechcete tyto e-maily?",
+    optOutLink: "Odhlásit je jedním kliknutím",
+    optOutWritePrefix: "Napište nám na",
+    optOutWriteSuffix: "a už je posílat nebudeme.",
+    seller: "Prodávající",
+    terms: "Obchodní podmínky",
+    complaints: "Reklamační řád",
+    privacy: "Ochrana osobních údajů",
+    docsLanguageNote: null,
+    workshop: "Dílna Lucie Polanské · Písek",
+    tagline:
+      "Keramika pro zahradu i domov. Každý kousek modeluji, glazuji a pálím sama ve své dílně v Písku.",
+    needHelp: "Potřebujete poradit? Napište na",
+    rights: "Všechna práva vyhrazena.",
+  },
+  sk: {
+    paidFor: "Za čo platíte",
+    hello: "Dobrý deň,",
+    helloName: (name) => `Dobrý deň, ${name},`,
+    closing: "Prajem pekný deň,",
+    optOutQuestion: "Nechcete dostávať tieto e-maily?",
+    optOutLink: "Odhláste sa jedným kliknutím",
+    optOutWritePrefix: "Napíšte nám na",
+    optOutWriteSuffix: "a už vám ich posielať nebudeme.",
+    seller: "Predávajúca",
+    terms: "Obchodné podmienky",
+    complaints: "Reklamačný poriadok",
+    privacy: "Ochrana osobných údajov",
+    docsLanguageNote: null,
+    workshop: "Dielňa Lucie Polanskej · Písek",
+    tagline:
+      "Keramika do záhrady aj domov. Každý kúsok modelujem, glazujem a vypaľujem sama vo svojej dielni v Písku.",
+    needHelp: "Potrebujete poradiť? Napíšte na",
+    rights: "Všetky práva vyhradené.",
+  },
+  pl: {
+    paidFor: "Za co Państwo płacą",
+    hello: "Dzień dobry,",
+    helloName: (name) => `Dzień dobry, ${name},`,
+    closing: "Serdecznie pozdrawiam",
+    optOutQuestion: "Nie chcą Państwo otrzymywać takich wiadomości?",
+    optOutLink: "Wypisz się jednym kliknięciem",
+    optOutWritePrefix: "Wystarczy napisać na",
+    optOutWriteSuffix: "– nie będziemy ich już wysyłać.",
+    seller: "Sprzedawca",
+    terms: "Regulamin",
+    complaints: "Zasady reklamacji",
+    privacy: "Ochrona danych osobowych",
+    docsLanguageNote: "dokumenty w języku czeskim",
+    workshop: "Pracownia Lucie Polanskiej · Písek",
+    tagline:
+      "Ceramika do ogrodu i domu. Każdy egzemplarz sama modeluję, szkliwię i wypalam w mojej pracowni w Písku.",
+    needHelp: "Potrzebują Państwo porady? Proszę napisać na",
+    rights: "Wszelkie prawa zastrzeżone.",
+  },
+  de: {
+    paidFor: "Wofür Sie bezahlen",
+    hello: "Guten Tag,",
+    helloName: (name) => `Guten Tag ${name},`,
+    closing: "Herzliche Grüße",
+    optOutQuestion: "Sie möchten diese E-Mails nicht mehr erhalten?",
+    optOutLink: "Mit einem Klick abmelden",
+    optOutWritePrefix: "Schreiben Sie uns an",
+    optOutWriteSuffix: "– dann senden wir sie nicht mehr.",
+    seller: "Verkäuferin",
+    terms: "AGB",
+    complaints: "Reklamationsordnung",
+    privacy: "Datenschutz",
+    docsLanguageNote: "Dokumente auf Tschechisch",
+    workshop: "Werkstatt von Lucie Polanská · Písek",
+    tagline:
+      "Keramik für Garten und Zuhause. Jedes Stück modelliere, glasiere und brenne ich selbst in meiner Werkstatt in Písek.",
+    needHelp: "Haben Sie Fragen? Schreiben Sie an",
+    rights: "Alle Rechte vorbehalten.",
+  },
+  en: {
+    paidFor: "What you're paying for",
+    hello: "Hello,",
+    helloName: (name) => `Hello ${name},`,
+    closing: "Warm wishes,",
+    optOutQuestion: "Would you rather not receive these e-mails?",
+    optOutLink: "Unsubscribe with one click",
+    optOutWritePrefix: "Just write to us at",
+    optOutWriteSuffix: "and we'll stop sending them.",
+    seller: "Seller",
+    terms: "Terms and Conditions",
+    complaints: "Complaints Policy",
+    privacy: "Privacy Policy",
+    docsLanguageNote: "documents in Czech",
+    workshop: "Lucie Polanská's studio · Písek",
+    tagline:
+      "Ceramics for the garden and the home. I model, glaze and fire every piece myself in my studio in Písek.",
+    needHelp: "Need any help? Write to",
+    rights: "All rights reserved.",
+  },
+}
+
+/** Sdílené texty kabátu — pro šablony, které skládají vlastní řádky. */
+export const useUiCopy = () => useCopy(UI_COPY)
 
 /* Položky výpisu „za co platíte" skládá `lib/email-items` (jedno místo pro
    objednávku i košík); šablony si typ berou odsud, spolu s `PaidFor`. */
@@ -191,9 +323,12 @@ export const P = ({
  * shodně končí u prostého „Dobrý den,“.
  */
 export const Greeting = ({ name }: { name?: string | null }) => {
+  const ui = useUiCopy()
   const trimmed = (name ?? "").trim()
+  // Náhrada „Vážený zákazníku" (z `customerName()`) se pozná v každém
+  // jazyce stejně — do cizojazyčného e-mailu se pak nedostane.
   const usable = trimmed && !/^vážen/i.test(trimmed)
-  return <P>{usable ? `Dobrý den, ${trimmed},` : "Dobrý den,"}</P>
+  return <P>{usable ? ui.helloName(trimmed) : ui.hello}</P>
 }
 
 /**
@@ -317,7 +452,7 @@ export const LedgerEnd = () => (
  */
 export const PaidFor = ({
   items,
-  heading = "Za co platíte",
+  heading,
   photos = true,
 }: {
   items?: EmailLineItem[] | null
@@ -325,6 +460,8 @@ export const PaidFor = ({
   /** Vypnuté u kurzů a poukazů. */
   photos?: boolean
 }) => {
+  const ui = useUiCopy()
+  const ks = piecesLabel(useEmailLocale())
   const lines = (items ?? []).filter((item) => item?.title)
   if (!lines.length) {
     return null
@@ -341,7 +478,7 @@ export const PaidFor = ({
 
   return (
     <Section style={{ margin: "32px 0 0" }}>
-      <Eyebrow>{heading}</Eyebrow>
+      <Eyebrow>{heading ?? ui.paidFor}</Eyebrow>
       {lines.map((item, index) =>
         item.service ? (
           <Row key={index}>
@@ -357,7 +494,7 @@ export const PaidFor = ({
                 }}
               >
                 {item.title}
-                {Number(item.quantity) > 1 ? ` · ${item.quantity} ks` : ""}
+                {Number(item.quantity) > 1 ? ` · ${item.quantity} ${ks}` : ""}
               </Text>
             </Column>
             <Column
@@ -445,7 +582,7 @@ export const PaidFor = ({
                 >
                   {[
                     item.subtitle || "",
-                    Number(item.quantity) > 1 ? `${item.quantity} ks` : "",
+                    Number(item.quantity) > 1 ? `${item.quantity} ${ks}` : "",
                   ]
                     .filter(Boolean)
                     .join(" · ")}
@@ -558,7 +695,9 @@ export const Note = ({
  * vlastní („Přeji hezký den“), e-mail ho může přepsat podle situace
  * („Děkuji a těším se,“ u poptávky, „Mějte se krásně,“ u doručení).
  */
-export const Signature = ({ closing = "Přeji hezký den," }: { closing?: string }) => (
+export const Signature = ({ closing }: { closing?: string }) => {
+  const ui = useUiCopy()
+  return (
   <Section style={{ margin: "30px 0 0" }}>
     <Text
       style={{
@@ -569,7 +708,7 @@ export const Signature = ({ closing = "Přeji hezký den," }: { closing?: string
         margin: 0,
       }}
     >
-      {closing}
+      {closing ?? ui.closing}
     </Text>
     <Text
       style={{
@@ -597,7 +736,8 @@ export const Signature = ({ closing = "Přeji hezký den," }: { closing?: string
       Keramická zahrada · Písek
     </Text>
   </Section>
-)
+  )
+}
 
 /**
  * „Nechcete tyto e-maily? Odhlásit je jedním kliknutím" — povinný řádek
@@ -606,7 +746,9 @@ export const Signature = ({ closing = "Přeji hezký den," }: { closing?: string
  * bez něj (nenastavená adresa backendu) zůstane možnost odmítnout e-mailem —
  * zákon ji chce v KAŽDÉ zprávě, mrtvý odkaz ale ne.
  */
-export const OptOutLine = ({ url }: { url?: string | null }) => (
+export const OptOutLine = ({ url }: { url?: string | null }) => {
+  const ui = useUiCopy()
+  return (
   <Text
     style={{
       fontFamily: brand.sans,
@@ -616,25 +758,26 @@ export const OptOutLine = ({ url }: { url?: string | null }) => (
       margin: "20px 0 0",
     }}
   >
-    Nechcete tyto e-maily?{" "}
+    {ui.optOutQuestion}{" "}
     {url ? (
       <Link href={url} style={{ color: brand.muted, textDecoration: "underline" }}>
-        Odhlásit je jedním kliknutím
+        {ui.optOutLink}
       </Link>
     ) : (
       <>
-        Napište nám na{" "}
+        {ui.optOutWritePrefix}{" "}
         <Link
           href={`mailto:${CONTACT_EMAIL}`}
           style={{ color: brand.muted, textDecoration: "underline" }}
         >
           {CONTACT_EMAIL}
         </Link>{" "}
-        a už je posílat nebudeme.
+        {ui.optOutWriteSuffix}
       </>
     )}
   </Text>
-)
+  )
+}
 
 /**
  * Identita prodávající a odkazy na právní dokumenty v patičce každého
@@ -645,11 +788,14 @@ export const OptOutLine = ({ url }: { url?: string | null }) => (
  * storefrontu nejsou ani odkazy (neodkazuje se naslepo).
  */
 export const LegalFooter = () => {
+  const ui = useUiCopy()
   const identity = sellerIdentityLine(LEGAL_MANIFEST, useEmailLegalFacts())
+  // Odkazy vedou na česká znění — jiná nejsou (překlad právních dokumentů
+  // je rozhodnutí majitele a advokáta, ne věc e-mailu).
   const links = [
-    { label: "Obchodní podmínky", href: legalPageUrl("obchodni-podminky") },
-    { label: "Reklamační řád", href: legalPageUrl("reklamacni-rad") },
-    { label: "Ochrana osobních údajů", href: legalPageUrl("ochrana-osobnich-udaju") },
+    { label: ui.terms, href: legalPageUrl("obchodni-podminky") },
+    { label: ui.complaints, href: legalPageUrl("reklamacni-rad") },
+    { label: ui.privacy, href: legalPageUrl("ochrana-osobnich-udaju") },
   ].filter((link) => link.href)
 
   if (!identity && !links.length) {
@@ -666,7 +812,7 @@ export const LegalFooter = () => {
         margin: "10px 0 0",
       }}
     >
-      {identity ? <>Prodávající: {identity}</> : null}
+      {identity ? <>{ui.seller}: {identity}</> : null}
       {identity && links.length ? <br /> : null}
       {links.map((link, index) => (
         <span key={link.href}>
@@ -676,6 +822,7 @@ export const LegalFooter = () => {
           </Link>
         </span>
       ))}
+      {links.length && ui.docsLanguageNote ? <> ({ui.docsLanguageNote})</> : null}
     </Text>
   )
 }
@@ -694,12 +841,14 @@ export const EmailLayout = ({
   children: React.ReactNode
 }) => {
   const seller = useSellerFacts()
+  const ui = useUiCopy()
+  const locale = useEmailLocale()
   // Kontakt musí v patičce být vždy — nevyplněný e-mail spadne na záložní
   // adresu; telefon se bez údaje vynechá.
   const contactEmail = seller.email || CONTACT_EMAIL
   const contactPhone = seller.phone
   return (
-    <Html lang="cs">
+    <Html lang={locale}>
       <Head />
       <Preview>{preview}</Preview>
       <Body
@@ -736,7 +885,7 @@ export const EmailLayout = ({
                 margin: 0,
               }}
             >
-              Dílna Lucie Polanské · Písek
+              {ui.workshop}
             </Text>
             <Text
               style={{
@@ -774,8 +923,7 @@ export const EmailLayout = ({
                 margin: "0 0 14px",
               }}
             >
-              Keramika pro zahradu i domov. Každý kousek modeluji, glazuji
-              a pálím sama ve své dílně v Písku.
+              {ui.tagline}
             </Text>
             <Text
               style={{
@@ -786,7 +934,7 @@ export const EmailLayout = ({
                 margin: "0 0 4px",
               }}
             >
-              Potřebujete poradit? Napište na{" "}
+              {ui.needHelp}{" "}
               <Link
                 href={`mailto:${contactEmail}`}
                 style={{ color: brand.ink, textDecoration: "underline" }}
@@ -805,8 +953,8 @@ export const EmailLayout = ({
                 margin: "10px 0 0",
               }}
             >
-              © {new Date().getFullYear()} Keramická zahrada · Lucie Polanská.
-              Všechna práva vyhrazena.
+              © {new Date().getFullYear()} Keramická zahrada · Lucie Polanská.{" "}
+              {ui.rights}
             </Text>
           </Section>
         </Container>

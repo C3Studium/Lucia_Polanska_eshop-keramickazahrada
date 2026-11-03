@@ -29,7 +29,6 @@ import {
   CP_CLAIM_INFO_URL,
   CP_DAMAGE_REPORT_DEADLINE_TEXT,
   damageCauseLabel,
-  damageCauseSentence,
   deadlineTextFor,
   isClaimKind,
   isDamageCause,
@@ -62,6 +61,19 @@ import {
   type ClaimLineItem,
 } from "./line-items"
 import { isMadeToOrderItem } from "./made-to-order"
+import {
+  claimChannelText,
+  claimDamageSentence,
+  claimDate,
+  claimDateTime,
+  claimLinesText,
+  claimResolutionText,
+  intakeDeadlineText,
+  intakeRefundMethodText,
+  intakeSubject,
+  loadClaimEmailContext,
+  takeoverText as takeoverTextIn,
+} from "./email-copy"
 import { goodsShipped } from "./money"
 import { loadClaimProduction } from "./production"
 import { capturedTotal, MONEY_EPSILON } from "./refund-rules"
@@ -514,7 +526,12 @@ export const createClaim = async (
     now,
     nextProtocolSequence(existing, now)
   )
+  // Protokol v jazyce objednávky (lib/claims/email-copy) — týž kontext
+  // jako potvrzovací e-mail níž.
+  const protocolContext = await loadClaimEmailContext(container, order.id)
+  const protocolLocale = protocolContext.locale
   const protocol = await buildAndStoreProtocol(container, {
+    locale: protocolLocale,
     protocolNumber,
     kind,
     orderDisplayId: String(order.display_id),
@@ -522,10 +539,17 @@ export const createClaim = async (
     email: order.email ?? "",
     createdAt: now,
     reason: request.reason,
-    items: itemsText,
-    damageCause: damageCauseSentence(damageCause),
+    items:
+      protocolLocale === "cs"
+        ? itemsText
+        : (kind === "odstoupeni"
+            ? claimLinesText(withdrawnItems, protocolLocale, protocolContext.titleOf)
+            : claimLinesText(lineItems, protocolLocale, protocolContext.titleOf)) ?? itemsText,
+    damageCause: claimDamageSentence(damageCause, protocolLocale),
     requestedResolution:
-      kind === "reklamace" ? resolutionLabel(input.requested_resolution) : null,
+      kind === "reklamace"
+        ? claimResolutionText(input.requested_resolution, protocolLocale)
+        : null,
   }).catch(() => ({ url: null as string | null, number: protocolNumber }))
   await service
     .updateReturnRequests({
@@ -563,14 +587,39 @@ export const createClaim = async (
         : deadlineTextFor(kind)
   const claimsUrl = orderClaimsUrl(order.id)
 
+  /*
+   * Potvrzení jde v jazyce objednávky (lib/email-locale) — zákazník ze
+   * Slovenska, Polska či Německa dostane i zákonné potvrzení o uplatnění
+   * ve své řeči. Texty pro majitelku a potvrzení na webu (`confirmation`)
+   * zůstávají česky; volný text zákazníka (důvod, popis vady) se nepřekládá.
+   */
+  const emailContext = protocolContext
+  const locale = emailContext.locale
+  const czech = locale === "cs"
+  const emailItemsText = czech
+    ? itemsText
+    : (kind === "odstoupeni"
+        ? claimLinesText(withdrawnItems, locale, emailContext.titleOf)
+        : claimLinesText(lineItems, locale, emailContext.titleOf)) ?? legacyItemsText
+  const emailExcludedText = czech
+    ? excludedText
+    : claimLinesText(excludedItems, locale, emailContext.titleOf)
+  const emailRefundMethodText = refundMethodText
+    ? intakeRefundMethodText(refundKind, refundAccount?.display ?? null, locale)
+    : null
+  const emailTakeoverText = timing ? takeoverTextIn(timing, locale) : null
+
   const emailData: Record<string, unknown> = {
-    subject: REFUND_REQUEST_SUBJECT[kind ?? ""] ?? "Vaši žádost jsem přijala",
+    subject: czech
+      ? REFUND_REQUEST_SUBJECT[kind ?? ""] ?? "Vaši žádost jsem přijala"
+      : intakeSubject(kind, false, locale),
+    ...(czech ? {} : { locale }),
     customerName: customerName(order),
     orderNumber: orderNumber(order),
     orderLink: orderLink(order),
     kind,
-    submittedAt: submittedText,
-    submittedChannel: CLAIM_CHANNEL_LABEL[channel],
+    submittedAt: czech ? submittedText : claimDateTime(now, locale),
+    submittedChannel: claimChannelText(channel, locale),
     // U reklamace popis vady (povinný), jinak jen důvod, který zákazník napsal.
     ...(kind === "reklamace"
       ? { refundReason: request.reason }
@@ -580,24 +629,24 @@ export const createClaim = async (
           ? { refundReason: request.reason }
           : {}),
     ...(kind === "reklamace" && input.requested_resolution
-      ? { requestedResolution: resolutionLabel(input.requested_resolution) }
+      ? { requestedResolution: claimResolutionText(input.requested_resolution, locale) }
       : {}),
-    ...(itemsText ? { items: itemsText } : {}),
-    ...(excludedText ? { excludedItems: excludedText } : {}),
+    ...(emailItemsText ? { items: emailItemsText } : {}),
+    ...(emailExcludedText ? { excludedItems: emailExcludedText } : {}),
     ...(kind === "odstoupeni" ? { wholeOrder } : {}),
     ...(isWithdrawalKind
       ? {
-          orderDate: formatPragueDate(order.created_at),
+          orderDate: claimDate(order.created_at, locale),
           goodsShipped: shipped,
           nothingToRefund: refundKind === "none",
-          ...(takeoverText ? { takeoverText } : {}),
+          ...(emailTakeoverText ? { takeoverText: emailTakeoverText } : {}),
           ...(returnAddress ? { returnAddress } : {}),
         }
       : {}),
-    ...(refundMethodText ? { refundMethodText } : {}),
+    ...(emailRefundMethodText ? { refundMethodText: emailRefundMethodText } : {}),
     ...(damageCause === "carrier" ? { carrierDamage: true } : {}),
     ...(damageCause === "damaged" ? { damagedItem: true } : {}),
-    deadlineText,
+    deadlineText: czech ? deadlineText : intakeDeadlineText(kind, resolveBy, locale),
     ...(claimsUrl ? { claimsUrl } : {}),
     ...(protocol.url ? { protocolUrl: protocol.url } : {}),
   }
@@ -647,9 +696,10 @@ export const createClaim = async (
           // Potvrzení přijetí s obsahem a datem a časem — i u zrušení hned.
           confirmationEmail: {
             ...emailData,
-            subject:
-              REFUND_REQUEST_AUTO_CANCELLED_SUBJECT[kind ?? ""] ??
-              "Vaši žádost jsem přijala — objednávka je zrušená",
+            subject: czech
+              ? REFUND_REQUEST_AUTO_CANCELLED_SUBJECT[kind ?? ""] ??
+                "Vaši žádost jsem přijala — objednávka je zrušená"
+              : intakeSubject(kind, true, locale),
             autoCancelled: true,
           },
         })
@@ -677,6 +727,7 @@ export const createClaim = async (
     to: order.email,
     key: `refund-request:${request.id}`,
     orderId: order.id,
+    locale,
     data: emailData,
   })
 

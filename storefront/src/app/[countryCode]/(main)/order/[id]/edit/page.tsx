@@ -1,6 +1,7 @@
 import { getGuestOrderEditContext } from "@lib/data/guest-order-edit"
 import { getOrderEditContext } from "@lib/data/order-edit"
 import { retrieveCustomer } from "@lib/data/customer"
+import { getContactEmails } from "@lib/data/site-copy"
 import { getCommissionBalance, listCommissionNotes } from "@lib/data/made-to-order"
 import OrderEditor from "@modules/order/components/order-edit"
 import OrderChangeOptions from "@modules/order/components/order-edit/change-options"
@@ -111,12 +112,15 @@ export default async function OrderEditPage(props: Props) {
 
   /* ── Úprava položek s mini obchodem — vypnuto od 12. 10. 2026 ───────────
      Kód níž zůstává beze změny pro případ, že se vypínač zase zapne. */
+  // Hlášky k objednávce vedou na e-mail pro objednávky a zakázky (Studio,
+  // `global.kontakty`), ne na obecné dotazy.
+  const { objednavky: orderEmail } = await getContactEmails()
   const description =
     context.mode === "swap_only"
       ? "Objednávka je zabalená — vyměnit jde už jen provedení za stejně drahé. Rozdíl ceny i to, co se stane s penězi, uvidíte ještě před uložením."
       : context.mode === "full" && context.items_editable
         ? "Změňte počet kusů, vyměňte provedení, odeberte nebo přidejte kus z obchodu. Rozdíl ceny i to, co se stane s penězi, uvidíte ještě před uložením."
-        : "Co se s objednávkou dá ještě udělat, najdete níž. Kdybyste potřebovali víc, napište nám na info@keramickazahrada.cz."
+        : `Co se s objednávkou dá ještě udělat, najdete níž. Kdybyste potřebovali víc, napište nám na ${orderEmail}.`
 
   return (
     <OrderStateShell

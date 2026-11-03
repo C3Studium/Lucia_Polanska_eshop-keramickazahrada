@@ -12,6 +12,7 @@ import {
   buildContactPayload,
   buildInvoicePayload,
   pickPaymentOptionId,
+  invoiceFlavourFor,
   pragueDate,
   singleInvoiceLine,
   vatRateTypeFor,
@@ -35,8 +36,11 @@ import {
   orderNumber,
   sendCustomerEmail,
 } from "./customer-email"
+import { emailLocaleOf } from "./email-locale"
 import { notifyMerchant } from "./notify"
 import { jeZkusebniRezim } from "./test-mode"
+import { isDepositRequest } from "./made-to-order/payment-kind"
+import { voucherNoteForOrder } from "./gift-voucher-orders"
 import { epsilonFor, toAmount } from "./ship-gate"
 import { outstandingFor } from "./balance-payment"
 
@@ -244,11 +248,13 @@ const storeInvoicePdf = async (
   container: MedusaContainer,
   idoklad: IdokladModuleService,
   invoiceId: number,
-  invoiceNumber: string
+  invoiceNumber: string,
+  /** Jazyk tiskové sestavy — u evropské faktury jazyk zákazníka. */
+  language?: number
 ): Promise<string | null> => {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   try {
-    const pdf = await idoklad.getInvoicePdf(invoiceId)
+    const pdf = await idoklad.getInvoicePdf(invoiceId, language)
     const fileModule = container.resolve(Modules.FILE)
     const [uploaded] = await fileModule.createFiles([
       {
@@ -274,18 +280,21 @@ const sendInvoiceEmail = async (
   order: any,
   state: IdokladInvoiceState
 ): Promise<void> => {
+  // Jazyk objednávky (lib/email-locale) — částku formátuje tenhle kód sám.
+  const locale = emailLocaleOf(order)
   await sendCustomerEmail(container, {
     template: "invoice-issued",
     to: order.email,
     key: `invoice:${state.invoice_id}`,
     orderId: order.id,
+    locale,
     data: {
       customerName: customerName(order),
       orderNumber: orderNumber(order),
       orderLink: orderLink(order),
       invoiceNumber: state.invoice_number ?? "",
       invoicePdfUrl: state.pdf_url ?? "",
-      totalAmount: formatMoney(order.total, order.currency_code),
+      totalAmount: formatMoney(order.total, order.currency_code, locale),
       // Celý rozpis objednávky do faktury — stejný obsah jako potvrzení.
       order,
       invoiceKind: "full",
@@ -401,6 +410,10 @@ export const ensureInvoiceForOrder = async (
 
       // 3) Create, then stamp metadata immediately — the invoice id is the
       //    idempotency fact and must survive even if PDF or e-mail fail.
+      /* Poukaz se v objednávce chová jako sleva — na dokladu by po něm
+         nezůstala stopa, tak ho jmenuje popis (částky se nemění). */
+      const voucherNote = await voucherNoteForOrder(container, order.id)
+
       const invoice = await idoklad.createInvoice(
         buildInvoicePayload({
           order,
@@ -410,6 +423,12 @@ export const ensureInvoiceForOrder = async (
           paymentOptionId,
           numericSequenceId: idoklad.numericSequenceId,
           currencyId,
+          description: [
+            `Objednávka #${order.display_id ?? order.id}`,
+            voucherNote,
+          ]
+            .filter(Boolean)
+            .join(" · "),
         })
       )
 
@@ -435,7 +454,8 @@ export const ensureInvoiceForOrder = async (
         container,
         idoklad,
         invoice.Id,
-        invoice.DocumentNumber ?? String(invoice.Id)
+        invoice.DocumentNumber ?? String(invoice.Id),
+        invoiceFlavourFor(order).reportLanguage
       )
       if (pdfUrl) {
         await patchOrderMetadata(container, order, {
@@ -513,11 +533,17 @@ export const ensureMadeToOrderInvoices = async (
     } as never)) as any[]
 
     const round2 = (value: number) => Math.round(value * 100) / 100
+    /*
+     * Záloha u ceny po domluvě má `type: "balance"` (jinak by se zaplacení
+     * nezapsalo — viz made-to-order/payment-kind). Bez tohohle rozlišení
+     * nepadla ani mezi zálohy, ani mezi doplatky, a zakázka zůstala bez
+     * faktury (3. 11. 2026).
+     */
     const paidDeposits = requests.filter(
-      (r) => r.type === "deposit" && r.status === "paid"
+      (r) => r.status === "paid" && isDepositRequest(r)
     )
     const paidBalances = requests.filter(
-      (r) => r.type === "balance" && r.status === "paid"
+      (r) => r.status === "paid" && !isDepositRequest(r)
     )
     const sumAmounts = (rows: any[]) =>
       round2(rows.reduce((sum, row) => sum + toAmount(row.amount), 0))
@@ -575,6 +601,12 @@ export const ensureMadeToOrderInvoices = async (
               .catch(() => undefined)
     }
 
+    // Jazyk e-mailu s fakturou (metadata košíku → země doručení) — částky
+    // v e-mailu formátuje tenhle kód, proto ho potřebuje dřív než provider.
+    const emailLocale = emailLocaleOf(order)
+    /* Zakázka zaplacená zčásti poukazem — na dokladu se to jmenuje stejně. */
+    const voucherNote = await voucherNoteForOrder(container, order.id)
+
     const issuePhase = async (
       keys: {
         invoiceId: string
@@ -631,7 +663,9 @@ export const ensureMadeToOrderInvoices = async (
             numericSequenceId: idoklad.numericSequenceId,
             currencyId,
             items,
-            description: `${label} — obj. #${order.display_id ?? order.id}`,
+            description: [`${label} — obj. #${order.display_id ?? order.id}`, voucherNote]
+              .filter(Boolean)
+              .join(" · "),
           })
         )
         const issuedAt = new Date().toISOString()
@@ -654,7 +688,8 @@ export const ensureMadeToOrderInvoices = async (
           container,
           idoklad,
           invoice.Id,
-          invoice.DocumentNumber ?? String(invoice.Id)
+          invoice.DocumentNumber ?? String(invoice.Id),
+          invoiceFlavourFor(order).reportLanguage
         )
         if (pdfUrl) {
           await patchOrderMetadata(container, order, { [keys.pdfUrl]: pdfUrl })
@@ -682,13 +717,14 @@ export const ensureMadeToOrderInvoices = async (
           to: order.email,
           key: `invoice:${invoice.Id}`,
           orderId: order.id,
+          locale: emailLocale,
           data: {
             customerName: customerName(order),
             orderNumber: orderNumber(order),
             orderLink: orderLink(order),
             invoiceNumber: invoice.DocumentNumber ?? "",
             invoicePdfUrl: pdfUrl ?? "",
-            totalAmount: formatMoney(rounded, order.currency_code),
+            totalAmount: formatMoney(rounded, order.currency_code, emailLocale),
             // Celý rozpis zakázky + (u zálohy) kolik ještě zbývá doplatit.
             order,
             invoiceKind: kind,
@@ -696,7 +732,7 @@ export const ensureMadeToOrderInvoices = async (
               kind === "deposit" &&
               typeof balanceRemaining === "number" &&
               balanceRemaining > 0
-                ? formatMoney(balanceRemaining, order.currency_code)
+                ? formatMoney(balanceRemaining, order.currency_code, emailLocale)
                 : undefined,
             commissionPayments: commissionPayments ?? null,
           },
@@ -752,7 +788,7 @@ export const ensureMadeToOrderInvoices = async (
           surcharge,
           commissionPaymentsText(
             splitCommissionPayments({ requests, surcharge: surchargeTotal }),
-            (amount) => formatMoney(amount, order.currency_code),
+            (amount) => formatMoney(amount, order.currency_code, emailLocale),
             depositInvoiceNumber
           )
         )) || created
@@ -919,7 +955,7 @@ export const issueCreditNoteForOrder = async (
 
       let pdfUrl: string | null = null
       try {
-        const pdf = await idoklad.getCreditNotePdf(creditId)
+        const pdf = await idoklad.getCreditNotePdf(creditId, invoiceFlavourFor(order).reportLanguage)
         const fileModule = container.resolve(Modules.FILE)
         const [uploaded] = await fileModule.createFiles([
           {
@@ -1102,7 +1138,7 @@ export const issueCreditNoteForRefund = async (
 
       let pdfUrl: string | null = null
       try {
-        const pdf = await idoklad.getCreditNotePdf(creditId)
+        const pdf = await idoklad.getCreditNotePdf(creditId, invoiceFlavourFor(order).reportLanguage)
         const fileModule = container.resolve(Modules.FILE)
         const [uploaded] = await fileModule.createFiles([
           {

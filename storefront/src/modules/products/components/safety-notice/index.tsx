@@ -1,3 +1,7 @@
+"use client"
+
+import { useEffect, useState } from "react"
+
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import styles from "./style.module.scss"
@@ -8,9 +12,33 @@ import styles from "./style.module.scss"
  * u každého kusu zvlášť. Kotvení u věcí na fasádu, mráz u nádob na vodu,
  * střepy u všeho — keramika je křehká vždy.
  *
- * Tvrzení o nezávadnosti glazur (N1) odkazuje na stránku s protokoly:
- * tvrzení bez dokladu by bylo klamavé (§ 5 ZOS).
+ * Tvrzení o nezávadnosti glazur (N1) odkazuje na protokol, který Lucie
+ * nahrává ve Studiu (`/api/certifikaty`): tvrzení bez dokladu by bylo
+ * klamavé (§ 5 ZOS) — dokud protokol publikovaný není, věta to říká pravdivě.
+ * Totéž pravidlo (`FOOD_CLAIM`) zrcadlí backend `lib/glaze-protocols.ts`,
+ * který protokol přikládá k potvrzení objednávky.
  */
+
+type GlazeProtocolLink = { glaze: string; url: string }
+
+/** Protokoly glazur ze Studia; `null` dokud se nenačtou. */
+const useGlazeProtocols = (enabled: boolean): GlazeProtocolLink[] | null => {
+  const [protocols, setProtocols] = useState<GlazeProtocolLink[] | null>(null)
+  useEffect(() => {
+    if (!enabled) return
+    let alive = true
+    fetch("/api/certifikaty")
+      .then((response) => (response.ok ? response.json() : { glazes: [] }))
+      .then((body: { glazes?: GlazeProtocolLink[] }) => {
+        if (alive) setProtocols((body.glazes ?? []).filter((row) => row?.url))
+      })
+      .catch(() => alive && setProtocols([]))
+    return () => {
+      alive = false
+    }
+  }, [enabled])
+  return protocols
+}
 
 /** Kategorie, kde se kus kotví na zeď / fasádu. */
 const WALL_MOUNTED = new Set(["plastiky-na-zeď", "domovní-čísla", "poštovní-schránky", "zvonková-tlačítka", "klasik", "retro", "plochá", "original"])
@@ -46,6 +74,7 @@ export default function SafetyNotice({
   description: string | null | undefined
 }) {
   const { sentences, foodClaim } = safetySentencesFor(categoryHandles, description)
+  const protocols = useGlazeProtocols(foodClaim)
   return (
     <aside className={styles.notice} aria-label="Bezpečnostní upozornění" data-testid="safety-notice">
       <p className={styles.title}>Bezpečné používání</p>
@@ -53,9 +82,24 @@ export default function SafetyNotice({
         {sentences.map((sentence) => (
           <li key={sentence}>{sentence}</li>
         ))}
-        {foodClaim && (
-          <li>
-            Nezávadnost glazury dokládáme protokolem —{" "}
+        {foodClaim && protocols && protocols.length > 0 && (
+          <li data-testid="glaze-protocol">
+            Zdravotní nezávadnost glazury dokládá protokol —{" "}
+            {protocols.map((protocol, index) => (
+              <span key={protocol.url}>
+                {index ? ", " : ""}
+                <a href={protocol.url} target="_blank" rel="noopener">
+                  {protocols.length > 1 ? protocol.glaze : "protokol (PDF)"}
+                </a>
+              </span>
+            ))}
+            ; přikládáme ho i k potvrzení objednávky. Všechny doklady jsou na stránce{" "}
+            <LocalizedClientLink href="/certifikaty">certifikáty a protokoly</LocalizedClientLink>.
+          </li>
+        )}
+        {foodClaim && protocols && protocols.length === 0 && (
+          <li data-testid="glaze-protocol-pending">
+            Protokol o zdravotní nezávadnosti glazury zveřejníme na stránce{" "}
             <LocalizedClientLink href="/certifikaty">certifikáty a protokoly</LocalizedClientLink>.
           </li>
         )}

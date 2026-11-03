@@ -13,6 +13,7 @@ import {
   ZERO_PAYMENT_PROVIDER,
 } from "@lib/util/price-on-request"
 import { HttpTypes } from "@medusajs/types"
+import { useContactEmails } from "@lib/context/contact-emails"
 // Button from @medusajs/ui replaced with local ClickButton
 import React, { useState } from "react"
 import ErrorMessage from "../error-message"
@@ -219,6 +220,8 @@ const ComgatePaymentButton = ({
 }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [redirecting, setRedirecting] = useState(false)
+  // Platba je věc objednávky → e-mail pro objednávky a zakázky ze Studia.
+  const { objednavky: orderEmail } = useContactEmails()
   const session = cart.payment_collection?.payment_sessions?.find(
     (s) => s.status === "pending"
   )
@@ -235,7 +238,7 @@ const ComgatePaymentButton = ({
     if (redirecting) return
     if (!redirectUrl) {
       setErrorMessage(
-        "Platební bránu se nepovedlo otevřít. Zkuste to prosím znovu, nebo nám napište na info@keramickazahrada.cz."
+        `Platební bránu se nepovedlo otevřít. Zkuste to prosím znovu, nebo nám napište na ${orderEmail}.`
       )
       return
     }

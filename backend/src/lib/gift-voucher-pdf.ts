@@ -9,6 +9,8 @@ import { getLegalFacts } from "./merchant-settings"
 import { formatVoucherCode } from "../modules/gift-voucher/code"
 import { formatVoucherCzk, formatVoucherDate } from "./gift-voucher-view"
 import { giftVoucherLink } from "./gift-voucher-link"
+import { emailLocaleForOrder } from "./customer-email"
+import { pick, type EmailLocale, type Localized } from "./email-locale"
 
 /**
  * Dárkový poukaz jako PDF — elektronická podoba té vytištěné kartičky.
@@ -61,6 +63,216 @@ export type GiftVoucherPdfInput = {
   sellerWeb: string
   /** Co se zůstatkem při nákupu pod hodnotu (z Právních údajů), nebo prázdné. */
   remainderNote?: string | null
+  /**
+   * Jazyk poukazu (lib/email-locale) — jazyk objednávky, ze které poukaz
+   * vznikl. Bez něj česky (poukaz z administrace, starší volání).
+   */
+  locale?: EmailLocale | null
+}
+
+/**
+ * Texty PDF po jazycích. Čeština je původní znění kartičky z dílny; ostatní
+ * jazyky dostane zákazník, který poukaz koupil na /sk, /pl nebo /de.
+ */
+const PDF_COPY: Localized<{
+  title1: string
+  title2: string
+  worth: string
+  inWorkshop: (genitive: string, name: string) => string
+  tel: string
+  validUntilShort: (date: string) => string
+  howToBack: (code: string) => string
+  howToSummary: (code: string) => string
+  balanceBack: (balance: string, value: string) => string
+  balanceSummary: (balance: string, value: string) => string
+  remainder: (note: string) => string
+  validUntil: (date: string) => string
+  howToLabel: string
+  forLabel: string
+  fromLabel: string
+  dedicationLabel: string
+  docTitle: (code: string) => string
+  docTitlePrint: (code: string) => string
+  pdfLang: string
+}> = {
+  cs: {
+    title1: "Dárkový poukaz",
+    title2: "na nákup keramiky",
+    worth: "v hodnotě",
+    inWorkshop: (genitive) => `v keramické dílně ${genitive}`,
+    tel: "tel.:",
+    validUntilShort: (date) => `platí do ${date}`,
+    howToBack: (code) =>
+      `Kód ${code} zadejte v košíku do pole pro slevový kód; jeho hodnota se odečte od ceny nákupu. ` +
+      "Uplatnit ho jde i přímo v dílně.",
+    howToSummary: (code) =>
+      `Kód ${code} zadejte v košíku do pole pro slevový kód; jeho hodnota se odečte od ceny nákupu. ` +
+      "Uplatnit ho jde i v dílně — stačí ho ukázat v telefonu nebo vytištěný.",
+    balanceBack: (balance, value) => `Zbývá ${balance} z ${value}.`,
+    balanceSummary: (balance, value) => `Na poukazu zbývá ${balance} z ${value}.`,
+    remainder: (note) => `Když nákup nedosáhne hodnoty poukazu, ${note}.`,
+    validUntil: (date) => `Poukaz platí do ${date}.`,
+    howToLabel: "Jak poukaz uplatnit",
+    forLabel: "Pro",
+    fromLabel: "Od",
+    dedicationLabel: "Věnování",
+    docTitle: (code) => `Dárkový poukaz ${code}`,
+    docTitlePrint: (code) => `Dárkový poukaz ${code} — k tisku`,
+    pdfLang: "cs-CZ",
+  },
+  sk: {
+    title1: "Darčekový poukaz",
+    title2: "na nákup keramiky",
+    worth: "v hodnote",
+    inWorkshop: (_genitive, name) => `v keramickej dielni ${skGenitive(name)}`,
+    tel: "tel.:",
+    validUntilShort: (date) => `platí do ${date}`,
+    howToBack: (code) =>
+      `Kód ${code} zadajte v košíku do poľa pre zľavový kód; jeho hodnota sa odpočíta od ceny nákupu. ` +
+      "Uplatniť ho môžete aj priamo v dielni.",
+    howToSummary: (code) =>
+      `Kód ${code} zadajte v košíku do poľa pre zľavový kód; jeho hodnota sa odpočíta od ceny nákupu. ` +
+      "Uplatniť ho môžete aj v dielni — stačí ho ukázať v telefóne alebo vytlačený.",
+    balanceBack: (balance, value) => `Zostáva ${balance} z ${value}.`,
+    balanceSummary: (balance, value) => `Na poukaze zostáva ${balance} z ${value}.`,
+    remainder: () => "",
+    validUntil: (date) => `Poukaz platí do ${date}.`,
+    howToLabel: "Ako uplatniť poukaz",
+    forLabel: "Pre",
+    fromLabel: "Od",
+    dedicationLabel: "Venovanie",
+    docTitle: (code) => `Darčekový poukaz ${code}`,
+    docTitlePrint: (code) => `Darčekový poukaz ${code} — na tlač`,
+    pdfLang: "sk-SK",
+  },
+  pl: {
+    title1: "Bon podarunkowy",
+    title2: "na zakup ceramiki",
+    worth: "o wartości",
+    inWorkshop: (_genitive, name) => `w pracowni ceramicznej ${plGenitive(name)}`,
+    tel: "tel.:",
+    validUntilShort: (date) => `ważny do ${date}`,
+    howToBack: (code) =>
+      `Kod ${code} należy wpisać w koszyku w polu na kod rabatowy; jego wartość zostanie odjęta od ceny zakupu. ` +
+      "Można go też wykorzystać bezpośrednio w pracowni.",
+    howToSummary: (code) =>
+      `Kod ${code} należy wpisać w koszyku w polu na kod rabatowy; jego wartość zostanie odjęta od ceny zakupu. ` +
+      "Można go też wykorzystać w pracowni — wystarczy pokazać go w telefonie lub w wersji wydrukowanej.",
+    balanceBack: (balance, value) => `Pozostało ${balance} z ${value}.`,
+    balanceSummary: (balance, value) => `Na bonie pozostało ${balance} z ${value}.`,
+    remainder: () => "",
+    validUntil: (date) => `Bon jest ważny do ${date}.`,
+    howToLabel: "Jak zrealizować bon",
+    forLabel: "Dla",
+    fromLabel: "Od",
+    dedicationLabel: "Dedykacja",
+    docTitle: (code) => `Bon podarunkowy ${code}`,
+    docTitlePrint: (code) => `Bon podarunkowy ${code} — do druku`,
+    pdfLang: "pl-PL",
+  },
+  de: {
+    title1: "Geschenkgutschein",
+    title2: "für Keramik",
+    worth: "im Wert von",
+    inWorkshop: (_genitive, name) => `aus der Keramikwerkstatt von ${name}`,
+    tel: "Tel.:",
+    validUntilShort: (date) => `gültig bis ${date}`,
+    howToBack: (code) =>
+      `Geben Sie den Code ${code} im Warenkorb in das Feld für den Rabattcode ein; sein Wert wird vom Kaufpreis abgezogen. ` +
+      "Einlösen können Sie ihn auch direkt in der Werkstatt.",
+    howToSummary: (code) =>
+      `Geben Sie den Code ${code} im Warenkorb in das Feld für den Rabattcode ein; sein Wert wird vom Kaufpreis abgezogen. ` +
+      "Einlösen können Sie ihn auch in der Werkstatt – zeigen Sie ihn einfach auf dem Handy oder ausgedruckt vor.",
+    balanceBack: (balance, value) => `Restguthaben ${balance} von ${value}.`,
+    balanceSummary: (balance, value) => `Auf dem Gutschein sind noch ${balance} von ${value} übrig.`,
+    remainder: () => "",
+    validUntil: (date) => `Der Gutschein gilt bis ${date}.`,
+    howToLabel: "So lösen Sie den Gutschein ein",
+    forLabel: "Für",
+    fromLabel: "Von",
+    dedicationLabel: "Widmung",
+    docTitle: (code) => `Geschenkgutschein ${code}`,
+    docTitlePrint: (code) => `Geschenkgutschein ${code} – zum Ausdrucken`,
+    pdfLang: "de-DE",
+  },
+  en: {
+    title1: "Gift voucher",
+    title2: "for handmade ceramics",
+    worth: "worth",
+    inWorkshop: (_genitive, name) => `from the ceramics studio of ${name}`,
+    tel: "Tel.:",
+    validUntilShort: (date) => `valid until ${date}`,
+    howToBack: (code) =>
+      `Enter the code ${code} in your basket in the discount code field; its value will be deducted from the price of your purchase. ` +
+      "You can also redeem it directly at the studio.",
+    howToSummary: (code) =>
+      `Enter the code ${code} in your basket in the discount code field; its value will be deducted from the price of your purchase. ` +
+      "You can also redeem it at the studio — just show it on your phone or bring it printed.",
+    balanceBack: (balance, value) => `${balance} of ${value} remaining.`,
+    balanceSummary: (balance, value) => `${balance} of ${value} remains on the voucher.`,
+    remainder: () => "",
+    validUntil: (date) => `The voucher is valid until ${date}.`,
+    howToLabel: "How to redeem the voucher",
+    forLabel: "For",
+    fromLabel: "From",
+    dedicationLabel: "Message",
+    docTitle: (code) => `Gift voucher ${code}`,
+    docTitlePrint: (code) => `Gift voucher ${code} — for printing`,
+    pdfLang: "en-GB",
+  },
+}
+
+const copyOf = (input: GiftVoucherPdfInput) => pick(input.locale ?? "cs", PDF_COPY)
+
+/**
+ * Věta o zůstatku pod hodnotou je text z Právních údajů — česky, jak ho
+ * majitelka napsala. Do cizojazyčného poukazu se nedává (přeložit ho
+ * strojově nejde a česká věta uprostřed slovenského PDF by mátla); co se
+ * zůstatkem, říká e-mail k poukazu.
+ */
+const remainderLine = (input: GiftVoucherPdfInput): string =>
+  input.remainderNote && (input.locale ?? "cs") === "cs"
+    ? PDF_COPY.cs.remainder(input.remainderNote)
+    : ""
+
+/**
+ * Druhý pád jména pro slovenskou větu „v keramickej dielni …" —
+ * `-á` → `-ej` (Polanská → Polanskej), `-a` → `-y`, `-e` zůstává (Lucie).
+ */
+export const skGenitive = (name: string): string =>
+  String(name)
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => {
+      if (/á$/.test(word)) return `${word.slice(0, -1)}ej`
+      if (/[eě]$/.test(word)) return word
+      if (/a$/.test(word)) return `${word.slice(0, -1)}y`
+      return word
+    })
+    .join(" ")
+
+/**
+ * Druhý pád pro polskou větu „w pracowni ceramicznej …" — přídavné
+ * příjmení `-ská`/`-cká` → `-skiej`/`-ckiej` (Polanská → Polanskiej),
+ * `-a` → `-y`, `-e` zůstává (Lucie).
+ */
+export const plGenitive = (name: string): string =>
+  String(name)
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => {
+      if (/[sc]ká$/.test(word)) return `${word.slice(0, -1)}iej`
+      if (/á$/.test(word)) return `${word.slice(0, -1)}ej`
+      if (/[eě]$/.test(word)) return word
+      if (/a$/.test(word)) return `${word.slice(0, -1)}y`
+      return word
+    })
+    .join(" ")
+
+/** Velikost písma, při které se řádek vejde do šířky (nejvýš `max`). */
+const fitSize = (text: string, font: PDFFont, max: number, width: number): number => {
+  const natural = font.widthOfTextAtSize(text, max)
+  return natural <= width ? max : Math.max(12, Math.floor((max * width) / natural))
 }
 
 const PAGE_W = 595.28
@@ -242,17 +454,24 @@ const drawVoucherFront = (
     radius: box.h * 0.38,
   })
 
+  const t = copyOf(input)
   const textX = box.x + 30
   const textW = box.w - box.h - 30
   let y = box.y + box.h - 42
 
-  page.drawText("Dárkový poukaz", { x: textX, y, size: 24, font: fonts.bold, color: INK })
+  /* Nadpis je na kartičce velký; delší překlad („Geschenkgutschein") se
+     zmenší, aby nevjel do ornamentu. Česky zůstává 24 bodů jako dřív. */
+  const titleSize = Math.min(
+    fitSize(t.title1, fonts.bold, 24, textW),
+    fitSize(t.title2, fonts.bold, 24, textW)
+  )
+  page.drawText(t.title1, { x: textX, y, size: titleSize, font: fonts.bold, color: INK })
   y -= 27
-  page.drawText("na nákup keramiky", { x: textX, y, size: 24, font: fonts.bold, color: INK })
+  page.drawText(t.title2, { x: textX, y, size: titleSize, font: fonts.bold, color: INK })
   y -= 36
-  page.drawText("v hodnotě", { x: textX, y, size: 15, font: fonts.bold, color: INK })
+  page.drawText(t.worth, { x: textX, y, size: 15, font: fonts.bold, color: INK })
   page.drawText(input.value, {
-    x: textX + fonts.bold.widthOfTextAtSize("v hodnotě", 15) + 12,
+    x: textX + fonts.bold.widthOfTextAtSize(t.worth, 15) + 12,
     y,
     size: 15,
     font: fonts.bold,
@@ -262,9 +481,9 @@ const drawVoucherFront = (
   y = box.y + 76
   const dilna = (input.sellerNameGenitive || "").trim() || dilnaGenitive(input.sellerName)
   for (const row of [
-    `v keramické dílně ${dilna}`,
+    t.inWorkshop(dilna, input.sellerName),
     input.sellerAddress,
-    input.sellerPhone ? `tel.: ${input.sellerPhone}` : "",
+    input.sellerPhone ? `${t.tel} ${input.sellerPhone}` : "",
   ].filter(Boolean)) {
     for (const part of wrap(row, fonts.regular, 10, textW)) {
       page.drawText(part, { x: textX, y, size: 10, font: fonts.regular, color: TEXT })
@@ -274,7 +493,7 @@ const drawVoucherFront = (
 
   /* Kód a platnost — to, co vytištěná kartička nemá a elektronická mít musí. */
   page.drawText(input.code, { x: textX, y: box.y + 24, size: 15, font: fonts.bold, color: TEXT })
-  page.drawText(`platí do ${input.validUntil}`, {
+  page.drawText(t.validUntilShort(input.validUntil), {
     x: textX + fonts.bold.widthOfTextAtSize(input.code, 15) + 14,
     y: box.y + 26,
     size: 9,
@@ -306,6 +525,7 @@ const drawVoucherBack = (
     borderWidth: 0.6,
   })
 
+  const t = copyOf(input)
   const padX = 30
   const innerX = box.x + padX
   const innerW = box.w - padX * 2
@@ -325,20 +545,14 @@ const drawVoucherBack = (
       bottom.push({ text: part, size, font, color })
     }
   }
-  push(
-    `Kód ${input.code} zadejte v košíku do pole pro slevový kód; jeho hodnota se odečte od ceny nákupu. ` +
-      "Uplatnit ho jde i přímo v dílně.",
-    9.5,
-    fonts.regular,
-    TEXT
-  )
+  push(t.howToBack(input.code), 9.5, fonts.regular, TEXT)
   if (input.balance) {
-    push(`Zbývá ${input.balance} z ${input.value}.`, 9.5, fonts.bold, TEXT)
+    push(t.balanceBack(input.balance, input.value), 9.5, fonts.bold, TEXT)
   }
-  if (input.remainderNote) {
-    push(`Když nákup nedosáhne hodnoty poukazu, ${input.remainderNote}.`, 8.5, fonts.regular, MUTED)
+  if (remainderLine(input)) {
+    push(remainderLine(input), 8.5, fonts.regular, MUTED)
   }
-  push(`Poukaz platí do ${input.validUntil}.`, 8.5, fonts.regular, MUTED)
+  push(t.validUntil(input.validUntil), 8.5, fonts.regular, MUTED)
 
   const LEAD = 1.45
   const bottomH = bottom.reduce((sum, row) => sum + row.size * LEAD, 0) + 13
@@ -367,17 +581,17 @@ const drawVoucherBack = (
   }
 
   if (input.recipientName) {
-    label("Pro")
+    label(t.forLabel)
     line(input.recipientName, 13, fonts.bold, TEXT)
     y -= 4
   }
   if (input.buyerName) {
-    label("Od")
+    label(t.fromLabel)
     line(input.buyerName, 11, fonts.regular, TEXT)
     y -= 4
   }
   if (input.dedication) {
-    label("Věnování")
+    label(t.dedicationLabel)
     line(input.dedication, 11, fonts.regular, TEXT, 1.5)
     y -= 4
   }
@@ -393,7 +607,7 @@ const drawVoucherBack = (
 
   /* Spodní blok: nadpis a za ním předpočítané řádky návodu. */
   y = bottomTop
-  page.drawText("JAK POUKAZ UPLATNIT", {
+  page.drawText(t.howToLabel.toUpperCase(), {
     x: innerX,
     y,
     size: 7.5,
@@ -464,7 +678,7 @@ const setMeta = (doc: PDFDocument, input: GiftVoucherPdfInput, title: string) =>
   doc.setAuthor(input.sellerName)
   doc.setCreator("Keramická zahrada")
   doc.setProducer("Keramická zahrada")
-  doc.setLanguage("cs-CZ")
+  doc.setLanguage(copyOf(input).pdfLang)
   const issued = input.issuedAt ? new Date(input.issuedAt) : null
   const stamp = issued && !Number.isNaN(issued.getTime()) ? issued : FALLBACK_STAMP
   doc.setCreationDate(stamp)
@@ -490,7 +704,7 @@ export const generateGiftVoucherPrintPdf = async (
   const doc = await PDFDocument.create({ updateMetadata: false })
   doc.registerFontkit(fontkit)
   const fonts = await embedFonts(doc)
-  setMeta(doc, input, `Dárkový poukaz ${input.code} — k tisku`)
+  setMeta(doc, input, copyOf(input).docTitlePrint(input.code))
 
   const box = {
     x: (PAGE_W - CARD_W) / 2,
@@ -516,7 +730,8 @@ export const generateGiftVoucherPdf = async (
   const doc = await PDFDocument.create({ updateMetadata: false })
   doc.registerFontkit(fontkit)
   const fonts = await embedFonts(doc)
-  setMeta(doc, input, `Dárkový poukaz ${input.code}`)
+  const t = copyOf(input)
+  setMeta(doc, input, t.docTitle(input.code))
 
   const page: PDFPage = doc.addPage([PAGE_W, PAGE_H])
   page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: PAPER })
@@ -549,17 +764,17 @@ export const generateGiftVoucherPdf = async (
 
   if (input.recipientName || input.buyerName || input.dedication) {
     if (input.recipientName) {
-      label("Pro")
+      label(t.forLabel)
       line(input.recipientName, 14, fonts.bold, TEXT)
       y -= 6
     }
     if (input.buyerName) {
-      label("Od")
+      label(t.fromLabel)
       line(input.buyerName, 12, fonts.regular, TEXT)
       y -= 6
     }
     if (input.dedication) {
-      label("Věnování")
+      label(t.dedicationLabel)
       line(input.dedication, 12, fonts.regular, TEXT, 1.6)
       y -= 6
     }
@@ -574,24 +789,18 @@ export const generateGiftVoucherPdf = async (
     y -= 20
   }
 
-  label("Jak poukaz uplatnit")
-  line(
-    `Kód ${input.code} zadejte v košíku do pole pro slevový kód; jeho hodnota se odečte od ceny nákupu. ` +
-      "Uplatnit ho jde i v dílně — stačí ho ukázat v telefonu nebo vytištěný.",
-    11,
-    fonts.regular,
-    TEXT
-  )
+  label(t.howToLabel)
+  line(t.howToSummary(input.code), 11, fonts.regular, TEXT)
   y -= 8
   if (input.balance) {
-    line(`Na poukazu zbývá ${input.balance} z ${input.value}.`, 11, fonts.bold, TEXT)
+    line(t.balanceSummary(input.balance, input.value), 11, fonts.bold, TEXT)
     y -= 4
   }
-  if (input.remainderNote) {
-    line(`Když nákup nedosáhne hodnoty poukazu, ${input.remainderNote}.`, 10.5, fonts.regular, MUTED)
+  if (remainderLine(input)) {
+    line(remainderLine(input), 10.5, fonts.regular, MUTED)
     y -= 4
   }
-  line(`Poukaz platí do ${input.validUntil}.`, 10.5, fonts.regular, MUTED)
+  line(t.validUntil(input.validUntil), 10.5, fonts.regular, MUTED)
 
   /* ---- Patička ---- */
   const footerY = MARGIN + 34
@@ -626,18 +835,22 @@ export const generateGiftVoucherPdf = async (
  */
 export const giftVoucherPdfInputFor = async (
   container: MedusaContainer,
-  voucher: any
+  voucher: any,
+  /** Jazyk poukazu; bez něj jazyk objednávky, ze které poukaz vznikl. */
+  locale?: EmailLocale | null
 ): Promise<GiftVoucherPdfInput> => {
   const { facts } = await getLegalFacts(container)
+  const lang = locale ?? (await giftVoucherLocale(container, voucher))
   const value = Number(voucher.initial_value)
   const balance = Number(voucher.balance)
   return {
+    locale: lang,
     voucherId: String(voucher.id),
     code: formatVoucherCode(voucher.code),
-    value: formatVoucherCzk(value),
+    value: formatVoucherCzk(value, lang),
     /* Zůstatek jen když se liší — na nedotčeném poukazu by to byl šum. */
-    balance: balance < value ? formatVoucherCzk(balance) : null,
-    validUntil: formatVoucherDate(voucher.valid_until),
+    balance: balance < value ? formatVoucherCzk(balance, lang) : null,
+    validUntil: formatVoucherDate(voucher.valid_until, lang),
     /* Datum vzniku poukazu, ne čas vystavení PDF — viz `issuedAt`. */
     issuedAt: voucher.created_at ? new Date(voucher.created_at).toISOString() : null,
     recipientName: voucher.recipient_name ?? null,
@@ -652,6 +865,17 @@ export const giftVoucherPdfInputFor = async (
     remainderNote: String(facts["voucher.remainder"] ?? "") || null,
   }
 }
+
+/**
+ * Jazyk poukazu = jazyk objednávky, ze které vznikl (koupě v obchodě na
+ * /sk, /pl, /de). Poukaz z administrace (Poukazy → nový) objednávku nemá
+ * a zůstává česky — prodává ho Lucie osobně, česky.
+ */
+export const giftVoucherLocale = async (
+  container: MedusaContainer,
+  voucher: { order_id?: string | null } | null | undefined
+): Promise<EmailLocale> =>
+  voucher?.order_id ? emailLocaleForOrder(container, voucher.order_id) : "cs"
 
 /** Název souboru ke stažení — bez diakritiky a bez mezer v kódu. */
 export const giftVoucherPdfFilename = (code: string): string =>

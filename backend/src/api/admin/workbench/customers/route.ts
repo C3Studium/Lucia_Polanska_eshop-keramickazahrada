@@ -69,7 +69,21 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       safely(
         query.graph({
           entity: "order",
-          fields: ["id", "customer_id", "email", "total", "created_at"],
+          // `items.*` + `shipping_methods.*` jen kvůli Meduse 2.18: bez nich
+          // `total` u objednávky s dopravou spadne (chybí verze dopravy)
+          // a `safely` z toho udělal „0 Kč, zatím bez objednávky" u všech.
+          // Celé `.*` — s jediným polem dopravy vyjde total bez poštovného.
+          fields: [
+            "id",
+            "customer_id",
+            "email",
+            "total",
+            "created_at",
+            "status",
+            "canceled_at",
+            "items.*",
+            "shipping_methods.*", "version" /* bez něj Medusa u total spadne */,
+          ],
           pagination: { take: 1000, skip: 0, order: { created_at: "DESC" } },
         }),
         { data: [] as any[] } as never
@@ -185,6 +199,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     const person = personForOrder(order)
     if (!person) continue
     personByOrderId.set(order.id, person)
+    // Zrušená objednávka není nákup — nepočítá se do počtu ani útraty
+    // (Karta zákazníka počítá stejně). Doplatek zakázky se hlídá dál níž.
+    if (order.status === "canceled" || order.canceled_at) continue
     person.orders_count += 1
     person.lifetime_value = round(
       person.lifetime_value + toNumber(order.total)

@@ -7,7 +7,8 @@ import {
   readCommissionBrief,
 } from "@lib/util/made-to-order"
 import { saveCommissionBrief } from "@lib/data/commission-actions"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import CommissionBrief from "../commission-brief"
 import styles from "./style.module.scss"
 
@@ -114,6 +115,7 @@ export default function CheckoutCommissionBriefs({
   /* Stav vyplnění drží tahle komponenta, protože ho kreslí na přepínači.
      Výchozí hodnota je z toho, co už v košíku leží; `CommissionBrief` po
      uložení ohlásí změnu. */
+  const router = useRouter()
   const [complete, setComplete] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(slots.map((slot) => [slot.key, slot.filled]))
   )
@@ -121,6 +123,17 @@ export default function CheckoutCommissionBriefs({
   /* Index, ne klíč: po odebrání řádku z košíku by klíč ukazoval na nic a blok
      by zmizel celý. Index se jen uřízne na poslední existující. */
   const [activeIndex, setActiveIndex] = useState(0)
+
+  /* Krok Přehled si zadání nečte z tohohle stavu, ale ze SERVEROVÉHO košíku
+     (`allCommissionsComplete` v `review/index.tsx`). Uložení brief revaliduje
+     značku košíku, jenže už vykreslený strom tím sám nezčerstvá — bez tohohle
+     řekne přehled „napište, co si představujete" nad vyplněným polem a
+     objednávku nepustí, dokud stránku někdo nenačte znovu. Jednou, až je
+     komplet — ne při každém ťuknutí (ukládá se průběžně). */
+  const vseVyplneno = slots.length > 0 && slots.every((slot) => complete[slot.key])
+  useEffect(() => {
+    if (vseVyplneno) router.refresh()
+  }, [vseVyplneno, router])
 
   if (!slots.length) {
     return null

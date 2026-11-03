@@ -1,28 +1,13 @@
-import { defineWidgetConfig } from "@medusajs/admin-sdk";
-import type { AdminOrder, DetailWidgetProps } from "@medusajs/framework/types";
-import {
-  Badge,
-  Button,
-  Container,
-  Heading,
-  Skeleton,
-  Text,
-  toast,
-} from "@medusajs/ui";
-import {
-  QueryClientProvider,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import type { AdminOrder } from "@medusajs/framework/types";
+import { Badge, Button, Skeleton, Text, toast } from "@medusajs/ui";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { OrderSection } from "../components/order-section";
 import { isCeskaPosta, isPersonalPickup } from "../lib/cp-shipping";
+import { useExpertMode } from "../lib/expert-mode";
 import { formatDate, formatDateTime } from "../lib/format";
-import { adminQueryClient } from "../lib/query-client";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba } from "../lib/ceska-chyba";
 import { reloadOrderPageSoon } from "../lib/reload-order-page";
-
-const queryClient = adminQueryClient;
 
 // ---------------------------------------------------------------------------
 // Tvary API podle docs/sledovani-zasilek.md §5 (route se staví zvlášť; widget
@@ -232,9 +217,14 @@ const Stepper = ({ steps }: { steps: Step[] }) => (
  * simulace jde STEJNOU cestou jako ostrý stav, tedy i e-mail zákazníkovi
  * („předáno dopravci") a změna fáze objednávky. Jen pro zásilky ČP; osobní
  * odběr a jiní dopravci widget skryjí (docs/sledovani-zasilek.md §7).
+ *
+ * Od 3. 11. 2026 sbalená karta v „Práci s objednávkou" — fáze je vidět
+ * v záhlaví, celý průběh po rozbalení. Sama se otevře, když se zásilka vrací
+ * nebo ČP hlásí problém. Simulace je jen v expertním režimu.
  */
-const CpTrackingWidgetInner = ({ order }: { order: AdminOrder }) => {
+export const CpTrackingPanel = ({ order }: { order: AdminOrder }) => {
   const queryClient = useQueryClient();
+  const expert = useExpertMode();
 
   // Sdílené se štítkem (lib/cp-shipping.ts), ať se oba widgety shodnou.
   const ceskaPosta = isCeskaPosta(order);
@@ -323,17 +313,34 @@ const CpTrackingWidgetInner = ({ order }: { order: AdminOrder }) => {
   const sideTracked =
     tracking?.phase === "returned" || tracking?.phase === "problem";
 
+  /*
+   * Bez štítku a bez čísla zásilky není co sledovat — karta se neukáže vůbec
+   * (do vygenerování štítku by jen opakovala „Nesleduje se"). Chyba načtení
+   * kartu nechá, ať je vidět.
+   */
+  if (trackingQuery.isLoading || (data && !tracking && !parcelCode)) {
+    return null;
+  }
+
   return (
-    <Container className="divide-y p-0">
-      <div className="flex items-center justify-between gap-x-2 px-6 py-4">
-        <Heading level="h2">Zásilka u České pošty</Heading>
-        {phaseMeta ? (
+    <OrderSection
+      title="Zásilka u České pošty"
+      badge={
+        phaseMeta ? (
           <Badge color={phaseMeta.color}>{phaseMeta.label}</Badge>
         ) : (
           <Badge color="grey">Nesleduje se</Badge>
-        )}
-      </div>
-
+        )
+      }
+      summary={
+        tracking
+          ? tracking.last_state_text ?? lastEvent?.text ?? parcelCode
+          : parcelCode
+            ? `Číslo zásilky ${parcelCode}`
+            : "Sledování začne po vygenerování štítku."
+      }
+      attention={sideTracked}
+    >
       <div className="flex flex-col gap-y-4 px-6 py-4">
         {trackingQuery.isLoading && <Skeleton className="h-24 rounded-lg" />}
 
@@ -437,7 +444,7 @@ const CpTrackingWidgetInner = ({ order }: { order: AdminOrder }) => {
                   </Text>
                 )}
 
-                {data.simulate_allowed && (
+                {data.simulate_allowed && expert && (
                   <div className="border-ui-border-base flex flex-col gap-y-2 rounded-lg border border-dashed px-3 py-3">
                     <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
                       Simulace (testovací prostředí)
@@ -471,7 +478,7 @@ const CpTrackingWidgetInner = ({ order }: { order: AdminOrder }) => {
           </>
         )}
       </div>
-    </Container>
+    </OrderSection>
   );
 };
 
@@ -504,16 +511,3 @@ const ParcelCode = ({
     </div>
   </div>
 );
-
-const CpTrackingWidget = ({ data }: DetailWidgetProps<AdminOrder>) => (
-  <QueryClientProvider client={queryClient}>
-    <CpTrackingWidgetInner order={data} />
-  </QueryClientProvider>
-);
-
-export const config = defineWidgetConfig({
-  zone: "order.details.side.after",
-  id: "keramicka-zahrada:cp-tracking",
-});
-
-export default CpTrackingWidget;

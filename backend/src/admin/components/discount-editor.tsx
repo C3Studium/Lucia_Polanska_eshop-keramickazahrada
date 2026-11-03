@@ -198,7 +198,7 @@ export const DiscountEditor = ({ trigger }: { trigger: React.ReactNode }) => {
         <Drawer.Footer>
           <Drawer.Close asChild>
             <Button variant="secondary" size="small">
-              Zpět
+              Zavřít
             </Button>
           </Drawer.Close>
           <Button

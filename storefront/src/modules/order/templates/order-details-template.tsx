@@ -12,6 +12,7 @@ import WithdrawalEntry, {
   withdrawalHref,
 } from "@modules/order/components/withdrawal/entry"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import ContactEmailLink from "@modules/common/components/contact-email"
 import type { OrderClaims } from "@lib/util/claims"
 import type { OrderEditMode } from "@lib/data/order-edit"
 import type { OrderTermsRef } from "@lib/legal/order-terms"
@@ -218,9 +219,7 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
               </LocalizedClientLink>
               . Reklamaci nebo vrácení podáte z odkazu v e-mailu s potvrzením
               objednávky, nebo nám napište na{" "}
-              <a href="mailto:info@keramickazahrada.cz">
-                info@keramickazahrada.cz
-              </a>
+              <ContactEmailLink role="objednavky" />
               .
             </p>
           )}

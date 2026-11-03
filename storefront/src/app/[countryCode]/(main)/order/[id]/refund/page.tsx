@@ -1,10 +1,11 @@
 import { getOrderClaims } from "@lib/data/claims"
 import { getGuestRefundContext } from "@lib/data/guest-refund"
 import { retrieveCustomer } from "@lib/data/customer"
+import { getContactEmails } from "@lib/data/site-copy"
 import { getSiteDocument } from "@lib/data/documents"
 import { listCommissionNotes } from "@lib/data/made-to-order"
 import { findOpenClaim } from "@lib/util/claims"
-import { CLAIM_FORM_KEY } from "@modules/order/components/carrier-damage"
+import { CLAIM_FORM_KEY } from "@lib/constants/documents"
 import RefundRequest from "@modules/order/components/refund-request"
 import CommissionConversation from "@modules/order/components/commission-conversation"
 import OrderStateShell from "@modules/order/components/order-state-shell"
@@ -61,6 +62,9 @@ export default async function OrderRefundPage(props: Props) {
   // „Moje objednávky" nabídneme JEN přihlášenému — host žádný výpis objednávek
   // nemá (odkaz by vedl na přihlášení). `null` = host.
   const customer = await retrieveCustomer().catch(() => null)
+  // Hlášky k objednávce vedou na e-mail pro objednávky a zakázky (Studio,
+  // `global.kontakty`), ne na obecné dotazy.
+  const { objednavky: orderEmail } = await getContactEmails()
   const myOrdersAction = customer
     ? { href: "/account/orders", label: "Moje objednávky" }
     : undefined
@@ -80,8 +84,8 @@ export default async function OrderRefundPage(props: Props) {
         title={tokenOk ? "Teď to nejde načíst." : "Odkaz nejde otevřít."}
         description={
           tokenOk
-            ? "Stav reklamací se nám teď nepodařilo načíst. Zkuste to prosím za chvíli znovu, nebo nám napište na info@keramickazahrada.cz."
-            : "Odkaz je neplatný nebo vypršel. Otevřete prosím ten z posledního e-mailu, nebo nám napište na info@keramickazahrada.cz."
+            ? `Stav reklamací se nám teď nepodařilo načíst. Zkuste to prosím za chvíli znovu, nebo nám napište na ${orderEmail}.`
+            : `Odkaz je neplatný nebo vypršel. Otevřete prosím ten z posledního e-mailu, nebo nám napište na ${orderEmail}.`
         }
         status="pending"
         primary={myOrdersAction}

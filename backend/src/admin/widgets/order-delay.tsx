@@ -1,11 +1,10 @@
-import { defineWidgetConfig } from "@medusajs/admin-sdk";
-import type { AdminOrder, DetailWidgetProps } from "@medusajs/framework/types";
-import { Button, Checkbox, Container, Heading, Input, Label, Text, Textarea, toast } from "@medusajs/ui";
-import { QueryClientProvider, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { AdminOrder } from "@medusajs/framework/types";
+import { Badge, Button, Checkbox, Input, Label, Text, Textarea, toast } from "@medusajs/ui";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { OrderSection } from "../components/order-section";
 import { formatDateTime } from "../lib/format";
 import { sdk } from "../lib/sdk";
-import { adminQueryClient } from "../lib/query-client";
 import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
@@ -37,7 +36,8 @@ const isServiceLine = (item: any) =>
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
-const Inner = ({ order }: { order: AdminOrder }) => {
+/** Sbalená karta v „Práci s objednávkou" — zpoždění je občasná věc (3. 11. 2026). */
+export const OrderDelayPanel = ({ order }: { order: AdminOrder }) => {
   const cache = useQueryClient();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -104,15 +104,23 @@ const Inner = ({ order }: { order: AdminOrder }) => {
   const canSubmit = selected.length > 0 && Boolean(date) && !announce.isPending;
 
   return (
-    <Container className="flex flex-col gap-y-3 p-4">
-      <div className="flex items-center justify-between gap-2">
-        <Heading level="h2">Zpoždění</Heading>
-        {!open && (
-          <Button size="small" variant="secondary" onClick={() => setOpen(true)}>
-            Oznámit zpoždění
-          </Button>
-        )}
-      </div>
+    <OrderSection
+      title="Zpoždění"
+      badge={
+        last ? <Badge color="orange">Nový termín {czDate(last.new_date)}</Badge> : undefined
+      }
+      summary={
+        last
+          ? `Oznámeno ${delays.length}× · naposledy ${formatDateTime(last.announced_at)}`
+          : "Když se objednávka zdrží, pošlete zákazníkovi omluvu s novým termínem."
+      }
+    >
+    <div className="flex flex-col gap-y-3 px-6 py-4">
+      {!open && (
+        <Button size="small" variant="secondary" className="self-start" onClick={() => setOpen(true)}>
+          Oznámit zpoždění
+        </Button>
+      )}
 
       {last ? (
         <Text size="small" className="text-ui-fg-subtle">
@@ -238,18 +246,7 @@ const Inner = ({ order }: { order: AdminOrder }) => {
           </div>
         </form>
       )}
-    </Container>
+    </div>
+    </OrderSection>
   );
 };
-
-const OrderDelayWidget = ({ data }: DetailWidgetProps<AdminOrder>) => (
-  <QueryClientProvider client={adminQueryClient}>
-    <Inner order={data} />
-  </QueryClientProvider>
-);
-
-export const config = defineWidgetConfig({
-  zone: "order.details.side.after",
-});
-
-export default OrderDelayWidget;

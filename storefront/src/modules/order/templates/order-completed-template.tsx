@@ -4,6 +4,7 @@ import {
   paymentMethodTitle,
 } from "@lib/constants"
 import { translateStatus } from "@lib/i18n/statuses"
+import { getContactEmails } from "@lib/data/site-copy"
 import { convertToLocale } from "@lib/util/money"
 import { PLATCE_DPH } from "@lib/util/dph"
 import OrderProgressPanel from "@modules/order/components/order-progress"
@@ -17,9 +18,8 @@ import type {
 } from "@lib/data/made-to-order"
 import CommissionList from "@modules/order/components/commission-list"
 import { isCarrierShippingMethod } from "@lib/util/carrier"
-import CarrierDamageNotice, {
-  CLAIM_FORM_KEY,
-} from "@modules/order/components/carrier-damage"
+import CarrierDamageNotice from "@modules/order/components/carrier-damage"
+import { CLAIM_FORM_KEY } from "@lib/constants/documents"
 import { getSiteDocument } from "@lib/data/documents"
 import { orderTermsRef } from "@lib/legal/order-terms"
 import ClaimsSummary from "@modules/order/components/claim-status/summary"
@@ -125,6 +125,8 @@ export default async function OrderCompletedTemplate({
     | undefined
   const orderNumber = String(order.display_id).padStart(4, "0")
   const claimForm = await getSiteDocument(CLAIM_FORM_KEY)
+  // Okénko „Potřebujete pomoct?" u objednávky → e-mail pro objednávky a zakázky.
+  const { objednavky: orderEmail } = await getContactEmails()
   // Persisted at checkout by the shipping step; the confirmation never showed it (spec §4).
   const pickupPoint = pickupPointLabel(
     order.metadata as Record<string, unknown> | undefined
@@ -680,7 +682,8 @@ export default async function OrderCompletedTemplate({
 
         <section className={s.support}>
           {/* `kosik.objednavka-pomoc`: obočí (`accent.0`) a nadpis (`title`).
-              E-mail a telefon pod tím jsou údaje obchodu, ne redakční text. */}
+              E-mail pod tím je adresa pro objednávky a zakázky ze Studia
+              (`global.kontakty`), telefon údaj obchodu. */}
           <div>
             <CmsText as="p" doc={help?.id} field="accent.0">
               {help?.accent?.[0]?.trim() || "Potřebujete s něčím pomoct?"}
@@ -691,9 +694,7 @@ export default async function OrderCompletedTemplate({
           </div>
           <p>
             Napište na{" "}
-            <a href="mailto:info@keramickazahrada.cz">
-              info@keramickazahrada.cz
-            </a>{" "}
+            <a href={`mailto:${orderEmail}`}>{orderEmail}</a>{" "}
             nebo zavolejte na{" "}
             <a href="tel:+420775211578">+420 775 211 578</a>.
           </p>

@@ -3,6 +3,7 @@ import { CommissionConfirmedEmail } from "../emails/commission-confirmed"
 import { OrderProcessingEmail } from "../emails/order-processing"
 import { PaymentReceivedEmail } from "../emails/payment-received"
 import { InvoiceIssuedEmail } from "../emails/invoice-issued"
+import { CommissionPriceAgreedEmail } from "../emails/commission-price-agreed"
 
 const payments = {
   deposit: "1 125 Kč",
@@ -112,5 +113,34 @@ describe("e-maily zakázky", () => {
     expect(out).toContain("pouštím do výroby vaší zakázky #50")
     expect(out).toContain("Předpokládané dokončení")
     expect(out).toContain("5. 11. 2026")
+  })
+
+  /*
+   * Potvrzení zakázky k domluvené ceně jde v příloze (lib/made-to-order/
+   * agreed-price.ts ho vyrábí znovu, už s čísly). Věta o příloze se smí
+   * ukázat jen tehdy, když příloha opravdu odešla — PDF se nemusí povést
+   * a Resend ho může odmítnout, a e-mail pak odejde bez něj.
+   */
+  it("domluvená cena jmenuje potvrzení v příloze, jen když opravdu jde s e-mailem", () => {
+    const sVetou = text(
+      renderToStaticMarkup(
+        <CommissionPriceAgreedEmail orderNumber="#68" contractAttached />
+      )
+    )
+    expect(sVetou).toContain("V příloze posílám potvrzení zakázky s domluvenou cenou")
+
+    const bezPotvrzeni = text(
+      renderToStaticMarkup(
+        <CommissionPriceAgreedEmail orderNumber="#68" contractAttached={false} />
+      )
+    )
+    expect(bezPotvrzeni).not.toContain("V příloze")
+
+    const prilohaOdmitnuta = text(
+      renderToStaticMarkup(
+        <CommissionPriceAgreedEmail orderNumber="#68" contractAttached attachments_failed />
+      )
+    )
+    expect(prilohaOdmitnuta).not.toContain("V příloze")
   })
 })

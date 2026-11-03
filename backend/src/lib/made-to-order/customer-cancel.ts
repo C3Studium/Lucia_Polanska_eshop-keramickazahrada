@@ -2,11 +2,14 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import {
   customerName,
+  emailLocaleForOrder,
   formatMoney,
   orderLink,
   orderNumber,
   sendCustomerEmail,
 } from "../customer-email"
+import { localizedCommissionTitle } from "./commission-title-i18n"
+import { startedAtTextFor } from "./start-production"
 import { notifyMerchant } from "../notify"
 import { isServiceLine } from "../packaging-lines"
 import { nextProtocolSequence, protocolNumberFor } from "../reklamacni-protokol"
@@ -14,7 +17,7 @@ import {
   claimService,
   decisionOutcome,
   protocolRefundsOf,
-  refundMethodLabel,
+  refundMethodLabelIn,
   regenerateProtocol,
 } from "../claims/admin"
 import {
@@ -396,30 +399,35 @@ export const cancelCommissionByCustomer = async (
 
   // 8) e-maily --------------------------------------------------------------------
   const title = commissionTitleOf(order, production.productionOrder)
+  // Zákazníkovi v jeho jazyce (lib/email-locale): částky, časy, název
+  // výrobku i způsob vrácení peněz; majitelce dál česky (`title`, `fmt`).
+  const locale = await emailLocaleForOrder(container, order.id)
+  const fmtCustomer = (value: number) => formatMoney(value, currency, locale)
   const emailSent = await sendCustomerEmail(container, {
     template: "commission-cancelled",
     to: order.email,
     key: `mto-cancel:${production.block.id}`,
     orderId: order.id,
+    locale,
     data: {
       customerName: customerName(order),
       orderNumber: orderNumber(order),
       orderLink: orderLink(order),
-      productTitle: title,
+      productTitle: localizedCommissionTitle(order, production.productionOrder, locale),
       phase: plan.phase,
       trigger,
-      cancelledAtText: formatPragueDateTime(now),
+      cancelledAtText: startedAtTextFor(now, locale),
       productionStartedAtText: production.block.production_start_notified_at
-        ? formatPragueDateTime(production.block.production_start_notified_at)
+        ? startedAtTextFor(new Date(production.block.production_start_notified_at), locale)
         : null,
-      paidTotal: paidTotal > MONEY_EPSILON ? fmt(paidTotal) : null,
-      refundAmount: plan.refund_amount > MONEY_EPSILON ? fmt(plan.refund_amount) : null,
-      depositKept: plan.deposit_kept > MONEY_EPSILON ? fmt(plan.deposit_kept) : null,
+      paidTotal: paidTotal > MONEY_EPSILON ? fmtCustomer(paidTotal) : null,
+      refundAmount: plan.refund_amount > MONEY_EPSILON ? fmtCustomer(plan.refund_amount) : null,
+      depositKept: plan.deposit_kept > MONEY_EPSILON ? fmtCustomer(plan.deposit_kept) : null,
       depositPercentage:
         production.block.deposit_percentage > 0
           ? String(production.block.deposit_percentage)
           : null,
-      refundMethodText: refundMethod ? refundMethodLabel(refundMethod, null) : null,
+      refundMethodText: refundMethod ? refundMethodLabelIn(refundMethod, null, locale) : null,
       protocolUrl,
     },
   }).catch((error) => {

@@ -202,10 +202,10 @@ export default class IdokladModuleService {
   }
 
   /** The invoice print PDF as bytes (the API answers base64 in the envelope). */
-  async getInvoicePdf(invoiceId: number): Promise<Buffer> {
+  async getInvoicePdf(invoiceId: number, language: number = REPORT_LANGUAGE_CZ): Promise<Buffer> {
     const base64 = await this.request<string>(
       `/Reports/IssuedInvoice/${invoiceId}/Pdf`,
-      { query: { compressed: false, language: REPORT_LANGUAGE_CZ } }
+      { query: { compressed: false, language } }
     )
     return Buffer.from(base64, "base64")
   }
@@ -261,10 +261,10 @@ export default class IdokladModuleService {
   }
 
   /** Tisk dobropisu jako PDF (API vrací base64 v obálce). */
-  async getCreditNotePdf(creditNoteId: number): Promise<Buffer> {
+  async getCreditNotePdf(creditNoteId: number, language: number = REPORT_LANGUAGE_CZ): Promise<Buffer> {
     const base64 = await this.request<string>(
       `/Reports/CreditNote/${creditNoteId}/Pdf`,
-      { query: { compressed: false, language: REPORT_LANGUAGE_CZ } }
+      { query: { compressed: false, language } }
     )
     return Buffer.from(base64, "base64")
   }

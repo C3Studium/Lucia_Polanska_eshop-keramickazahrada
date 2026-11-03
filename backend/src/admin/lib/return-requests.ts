@@ -1,5 +1,5 @@
 /**
- * Reklamace a zrušení — sdílené typy a popisky pro administraci.
+ * Reklamace a vrácení — sdílené typy a popisky pro administraci.
  *
  * Datový kontrakt: docs/reklamace-a-zruseni.md (§2 model, §4 admin API).
  * Jeden zdroj pravdy pro stránku /reklamace, widget na detailu objednávky a

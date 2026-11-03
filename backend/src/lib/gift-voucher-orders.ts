@@ -186,6 +186,67 @@ export const syncPurchasedVouchers = async (container: MedusaContainer, orderId:
 }
 
 /** 2 — objednávka zaplacená kódem poukazu: odečíst uplatněnou částku. */
+/**
+ * Věta o poukazu na doklad: „uhrazeno dárkovým poukazem UP39GY8C (1 000 Kč)".
+ *
+ * Uplatněný poukaz se v objednávce chová jako SLEVA, takže na faktuře jsou
+ * jen nižší částky a není z ní poznat, že zákazník platil poukazem — ani
+ * kterým. Účetní to musí umět spárovat s prodejem toho poukazu, proto se to
+ * píše do popisu dokladu (částky se tím nemění).
+ *
+ * ČISTÉ: bere hotové odpisy, ať se to dá otestovat bez databáze.
+ */
+export const formatVoucherNote = (
+  redemptions: Array<{ code?: string | null; amount?: unknown; reversed_at?: unknown }>
+): string | null => {
+  const live = redemptions.filter((redemption) => !redemption.reversed_at)
+  const parts = live
+    .map((redemption) => {
+      const code = String(redemption.code ?? "").trim()
+      if (!code) return null
+      const amount = toNumber(redemption.amount)
+      return amount > 0.005 ? `${code} (${formatVoucherCzk(amount)})` : code
+    })
+    .filter(Boolean) as string[]
+  if (!parts.length) return null
+  return parts.length === 1
+    ? `uhrazeno dárkovým poukazem ${parts[0]}`
+    : `uhrazeno dárkovými poukazy ${parts.join(", ")}`
+}
+
+/**
+ * Totéž, ale pro objednávku. Fail-open: doklad se kvůli poznámce nezdrží
+ * ani neshodí — bez modulu poukazů prostě žádná poznámka není.
+ */
+export const voucherNoteForOrder = async (
+  container: MedusaContainer,
+  orderId: string
+): Promise<string | null> => {
+  try {
+    const service = container.resolve<GiftVoucherModuleService>(GIFT_VOUCHER_MODULE)
+    const redemptions = (await service.listGiftVoucherRedemptions({
+      order_id: orderId,
+    } as never)) as any[]
+    if (!redemptions.length) return null
+    const voucherIds = Array.from(
+      new Set(redemptions.map((redemption) => redemption.voucher_id).filter(Boolean))
+    )
+    const vouchers = voucherIds.length
+      ? ((await service.listGiftVouchers({ id: voucherIds } as never)) as any[])
+      : []
+    const codeById = new Map(vouchers.map((voucher) => [voucher.id, voucher.code]))
+    return formatVoucherNote(
+      redemptions.map((redemption) => ({
+        code: codeById.get(redemption.voucher_id) ?? null,
+        amount: redemption.amount,
+        reversed_at: redemption.reversed_at,
+      }))
+    )
+  } catch {
+    return null
+  }
+}
+
 export const redeemVouchersFromOrder = async (container: MedusaContainer, orderId: string): Promise<void> => {
   const order = await loadOrder(container, orderId)
   if (!order) return

@@ -145,3 +145,22 @@ describe("customer e-mail links", () => {
     )
   })
 })
+
+describe("země odkazů v cizojazyčném e-mailu", () => {
+  const { linkCountryFor, storefrontCountryOf } = jest.requireActual("../storefront-url")
+
+  it("země obchodu z objednávky má přednost, jinak země jazyka", () => {
+    expect(linkCountryFor("en", "fr")).toBe("fr")
+    expect(linkCountryFor("de", "at")).toBe("at")
+    expect(linkCountryFor("sk", null)).toBe("sk")
+    expect(linkCountryFor("en", null)).toBeUndefined()
+    expect(linkCountryFor("en", "xyz")).toBeUndefined()
+  })
+
+  it("země z objednávky: metadata storefrontu → doručení → fakturace", () => {
+    expect(storefrontCountryOf({ metadata: { country_code: "IT" }, shipping_address: { country_code: "cz" } })).toBe("it")
+    expect(storefrontCountryOf({ shipping_address: { country_code: "fr" } })).toBe("fr")
+    expect(storefrontCountryOf({ billing_address: { country_code: "es" } })).toBe("es")
+    expect(storefrontCountryOf(null)).toBeNull()
+  })
+})

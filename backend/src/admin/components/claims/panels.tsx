@@ -2,7 +2,6 @@ import {
   Button,
   Checkbox,
   Label,
-  Prompt,
   Select,
   Text,
   Textarea,
@@ -18,6 +17,7 @@ import {
 } from "../../lib/return-requests";
 import { formatCzk } from "../../lib/workbench";
 import { useReturnAction } from "./use-return-action";
+import { ConfirmDialog } from "../confirm-dialog";
 import { ceskyText } from "../../lib/ceska-chyba";
 
 /**
@@ -498,51 +498,41 @@ export const CancelOrderPrompt = ({
   const remaining = asNumber(request.remaining);
 
   return (
-    <Prompt open={open} onOpenChange={setOpen}>
-      <Prompt.Trigger asChild>
+    <ConfirmDialog
+      open={open}
+      onOpenChange={setOpen}
+      trigger={
         <Button size="small" variant="danger">
           Zrušit objednávku a uvolnit sklad
         </Button>
-      </Prompt.Trigger>
-      <Prompt.Content>
-        <Prompt.Header>
-          <Prompt.Title>
-            Zrušit objednávku #{request.order_display_id}?
-          </Prompt.Title>
-          <Prompt.Description>
-            Objednávka se zruší v Medusa, posune se do fáze „zrušeno" a
-            rezervované kusy se vrátí na sklad.{" "}
-            {remaining > 0
-              ? `Pozor: na objednávce zbývá nevrácených ${formatCzk(remaining)} — server zrušení odmítne, dokud nejsou vráceny.`
-              : "Peníze jsou vyřízené, zrušení už nic nevrací."}
-          </Prompt.Description>
-        </Prompt.Header>
-        <Prompt.Footer>
-          <Prompt.Cancel>Zpět</Prompt.Cancel>
-          <Prompt.Action
-            onClick={() =>
-              mutation.mutate(
-                {},
-                {
-                  onSuccess: (result) => {
-                    if (result?.cancelled) {
-                      toast.success(ceskyText(result.message, "Objednávka byla zrušena."));
-                    } else {
-                      toast.warning(
-                        ceskyText(result?.message, "Objednávku se nepodařilo zrušit úplně — zkontrolujte detail.")
-                      );
-                    }
-                    setOpen(false);
-                    onDone?.();
-                  },
-                }
-              )
-            }
-          >
-            Zrušit objednávku
-          </Prompt.Action>
-        </Prompt.Footer>
-      </Prompt.Content>
-    </Prompt>
+      }
+      title={`Zrušit objednávku #${request.order_display_id}?`}
+      description={
+        `Objednávka se zruší v Medusa, posune se do fáze „zrušeno" a rezervované kusy se vrátí na sklad. ` +
+        (remaining > 0
+          ? `Pozor: na objednávce zbývá nevrácených ${formatCzk(remaining)} — server zrušení odmítne, dokud nejsou vráceny.`
+          : "Peníze jsou vyřízené, zrušení už nic nevrací.")
+      }
+      confirmLabel="Zrušit objednávku"
+      isPending={mutation.isPending}
+      onConfirm={() =>
+        mutation.mutate(
+          {},
+          {
+            onSuccess: (result) => {
+              if (result?.cancelled) {
+                toast.success(ceskyText(result.message, "Objednávka byla zrušena."));
+              } else {
+                toast.warning(
+                  ceskyText(result?.message, "Objednávku se nepodařilo zrušit úplně — zkontrolujte detail.")
+                );
+              }
+              setOpen(false);
+              onDone?.();
+            },
+          }
+        )
+      }
+    />
   );
 };

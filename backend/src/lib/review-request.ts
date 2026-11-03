@@ -20,6 +20,7 @@ import {
   sendCustomerEmail,
 } from "./customer-email"
 import { googleReviewUrl } from "./google-review-url"
+import { emailLocaleOf, localizedLineTitle } from "./email-locale"
 
 /** Pole objednávky, která šablona potřebuje — job i route načítají totéž. */
 export const REVIEW_ORDER_FIELDS = [
@@ -43,6 +44,12 @@ export const REVIEW_ORDER_FIELDS = [
   "items.variant_id",
   "items.metadata",
   "items.variant.product.handle",
+  // Jazyk objednávky (`metadata.locale`, jinak země doručení) — prosba jde
+  // v jazyce, ve kterém se kupovalo. Přeložený název nese řádek (items.metadata).
+  "metadata",
+  "shipping_address.country_code",
+  "billing_address.country_code",
+  "items.variant.product.metadata",
 ]
 
 /** Per objednávka — vícebalíková objednávka prosí jednou. */
@@ -55,13 +62,22 @@ export const buildReviewEmailData = (order: any): Record<string, unknown> => {
   // Handle, ne id — storefront routuje produkty podle handle.
   const handle = item?.variant?.product?.handle ?? null
   const link = productLink(handle)
+  const locale = emailLocaleOf(order)
   return {
+    ...(locale !== "cs" ? { locale } : {}),
     customerName: customerName(order),
     orderNumber: orderNumber(order),
     orderLink: orderLink(order),
     // `product_title` je název produktu; `title` položky je varianta („Ø 32 cm"),
     // která jako název nedává smysl.
-    productName: item?.product_title ?? item?.title ?? "váš kousek",
+    // V cizím jazyce překlad z `product.metadata.title_xx`; bez položky
+    // šablona použije své „váš kousek" v jazyce e-mailu.
+    productName:
+      locale === "cs"
+        ? item?.product_title ?? item?.title ?? "váš kousek"
+        : item
+          ? localizedLineTitle(item, locale)
+          : "",
     productImage: item?.thumbnail ?? "",
     productLink: link,
     reviewLink: link ? `${link}#hodnoceni` : "",

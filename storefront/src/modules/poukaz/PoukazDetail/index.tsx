@@ -9,7 +9,8 @@ import {
 } from "@lib/data/gift-vouchers"
 import WebButton from "@modules/common/components/Buttons/webButton"
 
-import { CONTACT_EMAIL, czk } from "../format"
+import ContactEmailLink from "@modules/common/components/contact-email"
+import { czk } from "../format"
 import { formatVoucherCode } from "@lib/util/gift-voucher-code"
 import styles from "../panel.module.scss"
 import PoukazKarta from "../PoukazKarta"
@@ -46,7 +47,8 @@ const dropOutcomeFromUrl = () => {
   }
 }
 
-const Mail = () => <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+/** Poukaz je věc objednávky → e-mail pro objednávky a zakázky ze Studia. */
+const Mail = () => <ContactEmailLink role="objednavky" />
 
 export default function PoukazDetail({
   initialVoucher,

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 
 import { useActionState } from "react"
+import { useParams } from "next/navigation"
 import Input from "@modules/common/components/input"
 import PhoneInput from "@modules/common/components/phone-input"
 import { LOGIN_VIEW } from "@modules/account/templates/login-template"
@@ -39,6 +40,7 @@ const REGISTER_DEFAULTS = {
 
 const Register = ({ setCurrentView, redirectTo, copy }: Props) => {
   const [message, formAction] = useActionState(signup, null)
+  const { countryCode } = useParams<{ countryCode?: string }>() ?? {}
   const text = (label: keyof typeof REGISTER_DEFAULTS) =>
     itemText(copy, label, REGISTER_DEFAULTS[label])
   const edit = (label: keyof typeof REGISTER_DEFAULTS) => editableItem(copy, label)
@@ -76,6 +78,9 @@ const Register = ({ setCurrentView, redirectTo, copy }: Props) => {
         {redirectTo && (
           <input type="hidden" name="redirect_to" value={redirectTo} />
         )}
+        {/* Země z přepínače → jazyk e-mailů k účtu (ověření, nové heslo). */}
+        <input type="hidden" name="country_code" value={countryCode ?? ""} />
+
         <div className={s.fields}>
           <Input
             label="Jméno"

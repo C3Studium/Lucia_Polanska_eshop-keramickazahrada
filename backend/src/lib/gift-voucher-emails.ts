@@ -6,7 +6,8 @@ import { sendCustomerEmail } from "./customer-email"
 import { giftVoucherLink } from "./gift-voucher-link"
 import { formatVoucherCode } from "../modules/gift-voucher/code"
 import { formatVoucherCzk, formatVoucherDate } from "./gift-voucher-view"
-import { giftVoucherPdfInputFor, storeGiftVoucherPdf } from "./gift-voucher-pdf"
+import { giftVoucherLocale, giftVoucherPdfInputFor, storeGiftVoucherPdf } from "./gift-voucher-pdf"
+import type { EmailLocale } from "./email-locale"
 import { checkAttachmentUrls, type EmailAttachmentRef } from "./legal/order-legal"
 
 /**
@@ -48,11 +49,13 @@ export type GiftVoucherAttachments = {
  */
 export const giftVoucherAttachments = async (
   container: MedusaContainer,
-  voucher: any
+  voucher: any,
+  /** Jazyk PDF — stejný jako e-mailu, ke kterému se přikládá. */
+  locale?: EmailLocale | null
 ): Promise<GiftVoucherAttachments> => {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   try {
-    const input = await giftVoucherPdfInputFor(container, voucher)
+    const input = await giftVoucherPdfInputFor(container, voucher, locale)
     const [summary, print] = await Promise.all([
       storeGiftVoucherPdf(container, input, "summary"),
       storeGiftVoucherPdf(container, input, "print").catch((error) => {
@@ -99,13 +102,17 @@ export const sendGiftVoucherEmail = async (
       ? `gift-voucher:paid:${voucher.id}`
       : `gift-voucher:manual:${voucher.id}:${to}:${Date.now()}`
 
-  const { summary, print } = await giftVoucherAttachments(container, voucher)
+  // Jazyk objednávky, ze které poukaz vznikl (z administrace česky) —
+  // e-mail i PDF v příloze stejně.
+  const locale = await giftVoucherLocale(container, voucher)
+  const { summary, print } = await giftVoucherAttachments(container, voucher, locale)
   const attachments = [summary, print].filter(Boolean) as EmailAttachmentRef[]
 
   const sent = await sendCustomerEmail(container, {
     template: "gift-voucher",
     to,
     key,
+    locale,
     ...(attachments.length ? { attachments } : {}),
     data: {
       /* Šablona o příloze ví — bez ní odkazuje na stránku poukazu. */
@@ -114,10 +121,10 @@ export const sendGiftVoucherEmail = async (
       printPdfUrl: print?.url ?? null,
       // „7HQ4 M2XP" — čte se líp; do pole v košíku jde zadat i s mezerou.
       code: formatVoucherCode(voucher.code),
-      value: formatVoucherCzk(voucher.initial_value),
-      balance: formatVoucherCzk(voucher.balance),
+      value: formatVoucherCzk(voucher.initial_value, locale),
+      balance: formatVoucherCzk(voucher.balance, locale),
       partlyUsed: Number(voucher.balance) < Number(voucher.initial_value),
-      validUntil: formatVoucherDate(voucher.valid_until),
+      validUntil: formatVoucherDate(voucher.valid_until, locale),
       recipientName: voucher.recipient_name || null,
       buyerName: voucher.buyer_name || null,
       dedication: voucher.dedication || null,
@@ -140,18 +147,20 @@ export const sendGiftVoucherPaymentEmail = async (
 ): Promise<boolean> => {
   const to = (voucher.buyer_email || "").trim()
   if (!to) return false
+  const locale = await giftVoucherLocale(container, voucher)
   return sendCustomerEmail(container, {
     template: "gift-voucher-payment",
     to,
+    locale,
     // Nový odkaz = nový e-mail; tentýž odkaz podruhé neodejde.
     key: `gift-voucher:pay:${voucher.id}:${paymentUrl.slice(-24)}`,
     data: {
       buyerName: voucher.buyer_name || null,
-      value: formatVoucherCzk(voucher.initial_value),
+      value: formatVoucherCzk(voucher.initial_value, locale),
       recipientName: voucher.recipient_name || null,
       kind: voucher.kind,
       sendTo: voucher.kind === "electronic" ? voucherRecipientEmail(voucher) : null,
-      validUntil: formatVoucherDate(voucher.valid_until),
+      validUntil: formatVoucherDate(voucher.valid_until, locale),
       paymentUrl,
       voucherUrl: giftVoucherLink(voucher.id),
     },

@@ -52,16 +52,16 @@ test("zaškrtnutí Z10 má přesné znění z auditu a PDF (bod 08)", () => {
 test("štítek pod cenou skládá jen to, co profil dal", () => {
   assert.equal(
     madeToOrderBadgeText({ depositPercentage: 25, maxDays: 42 }),
-    "Na zakázku · záloha 25 % · výroba do 42 dnů · nelze vrátit do 14 dnů"
+    "Na zakázku · záloha 25 % · výroba do 42 dnů · bez 14denní lhůty na vrácení"
   )
   assert.equal(
     madeToOrderBadgeText({ depositPercentage: 30 }),
-    "Na zakázku · záloha 30 % · nelze vrátit do 14 dnů"
+    "Na zakázku · záloha 30 % · bez 14denní lhůty na vrácení"
   )
-  assert.equal(madeToOrderBadgeText(), "Na zakázku · nelze vrátit do 14 dnů")
+  assert.equal(madeToOrderBadgeText(), "Na zakázku · bez 14denní lhůty na vrácení")
   assert.equal(
     madeToOrderBadgeText({ depositPercentage: 0, maxDays: null }),
-    "Na zakázku · nelze vrátit do 14 dnů"
+    "Na zakázku · bez 14denní lhůty na vrácení"
   )
 })
 

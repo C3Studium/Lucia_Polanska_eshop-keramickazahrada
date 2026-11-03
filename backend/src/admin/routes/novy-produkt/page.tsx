@@ -1,4 +1,4 @@
-import { Button, Container, Heading, Input, Label, Text, Toaster, toast } from "@medusajs/ui";
+import { Button, Container, Heading, Input, Label, Text, toast } from "@medusajs/ui";
 import {
   QueryClientProvider,
   useMutation,
@@ -71,11 +71,12 @@ const cards: Card[] = [
   },
   {
     id: "poskozeny",
-    title: "Výprodej / poškozený kus",
+    // Jen poškozený kus, samostatně — ne „výprodej" (Matěj, 3. 11. 2026).
+    title: "Poškozený kus",
     description:
-      "Poslední nebo lehce poškozený kus. Až se prodá, sami ho schováme a odebereme z akcí.",
-    defaultName: "Kus ve výprodeji",
-    toast: "Kus založen a zařazen do výprodeje poškozených.",
+      "Kus s vadou, prodává se levněji. Až se prodá, sami ho schováme a odebereme z akcí.",
+    defaultName: "Poškozený kus",
+    toast: "Poškozený kus založen.",
   },
   {
     id: "balicek",
@@ -86,6 +87,26 @@ const cards: Card[] = [
     toast: "",
   },
 ];
+
+/*
+ * Profil dopravy hned při založení. Bez něj objednávka spadne až po
+ * zaplacení. Subscriber default-shipping-profile ho doplní taky, ale až
+ * z události po vzniku; tady je kus v pořádku od první vteřiny. Výběr je
+ * stejný jako v lib/shipping-profile-default.ts (výchozí, jinak jediný);
+ * když se určit nedá, nepošle se nic a zbytek nechá na subscriberu.
+ */
+const defaultShippingProfileId = async (): Promise<string | undefined> => {
+  try {
+    const { shipping_profiles } = await sdk.client.fetch<{
+      shipping_profiles: { id: string; type?: string | null }[];
+    }>("/admin/shipping-profiles?limit=100");
+    const vychozi = shipping_profiles.find((profile) => profile.type === "default");
+    if (vychozi) return vychozi.id;
+    return shipping_profiles.length === 1 ? shipping_profiles[0].id : undefined;
+  } catch {
+    return undefined;
+  }
+};
 
 const isKind = (value: string | null): value is Kind =>
   value === "produkt" ||
@@ -122,9 +143,11 @@ const NovyProduktInner = () => {
 
   const create = useMutation({
     mutationFn: async ({ kind, title }: { kind: Kind; title: string }) => {
+      const shippingProfileId = await defaultShippingProfileId();
       const created: any = await sdk.admin.product.create({
         title,
         status: "draft",
+        ...(shippingProfileId ? { shipping_profile_id: shippingProfileId } : {}),
         ...(kind === "poskozeny" ? { metadata: { clearance: true } } : {}),
         options: [{ title: "Provedení", values: ["Standardní"] }],
         variants: [
@@ -297,7 +320,6 @@ const NovyProduktInner = () => {
         </Text>
       </div>
 
-      <Toaster />
     </Container>
   );
 };

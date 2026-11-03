@@ -155,7 +155,7 @@ export const LEGAL_FAQ: LegalFaqGroup[] = [
         id: "faq-zakazka-zaloha",
         question: "Kolik se u zakázky platí předem?",
         answer: [
-          "Při objednávce zaplatíte zálohu {{mto.deposit}} ceny, nejvýš polovinu. Platí se předem online — i když si zakázku vyzvednete osobně. Zbytek a dopravu doplatíte, až je hotovo.",
+          "Při objednávce zaplatíte zálohu ve výši uvedené u výrobku — podle kusu 25 až 50 % ceny. Platí se předem online — i když si zakázku vyzvednete osobně. Zbytek a dopravu doplatíte, až je hotovo.",
           "Zrušíte-li zakázku dřív, než vám přijde e-mail „Zakázka je ve výrobě“, vrátím vám všechno. Po něm se záloha nevrací — pokrývá materiál, návrh a práci, které už jsou v kusu, který nikomu jinému neprodám; všechno zaplacené nad zálohu vrátím do 14 dnů. [Podrobnosti v obchodních podmínkách](/smluvni-podminky#vyroba-na-zakazku).",
         ],
       },
@@ -200,7 +200,7 @@ export const LEGAL_FAQ: LegalFaqGroup[] = [
         id: "faq-kurzy-deti",
         question: "Můžou na kurz děti?",
         answer: [
-          "Ano. Rezervaci za dítě dělá rodič nebo jiný zákonný zástupce. Minimální věk: {{course.minAge}}.",
+          "Ano. Rezervaci za dítě dělá rodič nebo jiný zákonný zástupce. Věk: {{course.minAge}}.",
           "Během vedené práce se o děti postarám, mimo ni (příchod, přestávky, odchod) za ně odpovídá rodič. Fotky dětí zveřejním jen se souhlasem rodiče.",
         ],
       },

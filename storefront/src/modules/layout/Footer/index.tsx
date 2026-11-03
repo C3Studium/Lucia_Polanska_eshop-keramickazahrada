@@ -7,6 +7,8 @@ import type { CopyBlock, CopyBlocks } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
 import CollectionCategoryLink from "@modules/layout/Navbar/productsButton/CategoryLink"
 import { useContactDialog } from "@modules/layout/ContactDialog"
+import { useContactEmails } from "@lib/context/contact-emails"
+import { CONTACT_EMAILS_BLOCK, CONTACT_EMAIL_LABELS } from "@lib/constants/contact"
 import type { MerchantIdentity } from "@lib/data/merchant"
 import { subscribeToNewsletter } from "@lib/data/newsletter"
 import { openCookiePreferences } from "@lib/util/cookie-consent"
@@ -394,7 +396,11 @@ export default function Footer({
             one bordered row the difference showed up as a hole under the link groups. Across the
             full width the two columns come out within ~35px of each other, and the merchant details
             get a line of their own instead of a 270px gutter that broke the e-mail mid-word. */}
-        <MerchantBlock merchant={merchant} block={footerCopy} />
+        <MerchantBlock
+          merchant={merchant}
+          block={footerCopy}
+          contactsBlock={copy?.[CONTACT_EMAILS_BLOCK]}
+        />
 
         <div className="footer__bottom">
           <div className="footer__payments">
@@ -606,13 +612,15 @@ function FooterIcon({
  */
 function Newsletter({ block }: { block?: CopyBlock }) {
   const [status, setStatus] = useState<"idle" | "done" | "error">("idle")
+  // Země z URL (`/sk/…`) → jazyk potvrzovacího a uvítacího e-mailu.
+  const countryCode = usePathname()?.split("/")[1] ?? ""
 
   const submit = async (formData: FormData) => {
     const email = String(formData.get("email") ?? "").trim()
     if (!email) {
       return
     }
-    const result = await subscribeToNewsletter({ email })
+    const result = await subscribeToNewsletter({ email, countryCode })
     setStatus(result.ok ? "done" : "error")
   }
 
@@ -692,10 +700,22 @@ function Newsletter({ block }: { block?: CopyBlock }) {
 function MerchantBlock({
   merchant,
   block,
+  contactsBlock,
 }: {
   merchant: MerchantIdentity
   block?: CopyBlock
+  /** Blok `global.kontakty` — jen kvůli anotaci e-mailu pro Studio. */
+  contactsBlock?: CopyBlock
 }) {
+  /*
+   * E-mail je adresa pro DOTAZY ze Studia (`global.kontakty`), ne
+   * `seller.email` z Právních údajů — zadání Lucie 2. 11. 2026: dotazy na
+   * info@, objednávky jinam. Patička je kontakt pro každého, kdo se chce na
+   * něco zeptat. Klik na adresu ve Studiu otevře pole toho bloku, aby se
+   * adresa měnila na jednom místě; dřívější přepis v `items.3` bloku
+   * `global.paticka` má dál přednost, kdyby ho někdo vyplnil.
+   */
+  const emails = useContactEmails()
   /*
    * Z CMS jdou POPISKY, ne hodnoty.
    *
@@ -713,7 +733,8 @@ function MerchantBlock({
    * E-mail a telefon jdou z CMS včetně cíle odkazu.
    *
    * Řádek nese vypsaný tvar (`value`) a adresu odkazu (`note`), takže `editableLink` otevře
-   * popup s obojím — jinak by šlo změnit číslo, ale ne to, kam volá. Prázdné pole spadne na
+   * popup s obojím — jinak by šlo změnit číslo, ale ne to, kam volá. Prázdné pole spadne
+   * u e-mailu na adresu pro dotazy (`global.kontakty`, viz výš), u telefonu na
    * `getMerchantIdentity()`.
    *
    * POZOR: tytéž údaje čtou i obchodní podmínky, ochrana údajů, odstoupení od smlouvy,
@@ -743,10 +764,12 @@ function MerchantBlock({
       labelField: "items.3.label",
       value: (
         <a
-          href={hrefAt(3, `mailto:${merchant.email}`)}
-          {...editableLink(block, { text: "items.3.value", href: "items.3.note" })}
+          href={hrefAt(3, `mailto:${emails.dotazy}`)}
+          {...(labels[3]?.value?.trim()
+            ? editableLink(block, { text: "items.3.value", href: "items.3.note" })
+            : editableItem(contactsBlock, CONTACT_EMAIL_LABELS.dotazy))}
         >
-          {textAt(3, merchant.email)}
+          {textAt(3, emails.dotazy)}
         </a>
       ),
     },

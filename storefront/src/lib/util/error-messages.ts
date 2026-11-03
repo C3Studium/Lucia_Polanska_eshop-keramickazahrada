@@ -1,4 +1,11 @@
-import { SUPPORT_EMAIL } from "@lib/constants/contact"
+import { ORDER_EMAIL, SUPPORT_EMAIL } from "@lib/constants/contact"
+
+/*
+ * Adresy tu jsou ZÁLOHY z `@lib/constants/contact`, ne hodnoty ze Studia:
+ * `toCzechErrorMessage` je synchronní a volá se z klienta i ze serveru (košík,
+ * výrobek, balíček), takže CMS přečíst nemůže. Obecná chyba vede na dotazy,
+ * objednávka a platba na e-mail pro objednávky a zakázky.
+ */
 
 /**
  * Czech messages for the backend's English errors.
@@ -79,7 +86,7 @@ const RULES: ErrorRule[] = [
   {
     match: ["disabled sales channel"],
     message:
-      "Obchod teď nedokáže přijmout objednávku — chyba je na naší straně, ne u vás. Napište nám prosím na info@keramickazahrada.cz, ozveme se hned, jak to spravíme.",
+      `Obchod teď nedokáže přijmout objednávku — chyba je na naší straně, ne u vás. Napište nám prosím na ${ORDER_EMAIL}, ozveme se hned, jak to spravíme.`,
   },
 
   // --- cart -------------------------------------------------------------------
@@ -180,7 +187,7 @@ const RULES: ErrorRule[] = [
   {
     match: ["unknown error"],
     message:
-      "Tenhle způsob platby teď nejde spustit. Zkuste prosím jiný — a když to nepůjde, napište nám na info@keramickazahrada.cz, hned se na to podíváme.",
+      `Tenhle způsob platby teď nejde spustit. Zkuste prosím jiný — a když to nepůjde, napište nám na ${ORDER_EMAIL}, hned se na to podíváme.`,
   },
 ]
 

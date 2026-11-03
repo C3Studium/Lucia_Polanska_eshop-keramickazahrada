@@ -3,6 +3,7 @@ import {
   type OrderClaims,
 } from "@lib/util/claims"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import ContactEmailLink from "@modules/common/components/contact-email"
 
 import styles from "./style.module.scss"
 
@@ -78,7 +79,8 @@ export default function WithdrawalEntry({
           {(state.code === "made_to_order" || state.code === "expired") && claimHref ? (
             <LocalizedClientLink href={claimHref}>Reklamovat vadu</LocalizedClientLink>
           ) : null}
-          <a href="mailto:info@keramickazahrada.cz">info@keramickazahrada.cz</a>
+          {/* Klientská komponenta, ne hook — tenhle modul je bez „use client". */}
+          <ContactEmailLink role="objednavky" />
         </p>
       )}
     </section>

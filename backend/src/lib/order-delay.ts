@@ -6,6 +6,13 @@ import { pragueEndOfDay } from "../modules/gift-voucher/code"
 import { customerName, formatDate, orderLink, orderNumber, sendCustomerEmail } from "./customer-email"
 import { lineQuantityOf, LINE_QUANTITY_FIELDS } from "./order-quantity"
 import { isServiceLine } from "./packaging-lines"
+import {
+  emailLocaleOf,
+  localizedLineTitle,
+  piecesLabel,
+  pick,
+  type EmailLocale,
+} from "./email-locale"
 
 /**
  * „Oznámit zpoždění" u KAŽDÉ objednávky (panel Zpoždění v detailu objednávky).
@@ -44,10 +51,17 @@ export const ORDER_DELAYS_KEY = "order_delays"
 
 const DELAY_STAGES = ["confirmed", "in_production", "awaiting_balance"]
 
-const itemLabel = (item: { title: string; quantity: number; of?: number }) => {
+const itemLabel = (
+  item: { title: string; quantity: number; of?: number },
+  locale: EmailLocale = "cs"
+) => {
   const of = item.of ?? item.quantity
-  if (of > item.quantity) return `${item.title} · ${item.quantity} z ${of} ks`
-  return item.quantity > 1 ? `${item.title} · ${item.quantity} ks` : item.title
+  const ks = piecesLabel(locale)
+  if (of > item.quantity) {
+    const z = pick(locale, { cs: "z", sk: "z", pl: "z", de: "von", en: "of" })
+    return `${item.title} · ${item.quantity} ${z} ${of} ${ks}`
+  }
+  return item.quantity > 1 ? `${item.title} · ${item.quantity} ${ks}` : item.title
 }
 
 export const announceOrderDelay = async (
@@ -80,6 +94,11 @@ export const announceOrderDelay = async (
       "items.product_id",
       "items.variant_id",
       "items.metadata",
+      // Jazyk e-mailu a přeložené názvy výrobků (lib/email-locale).
+      "items.product_title",
+      "items.product.metadata",
+      "shipping_address.country_code",
+      "billing_address.country_code",
       ...LINE_QUANTITY_FIELDS,
     ],
     filters: { id: input.orderId },
@@ -154,6 +173,28 @@ export const announceOrderDelay = async (
   const reason = input.reason?.trim() || null
   const allCommission = commissionsMoved > 0 && commissionsMoved === selected.length && selected.length === goods.length
 
+  /*
+   * Seznam do e-mailu v jazyce objednávky. Historie (`items` výš) zůstává
+   * česky — čte ji widget v administraci; e-mail dostane přeložený název
+   * výrobku (bez českého výchozího provedení „Standardní").
+   */
+  const locale = emailLocaleOf(order)
+  const byId = new Map(selected.map((item: any) => [item.id, item]))
+  const emailItems =
+    locale === "cs"
+      ? items
+      : items.map((entry) => {
+          const line = byId.get(entry.id) as any
+          const variant = String(line?.variant_title ?? "").trim()
+          const showVariant = variant && !/^(default variant|standardní|výchozí)$/i.test(variant)
+          return {
+            ...entry,
+            title: [localizedLineTitle(line, locale) || line?.title, showVariant ? variant : null]
+              .filter(Boolean)
+              .join(" — "),
+          }
+        })
+
   const emailed = await sendCustomerEmail(container, {
     template: "order-delayed",
     to: order.email,
@@ -165,14 +206,18 @@ export const announceOrderDelay = async (
       .sort()
       .join(",")}`,
     orderId: order.id,
+    locale,
     data: {
       customerName: customerName(order),
       orderNumber: orderNumber(order),
       orderLink: orderLink(order),
-      ...(previousDate ? { originalDeliveryDate: formatDate(pragueEndOfDay(previousDate)) } : {}),
-      newDeliveryDate: formatDate(newDeadline),
+      ...(previousDate
+        ? { originalDeliveryDate: formatDate(pragueEndOfDay(previousDate), locale) }
+        : {}),
+      newDeliveryDate: formatDate(newDeadline, locale),
+      // Důvod píše majitelka česky — jde, jak ho napsala.
       ...(reason ? { delayReason: reason } : {}),
-      delayedItems: items.map(itemLabel),
+      delayedItems: emailItems.map((item) => itemLabel(item, locale)),
       wholeOrder: selected.length === goods.length,
       isCommission: allCommission,
     },

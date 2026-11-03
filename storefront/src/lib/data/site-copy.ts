@@ -10,6 +10,11 @@ import {
 } from "@c3studium/valecms/server/site"
 import { BUTTON_PREFIX, itemFieldPath, itemValue, paragraphs } from "@lib/util/site-copy"
 import type { CopyBlocks, CopyButton, CopyFile, CopyPage, FaqCategory, FaqQuestion } from "@lib/util/site-copy"
+import {
+  CONTACT_EMAILS_BLOCK,
+  contactEmailsFrom,
+  type ContactEmails,
+} from "@lib/constants/contact"
 
 /**
  * Redakční texty a fotky webu — z ValeCMS, ne ze Sanity.
@@ -343,6 +348,20 @@ export const getNotFoundCopy = async () => {
     },
   }
 }
+
+/* ------------------------------------------------------ kontaktní e-maily -- */
+
+/**
+ * Kontaktní e-maily — blok `global.kontakty` (`email.dotazy`,
+ * `email.objednavky`), zálohy v `@lib/constants/contact`.
+ *
+ * Pro serverové komponenty a server actions (hlášky v `@lib/data/*`).
+ * Klientské komponenty je berou z `useContactEmails()` — layouty skupin je
+ * tam podají z téhož čtení. Nikdy nevyhodí: `getPageCopy` při výpadku CMS
+ * vrátí prázdno a `contactEmailsFrom` zálohy.
+ */
+export const getContactEmails = async (): Promise<ContactEmails> =>
+  contactEmailsFrom((await getPageCopy("global"))[CONTACT_EMAILS_BLOCK])
 
 /* ------------------------------------------------------------------- SEO -- */
 

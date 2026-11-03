@@ -1,5 +1,3 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { ArchiveBox } from "@medusajs/icons";
 import {
   Badge,
   Container,
@@ -7,7 +5,6 @@ import {
   Input,
   Skeleton,
   Text,
-  Toaster,
   toast,
 } from "@medusajs/ui";
 import {
@@ -35,9 +32,10 @@ import {
 } from "../../components/catalog-filter";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
+import { movedTo } from "../../components/section-tabs";
 
 /**
- * Balení+ — every product's packaging cost, editable where you can see them all.
+ * Balení — every product's packaging cost, editable where you can see them all.
  *
  * ## Why this page exists
  *
@@ -313,7 +311,6 @@ const BaleniInner = () => {
 
   return (
     <Container className="divide-y p-0">
-      <Toaster />
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
         <div className="min-w-0">
           <Heading>Balení — ceny za kus</Heading>
@@ -431,17 +428,14 @@ const BaleniInner = () => {
 
 const queryClient = adminQueryClient;
 
-const BaleniWorkbenchPage = () => (
+/** Obsah záložky Nastavení obchodu › Balení. Ukládá se samo (při opuštění
+    pole), proto tu není lišta Uložit. */
+export const Baleni = () => (
   <QueryClientProvider client={queryClient}>
     <BaleniInner />
   </QueryClientProvider>
 );
 
-export const config = defineRouteConfig({
-  label: "Balení+",
-  icon: ArchiveBox,
-  // Nastavení nákladů, ne denní práce — proto až za pracovními stránkami.
-  rank: 110,
-});
-
-export default BaleniWorkbenchPage;
+/* Bez položky v menu — nastavení nákladů, ne denní práce, takže je záložkou
+   Nastavení obchodu; stará adresa tam přesměruje. */
+export default movedTo("/nastaveni-obchodu/baleni");

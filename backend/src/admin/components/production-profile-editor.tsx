@@ -273,7 +273,7 @@ export const ProductionProfileEditor = ({
         <Drawer.Footer>
           <Drawer.Close asChild>
             <Button variant="secondary" size="small">
-              Zrušit
+              Zavřít
             </Button>
           </Drawer.Close>
           <Button

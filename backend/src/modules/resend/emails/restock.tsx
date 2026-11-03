@@ -13,6 +13,71 @@ import {
   Signature,
 } from "../components/email-ui"
 import { storeLink } from "../../../lib/storefront-url"
+import { useCopy, useEmailLocale } from "../components/email-i18n"
+import type { Localized } from "../../../lib/email-locale"
+
+/** Texty po jazycích (lib/email-locale) — čeština je původní znění. */
+const COPY: Localized<{
+  preview: string
+  eyebrow: string
+  title: string
+  accent: string
+  intro: string
+  note: string
+  view: string
+  why: string
+}> = {
+  cs: {
+    preview: "Kousek, který jste sledovali, mám zase skladem.",
+    eyebrow: "Znovu skladem",
+    title: "Je zpátky",
+    accent: "skladem.",
+    intro: "kousek, který jste si uložili mezi oblíbené, mám zase skladem. Tak vám dávám vědět.",
+    note: "Můžete si ho rovnou objednat — u zboží skladem předám balíček dopravci do 3 pracovních dnů.",
+    view: "Zobrazit výrobek",
+    why: "Tento e-mail vám posílám, protože jste si výrobek uložili mezi oblíbené.",
+  },
+  sk: {
+    preview: "Kúsok, ktorý ste sledovali, mám znova na sklade.",
+    eyebrow: "Znova na sklade",
+    title: "Je späť",
+    accent: "na sklade.",
+    intro: "kúsok, ktorý ste si uložili medzi obľúbené, mám znova na sklade. Tak vám dávam vedieť.",
+    note: "Môžete si ho rovno objednať — tovar na sklade odovzdám prepravcovi do 3 pracovných dní.",
+    view: "Zobraziť výrobok",
+    why: "Tento e-mail vám posielam, pretože ste si výrobok uložili medzi obľúbené.",
+  },
+  pl: {
+    preview: "Egzemplarz, który Państwo obserwowali, znów jest dostępny.",
+    eyebrow: "Znów dostępne",
+    title: "Wrócił",
+    accent: "do sprzedaży.",
+    intro: "Egzemplarz, który dodali Państwo do ulubionych, znów jest dostępny — daję znać.",
+    note: "Można go od razu zamówić — towar dostępny od ręki przekazuję przewoźnikowi w ciągu 3 dni roboczych.",
+    view: "Zobacz produkt",
+    why: "Wysyłam tę wiadomość, ponieważ dodali Państwo ten produkt do ulubionych.",
+  },
+  de: {
+    preview: "Das Stück, das Sie sich gemerkt haben, ist wieder vorrätig.",
+    eyebrow: "Wieder vorrätig",
+    title: "Wieder",
+    accent: "da.",
+    intro: "das Stück, das Sie unter Ihren Favoriten gespeichert haben, ist wieder vorrätig. Ich wollte Ihnen Bescheid geben.",
+    note: "Sie können es gleich bestellen – vorrätige Ware übergebe ich innerhalb von 3 Werktagen an den Versanddienst.",
+    view: "Zum Produkt",
+    why: "Sie erhalten diese E-Mail, weil Sie das Produkt unter Ihren Favoriten gespeichert haben.",
+  },
+  en: {
+    preview: "The piece you saved is back in stock.",
+    eyebrow: "Back in stock",
+    title: "It's",
+    accent: "back.",
+    intro: "The piece you saved to your favourites is back in stock. I wanted to let you know.",
+    note: "You can order it straight away — I hand items in stock over to the courier within 3 working days.",
+    view: "View the piece",
+    why: "You're receiving this e-mail because you saved this product to your favourites.",
+  },
+}
 
 /**
  * Ploché props naplněné v send-restock-notification stepu. Dříve šablona
@@ -35,17 +100,18 @@ function RestockEmailComponent({
   thumbnail,
   product_url,
 }: RestockEmailProps) {
+  const t = useCopy(COPY)
+  // Popis produktu je jen česky (popisy se nepřekládají — web je přeloží
+  // prohlížeč); v cizojazyčném e-mailu by byl jediný český odstavec.
+  const showDescription = useEmailLocale() === "cs" && Boolean(description)
 
   return (
-    <EmailLayout preview="Kousek, který jste sledovali, mám zase skladem.">
-      <Eyebrow>Znovu skladem</Eyebrow>
-      <EmailH1 accent="skladem.">Je zpátky</EmailH1>
+    <EmailLayout preview={t.preview}>
+      <Eyebrow>{t.eyebrow}</Eyebrow>
+      <EmailH1 accent={t.accent}>{t.title}</EmailH1>
 
       <Greeting />
-      <P>
-        kousek, který jste si uložili mezi oblíbené, mám zase skladem. Tak vám
-        dávám vědět.
-      </P>
+      <P>{t.intro}</P>
 
       {/* Výrobek — řádek podle vzoru objednávky */}
       <Section style={{ margin: "28px 0 0" }}>
@@ -89,7 +155,7 @@ function RestockEmailComponent({
               {product_title}
               {variant_title ? ` — ${variant_title}` : ""}
             </Text>
-            {description ? (
+            {showDescription ? (
               <Text
                 style={{
                   fontFamily: brand.sans,
@@ -107,21 +173,13 @@ function RestockEmailComponent({
         <LedgerEnd />
       </Section>
 
-      <Note tone="olive">
-        Můžete si ho rovnou objednat — u zboží skladem předám balíček
-        dopravci do 3 pracovních dnů.
-      </Note>
+      <Note tone="olive">{t.note}</Note>
 
       <ButtonRow>
-        <EmailButton href={product_url || storeLink()}>
-          Zobrazit výrobek
-        </EmailButton>
+        <EmailButton href={product_url || storeLink()}>{t.view}</EmailButton>
       </ButtonRow>
 
-      <P small>
-        Tento e-mail vám posílám, protože jste si výrobek uložili mezi
-        oblíbené.
-      </P>
+      <P small>{t.why}</P>
       <Signature />
     </EmailLayout>
   )

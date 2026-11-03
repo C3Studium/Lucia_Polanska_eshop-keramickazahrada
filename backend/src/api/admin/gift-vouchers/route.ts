@@ -84,6 +84,30 @@ const firstMessage = (error: z.ZodError) => {
 export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) {
   const service = req.scope.resolve<GiftVoucherModuleService>(GIFT_VOUCHER_MODULE)
   const q = String(req.query.q ?? "").trim()
+  /*
+   * `used_in_order_id` — poukazy UPLATNĚNÉ v objednávce. Jiná otázka než
+   * `order_id` (poukazy v ní KOUPENÉ): v souhrnu objednávky je vidět jen
+   * „Sleva celkem", takže se z ní nepoznalo, že se platilo poukazem, ani
+   * kterým (3. 11. 2026).
+   */
+  const usedInOrderId = String(req.query.used_in_order_id ?? "").trim()
+  if (usedInOrderId) {
+    const redemptions = (await service.listGiftVoucherRedemptions({
+      order_id: usedInOrderId,
+    } as never)) as any[]
+    const voucherIds = Array.from(
+      new Set(redemptions.map((redemption) => redemption.voucher_id).filter(Boolean))
+    )
+    const used = voucherIds.length
+      ? ((await service.listGiftVouchers({ id: voucherIds } as never, {
+          relations: ["redemptions"],
+          order: { created_at: "DESC" },
+        } as never)) as any[])
+      : []
+    res.json({ gift_vouchers: used.map(serializeAdminVoucher) })
+    return
+  }
+
   /* `order_id` — poukazy koupené v jedné objednávce (widget na jejím detailu). */
   const orderId = String(req.query.order_id ?? "").trim()
   const vouchers = (await service.listGiftVouchers(

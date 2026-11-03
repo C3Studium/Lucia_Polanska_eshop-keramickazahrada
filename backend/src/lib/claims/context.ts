@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { getMerchantSettings } from "../merchant-settings"
 import { LINE_QUANTITY_FIELDS } from "../order-quantity"
 import { PARCEL_TRACKING_MODULE } from "../../modules/parcel-tracking"
+import { GIFT_VOUCHER_MODULE } from "../../modules/gift-voucher"
 import type ParcelTrackingModuleService from "../../modules/parcel-tracking/service"
 import { RETURN_REQUEST_MODULE } from "../../modules/return-request"
 import type ReturnRequestModuleService from "../../modules/return-request/service"
@@ -165,7 +166,7 @@ export const CLAIM_ORDER_FIELDS = [
 export const attachParcelTracking = async <T extends { id: string }>(
   container: MedusaContainer,
   order: T
-): Promise<T & { parcel_tracking: ClaimParcelTracking | null }> => {
+): Promise<T & { parcel_tracking: ClaimParcelTracking | null; electronic_delivery_at: Date | null }> => {
   let tracking: ClaimParcelTracking | null = null
   try {
     const service = container.resolve<ParcelTrackingModuleService>(
@@ -181,7 +182,27 @@ export const attachParcelTracking = async <T extends { id: string }>(
   } catch {
     tracking = null
   }
-  return Object.assign(order, { parcel_tracking: tracking })
+  // Elektronický dárkový poukaz: kdy odešel e-mailem — začátek lhůty pro
+  // odstoupení u objednávky, ve které nic nejde poštou (`withdrawalTimingFor`).
+  let electronicDeliveryAt: Date | null = null
+  try {
+    const vouchers = container.resolve(GIFT_VOUCHER_MODULE) as {
+      listGiftVouchers: (filters: unknown) => Promise<any[]>
+    }
+    const rows = await vouchers.listGiftVouchers({ order_id: order.id, kind: "electronic" })
+    for (const row of rows ?? []) {
+      const sentAt = row?.sent_at ? new Date(row.sent_at) : null
+      if (sentAt && Number.isFinite(sentAt.getTime()) && (!electronicDeliveryAt || sentAt > electronicDeliveryAt)) {
+        electronicDeliveryAt = sentAt
+      }
+    }
+  } catch {
+    electronicDeliveryAt = null
+  }
+  return Object.assign(order, {
+    parcel_tracking: tracking,
+    electronic_delivery_at: electronicDeliveryAt,
+  })
 }
 
 export const loadClaimOrder = async (

@@ -97,6 +97,17 @@ export default async function orderEditPaymentHandler({
     changeId,
     difference,
     moneySentence: `Rozdíl ${formatMoney(difference, "czk")} jste zaplatili kartou — úprava platí.`,
+    // Táž věta v jazyce objednávky (lib/email-locale).
+    sentence: (locale, currencyCode) => {
+      const amount = formatMoney(difference, currencyCode, locale)
+      return {
+        cs: `Rozdíl ${amount} jste zaplatili kartou — úprava platí.`,
+        sk: `Rozdiel ${amount} ste zaplatili kartou — úprava platí.`,
+        pl: `Różnicę ${amount} zapłacili Państwo kartą — zmiana obowiązuje.`,
+        de: `Die Differenz von ${amount} haben Sie per Karte bezahlt – die Änderung gilt.`,
+        en: `You've paid the difference of ${amount} by card — your change now applies.`,
+      }[locale]
+    },
   }).catch(() => undefined)
 }
 

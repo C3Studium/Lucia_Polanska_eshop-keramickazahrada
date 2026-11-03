@@ -45,7 +45,7 @@ export const REZERVACE_OKNO_DEFAULTS = {
   /** `note` položky `souhrn.nadpis` — zvýrazněný konec nadpisu. */
   "souhrn.nadpis#note": "Místo máte rezervované.",
   "souhrn.text":
-    "Co bude dál: potvrzení jsme právě poslali na {email}. Před kurzem vám ještě přijde připomínka — a zaplatíte až na místě, hotově nebo kartou. Kdyby vám termín nakonec nevyšel, rezervaci zrušíte přímo z e-mailu.",
+    "Co bude dál: potvrzení jsme právě poslali na {email}. Před kurzem vám ještě přijde připomínka — a zaplatíte až na místě, hotově nebo převodem na účet. Kdyby vám termín nakonec nevyšel, rezervaci zrušíte přímo z e-mailu.",
 } as const
 
 export type RezervaceOknoLabel = Exclude<keyof typeof REZERVACE_OKNO_DEFAULTS, `${string}#note`>

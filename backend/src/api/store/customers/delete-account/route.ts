@@ -4,6 +4,8 @@ import type {
 } from "@medusajs/framework/http";
 import { Modules } from "@medusajs/framework/utils";
 import { sendCustomerEmail } from "../../../../lib/customer-email";
+import { customerLocaleOf } from "../../../../lib/customer-locale";
+import { formatEmailDate } from "../../../../lib/email-locale";
 
 export const POST = async (
   req: AuthenticatedMedusaRequest,
@@ -18,7 +20,11 @@ export const POST = async (
   const customerModuleService = req.scope.resolve(Modules.CUSTOMER);
 
   // Read before the soft delete — afterwards the row no longer lists.
-  let customer: { email?: string; first_name?: string | null } | null = null;
+  let customer: {
+    email?: string;
+    first_name?: string | null;
+    metadata?: Record<string, unknown> | null;
+  } | null = null;
   try {
     customer = await customerModuleService.retrieveCustomer(customerId);
   } catch {
@@ -44,10 +50,13 @@ export const POST = async (
         template: "account-deleted",
         to: customer.email,
         key: `account-deleted:${customerId}:${new Date().toISOString().slice(0, 10)}`,
+        // Jazyk z registrace (customer.metadata.locale), jinak česky.
+        locale: customerLocaleOf(customer),
         data: {
           customerName: customer.first_name || "",
           email: customer.email,
-          deletionDate: new Date().toLocaleDateString("cs-CZ"),
+          // Česky beze změny („2. 11. 2026"), jinak podle jazyka zákazníka.
+          deletionDate: formatEmailDate(new Date(), customerLocaleOf(customer) ?? "cs"),
         },
       });
     } catch {
