@@ -20,6 +20,7 @@ import { PARCEL_TRACKING_MODULE } from "../modules/parcel-tracking"
 import type ParcelTrackingModuleService from "../modules/parcel-tracking/service"
 import { RETURN_REQUEST_MODULE } from "../modules/return-request"
 import type ReturnRequestModuleService from "../modules/return-request/service"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Asks — once — how the piece turned out (§12, §16 #14, P9-2;
@@ -51,7 +52,7 @@ const DAY_MS = 24 * 60 * 60 * 1000
 /** Bounded so one long-dormant deployment cannot mail years of history. */
 const MAX_PER_RUN = 50
 
-export default async function requestReviews(container: MedusaContainer) {
+async function requestReviews(container: MedusaContainer) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const trackingService = container.resolve<ParcelTrackingModuleService>(
@@ -179,6 +180,9 @@ export default async function requestReviews(container: MedusaContainer) {
     )
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("request-reviews", requestReviews)
 
 export const config = {
   name: "request-reviews",

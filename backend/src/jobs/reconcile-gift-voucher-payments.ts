@@ -4,6 +4,7 @@ import { processPaymentWorkflow } from "@medusajs/medusa/core-flows"
 import { GIFT_VOUCHER_MODULE } from "../modules/gift-voucher"
 import type GiftVoucherModuleService from "../modules/gift-voucher/service"
 import { paymentStatusFromProvider } from "../lib/payment-provider-status"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Dohled nad platbami poukazů — totéž co `reconcile-course-payments`
@@ -14,7 +15,7 @@ import { paymentStatusFromProvider } from "../lib/payment-provider-status"
  */
 const HOTOVO = ["captured", "authorized"]
 
-export default async function reconcileGiftVoucherPayments(container: MedusaContainer) {
+async function reconcileGiftVoucherPayments(container: MedusaContainer) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const service = container.resolve<GiftVoucherModuleService>(GIFT_VOUCHER_MODULE)
   const paymentModule = container.resolve(Modules.PAYMENT)
@@ -48,6 +49,9 @@ export default async function reconcileGiftVoucherPayments(container: MedusaCont
     }
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("reconcile-gift-voucher-payments", reconcileGiftVoucherPayments)
 
 export const config = {
   name: "reconcile-gift-voucher-payments",

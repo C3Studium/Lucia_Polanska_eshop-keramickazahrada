@@ -1,7 +1,8 @@
 import { MedusaContainer } from "@medusajs/framework/types"
 import { sendAbandonedCartsWorkflow, SendAbandonedCartsWorkflowInput } from "../workflows/send-abandoned-carts"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
-export default async function abandonedCartJob(
+async function abandonedCartJob(
   container: MedusaContainer
 ) {
   const logger = container.resolve("logger")
@@ -99,6 +100,9 @@ export default async function abandonedCartJob(
  *
  * Zapnutí = vrátit `schedule` níž. Nic jiného se měnit nemusí.
  */
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("abandoned-cart-notification", abandonedCartJob)
+
 export const config = {
   name: "abandoned-cart-notification",
   // schedule: "0 0 * * *"  ← původní rozvrh, každou půlnoc UTC

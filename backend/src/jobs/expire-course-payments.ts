@@ -9,6 +9,7 @@ import {
 } from "../modules/course/lifecycle"
 import { sendCoursePaymentExpiredEmail } from "../lib/course-emails"
 import { notifyCourseWaitlist } from "../lib/course-waitlist"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Releases online reservations whose card payment never arrived (24 hours).
@@ -35,7 +36,7 @@ import { notifyCourseWaitlist } from "../lib/course-waitlist"
  * The owner deliberately hears nothing — an expiry an hour is noise, and the
  * admin list shows „nezaplaceno (automaticky)" on the row anyway.
  */
-export default async function expireCoursePayments(container: MedusaContainer) {
+async function expireCoursePayments(container: MedusaContainer) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const courseService = container.resolve<CourseModuleService>(COURSE_MODULE)
 
@@ -141,6 +142,9 @@ export default async function expireCoursePayments(container: MedusaContainer) {
     logger.info(`[kurzy] Uvolněno ${expired} nezaplacených rezervací.`)
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("expire-course-payments", expireCoursePayments)
 
 export const config = {
   name: "expire-course-payments",

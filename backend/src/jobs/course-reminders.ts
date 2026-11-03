@@ -11,6 +11,7 @@ import {
   sendCourseReminderEmail,
 } from "../lib/course-emails"
 import { notifyMerchant } from "../lib/notify"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * The three-days-before reminder (docs/kurzy-system.md).
@@ -31,7 +32,7 @@ import { notifyMerchant } from "../lib/notify"
  * owner is, once per term (`course-reminder-calllist:{term_id}`): a morning
  * note listing whom to ring herself.
  */
-export default async function courseReminders(container: MedusaContainer) {
+async function courseReminders(container: MedusaContainer) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const courseService = container.resolve<CourseModuleService>(COURSE_MODULE)
 
@@ -104,6 +105,9 @@ export default async function courseReminders(container: MedusaContainer) {
     logger.info(`[kurzy] Odesláno ${sent} připomínek kurzu.`)
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("course-reminders", courseReminders)
 
 export const config = {
   name: "course-reminders",

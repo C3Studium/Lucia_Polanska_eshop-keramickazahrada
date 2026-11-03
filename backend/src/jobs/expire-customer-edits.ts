@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { cancelBeginOrderEditWorkflow } from "@medusajs/medusa/core-flows"
 import { CUSTOMER_EDIT_DESCRIPTION, DRY_RUN_NOTE } from "../lib/order-edit/core"
 import { cancelEditPaymentCollections } from "../lib/order-edit/payments"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Nezaplacené zákaznické úpravy nesmí objednávku zamknout navždy.
@@ -16,7 +17,7 @@ import { cancelEditPaymentCollections } from "../lib/order-edit/payments"
  * lib/order-edit/core.ts — metadata Medusa u úpravy neukládá, dřívější
  * značka v metadatech proto nikdy nic nenašla); adminské edity nechává být.
  */
-export default async function expireCustomerEdits(container: MedusaContainer) {
+async function expireCustomerEdits(container: MedusaContainer) {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const logger = container.resolve("logger")
   const now = Date.now()
@@ -52,6 +53,9 @@ export default async function expireCustomerEdits(container: MedusaContainer) {
     }
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("expire-customer-edits", expireCustomerEdits)
 
 export const config = {
   name: "expire-customer-edits",

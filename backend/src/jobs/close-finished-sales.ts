@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { updateProductsWorkflow } from "@medusajs/medusa/core-flows"
 import { updateSeasonalSelectionWorkflow } from "../workflows/manage-seasonal-selection"
 import { notifyMerchant } from "../lib/notify"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Closes seasonal sales that have run their course, and warns about ones about
@@ -30,7 +31,7 @@ import { notifyMerchant } from "../lib/notify"
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
-export default async function closeFinishedSales(container: MedusaContainer) {
+async function closeFinishedSales(container: MedusaContainer) {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const now = Date.now()
@@ -112,6 +113,9 @@ export default async function closeFinishedSales(container: MedusaContainer) {
     })
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("close-finished-sales", closeFinishedSales)
 
 export const config = {
   name: "close-finished-sales",

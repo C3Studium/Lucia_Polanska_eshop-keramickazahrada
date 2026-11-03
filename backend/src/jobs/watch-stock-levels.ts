@@ -2,6 +2,7 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { getInventoryAlerts } from "../lib/inventory-alerts"
 import { notifyMerchant } from "../lib/notify"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * The morning stock check (§3.9, §10, P7-2 — notifications #12 and #13).
@@ -23,7 +24,7 @@ import { notifyMerchant } from "../lib/notify"
 
 const DIGEST_LIMIT = 8
 
-export default async function watchStockLevels(container: MedusaContainer) {
+async function watchStockLevels(container: MedusaContainer) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const { low, out, default_threshold } = await getInventoryAlerts(container)
 
@@ -88,6 +89,9 @@ export default async function watchStockLevels(container: MedusaContainer) {
     `[stock] ${out.length} vyprodaných, ${low.length} dochází — upozornění odesláno.`
   )
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("watch-stock-levels", watchStockLevels)
 
 export const config = {
   name: "watch-stock-levels",

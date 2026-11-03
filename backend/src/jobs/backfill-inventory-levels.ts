@@ -2,6 +2,7 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 import { sweepUrovne } from "../lib/inventory-levels"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Pravidelně srovná sklad: každé skladové položce bez úrovně doplní nulu.
@@ -29,7 +30,7 @@ import { sweepUrovne } from "../lib/inventory-levels"
  *
  * Idempotentní: položka, která úroveň má, nevyvolá žádný zápis.
  */
-export default async function backfillInventoryLevelsJob(
+async function backfillInventoryLevelsJob(
   container: MedusaContainer
 ): Promise<void> {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
@@ -57,6 +58,9 @@ export default async function backfillInventoryLevelsJob(
     )
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("backfill-inventory-levels", backfillInventoryLevelsJob)
 
 export const config = {
   name: "backfill-inventory-levels",

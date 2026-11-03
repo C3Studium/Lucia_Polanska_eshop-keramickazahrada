@@ -8,6 +8,7 @@ import {
   hasOpenSupplement,
   reconcileCourseReservationPayment,
 } from "../lib/course-payment-reconcile"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Doptá se ComGate, co se stalo s platbami za kurzy.
@@ -51,7 +52,7 @@ import {
  * napíše. Dvě úlohy psát o téže věci by znamenalo dva e-maily.
  */
 
-export default async function reconcileCoursePayments(
+async function reconcileCoursePayments(
   container: MedusaContainer
 ) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
@@ -119,6 +120,9 @@ export default async function reconcileCoursePayments(
     )
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("reconcile-course-payments", reconcileCoursePayments)
 
 export const config = {
   name: "reconcile-course-payments",

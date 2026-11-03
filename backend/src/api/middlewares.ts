@@ -67,9 +67,27 @@ import { PostNewsletterPreviewSchema } from "./admin/newsletter/preview/route";
 import { PostNewsletterTestSchema } from "./admin/newsletter/test/route";
 import { PostNewsletterDraftSchema } from "./admin/newsletter/drafts/route";
 import { requireRefundedBeforeCancel } from "../lib/claims/money";
+import { zapisovacProvozu } from "../lib/provozni-hlidka/sber";
 
 export default defineMiddlewares({
   routes: [
+    /*
+     * Provozní deník — PRVNÍ v seznamu, aby viděl i požadavky, které
+     * některé pozdější pravidlo odmítne. Zapisuje se až po odeslání
+     * odpovědi, takže nic nezdrží a nic neshodí (lib/provozni-hlidka/sber.ts).
+     */
+    {
+      matcher: "/admin/*",
+      middlewares: [zapisovacProvozu()],
+    },
+    {
+      matcher: "/store/*",
+      middlewares: [zapisovacProvozu()],
+    },
+    {
+      matcher: "/hooks/*",
+      middlewares: [zapisovacProvozu()],
+    },
     // The customer-route order-edit rules, on the native admin endpoints too —
     // a rule enforced on one door only gets walked around (see the guard file).
     {

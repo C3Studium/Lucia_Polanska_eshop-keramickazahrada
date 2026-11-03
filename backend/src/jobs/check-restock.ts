@@ -2,11 +2,15 @@ import {
   MedusaContainer
 } from "@medusajs/framework/types";
 import { sendRestockNotificationsWorkflow } from "../workflows/send-restock-notifications";
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
-export default async function myCustomJob(container: MedusaContainer) {
+async function myCustomJob(container: MedusaContainer) {
   await sendRestockNotificationsWorkflow(container)
     .run()
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("check-restock", myCustomJob)
 
 export const config = {
   name: "check-restock",

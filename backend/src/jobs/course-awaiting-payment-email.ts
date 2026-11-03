@@ -4,6 +4,7 @@ import { COURSE_MODULE } from "../modules/course"
 import type CourseModuleService from "../modules/course/service"
 import { sendCourseReservationConfirmedEmail } from "../lib/course-emails"
 import { checkCourseReservationPayment } from "../lib/course-payment-reconcile"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * „Vaše rezervace čeká na platbu" — jen když platba za 2 minuty nedorazila.
@@ -26,7 +27,7 @@ import { checkCourseReservationPayment } from "../lib/course-payment-reconcile"
 const WAIT_MS = 2 * 60 * 1000
 const WINDOW_MS = 15 * 60 * 1000
 
-export default async function courseAwaitingPaymentEmail(container: MedusaContainer) {
+async function courseAwaitingPaymentEmail(container: MedusaContainer) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const courseService = container.resolve<CourseModuleService>(COURSE_MODULE)
   const now = Date.now()
@@ -62,6 +63,9 @@ export default async function courseAwaitingPaymentEmail(container: MedusaContai
     }
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("course-awaiting-payment-email", courseAwaitingPaymentEmail)
 
 export const config = {
   name: "course-awaiting-payment-email",

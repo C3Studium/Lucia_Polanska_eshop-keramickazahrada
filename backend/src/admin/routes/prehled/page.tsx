@@ -807,12 +807,22 @@ const VitrinaCard = () => {
             </Text>
           )}
         </div>
-        <Link
-          to="/nastaveni-obchodu"
-          className="text-ui-fg-interactive txt-small hover:underline"
-        >
-          Dovolená a oznámení →
-        </Link>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          {/* Provozní deník — co se v obchodě dělo a co z toho neprošlo.
+              Totéž chodí večer e-mailem; odkaz je tu pro „hned". */}
+          <Link
+            to="/prehled/provoz"
+            className="text-ui-fg-interactive txt-small hover:underline"
+          >
+            Provoz →
+          </Link>
+          <Link
+            to="/nastaveni-obchodu"
+            className="text-ui-fg-interactive txt-small hover:underline"
+          >
+            Dovolená a oznámení →
+          </Link>
+        </div>
       </div>
 
       {(data?.problems ?? []).map((problem, index) => (
