@@ -12,6 +12,7 @@ import {
 } from "../lib/price-reference"
 import { PRICE_HISTORY_MODULE } from "../modules/price-history"
 import type PriceHistoryModuleService from "../modules/price-history/service"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Zápis historie cen pro § 12a ZOS (nejnižší cena za 30 dní před slevou).
@@ -144,7 +145,7 @@ export const recordPriceHistory = async (
   }
 }
 
-export default async function recordPriceHistoryJob(
+async function recordPriceHistoryJob(
   container: MedusaContainer
 ): Promise<void> {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
@@ -159,6 +160,9 @@ export default async function recordPriceHistoryJob(
     )
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("record-price-history", recordPriceHistoryJob)
 
 export const config = {
   name: "record-price-history",

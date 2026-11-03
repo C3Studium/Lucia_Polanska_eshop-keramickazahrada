@@ -1,5 +1,6 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Srdeční tep CMS — drží Supabase projekt storefront CMS vzhůru.
@@ -30,7 +31,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 const base = (): string =>
   (process.env.STOREFRONT_PUBLIC_URL || process.env.MEDUSA_STOREFRONT_URL || "").replace(/\/+$/, "")
 
-export default async function cmsHeartbeat(container: MedusaContainer) {
+async function cmsHeartbeat(container: MedusaContainer) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
 
   const secret = (process.env.CMS_CRON_SECRET || "").trim()
@@ -72,6 +73,9 @@ export default async function cmsHeartbeat(container: MedusaContainer) {
     logger.error(`[cms-heartbeat] volání ${url} selhalo: ${String((error as Error)?.message ?? error)}`)
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("cms-heartbeat", cmsHeartbeat)
 
 export const config = {
   name: "cms-heartbeat",

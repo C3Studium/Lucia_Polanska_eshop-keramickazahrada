@@ -21,6 +21,7 @@ import {
   resolveRecipient,
   type MerchantNotificationInput,
 } from "../lib/notify"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Prezenční listina majitelce 12 hodin před začátkem kurzu.
@@ -39,7 +40,7 @@ import {
  * a příloha se přidá do `data.__attachments` — tak ji čte Resend provider
  * i opakované odeslání z Přehled → Odeslané e-maily.
  */
-export default async function courseAttendanceSheet(container: MedusaContainer) {
+async function courseAttendanceSheet(container: MedusaContainer) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const courseService = container.resolve<CourseModuleService>(COURSE_MODULE)
   const notifications = container.resolve(Modules.NOTIFICATION)
@@ -146,6 +147,9 @@ export default async function courseAttendanceSheet(container: MedusaContainer) 
     }
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("course-attendance-sheet", courseAttendanceSheet)
 
 export const config = {
   name: "course-attendance-sheet",

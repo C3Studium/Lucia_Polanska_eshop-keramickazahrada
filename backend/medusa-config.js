@@ -280,6 +280,11 @@ const medusaConfig = {
       // Dárkové poukazy (stránka Poukazy) — kód, zůstatek, uplatnění, platba ComGate.
       resolve: "./src/modules/gift-voucher",
     },
+    {
+      // Provozní deník — co se v obchodě stalo (platby, e-maily, změny
+      // v administraci, přihlášení). Čte ho denní souhrn a stránka Provoz.
+      resolve: "./src/modules/activity-log",
+    },
     // iDoklad invoicing (FINISHINGTODOLIST §1) — registered only with
     // credentials in hand; without them every invoicing entry point degrades
     // to a logged no-op, so checkout and fulfilment never depend on it.

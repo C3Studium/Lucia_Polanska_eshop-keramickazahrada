@@ -1,6 +1,7 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { sweepDiscountable } from "../lib/discountable"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Denní srovnání: kdo je zlevněný, ten slevový kód nedostane.
@@ -16,7 +17,7 @@ import { sweepDiscountable } from "../lib/discountable"
  * Běží nad ránem, po `close-finished-sales`, aby už četl svět po zavření
  * doběhlých akcí.
  */
-export default async function syncDiscountableDaily(container: MedusaContainer) {
+async function syncDiscountableDaily(container: MedusaContainer) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
 
   const { zapnuto, vypnuto, proslo } = await sweepDiscountable(container)
@@ -28,6 +29,9 @@ export default async function syncDiscountableDaily(container: MedusaContainer) 
     )
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("sync-discountable", syncDiscountableDaily)
 
 export const config = {
   name: "sync-discountable",

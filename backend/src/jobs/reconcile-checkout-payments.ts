@@ -7,6 +7,7 @@ import {
   emailFailedCheckoutPayment,
   failedPaymentEmailDue,
 } from "../lib/payment-failure"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Doptá se ComGate, co se stalo s platbami z pokladny, o kterých se obchod
@@ -57,7 +58,7 @@ const DNU_ZPET = 3
 /* Přesunuto do lib/payment-failure (sdílí ho i dohled doplatků). */
 export { duvodCesky }
 
-export default async function reconcileCheckoutPayments(
+async function reconcileCheckoutPayments(
   container: MedusaContainer
 ) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
@@ -154,6 +155,9 @@ export default async function reconcileCheckoutPayments(
     )
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("reconcile-checkout-payments", reconcileCheckoutPayments)
 
 export const config = {
   name: "reconcile-checkout-payments",

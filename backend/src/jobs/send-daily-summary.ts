@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { getOrdersListWorkflow } from "@medusajs/medusa/core-flows"
 import { getMerchantSettings } from "../lib/merchant-settings"
 import { resolveAllRecipients } from "../lib/notify"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * The 07:05 daily summary (WorkflowPlan.md §15, D7).
@@ -49,7 +50,7 @@ const toNumber = (value: unknown): number => {
   return 0
 }
 
-export default async function sendDailySummary(container: MedusaContainer) {
+async function sendDailySummary(container: MedusaContainer) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const notifications = container.resolve(Modules.NOTIFICATION)
@@ -170,6 +171,9 @@ export default async function sendDailySummary(container: MedusaContainer) {
       `${paidOrders.length} zaplacených objednávek, ${drafts + abandonedCarts} nedokončených.`
   )
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("send-daily-summary", sendDailySummary)
 
 export const config = {
   name: "send-daily-summary",

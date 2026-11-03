@@ -2,6 +2,7 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { getOrdersListWorkflow } from "@medusajs/medusa/core-flows"
 import { getNotificationAddresses, resolveAllRecipients } from "../lib/notify"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * The Monday-morning weekly summary.
@@ -53,7 +54,7 @@ const toNumber = (value: unknown): number => {
 const sumRevenue = (orders: any[]): number =>
   orders.reduce((sum, order) => sum + toNumber(order.total), 0)
 
-export default async function sendWeeklySummary(container: MedusaContainer) {
+async function sendWeeklySummary(container: MedusaContainer) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const notifications = container.resolve(Modules.NOTIFICATION)
 
@@ -157,6 +158,9 @@ export default async function sendWeeklySummary(container: MedusaContainer) {
       `${lastWeek.length} zaplacených objednávek.`
   )
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("send-weekly-summary", sendWeeklySummary)
 
 export const config = {
   name: "send-weekly-summary",

@@ -6,6 +6,7 @@ import {
   fetchCnbRates,
   type CnbRateSheet,
 } from "../lib/cnb-rates"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Foreign-currency prices from the ČNB fixing (2026-08-16).
@@ -173,9 +174,12 @@ export const syncCurrencyPrices = async (
   )
 }
 
-export default async function syncCurrencyPricesJob(container: MedusaContainer) {
+async function syncCurrencyPricesJob(container: MedusaContainer) {
   await syncCurrencyPrices(container)
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("sync-currency-prices", syncCurrencyPricesJob)
 
 export const config = {
   name: "sync-currency-prices",

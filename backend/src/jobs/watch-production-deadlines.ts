@@ -4,6 +4,7 @@ import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
 import { notifyMerchant } from "../lib/notify"
 import { cancelCommissionByCustomer } from "../lib/made-to-order/customer-cancel"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Warns about production deadlines before and after they pass (P6-4,
@@ -36,7 +37,7 @@ const ACTIVE_STAGES = ["confirmed", "in_production"]
 
 const day = (value: Date) => value.toISOString().slice(0, 10)
 
-export default async function watchProductionDeadlines(
+async function watchProductionDeadlines(
   container: MedusaContainer
 ) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
@@ -176,6 +177,9 @@ export default async function watchProductionDeadlines(
     `[production] Zkontrolováno ${productionOrders.length} zakázek na termíny a doplatky.`
   )
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("watch-production-deadlines", watchProductionDeadlines)
 
 export const config = {
   name: "watch-production-deadlines",

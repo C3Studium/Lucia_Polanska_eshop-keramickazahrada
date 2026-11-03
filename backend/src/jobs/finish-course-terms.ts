@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { COURSE_MODULE } from "../modules/course"
 import type CourseModuleService from "../modules/course/service"
 import { hasTermEnded } from "../modules/course/lifecycle"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Marks published terms that have already happened as `finished` — nightly,
@@ -21,7 +22,7 @@ import { hasTermEnded } from "../modules/course/lifecycle"
  * and after one pass those are `finished`. No e-mails, no notifications —
  * nothing here is news to anyone.
  */
-export default async function finishCourseTerms(container: MedusaContainer) {
+async function finishCourseTerms(container: MedusaContainer) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const courseService = container.resolve<CourseModuleService>(COURSE_MODULE)
 
@@ -60,6 +61,9 @@ export default async function finishCourseTerms(container: MedusaContainer) {
     )
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("finish-course-terms", finishCourseTerms)
 
 export const config = {
   name: "finish-course-terms",

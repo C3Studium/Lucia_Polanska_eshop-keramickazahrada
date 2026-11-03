@@ -36,6 +36,7 @@ import {
 } from "../lib/price-reference"
 import { PRICE_HISTORY_MODULE } from "../modules/price-history"
 import type PriceHistoryModuleService from "../modules/price-history/service"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * The morning price check for objects people keep in their oblíbených
@@ -81,7 +82,7 @@ import type PriceHistoryModuleService from "../modules/price-history/service"
  */
 const CURRENCY_CODE = "czk"
 
-export default async function watchPriceDrops(container: MedusaContainer) {
+async function watchPriceDrops(container: MedusaContainer) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const wishlistModule =
@@ -381,6 +382,9 @@ export default async function watchPriceDrops(container: MedusaContainer) {
     )
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("watch-price-drops", watchPriceDrops)
 
 export const config = {
   name: "watch-price-drops",

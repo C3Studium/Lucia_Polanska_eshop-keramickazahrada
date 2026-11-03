@@ -4,6 +4,7 @@ import { applyParcelEvents } from "../lib/parcel-tracking/apply"
 import { fetchParcelEvents } from "../lib/parcel-tracking/source"
 import { PARCEL_TRACKING_MODULE } from "../modules/parcel-tracking"
 import type ParcelTrackingModuleService from "../modules/parcel-tracking/service"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Sledování zásilek České pošty (docs/sledovani-zasilek.md §5).
@@ -23,7 +24,7 @@ import type ParcelTrackingModuleService from "../modules/parcel-tracking/service
 
 const MAX_PER_RUN = 50
 
-export default async function watchParcelTracking(container: MedusaContainer) {
+async function watchParcelTracking(container: MedusaContainer) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const service = container.resolve<ParcelTrackingModuleService>(
     PARCEL_TRACKING_MODULE
@@ -95,6 +96,9 @@ export default async function watchParcelTracking(container: MedusaContainer) {
     `[sledování] Zkontrolováno ${checked} zásilek (změna u ${changed}, uzavřeno ${finished}, chyb ${failed}).`
   )
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("watch-parcel-tracking", watchParcelTracking)
 
 export const config = {
   name: "watch-parcel-tracking",

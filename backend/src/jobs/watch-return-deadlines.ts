@@ -4,6 +4,7 @@ import { kindLabel, OPEN_STATUSES } from "../lib/claims/constants"
 import { RETURN_REQUEST_MODULE } from "../modules/return-request"
 import type ReturnRequestModuleService from "../modules/return-request/service"
 import { notifyMerchant } from "../lib/notify"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Hlídá zákonné lhůty reklamací / vrácení / odstoupení (docs/reklamace-a-zruseni.md §7).
@@ -29,7 +30,7 @@ const STATUS_HINT: Record<string, string> = {
   received: "vrátit peníze, nebo označit vyřízené",
 }
 
-export default async function watchReturnDeadlines(container: MedusaContainer) {
+async function watchReturnDeadlines(container: MedusaContainer) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const service = container.resolve<ReturnRequestModuleService>(
     RETURN_REQUEST_MODULE
@@ -87,6 +88,9 @@ export default async function watchReturnDeadlines(container: MedusaContainer) {
     `[reklamace] Zkontrolováno ${open.length} otevřených žádostí, upozornění: ${warned}.`
   )
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("watch-return-deadlines", watchReturnDeadlines)
 
 export const config = {
   name: "watch-return-deadlines",

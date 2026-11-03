@@ -16,6 +16,7 @@ import {
   orderNumber,
   sendCustomerEmail,
 } from "../lib/customer-email"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Asks ComGate what actually happened to balance payments nobody heard back
@@ -133,7 +134,7 @@ const emailCustomerAboutFailure = async (
   })
 }
 
-export default async function reconcileBalancePayments(
+async function reconcileBalancePayments(
   container: MedusaContainer
 ) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
@@ -337,6 +338,9 @@ export default async function reconcileBalancePayments(
     }
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("reconcile-balance-payments", reconcileBalancePayments)
 
 export const config = {
   name: "reconcile-balance-payments",

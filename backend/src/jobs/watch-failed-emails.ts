@@ -1,6 +1,7 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
 import { notifyMerchant } from "../lib/notify"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Merchant notification #15 — „E-mail se nepodařilo odeslat" (§15).
@@ -24,7 +25,7 @@ import { notifyMerchant } from "../lib/notify"
  * the per-notification dedupe key makes the overlap free. */
 const LOOKBACK_MINUTES = 90
 
-export default async function watchFailedEmails(container: MedusaContainer) {
+async function watchFailedEmails(container: MedusaContainer) {
   const notifications = container.resolve(Modules.NOTIFICATION)
   const logger = container.resolve("logger")
 
@@ -62,6 +63,9 @@ export default async function watchFailedEmails(container: MedusaContainer) {
     })
   }
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("watch-failed-emails", watchFailedEmails)
 
 export const config = {
   name: "watch-failed-emails",

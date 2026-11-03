@@ -4,6 +4,7 @@ import { updateProductsWorkflow } from "@medusajs/medusa/core-flows"
 import { updateSeasonalSelectionWorkflow } from "../workflows/manage-seasonal-selection"
 import { isClearanceProduct, isSoldOut } from "../lib/clearance"
 import { notifyMerchant } from "../lib/notify"
+import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
  * Takes sold-out clearance pieces out of the shop, and out of their sale.
@@ -22,7 +23,7 @@ import { notifyMerchant } from "../lib/notify"
  * settling state rather than a single event.
  */
 
-export default async function retireSoldOutClearance(
+async function retireSoldOutClearance(
   container: MedusaContainer
 ) {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
@@ -109,6 +110,9 @@ export default async function retireSoldOutClearance(
     audience: "owner",
   })
 }
+
+/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+export default sUlohou("retire-sold-out-clearance", retireSoldOutClearance)
 
 export const config = {
   name: "retire-sold-out-clearance",
