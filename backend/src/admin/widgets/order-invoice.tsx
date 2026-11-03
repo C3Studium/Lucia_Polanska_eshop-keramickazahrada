@@ -94,6 +94,13 @@ const OrderInvoiceWidgetInner = ({ order }: { order: AdminOrder }) => {
   }
 
   const { configured, test_mode: testMode, invoice, dobirka } = invoiceQuery.data;
+  /*
+   * Objednávka, u které se nic nezachytí: celá uhrazená dárkovým poukazem,
+   * nebo cena po domluvě objednaná za 0 Kč (platí se až přes zakázku).
+   * Faktura visí na zachycení platby, takže u takové sama nevznikne — a věta
+   * „vystaví se po zaplacení" by slibovala něco, co nepřijde (3. 11. 2026).
+   */
+  const bezPlatby = Number((order as any)?.total ?? 0) <= 0.005;
   const hasInvoice = Boolean(invoice.invoice_id);
 
   const badge = hasInvoice ? (
@@ -188,7 +195,9 @@ const OrderInvoiceWidgetInner = ({ order }: { order: AdminOrder }) => {
               <Text size="small" className="text-ui-fg-subtle">
                 {dobirka
                   ? "Vystaví se automaticky při předání dopravci."
-                  : "Vystaví se automaticky po zaplacení objednávky."}
+                  : bezPlatby
+                    ? "Objednávka je nulová — peníze přes bránu neprojdou, takže se faktura sama nevystaví. Jestli ji zákazník má dostat, vystavte ji tlačítkem."
+                    : "Vystaví se automaticky po zaplacení objednávky."}
               </Text>
             )}
             <Button

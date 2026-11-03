@@ -40,6 +40,7 @@ import { emailLocaleOf } from "./email-locale"
 import { notifyMerchant } from "./notify"
 import { jeZkusebniRezim } from "./test-mode"
 import { isDepositRequest } from "./made-to-order/payment-kind"
+import { voucherNoteForOrder } from "./gift-voucher-orders"
 import { epsilonFor, toAmount } from "./ship-gate"
 import { outstandingFor } from "./balance-payment"
 
@@ -409,6 +410,10 @@ export const ensureInvoiceForOrder = async (
 
       // 3) Create, then stamp metadata immediately — the invoice id is the
       //    idempotency fact and must survive even if PDF or e-mail fail.
+      /* Poukaz se v objednávce chová jako sleva — na dokladu by po něm
+         nezůstala stopa, tak ho jmenuje popis (částky se nemění). */
+      const voucherNote = await voucherNoteForOrder(container, order.id)
+
       const invoice = await idoklad.createInvoice(
         buildInvoicePayload({
           order,
@@ -418,6 +423,12 @@ export const ensureInvoiceForOrder = async (
           paymentOptionId,
           numericSequenceId: idoklad.numericSequenceId,
           currencyId,
+          description: [
+            `Objednávka #${order.display_id ?? order.id}`,
+            voucherNote,
+          ]
+            .filter(Boolean)
+            .join(" · "),
         })
       )
 
@@ -593,6 +604,8 @@ export const ensureMadeToOrderInvoices = async (
     // Jazyk e-mailu s fakturou (metadata košíku → země doručení) — částky
     // v e-mailu formátuje tenhle kód, proto ho potřebuje dřív než provider.
     const emailLocale = emailLocaleOf(order)
+    /* Zakázka zaplacená zčásti poukazem — na dokladu se to jmenuje stejně. */
+    const voucherNote = await voucherNoteForOrder(container, order.id)
 
     const issuePhase = async (
       keys: {
@@ -650,7 +663,9 @@ export const ensureMadeToOrderInvoices = async (
             numericSequenceId: idoklad.numericSequenceId,
             currencyId,
             items,
-            description: `${label} — obj. #${order.display_id ?? order.id}`,
+            description: [`${label} — obj. #${order.display_id ?? order.id}`, voucherNote]
+              .filter(Boolean)
+              .join(" · "),
           })
         )
         const issuedAt = new Date().toISOString()
