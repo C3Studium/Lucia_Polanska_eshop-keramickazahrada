@@ -351,7 +351,15 @@ const ZakazkyInner = () => {
                       </div>
                       <ProductionDiary
                         orderId={order.order_id}
-                        label={order.display_id ? `#${order.display_id}` : "zakázka"}
+                        productionOrderId={order.id}
+                        label={
+                          [
+                            order.display_id ? `#${order.display_id}` : "zakázka",
+                            order.line_title,
+                          ]
+                            .filter(Boolean)
+                            .join(" — ") || "zakázka"
+                        }
                         trigger={
                           <Button size="small" variant="secondary">
                             Deník

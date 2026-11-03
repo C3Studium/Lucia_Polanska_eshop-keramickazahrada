@@ -229,7 +229,15 @@ const OrderCommissionCustomerInner = ({ order }: { order: AdminOrder }) => {
             rovnou odpovědět (odpověď viditelná zákazníkovi mu přijde e-mailem). */}
         <ProductionDiary
           orderId={order.id}
-          label={`#${order.display_id}`}
+          productionOrderId={aktivniZakazka?.id ?? null}
+          label={
+            [
+              `#${order.display_id}`,
+              commissions.length > 1 ? aktivniZakazka?.line_title : null,
+            ]
+              .filter(Boolean)
+              .join(" — ")
+          }
           trigger={
             <Button size="small" variant="secondary">
               Konverzace se zákazníkem

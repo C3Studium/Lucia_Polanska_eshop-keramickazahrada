@@ -95,7 +95,11 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
    * hotová a zaplacená jede běžným postupem balení a odeslání.
    */
   const productionMode = Boolean(
-    production?.pure_commission && isProductionPhase(production.stage)
+    production?.pure_commission &&
+      // Některá zakázka se ještě dělá. U víc zakázek nestačí koukat na první:
+      // hotová první zakázka nabídla „Připraveno k odeslání" ve chvíli, kdy se
+      // druhá teprve vyráběla (3. 11. 2026).
+      commissions.some((commission) => isProductionPhase(commission.stage))
   );
   /*
    * Tlačítko tu je jen u JEDINÉ zakázky. Jedno tlačítko nad víc zakázkami by
