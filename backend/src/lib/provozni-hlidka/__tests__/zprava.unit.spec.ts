@@ -1,10 +1,8 @@
 import {
   denPrahy,
-  klicAlarmu,
   klicSouhrnu,
   predmetSouhrnu,
   rozdel,
-  textAlarmu,
   textSouhrnu,
   vecNefunguje,
 } from "../zprava"
@@ -31,16 +29,7 @@ const chyba = (nazev: string, detail?: string[]): VysledekKontroly => ({
   detail,
 })
 
-describe("klíče hlídky", () => {
-  it("alarm má v klíči den, takže jedna chyba píše jednou denně", () => {
-    const rano = new Date("2026-11-03T06:00:00Z")
-    const vecer = new Date("2026-11-03T19:00:00Z")
-    expect(klicAlarmu("faktury", rano)).toBe(klicAlarmu("faktury", vecer))
-    expect(klicAlarmu("faktury", new Date("2026-11-04T06:00:00Z"))).not.toBe(
-      klicAlarmu("faktury", rano)
-    )
-  })
-
+describe("den a klíč souhrnu", () => {
   it("den se bere pražský, ne podle UTC", () => {
     /* 23:30 v Praze je ještě 3. 11., i když v UTC je 22:30 téhož dne;
        o půlnoci v Praze (23:00 UTC) už musí být 4. 11. */
@@ -48,35 +37,13 @@ describe("klíče hlídky", () => {
     expect(denPrahy(new Date("2026-11-03T23:30:00Z"))).toBe("2026-11-04")
   })
 
-  it("souhrn a alarm si klíče nepletou", () => {
-    const kdy = new Date("2026-11-03T19:00:00Z")
-    expect(klicSouhrnu(kdy)).not.toBe(klicAlarmu("souhrn", kdy))
-  })
-})
-
-describe("alarm", () => {
-  const kdy = new Date("2026-11-03T13:38:00Z")
-
-  it("nese přesné podrobnosti, ne odkaz do logu", () => {
-    const text = textAlarmu(
-      chyba("Faktury v iDokladu", [
-        "#68 · zachyceno 1125 · v metadatech není doklad ani chyba",
-      ]),
-      kdy
+  it("souhrn chodí jednou denně, ať se úloha spustí kdykoli", () => {
+    const rano = new Date("2026-11-03T06:00:00Z")
+    const vecer = new Date("2026-11-03T19:00:00Z")
+    expect(klicSouhrnu(rano)).toBe(klicSouhrnu(vecer))
+    expect(klicSouhrnu(new Date("2026-11-04T19:00:00Z"))).not.toBe(
+      klicSouhrnu(vecer)
     )
-
-    expect(text).toContain("Faktury v iDokladu")
-    expect(text).toContain("#68")
-    expect(text).toContain("v metadatech není doklad ani chyba")
-    expect(text).not.toMatch(/log(u|y)? serveru/i)
-  })
-
-  it("řekne, že se bude opakovat jednou denně", () => {
-    expect(textAlarmu(chyba("Platby"), kdy)).toContain("jednou denně")
-  })
-
-  it("předmět pozná rozbitou věc podle názvu", () => {
-    expect(textAlarmu(chyba("Platby"), kdy)).toContain("Kontrola: Platby")
   })
 })
 

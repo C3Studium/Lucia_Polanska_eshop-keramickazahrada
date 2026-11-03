@@ -27,8 +27,8 @@ Dvě věci z toho plynou pro celý návrh:
 
 | Kdy | Co | Komu |
 | --- | --- | --- |
-| Hned (max 1× denně na tutéž věc) | Alarm s přesnými podrobnostmi | `dev_notification_email` |
-| Hned (max 1× za hodinu na tutéž věc) | Spadlá úloha, chyba webu | `dev_notification_email` |
+| Hned, u **každé nové chyby** | Alarm s přesnými podrobnostmi | `dev_notification_email` |
+| Hned | Spadlá úloha, spadlý požadavek, chyba webu | `dev_notification_email` |
 | 21:00 (20:00 UTC) | Provozní souhrn: co se stalo + co je zkontrolované | `dev_notification_email` |
 | Kdykoli | Stránka **Přehled → Provoz** | administrace |
 
@@ -60,10 +60,14 @@ kdy vznikne, aniž by si na to kdokoli vzpomněl.
 
 ### Co se nezapisuje, a to schválně
 
-- **Těla požadavků ne.** Jdou v nich hesla, platební údaje a osobní data;
-  deník je to poslední místo, kde mají ležet měsíc. Na dohledání chyby stačí
-  cesta, stav, trvání a identifikátor.
-- **Jména a e-maily ne.** U `actor` je jen `user:<id>`.
+- **Hesla, tokeny a platební údaje ne.** Těla požadavků se ukládají, ale
+  přečištěná (`lib/provozni-hlidka/redakce.ts`): bez těla se u spadlé akce
+  dohledává naslepo — „POST /admin/products selhalo 422" neřekne, které pole
+  bylo špatně. Čistí se dvakrát: podle názvu pole (`password`, `token`, `cvv`,
+  `card`, `signature`…) a podle **tvaru hodnoty**, takže JWT nebo číslo karty
+  se skryje i v poli, které se jmenuje nevinně. Tak totiž tajemství uniká:
+  nese ho pole, na které si seznam nevzpomněl.
+- **Jména a e-maily uživatelů administrace ne.** U `actor` je jen `user:<id>`.
 - **Čtení (GET) ne, dokud neselže 5xx.** 401 a 404 na čtení je běžný provoz
   prohlížeče (vypršelá relace, zahozená záložka), ne porucha. Bez tohohle
   pravidla by devět desetin deníku bylo prohlížení administrace.
@@ -100,16 +104,32 @@ Stav `nenastaveno` **není chyba** — hlídka nemá budit kvůli tomu, že v pr
 něco není vyplněné. Do souhrnu to patří, do alarmu ne; jinak se lidé naučí
 alarmy ignorovat.
 
-## 4. Proč alarm jen jednou denně
+## 4. Kdy alarm přijde a kdy ne
 
-Hlídka běží každou čtvrthodinu a účet Resend dává **100 e-mailů denně**.
-Neomezený alarm by při jedné trvalé chybě poslal 96 e-mailů, vyčerpal limit —
-a obchod by pak nemohl napsat zákazníkovi ani potvrzení objednávky. Klíč
-alarmu proto nese den (`mn:hlidka-<klíč>:<YYYY-MM-DD>`) a dedupe řeší
-notifikační modul, takže to přežije i restart služby.
+**Každá nová chyba jde hned, zvlášť.** Klíč alarmu nese *podpis konkrétní
+chyby* — akci, důvod a čeho se to týká (`alarm.ts`, `podpisChyby`). Když
+ráno selže faktura u #68 a odpoledne u #71, jsou to dva klíče a dva e-maily.
 
-Spadlá úloha a chyba webu mají v klíči hodinu, ne den: častěji je to při
-opakované chybě spam, vzácněji by se schovalo, že se to děje pořád.
+První verze měla v klíči jen kontrolu a den, a tím **druhou chybu spolkla**;
+byla to právě ta, o které se nevědělo. Na tomhle se neustupuje.
+
+**Tatáž chyba jde jednou za den.** Opakování téhož nálezu je pořád jeden
+e-mail: dvacáté hlášení o jedné rozbité věci není informace. V podpisu se
+zahazují jen čísla o čtyřech a víc číslicích (trvání v ms, časová razítka);
+**stavové kódy se nechávají**, protože 500 od brány je jiná porucha než 401.
+Dřív se zahazovala všechna čísla a obě chyby se slily — přišel na to test.
+
+**Strop je 40 alarmů za den.** Účet Resend dává sto e-mailů denně a sdílí je
+s objednávkami zákazníků. Při hromadné poruše (spadlá brána, padesát
+objednávek za hodinu) by deník vyčerpal limit a zákazník by nedostal ani
+potvrzení. Při dosažení stropu odejde JEDEN e-mail o tom, že se strop
+vyčerpal, a dál se chyby zapisují už jen do deníku — odkud je přečte večerní
+souhrn a stránka Provoz. Padesátá chyba za hodinu neříká nic, co by neřekla
+desátá.
+
+**V předmětu je cizí služba**, je-li ve hře: „Nefunguje: Platby — ComGate".
+Rozdíl mezi ComGate a Českou poštou je rozdíl mezi dvěma úplně jinými
+odpoledni (`sluzba.ts`), a v okamžiku alarmu to má být vidět z předmětu.
 
 ## 5. Co hlídka nepozná
 

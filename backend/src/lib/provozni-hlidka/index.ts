@@ -1,16 +1,16 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
-import { notifyMerchant } from "../notify"
 import { ACTIVITY_LOG_MODULE } from "../../modules/activity-log"
 import type ActivityLogModuleService from "../../modules/activity-log/service"
+import { posliAlarm } from "./alarm"
 import { KONTROLY } from "./kontroly"
 import type { ZaznamProvozu } from "./denik"
 import type { VysledekKontroly } from "./typy"
-import { klicAlarmu, predmetAlarmu, textAlarmu } from "./zprava"
 
 export * from "./typy"
 export * from "./zapis"
 export { KONTROLY } from "./kontroly"
+export { posliAlarm, podpisChyby } from "./alarm"
 
 /**
  * Provozní hlídka — spuštění a hlášení (3. 11. 2026).
@@ -46,6 +46,7 @@ export const spustKontroly = async (
           String((error as Error)?.stack ?? "")
             .split("\n")
             .slice(1, 5)
+            .map((radek) => radek.trim())
             .join("\n"),
         ].filter(Boolean),
       })
@@ -56,10 +57,12 @@ export const spustKontroly = async (
 }
 
 /**
- * Pošle alarm ke každé rozbité kontrole. Klíč nese den, takže jedna rozbitá
- * věc píše jednou denně — hlídka běží každou čtvrthodinu a Resend dává sto
- * e-mailů denně, takže neomezený alarm by vyčerpal limit a obchod by pak
- * nemohl napsat zákazníkovi.
+ * Pošle alarm ke každé rozbité kontrole.
+ *
+ * Podpis chyby se bere z PODROBNOSTÍ, ne jen z názvu kontroly: když ráno
+ * selže faktura u #68 a odpoledne u #71, je to jiná chyba a musí přijít
+ * druhý e-mail. Opakování téhož nálezu je pořád jeden e-mail za den —
+ * dvacáté hlášení o jedné rozbité věci není informace.
  */
 export const ohlasKontroly = async (
   container: MedusaContainer,
@@ -71,14 +74,19 @@ export const ohlasKontroly = async (
   for (const vysledek of vysledky) {
     if (vysledek.stav !== "chyba") continue
 
-    await notifyMerchant(container, {
-      key: klicAlarmu(vysledek.klic, kdy),
-      title: predmetAlarmu(vysledek),
-      description: textAlarmu(vysledek, kdy),
-      audience: "dev",
-      urgent: true,
-    })
-    posláno += 1
+    const stav = await posliAlarm(
+      container,
+      {
+        klic: vysledek.klic,
+        nazev: vysledek.nazev,
+        zprava: vysledek.zprava,
+        detail: vysledek.detail,
+        podpis: [vysledek.zprava, ...(vysledek.detail ?? [])],
+      },
+      kdy
+    )
+
+    if (stav === "poslano") posláno += 1
   }
 
   return posláno
@@ -86,10 +94,7 @@ export const ohlasKontroly = async (
 
 /**
  * Okamžitý alarm k jedné selhané věci — pro spadlou úlohu a pro chybu webu,
- * které nemají vlastní kontrolu a o kterých by se jinak nikdo nedozvěděl.
- *
- * Klíč drží jedno hlášení za hodinu na tutéž věc: častěji je to při opakované
- * chybě jen spam, a vzácnější by schovalo, že se to děje pořád.
+ * které vlastní kontrolu nemají.
  */
 export const ohlasHned = async (
   container: MedusaContainer,
@@ -98,25 +103,20 @@ export const ohlasHned = async (
     nazev: string
     zprava: string
     detail?: string[]
+    cehoSeTyka?: { typ: string; id: string } | null
   },
   kdy: Date = new Date()
 ): Promise<void> => {
-  const hodina = kdy.toISOString().slice(0, 13)
-  const vysledek: VysledekKontroly = {
-    klic: vec.klic,
-    nazev: vec.nazev,
-    stav: "chyba",
-    zprava: vec.zprava,
-    detail: vec.detail,
-  }
-
-  await notifyMerchant(container, {
-    key: `mn:hlidka-${vec.klic}:${hodina}`,
-    title: predmetAlarmu(vysledek),
-    description: textAlarmu(vysledek, kdy),
-    audience: "dev",
-    urgent: true,
-  })
+  await posliAlarm(
+    container,
+    {
+      ...vec,
+      /* Jiný text výjimky = jiná chyba = další e-mail. Tentýž pád se po
+         zbytek dne už jen zapisuje. */
+      podpis: [vec.zprava],
+    },
+    kdy
+  )
 }
 
 /** Záznamy deníku za okno — podklad pro denní souhrn a stránku Provoz. */

@@ -73,6 +73,9 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     kdo: "obchod",
     popis: zprava.slice(0, 300),
     detail: { cesta, chyba: zprava, ...(stopa ? { stopa } : {}) },
+    /* Alarm posílá tahle routa sama, s cestou a stopou — bez tohohle by
+       k jedné chybě webu odešly dva e-maily. */
+    bezAlarmu: true,
   })
 
   if (uroven === "error") {

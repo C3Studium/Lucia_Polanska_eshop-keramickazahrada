@@ -27,14 +27,11 @@ const casPrahy = (kdy: Date): string =>
     minute: "2-digit",
   })
 
-/**
- * Klíč alarmu nese den, takže jedna rozbitá věc píše JEDNOU DENNĚ, ne
- * každých patnáct minut. Resend dává 100 e-mailů denně — hlídka, která
- * při jedné chybě pošle 96 e-mailů, vyčerpá limit a obchod pak nemůže
- * napsat zákazníkovi.
+/*
+ * Alarmy si texty i klíče dělají samy v `alarm.ts`: jejich klíč nese podpis
+ * konkrétní chyby, ne jen den, aby nová chyba přišla hned. Tady zůstává to,
+ * co patří dennímu souhrnu.
  */
-export const klicAlarmu = (klic: string, kdy: Date): string =>
-  `mn:hlidka-${klic}:${denPrahy(kdy)}`
 
 /** Souhrn chodí jednou za den — klíč to drží i přes restart služby. */
 export const klicSouhrnu = (kdy: Date): string =>
@@ -56,39 +53,6 @@ export const vecNefunguje = (pocet: number): string => {
 const DO_CHATU =
   "Tenhle e-mail můžete celý vložit do chatu s Claudem — jsou v něm " +
   "všechna čísla, podle kterých se to dá dohledat."
-
-export const predmetAlarmu = (vysledek: VysledekKontroly): string =>
-  `Nefunguje: ${vysledek.nazev}`
-
-/**
- * Alarm nese tři věci: co se kontrolovalo, co je špatně a přesné
- * podrobnosti. Nikdy neodkazuje „podívejte se do logu serveru" — k logu
- * se od telefonu nikdo nedostane, a právě tehdy alarm přijde.
- */
-export const textAlarmu = (vysledek: VysledekKontroly, kdy: Date): string => {
-  const radky = [
-    `Kontrola: ${vysledek.nazev}`,
-    `Kdy: ${casPrahy(kdy)}`,
-    "",
-    "Co je špatně:",
-    vysledek.zprava,
-  ]
-
-  if (vysledek.detail?.length) {
-    radky.push("", "Podrobnosti:")
-    for (const polozka of vysledek.detail) {
-      radky.push(`· ${polozka}`)
-    }
-  }
-
-  radky.push(
-    "",
-    "Dokud to trvá, tenhle e-mail přijde jednou denně — ne každou čtvrthodinu.",
-    DO_CHATU
-  )
-
-  return radky.join("\n")
-}
 
 export const predmetSouhrnu = (
   vysledky: VysledekKontroly[],

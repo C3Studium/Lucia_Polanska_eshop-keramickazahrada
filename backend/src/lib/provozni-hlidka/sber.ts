@@ -3,6 +3,7 @@ import type {
   MedusaRequest,
   MedusaResponse,
 } from "@medusajs/framework/http"
+import { teloProDenik } from "./redakce"
 import { zapisProvoz, type DruhProvozu } from "./zapis"
 
 /**
@@ -17,11 +18,14 @@ import { zapisProvoz, type DruhProvozu } from "./zapis"
  * dokončení košíku. Stačí tedy sbírat tady a nová funkce je v deníku ode dne,
  * kdy vznikne, aniž by si na to kdokoli vzpomněl.
  *
- * ## Co se nezapisuje, a to schválně
+ * ## Těla požadavků
  *
- * **Těla požadavků ne.** Jdou v nich hesla, platební údaje a osobní data,
- * a deník je to poslední místo, kde mají ležet měsíc. Na dohledání chyby
- * stačí cesta, stav, trvání a identifikátor.
+ * Ukládají se **přečištěná** (`redakce.ts`): bez těla se u spadlé akce
+ * dohledává naslepo — „POST /admin/products selhalo 422" neřekne, které pole
+ * bylo špatně. Hesla, platební údaje a podpisy se cestou nahrazují
+ * `[skryto]`, a to jak podle názvu pole, tak podle tvaru hodnoty.
+ *
+ * ## Co se nezapisuje, a to schválně
  *
  * **Čtení (GET) ne, dokud neselže.** Jinak by devět desetin deníku bylo
  * prohlížení administrace a to podstatné by se v tom utopilo.
@@ -139,15 +143,23 @@ export const zapisovacProvozu = () =>
 
       const normalizovana = normalizujCestu(url)
 
+      /* Tělo se čte z `req.body`, tedy z už naparsovaného objektu —
+         surovými bajty (`req.rawBody`, na kterých stojí podpisy webhooků)
+         to nikdy nehýbe. */
+      const telo = teloProDenik(req.body)
+
       void zapisProvoz(req.scope, {
         druh: druhZCesty(url),
         akce: `${metoda} ${normalizovana}`,
         stav: selhalo ? "chyba" : "ok",
         kdo: kdo(req),
         popis: selhalo ? `odpověď ${stavKod}` : null,
-        detail: selhalo
-          ? { stav: stavKod, cesta: url, metoda }
-          : null,
+        detail: {
+          ...(selhalo ? { stav: stavKod, chyba: `odpověď ${stavKod}` } : {}),
+          cesta: url,
+          metoda,
+          ...(telo === null ? {} : { telo }),
+        },
         trvaloMs: Date.now() - start,
       })
     })

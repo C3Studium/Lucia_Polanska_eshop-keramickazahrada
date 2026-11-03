@@ -1,6 +1,6 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
-import { ohlasHned } from "./index"
+import { posliAlarm } from "./alarm"
 import { zapisProvoz } from "./zapis"
 
 /**
@@ -17,7 +17,7 @@ import { zapisProvoz } from "./zapis"
  * a stopou, a výjimku pustí dál — plánovač se tedy chová, jak se od něj
  * čeká, a nic se nespolkne.
  *
- * ## Proč se nepřeskakuje tiché selhání
+ * ## Proč se nepozná tiché selhání
  *
  * Úloha, která skončí bez výjimky, ale nic neudělá, se tady nepozná. To
  * hlídají kontroly (`kontroly.ts`), které se ptají na výsledek — podání
@@ -55,24 +55,27 @@ export const sUlohou =
         popis: zprava,
         detail: { chyba: zprava, stopa: stopa.join("\n") },
         trvaloMs: Date.now() - start,
+        /* Alarm posílá tenhle obal sám, s názvem úlohy a stopou — bez
+           tohohle by k jednomu pádu odešly dva e-maily. */
+        bezAlarmu: true,
       })
 
-      /* Alarm nesmí přebít původní výjimku — kdyby selhalo i odeslání,
-         plánovač má pořád dostat tu chybu, kvůli které úloha spadla. */
-      try {
-        await ohlasHned(container, {
-          klic: `uloha-${nazev}`,
-          nazev: `Úloha ${nazev}`,
-          zprava: `spadla: ${zprava}`,
-          detail: [`Úloha: ${nazev}`, `Výjimka: ${zprava}`, ...stopa],
-        })
-      } catch (chybaAlarmu) {
+      /* Alarm nesmí přebít původní výjimku: `posliAlarm` nikdy nevyhazuje,
+         takže plánovač dostane tu chybu, kvůli které úloha spadla. */
+      const stavAlarmu = await posliAlarm(container, {
+        klic: `uloha-${nazev}`,
+        nazev: `Úloha ${nazev}`,
+        zprava: `spadla: ${zprava}`,
+        detail: [`Úloha: ${nazev}`, `Výjimka: ${zprava}`, ...stopa],
+        /* Jiná výjimka = jiná chyba = další e-mail hned. Tentýž pád se po
+           zbytek dne už jen zapisuje do Provozu. */
+        podpis: [zprava],
+      })
+
+      if (stavAlarmu === "chyba") {
         container
           .resolve(ContainerRegistrationKeys.LOGGER)
-          .warn(
-            `[provoz] alarm k spadlé úloze ${nazev} se nepodařilo odeslat: ` +
-              String((chybaAlarmu as Error)?.message ?? chybaAlarmu)
-          )
+          .warn(`[provoz] alarm k spadlé úloze ${nazev} se nepodařilo odeslat`)
       }
 
       throw error

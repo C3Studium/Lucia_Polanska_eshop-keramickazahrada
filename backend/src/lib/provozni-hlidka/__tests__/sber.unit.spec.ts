@@ -32,12 +32,19 @@ const prostredi = () => {
 const projdi = async (
   metoda: string,
   url: string,
-  statusCode: number
+  statusCode: number,
+  telo?: Record<string, unknown>
 ): Promise<Zapsane[]> => {
   const { zapsane, scope } = prostredi()
   const posluchaci: Array<() => void> = []
 
-  const req = { method: metoda, originalUrl: url, headers: {}, scope } as never
+  const req = {
+    method: metoda,
+    originalUrl: url,
+    headers: {},
+    scope,
+    ...(telo ? { body: telo } : {}),
+  } as never
   const res = {
     statusCode,
     on: (jmeno: string, posluchac: () => void) => {
@@ -96,9 +103,19 @@ describe("sběr provozu z HTTP", () => {
     expect((zapsane[0].detail as Record<string, unknown>).stav).toBe(422)
   })
 
-  it("tělo požadavku se nikdy nezapíše", async () => {
-    const zapsane = await projdi("POST", "/admin/products", 201)
-    expect(JSON.stringify(zapsane[0])).not.toContain("body")
+  it("tělo se zapíše, ale bez hesel a platebních údajů", async () => {
+    const zapsane = await projdi("POST", "/store/customers", 201, {
+      email: "jana@example.com",
+      password: "velmiTajne123",
+      card: "4111111111111117",
+    })
+
+    const jako = JSON.stringify(zapsane[0])
+    /* Bez těla se u spadlé akce dohledává naslepo — proto tam je. */
+    expect(jako).toContain("jana@example.com")
+    /* A proto, co v něm nesmí být, být nesmí ani náhodou. */
+    expect(jako).not.toContain("velmiTajne123")
+    expect(jako).not.toContain("4111111111111117")
   })
 
   it("vlastní stránka Provoz se nezapisuje, aby deník nehlásil sám sebe", async () => {
