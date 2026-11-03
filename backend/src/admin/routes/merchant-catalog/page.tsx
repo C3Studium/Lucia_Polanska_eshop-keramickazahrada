@@ -424,7 +424,7 @@ const CollectionEditor = ({
         </Drawer.Body>
         <Drawer.Footer>
           <Button variant="secondary" onClick={() => setOpen(false)}>
-            Zrušit
+            Zavřít
           </Button>
           <Button
             variant="primary"
@@ -432,7 +432,7 @@ const CollectionEditor = ({
             disabled={!draft.title.trim() || !draft.handle.trim()}
             onClick={() => updateCollection.mutate(draft)}
           >
-            Uložit změny
+            Uložit
           </Button>
         </Drawer.Footer>
       </Drawer.Content>
@@ -479,7 +479,9 @@ const CatalogPageInner = () => {
       <UnclassifiedBanner />
       <header className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-end md:justify-between">
         <div>
-          <Heading>Kolekce a kategorie</Heading>
+          {/* Ne „Kolekce a kategorie" — tak se v menu jmenuje stránka
+              /rozdeleni a dvě stránky téhož jména by se pletly. */}
+          <Heading>Kolekce — údaje pro web</Heading>
           <Text size="small" className="text-ui-fg-subtle mt-1 max-w-2xl">
             Kolekce jsou hlavní prostředí obchodu. Každá z nich obsahuje vlastní
             kategorie a produkty.

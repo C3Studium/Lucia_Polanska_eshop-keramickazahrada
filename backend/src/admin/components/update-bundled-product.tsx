@@ -284,7 +284,7 @@ const UpdateBundledProduct = ({
             onClick={() => setOpen(false)}
             disabled={isPending}
           >
-            Zrušit
+            Zavřít
           </Button>
           <Button
             variant="primary"

@@ -567,7 +567,7 @@ export const CourseTermWizard = ({
           {step === "kdy" ? (
             <>
               <Drawer.Close asChild>
-                <Button variant="secondary">Zrušit</Button>
+                <Button variant="secondary">Zavřít</Button>
               </Drawer.Close>
               <Button
                 disabled={stepOneProblems.length > 0}

@@ -192,9 +192,11 @@ export const ProductSortingGuide = () => {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {/* Jedna věta, co se tu dělá — fronta jinak působí jako další seznam. */}
         <Text size="small" className="text-ui-fg-subtle">
-          Roztříděno {doneCount} z {allProducts.length} · ve frontě {queue.length}
+          Kusy bez kategorie, jeden po druhém · hotovo {doneCount} z{" "}
+          {allProducts.length}, zbývá {queue.length}
         </Text>
         <div className="bg-ui-bg-subtle h-1.5 w-40 overflow-hidden rounded-full">
           <div
@@ -269,7 +271,7 @@ export const ProductSortingGuide = () => {
             </label>
             <label className="flex items-center gap-2">
               <Switch checked={isDamaged} onCheckedChange={setIsDamaged} />
-              <Text size="small">Poškozený kus / výprodej</Text>
+              <Text size="small">Poškozený kus</Text>
             </label>
           </div>
 

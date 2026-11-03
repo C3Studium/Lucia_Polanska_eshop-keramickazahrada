@@ -2,32 +2,34 @@ import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { Users } from "@medusajs/icons";
 import {
   Badge,
-  Button,
   Container,
   Drawer,
   Heading,
   Input,
   Skeleton,
   Text,
-  Textarea,
-  Toaster,
-  toast,
 } from "@medusajs/ui";
 import {
   QueryClientProvider,
-  useMutation,
   useQuery,
-  useQueryClient,
 } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState } from "../../components/empty-state";
-import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
+import { CopyId, ExpertToggle, useExpertMode } from "../../lib/expert-mode";
 import { SubTabs } from "../../components/work-tabs";
 import { formatCzk } from "../../lib/workbench";
 import { formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
-import { ThankYouButton } from "../../components/thank-you-button";
+import {
+  CustomerCard,
+  isRegularCustomer,
+  RegularCustomerBadge,
+} from "../../components/customer-card";
+import {
+  LoyaltySettingsButton,
+  useLoyaltySettings,
+} from "../../components/loyalty-code-panel";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
 
@@ -72,14 +74,6 @@ type WorkbenchCustomersResponse = {
 };
 
 /**
- * Everything the shop has sent this customer, plus a private note.
- *
- * The note goes to the native customer record's metadata — the one canonical
- * place — so it survives this page and shows nowhere a customer could see
- * it. Failures in the e-mail list are shown deliberately: a send that failed
- * is the answer to „proč mi nic nepřišlo?".
- */
-/**
  * Whether the row should nudge her to say thank you.
  *
  * Three orders or more, with the most recent inside six months — someone who has
@@ -101,78 +95,22 @@ const deservesThanks = (customer: {
   return days <= THANKS_WINDOW_DAYS;
 };
 
+/**
+ * Karta zákazníka ve výsuvném panelu — hlavní čísla, poznámka, slevový kód
+ * a rozbalovací zbytek (`components/customer-card.tsx`, sdílí ji i widget na
+ * nativním detailu zákazníka). Obsah se načte až při otevření.
+ */
 const CustomerDrawer = ({
   customer,
   trigger,
+  openWithCode = false,
 }: {
   customer: WorkbenchCustomer;
   trigger: React.ReactNode;
+  /** Otevřít rovnou s formulářem „Poslat slevový kód". */
+  openWithCode?: boolean;
 }) => {
   const [open, setOpen] = useState(false);
-  const [note, setNote] = useState("");
-  const queryClient = useQueryClient();
-
-  const { data: emails, isLoading: emailsLoading } = useQuery<{
-    emails: { template: string; status: string; created_at: string }[];
-  }>({
-    queryKey: ["workbench-customer-emails", customer.id],
-    queryFn: () =>
-      sdk.client.fetch(`/admin/workbench/customers/${customer.id}/emails`),
-    enabled: open,
-  });
-
-  const { data: detail } = useQuery<{ customer: { metadata?: Record<string, unknown> | null } }>({
-    queryKey: ["workbench-customer-detail", customer.id],
-    queryFn: () => sdk.client.fetch(`/admin/customers/${customer.id}`),
-    enabled: open,
-  });
-
-  const { data: full } = useQuery<{
-    orders: {
-      id: string;
-      display_id: number | string;
-      created_at: string;
-      total: number;
-      stage: string | null;
-      made_to_order: boolean;
-      outstanding: number;
-    }[];
-  }>({
-    queryKey: ["workbench-customer-full", customer.id],
-    queryFn: () =>
-      sdk.client.fetch(`/admin/workbench/customers/${customer.id}`),
-    enabled: open,
-  });
-
-  useEffect(() => {
-    if (open && detail) {
-      const stored = detail.customer?.metadata?.poznamka;
-      setNote(typeof stored === "string" ? stored : "");
-    }
-  }, [open, detail]);
-
-  const saveNote = useMutation({
-    mutationFn: () =>
-      sdk.client.fetch(`/admin/customers/${customer.id}`, {
-        method: "POST",
-        body: {
-          metadata: {
-            ...((detail?.customer?.metadata as Record<string, unknown>) ?? {}),
-            poznamka: note.trim() || null,
-          },
-        },
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["workbench-customer-detail", customer.id],
-      });
-      toast.success("Poznámka uložena.");
-    },
-    onError: (error) =>
-      toast.error(
-        ceskaChyba(error, "Poznámku se nepodařilo uložit")
-      ),
-  });
 
   return (
     <Drawer open={open} onOpenChange={setOpen}>
@@ -181,79 +119,10 @@ const CustomerDrawer = ({
         <Drawer.Header>
           <Drawer.Title>{customer.name || customer.email}</Drawer.Title>
         </Drawer.Header>
-        <Drawer.Body className="flex flex-col gap-y-5 overflow-y-auto">
-          <div>
-            <Text size="small" weight="plus">
-              Poznámka (vidíte jen vy)
-            </Text>
-            <Textarea
-              rows={3}
-              className="mt-2"
-              placeholder="Např.: Preferuje osobní odběr, alergie na chrom…"
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-            />
-            <Button
-              size="small"
-              variant="secondary"
-              className="mt-2"
-              isLoading={saveNote.isPending}
-              onClick={() => saveNote.mutate()}
-            >
-              Uložit poznámku
-            </Button>
-          </div>
-
-          <div>
-            <Text size="small" weight="plus">
-              Objednávky
-            </Text>
-            {(full?.orders ?? []).length === 0 && (
-              <Text size="xsmall" className="text-ui-fg-subtle mt-2">
-                Zatím žádná objednávka.
-              </Text>
-            )}
-            {(full?.orders ?? []).map((order) => (
-              <Text key={order.id} size="xsmall" className="mt-1.5">
-                <Link
-                  to={`/orders/${order.id}`}
-                  className="text-ui-fg-interactive hover:underline"
-                >
-                  #{order.display_id}
-                </Link>{" "}
-                · {formatCzk(order.total)} · {formatDate(order.created_at)}
-                {order.made_to_order ? " · zakázka" : ""}
-                {order.outstanding > 0
-                  ? ` · dluží ${formatCzk(order.outstanding)}`
-                  : ""}
-              </Text>
-            ))}
-          </div>
-
-          <div>
-            <Text size="small" weight="plus">
-              Odeslané e-maily
-            </Text>
-            {emailsLoading && (
-              <Skeleton className="mt-2 h-10 rounded-lg" />
-            )}
-            {!emailsLoading && (emails?.emails.length ?? 0) === 0 && (
-              <Text size="xsmall" className="text-ui-fg-subtle mt-2">
-                Tomuto zákazníkovi zatím nic neodešlo.
-              </Text>
-            )}
-            {(emails?.emails ?? []).map((email, index) => (
-              <Text key={index} size="xsmall" className="mt-1.5">
-                {email.template}
-                {email.status === "failure" ? " · NEDORUČENO" : ""}{" "}
-                <span className="text-ui-fg-muted">
-                  {formatDate(email.created_at)}
-                </span>
-              </Text>
-            ))}
-          </div>
-
-          <RawData data={{ customer, detail, orders: full?.orders }} />
+        <Drawer.Body className="overflow-y-auto">
+          {open && (
+            <CustomerCard customerId={customer.id} initialCodeOpen={openWithCode} />
+          )}
         </Drawer.Body>
       </Drawer.Content>
     </Drawer>
@@ -366,6 +235,8 @@ const ZakazniciInner = () => {
     return () => window.clearTimeout(timer);
   }, [searchInput]);
   const expert = useExpertMode();
+  // Hranice „Stálý zákazník" = hranice, od které chodí kód (nastavení).
+  const { data: loyaltySettings } = useLoyaltySettings();
 
   const params = new URLSearchParams();
   params.set(
@@ -394,7 +265,6 @@ const ZakazniciInner = () => {
 
   return (
     <Container className="divide-y p-0">
-      <Toaster />
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
         <div>
           <Heading>Zákazníci — kdo je kdo</Heading>
@@ -404,6 +274,7 @@ const ZakazniciInner = () => {
           </Text>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+        <LoyaltySettingsButton />
         <ExpertToggle />
         <Input
           size="small"
@@ -492,6 +363,9 @@ const ZakazniciInner = () => {
                   )}
                   {customer.email_verified === false && (
                     <Badge size="2xsmall" color="orange">e-mail neověřen</Badge>
+                  )}
+                  {isRegularCustomer(customer.orders_count, loyaltySettings?.after_orders) && (
+                    <RegularCustomerBadge ordersCount={customer.orders_count} />
                   )}
                 </span>
                 <Text size="xsmall" className="text-ui-fg-subtle mt-1 truncate">
@@ -587,12 +461,23 @@ const ZakazniciInner = () => {
                 >
                   Napsat
                 </a>
-                {/* Starred when the numbers already argue for it — three orders or more,
-                    and one of them recent enough that a thank-you still reads as one. */}
-                <ThankYouButton
-                  customerId={customer.id}
-                  customerName={customer.name || customer.email}
-                  suggested={deservesThanks(customer)}
+                {/* Hvězdička, když to čísla už říkají — tři objednávky a víc, jedna
+                    z nich nedávno. Otevře Kartu rovnou s formulářem kódu. */}
+                <CustomerDrawer
+                  customer={customer}
+                  openWithCode
+                  trigger={
+                    <button
+                      type="button"
+                      className={
+                        deservesThanks(customer)
+                          ? "text-ui-fg-interactive txt-small font-medium hover:underline"
+                          : "text-ui-fg-subtle txt-small hover:underline"
+                      }
+                    >
+                      Slevový kód{deservesThanks(customer) ? " ★" : ""}
+                    </button>
+                  }
                 />
               </div>
             </article>
@@ -612,7 +497,7 @@ const ZakazniciWorkbenchPage = () => (
 );
 
 export const config = defineRouteConfig({
-  label: "Zákazníci+",
+  label: "Zákazníci",
   icon: Users,
   rank: 60,
 });

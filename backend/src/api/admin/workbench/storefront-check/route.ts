@@ -5,6 +5,7 @@ import {
   isVacationActive,
 } from "../../../../lib/merchant-settings"
 import { storefrontBase } from "../../../../lib/storefront-url"
+import { isPriceOnRequest } from "../../../../lib/price-on-request"
 
 /**
  * Vitrína — walks the customer's path from the backend and reports what
@@ -31,6 +32,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         "id",
         "title",
         "status",
+        "metadata",
         "variants.id",
         "variants.prices.amount",
         "variants.prices.currency_code",
@@ -40,6 +42,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     })
     const unbuyable: { id: string; title: string }[] = []
     for (const product of products as any[]) {
+      // Cena po domluvě (hlavně zakázky) cenu mít nemusí — přijde až e-mailem.
+      if (isPriceOnRequest(product.metadata)) continue
       const variants = product.variants ?? []
       const priced = variants.some((variant: any) =>
         (variant.prices ?? []).some(

@@ -64,10 +64,12 @@ import { CourseReminderEmail } from "./emails/course-reminder";
 import { CourseWaitlistSpotEmail } from "./emails/course-waitlist-spot";
 import { CourseReservationCancelledEmail } from "./emails/course-reservation-cancelled";
 import { CourseRequestEmail } from "./emails/course-request";
+import { CourseMessageEmail } from "./emails/course-message";
 import { CommissionInquiryReceivedEmail } from "./emails/commission-inquiry-received";
 import { GiftVoucherEmail } from "./emails/gift-voucher";
 import { GiftVoucherPaymentEmail } from "./emails/gift-voucher-payment";
 import { CommissionPriceAgreedEmail } from "./emails/commission-price-agreed";
+import { LoyaltyCodeEmail } from "./emails/loyalty-code";
 import { CONTACT_EMAIL, withEmailLegalFacts } from "./components/email-ui";
 import { loadEmailLegalFacts } from "./live-legal-facts";
 import { withEmailLocale } from "./components/email-i18n";
@@ -161,6 +163,8 @@ enum Templates {
   COURSE_RESERVATION_CANCELLED = "course-reservation-cancelled",
   // Žádost o místo na plném termínu: přijata / schválena / zamítnuta (data.variant).
   COURSE_REQUEST = "course-request",
+  // Zpráva majitelky všem účastníkům termínu (api/admin/courses/terms/[id]/message).
+  COURSE_MESSAGE = "course-message",
   // Poptávka zakázky ze stránky Výroba — potvrzení zákazníkovi
   // (api/store/commission-inquiries).
   COMMISSION_INQUIRY_RECEIVED = "commission-inquiry-received",
@@ -169,6 +173,8 @@ enum Templates {
   GIFT_VOUCHER_PAYMENT = "gift-voucher-payment",
   // Cena po domluvě — domluvená cena + zaplatit zálohu / celé.
   COMMISSION_PRICE_AGREED = "commission-price-agreed",
+  // Jednorázový slevový kód pro stálého zákazníka (lib/loyalty-code.ts).
+  LOYALTY_CODE = "loyalty-code",
   // TODO(emails): the remaining templates in ./emails/ are designed but have
   // no trigger to hang off yet. Register them here (both enums + the map +
   // a subject) once the underlying feature exists:
@@ -249,10 +255,12 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.COURSE_WAITLIST_SPOT]: CourseWaitlistSpotEmail,
   [Templates.COURSE_RESERVATION_CANCELLED]: CourseReservationCancelledEmail,
   [Templates.COURSE_REQUEST]: CourseRequestEmail,
+  [Templates.COURSE_MESSAGE]: CourseMessageEmail,
   [Templates.COMMISSION_INQUIRY_RECEIVED]: CommissionInquiryReceivedEmail,
   [Templates.GIFT_VOUCHER]: GiftVoucherEmail,
   [Templates.GIFT_VOUCHER_PAYMENT]: GiftVoucherPaymentEmail,
   [Templates.COMMISSION_PRICE_AGREED]: CommissionPriceAgreedEmail,
+  [Templates.LOYALTY_CODE]: LoyaltyCodeEmail,
 }
 
 export enum EmailTemplates {
@@ -318,12 +326,14 @@ export enum EmailTemplates {
   COURSE_RESERVATION_CANCELLED = "course-reservation-cancelled",
   // Žádost o místo na plném termínu: přijata / schválena / zamítnuta (data.variant).
   COURSE_REQUEST = "course-request",
+  COURSE_MESSAGE = "course-message",
   COMMISSION_INQUIRY_RECEIVED = "commission-inquiry-received",
   // Dárkové poukazy (stránka Poukazy, lib/gift-voucher-emails.ts).
   GIFT_VOUCHER = "gift-voucher",
   GIFT_VOUCHER_PAYMENT = "gift-voucher-payment",
   // Cena po domluvě — domluvená cena + zaplatit zálohu / celé.
   COMMISSION_PRICE_AGREED = "commission-price-agreed",
+  LOYALTY_CODE = "loyalty-code",
 }
 
 /**
@@ -645,6 +655,9 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       case Templates.COURSE_REQUEST:
         // Výchozí; odesílatel posílá předmět podle stavu v `data.subject`.
         return "Žádost o místo na kurzu"
+      case Templates.COURSE_MESSAGE:
+        // Výchozí; rozeslání posílá předmět (vlastní nebo s názvem kurzu) v `data.subject`.
+        return "Zpráva ke kurzu keramiky"
       case Templates.COMMISSION_INQUIRY_RECEIVED:
         return "Děkuji za poptávku — ozvu se s nabídkou"
       case Templates.GIFT_VOUCHER:
@@ -653,6 +666,8 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Dárkový poukaz — odkaz k zaplacení"
       case Templates.COMMISSION_PRICE_AGREED:
         return "Domluvená cena za vaši zakázku"
+      case Templates.LOYALTY_CODE:
+        return "Malé poděkování — slevový kód jen pro vás"
       case Templates.SURCHARGE_NOTICE:
         return "K vaší zakázce přibyl příplatek"
       case Templates.SURCHARGE_CONFIRMED:

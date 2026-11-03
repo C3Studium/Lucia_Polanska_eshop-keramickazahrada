@@ -1,5 +1,4 @@
-import { defineWidgetConfig } from "@medusajs/admin-sdk"
-import type { AdminOrder, DetailWidgetProps } from "@medusajs/framework/types"
+import type { AdminOrder } from "@medusajs/framework/types"
 import { Badge, Button, Container, Heading, Text, toast } from "@medusajs/ui"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { sdk } from "../lib/sdk"
@@ -23,9 +22,11 @@ import {
  *
  * Poukazy vznikají až po `order.placed`, takže hned po dokončení objednávky
  * tu chvíli nemusí být — widget se pak prostě neukáže.
+ *
+ * Vykresluje ho „Práce s objednávkou" (`order-workspace-main.tsx`), 3. 11. 2026.
  */
 
-const OrderGiftVouchersWidget = ({ data: order }: DetailWidgetProps<AdminOrder>) => {
+export const OrderGiftVouchersPanel = ({ order }: { order: AdminOrder }) => {
   const queryClient = useQueryClient()
   const orderId = String(order?.id ?? "")
 
@@ -66,7 +67,15 @@ const OrderGiftVouchersWidget = ({ data: order }: DetailWidgetProps<AdminOrder>)
   })
 
   const vouchers = data?.gift_vouchers ?? []
-  const uplatnene = pouzito?.gift_vouchers ?? []
+  /*
+   * Jen poukazy, které v TÉHLE objednávce opravdu něco odečetly. Backend bez
+   * podpory `used_in_order_id` (starší běžící verze) parametr přeskočí a vrátí
+   * všechny poukazy — v sandboxu se pak u každé objednávky ukázalo ~60
+   * „uplatněných" poukazů (3. 11. 2026).
+   */
+  const uplatnene = (pouzito?.gift_vouchers ?? []).filter((voucher) =>
+    (voucher.redemptions ?? []).some((redemption) => redemption.order_id === orderId)
+  )
   if (isLoading || (!vouchers.length && !uplatnene.length)) {
     return null
   }
@@ -201,9 +210,3 @@ const PoukazPdf = ({ voucherId }: { voucherId: string }) => {
     </>
   )
 }
-
-export const config = defineWidgetConfig({
-  zone: "order.details.after",
-})
-
-export default OrderGiftVouchersWidget

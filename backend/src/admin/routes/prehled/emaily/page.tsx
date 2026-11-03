@@ -6,7 +6,6 @@ import {
   Skeleton,
   Tabs,
   Text,
-  Toaster,
   toast,
 } from "@medusajs/ui";
 import {
@@ -275,7 +274,6 @@ const EmailyInner = () => {
         </div>
       )}
 
-      <Toaster />
     </Container>
   );
 };

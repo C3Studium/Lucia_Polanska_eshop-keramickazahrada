@@ -37,7 +37,12 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       }),
       safely(query.graph({
         entity: "order",
-        fields: ["id", "email", "customer_id", "total", "created_at"],
+        // `items.*` + `shipping_methods.*` jen kvůli Meduse 2.18 — bez nich
+        // `total` u objednávky s dopravou spadne a záloha níž vrátí prázdno;
+        // s jediným polem dopravy (`.name`) by total vyšel bez poštovného.
+        // `version` taky: bez něj Medusa při total + shipping_methods.* spadne
+        // („Shipping method version is required to load adjustments").
+        fields: ["id", "email", "customer_id", "total", "created_at", "version", "items.*", "shipping_methods.*"],
         pagination: { take: 1000, skip: 0, order: { created_at: "DESC" } },
       }), { data: [] as any[] } as never),
       newsletter

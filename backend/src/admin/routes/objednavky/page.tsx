@@ -1,5 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { DocumentText } from "@medusajs/icons";
+import { ShoppingCart } from "@medusajs/icons";
 import {
   Badge,
   Button,
@@ -9,7 +9,6 @@ import {
   Select,
   Skeleton,
   Text,
-  Toaster,
   toast,
 } from "@medusajs/ui";
 import {
@@ -111,7 +110,7 @@ const filterTabs = [
   { key: "naposta", label: "Na poštu" },
   { key: "payment_problem", label: "Problém s platbou" },
   { key: "dluzi", label: "Čeká na doplatek" },
-  /* §11.4 — kategorie z modulu Reklamace a zrušení: zrušené objednávky,
+  /* §11.4 — kategorie z modulu Reklamace a vrácení: zrušené objednávky,
      vrácení peněz (vrácení zboží / odstoupení) a reklamace. Jen čtení
      a odkaz do modulu; žádné hromadné akce.
 
@@ -211,7 +210,7 @@ const claimEmptyState = (
       return {
         title: "Žádná zrušená objednávka",
         description:
-          "Objednávky se sem dostanou po zrušení — z modulu Reklamace a zrušení, nebo přepnutím fáze.",
+          "Objednávky se sem dostanou po zrušení — z modulu Reklamace a vrácení, nebo přepnutím fáze.",
       };
     case "refunds":
       return {
@@ -229,7 +228,7 @@ const claimEmptyState = (
 
 /**
  * Řádek v záložkách Zrušené / Vrácení peněz / Reklamace. Klik vede na detail
- * objednávky; rozhodování o žádosti zůstává v modulu Reklamace a zrušení,
+ * objednávky; rozhodování o žádosti zůstává v modulu Reklamace a vrácení,
  * kam vede hluboký odkaz (správný tab + otevřený detail).
  */
 const ClaimOrderRow = ({
@@ -366,7 +365,7 @@ const ClaimOrderRow = ({
       <div className="flex flex-wrap justify-start gap-x-3 gap-y-1 lg:justify-end">
         {link && (
           <Link to={link} className="text-ui-fg-interactive txt-small hover:underline">
-            Otevřít v Reklamace a zrušení
+            Otevřít v Reklamace a vrácení
           </Link>
         )}
         <Link to={detailHref} className="text-ui-fg-interactive txt-small hover:underline">
@@ -1287,10 +1286,9 @@ const OrdersInner = () => {
 
   return (
     <Container className="divide-y p-0">
-      <Toaster />
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
         <div>
-          <Heading>Objednávky — pracovní přehled</Heading>
+          <Heading>Objednávky</Heading>
           <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
             Každá objednávka s penězi, stavem výroby i dopravou vedle sebe.
             Běžný den zvládnete v Přehledu → Denní práce; sem se chodí, když
@@ -1737,8 +1735,8 @@ const OrdersInner = () => {
             <div className="bg-ui-bg-subtle px-6 py-2">
               <Text size="xsmall" className="text-ui-fg-subtle">
                 {claimCategory === "cancelled"
-                  ? "Zrušené objednávky s důvodem. Rozhodnutí o vrácení peněz se dělá v modulu Reklamace a zrušení."
-                  : "Jen čtení — schválit, přijmout zboží nebo vrátit peníze jde v modulu Reklamace a zrušení (odkaz v řádku)."}
+                  ? "Zrušené objednávky s důvodem. Rozhodnutí o vrácení peněz se dělá v modulu Reklamace a vrácení."
+                  : "Jen čtení — schválit, přijmout zboží nebo vrátit peníze jde v modulu Reklamace a vrácení (odkaz v řádku)."}
               </Text>
             </div>
             {claimRows.map((order) => (
@@ -1759,7 +1757,7 @@ const OrdersInner = () => {
           <div className="flex items-center justify-center gap-3 px-6 py-4">
             {claimLimit >= CLAIM_PAGE_MAX ? (
               <Text size="small" className="text-ui-fg-subtle">
-                Zobrazeno prvních {CLAIM_PAGE_MAX} — starší najdete v modulu Reklamace a zrušení.
+                Zobrazeno prvních {CLAIM_PAGE_MAX} — starší najdete v modulu Reklamace a vrácení.
               </Text>
             ) : (
               <Button
@@ -1810,8 +1808,9 @@ const OrdersWorkbenchPage = () => (
 );
 
 export const config = defineRouteConfig({
-  label: "Objednávky+",
-  icon: DocumentText,
+  label: "Objednávky",
+  icon: ShoppingCart,
+  // Hlavní, denní: hned za Přehledem (0), před Reklamacemi a vrácením (15).
   rank: 10,
 });
 

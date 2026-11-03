@@ -1,7 +1,13 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { ShieldCheck } from "@medusajs/icons";
 import {
-  Badge, Button, Container, Heading, Input, Label, Text, Textarea, Toaster, toast,
+  Badge,
+  Button,
+  Container,
+  Heading,
+  Input,
+  Label,
+  Text,
+  Textarea,
+  toast,
 } from "@medusajs/ui";
 import {
   QueryClientProvider, useMutation, useQuery, useQueryClient,
@@ -11,6 +17,8 @@ import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client";
 import { ceskaChyba } from "../../lib/ceska-chyba";
 import { formatDateTime } from "../../lib/format";
+import { SaveBar } from "../../components/save-bar";
+import { movedTo } from "../../components/section-tabs";
 /* `lib/legal-facts` je schválně bez jediného importu — jen tak smí do
    prohlížečového bundlu (viz `obsah/page.tsx`). Popisky a nápovědy jsou tak
    na jednom místě se schématem, které hlídá zápis. */
@@ -227,7 +235,6 @@ const Inner = () => {
 
   return (
     <Container className="divide-y p-0">
-      <Toaster />
       <header className="px-6 pb-4 pt-6">
         <Heading>Právní údaje</Heading>
         <Text size="small" className="text-ui-fg-subtle mt-2 max-w-3xl">
@@ -353,48 +360,33 @@ const Inner = () => {
 
       {/* Lepí se ke spodku okna: formulář je dlouhý a „Uložit" má být po ruce
           i na telefonu, ne až za devatenácti poli. */}
-      <footer className="sticky bottom-0 z-10 flex flex-wrap items-center gap-3 rounded-b-lg bg-ui-bg-base px-6 py-4">
-        <Button
-          size="base"
-          disabled={!changedKeys.length || problems.length > 0}
-          isLoading={save.isPending}
-          onClick={() =>
-            save.mutate(
-              Object.fromEntries(
-                changedKeys.map((key) => [key, (edits[key] ?? "").trim()])
-              )
+      <SaveBar
+        dirty={changedKeys.length > 0}
+        count={changedKeys.length}
+        saving={save.isPending}
+        onSave={() =>
+          save.mutate(
+            Object.fromEntries(
+              changedKeys.map((key) => [key, (edits[key] ?? "").trim()])
             )
-          }
-        >
-          Uložit
-        </Button>
-        {problems.length ? (
-          <Text size="small" className="text-ui-fg-error">
-            Opravte {problems.length === 1 ? "zvýrazněné pole" : `zvýrazněná pole (${problems.length})`}.
-          </Text>
-        ) : changedKeys.length ? (
-          <>
-            <Text size="small" className="text-ui-fg-subtle">
-              Neuložené změny: {changedKeys.length}
-            </Text>
-            <Button size="small" variant="transparent" onClick={() => setEdits({})}>
-              Zahodit
-            </Button>
-          </>
-        ) : null}
-      </footer>
+          )
+        }
+        onDiscard={() => setEdits({})}
+        problem={
+          problems.length
+            ? `Opravte ${problems.length === 1 ? "zvýrazněné pole" : `zvýrazněná pole (${problems.length})`}.`
+            : undefined
+        }
+      />
     </Container>
   );
 };
 
 const queryClient = adminQueryClient;
-const Page = () => (
+/** Obsah záložky Právní věci › Právní údaje. */
+export const PravniUdaje = () => (
   <QueryClientProvider client={queryClient}><Inner /></QueryClientProvider>
 );
-export const config = defineRouteConfig({
-  label: "Právní údaje",
-  icon: ShieldCheck,
-  // Mezi nastavení obchodu: za E-maily obchodu (110), před Obsah webu (120).
-  rank: 115,
-});
-export default Page;
+/* Bez položky v menu — stránka je záložkou „Právní věci";
+   stará adresa tam přesměruje (i s #kotvou pole). */
+export default movedTo("/pravni");

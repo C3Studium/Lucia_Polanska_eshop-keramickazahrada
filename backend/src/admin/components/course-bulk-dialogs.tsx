@@ -303,7 +303,7 @@ export const CoursePricingDrawer = ({
         </Drawer.Body>
         <Drawer.Footer>
           <Drawer.Close asChild>
-            <Button variant="secondary">Zrušit</Button>
+            <Button variant="secondary">Zavřít</Button>
           </Drawer.Close>
           <Button
             disabled={problems.length > 0 || save.isPending}
@@ -415,7 +415,7 @@ export const CourseNoteDrawer = ({
         </Drawer.Body>
         <Drawer.Footer>
           <Drawer.Close asChild>
-            <Button variant="secondary">Zrušit</Button>
+            <Button variant="secondary">Zavřít</Button>
           </Drawer.Close>
           <Button
             disabled={!payload || save.isPending}

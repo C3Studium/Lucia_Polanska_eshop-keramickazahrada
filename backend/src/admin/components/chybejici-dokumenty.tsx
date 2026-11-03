@@ -57,7 +57,7 @@ export const ChybejiciDokumenty = () => {
 
       <Text size="xsmall" className="text-ui-fg-subtle">
         Než ho nahrajete, ukáže web na tom místě náhradní text. Nahrát se dá
-        v <a href="/app/dokumenty">Dokumentech</a>.
+        v <a href="/app/pravni/dokumenty">Právní věci › Dokumenty</a>.
       </Text>
     </Container>
   );

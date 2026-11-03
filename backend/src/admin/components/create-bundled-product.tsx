@@ -163,7 +163,7 @@ const CreateBundledProduct = ({
             <div className="ml-auto flex items-center gap-x-2">
               <FocusModal.Close asChild>
                 <Button variant="secondary" size="small" disabled={isPending}>
-                  Zrušit
+                  Zavřít
                 </Button>
               </FocusModal.Close>
               <Button

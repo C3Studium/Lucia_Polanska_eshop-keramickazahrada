@@ -7,7 +7,6 @@ import {
   Skeleton,
   Tabs,
   Text,
-  Toaster,
   toast,
 } from "@medusajs/ui";
 import {
@@ -306,7 +305,6 @@ const SezonniVyberyInner = () => {
         </div>
       )}
 
-      <Toaster />
     </Container>
   );
 };

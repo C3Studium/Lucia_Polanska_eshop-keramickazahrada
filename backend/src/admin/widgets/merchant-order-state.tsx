@@ -1,12 +1,6 @@
-import { defineWidgetConfig } from "@medusajs/admin-sdk";
-import type { AdminOrder, DetailWidgetProps } from "@medusajs/framework/types";
+import type { AdminOrder } from "@medusajs/framework/types";
 import { Badge, Button, Container, Heading, Skeleton, Text, toast } from "@medusajs/ui";
-import {
-  QueryClientProvider,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   nextStage,
   nextStageLabel,
@@ -15,7 +9,6 @@ import {
   type MerchantOrderStage,
 } from "../components/merchant-order-queue";
 import { sdk } from "../lib/sdk";
-import { adminQueryClient } from "../lib/query-client"
 import { ceskaChyba, ceskyText } from "../lib/ceska-chyba";
 import { nextStepLabel, stageLabel } from "../lib/stage-words";
 import {
@@ -32,8 +25,6 @@ import {
   type ProductionStage,
   type ProductionStepAction,
 } from "../lib/production-stage";
-
-const queryClient = adminQueryClient;
 
 type MerchantOrderDetailResponse = {
   merchant_order: MerchantOrder | null;
@@ -66,8 +57,12 @@ const stepSuccess: Record<ProductionStepAction, string> = {
  * screen — so there is one order page, and the next step is visible wherever the merchant
  * arrives from. The button posts to the same endpoint and therefore runs the same
  * workflows, including the full native fulfilment flow for "Odesláno".
+ *
+ * Od 3. 11. 2026 už to není samostatný widget: vykresluje ho „Práce
+ * s objednávkou" (`order-workspace.tsx`), aby stál vždycky nahoře — Medusa 2.18
+ * jinak řadí widgety v jednom sloupci podle pořadí souborů na disku.
  */
-const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
+export const MerchantOrderStatePanel = ({ order }: { order: AdminOrder }) => {
   const cache = useQueryClient();
   const stateQuery = useQuery<MerchantOrderDetailResponse>({
     queryKey: ["merchant-order-state", order.id],
@@ -193,6 +188,62 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
       toast.error(ceskaChyba(error, "Platbu se nepodařilo zapsat")),
   });
 
+  /*
+   * „Peníze přišly (dobírka)" — totéž tlačítko a tentýž endpoint jako ve
+   * frontě Denní práce; server ho nabízí (`dobirka_waiting`) jen u dobírky,
+   * jejíž balík odjel a peníze ještě nikdo nezapsal.
+   */
+  const dobirkaPaid = useMutation<{ captured: boolean; message?: string }>({
+    mutationFn: () =>
+      sdk.client.fetch(`/admin/merchant-orders/${order.id}/dobirka-paid`, {
+        method: "POST",
+      }),
+    onSuccess: async (result) => {
+      await cache.invalidateQueries({
+        queryKey: ["merchant-order-state", order.id],
+      });
+      await cache.invalidateQueries({ queryKey: ["merchant-orders"] });
+      if (result?.captured) {
+        toast.success("Peníze z dobírky jsou zapsané. Objednávka je zaplacená.");
+      } else {
+        toast.info(
+          ceskyText(result?.message, "Peníze u této objednávky už jsou zapsané.")
+        );
+      }
+    },
+    onError: (error) =>
+      toast.error(ceskaChyba(error, "Peníze se nepodařilo zapsat")),
+  });
+
+  /*
+   * Problém s platbou: jediný rozumný další krok je poslat zákazníkovi výzvu
+   * k zaplacení. Dřív tu stálo „Tato objednávka už po vás nic nechce" a
+   * tlačítko bylo schované v Odeslaných e-mailech (3. 11. 2026). Stejný
+   * endpoint jako tam.
+   */
+  const paymentRequest = useMutation<
+    { sent: boolean; warning?: string | null },
+    Error,
+    void
+  >({
+    mutationFn: () =>
+      sdk.client.fetch(`/admin/merchant-orders/${order.id}/payment-request`, {
+        method: "POST",
+      }),
+    onSuccess: async (result) => {
+      if (result.warning) {
+        toast.warning(result.warning);
+      } else if (result.sent) {
+        toast.success("Výzva k zaplacení odeslána");
+      } else {
+        toast.error("Výzvu se nepodařilo odeslat");
+      }
+      await cache.invalidateQueries({ queryKey: ["order-emails"] });
+    },
+    onError: (error) =>
+      toast.error(ceskaChyba(error, "Výzvu se nepodařilo odeslat")),
+  });
+
   if (stateQuery.isLoading) {
     return (
       <Container>
@@ -210,6 +261,9 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
   const target = nextStage[merchantOrder.stage];
   /** Osobní odběr mluví jinak: nic se neposílá, zákazník si přijede. */
   const pickup = Boolean(merchantOrder.is_personal_pickup);
+  const paymentProblem = merchantOrder.stage === "payment_problem";
+  const shipBlocked =
+    merchantOrder.stage === "shipping" && Boolean(merchantOrder.ship_block_reason);
 
   if (productionMode && production) {
     const next = stepHere ? productionStep[production.stage] : undefined;
@@ -310,10 +364,42 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
         )}
 
         <Text size="small" className="text-ui-fg-subtle">
-          {target
-            ? `Další krok: ${nextStepLabel(merchantOrder.stage, pickup)}`
-            : "Tato objednávka už po vás nic nechce."}
+          {paymentProblem
+            ? "Platba neprošla. Můžete zákazníkovi poslat výzvu k zaplacení — e-mail s odkazem, odkud zaplatí znovu."
+            : target
+              ? `Další krok: ${nextStepLabel(merchantOrder.stage, pickup)}`
+              : "Tato objednávka už po vás nic nechce."}
         </Text>
+
+        {/* Stejné pravidlo jako fronta Denní práce: když server odeslání
+            nepustí, tlačítko se neukáže a místo něj je vidět proč. */}
+        {shipBlocked && !pickup && (
+          <Text size="small" className="text-ui-fg-error">
+            {merchantOrder.ship_block_reason}
+          </Text>
+        )}
+
+        {paymentProblem && (
+          <Button
+            variant="primary"
+            size="small"
+            isLoading={paymentRequest.isPending}
+            onClick={() => paymentRequest.mutate()}
+          >
+            Poslat výzvu k zaplacení
+          </Button>
+        )}
+
+        {merchantOrder.dobirka_waiting && (
+          <Button
+            variant="primary"
+            size="small"
+            isLoading={dobirkaPaid.isPending}
+            onClick={() => dobirkaPaid.mutate()}
+          >
+            Peníze přišly (dobírka)
+          </Button>
+        )}
 
         {/*
           Osobní odběr se nikam neposílá — místo „Označit jako odeslané" tu
@@ -362,7 +448,8 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
           </div>
         ) : (
           target &&
-          merchantOrder.stage !== "payment_problem" && (
+          !paymentProblem &&
+          !shipBlocked && (
             <Button
               variant="primary"
               size="small"
@@ -378,15 +465,3 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
   );
 };
 
-const MerchantOrderStateWidget = ({ data }: DetailWidgetProps<AdminOrder>) => (
-  <QueryClientProvider client={queryClient}>
-    <MerchantOrderStateWidgetInner order={data} />
-  </QueryClientProvider>
-);
-
-export const config = defineWidgetConfig({
-  zone: "order.details.side.before",
-  id: "keramicka-zahrada:merchant-order-state",
-});
-
-export default MerchantOrderStateWidget;

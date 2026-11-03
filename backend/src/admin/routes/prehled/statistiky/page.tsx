@@ -3,7 +3,7 @@ import {
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { EmptyState } from "../../../components/empty-state";
 import { WorkTabs } from "../../../components/work-tabs";
 import { formatAmount } from "../../../lib/format";
@@ -92,6 +92,13 @@ const StatistikyInner = () => {
             Jak se obchodu daří. Nic z toho není potřeba dnes řešit — je to na
             rozmyšlenou, ne na práci.
           </Text>
+          {/* Podrobný rozbor po oblastech je samostatná stránka „Statistiky" v menu. */}
+          <Link
+            to="/statistiky-workbench"
+            className="text-ui-fg-interactive txt-small mt-2 inline-block hover:underline"
+          >
+            Podrobné statistiky →
+          </Link>
         </header>
 
         <div className="flex flex-wrap items-center gap-2 px-6 py-4">

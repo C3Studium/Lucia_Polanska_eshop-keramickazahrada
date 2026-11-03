@@ -5,7 +5,6 @@ import {
   Heading,
   Skeleton,
   Text,
-  Toaster,
 } from "@medusajs/ui";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -58,7 +57,7 @@ import { formatCzk } from "../../../lib/workbench";
 import { ceskaChyba } from "../../../lib/ceska-chyba";
 
 /**
- * Stránka žádosti — Reklamace a zrušení (docs/reklamace-a-zruseni.md §12, §13).
+ * Stránka žádosti — Reklamace a vrácení (docs/reklamace-a-zruseni.md §12, §13).
  *
  * Drawer ukazoval jen žádost; tady majitelka vidí celou objednávku (položky,
  * platby, zakázku) a rozhoduje nad ní. Peníze se vrací z KOŠÍKU VRÁCENÍ
@@ -334,7 +333,7 @@ const ClaimPageInner = () => {
       <Container className="p-6">
         <Heading level="h2">Chybí číslo žádosti</Heading>
         <Button size="small" variant="secondary" className="mt-4" asChild>
-          <Link to="/reklamace">Zpět na Reklamace a zrušení</Link>
+          <Link to="/reklamace">Zpět na Reklamace a vrácení</Link>
         </Button>
       </Container>
     );
@@ -362,7 +361,6 @@ const ClaimPageInner = () => {
   if (detailQuery.isError || !detail || !request) {
     return (
       <Container className="flex min-h-64 flex-col items-center justify-center gap-y-3 p-6 text-center">
-        <Toaster />
         <Heading level="h2">Žádost se nepodařilo načíst</Heading>
         <Text size="small" className="text-ui-fg-subtle max-w-md">
           {ceskaChyba(detailQuery.error, "Server neposlal data žádosti.")}
@@ -423,12 +421,11 @@ const ClaimPageInner = () => {
 
   return (
     <Container className="divide-y p-0">
-      <Toaster />
 
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
         <div className="min-w-0">
           <Link to={backLink} className="text-ui-fg-interactive txt-small hover:underline">
-            ← Reklamace a zrušení
+            ← Reklamace a vrácení
           </Link>
           <Heading className="mt-2">
             Objednávka #{displayId} · {kindLabel}

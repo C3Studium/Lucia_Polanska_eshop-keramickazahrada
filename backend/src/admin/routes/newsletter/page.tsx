@@ -33,10 +33,8 @@ import {
   IconButton,
   Input,
   Label,
-  Prompt,
   Skeleton,
   Text,
-  Toaster,
   clx,
   toast,
 } from "@medusajs/ui";
@@ -47,6 +45,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { ConfirmDialog } from "../../components/confirm-dialog";
 import { EmptyState } from "../../components/empty-state";
 import { SubTabs } from "../../components/work-tabs";
 import { formatAmount, formatDateTime } from "../../lib/format";
@@ -2035,31 +2034,17 @@ const ComposeTab = ({
         </div>
       )}
 
-      <Prompt
+      <ConfirmDialog
         open={!!deleteDraftTarget}
         onOpenChange={(open) => !open && setDeleteDraftTarget(null)}
-      >
-        <Prompt.Content>
-          <Prompt.Header>
-            <Prompt.Title>Smazat rozepsaný e-mail?</Prompt.Title>
-            <Prompt.Description>
-              „{deleteDraftTarget?.subject?.trim() || "Bez předmětu"}" zmizí
-              nadobro. Odeslaných kampaní se to nijak nedotkne.
-            </Prompt.Description>
-          </Prompt.Header>
-          <Prompt.Footer>
-            <Prompt.Cancel>Zrušit</Prompt.Cancel>
-            <Prompt.Action
-              disabled={deleteDraft.isPending}
-              onClick={() =>
-                deleteDraftTarget && deleteDraft.mutate(deleteDraftTarget.id)
-              }
-            >
-              Smazat
-            </Prompt.Action>
-          </Prompt.Footer>
-        </Prompt.Content>
-      </Prompt>
+        title="Smazat rozepsaný e-mail?"
+        description={`„${deleteDraftTarget?.subject?.trim() || "Bez předmětu"}" zmizí nadobro. Odeslaných kampaní se to nijak nedotkne.`}
+        confirmLabel="Smazat"
+        isPending={deleteDraft.isPending}
+        onConfirm={() =>
+          deleteDraftTarget && deleteDraft.mutate(deleteDraftTarget.id)
+        }
+      />
 
       {/* Editor */}
       <div className="flex flex-col gap-y-4">
@@ -2253,32 +2238,22 @@ const ComposeTab = ({
         )}
 
         <div>
-          <Prompt open={confirmOpen} onOpenChange={setConfirmOpen}>
-            <Prompt.Trigger asChild>
+          <ConfirmDialog
+            open={confirmOpen}
+            onOpenChange={setConfirmOpen}
+            trigger={
               <Button size="base" disabled={!canSend}>
                 Odeslat kampaň
               </Button>
-            </Prompt.Trigger>
-            <Prompt.Content>
-              <Prompt.Header>
-                <Prompt.Title>Odeslat kampaň?</Prompt.Title>
-                <Prompt.Description>
-                  E-mail „{subject.trim() || "bez předmětu"}" odejde{" "}
-                  {czechRecipients(confirmedCount)} s potvrzeným odběrem.
-                  Odeslanou kampaň nejde vzít zpět.
-                </Prompt.Description>
-              </Prompt.Header>
-              <Prompt.Footer>
-                <Prompt.Cancel>Zrušit</Prompt.Cancel>
-                <Prompt.Action
-                  disabled={sendCampaign.isPending}
-                  onClick={() => sendCampaign.mutate()}
-                >
-                  Odeslat
-                </Prompt.Action>
-              </Prompt.Footer>
-            </Prompt.Content>
-          </Prompt>
+            }
+            destructive={false}
+            title="Odeslat kampaň?"
+            description={`E-mail „${subject.trim() || "bez předmětu"}" odejde ${czechRecipients(confirmedCount)} s potvrzeným odběrem.`}
+            consequence="Odeslanou kampaň nejde vzít zpět."
+            confirmLabel="Odeslat"
+            isPending={sendCampaign.isPending}
+            onConfirm={() => sendCampaign.mutate()}
+          />
           {confirmedCount === 0 && (
             <Text size="xsmall" className="text-ui-fg-subtle mt-2">
               Zatím není komu poslat — žádný odběratel nemá potvrzený odběr.
@@ -2567,7 +2542,6 @@ const NewsletterInner = () => {
 
   return (
     <Container className="divide-y p-0">
-      <Toaster />
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
         <div>
           <Heading>Newsletter</Heading>
@@ -2635,7 +2609,8 @@ const NewsletterPage = () => (
 export const config = defineRouteConfig({
   label: "Newsletter",
   icon: EnvelopeSolid,
-  rank: 80,
+  // Vedlejší: za Zákazníky (60), před Statistikami (70).
+  rank: 65,
 });
 
 export default NewsletterPage;

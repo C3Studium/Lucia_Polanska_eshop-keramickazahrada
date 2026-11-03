@@ -1,5 +1,4 @@
-import { AdminOrder, DetailWidgetProps } from "@medusajs/framework/types";
-import { defineWidgetConfig } from "@medusajs/admin-sdk";
+import { AdminOrder } from "@medusajs/framework/types";
 import {
   Container,
   Heading,
@@ -9,15 +8,9 @@ import {
   Button,
   toast,
 } from "@medusajs/ui";
-import {
-  QueryClientProvider,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { sdk } from "../lib/sdk";
-import { adminQueryClient } from "../lib/query-client";
 import { ProductionDiary } from "../components/production-diary";
 import { ceskaChyba } from "../lib/ceska-chyba";
 
@@ -59,16 +52,16 @@ type DiaryNote = {
   created_at: string;
 };
 
-const queryClient = adminQueryClient;
-
 /**
  * Co zákazník poslal k zakázce — vedle „Zákazník" v pravém baru.
  *
  * Workflow-wise to patří k zákazníkovi: jeho přání (text) + fotky (klik =
  * celá obrazovka), a pod tím vlastní interní poznámka ateliéru. Dřív to bylo
  * zamíchané v hlavním bloku „Výroba na zakázku"; tady je to přehlednější.
+ *
+ * Vykresluje ho „Práce s objednávkou" (`order-workspace.tsx`), 3. 11. 2026.
  */
-const OrderCommissionCustomerInner = ({ order }: { order: AdminOrder }) => {
+export const OrderCommissionCustomerPanel = ({ order }: { order: AdminOrder }) => {
   const queryClient = useQueryClient();
   const { data, isLoading, isError } = useQuery<ProductionResponse>({
     queryKey: ["made-to-order-order", order.id],
@@ -374,18 +367,3 @@ const OrderCommissionCustomerInner = ({ order }: { order: AdminOrder }) => {
     </Container>
   );
 };
-
-const OrderCommissionCustomerWidget = ({
-  data,
-}: DetailWidgetProps<AdminOrder>) => (
-  <QueryClientProvider client={queryClient}>
-    <OrderCommissionCustomerInner order={data} />
-  </QueryClientProvider>
-);
-
-export const config = defineWidgetConfig({
-  zone: "order.details.side.after",
-  id: "keramicka-zahrada:commission-customer",
-});
-
-export default OrderCommissionCustomerWidget;

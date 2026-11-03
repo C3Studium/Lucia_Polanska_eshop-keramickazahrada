@@ -202,6 +202,19 @@ const KEY_SCHEMAS = {
    * a uložení beze změny ho neposune.
    */
   legal_facts_updated_at: isoInstantOrEmpty,
+  /**
+   * Slevový kód pro stálé zákazníky (Zákazníci+, `lib/loyalty-code.ts`):
+   * výchozí sleva a platnost ručně posílaného kódu a automat „po N. zaplacené
+   * objednávce". Jeden objekt, zapisuje se vždy celý (formulář má všechna
+   * čtyři pole). Automat je výchozím vypnutý — e-mail se slevou majitelka
+   * zapíná vědomě.
+   */
+  loyalty_code: z.strictObject({
+    auto_enabled: z.boolean(),
+    after_orders: z.number().int().min(2).max(50),
+    percentage: z.number().int().min(1).max(50),
+    valid_days: z.number().int().min(1).max(365),
+  }),
 } as const
 
 /**
@@ -268,6 +281,8 @@ export const MERCHANT_SETTINGS_DEFAULTS: MerchantSettings = {
   /* Nic uloženého = všude výchozí hodnoty z `lib/legal-facts.ts`. */
   legal_facts: {},
   legal_facts_updated_at: "",
+  /* Stejné hodnoty jako LOYALTY_CODE_DEFAULTS v lib/loyalty-code-rules.ts. */
+  loyalty_code: { auto_enabled: false, after_orders: 3, percentage: 10, valid_days: 60 },
 }
 
 /**

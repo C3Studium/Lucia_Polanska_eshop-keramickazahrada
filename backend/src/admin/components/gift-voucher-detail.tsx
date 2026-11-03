@@ -15,6 +15,7 @@ import { type ReactNode, useState } from "react";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba } from "../lib/ceska-chyba";
 import { formatCzk } from "../lib/workbench";
+import { ConfirmDialog } from "./confirm-dialog";
 import {
   type AdminGiftVoucher,
   type GiftVoucherRedemption,
@@ -938,32 +939,26 @@ const CancelPrompt = ({ voucher }: { voucher: AdminGiftVoucher }) => {
     success: () => `Poukaz ${voucher.code} je zrušený.`,
   });
   return (
-    <Prompt>
-      <Prompt.Trigger asChild>
+    <ConfirmDialog
+      trigger={
         <Button variant="danger" size="small">
           Zrušit poukaz
         </Button>
-      </Prompt.Trigger>
-      <Prompt.Content>
-        <Prompt.Header>
-          <Prompt.Title>Zrušit poukaz {voucher.code}?</Prompt.Title>
-          <Prompt.Description>
-            Zrušený poukaz nepůjde uplatnit v obchodě ani v dílně
-            {voucher.balance > 0 ? ` (zbývá na něm ${formatCzk(voucher.balance)})` : ""}.
-            {voucher.payment_status === "paid"
-              ? " Pokud kupujícímu vracíte peníze, vraťte je zvlášť — zrušením se nic nevrací."
-              : ""}{" "}
-            Kdyby to byl omyl, poukaz jde zase obnovit.
-          </Prompt.Description>
-        </Prompt.Header>
-        <Prompt.Footer>
-          <Prompt.Cancel>Ponechat</Prompt.Cancel>
-          <Prompt.Action disabled={cancel.isPending} onClick={() => cancel.mutate({ action: "cancel" })}>
-            Zrušit poukaz
-          </Prompt.Action>
-        </Prompt.Footer>
-      </Prompt.Content>
-    </Prompt>
+      }
+      title={`Zrušit poukaz ${voucher.code}?`}
+      description={
+        `Zrušený poukaz nepůjde uplatnit v obchodě ani v dílně` +
+        (voucher.balance > 0 ? ` (zbývá na něm ${formatCzk(voucher.balance)})` : "") +
+        "." +
+        (voucher.payment_status === "paid"
+          ? " Pokud kupujícímu vracíte peníze, vraťte je zvlášť — zrušením se nic nevrací."
+          : "") +
+        " Kdyby to byl omyl, poukaz jde zase obnovit."
+      }
+      confirmLabel="Zrušit poukaz"
+      isPending={cancel.isPending}
+      onConfirm={() => cancel.mutate({ action: "cancel" })}
+    />
   );
 };
 

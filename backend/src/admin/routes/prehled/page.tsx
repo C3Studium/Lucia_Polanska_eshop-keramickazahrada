@@ -67,7 +67,42 @@ type OperationsSummary = {
     discount_codes: number;
     automatic_discounts: number;
   };
+  /**
+   * „Čeká na vás" (3. 11. 2026). Volitelné: backend před restartem pole ještě
+   * neposílá a stránka se kvůli tomu nesmí rozbít.
+   */
+  waiting?: Waiting;
   next_up: MerchantOrder[];
+};
+
+type ParcelIssue = {
+  order_id: string;
+  display_id: number | string | null;
+  parcel_code: string | null;
+  kind: "returned" | "problem" | "stored";
+  days: number | null;
+  text: string | null;
+};
+
+type Waiting = {
+  commissions_to_confirm: number;
+  claims: {
+    new: number;
+    received: number;
+    overdue: number;
+    overdue_first: { id: string; status: string } | null;
+  };
+  courses: { seat_requests: number; cancel_requests: number };
+  parcels: ParcelIssue[];
+  parcels_total: number;
+  order_changes: {
+    order_id: string;
+    display_id: number | string | null;
+    requested_at: string | null;
+  }[];
+  order_changes_total: number;
+  order_change_window_days: number;
+  stored_parcel_days: number;
 };
 
 /**
@@ -308,7 +343,240 @@ const attentionTiles = (summary: OperationsSummary): Tile[] => {
     });
   }
 
+  const waiting = summary.waiting;
+  if (waiting) {
+    // Lhůta na vyřízení je ze zákona — po ní to hoří, ne „čeká".
+    const overdue = waiting.claims.overdue;
+    if (overdue > 0) {
+      const first = waiting.claims.overdue_first;
+      tiles.push({
+        key: "claims-overdue",
+        label: tvar(overdue, "Reklamace po lhůtě", "Reklamace po lhůtě", "Reklamací po lhůtě"),
+        value: String(overdue),
+        tone: "critical",
+        hint: "Uplynula lhůta na vyřízení.",
+        to:
+          overdue === 1 && first
+            ? `/reklamace/${encodeURIComponent(first.id)}`
+            : `/reklamace?status=${first?.status ?? "pending"}`,
+        cta: "Vyřídit",
+      });
+    }
+
+    // Zásilky s potíží jednotlivě — bývá jich málo a každá vede na svou
+    // objednávku. Dlouho uložené jsou v „Čeká na vás", tady jen to zlé.
+    for (const parcel of waiting.parcels) {
+      if (parcel.kind === "stored") continue;
+      tiles.push({
+        key: `parcel-${parcel.order_id}`,
+        label: parcel.kind === "returned" ? "se vrací zpět" : "— pošta hlásí problém",
+        value: `Zásilka #${parcel.display_id ?? "?"}`,
+        tone: parcel.kind === "returned" ? "critical" : "warning",
+        hint: parcel.text ?? undefined,
+        to: `/orders/${parcel.order_id}`,
+        cta: "Otevřít objednávku",
+      });
+    }
+  }
+
   return tiles;
+};
+
+/**
+ * „1 žádost / 2 žádosti / 5 žádostí" — tři tvary podle čísla. Každý štítek
+ * nese svoje, protože čeština se jedním pravidlem skloňovat nedá.
+ */
+const tvar = (count: number, one: string, few: string, many: string): string =>
+  count === 1 ? one : count >= 2 && count <= 4 ? few : many;
+
+/**
+ * „Čeká na vás" — žádosti a rozhodnutí, kde je na tahu ona (3. 11. 2026).
+ *
+ * Jen nenulové, každý štítek vede rovnou na seznam (nebo objednávku), kde se
+ * to vyřeší. Co hoří (po lhůtě, vrácená zásilka), je nahoře v hlavičce,
+ * ne tady — jedna věc se nesmí objevit dvakrát.
+ */
+const waitingTiles = (
+  waiting: Waiting | undefined,
+  newInquiries: number
+): Tile[] => {
+  const tiles: Tile[] = [];
+
+  if (newInquiries > 0) {
+    tiles.push({
+      key: "inquiries",
+      value: String(newInquiries),
+      label: tvar(
+        newInquiries,
+        "nová poptávka zakázky",
+        "nové poptávky zakázek",
+        "nových poptávek zakázek"
+      ),
+      hint: "Zákazník popsal, co by chtěl — pošlete mu nabídku.",
+      to: "/zakazkova-vyroba/poptavky",
+      cta: "Otevřít",
+    });
+  }
+
+  if (!waiting) {
+    return tiles;
+  }
+
+  const { claims, courses } = waiting;
+
+  if (waiting.commissions_to_confirm > 0) {
+    const count = waiting.commissions_to_confirm;
+    tiles.push({
+      key: "commissions-to-confirm",
+      value: String(count),
+      label: tvar(
+        count,
+        "zakázka čeká na potvrzení zadání nebo ceny",
+        "zakázky čekají na potvrzení zadání nebo ceny",
+        "zakázek čeká na potvrzení zadání nebo ceny"
+      ),
+      hint: "Přečtěte si zadání a potvrďte ho, u ceny po domluvě pošlete cenu.",
+      to: "/prehled/zakazky",
+      cta: "Otevřít",
+    });
+  }
+
+  if (claims.new > 0) {
+    tiles.push({
+      key: "claims-new",
+      value: String(claims.new),
+      label: tvar(
+        claims.new,
+        "nová reklamace nebo vrácení",
+        "nové reklamace nebo vrácení",
+        "nových reklamací nebo vrácení"
+      ),
+      hint: "Rozhodněte, jestli žádost schválíte.",
+      to: "/reklamace?status=pending",
+      cta: "Otevřít",
+    });
+  }
+
+  if (claims.received > 0) {
+    tiles.push({
+      key: "claims-received",
+      value: String(claims.received),
+      label: tvar(
+        claims.received,
+        "žádost s vráceným zbožím k dokončení",
+        "žádosti s vráceným zbožím k dokončení",
+        "žádostí s vráceným zbožím k dokončení"
+      ),
+      hint: "Zboží je zpátky u vás. Zbývá rozhodnout a případně vrátit peníze.",
+      to: "/reklamace?status=received",
+      cta: "Otevřít",
+    });
+  }
+
+  for (const change of waiting.order_changes) {
+    tiles.push({
+      key: `order-change-${change.order_id}`,
+      value: "",
+      label: `Objednávka #${change.display_id ?? "?"}: zákazník žádá o změnu`,
+      hint: "Zavolejte nebo odepište zákazníkovi — kontakt je v e-mailu i na objednávce.",
+      to: `/orders/${change.order_id}`,
+      cta: "Otevřít",
+    });
+  }
+
+  if (courses.seat_requests > 0) {
+    tiles.push({
+      key: "course-seats",
+      value: String(courses.seat_requests),
+      label: tvar(
+        courses.seat_requests,
+        "žádost o místo na kurzu",
+        "žádosti o místo na kurzu",
+        "žádostí o místo na kurzu"
+      ),
+      hint: "Termín je plný a někdo by rád přišel.",
+      to: "/kurzy-sprava?zalozka=mista",
+      cta: "Otevřít",
+    });
+  }
+
+  if (courses.cancel_requests > 0) {
+    tiles.push({
+      key: "course-cancels",
+      value: String(courses.cancel_requests),
+      label: tvar(
+        courses.cancel_requests,
+        "žádost o zrušení kurzu",
+        "žádosti o zrušení kurzu",
+        "žádostí o zrušení kurzu"
+      ),
+      hint: "Zákazník chce zrušit rezervaci méně než 24 hodin předem.",
+      to: "/kurzy-sprava?zalozka=zadosti",
+      cta: "Otevřít",
+    });
+  }
+
+  for (const parcel of waiting.parcels) {
+    if (parcel.kind !== "stored") continue;
+    tiles.push({
+      key: `parcel-stored-${parcel.order_id}`,
+      value: "",
+      label: `Zásilka #${parcel.display_id ?? "?"} leží na poště ${parcel.days ?? waiting.stored_parcel_days} dní`,
+      hint: "Zákazník si ji zatím nevyzvedl — připomeňte mu to, ať se nevrátí.",
+      to: `/orders/${parcel.order_id}`,
+      cta: "Otevřít objednávku",
+    });
+  }
+
+  return tiles;
+};
+
+/** Kolik věcí „Čeká na vás" a hořících věcí z téhož bloku — do úvodní věty. */
+const waitingCount = (waiting: Waiting | undefined, newInquiries: number): number =>
+  newInquiries +
+  (waiting
+    ? waiting.commissions_to_confirm +
+      waiting.claims.new +
+      waiting.claims.received +
+      waiting.claims.overdue +
+      waiting.courses.seat_requests +
+      waiting.courses.cancel_requests +
+      waiting.parcels_total +
+      waiting.order_changes_total
+    : 0);
+
+/**
+ * Řádek „Čeká na vás" — hned pod úvodní větou, nad „Na řadě".
+ *
+ * Štítky místo dlaždic: jsou to žádosti od lidí, kterých bývá pár, a každá
+ * má jeden cíl. Číslo tučně, věta celá — „2 žádosti o místo na kurzu", ne
+ * „Kurzy: 2". Bez ničeho na řádku se řádek vůbec neukáže.
+ */
+const CekaRadek = ({ tiles }: { tiles: Tile[] }) => {
+  if (!tiles.length) {
+    return null;
+  }
+  return (
+    <section className="flex flex-col gap-y-3 px-6 py-5">
+      <Heading level="h2">Čeká na vás</Heading>
+      <div className="flex flex-wrap items-center gap-2">
+        {tiles.map((tile) => (
+          <Link
+            key={tile.key}
+            to={tile.to}
+            title={tile.hint}
+            className="text-ui-fg-base txt-compact-small border-ui-border-strong bg-ui-bg-base hover:bg-ui-bg-base-hover transition-fg flex items-center gap-x-1.5 rounded-lg border px-3 py-2 outline-none focus-visible:shadow-borders-focus"
+          >
+            {tile.value && <span className="font-semibold">{tile.value}</span>}
+            <span>{tile.label}</span>
+            <span aria-hidden="true" className="text-ui-fg-interactive">
+              →
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
 };
 
 const workTiles = (summary: OperationsSummary): Tile[] => {
@@ -540,7 +808,7 @@ const VitrinaCard = () => {
           )}
         </div>
         <Link
-          to="/dovolena-oznameni"
+          to="/nastaveni-obchodu"
           className="text-ui-fg-interactive txt-small hover:underline"
         >
           Dovolená a oznámení →
@@ -590,6 +858,20 @@ const PrehledInner = () => {
       placeholderData: (previous) => previous,
     });
 
+  /*
+   * Nové poptávky zakázek mají vlastní endpoint (modul poptávek). Chyba nebo
+   * 404 (backend ještě bez nové routy) = štítek se prostě neukáže — kvůli
+   * poptávkám se Přehled nesmí hlásit jako nenačtený.
+   */
+  const { data: inquiryCounts } = useQuery<{ new: number }>({
+    queryKey: ["commission-inquiries", "counts"],
+    queryFn: () => sdk.client.fetch("/admin/commission-inquiries/counts"),
+    retry: false,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+  });
+  const newInquiries = Math.max(0, Number(inquiryCounts?.new) || 0);
+
   if (isLoading) {
     return (
       <Container className="divide-y p-0">
@@ -628,9 +910,12 @@ const PrehledInner = () => {
   const attention = attentionTiles(data);
   const work = workTiles(data);
   const shop = shopTiles(data);
+  const waiting = waitingTiles(data.waiting, newInquiries);
+  const cekaCelkem = waitingCount(data.waiting, newInquiries);
 
   const allClear =
     attention.length === 0 &&
+    cekaCelkem === 0 &&
     data.today.new_orders === 0 &&
     data.today.working === 0 &&
     data.today.shipping === 0 &&
@@ -642,7 +927,8 @@ const PrehledInner = () => {
    * Sčítá se jen to, co je dnes práce: poruchy a objednávky, které někdo
    * musí posunout. Zásoby a recenze v tom schválně nejsou — „93 dochází na
    * skladě" by z klidného dne udělalo stovku úkolů, a přitom to není nic,
-   * co se má udělat dnes.
+   * co se má udělat dnes. Žádosti z „Čeká na vás" (poptávky, reklamace,
+   * kurzy, zásilky) ano — na ty někdo čeká.
    */
   const celkem =
     data.attention.payment_problems +
@@ -651,7 +937,8 @@ const PrehledInner = () => {
     data.attention.overdue_production +
     data.today.new_orders +
     data.today.working +
-    data.today.shipping;
+    data.today.shipping +
+    cekaCelkem;
 
   return (
     <div className="flex flex-col gap-y-3">
@@ -709,8 +996,11 @@ const PrehledInner = () => {
           </div>
         </header>
 
+        <CekaRadek tiles={waiting} />
+
         {/*
-          Pořadí dne (§4): co hoří (štítky v hlavičce) → na čem jsem na tahu
+          Pořadí dne (§4): co hoří (štítky v hlavičce) → co čeká na odpověď
+          (Čeká na vás) → na čem jsem na tahu
           (Na řadě) → kolik toho je (Dnešní práce) → obchod (řádek štítků).
 
           „Na řadě" bývalo úplně dole, pod čtrnácti dlaždicemi. Přitom je to

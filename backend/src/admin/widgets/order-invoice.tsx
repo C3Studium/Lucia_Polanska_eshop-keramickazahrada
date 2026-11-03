@@ -1,18 +1,10 @@
-import { defineWidgetConfig } from "@medusajs/admin-sdk";
-import type { AdminOrder, DetailWidgetProps } from "@medusajs/framework/types";
+import type { AdminOrder } from "@medusajs/framework/types";
 import { Badge, Button, Container, Heading, Skeleton, Text, toast } from "@medusajs/ui";
-import {
-  QueryClientProvider,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useExpertMode } from "../lib/expert-mode";
 import { formatDateTime } from "../lib/format";
 import { sdk } from "../lib/sdk";
-import { adminQueryClient } from "../lib/query-client"
 import { ceskaChyba } from "../lib/ceska-chyba";
-
-const queryClient = adminQueryClient;
 
 type InvoiceState = {
   invoice_id: number | null;
@@ -35,9 +27,12 @@ type InvoiceResponse = {
  * Faktura z iDokladu na detailu objednávky (FINISHINGTODOLIST §1): číslo,
  * stažení PDF, ruční vystavení/zopakování po chybě a zápis úhrady. Vystavování
  * jinak běží samo — po zaplacení, u dobírky při předání dopravci.
+ *
+ * Vykresluje ho „Práce s objednávkou" (`order-workspace.tsx`), 3. 11. 2026.
  */
-const OrderInvoiceWidgetInner = ({ order }: { order: AdminOrder }) => {
+export const OrderInvoicePanel = ({ order }: { order: AdminOrder }) => {
   const cache = useQueryClient();
+  const expert = useExpertMode();
   const invoiceQuery = useQuery<InvoiceResponse>({
     queryKey: ["idoklad-invoice", order.id],
     queryFn: () =>
@@ -134,8 +129,8 @@ const OrderInvoiceWidgetInner = ({ order }: { order: AdminOrder }) => {
         )}
         {!configured && (
           <Text size="small" className="text-ui-fg-subtle">
-            iDoklad není nakonfigurován (IDOKLAD_CLIENT_ID / SECRET). Faktury
-            se nevystavují.
+            Fakturace není napojená na iDoklad, faktury se nevystavují.
+            {expert ? " (Chybí IDOKLAD_CLIENT_ID / IDOKLAD_CLIENT_SECRET.)" : ""}
           </Text>
         )}
 
@@ -214,16 +209,3 @@ const OrderInvoiceWidgetInner = ({ order }: { order: AdminOrder }) => {
     </Container>
   );
 };
-
-const OrderInvoiceWidget = ({ data }: DetailWidgetProps<AdminOrder>) => (
-  <QueryClientProvider client={queryClient}>
-    <OrderInvoiceWidgetInner order={data} />
-  </QueryClientProvider>
-);
-
-export const config = defineWidgetConfig({
-  zone: "order.details.side.after",
-  id: "keramicka-zahrada:order-invoice",
-});
-
-export default OrderInvoiceWidget;

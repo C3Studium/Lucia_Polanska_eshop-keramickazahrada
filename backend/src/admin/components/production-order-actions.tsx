@@ -3,7 +3,6 @@ import {
   Drawer,
   Input,
   Label,
-  Prompt,
   Select,
   Text,
   Textarea,
@@ -11,6 +10,7 @@ import {
 } from "@medusajs/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { ConfirmDialog } from "./confirm-dialog";
 import { formatAmount } from "../lib/format";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba, ceskyText } from "../lib/ceska-chyba";
@@ -54,14 +54,6 @@ export type ProductionOrderSummary = {
   item_total?: number;
   /** Kolik zakázek má objednávka — hlášky pak říkají, že se ruší položka, ne objednávka. */
   commissions_in_order?: number;
-};
-
-/** „#123 — Domovní číslo" / „#123": jak zakázku pojmenovat v titulcích a hláškách. */
-const commissionLabel = (order: ProductionOrderSummary): string => {
-  const number = order.display_id ? `#${order.display_id}` : "";
-  return order.line_title
-    ? [number, order.line_title].filter(Boolean).join(" — ")
-    : number;
 };
 
 type Action =
@@ -524,7 +516,7 @@ export const SettleBalanceOffline = ({
         <Drawer.Footer>
           <Drawer.Close asChild>
             <Button size="small" variant="secondary" type="button">
-              Zpět
+              Zavřít
             </Button>
           </Drawer.Close>
           <Button
@@ -564,37 +556,32 @@ const ConfirmedAction = ({
   const mutation = useAction(order);
 
   return (
-    <Prompt open={open} onOpenChange={setOpen}>
-      <Prompt.Trigger asChild>
+    <ConfirmDialog
+      open={open}
+      onOpenChange={setOpen}
+      trigger={
         <Button size="small" variant={variant === "danger" ? "danger" : variant}>
           {label}
         </Button>
-      </Prompt.Trigger>
-      <Prompt.Content>
-        <Prompt.Header>
-          <Prompt.Title>{title}</Prompt.Title>
-          <Prompt.Description>{description}</Prompt.Description>
-        </Prompt.Header>
-        <Prompt.Footer>
-          <Prompt.Cancel>Zpět</Prompt.Cancel>
-          <Prompt.Action
-            onClick={() =>
-              mutation.mutate(
-                { action },
-                {
-                  onSuccess: () => {
-                    toast.success(successMessage);
-                    setOpen(false);
-                  },
-                }
-              )
-            }
-          >
-            {confirmLabel}
-          </Prompt.Action>
-        </Prompt.Footer>
-      </Prompt.Content>
-    </Prompt>
+      }
+      /* Červeně jen zrušení — e-mail nebo posun fáze nic neničí. */
+      destructive={variant === "danger"}
+      title={title}
+      description={description}
+      confirmLabel={confirmLabel}
+      isPending={mutation.isPending}
+      onConfirm={() =>
+        mutation.mutate(
+          { action },
+          {
+            onSuccess: () => {
+              toast.success(successMessage);
+              setOpen(false);
+            },
+          }
+        )
+      }
+    />
   );
 };
 
@@ -749,7 +736,7 @@ export const ProductionOrderActions = ({
               ? `Zákazník už zaplatil ${formatAmount(
                   order.paid_total,
                   order.currency_code
-                )}. Zrušení projde až po vyřízení vrácení peněz v „Reklamace a zrušení" — dokud na objednávce zbývá nevrácená částka, server zrušení odmítne. Nezaplacené platby se stornují.`
+                )}. Zrušení projde až po vyřízení vrácení peněz v „Reklamace a vrácení" — dokud na objednávce zbývá nevrácená částka, server zrušení odmítne. Nezaplacené platby se stornují.`
               : "Zakázka se zruší a zmizí z fronty."
           }
           confirmLabel="Zrušit zakázku"

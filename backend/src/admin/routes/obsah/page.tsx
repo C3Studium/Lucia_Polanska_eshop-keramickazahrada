@@ -1,9 +1,8 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { PencilSquare } from "@medusajs/icons";
 import { Button, Container, Heading, Text } from "@medusajs/ui";
 import { useEffect, useState } from "react";
 
 import { sdk } from "../../lib/sdk";
+import { movedTo } from "../../components/section-tabs";
 
 /**
  * Obsah webu — rozcestník do Studia.
@@ -28,7 +27,8 @@ import { sdk } from "../../lib/sdk";
  * by znamenalo dvě místa, kde se mění tentýž text, a jedno z nich by po čase
  * začalo lhát.
  */
-const ObsahPage = () => {
+/** Obsah záložky Web › Obsah webu. */
+export const ObsahWebu = () => {
   /* The Studio address is server env — the browser bundle can't read it, and
      importing `src/lib/constants` for it drags the entire server framework
      (pg, jsonwebtoken) into the vite bundle and crashes the admin at load.
@@ -95,12 +95,6 @@ const ObsahPage = () => {
   );
 };
 
-export const config = defineRouteConfig({
-  label: "Obsah webu",
-  icon: PencilSquare,
-  // Za pracovními stránkami: je to místo, kam se chodí zřídka a odkud se hned
-  // odchází jinam. Stejný řád jako mělo „Obsah webu" se Sanity.
-  rank: 120,
-});
-
-export default ObsahPage;
+/* Bez položky v menu — stránka je záložkou „Web" (úplně dole v menu: chodí
+   se sem zřídka a hned se odchází do Studia); stará adresa tam přesměruje. */
+export default movedTo("/web");

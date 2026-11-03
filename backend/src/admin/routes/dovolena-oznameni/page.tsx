@@ -1,7 +1,10 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { Calendar } from "@medusajs/icons";
 import {
-  Button, Container, Heading, Input, Switch, Text, Toaster, toast,
+  Container,
+  Heading,
+  Input,
+  Switch,
+  Text,
+  toast,
 } from "@medusajs/ui";
 import {
   QueryClientProvider, useMutation, useQuery, useQueryClient,
@@ -10,6 +13,19 @@ import { useEffect, useState } from "react";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
+import { SaveBar } from "../../components/save-bar";
+import { movedTo } from "../../components/section-tabs";
+
+const savedForm = (s: any) => ({
+  vacation: Boolean(s.vacation_enabled),
+  until: String(s.vacation_until ?? ""),
+  vMessage: String(s.vacation_message ?? ""),
+  announce: Boolean(s.announcement_enabled),
+  aText: String(s.announcement_text ?? ""),
+  aLink: String(s.announcement_link ?? ""),
+  /* Výchozí true jako v backendu. */
+  company: s.company_purchase_enabled !== false,
+});
 
 /**
  * Dovolená a oznámení — the shop's voice on its own page (Matěj,
@@ -39,17 +55,27 @@ const Inner = () => {
   const [company, setCompany] = useState(true);
   // Doběrečné se přestěhovalo na stránku Doprava a platba (12. 10. 2026).
 
-  useEffect(() => {
-    const s = data?.settings;
-    if (!s) return;
-    setVacation(Boolean(s.vacation_enabled));
-    setUntil(s.vacation_until ?? "");
-    setVMessage(s.vacation_message ?? "");
-    setAnnounce(Boolean(s.announcement_enabled));
-    setAText(s.announcement_text ?? "");
-    setALink(s.announcement_link ?? "");
-    setCompany(s.company_purchase_enabled !== false);
-  }, [data]);
+  /* Uložené hodnoty ve stejném tvaru jako formulář — z nich se plní pole,
+     proti nim se počítají neuložené změny a na ně vrací „Zahodit". */
+  const saved = data?.settings ? savedForm(data.settings) : null;
+  const reset = () => {
+    if (!saved) return;
+    setVacation(saved.vacation);
+    setUntil(saved.until);
+    setVMessage(saved.vMessage);
+    setAnnounce(saved.announce);
+    setAText(saved.aText);
+    setALink(saved.aLink);
+    setCompany(saved.company);
+  };
+  useEffect(reset, [data]);
+
+  const current = { vacation, until, vMessage, announce, aText, aLink: aLink.trim(), company };
+  const changes = saved
+    ? (Object.keys(current) as Array<keyof typeof current>).filter(
+        (key) => current[key] !== saved[key]
+      ).length
+    : 0;
 
   const save = useMutation({
     mutationFn: () =>
@@ -76,7 +102,6 @@ const Inner = () => {
 
   return (
     <Container className="divide-y p-0">
-      <Toaster />
       <header className="px-6 pb-4 pt-6">
         <Heading>Dovolená a oznámení</Heading>
         <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
@@ -156,22 +181,22 @@ const Inner = () => {
         </div>
       </section>
 
-      <footer className="px-6 py-4">
-        <Button size="small" isLoading={save.isPending} onClick={() => save.mutate()}>
-          Uložit
-        </Button>
-      </footer>
+      <SaveBar
+        dirty={changes > 0}
+        count={changes}
+        saving={save.isPending}
+        onSave={() => save.mutate()}
+        onDiscard={reset}
+      />
     </Container>
   );
 };
 
 const queryClient = adminQueryClient;
-const Page = () => (
+/** Obsah záložky Nastavení obchodu › Dovolená a oznámení. */
+export const DovolenaOznameni = () => (
   <QueryClientProvider client={queryClient}><Inner /></QueryClientProvider>
 );
-export const config = defineRouteConfig({
-  label: "Dovolená a oznámení",
-  icon: Calendar,
-  rank: 100,
-});
-export default Page;
+/* Bez položky v menu — stránka je záložkou Nastavení obchodu; stará adresa
+   (odkaz z Přehledu, záložky v prohlížeči) tam přesměruje. */
+export default movedTo("/nastaveni-obchodu");

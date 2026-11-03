@@ -1,11 +1,9 @@
-import { defineWidgetConfig } from "@medusajs/admin-sdk";
-import type { DetailWidgetProps, AdminOrder } from "@medusajs/framework/types";
-import { Badge, Button, Container, Heading, Text } from "@medusajs/ui";
-import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { Badge, Text } from "@medusajs/ui";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { OrderSection } from "../components/order-section";
 import { DamageBadge, LineItemsList } from "../components/return-line-items";
 import { formatDateTime } from "../lib/format";
-import { adminQueryClient } from "../lib/query-client";
 import {
   asNumber,
   DAMAGE_CAUSE_HINT,
@@ -24,10 +22,10 @@ import { sdk } from "../lib/sdk";
 import { formatCzk } from "../lib/workbench";
 
 /**
- * Reklamace a zrušení na detailu objednávky — ať majitelka vidí stav i tady.
+ * Reklamace a vrácení na detailu objednávky — ať majitelka vidí stav i tady.
  *
  * Jen čtení + odkaz do modulu. Schválení, přijetí zboží i vrácení peněz se
- * dělá výhradně v „Reklamace a zrušení", kde se akce nabízejí podle stavu
+ * dělá výhradně v „Reklamace a vrácení", kde se akce nabízejí podle stavu
  * (docs/reklamace-a-zruseni.md §3, §8) — tlačítko „vrátit celou částku" tu
  * záměrně není, obcházelo pravidla. Bez žádostí se widget nevykreslí.
  */
@@ -132,7 +130,7 @@ const RequestRow = ({ request }: { request: ReturnRequest }) => {
           to={reklamaceLink(request)}
           className="text-ui-fg-interactive txt-small hover:underline"
         >
-          Otevřít v Reklamace a zrušení
+          Otevřít v Reklamace a vrácení
         </Link>
         {request.protocol_url && (
           <a
@@ -149,7 +147,11 @@ const RequestRow = ({ request }: { request: ReturnRequest }) => {
   );
 };
 
-const Inner = ({ orderId }: { orderId: string }) => {
+/**
+ * Sbalená karta v „Práci s objednávkou" (3. 11. 2026). Bez žádostí se
+ * nevykreslí vůbec; sama se otevře, dokud nějaká žádost není vyřízená.
+ */
+export const OrderReturnsPanel = ({ orderId }: { orderId: string }) => {
   const { data } = useQuery<ReturnRequestListResponse>({
     queryKey: ["order-returns", orderId],
     queryFn: () =>
@@ -163,40 +165,42 @@ const Inner = ({ orderId }: { orderId: string }) => {
     return null;
   }
 
-  return (
-    <Container className="divide-y p-0">
-      <div className="flex items-center justify-between px-6 py-4">
-        <Heading level="h2">Reklamace a zrušení</Heading>
-        <Button size="small" variant="transparent" asChild>
-          <Link to="/reklamace">Otevřít modul</Link>
-        </Button>
-      </div>
+  const open = requests.filter((request) => !isFinalStatus(request.status));
 
+  return (
+    <OrderSection
+      title="Reklamace a vrácení"
+      badge={
+        open.length ? (
+          <Badge color="orange">Otevřené: {open.length}</Badge>
+        ) : (
+          <Badge color="grey">Vyřízeno</Badge>
+        )
+      }
+      summary={
+        requests.length === 1
+          ? `1 žádost · ${STATUS_META[requests[0].status].label}`
+          : `${requests.length} ${requests.length < 5 ? "žádosti" : "žádostí"}`
+      }
+      attention={open.length > 0}
+    >
       {requests.map((request) => (
         <RequestRow key={request.id} request={request} />
       ))}
 
-      <div className="px-6 py-3">
+      <div className="flex flex-col gap-y-2 px-6 py-3">
+        <Link
+          to="/reklamace"
+          className="text-ui-fg-interactive txt-small hover:underline"
+        >
+          Otevřít Reklamace a vrácení
+        </Link>
         <Text size="xsmall" className="text-ui-fg-muted">
           Rozhodnutí, přijetí zboží i vrácení peněz se dělá jen v modulu
-          Reklamace a zrušení — podle stavu žádosti. Nativní „Zrušit objednávku"
+          Reklamace a vrácení — podle stavu žádosti. Nativní „Zrušit objednávku"
           projde až po vyřízení vrácení peněz.
         </Text>
       </div>
-    </Container>
+    </OrderSection>
   );
 };
-
-const queryClient = adminQueryClient;
-
-const OrderReturnsWidget = ({ data: order }: DetailWidgetProps<AdminOrder>) => (
-  <QueryClientProvider client={queryClient}>
-    <Inner orderId={order.id} />
-  </QueryClientProvider>
-);
-
-export const config = defineWidgetConfig({
-  zone: "order.details.side.after",
-});
-
-export default OrderReturnsWidget;

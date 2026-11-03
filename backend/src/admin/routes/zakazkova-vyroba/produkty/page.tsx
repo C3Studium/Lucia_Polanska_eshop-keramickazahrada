@@ -466,7 +466,7 @@ const ProductSettingsDrawer = ({
         </Drawer.Body>
         <Drawer.Footer>
           <Button variant="secondary" onClick={() => setOpen(false)}>
-            Zrušit
+            Zavřít
           </Button>
           <Button
             variant="primary"
@@ -474,7 +474,7 @@ const ProductSettingsDrawer = ({
             disabled={!isValid || detailsQuery.isLoading || detailsQuery.isError}
             onClick={() => updateProduct.mutate(draft)}
           >
-            Uložit nastavení
+            Uložit
           </Button>
         </Drawer.Footer>
       </Drawer.Content>

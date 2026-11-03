@@ -6,12 +6,10 @@ import {
   Container,
   Heading,
   Input,
-  Prompt,
   Select,
   Skeleton,
   Switch,
   Text,
-  Toaster,
   toast,
 } from "@medusajs/ui";
 import {
@@ -22,6 +20,7 @@ import {
 } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { ConfirmDialog } from "../../../components/confirm-dialog";
 import { EmptyState, pieces } from "../../../components/empty-state";
 import {
   InlineNumber,
@@ -30,7 +29,9 @@ import {
 } from "../../../components/inline-field";
 import { ProductLightbox } from "../../../components/product-thumb";
 import { ProductionProfileEditor } from "../../../components/production-profile-editor";
-import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../../lib/expert-mode";
+import { ProductMoreActions } from "../../../components/product-detail-actions";
+import { ProductPerformanceCard } from "../../../components/product-performance-card";
+import { CopyId, RawData, useExpertMode } from "../../../lib/expert-mode";
 import { formatDate, formatDateTime } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
 import { formatCzk } from "../../../lib/workbench";
@@ -144,12 +145,13 @@ const czkPrice = (variant: NativeVariant): number | null => {
   return czk ? Number(czk.amount) : null;
 };
 
-const monthLabel = (month: string): string => {
-  const [year, index] = month.split("-").map(Number);
-  if (!year || !index) return month;
-  return new Intl.DateTimeFormat("cs-CZ", { month: "long" }).format(
-    new Date(year, index - 1, 1)
-  );
+/** „v eurech 12,50 €" čte se líp než samotný kód měny. */
+const currencyWords: Record<string, string> = {
+  eur: "v eurech",
+  pln: "ve zlotých",
+  usd: "v dolarech",
+  gbp: "v librách",
+  huf: "ve forintech",
 };
 
 const PRODUCT_FIELDS = [
@@ -215,7 +217,8 @@ const Section = ({
 }: {
   title: string;
   hint?: string;
-  children: React.ReactNode;
+  /** Bez obsahu (např. vypnutý přepínač) zůstane jen nadpis a nápověda. */
+  children?: React.ReactNode;
   action?: React.ReactNode;
 }) => (
   <section className="px-6 py-5">
@@ -228,7 +231,7 @@ const Section = ({
         {hint}
       </Text>
     )}
-    <div className="mt-4">{children}</div>
+    {children ? <div className="mt-4">{children}</div> : null}
   </section>
 );
 
@@ -535,7 +538,7 @@ const VariantRow = ({
               Po domluvě
             </Text>
             <Text size="xsmall" className="text-ui-fg-subtle">
-              Cenu pošlete zákazníkovi z objednávky.
+              Cenu tu vyplňovat nemusíte — pošlete ji zákazníkovi z objednávky.
             </Text>
           </div>
         ) : (
@@ -568,23 +571,35 @@ const VariantRow = ({
         />
         {/* Ceny v ostatních měnách obchodu: dopočítává je denně úloha
             sync-currency-prices z kurzu ČNB (jobs/sync-currency-prices.ts),
-            ručně se neupravují — přepsala by je. */}
-        {(variant.prices ?? [])
-          .filter((price) => String(price.currency_code).toLowerCase() !== "czk")
-          .map((price) => (
+            ručně se neupravují — přepsala by je. Zůstávají vidět pro
+            kontrolu, jedním čitelným řádkem. */}
+        {(() => {
+          const foreign = (variant.prices ?? []).filter(
+            (price) => String(price.currency_code).toLowerCase() !== "czk"
+          );
+          if (!foreign.length) return null;
+          return (
             <Text
-              key={price.currency_code}
               size="xsmall"
               className="text-ui-fg-subtle tabular-nums"
-              title="Dopočítává se denně z kurzu ČNB podle ceny v Kč."
+              title="Dopočítává se samo každý den z ceny v Kč. Ručně se nemění."
             >
-              {new Intl.NumberFormat("cs-CZ", {
-                style: "currency",
-                currency: String(price.currency_code).toUpperCase(),
-              }).format(Number(price.amount))}{" "}
-              · podle ČNB
+              {foreign
+                .map((price) => {
+                  const code = String(price.currency_code).toLowerCase();
+                  const amount = new Intl.NumberFormat("cs-CZ", {
+                    style: "currency",
+                    currency: code.toUpperCase(),
+                  }).format(Number(price.amount));
+                  return currencyWords[code]
+                    ? `${currencyWords[code]} ${amount}`
+                    : amount;
+                })
+                .join(" · ")}{" "}
+              · podle kurzu ČNB
             </Text>
-          ))}
+          );
+        })()}
         {czkPrice(variant) == null && (
           <Text size="xsmall" className="text-ui-fg-subtle">
             Bez ceny — vyplňte ji, ostatní měny se dopočítají samy.
@@ -638,8 +653,8 @@ const VariantRow = ({
       )}
       <div className="flex justify-end">
         {canDelete && (
-          <Prompt>
-            <Prompt.Trigger asChild>
+          <ConfirmDialog
+            trigger={
               <button
                 type="button"
                 title="Odebrat variantu"
@@ -647,25 +662,14 @@ const VariantRow = ({
               >
                 <Trash />
               </button>
-            </Prompt.Trigger>
-            <Prompt.Content>
-              <Prompt.Header>
-                <Prompt.Title>Odebrat variantu „{variant.title}"?</Prompt.Title>
-                <Prompt.Description>
-                  Varianta zmizí z obchodu i ze skladu. Historie objednávek zůstává.
-                </Prompt.Description>
-              </Prompt.Header>
-              <Prompt.Footer>
-                <Prompt.Cancel>Zrušit</Prompt.Cancel>
-                <Prompt.Action
-                  disabled={remove.isPending}
-                  onClick={() => remove.mutate()}
-                >
-                  Odebrat
-                </Prompt.Action>
-              </Prompt.Footer>
-            </Prompt.Content>
-          </Prompt>
+            }
+            title={`Odebrat variantu „${variant.title}"?`}
+            description="Varianta zmizí z obchodu i ze skladu. Historie objednávek zůstává."
+            consequence="Vrátit to nejde."
+            confirmLabel="Odebrat"
+            isPending={remove.isPending}
+            onConfirm={() => remove.mutate()}
+          />
         )}
       </div>
     </div>
@@ -793,7 +797,7 @@ const AddVariantRow = ({
               ? [{ currency_code: "czk", amount: Number(price) }]
               : [],
           // The shop default: a sold-out piece keeps selling (stock goes
-          // negative); the page's „Objednání bez skladu" switch turns it off.
+          // negative); the page's „Objednání bez kusů na skladu" switch turns it off.
           allow_backorder: true,
         },
       });
@@ -815,8 +819,8 @@ const AddVariantRow = ({
           <Plus /> Přidat provedení
         </Button>
         <Text size="xsmall" className="text-ui-fg-muted">
-          Když se kus dělá ve víc velikostech nebo barvách — každé má pak
-          vlastní cenu a sklad.
+          Pro víc velikostí nebo barev — každé provedení má vlastní cenu a
+          sklad.
         </Text>
       </div>
     );
@@ -852,6 +856,22 @@ const AddVariantRow = ({
   );
 };
 
+/**
+ * Stav dopravy kusu pro kontrolu „Než publikujete".
+ *
+ * `none` = kus nemá profil dopravy, `empty` = profil má, ale pod ním není
+ * žádná možnost dopravy (Domovní znamení, 31. 10.). Obojí shodí objednávku až
+ * při dokončení, po zaplacení — viz widgets/product-shipping-profile.tsx.
+ */
+type ShippingCheck = {
+  state: "ok" | "none" | "empty";
+  profileName: string | null;
+  /** Kam kus přeřadit, aby šel objednat; `null` = není kam (obchod nemá dopravu). */
+  fixTarget: { id: string; name: string } | null;
+  onFix: () => void;
+  fixing: boolean;
+};
+
 /** „Než publikujete" + kupitelnost — one merged checklist, warnings only. */
 const ReadinessCard = ({
   product,
@@ -859,6 +879,7 @@ const ReadinessCard = ({
   inShop,
   onAddToShop,
   addingToShop,
+  shipping,
 }: {
   product: NativeProduct;
   detail: WorkbenchDetail | undefined;
@@ -866,12 +887,29 @@ const ReadinessCard = ({
   inShop: boolean | null;
   onAddToShop: () => void;
   addingToShop: boolean;
+  /** `null` = ještě se načítá (nebo nejde zjistit) — pak se nic netvrdí. */
+  shipping: ShippingCheck | null;
 }) => {
   const variants = product.variants ?? [];
-  // „Cena po domluvě“ je platný stav bez ceny (stejně jako product-completeness).
+  const metadata = product.metadata ?? {};
+  /*
+   * Cena: „cena po domluvě“ (hlavně zakázky) cenu mít nemusí — 0 Kč nebo
+   * prázdná je u ní v pořádku (Matěj, 3. 11. 2026). Jinak 0 Kč cenou není:
+   * kus by šel koupit zadarmo. Výjimka je poukaz, jehož hodnota se volí
+   * v košíku (lib/voucher.ts).
+   */
+  const priceOnRequest = metadata.price_on_request === true;
+  const voucher =
+    metadata.gift_voucher === true ||
+    metadata.voucher_custom_amount === true ||
+    metadata.voucher_custom_amount === "true";
+  const czkPrices = variants
+    .map(czkPrice)
+    .filter((price): price is number => price !== null);
   const hasPrice =
-    product.metadata?.price_on_request === true ||
-    variants.some((variant) => czkPrice(variant) !== null);
+    priceOnRequest ||
+    czkPrices.some((price) => price > 0) ||
+    (voucher && czkPrices.length > 0);
   const anyBackorder = variants.some((variant) => variant.allow_backorder);
   const allOut =
     detail !== undefined &&
@@ -911,6 +949,39 @@ const ReadinessCard = ({
             ),
           },
         ]),
+    /*
+     * Doprava, „aby to nemohlo spadnout" (Matěj, 3. 11. 2026). Nový kus
+     * profil dostává sám (subscribers/default-shipping-profile.ts); tohle
+     * chytí, co se rozbilo potom — přeřazení na prázdný profil, import.
+     */
+    ...(shipping === null
+      ? []
+      : [
+          {
+            label: "Doprava",
+            ok: shipping.state === "ok",
+            why:
+              shipping.state === "none"
+                ? "Kus nemá nastavenou dopravu — zákazník by zaplatil a objednávka by pak spadla."
+                : `Doprava „${shipping.profileName ?? "?"}“ nemá žádnou možnost doručení — objednávka by spadla až po zaplacení.`,
+            action: shipping.fixTarget ? (
+              <Button
+                size="small"
+                variant="secondary"
+                className="mt-2"
+                isLoading={shipping.fixing}
+                onClick={shipping.onFix}
+              >
+                Nastavit běžnou dopravu ({shipping.fixTarget.name})
+              </Button>
+            ) : (
+              <Text size="small" className="text-ui-fg-error mt-1">
+                Obchod nemá žádnou dopravu, na kterou by šel kus přeřadit —
+                ozvěte se prosím Matějovi.
+              </Text>
+            ),
+          },
+        ]),
     {
       label: "Fotografie",
       ok: Boolean(product.thumbnail || (product.images ?? []).length),
@@ -919,7 +990,9 @@ const ReadinessCard = ({
     {
       label: "Cena",
       ok: hasPrice,
-      why: "Bez ceny produkt nepůjde publikovat.",
+      why: czkPrices.length
+        ? "Cena je 0 Kč — kus by šel koupit zadarmo. (U ceny po domluvě to nevadí.)"
+        : "Bez ceny ho zákazník nekoupí. (U ceny po domluvě to nevadí.)",
     },
     {
       label: "Popis",
@@ -934,7 +1007,7 @@ const ReadinessCard = ({
     {
       label: "Kusy skladem",
       ok: !allOut,
-      why: "Všechno je vyprodané, kus se nevyrábí na zakázku a objednání bez skladu je vypnuté — zákazník nemá co koupit.",
+      why: "Všechno je vyprodané, kus se nevyrábí na zakázku a objednání bez kusů na skladu je vypnuté — zákazník nemá co koupit.",
     },
     {
       label: "Hmotnost",
@@ -942,25 +1015,32 @@ const ReadinessCard = ({
       why: "Bez hmotnosti se cena dopravy počítá z výchozího odhadu.",
     },
   ];
+  // Vidět je jen to, co chybí — splněné body nikoho nezajímají (Matěj, 3. 11.).
   const missing = checks.filter((check) => !check.ok);
+
+  if (!missing.length) {
+    return (
+      <section className="px-6 py-4">
+        <Text size="small" weight="plus" className="text-ui-tag-green-text">
+          ✓ Připraveno k prodeji
+        </Text>
+      </section>
+    );
+  }
 
   return (
     <section className="px-6 py-5">
       <div className="flex items-center gap-x-2">
         <Heading level="h2">Než publikujete</Heading>
-        {missing.length > 0 && (
-          <Badge size="2xsmall" color="orange">
-            {missing.length}
-          </Badge>
-        )}
+        <Badge size="2xsmall" color="orange">
+          {missing.length}
+        </Badge>
       </div>
       <Text size="small" className="text-ui-fg-subtle mt-1">
-        {missing.length
-          ? "Tohle ještě chybí. Publikovat můžete i tak — je to jen upozornění."
-          : "Všechno je vyplněné. Kus je připravený."}
+        Tohle ještě chybí. Publikovat můžete i tak — je to jen upozornění.
       </Text>
       <div className="mt-3 flex flex-col">
-        {checks.map((check) => (
+        {missing.map((check) => (
           <div
             key={check.label}
             className="flex items-start justify-between gap-3 py-2"
@@ -969,15 +1049,13 @@ const ReadinessCard = ({
               <Text size="small" weight="plus">
                 {check.label}
               </Text>
-              {!check.ok && (
-                <Text size="small" className="text-ui-fg-subtle mt-0.5">
-                  {check.why}
-                </Text>
-              )}
-              {!check.ok && check.action}
+              <Text size="small" className="text-ui-fg-subtle mt-0.5">
+                {check.why}
+              </Text>
+              {check.action}
             </div>
-            <Badge size="2xsmall" color={check.ok ? "green" : "orange"}>
-              {check.ok ? "Hotovo" : "Chybí"}
+            <Badge size="2xsmall" color="orange">
+              Chybí
             </Badge>
           </div>
         ))}
@@ -991,8 +1069,6 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
   const navigate = useNavigate();
   const expert = useExpertMode();
   const [lightbox, setLightbox] = useState<{ id: string; title: string } | null>(null);
-  const [discountPercent, setDiscountPercent] = useState("20");
-  const [discountClearance, setDiscountClearance] = useState(true);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const productQuery = useQuery<{ product: NativeProduct }>({
@@ -1081,8 +1157,66 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
   });
   const [addingMaterial, setAddingMaterial] = useState(false);
 
+  /*
+   * Doprava pro kontrolu „Než publikujete". Klíče a adresy schválně stejné
+   * jako widget Doprava na nativní stránce (widgets/product-shipping-profile.tsx),
+   * ať se obě místa obnovují spolu a nečtou dvakrát.
+   */
+  const shippingProfileQuery = useQuery<{
+    product: { id: string; shipping_profile?: { id: string; name?: string } | null };
+  }>({
+    queryKey: ["product-shipping-profile", productId],
+    queryFn: () =>
+      sdk.client.fetch(`/admin/products/${productId}?fields=id,*shipping_profile`),
+    refetchOnWindowFocus: true,
+  });
+  const shippingProfilesQuery = useQuery<{
+    shipping_profiles: { id: string; name: string; type?: string | null }[];
+  }>({
+    queryKey: ["shipping-profiles"],
+    queryFn: () => sdk.client.fetch("/admin/shipping-profiles?limit=100"),
+    staleTime: 5 * 60_000,
+  });
+  const shippingOptionsQuery = useQuery<{
+    shipping_options: { id: string; shipping_profile_id?: string | null }[];
+  }>({
+    queryKey: ["shipping-options-per-profile"],
+    queryFn: () =>
+      sdk.client.fetch(
+        "/admin/shipping-options?limit=1000&fields=id,name,shipping_profile_id"
+      ),
+    staleTime: 5 * 60_000,
+  });
+
   const product = productQuery.data?.product;
   const detail = detailQuery.data;
+
+  /** Kolik možností dopravy leží na profilu; `null` = ještě se neví. */
+  const optionsOnProfile = (profileId: string): number | null => {
+    const all = shippingOptionsQuery.data?.shipping_options;
+    if (!all) return null;
+    return all.filter((option) => option.shipping_profile_id === profileId).length;
+  };
+  const currentProfile = shippingProfileQuery.data?.product?.shipping_profile ?? null;
+  /*
+   * Kam kus přeřadit: výchozí profil, má-li dopravu; jinak jediný profil
+   * s dopravou. Při víc kandidátech se nehádá (stejně jako
+   * lib/shipping-profile-default.ts) — špatný profil = špatná doprava.
+   */
+  const profilesWithOptions = (shippingProfilesQuery.data?.shipping_profiles ?? []).filter(
+    (profile) => (optionsOnProfile(profile.id) ?? 0) > 0
+  );
+  const shippingFixTarget =
+    profilesWithOptions.find((profile) => profile.type === "default") ??
+    (profilesWithOptions.length === 1 ? profilesWithOptions[0] : null);
+  const shippingState: ShippingCheck["state"] | null =
+    !shippingProfileQuery.data || !shippingOptionsQuery.data
+      ? null
+      : !currentProfile?.id
+        ? "none"
+        : optionsOnProfile(currentProfile.id) === 0
+          ? "empty"
+          : "ok";
 
   const invalidate = async () => {
     await queryClient.invalidateQueries({ queryKey: ["produkt", productId] });
@@ -1201,11 +1335,29 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
       toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
   });
 
+  // Oprava z kontroly „Doprava" — stejný zápis, jakým profil mění widget Doprava.
+  const fixShipping = useMutation({
+    mutationFn: (shippingProfileId: string) =>
+      sdk.client.fetch(`/admin/products/${productId}`, {
+        method: "POST",
+        body: { shipping_profile_id: shippingProfileId },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["product-shipping-profile", productId],
+      });
+      toast.success("Doprava nastavena — kus jde objednat.");
+    },
+    onError: (error) =>
+      toast.error(ceskaChyba(error, "Dopravu se nepodařilo nastavit.")),
+  });
+
   /*
-   * A quick price cut for a damaged or clearance piece: every variant's CZK
-   * price drops by the given percentage (foreign currencies re-derive from the
-   * daily ČNB job), the pre-discount prices are remembered in metadata, and by
-   * default the piece is flagged Výprodej — the same switch the workbenches use.
+   * A quick price cut for a damaged piece: every variant's CZK price drops by
+   * the given percentage (foreign currencies re-derive from the daily ČNB
+   * job), the pre-discount prices are remembered in metadata, and by default
+   * the piece is flagged Poškozený kus (`clearance`) — the same switch the
+   * workbenches use.
    */
   const applyDiscount = useMutation({
     mutationFn: async (input: { percent: number; markClearance: boolean }) => {
@@ -1271,6 +1423,16 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
         if (metadata[key] !== undefined) copiedFlags[key] = metadata[key]
       }
       const optionTitle = product.options?.[0]?.title ?? "Provedení"
+      /*
+       * Doprava: kopie jede jako originál (třeba křehký profil), ale jen když
+       * pod jeho profilem nějaká doprava je — rozbitý stav se nekopíruje.
+       * Jinak běžný profil; a kdyby se nevědělo nic, doplní ho subscriber
+       * default-shipping-profile při vzniku produktu.
+       */
+      const copiedProfileId =
+        currentProfile?.id && (optionsOnProfile(currentProfile.id) ?? 0) > 0
+          ? currentProfile.id
+          : shippingFixTarget?.id
       const created = await sdk.client.fetch<{ product: { id: string } }>(
         `/admin/products`,
         {
@@ -1285,6 +1447,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
             height: product.height ?? undefined,
             width: product.width ?? undefined,
             status: "draft",
+            ...(copiedProfileId ? { shipping_profile_id: copiedProfileId } : {}),
             collection_id: product.collection_id ?? undefined,
             categories: (product.categories ?? []).map((category) => ({
               id: category.id,
@@ -1419,7 +1582,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
           description="Možná byl smazán, nebo je odkaz starý."
           action={
             <Button size="small" variant="secondary" asChild>
-              <Link to="/produkty-workbench">Zpět na Produkty+</Link>
+              <Link to="/produkty-workbench">Zpět na Produkty</Link>
             </Button>
           }
         />
@@ -1482,10 +1645,6 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
   const stockByVariant = new Map(
     (detail?.variants ?? []).map((variant) => [variant.id, variant])
   );
-  const soldTotal = (detail?.sales_by_month ?? []).reduce(
-    (sum, month) => sum + month.sold,
-    0
-  );
   const wishlistTotal = (detail?.variants ?? []).reduce(
     (sum, variant) => sum + variant.wishlist_count,
     0
@@ -1517,19 +1676,26 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
 
   return (
     <Container className="divide-y p-0">
-      <Toaster />
       <ProductLightbox product={lightbox} onClose={() => setLightbox(null)} />
 
       {/* ————— Hlavička ————— */}
       <header className="px-6 pb-4 pt-4">
-        <Link
-          to="/produkty-workbench"
-          className="text-ui-fg-muted txt-small hover:text-ui-fg-subtle"
-        >
-          ← Produkty+
-        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+          <Link
+            to="/produkty-workbench"
+            className="text-ui-fg-muted txt-small hover:text-ui-fg-subtle"
+          >
+            ← Produkty
+          </Link>
+          {/* Jednou pro celou stránku místo „ukládá se při opuštění pole"
+              u každého oddílu (Matěj, 3. 11. 2026). */}
+          <Text size="xsmall" className="text-ui-fg-muted">
+            Změny se ukládají samy — stačí opustit pole nebo přepnout přepínač.
+          </Text>
+        </div>
         <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
-        <div className="flex min-w-0 flex-1 items-start gap-4">
+        {/* basis-80: na telefonu se tlačítka zalomí pod název, ne vedle něj. */}
+        <div className="flex min-w-0 flex-1 basis-80 items-start gap-4">
           <button
             type="button"
             title="Zvětšit fotku"
@@ -1559,32 +1725,42 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               onSave={(next) => saveProduct.mutateAsync({ title: next })}
             />
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <Badge size="2xsmall" color={isPublished ? "green" : "grey"}>
-                {isPublished ? "publikováno" : "koncept"}
+              {/* Štítky zůstávají všechny (Matěj, 3. 11.) — jen řečí, kterou
+                  Lucie čte bez překladu: co kus je a jestli ho zákazník vidí. */}
+              <Badge
+                size="2xsmall"
+                color={isPublished ? "green" : "grey"}
+                title={
+                  isPublished
+                    ? "Zákazníci ho v obchodě vidí a můžou koupit."
+                    : "Zákazníci ho v obchodě nevidí, dokud ho nepublikujete."
+                }
+              >
+                {isPublished ? "Publikováno" : "Koncept — zákazník ho nevidí"}
               </Badge>
               {production?.enabled && (
                 <Badge size="2xsmall" color="purple">
-                  zakázka
+                  Na zakázku
                 </Badge>
               )}
               {priceOnRequest && (
                 <Badge size="2xsmall" color="purple">
-                  cena po domluvě
+                  Cena po domluvě
                 </Badge>
               )}
               {isBundle && (
                 <Badge size="2xsmall" color="blue">
-                  balíček
+                  Součást balíčku
                 </Badge>
               )}
               {clearance && (
                 <Badge size="2xsmall" color="orange">
-                  výprodej
+                  Poškozený kus
                 </Badge>
               )}
               {archived && (
                 <Badge size="2xsmall" color="red">
-                  archiv
+                  V archivu
                 </Badge>
               )}
               {expert && <CopyId value={product.id} />}
@@ -1628,38 +1804,16 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
             </Button>
           )}
           {isPublished ? (
-            // Hiding a live product is the misclick that must not happen
-            // silently — the same confirmation the eye uses in the lists.
-            <Prompt>
-              <Prompt.Trigger asChild>
-                <Button
-                  size="small"
-                  variant="secondary"
-                  isLoading={saveProduct.isPending}
-                >
-                  Skrýt z obchodu
-                </Button>
-              </Prompt.Trigger>
-              <Prompt.Content>
-                <Prompt.Header>
-                  <Prompt.Title>
-                    Skrýt „{product.title}" z obchodu?
-                  </Prompt.Title>
-                  <Prompt.Description>
-                    Zákazníci ho v obchodě neuvidí a nekoupí, dokud ho zase
-                    nezveřejníte.
-                  </Prompt.Description>
-                </Prompt.Header>
-                <Prompt.Footer>
-                  <Prompt.Cancel>Zrušit</Prompt.Cancel>
-                  <Prompt.Action
-                    onClick={() => saveProduct.mutate({ status: "draft" })}
-                  >
-                    Skrýt
-                  </Prompt.Action>
-                </Prompt.Footer>
-              </Prompt.Content>
-            </Prompt>
+            // Skrytí je vratné a nic neposílá, takže se neptá (stejně jako
+            // oko v seznamech): na stejném místě hned naskočí „Publikovat".
+            <Button
+              size="small"
+              variant="secondary"
+              isLoading={saveProduct.isPending}
+              onClick={() => saveProduct.mutate({ status: "draft" })}
+            >
+              Skrýt z obchodu
+            </Button>
           ) : (
             <Button
               size="small"
@@ -1670,14 +1824,9 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               Publikovat
             </Button>
           )}
-          <Button
-            size="small"
-            variant="transparent"
-            isLoading={archive.isPending}
-            onClick={() => archive.mutate(!archived)}
-          >
-            {archived ? "Obnovit z archivu" : "Archivovat"}
-          </Button>
+          {/* Duplikovat zůstává venku: série (šest hrnků z jedné glazury)
+              se zakládá kopírováním, to je denní práce. Vzácné akce
+              (sleva, archiv, smazání, expertní režim) jsou pod „…". */}
           <Button
             size="small"
             variant="secondary"
@@ -1686,114 +1835,27 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
           >
             Duplikovat
           </Button>
-          {/* Rychlá sleva — na poškozené a výprodejové kusy, přímo z lišty. */}
-          <Prompt>
-            <Prompt.Trigger asChild>
-              <Button
-                size="small"
-                variant="secondary"
-                isLoading={applyDiscount.isPending}
-                disabled={priceMin === null}
-              >
-                Zlevnit
-              </Button>
-            </Prompt.Trigger>
-            <Prompt.Content>
-              <Prompt.Header>
-                <Prompt.Title>Zlevnit „{product.title}"</Prompt.Title>
-                <Prompt.Description>
-                  Sníží cenu všech variant o zadaná procenta.
-                  {priceMin !== null && (
-                    <>
-                      {" "}Teď:{" "}
-                      {priceMin === priceMax
-                        ? formatCzk(priceMin)
-                        : `${formatCzk(priceMin)} – ${formatCzk(priceMax!)}`}
-                      .
-                    </>
-                  )}{" "}
-                  Původní ceny se zapamatují.
-                </Prompt.Description>
-              </Prompt.Header>
-              <div className="flex flex-col gap-3 px-6 py-2">
-                <div className="flex items-center gap-2">
-                  <Input
-                    size="small"
-                    type="number"
-                    min={1}
-                    max={99}
-                    className="w-20"
-                    value={discountPercent}
-                    onChange={(event) => setDiscountPercent(event.target.value)}
-                  />
-                  <Text size="small">% sleva</Text>
-                </div>
-                <label className="flex items-center gap-2">
-                  <Switch
-                    checked={discountClearance}
-                    onCheckedChange={setDiscountClearance}
-                  />
-                  <Text size="small">
-                    Zároveň označit jako výprodej (poškozený/jedinečný kus)
-                  </Text>
-                </label>
-              </div>
-              <Prompt.Footer>
-                <Prompt.Cancel>Zrušit</Prompt.Cancel>
-                <Prompt.Action
-                  disabled={
-                    !Number.isFinite(Number(discountPercent)) ||
-                    Number(discountPercent) < 1 ||
-                    Number(discountPercent) > 99
-                  }
-                  onClick={() =>
-                    applyDiscount.mutate({
-                      percent: Math.round(Number(discountPercent)),
-                      markClearance: discountClearance,
-                    })
-                  }
-                >
-                  Zlevnit
-                </Prompt.Action>
-              </Prompt.Footer>
-            </Prompt.Content>
-          </Prompt>
-          <Prompt variant="danger">
-            <Prompt.Trigger asChild>
-              <Button
-                size="small"
-                variant="transparent"
-                className="text-ui-fg-error"
-                isLoading={removeProduct.isPending}
-              >
-                <Trash /> Smazat
-              </Button>
-            </Prompt.Trigger>
-            <Prompt.Content>
-              <Prompt.Header>
-                <Prompt.Title>Smazat „{product.title}" nadobro?</Prompt.Title>
-                <Prompt.Description>
-                  Tohle nejde vrátit. Objednávky si svoje údaje nechají, ale kus
-                  z katalogu zmizí. Když si nejste jistí, použijte radši
-                  Archivovat.
-                </Prompt.Description>
-              </Prompt.Header>
-              <Prompt.Footer>
-                <Prompt.Cancel>Zrušit</Prompt.Cancel>
-                <Prompt.Action onClick={() => removeProduct.mutate()}>
-                  Smazat
-                </Prompt.Action>
-              </Prompt.Footer>
-            </Prompt.Content>
-          </Prompt>
-          <ExpertToggle />
-          {expert && (
-            <Button size="small" variant="transparent" asChild>
-              <Link to={`/products/${product.id}?puvodni=1`}>
-                Původní editace <ArrowUpRightOnBox />
-              </Link>
-            </Button>
-          )}
+          <ProductMoreActions
+            productId={product.id}
+            productTitle={product.title}
+            priceLabel={
+              priceMin === null
+                ? null
+                : priceMin === priceMax
+                  ? formatCzk(priceMin)
+                  : `${formatCzk(priceMin)} – ${formatCzk(priceMax!)}`
+            }
+            damaged={clearance}
+            archived={archived}
+            pending={{
+              discount: applyDiscount.isPending,
+              archive: archive.isPending,
+              remove: removeProduct.isPending,
+            }}
+            onDiscount={(input) => applyDiscount.mutate(input)}
+            onArchive={(next) => archive.mutate(next)}
+            onDelete={() => removeProduct.mutate()}
+          />
         </div>
         </div>
       </header>
@@ -1830,9 +1892,21 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
             }
           >
             {(product.images ?? []).length === 0 ? (
-              <Text size="small" className="text-ui-fg-subtle">
-                Zatím žádné fotky. Bez fotky si kousek nikdo nekoupí.
-              </Text>
+              // Prázdný stav je zároveň tlačítko — kam kliknout, je jasné.
+              <button
+                type="button"
+                disabled={uploadImages.isPending}
+                onClick={() => fileInput.current?.click()}
+                className="border-ui-border-strong hover:bg-ui-bg-base-hover text-ui-fg-subtle flex w-full flex-col items-center gap-1 rounded-lg border border-dashed px-4 py-6 disabled:opacity-60"
+              >
+                <Photo />
+                <Text size="small" weight="plus">
+                  Zatím žádné fotky — klikněte a nahrajte první
+                </Text>
+                <Text size="xsmall" className="text-ui-fg-muted">
+                  Bez fotky si kousek nikdo nekoupí. První fotka bude hlavní.
+                </Text>
+              </button>
             ) : (
               <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5">
                 {(product.images ?? []).map((image) => {
@@ -1879,10 +1953,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
             )}
           </Section>
 
-          <Section
-            title="Základní údaje"
-            hint="Píšete přímo do polí — opuštění pole uloží."
-          >
+          <Section title="Základní údaje">
             <div className="flex flex-col gap-4">
               <div>
                 <FieldLabel>Popis</FieldLabel>
@@ -1943,8 +2014,8 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                       />
                     </div>
                     <Text size="xsmall" className="text-ui-fg-muted mt-1">
-                      Ukáže se zákazníkovi u zakázky v košíku i v pokladně jako
-                      výzva, co poslat. Prázdné → obecný text.
+                      Zákazník ji uvidí při objednání jako výzvu, co má poslat.
+                      Prázdné = obecný text.
                     </Text>
                   </div>
                 )}
@@ -1980,11 +2051,11 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               <Heading level="h2">
                 {variants.length === 1 ? "Cena a sklad" : "Provedení a ceny"}
               </Heading>
-              <Text size="small" className="text-ui-fg-subtle mt-1">
-                {variants.length === 1
-                  ? "Ukládá se při opuštění pole — žádné tlačítko navíc."
-                  : "Název, kód, cena i naskladnění — všechno rovnou tady, ukládá se při opuštění pole."}
-              </Text>
+              {variants.length > 1 && (
+                <Text size="small" className="text-ui-fg-subtle mt-1">
+                  Každé provedení má vlastní název, cenu a sklad.
+                </Text>
+              )}
               {/* Cena po domluvě (metadata.price_on_request) — jediné místo,
                   kde se zapíná; dřívější informační věta je sloučená sem. */}
               <label className="bg-ui-bg-subtle mt-3 flex cursor-pointer items-start gap-3 rounded-lg px-3 py-2.5">
@@ -2001,9 +2072,11 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                     Bez ceny — cena po domluvě
                   </Text>
                   <Text size="small" className="text-ui-fg-subtle mt-0.5">
+                    {/* Pravidlo z kontroly „Než publikujete": u ceny po
+                        domluvě cena chybět smí (0 Kč nevadí). */}
                     {priceOnRequest
-                      ? "Zákazník objedná za 0 Kč, cenu mu po domluvě pošlete z objednávky; produkt je automaticky zakázka."
-                      : "Zaškrtněte, když cenu domlouváte se zákazníkem až po objednávce — kus se pak stane zakázkou."}
+                      ? "Cenu vyplňovat nemusíte (0 Kč nevadí) — zákazník objedná za 0 Kč a cenu mu pošlete z objednávky. Kus je zakázka."
+                      : "Když cenu domlouváte až po objednávce (hlavně u zakázek). Kus se stane zakázkou a cenu vyplňovat nemusíte — stačí 0 Kč."}
                   </Text>
                 </div>
               </label>
@@ -2055,7 +2128,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
           >
             {(() => {
               /* Kaskáda: kategorie patří kolekci přes metadata.collection_id
-                 (nastavuje se v Rozdělení; stejnou vazbu čte menu obchodu).
+                 (nastavuje se v Kolekce a kategorie; stejnou vazbu čte menu obchodu).
                  Plochý mrak všech 20 kategorií nutil Lucii pamatovat si,
                  co kam patří — teď jí stránka nabídne jen ty správné. */
               const collectionId = product.collection_id ?? null;
@@ -2145,7 +2218,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                             to="/rozdeleni"
                             className="text-ui-fg-interactive hover:underline"
                           >
-                            Rozdělení
+                            Kolekce a kategorie
                           </Link>
                           .
                         </Text>
@@ -2281,6 +2354,29 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
             inShop={inShop}
             onAddToShop={addToShop}
             addingToShop={saveProduct.isPending}
+            shipping={
+              shippingState === null
+                ? null
+                : {
+                    state: shippingState,
+                    profileName: currentProfile?.name ?? null,
+                    fixTarget: shippingFixTarget
+                      ? { id: shippingFixTarget.id, name: shippingFixTarget.name }
+                      : null,
+                    onFix: () => {
+                      if (shippingFixTarget) fixShipping.mutate(shippingFixTarget.id);
+                    },
+                    fixing: fixShipping.isPending,
+                  }
+            }
+          />
+
+          {/* Čísla hned pod kontrolou — „jak se mu daří" je druhá otázka,
+              kterou si u kusu klade (dřív to byly tři oddíly na konci). */}
+          <ProductPerformanceCard
+            detail={detail}
+            wishlistTotal={wishlistTotal}
+            waitingTotal={waitingTotal}
           />
 
           {/*
@@ -2291,7 +2387,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
           {expert && (
             <Section
               title="Prodejní kanály"
-              hint="Obchod ukazuje jen kusy v kanálu označeném „obchod“. Přepínače platí hned."
+              hint="Obchod ukazuje jen kusy v kanálu, ze kterého čte."
             >
               <div className="divide-y">
                 {(salesChannelsQuery.data?.sales_channels ?? []).map((channel) => {
@@ -2330,10 +2426,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
             </Section>
           )}
 
-          <Section
-            title="Vlastnosti prodeje"
-            hint="Přepínače platí hned — žádné ukládání navíc."
-          >
+          <Section title="Vlastnosti prodeje">
             <div className="divide-y">
               {/*
                 Jedno kliknutí = zakázka. Podrobné podmínky zůstávají
@@ -2345,39 +2438,41 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                 label="Na zakázku"
                 description={
                   priceOnRequest
-                    ? "Zapnuto automaticky, protože kus má cenu po domluvě. Vypnout jde vypnutím ceny po domluvě."
+                    ? "Zapnuto, protože kus má cenu po domluvě (vypíná se tam)."
                     : production?.enabled
-                      ? "Kus se vyrábí až po objednání — zákazník zaplatí zálohu a počká. Záloha, lhůta a „co mi pošlete“ jsou níž v Zakázkové výrobě."
-                      : "Zapněte, když se kus vyrábí až po objednání. Zákazník zaplatí zálohu (výchozí 25 %, lhůta 14–42 dní) a doplatí před odesláním."
+                      ? "Vyrábí se po objednání, zákazník platí zálohu — podmínky jsou níž v Zakázkové výrobě."
+                      : "Vyrábí se až po objednání: záloha 25 %, zbytek před odesláním, výroba 14–42 dní."
                 }
                 checked={Boolean(production?.enabled)}
                 disabled={toggleMadeToOrder.isPending || priceOnRequest}
                 onChange={(next) => toggleMadeToOrder.mutate(next)}
               />
+              {/* Příznak `clearance` = jen poškozený kus, samostatně, ne
+                  „výprodej" (Matěj, 3. 11. 2026). */}
               <FlagRow
-                label="Výprodej"
-                description="Poškozený nebo jedinečný kousek. Po vyprodání se sám skryje z obchodu."
+                label="Poškozený kus"
+                description="Kus s vadou, prodává se levněji. Po prodeji se sám skryje z obchodu."
                 checked={clearance}
                 disabled={saveFlags.isPending}
                 onChange={(next) => saveFlags.mutate({ clearance: next })}
               />
               <FlagRow
                 label="Dobírka"
-                description={'Zapnuto = dá se poslat na dobírku (výchozí u všech). Vypněte, když ho chcete jen předem kartou — zákazník pak uvidí „Nelze objednat na dobírku". Zakázky a zahraničí dobírku nemají nikdy.'}
+                description="Zapnuto (výchozí) = jde poslat na dobírku; vypnuto = jen platba předem. Zakázky a zahraničí ji nemají nikdy."
                 checked={product?.metadata?.cod_allowed !== false}
                 disabled={saveFlags.isPending}
                 onChange={(next) => saveFlags.mutate({ cod_allowed: next })}
               />
               <FlagRow
                 label="Mrazuvzdorný"
-                description="Kus vydrží mráz — důležité u květináčů a zahradních kousků."
+                description="Vydrží mráz — u květináčů a zahradních kousků."
                 checked={flagOf(product, "frost_resistant")}
                 disabled={saveFlags.isPending}
                 onChange={(next) => saveFlags.mutate({ frost_resistant: next })}
               />
               <FlagRow
                 label="Křehké"
-                description="Celá zásilka s tímto kouskem pojede v křehkém režimu."
+                description="Celá zásilka s tímto kouskem pojede jako křehká."
                 checked={flagOf(product, "fragile")}
                 disabled={saveFlags.isPending}
                 onChange={(next) => saveFlags.mutate({ fragile: next })}
@@ -2393,11 +2488,13 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                   <Text size="small" weight="plus">
                     Cena balení
                   </Text>
-                  <Text size="small" className="text-ui-fg-subtle mt-0.5">
-                    Balné za kus — zákazník ho uvidí jako vlastní položku
-                    pod výrobkem (v košíku, objednávce i na faktuře), i u
-                    osobního odběru. V cizí měně se přepočte kurzem ČNB
-                    a zaokrouhlí nahoru na 0,50. Prázdné = 0 Kč (ukáže se „Balné 0,-").
+                  <Text
+                    size="small"
+                    className="text-ui-fg-subtle mt-0.5"
+                    title="V cizí měně se přepočte kurzem ČNB a zaokrouhlí nahoru na 0,50."
+                  >
+                    Balné za kus — zákazník ho uvidí jako položku pod výrobkem
+                    (i u osobního odběru). Prázdné = 0 Kč.
                   </Text>
                 </div>
                 <InlineNumber
@@ -2498,152 +2595,46 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
             </div>
           </Section>
 
+          {/* Jeden přepínač; zpráva pro zákazníka jen když je zapnutý.
+              Uložená zpráva se vypnutím nemaže — po zapnutí je zpátky. */}
           <Section
-            title="Objednání bez skladu"
-            hint="Výchozí chování obchodu: po vyprodání se prodává dál a sklad jde do mínusu — vidíte, kolik kusů dlužíte."
-          >
-            <div className="divide-y">
-              <FlagRow
-                label="Objednat i bez kusů skladem"
-                description={'Zákazník koupí i vyprodaný kus; u něj se místo „Prodáno“ ukáže „Na objednávku“.'}
+            title="Objednání bez kusů na skladu"
+            hint="Zákazník může koupit produkt, který není na skladu, ale uvidí zprávu, že to bude trvat déle."
+            action={
+              <Switch
+                aria-label="Objednání bez kusů na skladu"
                 checked={backorderAll}
                 disabled={toggleBackorder.isPending || variants.length === 0}
-                onChange={(next) => toggleBackorder.mutate(next)}
+                onCheckedChange={(next) => toggleBackorder.mutate(next)}
               />
-              <div className="flex flex-col gap-2 py-3">
-                <div>
-                  <Text size="small" weight="plus">
-                    Co uvidí zákazník
-                  </Text>
-                  <Text size="small" className="text-ui-fg-subtle mt-0.5">
-                    Vaše věta o čekání — ukáže se u vyprodaného kusu vedle „Na
-                    objednávku".
-                  </Text>
-                </div>
-                <InlineText
-                  value={backorderNote}
-                  placeholder="např. Vyrobíme pro vás do 3 týdnů."
-                  onSave={(next) =>
-                    saveFlags.mutateAsync({ backorder_note: next || null })
-                  }
-                />
-              </div>
-              {backorderAll && clearance && (
-                <Text size="small" className="text-ui-fg-error py-3">
-                  Pozor: kus je ve výprodeji — po vyprodání se sám skryje
-                  z obchodu, takže objednání bez skladu se neuplatní. Vypněte
-                  jedno z toho.
-                </Text>
-              )}
-            </div>
-          </Section>
-
-          <section className="px-6 py-5">
-            <Heading level="h2">Prodeje za půl roku</Heading>
-            <div className="mt-3 flex flex-col gap-1">
-              {(detail?.sales_by_month ?? []).map((month) => (
-                <div
-                  key={month.month}
-                  className="flex items-center justify-between gap-2"
-                >
-                  <Text size="small" className="text-ui-fg-subtle capitalize">
-                    {monthLabel(month.month)}
-                  </Text>
-                  <Text size="small" className="tabular-nums">
-                    {month.sold ? pieces(month.sold) : "—"}
+            }
+          >
+            {backorderAll ? (
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                  <FieldLabel>Zpráva pro zákazníka</FieldLabel>
+                  <InlineText
+                    value={backorderNote}
+                    placeholder="např. Vyrobíme pro vás do 3 týdnů."
+                    onSave={(next) =>
+                      saveFlags.mutateAsync({ backorder_note: next || null })
+                    }
+                  />
+                  <Text size="xsmall" className="text-ui-fg-muted">
+                    Ukáže se u kusu, který není skladem, vedle „Na objednávku“.
+                    Sklad pak jde do mínusu — uvidíte, kolik kusů dlužíte.
                   </Text>
                 </div>
-              ))}
-            </div>
-            <div className="border-ui-border-base mt-3 flex flex-wrap gap-x-6 gap-y-1 border-t pt-3">
-              <Text size="small" className="text-ui-fg-subtle">
-                Celkem prodáno: <strong>{pieces(soldTotal)}</strong>
-              </Text>
-              <Text size="small" className="text-ui-fg-subtle">
-                V seznamech přání: <strong>{wishlistTotal}</strong>
-              </Text>
-              {waitingTotal > 0 && (
-                <Text size="small" className="text-ui-fg-subtle">
-                  Čeká na naskladnění: <strong>{waitingTotal}</strong>
-                </Text>
-              )}
-            </div>
-          </section>
-
-          <section className="px-6 py-5">
-            <div className="flex items-center gap-2">
-              <Heading level="h2">Recenze</Heading>
-              {detail?.reviews.average != null && (
-                <Badge size="2xsmall" color="green">
-                  ★ {detail.reviews.average}
-                </Badge>
-              )}
-            </div>
-            {detail?.reviews.count ? (
-              <div className="mt-3 flex flex-col gap-3">
-                {detail.reviews.latest.map((review, index) => (
-                  <div key={index}>
-                    <div className="flex items-center justify-between gap-2">
-                      <Text size="small" weight="plus">
-                        {"★".repeat(Math.max(1, Math.round(review.rating)))}
-                      </Text>
-                      <Text size="xsmall" className="text-ui-fg-muted">
-                        {formatDate(review.created_at)}
-                      </Text>
-                    </div>
-                    <Text size="small" className="text-ui-fg-subtle mt-0.5">
-                      {review.content.length > 160
-                        ? `${review.content.slice(0, 160)}…`
-                        : review.content}
-                    </Text>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <Text size="small" className="text-ui-fg-subtle mt-2">
-                Zatím žádné recenze.
-              </Text>
-            )}
-          </section>
-
-          <section className="px-6 py-5">
-            <Heading level="h2">Kde je zapojen</Heading>
-            {isBundle || (detail?.memberships.seasonal_selections ?? []).length ? (
-              <div className="mt-3 flex flex-col gap-2">
-                {(detail?.memberships.bundles ?? []).map((bundle) => (
-                  <Text size="small" key={bundle.id}>
-                    Balíček{" "}
-                    <Link
-                      to="/bundled-products"
-                      className="text-ui-fg-interactive hover:underline"
-                    >
-                      {bundle.title}
-                    </Link>
+                {clearance && (
+                  <Text size="small" className="text-ui-fg-error">
+                    Pozor: poškozený kus se po prodeji sám skryje z obchodu,
+                    takže objednání bez kusů na skladu se neuplatní. Vypněte
+                    jedno z toho.
                   </Text>
-                ))}
-                {(detail?.memberships.seasonal_selections ?? []).map(
-                  (selection) => (
-                    <Text size="small" key={selection.id}>
-                      Sezónní akce{" "}
-                      <Link
-                        to="/sezonni-vybery"
-                        className="text-ui-fg-interactive hover:underline"
-                      >
-                        {selection.title}
-                      </Link>
-                    </Text>
-                  )
                 )}
-                <Text size="xsmall" className="text-ui-fg-muted mt-1">
-                  Změna ceny se propíše i tam — počítejte s tím.
-                </Text>
               </div>
-            ) : (
-              <Text size="small" className="text-ui-fg-subtle mt-2">
-                Nikde — kus není v žádném balíčku ani akci.
-              </Text>
-            )}
-          </section>
+            ) : null}
+          </Section>
 
           <section className="px-6 py-5">
             <Text size="xsmall" className="text-ui-fg-muted mb-2">
@@ -2653,7 +2644,8 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
             <RawData data={{ product, detail }} />
             {!expert && (
               <Text size="xsmall" className="text-ui-fg-muted">
-                Expertní režim v hlavičce ukáže i surová data a původní editaci.
+                Expertní režim (nahoře pod „…“) ukáže i surová data a původní
+                editaci.
               </Text>
             )}
           </section>

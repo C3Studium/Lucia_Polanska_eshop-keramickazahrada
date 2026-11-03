@@ -2,7 +2,6 @@ import { defineRouteConfig } from "@medusajs/admin-sdk";
 import {
   ArrowUpRightOnBox,
   ChevronDown,
-  FlyingBox,
   Photo,
   TagSolid,
 } from "@medusajs/icons";
@@ -15,7 +14,6 @@ import {
   Skeleton,
   Switch,
   Text,
-  Toaster,
   toast,
 } from "@medusajs/ui";
 import {
@@ -58,9 +56,8 @@ import {
 import { ProductionProfileEditor } from "../../components/production-profile-editor";
 import { formatCzk, productionStageLabels } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
-import { ShippingProfileEditor } from "../../components/shipping-profile-editor";
 import { SelectCheckbox } from "../../components/select-checkbox";
-import { ArchiveToggle } from "../../components/archive-toggle";
+import { ProductRowMore } from "../../components/product-row-more";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
 
@@ -294,12 +291,10 @@ const PublishToggle = ({ product }: { product: WorkbenchProduct }) => {
       label={`produkt ${product.title}`}
       hideText="Zákazníci ho v obchodě neuvidí a nekoupí, dokud ho zase nezveřejníte."
       showText="Produkt se vrátí do obchodu a půjde koupit."
-      onToggle={() =>
+      onToggle={(next) =>
         sdk.client.fetch(`/admin/products/${product.id}`, {
           method: "POST",
-          body: {
-            status: product.status === "published" ? "draft" : "published",
-          },
+          body: { status: next ? "published" : "draft" },
         })
       }
       onDone={() =>
@@ -323,22 +318,26 @@ const PublishToggle = ({ product }: { product: WorkbenchProduct }) => {
  */
 /*
  * Seznam jako TABULKA (Matěj 12. 10. 2026: „mít 2 řádky je o ničem, když to
- * má být list"). Od 1400 px jeden řádek na produkt se sloupci a hlavičkou —
- * přepínače bez popisků, popisek nese hlavička. Užší displej: nastavení pod
- * údaji; telefon: nastavení pod „…".
+ * má být list"). Od 1200 px jeden řádek na produkt se sloupci a hlavičkou;
+ * užší displej skládá údaje pod název.
+ *
+ * Sloupec „Balné a doprava" nese to, co se u kusu mění nejčastěji (Matěj
+ * 3. 11. 2026: „to hlavní tam nech jako balné atd."): balné, dobírka,
+ * křehké. Vzácná nastavení jsou pod „…" v malém okně (ProductRowMore).
  */
 const ROW_GRID =
-  "min-[1100px]:grid-cols-[minmax(0,1fr)_96px_88px_92px_150px]";
+  "min-[1200px]:grid-cols-[minmax(0,1fr)_96px_88px_92px_176px_164px]";
 
-const RowHeader = () => (
+const RowHeader = ({ settings }: { settings: boolean }) => (
   <div
-    className={`bg-ui-bg-subtle text-ui-fg-subtle hidden gap-x-3 px-6 py-2 min-[1100px]:grid ${ROW_GRID}`}
+    className={`bg-ui-bg-subtle text-ui-fg-subtle hidden gap-x-3 px-6 py-2 min-[1200px]:grid ${ROW_GRID}`}
   >
     {[
       ["Produkt", "", "pl-[92px]"],
       ["Stav", "", ""],
       ["Cena", "", ""],
       ["Prodeje 30 dní", "", ""],
+      [settings ? "Balné a doprava" : "", "", ""],
       ["", "", ""],
     ].map(([label, title, className], index) => (
       <Text key={index} size="xsmall" weight="plus" className={className} title={title || undefined}>
@@ -362,11 +361,10 @@ const FlagSwitch = ({
   onFlip: () => void;
 }) => (
   <label
-    className={`flex cursor-pointer items-center gap-1.5 ${dirty ? `min-[1100px]:rounded-md min-[1100px]:bg-ui-tag-orange-bg min-[1100px]:px-1` : ""}`}
+    className={`flex cursor-pointer items-center gap-1.5 ${dirty ? "bg-ui-tag-orange-bg rounded-md px-1" : ""}`}
     title={title}
   >
     <Switch size="small" checked={checked} onCheckedChange={onFlip} />
-    {/* Na širokém displeji nese popisek hlavička sloupce. */}
     <Text
       size="xsmall"
       className={`${dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle"}`}
@@ -377,7 +375,7 @@ const FlagSwitch = ({
 );
 
 /**
- * Balení [cena] v řádku (Matěj 12. 10. 2026: neschovávat do okna). Píše se
+ * Balné [cena] v řádku (Matěj 12. 10. 2026: neschovávat do okna). Píše se
  * jako přepínače do rozpracovaných změn — uloží se Potvrdit / Potvrdit vše.
  * Prázdné = bez ceny balení (zákazník uvidí „Balné 0,-").
  */
@@ -410,7 +408,7 @@ const PackagingInput = ({
         size="xsmall"
         className={`${dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle"}`}
       >
-        Balení
+        Balné
       </Text>
       <input
         type="number"
@@ -568,7 +566,7 @@ const StatsView = () => {
       {block(
         "Poškozené a hodnocení",
         <Text size="small">
-          Výprodej poškozených: {data.clearance.total}
+          Poškozené kusy: {data.clearance.total}
           {data.clearance.sold_out_awaiting_removal > 0
             ? ` (${data.clearance.sold_out_awaiting_removal} vyprodáno — zmizí samy)`
             : ""}
@@ -647,8 +645,6 @@ const ProductsInner = () => {
       }
     >
   >({});
-  /* Telefon: akce řádku schované pod „…" (na PC jsou vidět vždy). */
-  const [openActions, setOpenActions] = useState<string | null>(null);
 
   /* Deep link z Rozdělení: ?produkt=<id>&druh=<kind> přepne na správnou
      záložku a rovnou řádek rozbalí — rychlé akce bez hledání. Parametry se
@@ -816,6 +812,21 @@ const ProductsInner = () => {
         if (Object.keys(entry).length === 0) delete next[id];
         else next[id] = entry;
       }
+      return next;
+    });
+  };
+
+  /* Okno „…" uložilo přepínač rovnou — jeho rozpracovaná hodnota v řádku
+     (např. z lišty výběru) by jinak visela jako neuložená změna. */
+  const dropPendingKey = (productId: string, key: FlagKey) => {
+    setPendingFlags((prev) => {
+      const entry = prev[productId];
+      if (!entry || !(key in entry)) return prev;
+      const next = { ...prev };
+      const rest = { ...entry };
+      delete rest[key];
+      if (Object.keys(rest).length === 0) delete next[productId];
+      else next[productId] = rest;
       return next;
     });
   };
@@ -1218,7 +1229,7 @@ const ProductsInner = () => {
       <Fragment key={product.id}>
         <article
           id={`workbench-row-${product.id}`}
-          className={`grid gap-x-3 gap-y-2 px-6 py-3 min-[1100px]:items-center ${ROW_GRID}`}>
+          className={`grid gap-x-3 gap-y-2 px-6 py-3 min-[1200px]:items-center ${ROW_GRID}`}>
           {/* 1) Produkt: výběr, fotka, název, zařazení, odkazy */}
           <div className="flex min-w-0 items-center gap-3">
             <SelectCheckbox
@@ -1264,17 +1275,6 @@ const ProductsInner = () => {
                     </button>
                   }
                 />
-                {active === "produkty" && (
-                  <ProductionProfileEditor
-                    productId={product.id}
-                    productTitle={product.title}
-                    trigger={
-                      <button type="button" className="text-ui-fg-subtle hover:underline">
-                        Nastavit jako zakázku
-                      </button>
-                    }
-                  />
-                )}
                 {active === "zakazky" && (
                   <ProductionProfileEditor
                     productId={product.id}
@@ -1299,20 +1299,10 @@ const ProductsInner = () => {
                 {expert && <CopyId value={product.id} />}
               </div>
             </div>
-            {/* Telefon: nastavení a akce řádku pod „…" — stejné jako na PC. */}
-            <button
-              type="button"
-              className="text-ui-fg-subtle hover:text-ui-fg-base hover:bg-ui-bg-base-hover ml-auto shrink-0 rounded-md px-3 py-1.5 text-lg leading-none"
-              aria-expanded={openActions === product.id}
-              aria-label="Další nastavení a akce"
-              onClick={() => setOpenActions(openActions === product.id ? null : product.id)}
-            >
-              …
-            </button>
           </div>
 
-          {/* 2–4) Stav, cena, prodeje — na užším displeji jedna řádka pod názvem */}
-          <div className={`flex flex-wrap items-center gap-x-5 gap-y-1 pl-[92px] min-[1100px]:contents`}>
+          {/* 2–5) Stav, cena, prodeje, balné — na užším displeji pod názvem */}
+          <div className={`flex flex-wrap items-center gap-x-5 gap-y-2 sm:pl-[92px] min-[1200px]:contents`}>
             <div className="flex flex-wrap gap-1">
               {product.status !== "published" && (
                 <Badge size="2xsmall" color="grey">koncept</Badge>
@@ -1336,7 +1326,7 @@ const ProductsInner = () => {
               </Text>
               <Text size="xsmall" className="text-ui-fg-subtle">
                 {active === "poskozene"
-                  ? "výprodejová cena"
+                  ? "cena se slevou"
                   : `${product.variants.length} ${
                       product.variants.length === 1
                         ? "varianta"
@@ -1353,73 +1343,42 @@ const ProductsInner = () => {
                 {product.review_average !== null ? ` · ${product.review_average} ★` : ""}
               </Text>
             </div>
+            {/*
+              5) Balné a doprava — to, co se u kusu mění často, rovnou v řádku.
+              Píše se do rozpracovaných změn jako dřív (Potvrdit / Potvrdit vše),
+              na označeném řádku pro celý výběr.
+            */}
+            <div className="flex flex-col gap-1.5">
+              {settingsOn ? (
+                <>
+                  <PackagingInput
+                    value={effectivePackaging(product)}
+                    dirty={pending?.packaging_price !== undefined}
+                    onChange={(value) => stagePackaging(product, value)}
+                  />
+                  <div className="flex items-center gap-3">
+                    <FlagSwitch
+                      label="Dobírka"
+                      title="Zákazník smí platit při převzetí — jen ČR a Česká pošta na adresu."
+                      checked={effectiveFlag(product, "cod_allowed")}
+                      dirty={pending?.cod_allowed !== undefined}
+                      onFlip={() => stageFlag(product, "cod_allowed")}
+                    />
+                    <FlagSwitch
+                      label="Křehké"
+                      title="Celá zásilka s tímto kouskem pojede v křehkém režimu (Česká pošta – křehké nebo osobní odběr)."
+                      checked={effectiveFlag(product, "fragile")}
+                      dirty={pending?.fragile !== undefined}
+                      onFlip={() => stageFlag(product, "fragile")}
+                    />
+                  </div>
+                </>
+              ) : null}
+            </div>
           </div>
 
-          {/*
-            5) Nastavení kusu — za „…", ne jako pět sloupců (spec §13).
-
-            Dřív měl každý přepínač vlastní sloupec a mřížka se kvůli tomu
-            skládala až od 1400 px. Windows 1920 při 150 % zvětšení dává
-            1280 CSS px, takže se na jejím počítači nesložila nikdy —
-            dostávala zalomený dvouúrovňový řádek s pěti přepínači bez
-            popisků, u dvaceti produktů stokrát pod sebou.
-
-            Těchhle pět vlastností se mění buď hromadně v liště výběru
-            (§2), nebo u jednoho kusu tady — tedy jednou za čas, ne při
-            každém pohledu na seznam.
-          */}
-          <div
-            className={`${
-              openActions === product.id ? "flex" : "hidden"
-            } col-span-full flex-wrap items-center gap-x-4 gap-y-2 rounded-md bg-ui-bg-subtle px-2 py-2 min-[1100px]:pl-[92px]`}
-          >
-            {settingsOn ? (
-              <FlagSwitch
-                label="Dobírka"
-                title="Zákazník smí platit při převzetí — jen ČR a Česká pošta na adresu."
-                checked={effectiveFlag(product, "cod_allowed")}
-                dirty={pending?.cod_allowed !== undefined}
-                onFlip={() => stageFlag(product, "cod_allowed")}
-              />
-            ) : null}
-            {settingsOn ? (
-              <FlagSwitch
-                label="Křehké"
-                title="Celá zásilka s tímto kouskem pojede v křehkém režimu (Česká pošta – křehké nebo osobní odběr)."
-                checked={effectiveFlag(product, "fragile")}
-                dirty={pending?.fragile !== undefined}
-                onFlip={() => stageFlag(product, "fragile")}
-              />
-            ) : null}
-            {settingsOn ? (
-              <PackagingInput
-                value={effectivePackaging(product)}
-                dirty={pending?.packaging_price !== undefined}
-                onChange={(value) => stagePackaging(product, value)}
-              />
-            ) : null}
-            {active === "produkty" || active === "poskozene" ? (
-              <FlagSwitch
-                label="Poškozené"
-                title="Poškozený / poslední kus ve výprodeji — po prodeji se sám schová."
-                checked={effectiveFlag(product, "clearance")}
-                dirty={pending?.clearance !== undefined}
-                onFlip={() => stageFlag(product, "clearance")}
-              />
-            ) : null}
-            {settingsOn ? (
-              <FlagSwitch
-                label="Bez slev. kódů"
-                title="Slevové kódy se na tento produkt nevztahují (ani do budoucna). Vyber víc kusů a přepni je naráz."
-                checked={effectiveFlag(product, "no_promo")}
-                dirty={pending?.no_promo !== undefined}
-                onFlip={() => stageFlag(product, "no_promo")}
-              />
-            ) : null}
-          </div>
-
-          {/* 5) Akce řádku — pátý a poslední sloupec mřížky. */}
-          <div className={`flex items-center gap-3 min-[1100px]:justify-end`}>
+          {/* 6) Akce řádku — poslední sloupec mřížky; vzácné věci pod „…". */}
+          <div className={`flex items-center gap-3 sm:pl-[92px] min-[1200px]:justify-end min-[1200px]:pl-0`}>
               <button
                 type="button"
                 title={expanded === product.id ? "Sbalit" : "Rozbalit"}
@@ -1430,24 +1389,6 @@ const ProductsInner = () => {
                   className={`transition-transform ${expanded === product.id ? "rotate-180" : ""}`}
                 />
               </button>
-              {active !== "oblibene" && (
-                <ShippingProfileEditor
-                  productId={product.id}
-                  productTitle={product.title}
-                  fragile={product.fragile}
-                  packagingPrice={product.packaging_price}
-                  trigger={
-                    <button
-                      type="button"
-                      title="Profil dopravy (doprava a balení)"
-                      className="text-ui-fg-subtle hover:text-ui-fg-base"
-                    >
-                      <FlyingBox />
-                    </button>
-                  }
-                />
-              )}
-              {active !== "oblibene" && <ArchiveToggle product={product} />}
               <PublishToggle product={product} />
               {product.store_url && (
                 <a
@@ -1466,6 +1407,35 @@ const ProductsInner = () => {
               >
                 Upravit
               </Link>
+              {active !== "oblibene" && (
+                <ProductRowMore
+                  product={product}
+                  flags={
+                    settingsOn
+                      ? {
+                          ...(active === "produkty" || active === "poskozene"
+                            ? { clearance: effectiveFlag(product, "clearance") }
+                            : {}),
+                          no_promo: effectiveFlag(product, "no_promo"),
+                        }
+                      : {}
+                  }
+                  onFlagSaved={(key) => dropPendingKey(product.id, key)}
+                  showShipping
+                  showMakeCommission={active === "produkty"}
+                  showArchive
+                  trigger={
+                    <button
+                      type="button"
+                      title="Další nastavení"
+                      aria-label={`Další nastavení — ${product.title}`}
+                      className="text-ui-fg-subtle hover:text-ui-fg-base hover:bg-ui-bg-base-hover rounded-md px-2 py-0.5 text-lg leading-none"
+                    >
+                      …
+                    </button>
+                  }
+                />
+              )}
           </div>
 
           {/* Rozpracované změny řádku — potvrzení na celou šířku, jen když jsou. */}
@@ -1505,15 +1475,13 @@ const ProductsInner = () => {
 
   return (
     <Container className="divide-y p-0">
-      <Toaster />
       <ProductLightbox product={lightbox} onClose={() => setLightbox(null)} />
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
         <div className="min-w-0">
           <Heading>Produkty — pracovní přehled</Heading>
           <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
-            Každý druh zboží má svou záložku a své ovládání: běžné produkty,
-            zakázky se zálohou, balíčky, poškozené kusy — a statistiky přes
-            všechno dohromady.
+            Každý druh zboží má svou záložku. Balné, dobírku a křehké měníte
+            přímo v řádku, ostatní nastavení najdete pod „…“.
           </Text>
         </div>
         <div className="flex flex-wrap items-center gap-4">
@@ -1659,11 +1627,11 @@ const ProductsInner = () => {
               }
               description={
                 active === "poskozene"
-                  ? "Poškozený kus založíte tlačítkem Přidat produkt nahoře, nebo označíte existující v záložce Produkty."
+                  ? "Poškozený kus založíte tlačítkem Přidat produkt nahoře, nebo existující označíte v záložce Produkty pod „…“."
                   : active === "balicky"
                     ? "Balíček sestavíte tlačítkem Přidat produkt nahoře."
                     : active === "zakazky"
-                      ? "Zakázku založíte tlačítkem Přidat produkt nahoře, nebo tak označíte existující produkt akcí ‚Nastavit jako zakázku‘."
+                      ? "Zakázku založíte tlačítkem Přidat produkt nahoře, nebo existující produkt nastavíte v záložce Produkty pod „…“ → Nastavit jako zakázku."
                       : active === "archivovane"
                         ? "Archivované kusy zmizí z obchodu i ze seznamů, ale zůstanou v historii objednávek."
                         : "Zkuste jiné hledání."
@@ -1676,7 +1644,9 @@ const ProductsInner = () => {
               <div className={gridClassName}>{rows.map(renderGridCard)}</div>
             ) : (
               <div className="divide-y">
-                {view !== "kompakt" && <RowHeader />}
+                {view !== "kompakt" && (
+                  <RowHeader settings={active !== "oblibene" && active !== "archivovane"} />
+                )}
                 {rows.map(view === "kompakt" ? renderCompactRow : renderRow)}
               </div>
             )
@@ -1732,7 +1702,7 @@ const ProductsInner = () => {
                 onSet={(next) => stageFlagForSelection("no_promo", next)}
               />
               <BulkNumber
-                label="Balení"
+                label="Balné"
                 unit="Kč"
                 value={bulkPackaging.kind === "same" ? bulkPackaging.value : null}
                 mixed={bulkPackaging.kind === "mixed"}
@@ -1789,7 +1759,7 @@ const ProductsWorkbenchPage = () => (
 );
 
 export const config = defineRouteConfig({
-  label: "Produkty+",
+  label: "Produkty",
   icon: TagSolid,
   rank: 20,
 });

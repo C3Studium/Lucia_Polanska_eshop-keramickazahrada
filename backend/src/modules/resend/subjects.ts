@@ -254,6 +254,12 @@ export const LOCALIZED_SUBJECTS: Record<string, Record<Exclude<EmailLocale, "cs"
     de: "Geschenkgutschein – Link zur Zahlung",
     en: "Gift voucher — your payment link",
   },
+  "loyalty-code": {
+    sk: "Malé poďakovanie — zľavový kód len pre vás",
+    pl: "Małe podziękowanie — kod rabatowy tylko dla Państwa",
+    de: "Ein kleines Dankeschön – Ihr persönlicher Rabattcode",
+    en: "A small thank-you — a discount code just for you",
+  },
   "commission-price-agreed": {
     sk: "Dohodnutá cena za vašu zákazku",
     pl: "Uzgodniona cena zamówienia indywidualnego",

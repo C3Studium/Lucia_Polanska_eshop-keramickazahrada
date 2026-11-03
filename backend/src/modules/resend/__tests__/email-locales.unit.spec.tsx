@@ -21,6 +21,7 @@ import type { EmailLocale } from "../../../lib/email-locale"
 /** Šablony, které zákazníkovi chodí v jeho jazyce (kurzy a majitelka ne). */
 export const TRANSLATED_TEMPLATES = [
   "abandoned-cart",
+  "loyalty-code",
   "account-deleted",
   "commission-cancelled",
   "commission-completed",

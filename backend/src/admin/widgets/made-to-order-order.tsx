@@ -1,5 +1,4 @@
-import { AdminOrder, DetailWidgetProps } from "@medusajs/framework/types";
-import { defineWidgetConfig } from "@medusajs/admin-sdk";
+import { AdminOrder } from "@medusajs/framework/types";
 import {
   Badge,
   Button,
@@ -11,12 +10,7 @@ import {
   Textarea,
   toast,
 } from "@medusajs/ui";
-import {
-  QueryClientProvider,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { SettleBalanceOffline } from "../components/production-order-actions";
 import {
@@ -26,7 +20,6 @@ import {
 } from "../components/agreed-price";
 import { formatAmount } from "../lib/format";
 import { sdk } from "../lib/sdk";
-import { adminQueryClient } from "../lib/query-client"
 import { ceskaChyba } from "../lib/ceska-chyba";
 import { reloadOrderPageSoon } from "../lib/reload-order-page";
 import {
@@ -116,8 +109,6 @@ type ProductionAction =
   | "request_balance"
   | "remind_balance"
   | "cancel";
-
-const queryClient = adminQueryClient;
 
 const toNum = (value: unknown): number => {
   if (typeof value === "number") return value;
@@ -688,11 +679,12 @@ const CommissionCard = ({
   );
 };
 
-const MadeToOrderOrderWidgetInner = ({
-  order,
-}: {
-  order: AdminOrder;
-}) => {
+/**
+ * Karty zakázek objednávky — po jedné na zakázkovou položku. Od 3. 11. 2026
+ * je vykresluje „Práce s objednávkou" (`order-workspace-main.tsx`) v hlavním
+ * sloupci; obsah karet a jejich akce se tím nemění.
+ */
+export const MadeToOrderPanel = ({ order }: { order: AdminOrder }) => {
   const productionQuery = useQuery<ProductionResponse>({
     queryKey: ["made-to-order-order", order.id],
     queryFn: () =>
@@ -741,18 +733,3 @@ const MadeToOrderOrderWidgetInner = ({
     </div>
   );
 };
-
-const MadeToOrderOrderWidget = ({
-  data,
-}: DetailWidgetProps<AdminOrder>) => (
-  <QueryClientProvider client={queryClient}>
-    <MadeToOrderOrderWidgetInner order={data} />
-  </QueryClientProvider>
-);
-
-export const config = defineWidgetConfig({
-  zone: "order.details.before",
-  id: "keramicka-zahrada:made-to-order",
-});
-
-export default MadeToOrderOrderWidget;

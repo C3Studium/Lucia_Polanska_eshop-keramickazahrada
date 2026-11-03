@@ -4,10 +4,8 @@ import {
   Container,
   Heading,
   Input,
-  Prompt,
   Skeleton,
   Text,
-  Toaster,
   toast,
 } from "@medusajs/ui";
 import {
@@ -18,6 +16,7 @@ import {
 } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { ConfirmDialog } from "../../../components/confirm-dialog";
 import { EmptyState } from "../../../components/empty-state";
 import { SubTabs, WorkTabs } from "../../../components/work-tabs";
 import { VisibilityEye } from "../../../components/visibility-eye";
@@ -83,13 +82,13 @@ const tabs = [
   { key: "standard", label: "Produkty", empty: "Zatím žádné produkty" },
   { key: "made-to-order", label: "Na zakázku", empty: "Žádný produkt na zakázku" },
   { key: "bundle", label: "Balíčky", empty: "Žádné balíčky" },
-  { key: "clearance", label: "Poškozené", empty: "Nic ve výprodeji" },
+  { key: "clearance", label: "Poškozené", empty: "Žádné poškozené kusy" },
 ];
 
 /** Reached from the sub-bar but rendered as their own screens. */
 const managedTabs = [
   { key: "balicky", label: "Spravovat balíčky", to: "/bundled-products" },
-  { key: "kolekce", label: "Kolekce a kategorie", to: "/merchant-catalog" },
+  { key: "kolekce", label: "Údaje kolekcí pro web", to: "/merchant-catalog" },
   { key: "profily", label: "Nastavení zakázkové výroby", to: "/zakazkova-vyroba" },
 ];
 
@@ -100,7 +99,7 @@ const emptyWhy: Record<string, string> = {
   bundle:
     "Balíček spojí více produktů do jedné nabídky — založíte ho tlačítkem Nový produkt.",
   clearance:
-    "Poškozený nebo poslední kus označíte přepínačem Výprodej u produktu.",
+    "Poškozený kus založíte tlačítkem Nový produkt, nebo ho označíte v seznamu produktů pod „…“ (Poškozený kus).",
 };
 
 const DeleteProduct = ({ product }: { product: ProductRow }) => {
@@ -119,27 +118,19 @@ const DeleteProduct = ({ product }: { product: ProductRow }) => {
   });
 
   return (
-    <Prompt>
-      <Prompt.Trigger asChild>
+    <ConfirmDialog
+      trigger={
         <Button size="small" variant="transparent">
           Smazat
         </Button>
-      </Prompt.Trigger>
-      <Prompt.Content>
-        <Prompt.Header>
-          <Prompt.Title>Smazat „{product.title}"?</Prompt.Title>
-          <Prompt.Description>
-            Produkt zmizí z e-shopu i z administrace. Objednávek, ve kterých už
-            je, se to nedotkne. Vrátit to nejde — pokud ho chcete jen dočasně
-            skrýt, přepněte ho v editaci na koncept.
-          </Prompt.Description>
-        </Prompt.Header>
-        <Prompt.Footer>
-          <Prompt.Cancel>Zpět</Prompt.Cancel>
-          <Prompt.Action onClick={() => remove.mutate()}>Smazat</Prompt.Action>
-        </Prompt.Footer>
-      </Prompt.Content>
-    </Prompt>
+      }
+      title={`Smazat „${product.title}"?`}
+      description="Produkt zmizí z e-shopu i z administrace. Objednávek, ve kterých už je, se to nedotkne."
+      consequence="Vrátit to nejde — pokud ho chcete jen dočasně skrýt, přepněte ho v editaci na koncept."
+      confirmLabel="Smazat"
+      isPending={remove.isPending}
+      onConfirm={() => remove.mutate()}
+    />
   );
 };
 
@@ -345,15 +336,10 @@ const ProduktyInner = () => {
                     label={`produkt ${product.title}`}
                     hideText="Zákazníci ho v obchodě neuvidí a nekoupí, dokud ho zase nezveřejníte."
                     showText="Produkt se vrátí do obchodu a půjde koupit."
-                    onToggle={() =>
+                    onToggle={(next) =>
                       sdk.client.fetch(`/admin/products/${product.id}`, {
                         method: "POST",
-                        body: {
-                          status:
-                            product.status === "published"
-                              ? "draft"
-                              : "published",
-                        },
+                        body: { status: next ? "published" : "draft" },
                       })
                     }
                     onDone={async () => {
@@ -475,13 +461,10 @@ const ProduktyInner = () => {
                   label={`produkt ${product.title}`}
                   hideText="Zákazníci ho v obchodě neuvidí a nekoupí, dokud ho zase nezveřejníte."
                   showText="Produkt se vrátí do obchodu a půjde koupit."
-                  onToggle={() =>
+                  onToggle={(next) =>
                     sdk.client.fetch(`/admin/products/${product.id}`, {
                       method: "POST",
-                      body: {
-                        status:
-                          product.status === "published" ? "draft" : "published",
-                      },
+                      body: { status: next ? "published" : "draft" },
                     })
                   }
                   onDone={async () => {
@@ -499,7 +482,6 @@ const ProduktyInner = () => {
         </div>
       )}
 
-      <Toaster />
     </Container>
   );
 };

@@ -8,10 +8,8 @@ import {
   Heading,
   Input,
   Label,
-  Prompt,
   Skeleton,
   Text,
-  Toaster,
   toast,
 } from "@medusajs/ui";
 import {
@@ -21,6 +19,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useState } from "react";
+import { ConfirmDialog } from "../../components/confirm-dialog";
 import { DiscountEditor } from "../../components/discount-editor";
 import { EmptyState } from "../../components/empty-state";
 import { ExpertToggle, RawData } from "../../lib/expert-mode";
@@ -32,7 +31,7 @@ import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
- * Slevy+ — promotions, campaigns and price lists as one workbench
+ * Slevy — promotions, campaigns and price lists as one workbench
  * (phase 3, admin-advanced-plan.md).
  *
  * The last domain still living on native pages. One joined read
@@ -204,30 +203,25 @@ const PromotionRow = ({ promotion }: { promotion: WorkbenchPromotion }) => {
         >
           {active ? "Pozastavit" : "Spustit"}
         </Button>
-        <Prompt open={confirmDelete} onOpenChange={setConfirmDelete}>
-          <Prompt.Trigger asChild>
+        <ConfirmDialog
+          open={confirmDelete}
+          onOpenChange={setConfirmDelete}
+          trigger={
             <Button size="small" variant="transparent">
               Smazat
             </Button>
-          </Prompt.Trigger>
-          <Prompt.Content>
-            <Prompt.Header>
-              <Prompt.Title>Smazat slevu?</Prompt.Title>
-              <Prompt.Description>
-                {promotion.code
-                  ? `Kód ${promotion.code} přestane platit okamžitě.`
-                  : "Automatická sleva přestane platit okamžitě."}{" "}
-                Objednávek, které ji už použily, se to nedotkne.
-              </Prompt.Description>
-            </Prompt.Header>
-            <Prompt.Footer>
-              <Prompt.Cancel>Zrušit</Prompt.Cancel>
-              <Prompt.Action onClick={() => remove.mutate()}>
-                Smazat
-              </Prompt.Action>
-            </Prompt.Footer>
-          </Prompt.Content>
-        </Prompt>
+          }
+          title="Smazat slevu?"
+          description={`${
+            promotion.code
+              ? `Kód ${promotion.code} přestane platit okamžitě.`
+              : "Automatická sleva přestane platit okamžitě."
+          } Objednávek, které ji už použily, se to nedotkne.`}
+          consequence="Smazanou slevu nejde vrátit."
+          confirmLabel="Smazat"
+          isPending={remove.isPending}
+          onConfirm={() => remove.mutate()}
+        />
       </div>
     </article>
   );
@@ -331,7 +325,7 @@ const CampaignEditor = ({
         <Drawer.Footer>
           <Drawer.Close asChild>
             <Button variant="secondary" size="small">
-              Zrušit
+              Zavřít
             </Button>
           </Drawer.Close>
           <Button
@@ -428,7 +422,6 @@ const SlevyInner = () => {
 
   return (
     <Container className="divide-y p-0">
-      <Toaster />
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
         <div>
           <Heading>Slevy — správa</Heading>
@@ -677,8 +670,9 @@ const SlevyWorkbenchPage = () => (
 );
 
 export const config = defineRouteConfig({
-  label: "Slevy+",
+  label: "Slevy",
   icon: ReceiptPercent,
+  // Vedlejší: za Poukazy (45), před Zákazníky (60).
   rank: 50,
 });
 

@@ -499,7 +499,9 @@ export const OrderRow = ({
     order.stage === "shipping" && Boolean(order.ship_block_reason);
 
   return (
-    <article className="bg-ui-bg-base grid gap-4 px-6 py-5 lg:grid-cols-[150px_minmax(0,1.3fr)_minmax(0,1fr)_160px_auto] lg:items-center">
+    /* Sloupec akcí má strop: dlouhá hláška (např. „Zbývá doplatek…") ho dřív
+       roztáhla přes celý řádek a zákazník/stav se slily do sloupce o pár písmenech. */
+    <article className="bg-ui-bg-base grid gap-4 px-6 py-5 lg:grid-cols-[150px_minmax(9rem,1.3fr)_minmax(8rem,1fr)_160px_minmax(0,20rem)] lg:items-center">
       <div>
         <Text size="xsmall" className="text-ui-fg-muted uppercase">
           Objednávka

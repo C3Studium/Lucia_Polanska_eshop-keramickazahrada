@@ -1,5 +1,4 @@
-import { defineWidgetConfig } from "@medusajs/admin-sdk";
-import type { AdminOrder, DetailWidgetProps } from "@medusajs/framework/types";
+import type { AdminOrder } from "@medusajs/framework/types";
 import {
   Badge,
   Button,
@@ -9,14 +8,9 @@ import {
   Text,
   toast,
 } from "@medusajs/ui";
-import {
-  QueryClientProvider,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { sdk } from "../lib/sdk";
-import { adminQueryClient } from "../lib/query-client";
+import { useExpertMode } from "../lib/expert-mode";
 import { isCeskaPosta, isPersonalPickup } from "../lib/cp-shipping";
 import {
   otevritStitek,
@@ -26,8 +20,6 @@ import {
 } from "../lib/stitky";
 import { ceskaChyba } from "../lib/ceska-chyba";
 import { reloadOrderPageSoon } from "../lib/reload-order-page";
-
-const queryClient = adminQueryClient;
 
 type LabelResponse = {
   available: boolean;
@@ -56,9 +48,13 @@ type LabelResponse = {
  * nezávisí jen na jednom záznamu (ČP nemá reprint). Pak jde stáhnout (soubor
  * `Stitek-Jmeno-Prijmeni-0026.pdf`), sdílet do telefonu (tisk přes mobil) nebo
  * otevřít. Jen pro zásilky ČP; osobní odběr a jiní dopravci widget skryjí.
+ *
+ * Vykresluje ho „Práce s objednávkou" (`order-workspace.tsx`) hned pod Denní
+ * prací. Testovací generování je jen v expertním režimu (3. 11. 2026).
  */
-const CpLabelWidgetInner = ({ order }: { order: AdminOrder }) => {
+export const CpLabelPanel = ({ order }: { order: AdminOrder }) => {
   const queryClient = useQueryClient();
+  const expert = useExpertMode();
 
   // Sdílené s widgetem sledování (lib/cp-shipping.ts), ať se oba shodnou.
   const ceskaPosta = isCeskaPosta(order);
@@ -101,6 +97,18 @@ const CpLabelWidgetInner = ({ order }: { order: AdminOrder }) => {
       ),
   });
 
+  /*
+   * Fáze z Denní práce — stejný klíč i adresa jako karta nad námi, takže
+   * jde o jednu odpověď, žádný dotaz navíc.
+   */
+  const stageQuery = useQuery<{ merchant_order: { stage?: string } | null }>({
+    queryKey: ["merchant-order-state", order.id],
+    queryFn: () =>
+      sdk.client.fetch(`/admin/merchant-orders/${order.id}`, { method: "GET" }),
+    retry: false,
+    enabled: ceskaPosta && !personalPickup,
+  });
+
   // Osobní odběr ani cizí dopravce tu nemají co dělat.
   if (!ceskaPosta || personalPickup) {
     return null;
@@ -108,6 +116,16 @@ const CpLabelWidgetInner = ({ order }: { order: AdminOrder }) => {
 
   const data = labelQuery.data;
   const label = data?.labels?.[0] ?? null;
+
+  /*
+   * Odeslaná nebo zrušená objednávka bez štítku: nový už nikdo dělat nebude
+   * a karta by jen strašila „Zatím bez štítku" (3. 11. 2026). Se štítkem
+   * zůstává — jde stáhnout znovu.
+   */
+  const stage = stageQuery.data?.merchant_order?.stage;
+  if (!labelQuery.isLoading && !label && (stage === "shipped" || stage === "cancelled")) {
+    return null;
+  }
   const filename =
     data?.filename || `Stitek-objednavka-${order.display_id ?? ""}.pdf`;
 
@@ -241,23 +259,27 @@ const CpLabelWidgetInner = ({ order }: { order: AdminOrder }) => {
                     >
                       Vygenerovat štítek pro Českou poštu
                     </Button>
-                    <Button
-                      size="small"
-                      variant="secondary"
-                      isLoading={generate.isPending && generate.variables === true}
-                      disabled={generate.isPending}
-                      onClick={() => generate.mutate(true)}
-                    >
-                      Testovací generování
-                    </Button>
+                    {expert && (
+                      <Button
+                        size="small"
+                        variant="secondary"
+                        isLoading={generate.isPending && generate.variables === true}
+                        disabled={generate.isPending}
+                        onClick={() => generate.mutate(true)}
+                      >
+                        Testovací generování
+                      </Button>
+                    )}
                   </div>
-                  <Text size="xsmall" className="text-ui-fg-muted">
-                    Testovací generování použije zkušební výdejnu, kterou ČP
-                    testovací prostředí zná (reálnou výdejnu z widgetu test odmítá
-                    přes chybu 247). Slouží jen k ověření, jak štítek vypadá, že
-                    dorazí e-mailem a jak se uloží — reálnou výdejnu objednávky
-                    nemění.
-                  </Text>
+                  {expert && (
+                    <Text size="xsmall" className="text-ui-fg-muted">
+                      Testovací generování použije zkušební výdejnu, kterou ČP
+                      testovací prostředí zná (reálnou výdejnu z widgetu test odmítá
+                      přes chybu 247). Slouží jen k ověření, jak štítek vypadá, že
+                      dorazí e-mailem a jak se uloží — reálnou výdejnu objednávky
+                      nemění.
+                    </Text>
+                  )}
                 </div>
               )
             )}
@@ -267,16 +289,3 @@ const CpLabelWidgetInner = ({ order }: { order: AdminOrder }) => {
     </Container>
   );
 };
-
-const CpLabelWidget = ({ data }: DetailWidgetProps<AdminOrder>) => (
-  <QueryClientProvider client={queryClient}>
-    <CpLabelWidgetInner order={data} />
-  </QueryClientProvider>
-);
-
-export const config = defineWidgetConfig({
-  zone: "order.details.side.after",
-  id: "keramicka-zahrada:cp-label",
-});
-
-export default CpLabelWidget;

@@ -1,17 +1,17 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk";
-import Segment from "../../../icons/segment-icon";
 import {
   Button,
   Container,
   Heading,
   Text,
 } from "@medusajs/ui";
+import { movedTo } from "../../components/section-tabs";
 
 /**
  * Návštěvnost webu — a signpost, not a dashboard. The numbers live in
  * Segment; this page says so in Czech and opens it in a new window.
  */
-const SegmentRoute = () => {
+/** Obsah záložky Web › Návštěvnost. */
+export const Navstevnost = () => {
   return (
     <Container className="flex flex-col p-0 overflow-hidden">
       <div className="p-6 flex flex-wrap items-start justify-between gap-3">
@@ -37,10 +37,6 @@ const SegmentRoute = () => {
   );
 };
 
-export const config = defineRouteConfig({
-  label: "Návštěvnost webu",
-  icon: Segment,
-  rank: 130,
-});
-
-export default SegmentRoute;
+/* Bez položky v menu — stránka je záložkou „Web"; stará adresa tam
+   přesměruje. */
+export default movedTo("/web/navstevnost");

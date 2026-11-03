@@ -1,6 +1,6 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { Gift, MagnifyingGlass } from "@medusajs/icons";
-import { Badge, Button, Container, Heading, Input, Label, Skeleton, Text, Toaster, toast } from "@medusajs/ui";
+import { Badge, Button, Container, Heading, Input, Label, Skeleton, Text, toast } from "@medusajs/ui";
 import { QueryClientProvider, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../../components/empty-state";
@@ -20,6 +20,7 @@ import { adminQueryClient } from "../../lib/query-client";
 import { sdk } from "../../lib/sdk";
 import { ceskaChyba } from "../../lib/ceska-chyba";
 import { formatCzk } from "../../lib/workbench";
+import { SaveBar } from "../../components/save-bar";
 
 /**
  * Poukazy — dárkové poukazy prodané v dílně, po telefonu i v obchodě.
@@ -184,7 +185,10 @@ const VoucherRow = ({
 };
 
 const PoukazyInner = () => {
-  const [search, setSearch] = useState("");
+  // ?q=KÓD z hledání odkudkoli (Ctrl+K) předvyplní hledání.
+  const [search, setSearch] = useState(
+    () => new URLSearchParams(window.location.search).get("q") ?? ""
+  );
   const q = useDebounced(search.trim());
   const [filter, setFilter] = useState<Filter>("vse");
   const [createOpen, setCreateOpen] = useState(false);
@@ -234,7 +238,6 @@ const PoukazyInner = () => {
 
   return (
     <Container className="divide-y p-0">
-      <Toaster />
       <header className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-end md:justify-between">
         <div>
           <Heading>Poukazy</Heading>
@@ -392,7 +395,8 @@ const PoukazyPage = () => (
 export const config = defineRouteConfig({
   label: "Poukazy",
   icon: Gift,
-  rank: 75,
+  // Vedlejší: za Kurzy (40), před Slevami (50).
+  rank: 45,
 });
 
 /**
@@ -488,21 +492,22 @@ const VoucherLimits = () => {
             />
           </div>
         ))}
-        <Button
-          size="small"
-          variant="secondary"
-          isLoading={ulozit.isPending}
-          disabled={!platne || !zmeneno || ulozit.isPending}
-          onClick={() => ulozit.mutate()}
-        >
-          Uložit meze
-        </Button>
       </div>
-      {!platne && (
-        <Text size="xsmall" className="text-ui-fg-error">
-          Zadejte celá kladná čísla; horní mez nemůže být nižší než dolní.
-        </Text>
-      )}
+      {/* Nelepí se: je to pár polí uprostřed seznamu poukazů. */}
+      <div className="-mx-6 -mb-4">
+        <SaveBar
+          sticky={false}
+          dirty={zmeneno}
+          saving={ulozit.isPending}
+          onSave={() => ulozit.mutate()}
+          onDiscard={() => setDraft(null)}
+          problem={
+            platne
+              ? undefined
+              : "Zadejte celá kladná čísla; horní mez nemůže být nižší než dolní."
+          }
+        />
+      </div>
     </div>
   );
 };

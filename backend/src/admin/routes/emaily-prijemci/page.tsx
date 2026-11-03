@@ -1,7 +1,10 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { Envelope } from "@medusajs/icons";
 import {
-  Button, Container, Heading, Input, Text, Textarea, Toaster, toast,
+  Container,
+  Heading,
+  Input,
+  Text,
+  Textarea,
+  toast,
 } from "@medusajs/ui";
 import {
   QueryClientProvider, useMutation, useQuery, useQueryClient,
@@ -10,6 +13,8 @@ import { useEffect, useState } from "react";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
+import { SaveBar } from "../../components/save-bar";
+import { movedTo } from "../../components/section-tabs";
 
 /**
  * E-maily obchodu — kam chodí provozní a vývojářské zprávy.
@@ -33,14 +38,35 @@ const Inner = () => {
   const [returnAddress, setReturnAddress] = useState("");
   const [returnInstructions, setReturnInstructions] = useState("");
 
-  useEffect(() => {
-    const s = data?.settings;
-    if (!s) return;
-    setOwner(s.owner_notification_email ?? "");
-    setDev(s.dev_notification_email ?? "");
-    setReturnAddress(s.return_address ?? "");
-    setReturnInstructions(s.return_instructions ?? "");
-  }, [data]);
+  /* Uložené hodnoty — z nich se plní pole, proti nim se počítají neuložené
+     změny a na ně vrací „Zahodit". */
+  const s = data?.settings;
+  const saved = s
+    ? {
+        owner: String(s.owner_notification_email ?? ""),
+        dev: String(s.dev_notification_email ?? ""),
+        returnAddress: String(s.return_address ?? ""),
+        returnInstructions: String(s.return_instructions ?? ""),
+      }
+    : null;
+  const reset = () => {
+    if (!saved) return;
+    setOwner(saved.owner);
+    setDev(saved.dev);
+    setReturnAddress(saved.returnAddress);
+    setReturnInstructions(saved.returnInstructions);
+  };
+  useEffect(reset, [data]);
+
+  /* Ukládá se oříznuté, tak se i porovnává oříznuté. */
+  const changes = saved
+    ? [
+        owner.trim() !== saved.owner,
+        dev.trim() !== saved.dev,
+        returnAddress.trim() !== saved.returnAddress,
+        returnInstructions.trim() !== saved.returnInstructions,
+      ].filter(Boolean).length
+    : 0;
 
   const save = useMutation({
     mutationFn: () =>
@@ -65,7 +91,6 @@ const Inner = () => {
 
   return (
     <Container className="divide-y p-0">
-      <Toaster />
       <header className="px-6 pb-4 pt-6">
         <Heading>E-maily obchodu</Heading>
         <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
@@ -149,22 +174,22 @@ const Inner = () => {
         </Text>
       </section>
 
-      <footer className="px-6 py-4">
-        <Button size="small" isLoading={save.isPending} onClick={() => save.mutate()}>
-          Uložit
-        </Button>
-      </footer>
+      <SaveBar
+        dirty={changes > 0}
+        count={changes}
+        saving={save.isPending}
+        onSave={() => save.mutate()}
+        onDiscard={reset}
+      />
     </Container>
   );
 };
 
 const queryClient = adminQueryClient;
-const Page = () => (
+/** Obsah záložky Nastavení obchodu › E-maily obchodu. */
+export const EmailyObchodu = () => (
   <QueryClientProvider client={queryClient}><Inner /></QueryClientProvider>
 );
-export const config = defineRouteConfig({
-  label: "E-maily obchodu",
-  icon: Envelope,
-  rank: 110,
-});
-export default Page;
+/* Bez položky v menu — stránka je záložkou Nastavení obchodu; stará adresa
+   tam přesměruje. */
+export default movedTo("/nastaveni-obchodu/emaily");

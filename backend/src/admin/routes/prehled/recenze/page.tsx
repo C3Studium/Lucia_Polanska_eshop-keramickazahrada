@@ -3,10 +3,8 @@ import {
   Button,
   Container,
   Heading,
-  Prompt,
   Skeleton,
   Text,
-  Toaster,
   toast,
 } from "@medusajs/ui";
 import {
@@ -22,6 +20,7 @@ import { formatDate } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
 import { adminQueryClient } from "../../../lib/query-client"
 import { ceskaChyba } from "../../../lib/ceska-chyba";
+import { toastWithUndo } from "../../../lib/undo";
 
 /**
  * Recenze, now a tab of Přehled rather than its own sidebar section.
@@ -113,26 +112,16 @@ const Stars = ({ rating }: { rating: number }) => {
  */
 const actionsFor = (
   status: ReviewStatus
-): Array<{ to: ReviewStatus; label: string; variant: "primary" | "secondary"; confirm?: string }> => {
+): Array<{ to: ReviewStatus; label: string; variant: "primary" | "secondary" }> => {
   switch (status) {
     case "čeká na schválení":
       return [
         { to: "schváleno", label: "Povolit", variant: "primary" },
-        {
-          to: "zamítnuto",
-          label: "Nepovolit",
-          variant: "secondary",
-          confirm: "Recenze se zákazníkovi nikde nezobrazí. Pokračovat?",
-        },
+        { to: "zamítnuto", label: "Nepovolit", variant: "secondary" },
       ];
     case "schváleno":
       return [
-        {
-          to: "zamítnuto",
-          label: "Skrýt z e-shopu",
-          variant: "secondary",
-          confirm: "Recenze zmizí z produktu. Pokračovat?",
-        },
+        { to: "zamítnuto", label: "Skrýt z e-shopu", variant: "secondary" },
         { to: "archivováno", label: "Archivovat", variant: "secondary" },
       ];
     case "zamítnuto":
@@ -148,15 +137,36 @@ const actionsFor = (
 const RowActions = ({ review }: { review: Review }) => {
   const queryClient = useQueryClient();
 
+  const setStatus = (status: ReviewStatus) =>
+    sdk.client.fetch("/admin/reviews/status", {
+      method: "POST",
+      body: { ids: [review.id], status },
+    });
+  const refresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["reviews"] });
+    await queryClient.invalidateQueries({ queryKey: ["operations-summary"] });
+  };
+
   const move = useMutation({
-    mutationFn: (status: ReviewStatus) =>
-      sdk.client.fetch("/admin/reviews/status", {
-        method: "POST",
-        body: { ids: [review.id], status },
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["reviews"] });
-      await queryClient.invalidateQueries({ queryKey: ["operations-summary"] });
+    /* `from` jede s voláním: po přesunu řádek zmizí z tabulky a vrácení
+       potřebuje stav, ze kterého recenze odešla. */
+    mutationFn: ({ to }: { to: ReviewStatus; from: ReviewStatus }) => setStatus(to),
+    onSuccess: async (_, { to, from }) => {
+      await refresh();
+      /* Skrytí recenze se neptá — je vratné a zákazníkovi nic nepřijde, tak
+         se rovnou udělá a nabídne vrácení (pravidlo v confirm-dialog.tsx). */
+      if (to === "zamítnuto") {
+        toastWithUndo(
+          "Recenze se v e-shopu nezobrazí.",
+          "Skrytí recenze",
+          async () => {
+            await setStatus(from);
+            await refresh();
+          },
+          "Najdete ji v záložce Nepovolené."
+        );
+        return;
+      }
       toast.success("Hotovo");
     },
     onError: (error) =>
@@ -167,39 +177,17 @@ const RowActions = ({ review }: { review: Review }) => {
 
   return (
     <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-      {actionsFor(review.status).map((action) =>
-        action.confirm ? (
-          <Prompt key={action.to}>
-            <Prompt.Trigger asChild>
-              <Button size="small" variant={action.variant}>
-                {action.label}
-              </Button>
-            </Prompt.Trigger>
-            <Prompt.Content>
-              <Prompt.Header>
-                <Prompt.Title>{action.label}?</Prompt.Title>
-                <Prompt.Description>{action.confirm}</Prompt.Description>
-              </Prompt.Header>
-              <Prompt.Footer>
-                <Prompt.Cancel>Zpět</Prompt.Cancel>
-                <Prompt.Action onClick={() => move.mutate(action.to)}>
-                  {action.label}
-                </Prompt.Action>
-              </Prompt.Footer>
-            </Prompt.Content>
-          </Prompt>
-        ) : (
-          <Button
-            key={action.to}
-            size="small"
-            variant={action.variant}
-            isLoading={move.isPending}
-            onClick={() => move.mutate(action.to)}
-          >
-            {action.label}
-          </Button>
-        )
-      )}
+      {actionsFor(review.status).map((action) => (
+        <Button
+          key={action.to}
+          size="small"
+          variant={action.variant}
+          isLoading={move.isPending}
+          onClick={() => move.mutate({ to: action.to, from: review.status })}
+        >
+          {action.label}
+        </Button>
+      ))}
     </div>
   );
 };
@@ -345,7 +333,6 @@ const RecenzeInner = () => {
         </div>
       )}
 
-      <Toaster />
     </Container>
   );
 };

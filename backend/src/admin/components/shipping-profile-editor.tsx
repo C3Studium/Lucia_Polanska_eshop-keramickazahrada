@@ -208,7 +208,7 @@ export const ShippingProfileEditor = ({
           </div>
 
           <Text size="xsmall" className="text-ui-fg-muted">
-            Ceny všech produktů najednou upravíte v Balení+.
+            Ceny všech produktů najednou upravíte v Nastavení obchodu › Balení.
           </Text>
         </Drawer.Body>
         <Drawer.Footer>

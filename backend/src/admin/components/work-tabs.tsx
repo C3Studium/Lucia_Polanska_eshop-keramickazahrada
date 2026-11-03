@@ -1,5 +1,6 @@
 import { Text, clx } from "@medusajs/ui";
 import { Link } from "react-router-dom";
+import { AdminSearch } from "./admin-search";
 
 /**
  * The tab bar across the whole Přehled section.
@@ -97,6 +98,10 @@ export const WorkTabs = ({ active }: { active: WorkTabKey }) => (
         })}
       </div>
     ))}
+    {/* Hledání odkudkoli (Ctrl+K) — na konci lišty, ať nepřebíjí záložky. */}
+    <div className="ml-auto">
+      <AdminSearch />
+    </div>
   </nav>
 );
 

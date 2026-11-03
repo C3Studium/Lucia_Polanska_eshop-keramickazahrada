@@ -10,6 +10,23 @@ import type MerchantOrderModuleService from "../../../../modules/merchant-order/
 import { MERCHANT_ORDER_STAGES } from "../../../../modules/merchant-order/stages"
 import type { MerchantOrderStage } from "../../../../modules/merchant-order/stages"
 import { toMerchantOrderRow } from "../../merchant-orders/projection"
+import { isAgreedPriceCommission } from "../../../../lib/made-to-order/agreed-price"
+import {
+  claimsWaiting,
+  commissionsWaitingForOwner,
+  ORDER_CHANGE_WINDOW_DAYS,
+  orderChangeRequests,
+  parcelIssues,
+  RETURNED_PARCEL_WINDOW_DAYS,
+  STORED_PARCEL_DAYS,
+  WAITING_LIST_LIMIT,
+} from "../../../../lib/prehled-ceka"
+import { COURSE_MODULE } from "../../../../modules/course"
+import type CourseModuleService from "../../../../modules/course/service"
+import { PARCEL_TRACKING_MODULE } from "../../../../modules/parcel-tracking"
+import type ParcelTrackingModuleService from "../../../../modules/parcel-tracking/service"
+import { RETURN_REQUEST_MODULE } from "../../../../modules/return-request"
+import type ReturnRequestModuleService from "../../../../modules/return-request/service"
 
 /**
  * Everything Přehled needs, in one request (WorkflowPlan.md §4).
@@ -127,6 +144,140 @@ const volbaZDotazu = <T extends string>(
     : fallback
 
 const PRODUCTION_TERMINAL_STAGES = ["completed", "cancelled"]
+
+/**
+ * „Čeká na vás" (3. 11. 2026) — žádosti a rozhodnutí, která dřív Přehled
+ * nepočítal: zadání zakázek, reklamace, žádosti ke kurzům, zásilky s potíží
+ * a žádosti o změnu objednávky. Co z načtených řádků opravdu čeká, rozhoduje
+ * `lib/prehled-ceka.ts` (má testy).
+ *
+ * Každá část má vlastní pojistku: spadlý modul ukáže u své části nulu, ne
+ * nenačtený Přehled — ten je pro ni důležitější než kterákoli jedna dlaždice.
+ */
+const loadWaiting = async (
+  scope: MedusaRequest["scope"],
+  productionOrders: any[],
+  now: Date
+) => {
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+  const logger = scope.resolve(ContainerRegistrationKeys.LOGGER)
+  const safe = async <T>(label: string, fallback: T, run: () => Promise<T>): Promise<T> => {
+    try {
+      return await run()
+    } catch (error) {
+      logger.warn(`[operations/summary] ${label}: ${(error as Error)?.message ?? error}`)
+      return fallback
+    }
+  }
+
+  const commissionsToConfirm = commissionsWaitingForOwner(
+    productionOrders,
+    isAgreedPriceCommission
+  ).length
+
+  const [claims, courses, parcels, orderChanges] = await Promise.all([
+    safe("reklamace", claimsWaiting([], now), async () => {
+      const service = scope.resolve<ReturnRequestModuleService>(RETURN_REQUEST_MODULE)
+      const rows = (await service.listReturnRequests(
+        { status: ["pending", "approved", "received"] } as never,
+        { select: ["id", "status", "resolve_by"] } as never
+      )) as any[]
+      return claimsWaiting(rows, now)
+    }),
+
+    safe("kurzy", { seat_requests: 0, cancel_requests: 0 }, async () => {
+      const service = scope.resolve<CourseModuleService>(COURSE_MODULE)
+      // Stejný výběr jako fronty v Kurzech: žádost bez termínu se tam
+      // nezobrazí, takže se tu nesmí ani počítat.
+      const [waitlist, cancelRequests] = await Promise.all([
+        service.listCourseWaitlists(
+          { status: "waiting" } as never,
+          { relations: ["term"], take: 200 } as never
+        ) as Promise<any[]>,
+        service.listCourseReservations(
+          { cancel_request_status: "pending" } as never,
+          { relations: ["term"], take: 200 } as never
+        ) as Promise<any[]>,
+      ])
+      return {
+        seat_requests: waitlist.filter((entry) => entry.term).length,
+        cancel_requests: cancelRequests.filter((entry) => entry.term).length,
+      }
+    }),
+
+    safe("zásilky", [] as ReturnType<typeof parcelIssues>, async () => {
+      const service = scope.resolve<ParcelTrackingModuleService>(PARCEL_TRACKING_MODULE)
+      const returnedSince = new Date(now.getTime() - RETURNED_PARCEL_WINDOW_DAYS * DAY_MS)
+      const storedBefore = new Date(now.getTime() - STORED_PARCEL_DAYS * DAY_MS)
+      const rows = (await service.listParcelTrackings(
+        {
+          $or: [
+            { phase: "returned", returned_at: { $gte: returnedSince } },
+            { phase: "problem", done: false },
+            { phase: "stored", done: false, stored_at: { $lte: storedBefore } },
+          ],
+        } as never,
+        { take: 50 } as never
+      )) as any[]
+      return parcelIssues(rows, now)
+    }),
+
+    safe("žádosti o změnu", [] as ReturnType<typeof orderChangeRequests>, async () => {
+      const notifications = scope.resolve(Modules.NOTIFICATION)
+      const rows = (await notifications.listNotifications(
+        {
+          channel: "feed",
+          trigger_type: "order-change",
+          created_at: {
+            $gte: new Date(now.getTime() - ORDER_CHANGE_WINDOW_DAYS * DAY_MS),
+          },
+        } as never,
+        { take: 100, select: ["id", "resource_id", "created_at"] } as never
+      )) as any[]
+      return orderChangeRequests(rows)
+    }),
+  ])
+
+  // Štítek nese číslo objednávky — jeden dotaz na všechna čísla najednou.
+  const listedParcels = parcels.slice(0, WAITING_LIST_LIMIT)
+  const listedChanges = orderChanges.slice(0, WAITING_LIST_LIMIT)
+  const orderIds = [
+    ...new Set([
+      ...listedParcels.map((parcel) => parcel.order_id),
+      ...listedChanges.map((change) => change.order_id),
+    ]),
+  ]
+  const displayById = new Map<string, unknown>()
+  if (orderIds.length) {
+    const rows = await safe("čísla objednávek", [] as any[], async () => {
+      const { data } = await query.graph({
+        entity: "order",
+        fields: ["id", "display_id"],
+        filters: { id: orderIds },
+      })
+      return data as any[]
+    })
+    for (const row of rows) displayById.set(row.id, row.display_id)
+  }
+
+  return {
+    commissions_to_confirm: commissionsToConfirm,
+    claims,
+    courses,
+    parcels: listedParcels.map((parcel) => ({
+      ...parcel,
+      display_id: displayById.get(parcel.order_id) ?? null,
+    })),
+    parcels_total: parcels.length,
+    order_changes: listedChanges.map((change) => ({
+      ...change,
+      display_id: displayById.get(change.order_id) ?? null,
+    })),
+    order_changes_total: orderChanges.length,
+    order_change_window_days: ORDER_CHANGE_WINDOW_DAYS,
+    stored_parcel_days: STORED_PARCEL_DAYS,
+  }
+}
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
@@ -417,6 +568,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     { take: 1, order: { stage_changed_at: "ASC" } }
   )
 
+  const waiting = await loadWaiting(req.scope, activeProduction, now)
+
   res.status(200).json({
     generated_at: now.toISOString(),
     attention: {
@@ -458,6 +611,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         (promotion) => promotion.is_automatic
       ).length,
     },
+    waiting,
     next_up: nextUp,
   })
 }
