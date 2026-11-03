@@ -197,7 +197,7 @@ const ReklamaceInner = () => {
             placeholder="Hledat číslo objednávky, e-mail, jméno…"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            className="w-72"
+            className="w-72 max-w-full"
           />
           <label className="flex items-center gap-x-2">
             <Checkbox

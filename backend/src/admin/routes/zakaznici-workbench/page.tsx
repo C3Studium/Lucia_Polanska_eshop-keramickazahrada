@@ -403,7 +403,7 @@ const ZakazniciInner = () => {
             Seřazeno podle toho, kolik u vás kdo utratil.
           </Text>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
         <ExpertToggle />
         <Input
           size="small"
@@ -411,7 +411,7 @@ const ZakazniciInner = () => {
           placeholder="Hledat jméno nebo e-mail…"
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
-          className="w-64"
+          className="w-64 max-w-full"
         />
         </div>
       </header>

@@ -1297,7 +1297,7 @@ const OrdersInner = () => {
             je potřeba vidět všechno najednou.
           </Text>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
         {/* Vrácení posledního hromadného přesunu. Totéž umí Ctrl+Z. */}
         {lastUndo && (
           <Button
@@ -1316,7 +1316,7 @@ const OrdersInner = () => {
           placeholder="Hledat e-mail nebo číslo objednávky…"
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
-          className="w-64"
+          className="w-64 max-w-full"
         />
         </div>
       </header>
