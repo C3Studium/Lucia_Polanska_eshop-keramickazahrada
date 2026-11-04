@@ -88,6 +88,35 @@ describe("souhrn deníku", () => {
     expect(radky[0]).toContain("order_123")
     expect(radky[0]).toContain("ComGate vrátil 500")
   })
+
+  /*
+   * Sběr z HTTP píše tutéž větu dvakrát — do `detail.chyba` i do `summary`
+   * (sber.ts). V souhrnu z 3. 11. 2026 z toho bylo „odpověď 400 · odpověď
+   * 400", což vypadá jako dvě různé chyby.
+   */
+  it("shodný důvod a popis vypíše jednou", () => {
+    const [radek] = selhani([
+      zaznam("reklamace", "POST /admin/return-requests/:id/refund-account", "chyba", {
+        summary: "odpověď 400",
+        detail: { chyba: "odpověď 400" },
+      }),
+    ])
+
+    expect(radek).toContain("odpověď 400")
+    expect(radek.split("odpověď 400")).toHaveLength(2)
+  })
+
+  it("jiný popis než důvod se nezahodí", () => {
+    const [radek] = selhani([
+      zaznam("platba", "POST /hooks/payment", "chyba", {
+        summary: "objednávka #42",
+        detail: { chyba: "odpověď 500" },
+      }),
+    ])
+
+    expect(radek).toContain("odpověď 500")
+    expect(radek).toContain("objednávka #42")
+  })
 })
 
 describe("rozpoznání cesty", () => {

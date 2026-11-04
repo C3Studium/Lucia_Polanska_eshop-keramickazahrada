@@ -84,8 +84,8 @@ export const textSouhrnu = (
 
   if (chyby.length) {
     radky.push(
-      `Pozor: ${vecNefunguje(chyby.length)}. Podrobný e-mail ke každé ` +
-        "z nich už odešel samostatně.",
+      `Pozor: ${vecNefunguje(chyby.length)}. Podrobnosti ke každé z nich ` +
+        "přišly v souhrnu chyb.",
       ""
     )
     for (const chyba of chyby) {
@@ -114,7 +114,7 @@ export const textSouhrnu = (
     "",
     chyby.length
       ? DO_CHATU
-      : "Kdyby něco selhalo, přijde e-mail hned — tenhle souhrn na to nečeká."
+      : "Kdyby něco selhalo, přijde souhrn chyb nejpozději do 4 hodin."
   )
 
   return radky.join("\n")
