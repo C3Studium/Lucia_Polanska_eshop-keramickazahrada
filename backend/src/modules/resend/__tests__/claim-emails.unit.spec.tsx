@@ -40,12 +40,12 @@ describe("claim e-mails — položky a poškození přepravou", () => {
     expect(html).toContain("Keramický hrnek · 1 ks · 390 Kč")
     expect(html).toMatch(/1 305 Kč<br\s*\/?>/)
     expect(html).toContain("Poškozeno přepravou")
-    // 14. 10. 2026 (právní audit §4.1): s dopravcem to řešíme my; obal a fotky
-    // jsou prosba, lhůta pošty ani její formulář zákazníka nezavazují.
-    expect(html).toContain("řešíme s Českou poštou my")
-    expect(html).toContain("nijak nepodmiňuje")
-    expect(html).not.toContain("podává příjemce")
-    expect(html).not.toContain("2 pracovních dnů")
+    // 4. 11. 2026 (rozhodnutí majitelky): poškozený obal se hlásí na poště —
+    // náhradu ČP vyplácí adresátovi. Poslední věta („vyřídíme ji my") zůstává
+    // kvůli reklamačnímu řádu, čl. 5. Formulář ČP platí nad 30 kg → nikam.
+    expect(html).toContain("na kterékoli poště")
+    expect(html).toContain("adresátovi")
+    expect(html).toContain("vyřídíme ji my")
     expect(html).not.toContain(CP_CLAIM_FORM_URL)
   })
 

@@ -25,7 +25,6 @@ import {
   CLAIM_CHANNEL_LABEL,
   CLAIM_CHANNEL_ONLINE,
   claimReasonFor,
-  CP_CLAIM_FORM_URL,
   CP_CLAIM_INFO_URL,
   CP_DAMAGE_REPORT_DEADLINE_TEXT,
   damageCauseLabel,
@@ -808,9 +807,16 @@ export const createClaim = async (
 
 /**
  * Text upozornění „poškozeno přepravou" (§11.3) — čistá funkce, ať jde
- * ověřit bez kontejneru: číslo zásilky (nebo že chybí), že škodu u ČP řeší
- * majitelka (zákazníkovi to podmínkou reklamace není), odkaz na stránku
- * a formulář ČP, lhůta, fotky od zákazníka a co je poškozené.
+ * ověřit bez kontejneru: číslo zásilky (nebo že chybí), kdo reklamuje
+ * u České pošty, lhůta, odkaz na postup ČP, fotky od zákazníka a co je
+ * poškozené.
+ *
+ * Od 4. 11. 2026 (rozhodnutí majitelky) tu stojí, že reklamaci u pošty
+ * podává PŘÍJEMCE: náhradu ČP vyplácí adresátovi, takže ji odesílatel za
+ * zákazníka uplatnit nemůže. Zákazník k tomu dostal pokyn v e-mailu; tady
+ * se připomíná, ať se ověří, že to udělal — do dvou pracovních dnů, jinak
+ * nedostane náhradu nikdo. Odkaz na formulář ČP zmizel: ten platí pro
+ * zásilky nad 30 kg (`CP_CLAIM_FORM_URL`).
  */
 export const carrierDamageDescription = (input: {
   parcelCode: string | null
@@ -822,11 +828,11 @@ export const carrierDamageDescription = (input: {
     input.parcelCode
       ? `Číslo zásilky: ${input.parcelCode}`
       : "Číslo zásilky se nepodařilo dohledat (objednávka nemá podací číslo ČP) — najděte ho prosím v podacím archu.",
-    "Škodu u České pošty řešíte vy jako odesílatel (pojištění balíku). Zákazník reklamuje u nás a lhůta pošty jeho reklamaci nepodmiňuje — za vadu při převzetí odpovídáte vy (§ 2161 OZ).",
-    "Pokud Česká pošta vyžaduje součinnost příjemce (např. sepsat záznam o poškození na pobočce), požádejte o ni zákazníka — jako prosbu, ne podmínku vyřízení.",
+    "Reklamaci poškozené zásilky podává u České pošty PŘÍJEMCE — náhradu pošta vyplácí adresátovi, takže ji za zákazníka uplatnit nemůžete. V e-mailu má pokyn nahlásit poškozený obal na kterékoli poště; ověřte prosím, že to udělal, a pomozte mu s podacím číslem.",
     CP_DAMAGE_REPORT_DEADLINE_TEXT,
+    "Na reklamaci u nás to nic nemění: za vadu při převzetí odpovídáte vy (§ 2161 OZ) a reklamační řád, čl. 5 to potvrzuje — odmítnout ji kvůli zmeškané lhůtě pošty nejde.",
     `Postup ČP: ${CP_CLAIM_INFO_URL}`,
-    `Formulář ČP (PDF): ${CP_CLAIM_FORM_URL}`,
+    "Formulář ke stažení pošta pro tyhle zásilky nevydává — reklamace se podává u přepážky nebo elektronicky (PDF na webu ČP platí jen pro zásilky nad 30 kg).",
     `Zákazník popisuje: ${input.reason}`,
     input.itemsText ? `Poškozené zboží:\n${input.itemsText}` : null,
     // Fotky jsou u poškození přepravou dobrovolné — prázdný seznam může

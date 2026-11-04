@@ -49,7 +49,7 @@ const COPY: Localized<{
     browse: "Prohlédnout další kousky",
     damagedHeading: "Dorazila zásilka poškozená?",
     damagedText: (n) =>
-      ` Napište mi prosím${n ? ` (objednávka ${n})` : ""} a přiložte fotky obalu i zboží — poškozený kousek vyměním nebo vám vrátím peníze a s dopravcem si to vyřídím sama. Obal si prosím schovejte, dokud se vám neozvu.`,
+      ` Poškozená krabice je škoda dopravce: nahlaste ji prosím na kterékoli poště, nejlépe do dvou pracovních dnů od převzetí — náhradu vyplácí Česká pošta adresátovi, tedy vám. Vezměte s sebou zásilku i s obalem a výplní, nebo aspoň fotky. Je-li krabice v pořádku a rozbitý jen kousek, napište mi${n ? ` (objednávka ${n})` : ""} a přiložte fotky — vyměním ho nebo vám vrátím peníze. Obal si prosím schovejte, dokud se to nevyřeší.`,
     claimOnline: "Reklamaci můžete podat i online:",
     withdrawalBefore:
       "Od kupní smlouvy můžete odstoupit bez udání důvodu do 14 dnů od převzetí zboží, online přes tlačítko",
@@ -70,7 +70,7 @@ const COPY: Localized<{
     browse: "Pozrieť ďalšie kúsky",
     damagedHeading: "Dorazila zásielka poškodená?",
     damagedText: (n) =>
-      ` Napíšte mi, prosím,${n ? ` (objednávka ${n})` : ""} a priložte fotky obalu aj tovaru — poškodený kúsok vymením alebo vám vrátim peniaze a s prepravcom si to vybavím sama. Obal si, prosím, odložte, kým sa vám neozvem.`,
+      ` Poškodená krabica je škoda dopravcu: nahláste ju, prosím, na ktorejkoľvek pošte, najlepšie do dvoch pracovných dní od prevzatia — náhradu vypláca Česká pošta adresátovi, teda vám. Vezmite s sebou zásielku aj s obalom a výplňou, alebo aspoň fotky. Ak je krabica v poriadku a rozbitý len kúsok, napíšte mi${n ? ` (objednávka ${n})` : ""} a priložte fotky — vymením ho alebo vám vrátim peniaze. Obal si, prosím, odložte, kým sa to nevyrieši.`,
     claimOnline: "Reklamáciu môžete podať aj online:",
     withdrawalBefore:
       "Od kúpnej zmluvy môžete odstúpiť bez uvedenia dôvodu do 14 dní od prevzatia tovaru, online cez tlačidlo",
@@ -91,7 +91,7 @@ const COPY: Localized<{
     browse: "Zobacz inne wyroby",
     damagedHeading: "Przesyłka dotarła uszkodzona?",
     damagedText: (n) =>
-      ` Proszę do mnie napisać${n ? ` (zamówienie ${n})` : ""} i dołączyć zdjęcia opakowania oraz towaru — uszkodzony egzemplarz wymienię albo zwrócę pieniądze, a sprawę z przewoźnikiem załatwię sama. Proszę zachować opakowanie, dopóki się nie odezwę.`,
+      ` Uszkodzone opakowanie to szkoda przewoźnika: prosimy zgłosić je na dowolnej poczcie, najlepiej w ciągu dwóch dni roboczych od odbioru — odszkodowanie Poczta Czeska wypłaca adresatowi, czyli Państwu. Prosimy zabrać przesyłkę razem z opakowaniem i wypełnieniem, albo przynajmniej zdjęcia. Jeśli opakowanie jest całe, a uszkodzony tylko egzemplarz, proszę do mnie napisać${n ? ` (zamówienie ${n})` : ""} i dołączyć zdjęcia — wymienię go albo zwrócę pieniądze. Proszę zachować opakowanie, dopóki sprawa się nie wyjaśni.`,
     claimOnline: "Reklamację można złożyć także online:",
     withdrawalBefore:
       "Od umowy sprzedaży można odstąpić bez podania przyczyny w ciągu 14 dni od otrzymania towaru, online przyciskiem",
@@ -112,7 +112,7 @@ const COPY: Localized<{
     browse: "Weitere Stücke ansehen",
     damagedHeading: "Ist das Paket beschädigt angekommen?",
     damagedText: (n) =>
-      ` Schreiben Sie mir bitte${n ? ` (Bestellung ${n})` : ""} und schicken Sie Fotos von Verpackung und Ware mit – ein beschädigtes Stück tausche ich aus oder erstatte Ihnen den Betrag, die Sache mit dem Versanddienst kläre ich selbst. Bitte heben Sie die Verpackung auf, bis Sie von mir hören.`,
+      ` Eine beschädigte Verpackung ist ein Schaden des Frachtführers: Melden Sie sie bitte in einer beliebigen Postfiliale, am besten innerhalb von zwei Werktagen nach der Übernahme – die Entschädigung zahlt die Tschechische Post an den Empfänger, also an Sie. Bringen Sie die Sendung samt Verpackung und Füllmaterial mit, oder zumindest Fotos. Ist die Verpackung in Ordnung und nur das Stück zerbrochen, schreiben Sie mir${n ? ` (Bestellung ${n})` : ""} mit Fotos – ich tausche es aus oder erstatte Ihnen den Betrag. Bitte heben Sie die Verpackung auf, bis die Sache geklärt ist.`,
     claimOnline: "Eine Reklamation können Sie auch online einreichen:",
     withdrawalBefore:
       "Sie können innerhalb von 14 Tagen nach Erhalt der Ware ohne Angabe von Gründen vom Kaufvertrag zurücktreten – online über die Schaltfläche",
@@ -133,7 +133,7 @@ const COPY: Localized<{
     browse: "Browse more pieces",
     damagedHeading: "Did the parcel arrive damaged?",
     damagedText: (n) =>
-      ` Please write to me${n ? ` (order ${n})` : ""} and attach photos of the packaging and the goods — I'll replace the damaged piece or refund you, and I'll sort things out with the courier myself. Please keep the packaging until you hear back from me.`,
+      ` Damaged packaging is the carrier's liability: please report it at any post office, ideally within two working days of receipt — Česká pošta pays the compensation to the addressee, that is to you. Take the parcel with its box and packing material, or at least photos. If the box is fine and only the piece is broken, write to me${n ? ` (order ${n})` : ""} with photos — I'll replace it or refund you. Please keep the packaging until the matter is settled.`,
     claimOnline: "You can also make a complaint online:",
     withdrawalBefore:
       "You can withdraw from the purchase contract without giving any reason within 14 days of receiving the goods, online using the button",

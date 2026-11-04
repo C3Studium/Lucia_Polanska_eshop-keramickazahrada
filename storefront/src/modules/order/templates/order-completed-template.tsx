@@ -19,8 +19,6 @@ import type {
 import CommissionList from "@modules/order/components/commission-list"
 import { isCarrierShippingMethod } from "@lib/util/carrier"
 import CarrierDamageNotice from "@modules/order/components/carrier-damage"
-import { CLAIM_FORM_KEY } from "@lib/constants/documents"
-import { getSiteDocument } from "@lib/data/documents"
 import { orderTermsRef } from "@lib/legal/order-terms"
 import ClaimsSummary from "@modules/order/components/claim-status/summary"
 import { withdrawalHref } from "@modules/order/components/withdrawal/entry"
@@ -124,7 +122,6 @@ export default async function OrderCompletedTemplate({
     | (HttpTypes.StoreOrderShippingMethod & { amount?: number })
     | undefined
   const orderNumber = String(order.display_id).padStart(4, "0")
-  const claimForm = await getSiteDocument(CLAIM_FORM_KEY)
   // Okénko „Potřebujete pomoct?" u objednávky → e-mail pro objednávky a zakázky.
   const { objednavky: orderEmail } = await getContactEmails()
   // Persisted at checkout by the shipping step; the confirmation never showed it (spec §4).
@@ -361,7 +358,6 @@ export default async function OrderCompletedTemplate({
           <CarrierDamageNotice
             orderNumber={order.display_id}
             isCarrierDelivery={isCarrierShippingMethod(order as any)}
-            claimForm={claimForm}
             stage="pending"
           />
         </section>

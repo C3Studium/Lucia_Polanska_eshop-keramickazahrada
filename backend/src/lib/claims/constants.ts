@@ -319,10 +319,16 @@ export const CP_CLAIM_INFO_URL =
   "https://www.ceskaposta.cz/rady-a-tipy/jine/reklamace-a-stiznosti"
 
 /**
- * Formulář České pošty „Reklamace poškození" (PDF) a pokyny k němu — přímé
- * odkazy. Ověřeno 12. 10. 2026: oba vrací PDF. Od 14. 10. 2026 je dostává
- * majitelka v upozornění na poškození přepravou (`carrierDamageDescription`);
- * zákaznické e-maily je jako povinný krok neuvádí (právní audit §4.1).
+ * Formulář České pošty „Reklamace poškození" (PDF) a pokyny k němu.
+ *
+ * NIKAM SE NEODKAZUJÍ a nemají. Ověřeno 3. 11. 2026 přímo z toho souboru
+ * (patička 09/2024): platí výslovně pro „Balík Do ruky nad 30 kg a Balíkovna
+ * plus nad 30 kg". Keramická zásilka takovou hmotnost nemá, takže by to byl
+ * formulář k něčemu jinému. Pro běžnou zásilku Česká pošta formulář ke
+ * stažení nevydává — reklamace se podává u přepážky nebo elektronicky.
+ *
+ * Konstanty zůstávají jako zámek: testy e-mailů ověřují, že ani jeden text
+ * tyhle adresy neobsahuje. Kdo je sem vrátí, rozsvítí test.
  */
 export const CP_CLAIM_FORM_URL =
   "https://www.ceskaposta.cz/documents/d/guest/formular-reklamace-pdf?download=true"
@@ -330,21 +336,41 @@ export const CP_CLAIM_GUIDE_URL =
   "https://www.ceskaposta.cz/documents/d/guest/pokyny-pro-podani-reklamace-pri-poskozeni?download=true"
 
 /**
- * Lhůta pro hlášení poškození dopravci — JEN do e-mailu majitelce. Je to
- * lhůta mezi prodávající a Českou poštou; zákazníkovy reklamace se netýká.
+ * Lhůta pro hlášení poškození dopravci — JEN do e-mailu majitelce. Zákazník
+ * má v „zásilka doručena" vlastní znění (`CARRIER_DAMAGE_CUSTOMER_TEXT`);
+ * tohle je připomínka majitelce, že po dvou dnech nedostane náhradu nikdo.
+ * Na reklamaci u nás to nic nemění — reklamační řád, čl. 5.
  */
 export const CP_DAMAGE_REPORT_DEADLINE_TEXT =
   "Poškození se České poště hlásí neprodleně, nejpozději do 2 pracovních dnů od dodání — jinak nárok na náhradu od pošty propadá. Zákazníkovy reklamace u vás se tato lhůta netýká."
 
 /**
- * Věta zákazníkovi u „Balík dorazil poškozený" (14. 10. 2026, právní audit
- * §4.1): poškození řeší s dopravcem prodávající, zákazník nic dalšího podávat
- * nemusí. Obal a fotky jsou PROSBA, ne podmínka. Nahrazuje dřívější
- * `CP_CUSTOMER_CLAIM_TEXT` („reklamaci u přepravce podává příjemce, do
- * 2 pracovních dnů"), která z lhůty dopravce dělala podmínku reklamace.
+ * Věta zákazníkovi u „Balík dorazil poškozený".
+ *
+ * ## Rozhodnutí majitelky (4. 11. 2026)
+ *
+ * Poškozená krabice jde za dopravcem — zabaleno je dobře, a co se s obalem
+ * stalo po cestě, uznává a platí Česká pošta. Zákazník se s tím tedy obrací
+ * na poštu, a není to jen pohodlnější cesta: náhradu za poškozenou zásilku
+ * vyplácí ČP ADRESÁTOVI, takže ji za něj nikdo jiný uplatnit nemůže
+ * (reklamační podmínky ČP). Rozbitý výrobek v nepoškozené krabici je naše
+ * věc a řeší se reklamací u nás.
+ *
+ * ## Co ve větě zůstává a proč
+ *
+ * Reklamační řád, čl. 5 (vydané znění od 3. 11. 2026) říká, že poškození při
+ * přepravě je vada při převzetí, reklamuje se U NÁS a žádná lhůta dopravce
+ * zákazníka nezavazuje. Dokud tohle znění platí, nesmí věta tvrdit, že se na
+ * nás obrátit nemůže — proto končí tím, že jeho reklamaci vyřídíme, i když
+ * na poště neuspěje. Udělat z pošty jedinou cestu znamená nové znění
+ * reklamačního řádu, ne jinou větu v e-mailu.
+ *
+ * Dřívější podoba („vy kvůli tomu nikam chodit ani nic podávat nemusíte",
+ * právní audit §4.1) měla jednu nechtěnou cenu: dvoudenní lhůta pošty
+ * propadla, než se k zásilce kdokoli dostal, a náhradu pak nedostal nikdo.
  */
 export const CARRIER_DAMAGE_CUSTOMER_TEXT =
-  "Poškození při přepravě řešíme s Českou poštou my — vy kvůli tomu nikam chodit ani nic podávat nemusíte. Pokud můžete, nechte si prosím obal a výplň, dokud se vám neozveme; fotky obalu i zboží nám pomohou. Kdyby Česká pošta potřebovala vaši součinnost (například sepsat záznam o poškození), dáme vám vědět — vaši reklamaci to nijak nepodmiňuje."
+  "Poškozený obal je škoda dopravce: nahlaste prosím zásilku na kterékoli poště, nejlépe do dvou pracovních dnů od převzetí — náhradu Česká pošta vyplácí adresátovi, tedy vám. Vezměte s sebou zásilku i s obalem a výplní, nebo aspoň fotky obalu a zboží. Napište prosím i nám; pokud vám na poště reklamaci nepřijmou, vyřídíme ji my — vaše práva u nás na dopravci nezávisí."
 
 /**
  * Táž věta v jazyce zákazníka (e-mail „žádost přijata", lib/email-locale).
@@ -352,8 +378,8 @@ export const CARRIER_DAMAGE_CUSTOMER_TEXT =
  */
 export const CARRIER_DAMAGE_CUSTOMER_TEXTS: Localized<string> = {
   cs: CARRIER_DAMAGE_CUSTOMER_TEXT,
-  sk: "Poškodenie pri preprave riešime s Českou poštou my — vy kvôli tomu nikam chodiť ani nič podávať nemusíte. Ak môžete, nechajte si, prosím, obal a výplň, kým sa vám neozveme; fotky obalu aj tovaru nám pomôžu. Keby Česká pošta potrebovala vašu súčinnosť (napríklad spísať záznam o poškodení), dáme vám vedieť — vašu reklamáciu to nijako nepodmieňuje.",
-  pl: "Uszkodzenie w transporcie wyjaśniamy z Pocztą Czeską sami — nie muszą Państwo nigdzie chodzić ani niczego składać. Jeśli to możliwe, prosimy zachować opakowanie i wypełnienie, dopóki się nie odezwiemy; zdjęcia opakowania i towaru bardzo nam pomogą. Gdyby Poczta Czeska potrzebowała Państwa pomocy (na przykład spisania protokołu szkody), damy znać — nie jest to warunek rozpatrzenia reklamacji.",
-  de: "Den Transportschaden klären wir selbst mit der Tschechischen Post – Sie müssen dafür nirgendwohin gehen und nichts einreichen. Wenn möglich, bewahren Sie Verpackung und Füllmaterial bitte auf, bis wir uns melden; Fotos von Verpackung und Ware helfen uns sehr. Sollte die Tschechische Post Ihre Mitwirkung brauchen (zum Beispiel für ein Schadensprotokoll), sagen wir Bescheid – Ihre Reklamation hängt davon nicht ab.",
-  en: "We'll sort out the transit damage with Česká pošta ourselves — you don't need to go anywhere or file anything. If you can, please keep the box and the packing material until you hear from us; photos of the packaging and the goods will help a lot. Should Česká pošta need your help (for example, to write up a damage report), we'll let you know — your complaint doesn't depend on it in any way.",
+  sk: "Poškodený obal je škoda dopravcu: nahláste, prosím, zásielku na ktorejkoľvek pošte, najlepšie do dvoch pracovných dní od prevzatia — náhradu Česká pošta vypláca adresátovi, teda vám. Vezmite s sebou zásielku aj s obalom a výplňou, alebo aspoň fotky obalu a tovaru. Napíšte, prosím, aj nám; ak vám na pošte reklamáciu neprijmú, vyriešime ju my — vaše práva u nás od dopravcu nezávisia.",
+  pl: "Uszkodzone opakowanie to szkoda przewoźnika: prosimy zgłosić przesyłkę na dowolnej poczcie, najlepiej w ciągu dwóch dni roboczych od odbioru — odszkodowanie Poczta Czeska wypłaca adresatowi, czyli Państwu. Prosimy zabrać przesyłkę razem z opakowaniem i wypełnieniem, albo przynajmniej zdjęcia opakowania i towaru. Prosimy napisać również do nas; jeśli poczta nie przyjmie reklamacji, rozpatrzymy ją my — Państwa prawa u nas nie zależą od przewoźnika.",
+  de: "Eine beschädigte Verpackung ist ein Schaden des Frachtführers: Melden Sie die Sendung bitte in einer beliebigen Postfiliale, am besten innerhalb von zwei Werktagen nach der Übernahme – die Tschechische Post zahlt die Entschädigung an den Empfänger, also an Sie. Bringen Sie die Sendung samt Verpackung und Füllmaterial mit, oder zumindest Fotos von Verpackung und Ware. Schreiben Sie bitte auch uns; nimmt die Post die Reklamation nicht an, bearbeiten wir sie – Ihre Rechte uns gegenüber hängen nicht vom Frachtführer ab.",
+  en: "Damaged packaging is the carrier's liability: please report the parcel at any post office, ideally within two working days of receipt — Česká pošta pays the compensation to the addressee, that is to you. Take the parcel with its box and packing material, or at least photos of the packaging and the goods. Please write to us as well; if the post office turns the claim down, we will handle it — your rights with us do not depend on the carrier.",
 }

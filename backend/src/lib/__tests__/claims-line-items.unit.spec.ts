@@ -362,7 +362,7 @@ describe("lineItemsText — „název · varianta · N ks · částka“ (§11.5
 })
 
 describe("carrierDamageDescription — e-mail majitelce (§11.3)", () => {
-  it("nese číslo zásilky, odkaz na formulář ČP, lhůtu, položky a fotky", () => {
+  it("nese číslo zásilky, kdo reklamuje, lhůtu, položky a fotky", () => {
     const text = carrierDamageDescription({
       parcelCode: "DR1234567890X",
       itemsText: "Mísa · 1 ks · 1 305 Kč",
@@ -370,14 +370,14 @@ describe("carrierDamageDescription — e-mail majitelce (§11.3)", () => {
       reason: "Rozbitá mísa, krabice promáčklá",
     })
     expect(text).toContain("DR1234567890X")
-    expect(text).toContain(CP_CLAIM_FORM_URL)
     expect(text).toMatch(/2 pracovních dnů/)
-    // 14. 10. 2026 (právní audit §4.1): škodu u ČP řeší majitelka; zákazníkova
-    // reklamace na lhůtě pošty nezávisí, součinnost je jen prosba.
-    expect(text).toMatch(/řešíte vy/)
-    expect(text).toMatch(/nepodmiňuje/)
-    expect(text).toMatch(/prosbu, ne podmínku/)
-    expect(text).not.toMatch(/podává příjemce/)
+    // 4. 11. 2026 (rozhodnutí majitelky): u pošty reklamuje příjemce — náhradu
+    // ČP vyplácí adresátovi. Na reklamaci u nás to nic nemění (reklamační řád,
+    // čl. 5), a formulář ČP se nikam neodkazuje: platí jen nad 30 kg.
+    expect(text).toMatch(/podává u České pošty PŘÍJEMCE/)
+    expect(text).toMatch(/§ 2161 OZ/)
+    expect(text).toMatch(/odmítnout ji kvůli zmeškané lhůtě pošty nejde/)
+    expect(text).not.toContain(CP_CLAIM_FORM_URL)
     expect(text).toContain("Mísa · 1 ks · 1 305 Kč")
     expect(text).toContain("https://cdn/1.jpg")
     expect(text).toContain("Rozbitá mísa")

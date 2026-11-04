@@ -25,6 +25,8 @@ import { movedTo } from "../../components/section-tabs";
  * - **Co web očekává** — místa zadrátovaná v kódu (`modules/dokumenty/catalogue.ts`).
  *   Ukazují se i prázdná a prázdné povinné hlásí Přehled. Bez toho by se
  *   o chybějícím dokumentu nikdo nedozvěděl, dokud si ho nevšimne zákazník.
+ *   Od 4. 11. 2026 je katalog prázdný (formulář k reklamaci se nahrávat
+ *   nemá — viz komentář tam), takže se ukazuje jen druhá část.
  * - **Vlastní** — cokoli dalšího. Pojmenuje se tady a v kódu se pak zavolá
  *   `/store/documents/<jméno>`.
  *
@@ -201,7 +203,9 @@ const Inner = () => {
             PDF, na která web někde odkazuje.
           </Text>
         </div>
-        {isLoading ? null : chybi.length ? (
+        {/* Prázdný katalog nemá co hlásit — „Hotovo 0 z 0" by byla zpráva
+            o ničem. */}
+        {isLoading || !ocekavane.length ? null : chybi.length ? (
           <Badge size="small" color="red">
             Chybí {chybi.length} z {ocekavane.length}
           </Badge>
