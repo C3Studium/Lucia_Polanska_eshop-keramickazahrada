@@ -23,7 +23,6 @@ const ADMIN_ROOT = resolve(__dirname, "..")
 const PURE_MODULE_ALLOWLIST = [
   "modules/course/recurrence",
   "modules/course/bulk-scope",
-  "icons/segment-icon",
   // Právní údaje: klíče, popisky, nápovědy a kontrola hodnot pro stránku
   // „Právní údaje" — tytéž, které hlídají zápis do nastavení.
   "lib/legal-facts",
