@@ -90,7 +90,7 @@ async function watchStockLevels(container: MedusaContainer) {
   )
 }
 
-/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+/* Běh i pád úlohy jde do provozního deníku; pád navíc do souhrnu chyb (e-mail nejvýš po 4 h). */
 export default sUlohou("watch-stock-levels", watchStockLevels)
 
 export const config = {

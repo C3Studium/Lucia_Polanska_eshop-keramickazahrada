@@ -50,7 +50,7 @@ async function reconcileGiftVoucherPayments(container: MedusaContainer) {
   }
 }
 
-/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+/* Běh i pád úlohy jde do provozního deníku; pád navíc do souhrnu chyb (e-mail nejvýš po 4 h). */
 export default sUlohou("reconcile-gift-voucher-payments", reconcileGiftVoucherPayments)
 
 export const config = {

@@ -6,6 +6,8 @@ import { spustKontroly, zaznamyZa } from "../lib/provozni-hlidka"
 import { textDeniku } from "../lib/provozni-hlidka/denik"
 import { klicSouhrnu, predmetSouhrnu, textSouhrnu } from "../lib/provozni-hlidka/zprava"
 import { sUlohou } from "../lib/provozni-hlidka/uloha"
+import { textFronty } from "../lib/provozni-hlidka/fronta"
+import { prectiFrontu, uzavriFrontu } from "../lib/provozni-hlidka/souhrn-chyb"
 import { ACTIVITY_LOG_MODULE } from "../modules/activity-log"
 import type ActivityLogModuleService from "../modules/activity-log/service"
 
@@ -56,7 +58,20 @@ async function sendProvozniSouhrn(container: MedusaContainer) {
   const vysledky = await spustKontroly(container)
   const zaznamy = await zaznamyZa(container, new Date(kdy.getTime() - DEN), kdy)
 
+  /* Večerní souhrn zastupuje souhrn chyb ve 21:00 (4. 11. 2026): vezme
+     s sebou, co se pokazilo od minulého souhrnu, aby nešly dva e-maily
+     naráz (`send-provozni-alarmy`). */
+  const fronta = await prectiFrontu(container, kdy)
+
   const telo = [
+    ...(fronta.skupiny.length
+      ? [
+          "CO SE POKAZILO OD MINULÉHO SOUHRNU",
+          "",
+          textFronty(fronta.skupiny, fronta.od, kdy),
+          "",
+        ]
+      : []),
     "CO SE DNES STALO",
     "",
     textDeniku(zaznamy),
@@ -74,8 +89,10 @@ async function sendProvozniSouhrn(container: MedusaContainer) {
     /* E-mail ano, ale ne „urgent": souhrn není poplach, a červený rámeček
        u denní zprávy by poplach odnaučil brát vážně. */
     email: true,
+    souhrn: true,
   })
 
+  await uzavriFrontu(container, fronta)
   await uklidDeniku(container)
 }
 
@@ -110,7 +127,7 @@ const uklidDeniku = async (container: MedusaContainer): Promise<void> => {
   }
 }
 
-/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+/* Běh i pád úlohy jde do provozního deníku; pád navíc do souhrnu chyb (e-mail nejvýš po 4 h). */
 export default sUlohou("send-provozni-souhrn", sendProvozniSouhrn)
 
 export const config = {

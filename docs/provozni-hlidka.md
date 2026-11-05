@@ -27,10 +27,20 @@ Dvě věci z toho plynou pro celý návrh:
 
 | Kdy | Co | Komu |
 | --- | --- | --- |
-| Hned, u **každé nové chyby** | Alarm s přesnými podrobnostmi | `dev_notification_email` |
-| Hned | Spadlá úloha, spadlý požadavek, chyba webu | `dev_notification_email` |
-| 21:00 (20:00 UTC) | Provozní souhrn: co se stalo + co je zkontrolované | `dev_notification_email` |
+| Hned | Zvonek v administraci ke každé chybě | administrace |
+| Každé 4 h (1, 5, 9, 13, 17 h v zimě), **jen když se něco pokazilo** | Souhrn chyb: každá věc jednou, s počtem opakování a podrobnostmi | `dev_notification_email` |
+| 21:00 (20:00 UTC) | Provozní souhrn: co se pokazilo od minulého souhrnu + co se stalo + co je zkontrolované | `dev_notification_email` |
 | Kdykoli | Stránka **Přehled → Provoz** | administrace |
+
+**Od 4. 11. 2026 nechodí vývojáři žádný e-mail hned.** 3. 11. jich odešlo 42
+a vyčerpaly denní limit Resendu (100), který sdílí i potvrzení objednávek.
+Každý `notifyMerchant` s `audience: "dev"` proto vytvoří zvonek a e-mail jen
+zařadí do fronty (`lib/provozni-hlidka/fronta.ts`, řádky `alarm:ve-fronte`
+v deníku). Úloha `send-provozni-alarmy` je každé 4 hodiny pošle jedním
+e-mailem; ve 21:00 je vezme s sebou večerní souhrn. Nejvýš tedy šest
+vývojářských e-mailů za den. Hned odchází jen to, co má `souhrn: true`
+(samotné souhrny a zkušební skript). Když se zařazení do fronty nepovede,
+e-mail odejde hned — ztracená chyba je horší než e-mail navíc.
 
 Všechno jde na **vývojářskou** adresu, ne majitelce: rozbitá fakturace ani
 vyčerpaný limit e-mailů nejsou práce pro keramičku. Její obchodní souhrn
@@ -106,30 +116,31 @@ alarmy ignorovat.
 
 ## 4. Kdy alarm přijde a kdy ne
 
-**Každá nová chyba jde hned, zvlášť.** Klíč alarmu nese *podpis konkrétní
+**Každá nová chyba je v souhrnu zvlášť.** Klíč alarmu nese *podpis konkrétní
 chyby* — akci, důvod a čeho se to týká (`alarm.ts`, `podpisChyby`). Když
-ráno selže faktura u #68 a odpoledne u #71, jsou to dva klíče a dva e-maily.
+ráno selže faktura u #68 a odpoledne u #71, jsou to dva klíče a dva řádky
+souhrnu (a dva zvonky).
 
 První verze měla v klíči jen kontrolu a den, a tím **druhou chybu spolkla**;
 byla to právě ta, o které se nevědělo. Na tomhle se neustupuje.
 
-**Tatáž chyba jde jednou za den.** Opakování téhož nálezu je pořád jeden
-e-mail: dvacáté hlášení o jedné rozbité věci není informace. V podpisu se
+**Tatáž chyba je jeden řádek s počtem.** Opakování téhož nálezu se v souhrnu
+sloučí („×16, poprvé 9:15, naposledy 12:45"): dvacáté hlášení o jedné
+rozbité věci není informace, ale že trvá, informace je. V podpisu se
 zahazují jen čísla o čtyřech a víc číslicích (trvání v ms, časová razítka);
 **stavové kódy se nechávají**, protože 500 od brány je jiná porucha než 401.
 Dřív se zahazovala všechna čísla a obě chyby se slily — přišel na to test.
 
-**Strop je 40 alarmů za den.** Účet Resend dává sto e-mailů denně a sdílí je
-s objednávkami zákazníků. Při hromadné poruše (spadlá brána, padesát
-objednávek za hodinu) by deník vyčerpal limit a zákazník by nedostal ani
-potvrzení. Při dosažení stropu odejde JEDEN e-mail o tom, že se strop
-vyčerpal, a dál se chyby zapisují už jen do deníku — odkud je přečte večerní
-souhrn a stránka Provoz. Padesátá chyba za hodinu neříká nic, co by neřekla
-desátá.
+**Okno začíná koncem minulého souhrnu**, ne podle hodin (značka
+`alarm:souhrn-odeslan` nese `detail.do`). Když úloha jednou nepoběží
+(nasazení, restart), další souhrn pokryje i zmeškanou dobu. Bez vývojářské
+adresy se okno neuzavírá a chyby počkají (nejvýš týden zpátky). Souhrn
+vypíše celých prvních 25 věcí, zbytek jen názvem; dřívější denní strop 40
+alarmů odpadl, protože vývojářských e-mailů je nejvýš šest za den.
 
-**V předmětu je cizí služba**, je-li ve hře: „Nefunguje: Platby — ComGate".
-Rozdíl mezi ComGate a Českou poštou je rozdíl mezi dvěma úplně jinými
-odpoledni (`sluzba.ts`), a v okamžiku alarmu to má být vidět z předmětu.
+**V předmětu alarmu je cizí služba**, je-li ve hře: „Nefunguje: Platby —
+ComGate". Rozdíl mezi ComGate a Českou poštou je rozdíl mezi dvěma úplně
+jinými odpoledni (`sluzba.ts`); v souhrnu je to název řádku.
 
 ## 5. Co hlídka nepozná
 

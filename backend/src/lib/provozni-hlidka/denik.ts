@@ -1,4 +1,5 @@
 import type { DruhProvozu } from "./zapis"
+import { jeRadekFronty } from "./fronta"
 
 /**
  * Souhrn deníku — čisté sčítání (3. 11. 2026).
@@ -61,6 +62,13 @@ const PORADI: string[] = [
   "web",
 ]
 
+/**
+ * Deník bez účetnictví fronty — viz `jeRadekFronty`. Filtruje se tady, ne
+ * jen v dotazu: na obsahu večerního souhrnu záleží a tohle jde ověřit testem.
+ */
+const bezUcetnictvi = (zaznamy: ZaznamProvozu[]): ZaznamProvozu[] =>
+  zaznamy.filter((zaznam) => !jeRadekFronty(zaznam))
+
 export type SouctyDruhu = {
   druh: string
   nazev: string
@@ -71,7 +79,7 @@ export type SouctyDruhu = {
 export const soucty = (zaznamy: ZaznamProvozu[]): SouctyDruhu[] => {
   const mapa = new Map<string, { ok: number; chyby: number }>()
 
-  for (const zaznam of zaznamy) {
+  for (const zaznam of bezUcetnictvi(zaznamy)) {
     const stav = mapa.get(zaznam.kind) ?? { ok: 0, chyby: 0 }
     if (zaznam.status === "chyba") stav.chyby += 1
     else stav.ok += 1
@@ -124,7 +132,9 @@ export const nejcastejsiAkce = (
 
 /** Selhání z deníku, s podrobnostmi — to, co jde vložit do chatu. */
 export const selhani = (zaznamy: ZaznamProvozu[], kolik = 20): string[] => {
-  const chyby = zaznamy.filter((zaznam) => zaznam.status === "chyba")
+  const chyby = bezUcetnictvi(zaznamy).filter(
+    (zaznam) => zaznam.status === "chyba"
+  )
   const radky = chyby.map((zaznam) => {
     const detail = zaznam.detail as Record<string, unknown> | null | undefined
     const duvod = detail?.chyba ?? detail?.stav ?? null

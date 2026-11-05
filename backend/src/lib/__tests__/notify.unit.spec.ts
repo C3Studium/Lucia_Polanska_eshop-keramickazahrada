@@ -201,3 +201,95 @@ describe("notifyMerchant", () => {
     ])
   })
 })
+
+describe("notifyMerchant — vývojářské e-maily souhrnem (4. 11. 2026)", () => {
+  /* 3. 11. odešlo 42 vývojářských e-mailů a vyčerpaly denní limit Resendu.
+     Od teď jde vývojáři zvonek hned a e-mail jedním souhrnem za 4 hodiny. */
+  const devInput = {
+    key: "mn:hlidkafaktury-abc:2026-11-04",
+    title: "Nefunguje: Faktury v iDokladu",
+    description: "iDoklad vrátil 400",
+    audience: "dev" as const,
+    urgent: true,
+  }
+
+  const withQueue = (created: unknown[][], queued: unknown[], queueFails = false) => {
+    const base = containerWith(created, [])
+    return {
+      resolve: (key: string) => {
+        if (key === "activityLog") {
+          return {
+            createActivityEvents: async (row: unknown) => {
+              if (queueFails) throw new Error("db down")
+              queued.push(row)
+              return row
+            },
+          }
+        }
+        return base.resolve(key)
+      },
+    }
+  }
+
+  afterEach(() => {
+    delete process.env.DEV_NOTIFICATION_EMAIL
+  })
+
+  it("zařadí e-mail do fronty a hned vytvoří jen zvonek", async () => {
+    process.env.DEV_NOTIFICATION_EMAIL = "dev@example.com"
+    const created: unknown[][] = []
+    const queued: any[] = []
+
+    const result = await notifyMerchant(withQueue(created, queued) as never, devInput)
+
+    expect(result.email).toBe("queued")
+    expect(created.flat().map((p: any) => p.channel)).toEqual(["feed"])
+    expect(queued).toHaveLength(1)
+    expect(queued[0].action).toBe("alarm:ve-fronte")
+    expect(queued[0].detail).toEqual({
+      klic: devInput.key,
+      titulek: devInput.title,
+      popis: devInput.description,
+    })
+  })
+
+  it("samotný souhrn odejde hned", async () => {
+    process.env.DEV_NOTIFICATION_EMAIL = "dev@example.com"
+    const created: unknown[][] = []
+    const queued: unknown[] = []
+
+    const result = await notifyMerchant(withQueue(created, queued) as never, {
+      ...devInput,
+      souhrn: true,
+    })
+
+    expect(result.email).toBe("sent")
+    expect(created.flat().map((p: any) => p.channel)).toEqual(["feed", "email"])
+    expect(queued).toHaveLength(0)
+  })
+
+  it("když se fronta nepovede, pošle e-mail hned — chyba se nesmí ztratit", async () => {
+    process.env.DEV_NOTIFICATION_EMAIL = "dev@example.com"
+    const created: unknown[][] = []
+
+    const result = await notifyMerchant(withQueue(created, [], true) as never, devInput)
+
+    expect(result.email).toBe("sent")
+    expect(created.flat().map((p: any) => p.channel)).toEqual(["feed", "email"])
+  })
+
+  it("e-maily majitelce chodí dál hned", async () => {
+    process.env.OWNER_NOTIFICATION_EMAIL = "owner@example.com"
+    const created: unknown[][] = []
+    const queued: unknown[] = []
+
+    const result = await notifyMerchant(withQueue(created, queued) as never, {
+      ...devInput,
+      audience: "owner",
+    })
+
+    delete process.env.OWNER_NOTIFICATION_EMAIL
+    expect(result.email).toBe("sent")
+    expect(queued).toHaveLength(0)
+  })
+})

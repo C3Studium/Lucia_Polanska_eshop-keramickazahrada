@@ -2,42 +2,26 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { createHash } from "node:crypto"
 import { notifyMerchant } from "../notify"
 import { ciziSluzba, nazevSeSluzbou, type CiziSluzba } from "./sluzba"
-import { pocetDnes, ulozZaznam } from "./uloz"
 import { denPrahy } from "./zprava"
 
 /**
- * Alarmy (3. 11. 2026, přepsáno podle připomínky „když se něco pokazí, musí
- * to poslat").
+ * Alarmy (3. 11. 2026; 4. 11. 2026 převedeno na souhrn po 4 hodinách).
  *
- * ## Co se změnilo a proč
+ * ## Podpis chyby
  *
- * První verze měla v klíči jen kontrolu a den: `hlidka-faktury:2026-11-03`.
- * Na opakování téhož to bylo správně, ale **nová chyba se tím spolkla** —
- * když v devět selhala faktura u #68 a ve dvě u #71, druhý e-mail nepřišel,
- * protože klíč byl stejný. A právě ten druhý byl ten, o kterém se nevědělo.
+ * Klíč nese **podpis konkrétní chyby**: která objednávka, která akce, jaký
+ * text výjimky. Když v devět selže faktura u #68 a ve dvě u #71, jsou to dvě
+ * různé věci a v souhrnu jsou obě. Opakování téže chyby se v souhrnu sloučí
+ * do jednoho řádku s počtem („×16").
  *
- * Klíč proto nese **podpis konkrétní chyby**: která objednávka, která akce,
- * jaký text výjimky. Nová chyba je nový klíč a jde hned. Opakování téže
- * chyby je pořád jeden e-mail za den, protože dvacáté hlášení o jedné
- * rozbité věci není informace.
+ * ## Proč už ne e-mail hned
  *
- * ## Strop a proč tam je
- *
- * Účet Resend dává **sto e-mailů denně** a sdílí je s objednávkami zákazníků.
- * Když se něco rozbije hromadně (spadlá brána, padesát objednávek za hodinu),
- * mohl by deník vyčerpat limit a zákazník by nedostal ani potvrzení.
- *
- * Strop je proto čtyřicet alarmů denně. Při jeho dosažení odejde JEDEN e-mail
- * o tom, že se strop vyčerpal, a dál se chyby zapisují už jen do deníku —
- * odkud je přečte večerní souhrn a stránka Provoz. Padesátá chyba za hodinu
- * navíc neříká nic, co by neřekla desátá.
+ * 3. 11. odešlo 42 vývojářských e-mailů a vyčerpaly denní limit Resendu
+ * (100), který sdílí i potvrzení objednávek. Alarm proto vytvoří hned jen
+ * zvonek v administraci a zařadí se do fronty (`fronta.ts`); e-mailem
+ * chodí jeden souhrn za 4 hodiny, a jen když se něco pokazilo. Denní strop
+ * alarmů tím odpadl — víc než šest vývojářských e-mailů za den už nevznikne.
  */
-
-/** Víc alarmů denně než tohle je příznak hromadné poruchy, ne informace. */
-const STROP_ALARMU = 40
-
-/** Akce, pod kterou se v deníku počítají odeslané alarmy. */
-export const AKCE_ALARMU = "alarm:odeslan"
 
 /**
  * Podpis chyby — z něj je klíč. Normalizuje se, aby se *táž* chyba poznala
@@ -95,9 +79,6 @@ const casPrahy = (kdy: Date): string =>
     minute: "2-digit",
   })
 
-const DO_CHATU =
-  "Tenhle e-mail můžete celý vložit do chatu s Claudem — jsou v něm " +
-  "všechna čísla, podle kterých se to dá dohledat."
 
 /** Text alarmu. Nikdy neodkazuje do logu — k logu se od telefonu nedostane. */
 export const textAlarmuChyby = (
@@ -124,28 +105,19 @@ export const textAlarmuChyby = (
     }
   }
 
-  radky.push(
-    "",
-    "Každá nová chyba přijde zvlášť a hned. Tatáž chyba se po zbytek dne " +
-      "už jen zapisuje do Provozu, aby nezabrala denní limit e-mailů.",
-    DO_CHATU
-  )
-
   return radky.join("\n")
 }
 
 /**
- * Pošle alarm k jedné konkrétní chybě. Nikdy nevyhodí výjimku — alarm je
- * následek chyby a nesmí se stát druhou chybou.
- *
- * Vrací, co se stalo, hlavně kvůli testům a logu: `poslano`, `strop`
- * (vyčerpaný denní strop) nebo `bez-prijemce`.
+ * Zařadí alarm k jedné konkrétní chybě: zvonek hned, e-mail souhrnem.
+ * Nikdy nevyhodí výjimku — alarm je následek chyby a nesmí se stát druhou
+ * chybou.
  */
 export const posliAlarm = async (
   container: MedusaContainer,
   podnet: PodnetAlarmu,
   kdy: Date = new Date()
-): Promise<"poslano" | "strop" | "chyba"> => {
+): Promise<"zarazeno" | "chyba"> => {
   try {
     const sluzba =
       podnet.sluzba ??
@@ -156,40 +128,6 @@ export const posliAlarm = async (
       ...(podnet.podpis ?? [podnet.zprava]),
       podnet.cehoSeTyka?.id
     )
-
-    const odeslano = await pocetDnes(container, AKCE_ALARMU)
-
-    if (odeslano >= STROP_ALARMU) {
-      /* Jeden e-mail o vyčerpaném stropu za den — klíč ho drží i přes
-         restart služby. Dál se chyby zapisují už jen do deníku. */
-      await notifyMerchant(container, {
-        key: `mn:hlidkastrop:${denPrahy(kdy)}`,
-        title: "Provoz: chyb je dnes tolik, že se přestaly posílat",
-        description: [
-          `Dnes odešlo ${odeslano} alarmů, což je denní strop.`,
-          "",
-          "Další chyby se zapisují do Přehled → Provoz, ale e-mailem už " +
-            "nechodí — jinak by zabraly denní limit a zákazníkům by přestala " +
-            "chodit i potvrzení objednávek.",
-          "",
-          "Tolik chyb za den znamená hromadnou poruchu. Podívejte se do " +
-            "Provozu, co se opakuje.",
-        ].join("\n"),
-        audience: "dev",
-        urgent: true,
-      })
-
-      await ulozZaznam(container, {
-        kind: "alarm",
-        action: "alarm:strop",
-        status: "chyba",
-        actor: "systém",
-        summary: `strop ${STROP_ALARMU} alarmů za den vyčerpán`,
-        detail: { klic: podnet.klic, zprava: podnet.zprava },
-      })
-
-      return "strop"
-    }
 
     await notifyMerchant(container, {
       key: `mn:hlidka${podnet.klic.replace(/[^a-z0-9]/gi, "")}-${podpis}:${denPrahy(kdy)}`,
@@ -202,21 +140,9 @@ export const posliAlarm = async (
         : {}),
     })
 
-    await ulozZaznam(container, {
-      kind: "alarm",
-      action: AKCE_ALARMU,
-      status: "ok",
-      actor: "systém",
-      summary: `${podnet.nazev}${sluzba ? ` — ${sluzba}` : ""}`,
-      detail: { klic: podnet.klic, podpis, zprava: podnet.zprava },
-      ref_type: podnet.cehoSeTyka?.typ ?? null,
-      ref_id: podnet.cehoSeTyka?.id ?? null,
-    })
-
-    return "poslano"
+    return "zarazeno"
   } catch {
-    /* Alarm je následek chyby; druhá chyba z něj nesmí nic shodit. Zápis
-       o selhání se ani nezkouší — kdyby nešel deník, nešel by ani ten. */
+    /* Alarm je následek chyby; druhá chyba z něj nesmí nic shodit. */
     return "chyba"
   }
 }

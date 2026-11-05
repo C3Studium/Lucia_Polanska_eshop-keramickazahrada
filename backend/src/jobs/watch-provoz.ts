@@ -6,10 +6,10 @@ import { sUlohou } from "../lib/provozni-hlidka/uloha"
 /**
  * Provozní hlídka — běh každých patnáct minut (3. 11. 2026).
  *
- * Projde kontroly a ke každé rozbité pošle e-mail na vývojářskou adresu.
- * Klíč alarmu nese den, takže jedna rozbitá věc píše jednou denně, ne
- * devadesátšestkrát — Resend dává sto e-mailů denně a vyčerpaný limit by
- * znamenal, že zákazník nedostane ani potvrzení objednávky.
+ * Projde kontroly a každou rozbitou zařadí do souhrnu chyb (e-mail po 4 h).
+ * Opakování téže věci se v souhrnu sloučí („×16") — Resend dává sto e-mailů
+ * denně a vyčerpaný limit by znamenal, že zákazník nedostane ani potvrzení
+ * objednávky.
  *
  * Čtvrthodina je kompromis: kratší interval by u věcí s dvouhodinovou
  * lhůtou (zachycení platby) nic nepřidal, delší by znamenal, že se o
@@ -31,11 +31,11 @@ async function watchProvoz(container: MedusaContainer) {
   logger.warn(
     `[provoz] nefunguje: ${chyby
       .map((chyba) => chyba.nazev)
-      .join(", ")} — alarmů k odeslání: ${posláno}`
+      .join(", ")} — zařazeno do souhrnu: ${posláno}`
   )
 }
 
-/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+/* Běh i pád úlohy jde do provozního deníku; pád navíc do souhrnu chyb (e-mail nejvýš po 4 h). */
 export default sUlohou("watch-provoz", watchProvoz)
 
 export const config = {

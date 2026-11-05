@@ -51,6 +51,8 @@ export default async function testProvozniEmaily({ container }: ExecArgs) {
       `Kontrola routingu D7: tahle zpráva míří na vývojářskou adresu (nezdařené e-maily, chyby dopravce). Odesláno ${kdy}.`,
     audience: "dev",
     email: true,
+    /* Zkouška má dorazit hned, ne až v souhrnu chyb po 4 hodinách. */
+    souhrn: true,
   })
 
   logger.info(

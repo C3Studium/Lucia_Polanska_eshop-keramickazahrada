@@ -89,7 +89,7 @@ async function watchReturnDeadlines(container: MedusaContainer) {
   )
 }
 
-/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+/* Běh i pád úlohy jde do provozního deníku; pád navíc do souhrnu chyb (e-mail nejvýš po 4 h). */
 export default sUlohou("watch-return-deadlines", watchReturnDeadlines)
 
 export const config = {

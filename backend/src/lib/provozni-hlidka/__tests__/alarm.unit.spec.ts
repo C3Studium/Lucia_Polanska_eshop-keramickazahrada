@@ -5,11 +5,12 @@ import { ciziSluzba, nazevSeSluzbou } from "../sluzba"
  * Alarmy. Dvě pravidla, která se tu hlídají, jsou protichůdná a právě proto
  * se dají snadno pokazit:
  *
- * 1. **Nová chyba musí přijít hned.** První verze měla v klíči jen kontrolu
- *    a den, takže když ráno selhala faktura u #68 a odpoledne u #71, druhý
- *    e-mail nepřišel — a byl to ten, o kterém se nevědělo.
+ * 1. **Nová chyba se nesmí ztratit.** První verze měla v klíči jen kontrolu
+ *    a den, takže když ráno selhala faktura u #68 a odpoledne u #71, druhá
+ *    se spolkla — a byla to ta, o které se nevědělo.
  * 2. **Tatáž chyba nesmí přijít stokrát.** Resend dává sto e-mailů denně
- *    a sdílí je s objednávkami zákazníků.
+ *    a sdílí je s objednávkami zákazníků; od 4. 11. chodí vývojáři jeden
+ *    souhrn za 4 hodiny (`fronta.ts`).
  *
  * Rozhoduje o tom podpis: co je „tatáž chyba" a co už „jiná".
  */
@@ -92,13 +93,14 @@ describe("text alarmu", () => {
     expect(text).toContain("3. 11. 2026")
   })
 
-  it("slíbí, že nová chyba přijde zvlášť a hned", () => {
+  it("neslibuje e-mail hned a neodkazuje do logu", () => {
     const text = textAlarmuChyby(
       { klic: "platby", nazev: "Platby", zprava: "rozbité" },
       null,
       kdy
     )
-    expect(text).toContain("Každá nová chyba přijde zvlášť a hned")
+    /* Text jde do souhrnu po 4 hodinách — patička je tam jen jednou. */
+    expect(text).not.toContain("hned")
     expect(text).not.toMatch(/log(u|y)? serveru/i)
   })
 })

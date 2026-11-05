@@ -74,7 +74,7 @@ async function cmsHeartbeat(container: MedusaContainer) {
   }
 }
 
-/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+/* Běh i pád úlohy jde do provozního deníku; pád navíc do souhrnu chyb (e-mail nejvýš po 4 h). */
 export default sUlohou("cms-heartbeat", cmsHeartbeat)
 
 export const config = {
