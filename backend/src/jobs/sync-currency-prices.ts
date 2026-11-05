@@ -6,6 +6,7 @@ import {
   fetchCnbRates,
   type CnbRateSheet,
 } from "../lib/cnb-rates"
+import { jeMenaObchodu, vypisMen } from "../lib/currencies"
 import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
@@ -52,9 +53,23 @@ export const syncCurrencyPrices = async (
     is_default?: boolean
   }[]
   const defaultCurrency = supported.find((currency) => currency.is_default)
-  const targets = supported
+  const povolene = supported
     .map((currency) => currency.currency_code.toLowerCase())
     .filter((code) => code !== "czk")
+
+  /* Obchod prodává jen v korunách a eurech (lib/currencies). Zapnout další
+     měnu jde v administraci dvěma kliknutími a tahle úloha by jí hned
+     vyrobila ceny — ale poslat ji není kam: ComGate i iDoklad by na ni
+     potřebovaly vlastní účet. Proto se nepočítá a je to vidět v logu. */
+  const nechtene = povolene.filter((code) => !jeMenaObchodu(code))
+  if (nechtene.length) {
+    logger.warn(
+      `[cnb] Obchod má zapnuté měny mimo ${vypisMen()}: ${nechtene
+        .join(", ")
+        .toUpperCase()} — ceny se pro ně nepočítají. Vypněte je v Nastavení → Store.`
+    )
+  }
+  const targets = povolene.filter((code) => jeMenaObchodu(code))
 
   if (defaultCurrency && defaultCurrency.currency_code.toLowerCase() !== "czk") {
     logger.warn(

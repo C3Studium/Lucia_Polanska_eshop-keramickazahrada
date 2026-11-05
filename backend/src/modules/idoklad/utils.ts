@@ -10,7 +10,9 @@ import {
   REPORT_LANGUAGE_SK,
   VAT_RATE_TYPE_BASIC,
   VAT_RATE_TYPE_ZERO,
+  type IdokladBankAccount,
   type IdokladContactPayload,
+  type IdokladExchangeRate,
   type IdokladEnvelope,
   type IdokladInvoiceDefault,
   type IdokladInvoiceItemPayload,
@@ -471,6 +473,10 @@ type InvoicePayloadInput = {
   items?: IdokladInvoiceItemPayload[]
   /** Vlastní popis dokladu (jinak „Objednávka #X"). */
   description?: string
+  /** Účet agendy v měně dokladu (u koruny se nepředává). */
+  bankAccount?: IdokladBankAccount | null
+  /** Kurz z lístku iDokladu; bez něj by euro na dokladu platilo 1:1. */
+  exchangeRate?: IdokladExchangeRate | null
 }
 
 /**
@@ -502,12 +508,43 @@ export const invoiceFlavourFor = (
   return { european, reportLanguage }
 }
 
-const europeanAccount = (
-  defaults: IdokladInvoiceDefault
-): Pick<IdokladInvoicePayload, "Iban" | "Swift"> => {
-  const iban = (process.env.IDOKLAD_EU_IBAN || defaults.Iban || "").replace(/\s+/g, "")
-  const swift = (process.env.IDOKLAD_EU_SWIFT || defaults.Swift || "").trim()
+/**
+ * Bankovní spojení agendy pro měnu dokladu.
+ *
+ * Lucie má v iDokladu dva účty — korunový a eurový. Eurová faktura musí nést
+ * ten eurový, jinak zákazník pošle eura na korunový účet a banka je převede
+ * svým kurzem. Vybírá se podle měny; výchozí účet měny má přednost.
+ */
+export const pickBankAccount = (
+  accounts: IdokladBankAccount[],
+  currencyId: number | undefined
+): IdokladBankAccount | undefined => {
+  if (!currencyId) return undefined
+  const shoda = accounts.filter((ucet) => ucet.CurrencyId === currencyId)
+  return shoda.find((ucet) => ucet.IsDefault) ?? shoda[0]
+}
+
+const bankovniSpojeni = (
+  defaults: IdokladInvoiceDefault,
+  account?: IdokladBankAccount | null
+): Pick<IdokladInvoicePayload, "BankId" | "Iban" | "Swift" | "AccountNumber"> => {
+  const iban = (
+    account?.Iban ||
+    process.env.IDOKLAD_EU_IBAN ||
+    defaults.Iban ||
+    ""
+  ).replace(/\s+/g, "")
+  const swift = (
+    account?.Swift ||
+    process.env.IDOKLAD_EU_SWIFT ||
+    defaults.Swift ||
+    ""
+  ).trim()
   return {
+    ...(account ? { BankId: account.Id } : {}),
+    ...(account?.AccountNumber
+      ? { AccountNumber: truncate(account.AccountNumber, 50) }
+      : {}),
     ...(iban ? { Iban: truncate(iban, 50) } : {}),
     ...(swift ? { Swift: truncate(swift, 11) } : {}),
   }
@@ -540,18 +577,29 @@ export const buildInvoicePayload = (
     PaymentOptionId: input.paymentOptionId ?? defaults.PaymentOptionId,
     ...(variableSymbol ? { VariableSymbol: variableSymbol } : {}),
     Note: "Vystaveno automaticky e-shopem Keramická zahrada.",
-    ...invoiceFlavourPayload(order, defaults),
+    ...(input.exchangeRate
+      ? {
+          ExchangeRate: input.exchangeRate.ExchangeRateValue,
+          ExchangeRateAmount: input.exchangeRate.Amount,
+        }
+      : {}),
+    ...invoiceFlavourPayload(order, defaults, input.bankAccount),
   }
 }
 
 const invoiceFlavourPayload = (
   order: InvoiceOrderInput,
-  defaults: IdokladInvoiceDefault
+  defaults: IdokladInvoiceDefault,
+  bankAccount?: IdokladBankAccount | null
 ): Partial<IdokladInvoicePayload> => {
   const flavour = invoiceFlavourFor(order)
+  /* Účet se mění podle MĚNY, jazyk sestavy podle země — eurová faktura pro
+     Čecha jede na eurový účet, korunová pro Slováka na korunový. */
   return {
     ReportLanguage: flavour.reportLanguage,
-    ...(flavour.european ? europeanAccount(defaults) : {}),
+    ...(flavour.european || bankAccount
+      ? bankovniSpojeni(defaults, bankAccount)
+      : {}),
   }
 }
 

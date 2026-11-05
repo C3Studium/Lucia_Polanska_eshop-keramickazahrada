@@ -3,8 +3,10 @@ import {
   REPORT_LANGUAGE_CZ,
   type IdokladContact,
   type IdokladContactPayload,
+  type IdokladBankAccount,
   type IdokladCountry,
   type IdokladCurrency,
+  type IdokladExchangeRate,
   type IdokladInvoiceDefault,
   type IdokladInvoicePayload,
   type IdokladIssuedInvoice,
@@ -170,6 +172,38 @@ export default class IdokladModuleService {
       { query: { filter: `Code~eq~${normalized}`, pagesize: 1 } }
     )
     return page.Items?.[0]?.Id
+  }
+
+  /** Bankovní spojení agendy — vybírá se podle měny dokladu. */
+  async listBankAccounts(): Promise<IdokladBankAccount[]> {
+    const page = await this.request<IdokladPagedList<IdokladBankAccount>>(
+      "/BankAccounts",
+      { query: { pagesize: 100 } }
+    )
+    return page.Items ?? []
+  }
+
+  /**
+   * Poslední kurz z lístku iDokladu pro danou měnu.
+   *
+   * Vlastní lístek, ne ČNB z `lib/cnb-rates`: čísla jsou sice stejná, ale
+   * doklad má nést přesně ten kurz, který uvidí účetní v iDokladu. Řadí se
+   * podle Id, protože podle data to API neumí (odpoví 400).
+   */
+  async findExchangeRate(
+    currencyId: number
+  ): Promise<IdokladExchangeRate | undefined> {
+    const page = await this.request<IdokladPagedList<IdokladExchangeRate>>(
+      "/ExchangeRates",
+      {
+        query: {
+          filter: `CurrencyId~eq~${currencyId}`,
+          sort: "Id~desc",
+          pagesize: 1,
+        },
+      }
+    )
+    return page.Items?.[0]
   }
 
   async listPaymentOptions(): Promise<IdokladPaymentOption[]> {
