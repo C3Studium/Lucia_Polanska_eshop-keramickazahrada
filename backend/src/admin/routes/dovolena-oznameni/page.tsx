@@ -15,6 +15,13 @@ import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
 import { SaveBar } from "../../components/save-bar";
 import { movedTo } from "../../components/section-tabs";
+import {
+  dovolenaVidet,
+  odkazSedi,
+  oznameniVidet,
+  prazskyDnes,
+  upravenyOdkaz,
+} from "../../lib/dovolena-oznameni";
 
 const savedForm = (s: any) => ({
   vacation: Boolean(s.vacation_enabled),
@@ -70,12 +77,42 @@ const Inner = () => {
   };
   useEffect(reset, [data]);
 
-  const current = { vacation, until, vMessage, announce, aText, aLink: aLink.trim(), company };
+  const current = {
+    vacation,
+    until,
+    vMessage,
+    announce,
+    aText,
+    aLink: upravenyOdkaz(aLink),
+    company,
+  };
   const changes = saved
     ? (Object.keys(current) as Array<keyof typeof current>).filter(
         (key) => current[key] !== saved[key]
       ).length
     : 0;
+
+  /*
+   * Co obchod ukazuje PRÁVĚ TEĎ — počítáno z uložených hodnot, ne z přepínačů.
+   *
+   * Zapnutý přepínač totiž neznamená, že je upozornění vidět: dovolená
+   * s datem návratu v minulosti se nehlásí (backend `isVacationActive`)
+   * a oznámení bez textu se nevydává vůbec. Obojí se uloží a v obchodě se
+   * nestane nic — a bez téhle věty to vypadá, že ukládání nefunguje.
+   */
+  const dnes = prazskyDnes();
+  const videtDovolena = dovolenaVidet(
+    { enabled: Boolean(saved?.vacation), until: saved?.until },
+    dnes
+  );
+  const videtOznameni = oznameniVidet({
+    enabled: Boolean(saved?.announce),
+    text: saved?.aText,
+  });
+  /* Totéž nad rozepsaným formulářem, ať se to pozná ještě před uložením. */
+  const dovolenaMarne =
+    vacation && Boolean(until) && !dovolenaVidet({ enabled: true, until }, dnes);
+  const oznameniMarne = announce && !oznameniVidet({ enabled: true, text: aText });
 
   const save = useMutation({
     mutationFn: () =>
@@ -87,14 +124,16 @@ const Inner = () => {
           vacation_message: vMessage,
           announcement_enabled: announce,
           announcement_text: aText,
-          announcement_link: aLink.trim(),
+          announcement_link: upravenyOdkaz(aLink),
           company_purchase_enabled: company,
         },
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["merchant-settings"] });
       await queryClient.invalidateQueries({ queryKey: ["storefront-check"] });
-      toast.success("Uloženo — obchod to zákazníkům ukáže hned.");
+      // Pás v obchodě čte `/store/shop-status` s `revalidate: 60` —
+      // minutu může být pozadu, dnem nikdy.
+      toast.success("Uloženo — v obchodě se to projeví do minuty.");
     },
     onError: (error) =>
       toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
@@ -108,6 +147,18 @@ const Inner = () => {
           Co sem napíšete, uvidí zákazníci nahoře na každé stránce obchodu
           i v pokladně. Nakupovat jde dál — dovolená nic neblokuje.
         </Text>
+        {saved && (
+          <Text size="small" weight="plus" className="mt-3">
+            {videtDovolena || videtOznameni
+              ? `Teď v obchodě visí: ${[
+                  videtDovolena && "Dovolená",
+                  videtOznameni && "Novinky",
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}.`
+              : "Teď v obchodě nevisí žádné upozornění."}
+          </Text>
+        )}
       </header>
 
       <section className="flex flex-col gap-y-4 px-6 py-5">
@@ -138,6 +189,12 @@ const Inner = () => {
             </div>
           </div>
         )}
+        {dovolenaMarne && (
+          <Text size="xsmall" className="text-ui-fg-error">
+            Datum návratu už bylo, takže se upozornění v obchodě neukazuje.
+            Zadejte pozdější datum, nebo pole nechte prázdné.
+          </Text>
+        )}
       </section>
 
       <section className="flex flex-col gap-y-4 px-6 py-5">
@@ -162,8 +219,19 @@ const Inner = () => {
               <Input size="small" type="url" value={aLink}
                 placeholder="https://…"
                 onChange={(e) => setALink(e.target.value)} />
+              {!odkazSedi(aLink) && (
+                <Text size="xsmall" className="text-ui-fg-error mt-1">
+                  Tohle nevypadá jako adresa — zkuste třeba
+                  https://www.naplavka.cz.
+                </Text>
+              )}
             </div>
           </div>
+        )}
+        {oznameniMarne && (
+          <Text size="xsmall" className="text-ui-fg-error">
+            Bez textu se oznámení v obchodě neukáže — napište, co tam má stát.
+          </Text>
         )}
       </section>
 
@@ -184,6 +252,11 @@ const Inner = () => {
       <SaveBar
         dirty={changes > 0}
         count={changes}
+        problem={
+          odkazSedi(aLink)
+            ? undefined
+            : "Odkaz u oznámení nevypadá jako adresa."
+        }
         saving={save.isPending}
         onSave={() => save.mutate()}
         onDiscard={reset}
