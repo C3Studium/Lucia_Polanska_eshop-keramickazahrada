@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { ACTIVITY_LOG_MODULE } from "../../modules/activity-log"
 import type ActivityLogModuleService from "../../modules/activity-log/service"
 import { posliAlarm } from "./alarm"
+import { DRUH_FRONTY } from "./fronta"
 import { KONTROLY } from "./kontroly"
 import type { ZaznamProvozu } from "./denik"
 import type { VysledekKontroly } from "./typy"
@@ -57,12 +58,12 @@ export const spustKontroly = async (
 }
 
 /**
- * Pošle alarm ke každé rozbité kontrole.
+ * Zařadí alarm ke každé rozbité kontrole (e-mailem odejde souhrnem po
+ * 4 hodinách, `fronta.ts`).
  *
  * Podpis chyby se bere z PODROBNOSTÍ, ne jen z názvu kontroly: když ráno
- * selže faktura u #68 a odpoledne u #71, je to jiná chyba a musí přijít
- * druhý e-mail. Opakování téhož nálezu je pořád jeden e-mail za den —
- * dvacáté hlášení o jedné rozbité věci není informace.
+ * selže faktura u #68 a odpoledne u #71, je to jiná chyba a v souhrnu je
+ * zvlášť. Opakování téhož nálezu se v souhrnu sloučí do jednoho řádku.
  */
 export const ohlasKontroly = async (
   container: MedusaContainer,
@@ -86,14 +87,14 @@ export const ohlasKontroly = async (
       kdy
     )
 
-    if (stav === "poslano") posláno += 1
+    if (stav === "zarazeno") posláno += 1
   }
 
   return posláno
 }
 
 /**
- * Okamžitý alarm k jedné selhané věci — pro spadlou úlohu a pro chybu webu,
+ * Alarm k jedné selhané věci (zvonek hned, e-mail souhrnem) — pro spadlou úlohu a pro chybu webu,
  * které vlastní kontrolu nemají.
  */
 export const ohlasHned = async (
@@ -111,8 +112,8 @@ export const ohlasHned = async (
     container,
     {
       ...vec,
-      /* Jiný text výjimky = jiná chyba = další e-mail. Tentýž pád se po
-         zbytek dne už jen zapisuje. */
+      /* Jiný text výjimky = jiná chyba = další řádek v souhrnu. Tentýž pád
+         se sloučí s počtem opakování. */
       podpis: [vec.zprava],
     },
     kdy
@@ -131,7 +132,11 @@ export const zaznamyZa = async (
     ) as ActivityLogModuleService
 
     const zaznamy = await service.listActivityEvents(
-      { created_at: { $gte: od, $lte: doKdy } } as never,
+      /* Účetnictví fronty do deníku nepatří — viz `DRUH_FRONTY`. */
+      {
+        created_at: { $gte: od, $lte: doKdy },
+        kind: { $ne: DRUH_FRONTY },
+      } as never,
       { take: 5000, order: { created_at: "DESC" } }
     )
 

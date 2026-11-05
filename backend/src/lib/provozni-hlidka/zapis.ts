@@ -117,7 +117,7 @@ export const zapisProvoz = async (
           }`
       ),
     ],
-    /* Podpis drží „jiná chyba = jiný e-mail": akce, důvod a čeho se to týká.
+    /* Podpis drží „jiná chyba = jiný řádek souhrnu": akce, důvod a čeho se to týká.
        Stav odpovědi je v důvodu, takže 422 a 500 na téže cestě jsou dvě
        různé chyby — a to je správně, jsou. */
     podpis: [zapis.akce, duvod],

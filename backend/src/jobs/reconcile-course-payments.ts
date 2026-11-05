@@ -121,7 +121,7 @@ async function reconcileCoursePayments(
   }
 }
 
-/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+/* Běh i pád úlohy jde do provozního deníku; pád navíc do souhrnu chyb (e-mail nejvýš po 4 h). */
 export default sUlohou("reconcile-course-payments", reconcileCoursePayments)
 
 export const config = {

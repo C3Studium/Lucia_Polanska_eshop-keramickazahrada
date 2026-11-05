@@ -67,8 +67,8 @@ export const sUlohou =
         nazev: `Úloha ${nazev}`,
         zprava: `spadla: ${zprava}`,
         detail: [`Úloha: ${nazev}`, `Výjimka: ${zprava}`, ...stopa],
-        /* Jiná výjimka = jiná chyba = další e-mail hned. Tentýž pád se po
-           zbytek dne už jen zapisuje do Provozu. */
+        /* Jiná výjimka = jiná chyba = další řádek souhrnu. Tentýž pád se
+           v souhrnu sloučí s počtem opakování. */
         podpis: [zprava],
       })
 

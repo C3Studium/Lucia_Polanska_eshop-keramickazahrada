@@ -383,7 +383,7 @@ async function watchPriceDrops(container: MedusaContainer) {
   }
 }
 
-/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+/* Běh i pád úlohy jde do provozního deníku; pád navíc do souhrnu chyb (e-mail nejvýš po 4 h). */
 export default sUlohou("watch-price-drops", watchPriceDrops)
 
 export const config = {

@@ -100,7 +100,7 @@ async function abandonedCartJob(
  *
  * Zapnutí = vrátit `schedule` níž. Nic jiného se měnit nemusí.
  */
-/* Běh i pád úlohy jde do provozního deníku; pád navíc hned e-mailem. */
+/* Běh i pád úlohy jde do provozního deníku; pád navíc do souhrnu chyb (e-mail nejvýš po 4 h). */
 export default sUlohou("abandoned-cart-notification", abandonedCartJob)
 
 export const config = {

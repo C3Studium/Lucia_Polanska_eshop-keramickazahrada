@@ -146,3 +146,50 @@ describe("rozpoznání cesty", () => {
     expect(druhZCesty("/store/carts/cart_1")).toBe("obchod")
   })
 })
+
+/**
+ * Fronta vývojářských e-mailů si ke KAŽDÉ chybě zapíše ještě jeden řádek
+ * („čeká na odeslání", kind `alarm`, status `chyba`). Je to účetnictví, ne
+ * druhá porucha — do souhrnu ani do součtů se počítat nesmí, jinak večerní
+ * e-mail hlásí dvojnásobek a vedle skutečného pádu stojí „alarm · ve-fronte".
+ */
+describe("účetnictví fronty se do deníku nepočítá", () => {
+  const pad: ZaznamProvozu = {
+    kind: "uloha",
+    action: "job:watch-provoz",
+    status: "chyba",
+    summary: "spadla: timeout",
+    created_at: "2026-11-05T08:00:00.000Z",
+  } as ZaznamProvozu
+
+  const ucet: ZaznamProvozu = {
+    kind: "alarm",
+    action: "alarm:ve-fronte",
+    status: "chyba",
+    summary: "spadla: timeout",
+    created_at: "2026-11-05T08:00:01.000Z",
+  } as ZaznamProvozu
+
+  it("součty vidí jeden pád, ne dva", () => {
+    const vysledek = soucty([pad, ucet])
+    expect(vysledek.map((radek) => radek.druh)).toEqual(["uloha"])
+    expect(vysledek[0].chyby).toBe(1)
+  })
+
+  it("text souhrnu účetní řádek nevypisuje", () => {
+    const vypis = textDeniku([pad, ucet])
+    expect(vypis).toContain("job:watch-provoz")
+    expect(vypis).not.toContain("alarm:ve-fronte")
+  })
+
+  it("značka o odeslaném souhrnu se taky nepočítá", () => {
+    const znacka = {
+      kind: "alarm",
+      action: "alarm:souhrn-odeslan",
+      status: "ok",
+      summary: "souhrn chyb: 1 věc, 1 hlášení",
+      created_at: "2026-11-05T08:00:02.000Z",
+    } as ZaznamProvozu
+    expect(soucty([pad, znacka]).map((radek) => radek.druh)).toEqual(["uloha"])
+  })
+})

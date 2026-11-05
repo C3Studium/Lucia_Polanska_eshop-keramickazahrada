@@ -3,6 +3,7 @@ import { ACTIVITY_LOG_MODULE } from "../../../../modules/activity-log"
 import type ActivityLogModuleService from "../../../../modules/activity-log/service"
 import { soucty, type ZaznamProvozu } from "../../../../lib/provozni-hlidka/denik"
 import { spustKontroly } from "../../../../lib/provozni-hlidka"
+import { DRUH_FRONTY } from "../../../../lib/provozni-hlidka/fronta"
 
 /**
  * Provozní deník pro stránku Přehled → Provoz (3. 11. 2026).
@@ -36,7 +37,12 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
   const od = new Date(Date.now() - hodin * HODINA)
 
-  const filtry: Record<string, unknown> = { created_at: { $gte: od } }
+  /* Účetnictví fronty vývojářských e-mailů není provozní záznam; výslovná
+     volba druhu níž ho ale zpřístupní. Viz `DRUH_FRONTY`. */
+  const filtry: Record<string, unknown> = {
+    created_at: { $gte: od },
+    kind: { $ne: DRUH_FRONTY },
+  }
   if (jenChyby) filtry.status = "chyba"
   if (typeof req.query.druh === "string" && req.query.druh) {
     filtry.kind = req.query.druh
@@ -50,7 +56,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   /* Součty se počítají nad celým oknem, ne nad stránkou — jinak by
      „14 plateb" znamenalo jen „14 plateb na první stránce". */
   const proSoucty = (await service.listActivityEvents(
-    { created_at: { $gte: od } } as never,
+    { created_at: { $gte: od }, kind: { $ne: DRUH_FRONTY } } as never,
     { take: 5000, order: { created_at: "DESC" } }
   )) as unknown as ZaznamProvozu[]
 

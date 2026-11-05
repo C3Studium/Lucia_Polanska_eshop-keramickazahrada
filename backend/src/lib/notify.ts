@@ -32,6 +32,7 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { getMerchantSettings } from "./merchant-settings"
+import { zaradDoFronty } from "./provozni-hlidka/fronta"
 
 /** D7: technical failures go to the developer, business events to the owner. */
 export type MerchantNotificationAudience = "owner" | "dev"
@@ -60,6 +61,13 @@ export type MerchantNotificationInput = {
   replyTo?: string
   /** Links the notification to an order/review/… in the notification table. */
   resource?: { id: string; type: string }
+  /**
+   * Jen pro samotné souhrny (4. 11. 2026). Vývojářské e-maily (`audience:
+   * "dev"`) se jinak neposílají hned, ale řadí do fronty a chodí jedním
+   * souhrnem za 4 hodiny (`lib/provozni-hlidka/fronta.ts`) — jednotlivé
+   * chyby 3. 11. vyčerpaly denní limit Resendu. Zvonek vzniká vždy hned.
+   */
+  souhrn?: boolean
 }
 
 /** The generic merchant e-mail template registered with the Resend provider. */
@@ -67,7 +75,7 @@ export const MERCHANT_NOTIFICATION_TEMPLATE = "merchant-notification"
 
 export type MerchantNotificationOutcome = {
   feed: boolean
-  email: "sent" | "not-requested" | "no-recipient"
+  email: "sent" | "queued" | "not-requested" | "no-recipient"
 }
 
 /**
@@ -182,10 +190,28 @@ export const notifyMerchant = async (
   const notificationModule = container.resolve(Modules.NOTIFICATION)
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
 
-  const payloads: Record<string, unknown>[] = [buildFeedNotification(input)]
+  let payloads: Record<string, unknown>[] = [buildFeedNotification(input)]
   let email: MerchantNotificationOutcome["email"] = "not-requested"
 
-  if (input.urgent || input.email) {
+  const wantsEmail = Boolean(input.urgent || input.email)
+
+  /* Vývojářský e-mail jde do fronty a odejde souhrnem (viz `souhrn`). Když
+     se zařazení nepovede, pošle se hned — ztracená chyba je horší než
+     e-mail navíc. */
+  if (wantsEmail && input.audience === "dev" && !input.souhrn) {
+    await notificationModule.createNotifications(payloads as never)
+    const queued = await zaradDoFronty(container, {
+      klic: input.key,
+      titulek: input.title,
+      popis: input.description ?? null,
+      resource: input.resource ?? null,
+    })
+    if (queued) return { feed: true, email: "queued" }
+    /* Zvonek už vznikl; zbývá jen e-mail. */
+    payloads = []
+  }
+
+  if (wantsEmail) {
     const recipient = resolveRecipient(
       input.audience,
       await getNotificationAddresses(container)
@@ -207,7 +233,9 @@ export const notifyMerchant = async (
     }
   }
 
-  await notificationModule.createNotifications(payloads as never)
+  if (payloads.length) {
+    await notificationModule.createNotifications(payloads as never)
+  }
 
   return { feed: true, email }
 }
