@@ -12,10 +12,24 @@ import { adminQueryClient } from "../lib/query-client"
  * warning here and the row there can never disagree.
  */
 const Inner = ({ productId }: { productId: string }) => {
-  const { data } = useQuery<any>({
+  const { data, isError } = useQuery<any>({
     queryKey: ["workbench-product", productId],
     queryFn: () => sdk.client.fetch(`/admin/workbench/products/${productId}`),
   });
+  /*
+   * Nenačtený dotaz nesmí mluvit jako „všechno v pořádku": tahle karta je
+   * u produktu vidět vždycky (zeleně, nebo červeně), takže její zmizení se
+   * čte jako „koupit se dá".
+   */
+  if (isError) {
+    return (
+      <Container className="p-4">
+        <Badge size="2xsmall" color="red">
+          Nejde zjistit, jestli se dá koupit
+        </Badge>
+      </Container>
+    );
+  }
   if (!data) return null;
 
   const problems: string[] = [];

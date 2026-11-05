@@ -76,6 +76,21 @@ describe("widgety adminu", () => {
   })
 
   /*
+   * Chyba dotazu kartu schovat nesmí. Takhle mizely „Denní práce", „Faktura",
+   * „Výroba na zakázku" i „Dá se koupit" — a to přesně ve chvíli, kdy se něco
+   * dělo (5. 11. 2026). Prázdno patří jen tomu, kde opravdu není co ukázat;
+   * na nenačtený dotaz je `components/panel-error.tsx`.
+   */
+  it("žádná karta se neschová jen kvůli chybě dotazu", () => {
+    const hresici = [...obsah.entries()]
+      .filter(([, text]) =>
+        /ifs*([^)]*isError[^)]*)s*{?s*return null/.test(text)
+      )
+      .map(([jmeno]) => jmeno)
+    expect(hresici).toEqual([])
+  })
+
+  /*
    * A neschovává se podle fáze objednávky. U odeslané a zrušené bez štítku se
    * od 3. 11. 2026 schovával, aby nestrašil oranžovým „Zatím bez štítku" —
    * tím ale zmizela jediná cesta ke štítku. Jediné „return null" v panelu

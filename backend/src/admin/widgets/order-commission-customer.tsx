@@ -12,6 +12,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { sdk } from "../lib/sdk";
 import { ProductionDiary } from "../components/production-diary";
+import { PanelError } from "../components/panel-error";
+import { maZakazkovouPolozku } from "../lib/order-commission";
 import { ceskaChyba } from "../lib/ceska-chyba";
 
 type ProductionOrder = {
@@ -63,7 +65,7 @@ type DiaryNote = {
  */
 export const OrderCommissionCustomerPanel = ({ order }: { order: AdminOrder }) => {
   const queryClient = useQueryClient();
-  const { data, isLoading, isError } = useQuery<ProductionResponse>({
+  const { data, isLoading, isError, refetch } = useQuery<ProductionResponse>({
     queryKey: ["made-to-order-order", order.id],
     queryFn: () =>
       sdk.client.fetch(`/admin/made-to-order/orders/${order.id}`, {
@@ -152,7 +154,13 @@ export const OrderCommissionCustomerPanel = ({ order }: { order: AdminOrder }) =
       </Container>
     );
   }
-  if (isError || !production) return null;
+  // Zadání od zákazníka má jen zakázka; chyba se proto hlásí jen u ní.
+  if (isError) {
+    return maZakazkovouPolozku(order) ? (
+      <PanelError title="Od zákazníka" onRetry={refetch} />
+    ) : null;
+  }
+  if (!production) return null;
 
   // „Od zákazníka" = to NEJNOVĚJŠÍ dle data. Zprávy zákazníka (vlákno) chodí
   // DESC z backendu; původní zadání z objednávky (metadata) slouží jako záloha,
