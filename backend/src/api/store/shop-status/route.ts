@@ -34,6 +34,19 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     // Zakázky se při dovolené už nepozastavují — pole zůstává kvůli starším
     // buildům storefrontu, vždy false.
     commissions_paused: false,
+    /*
+     * Nákup na firmu — jestli to pokladna má vůbec nabízet.
+     *
+     * Přepínač v administraci (Nastavení obchodu → Dovolená a oznámení) se
+     * do 5. 11. 2026 ukládal, ale nikdo ho nečetl: políčko „Nakupuji na
+     * firmu" svítilo v pokladně vždycky, i když ho majitelka vypnula.
+     *
+     * Jen zobrazení. Fakturační údaje se tím nikde nemažou a objednávka,
+     * která už s nimi vznikla, zůstává, jak je. Selhané čtení nastavení
+     * (settings === null) volbu NEVYPÍNÁ — schovat zákazníkovi možnost kvůli
+     * chybě je horší než ji nechat.
+     */
+    company_purchase: settings?.company_purchase_enabled !== false,
     // Doběrečné — the checkout shows the surcharge next to the dobírka
     // option before it is chosen. Display only: the fee itself is added
     // server-side when the payment session is created (`lib/dobirka-fee.ts`).

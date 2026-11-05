@@ -20,10 +20,13 @@ const Addresses = ({
   cart,
   customer,
   countryCode,
+  companyPurchase = true,
 }: {
   cart: HttpTypes.StoreCart | null
   customer: HttpTypes.StoreCustomer | null
   countryCode: string
+  /** Nabízet nákup na firmu? Nastavení obchodu, jen zobrazení. */
+  companyPurchase?: boolean
 }) => {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -149,6 +152,7 @@ const Addresses = ({
               onChange={toggleSameAsBilling}
               cart={cart}
               countryCode={countryCode}
+              companyPurchase={companyPurchase}
             />
 
             {!sameAsBilling && (
