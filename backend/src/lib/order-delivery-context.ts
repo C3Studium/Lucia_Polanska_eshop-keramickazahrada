@@ -13,6 +13,8 @@
  *  - `other` — neznámá/nenastavená doprava (editace doručení se nenabízí).
  */
 
+import { isPersonalPickupOrder } from "./personal-pickup"
+
 const fold = (value: string) =>
   value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
 
@@ -45,15 +47,8 @@ export const deliveryContext = (order: any): OrderDeliveryContext => {
   const sa = order?.shipping_address as Record<string, unknown> | null | undefined
 
   const isBalikovna = methods.some((m) => fold(str(m?.name)).includes("balikovna"))
-  const isPickup = methods.some((m) => {
-    const provider = str(m?.shipping_option?.provider_id)
-    return (
-      (m?.data as any)?.personal_pickup === true ||
-      fold(str(m?.name)).includes("osobni") ||
-      fold(str(m?.name)).includes("odber") ||
-      provider.includes("pickup")
-    )
-  })
+  /* Sdílené pravidlo — kód služby dopravce přebíjí zbylý příznak odběru. */
+  const isPickup = isPersonalPickupOrder({ shipping_methods: methods })
 
   const method: OrderDeliveryContext["method"] = isBalikovna
     ? "balikovna"

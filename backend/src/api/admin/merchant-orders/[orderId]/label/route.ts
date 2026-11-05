@@ -11,6 +11,7 @@ import {
   lineQuantityOf,
 } from "../../../../../lib/order-quantity"
 import { ensureParcelTracking } from "../../../../../lib/parcel-tracking/start"
+import { isPersonalPickupOrder } from "../../../../../lib/personal-pickup"
 
 /**
  * Přístupy k ČP jsou KOMPLETNÍ až se všemi šesti údaji — stejná podmínka, jakou
@@ -369,12 +370,17 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     throw new MedusaError(MedusaError.Types.NOT_FOUND, "Objednávka nebyla nalezena.")
   }
 
-  // Osobní odběr se neposílá — není co podávat.
-  const isPersonalPickup = (order.shipping_methods ?? []).some((method: any) => {
-    const data = method?.data || {}
-    return data.personal_pickup === true || data.service_code === "PICKUP"
-  })
-  if (isPersonalPickup) {
+  /*
+   * Osobní odběr se neposílá — není co podávat.
+   *
+   * Čte se sdíleným pravidlem (`lib/personal-pickup`), ne vlastní kopií:
+   * zakázka s cenou po domluvě vzniká na odběr a dopravu dostane až
+   * v administraci, a Medusa data metody SLUČUJE, takže vedle
+   * `service_code: "DR"` zůstane `personal_pickup: true`. Zdejší kopie na to
+   * skočila a u #69 štítek odmítla vystavit hláškou „objednávka je na osobní
+   * odběr", přestože zásilka jela Českou poštou (5. 11. 2026).
+   */
+  if (isPersonalPickupOrder(order)) {
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
       "Objednávka je na osobní odběr — žádný štítek se nevystavuje."

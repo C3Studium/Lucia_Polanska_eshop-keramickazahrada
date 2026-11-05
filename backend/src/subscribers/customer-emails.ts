@@ -1,6 +1,7 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { buildCommissionConfirmation } from "../lib/potvrzeni-zakazky"
+import { isPersonalPickupOrder } from "../lib/personal-pickup"
 import {
   customerName,
   formatDate,
@@ -491,10 +492,10 @@ const onBalancePaid = async ({
   await ensureMadeToOrderInvoices(container, data.order_id).catch(() => undefined)
 }
 
-const isPickupOrder = (order: any): boolean =>
-  (order.shipping_methods || []).some(
-    (method: any) => method?.data?.personal_pickup === true
-  )
+/* Sdílené pravidlo: po výměně dopravy u zakázky zůstává v datech metody
+   starý příznak odběru, a zákazník by pak dostal e-mail o vyzvednutí
+   u pultu místo o zásilce. */
+const isPickupOrder = (order: any): boolean => isPersonalPickupOrder(order)
 
 /**
  * Co na objednávce ještě není zaplacené — `0`, když je vyrovnaná.

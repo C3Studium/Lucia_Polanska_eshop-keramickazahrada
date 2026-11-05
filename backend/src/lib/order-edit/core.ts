@@ -1,4 +1,5 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
+import { isPersonalPickupOrder } from "../personal-pickup"
 import {
   ContainerRegistrationKeys,
   getVariantAvailability,
@@ -500,7 +501,10 @@ const applyShippingRecalculation = async (
   const methods = (order.shipping_methods ?? []) as any[]
   if (methods.length !== 1) return false
   const method = methods[0]
-  if (!method?.shipping_option_id || method?.data?.personal_pickup === true) return false
+  /* U odběru se poštovné nepřepočítává; sdílené pravidlo, ať zbylý příznak
+     po výměně dopravy nezablokuje přepočet u skutečné zásilky. */
+  if (!method?.shipping_option_id) return false
+  if (isPersonalPickupOrder(order as never)) return false
 
   const prices = await shippingOptionPrices(container, method.shipping_option_id)
   const desired = resolveShippingAmount(prices, {
