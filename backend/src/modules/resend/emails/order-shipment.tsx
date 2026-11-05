@@ -51,7 +51,7 @@ const COPY: Localized<{
     viewOrder: "Zobrazit objednávku",
     fragile: "Keramika je křehká, proto cestuje v pořádném balení.",
     inspect:
-      "Až zásilka dorazí, prohlédněte si prosím obal ještě při převzetí. Je-li promáčklý, protržený nebo prosakuje, můžete balík rozbalit rovnou před doručovatelem a poškození s ním sepsat — mně to pak usnadní vyřízení s dopravcem. Podmínkou to ale není: když poškození najdete až doma, napište mi a přiložte fotky, obal si prosím schovejte. Poškozený kousek vyměním nebo vám vrátím peníze a s dopravcem si to vyřídím sama.",
+      "Až zásilka dorazí, prohlédněte si prosím obal ještě při převzetí. Je-li promáčklý, protržený nebo prosakuje, rozbalte balík rovnou před doručovatelem a poškození s ním sepište — se záznamem vyřídí pošta reklamaci nejsnáz. Poškozený obal totiž hlásíte na kterékoli poště, nejlépe do dvou pracovních dnů od převzetí; náhradu vyplácí Česká pošta adresátovi, tedy vám. Je-li obal v pořádku a rozbitý jen kousek, napište mi a přiložte fotky — vyměním ho nebo vám vrátím peníze. Obal si prosím v obou případech schovejte.",
     carrierNotice:
       "O doručení vám dá dopravce vědět SMS nebo e-mailem. Když vás nezastihne, zásilku uloží k vyzvednutí.",
     withdrawalBefore:
@@ -73,7 +73,7 @@ const COPY: Localized<{
     viewOrder: "Zobraziť objednávku",
     fragile: "Keramika je krehká, preto cestuje v poriadnom balení.",
     inspect:
-      "Keď zásielka dorazí, prezrite si, prosím, obal ešte pri prevzatí. Ak je pomačkaný, roztrhnutý alebo presakuje, môžete balík rozbaliť priamo pred doručovateľom a poškodenie s ním spísať — mne to potom uľahčí vybavenie s prepravcom. Podmienkou to však nie je: ak poškodenie nájdete až doma, napíšte mi a priložte fotky, obal si, prosím, odložte. Poškodený kúsok vymením alebo vám vrátim peniaze a s prepravcom si to vybavím sama.",
+      "Keď zásielka dorazí, prezrite si, prosím, obal ešte pri prevzatí. Ak je pomačkaný, roztrhnutý alebo presakuje, rozbaľte balík priamo pred doručovateľom a poškodenie s ním spíšte — so záznamom vybaví pošta reklamáciu najľahšie. Poškodený obal totiž hlásite na ktorejkoľvek pošte, najlepšie do dvoch pracovných dní od prevzatia; náhradu vypláca Česká pošta adresátovi, teda vám. Ak je obal v poriadku a rozbitý len kúsok, napíšte mi a priložte fotky — vymením ho alebo vám vrátim peniaze. Obal si, prosím, v oboch prípadoch odložte.",
     carrierNotice:
       "O doručení vám dá prepravca vedieť SMS alebo e-mailom. Ak vás nezastihne, zásielku uloží na vyzdvihnutie.",
     withdrawalBefore:
@@ -95,7 +95,7 @@ const COPY: Localized<{
     viewOrder: "Zobacz zamówienie",
     fragile: "Ceramika jest delikatna, dlatego podróżuje w solidnym opakowaniu.",
     inspect:
-      "Gdy przesyłka dotrze, proszę obejrzeć opakowanie jeszcze przy odbiorze. Jeśli jest zgniecione, rozdarte albo przecieka, mogą Państwo otworzyć paczkę przy doręczycielu i spisać z nim protokół szkody — ułatwi mi to sprawę z przewoźnikiem. Nie jest to jednak warunek: jeśli uszkodzenie wyjdzie na jaw dopiero w domu, proszę do mnie napisać i dołączyć zdjęcia, a opakowanie zachować. Uszkodzony egzemplarz wymienię albo zwrócę pieniądze, a sprawę z przewoźnikiem załatwię sama.",
+      "Gdy przesyłka dotrze, proszę obejrzeć opakowanie jeszcze przy odbiorze. Jeśli jest zgniecione, rozdarte albo przecieka, proszę otworzyć paczkę przy doręczycielu i spisać z nim protokół szkody — z protokołem poczta rozpatrzy reklamację najszybciej. Uszkodzone opakowanie zgłasza się bowiem na dowolnej poczcie, najlepiej w ciągu dwóch dni roboczych od odbioru; odszkodowanie Poczta Czeska wypłaca adresatowi, czyli Państwu. Jeśli opakowanie jest całe, a uszkodzony tylko egzemplarz, proszę do mnie napisać i dołączyć zdjęcia — wymienię go albo zwrócę pieniądze. W obu przypadkach proszę zachować opakowanie.",
     carrierNotice:
       "O doręczeniu poinformuje Państwa przewoźnik SMS-em lub e-mailem. Jeśli nie zastanie Państwa w domu, zostawi przesyłkę do odbioru.",
     withdrawalBefore:
@@ -117,7 +117,7 @@ const COPY: Localized<{
     viewOrder: "Bestellung ansehen",
     fragile: "Keramik ist zerbrechlich – deshalb reist sie gut verpackt.",
     inspect:
-      "Wenn das Paket ankommt, sehen Sie sich die Verpackung bitte schon bei der Übergabe an. Ist sie eingedrückt, eingerissen oder feucht, können Sie das Paket direkt vor dem Zusteller öffnen und den Schaden mit ihm festhalten – das erleichtert mir die Klärung mit dem Versanddienst. Eine Bedingung ist das aber nicht: Wenn Sie einen Schaden erst zu Hause entdecken, schreiben Sie mir mit Fotos und heben Sie die Verpackung bitte auf. Ein beschädigtes Stück tausche ich aus oder erstatte Ihnen den Betrag – die Sache mit dem Versanddienst kläre ich selbst.",
+      "Wenn das Paket ankommt, sehen Sie sich die Verpackung bitte schon bei der Übergabe an. Ist sie eingedrückt, eingerissen oder feucht, öffnen Sie das Paket direkt vor dem Zusteller und halten Sie den Schaden mit ihm fest – mit einem Protokoll bearbeitet die Post die Reklamation am einfachsten. Eine beschädigte Verpackung melden Sie nämlich in einer beliebigen Postfiliale, am besten innerhalb von zwei Werktagen nach der Übernahme; die Entschädigung zahlt die Tschechische Post an den Empfänger, also an Sie. Ist die Verpackung in Ordnung und nur das Stück zerbrochen, schreiben Sie mir mit Fotos – ich tausche es aus oder erstatte Ihnen den Betrag. Heben Sie die Verpackung bitte in beiden Fällen auf.",
     carrierNotice:
       "Der Versanddienst informiert Sie per SMS oder E-Mail über die Zustellung. Wenn er Sie nicht antrifft, hinterlegt er das Paket zur Abholung.",
     withdrawalBefore:
@@ -139,7 +139,7 @@ const COPY: Localized<{
     viewOrder: "View order",
     fragile: "Ceramics are fragile, so they travel in sturdy packaging.",
     inspect:
-      "When the parcel arrives, please take a look at the packaging while the courier is still there. If it's dented, torn or wet, you can open the parcel in front of the courier and have the damage recorded — that makes it easier for me to sort out with the carrier. It isn't a condition, though: if you only discover damage once you're home, write to me with photos and please keep the packaging. I'll replace the damaged piece or refund you, and I'll deal with the carrier myself.",
+      "When the parcel arrives, please take a look at the packaging while the courier is still there. If it's dented, torn or wet, open the parcel in front of the courier and have the damage recorded — with a record, the post office handles the claim most easily. Damaged packaging is reported at any post office, ideally within two working days of receipt; Česká pošta pays the compensation to the addressee, that is to you. If the box is fine and only the piece is broken, write to me with photos — I'll replace it or refund you. Either way, please keep the packaging.",
     carrierNotice:
       "The courier will let you know about the delivery by text message or e-mail. If you're not in, they'll leave the parcel for you to collect.",
     withdrawalBefore:

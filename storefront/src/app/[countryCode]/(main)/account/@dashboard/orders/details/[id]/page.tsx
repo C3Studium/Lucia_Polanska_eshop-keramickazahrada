@@ -1,8 +1,6 @@
 import { retrieveOrder, getOrderAccessToken } from "@lib/data/orders"
 import { getOrderClaims } from "@lib/data/claims"
 import OrderDetailsTemplate from "@modules/order/templates/order-details-template"
-import { CLAIM_FORM_KEY } from "@lib/constants/documents"
-import { getSiteDocument } from "@lib/data/documents"
 import { getOrderEditContext } from "@lib/data/order-edit"
 import { ORDER_ITEM_EDITING_ENABLED } from "@modules/order/components/order-edit/shared"
 import {
@@ -59,9 +57,6 @@ export default async function OrderDetailPage(props: Props) {
           pending: Boolean(editContext.pending_change),
         }
       : null
-  // Načítá se tady, protože tahle stránka je serverová — šablona pod ní
-  // je klientská a datová vrstva `server-only`.
-  const claimForm = await getSiteDocument(CLAIM_FORM_KEY)
   // `null` = není zakázka (route 404) → konverzace se nevykreslí; prázdné pole
   // = zakázka, kde se zatím nepsalo, a ta tlačítko mít má.
   const commissionNotes = await listCommissionNotes(order.id)
@@ -93,7 +88,6 @@ export default async function OrderDetailPage(props: Props) {
   return (
     <OrderDetailsTemplate
       order={order}
-      claimForm={claimForm}
       commissionNotes={commissionNotes}
       commissionBalance={commissionBalance}
       commissionCancellation={commissionCancellation}

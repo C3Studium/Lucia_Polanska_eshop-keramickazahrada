@@ -41,15 +41,22 @@ export const NEW_CLAIM_RESOLUTIONS: ClaimRequestedResolution[] = [
 ]
 
 /**
- * Poškození při přepravě (14. 10. 2026, právní audit §4.1): zákazník ho hlásí
- * NÁM jako běžnou reklamaci; škodu u dopravce řeší prodávající (za vadu při
- * převzetí odpovídá ona, § 2161 OZ). Obal a fotky jsou prosba, ne podmínka.
- * Dřívější odkazy na formulář a lhůtu České pošty (`CP_CLAIM_*`) z webu
- * zmizely — stejná věta jako v e-mailech (`CARRIER_DAMAGE_CUSTOMER_TEXT` na
- * backendu).
+ * Poškození při přepravě (4. 11. 2026, rozhodnutí majitelky): poškozená
+ * krabice je škoda dopravce a zákazník ji hlásí NA POŠTĚ — náhradu Česká
+ * pošta vyplácí adresátovi, takže ji za něj nikdo jiný uplatnit nemůže.
+ * Rozbitý výrobek v nepoškozené krabici se reklamuje u nás.
+ *
+ * Věta přitom dál končí tím, že reklamaci vyřídíme i bez pošty: reklamační
+ * řád, čl. 5 (vydané znění od 3. 11. 2026) říká, že poškození při přepravě
+ * je vada při převzetí a žádná lhůta dopravce zákazníka nezavazuje. Změnit
+ * to znamená nové znění řádu, ne jinou větu tady.
+ *
+ * Jedno znění pro web i e-maily — druhá polovina je
+ * `CARRIER_DAMAGE_CUSTOMER_TEXT(S)` v `backend/src/lib/claims/constants.ts`
+ * (tam i překlady). Kdo mění jednu, mění obě.
  */
 export const CARRIER_DAMAGE_CUSTOMER_TEXT =
-  "Poškození při přepravě řešíme s Českou poštou my — vy kvůli tomu nikam chodit ani nic podávat nemusíte. Pokud můžete, nechte si prosím obal a výplň, dokud se vám neozveme; fotky obalu i zboží nám pomohou. Kdyby Česká pošta potřebovala vaši součinnost (například sepsat záznam o poškození), dáme vám vědět — vaši reklamaci to nijak nepodmiňuje."
+  "Poškozený obal je škoda dopravce: nahlaste prosím zásilku na kterékoli poště, nejlépe do dvou pracovních dnů od převzetí — náhradu Česká pošta vyplácí adresátovi, tedy vám. Vezměte s sebou zásilku i s obalem a výplní, nebo aspoň fotky obalu a zboží. Napište prosím i nám; pokud vám na poště reklamaci nepřijmou, vyřídíme ji my — vaše práva u nás na dopravci nezávisí."
 
 /** Co ROZHODLA majitelka při schválení (§2169–2172). */
 export type ClaimResolution = "repair" | "replace" | "discount" | "refund"

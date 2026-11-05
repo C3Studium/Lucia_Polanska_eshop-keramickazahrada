@@ -113,9 +113,9 @@ const CAUSES: {
   {
     value: "carrier",
     label: "Balík dorazil poškozený",
-    // 14. 10. 2026 (právní audit §4.1): poškození hlásíte nám, s dopravcem to
-    // řešíme my — žádná lhůta pošty, fotky a obal jen prosba.
-    help: "Zásilka přišla rozbitá nebo s poškozeným obalem. S dopravcem to vyřešíme sami — fotky obalu i zboží nám pomohou, pokud je máte.",
+    // 4. 11. 2026 (rozhodnutí majitelky): poškozený obal je škoda dopravce
+    // a hlásí se na poště — náhradu ČP vyplácí adresátovi, nikomu jinému.
+    help: "Zásilka přišla rozbitá nebo s poškozeným obalem. Škodu na obalu uznává Česká pošta — nahlaste ji prosím i na kterékoli poště, nejlépe do dvou pracovních dnů od převzetí.",
     photos: false,
   },
 ]
@@ -170,10 +170,9 @@ const componentMax = (item: ClaimOrderItem, component: ClaimOrderItemComponent) 
  * Co se stalo (§11.3, §13.7): u reklamace povinná volba — vada
  * (`damage_cause` se neposílá), poškozený kus (`"damaged"`, fotky povinné)
  * nebo balík dorazil poškozený (`"carrier"`, fotky vítány). U přepravy se
- * ukáže věta, že škodu s dopravcem řešíme my a zákazník nic dalšího podávat
- * nemusí (14. 10. 2026, právní audit §4.1 — za vadu při převzetí odpovídá
- * prodávající; lhůta České pošty je její věc). Dokument `claimForm` se
- * nabídne jen jako nepovinný.
+ * ukáže pokyn nahlásit poškození i na poště (4. 11. 2026 — poškozený obal je
+ * škoda dopravce a náhradu ČP vyplácí adresátovi), i to, že reklamaci u nás
+ * to nepodmiňuje.
  *
  * Auto-zrušení (§13.1): odstoupení / vrácení u nezaplacené a neodeslané
  * objednávky server rovnou vyřídí a objednávku zruší (`auto_cancelled`). Pak
@@ -188,7 +187,6 @@ export default function RefundRequest({
   claims,
   initialKind,
   currencyCode = "czk",
-  claimForm = null,
   withdrawalElsewhere = false,
 }: {
   orderId: string
@@ -199,9 +197,6 @@ export default function RefundRequest({
       formulář vykreslí. Zamčená/neznámá hodnota → reklamace. */
   initialKind?: string
   currencyCode?: string
-  /** Dokument „Formulář k reklamaci" (modul Dokumenty); když je, nabídne se
-      u poškození přepravou jako NEPOVINNÁ příloha. */
-  claimForm?: { title: string; url: string } | null
   /** Tlačítko „Odstoupit od smlouvy" už stránka ukazuje samostatně (účet) —
       volbu odstoupení tu pak nenabízet podruhé. */
   withdrawalElsewhere?: boolean
@@ -817,26 +812,19 @@ export default function RefundRequest({
         </fieldset>
       )}
 
-      {/* 14. 10. 2026 (právní audit §4.1): poškození přepravou je vada při
-          převzetí — odpovídá za ni prodávající (§ 2161 OZ) a s dopravcem si
-          ji řeší sama. Zákazník reklamuje tady, bez lhůty České pošty; obal
-          a fotky jsou prosba. Dřívější pokyn „do 2 pracovních dnů na poštu,
-          jinak reklamaci nepřijme" byl v rozporu se zákonem. */}
+      {/* 4. 11. 2026 (rozhodnutí majitelky): poškozený obal je škoda dopravce
+          a hlásí se na poště — náhradu Česká pošta vyplácí ADRESÁTOVI, takže
+          ji za zákazníka nikdo jiný uplatnit nemůže, a nárok propadá do dvou
+          pracovních dnů. Žádný formulář ČP se tu nenabízí: pro zásilky do
+          30 kg ho pošta ke stažení nevydává (modules/dokumenty/catalogue na
+          backendu). Poslední věta zůstává kvůli reklamačnímu řádu, čl. 5 —
+          reklamaci u nás pošta nepodmiňuje. */}
       {needsCause && cause === "carrier" && (
         <div className={styles.carrierNotice} role="note">
           <p className={styles.carrierNoticeTitle}>
-            S dopravcem to vyřešíme my
+            Nahlaste to prosím i na poště
           </p>
           <p>{CARRIER_DAMAGE_CUSTOMER_TEXT}</p>
-          {claimForm?.url ? (
-            <p>
-              Pokud chcete, můžete nám poslat i vyplněný{" "}
-              <a href={claimForm.url} target="_blank" rel="noreferrer">
-                {claimForm.title || "formulář k reklamaci"}
-              </a>{" "}
-              — není to ale potřeba, stačí tento formulář.
-            </p>
-          ) : null}
         </div>
       )}
 

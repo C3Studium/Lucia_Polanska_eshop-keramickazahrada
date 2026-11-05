@@ -17,6 +17,7 @@ import { Link } from "react-router-dom";
 import { EmptyState } from "../../../components/empty-state";
 import { ProductionDiary } from "../../../components/production-diary";
 import { ProductionOrderActions } from "../../../components/production-order-actions";
+import { RowLink } from "../../../components/row-link";
 import { WorkTabs } from "../../../components/work-tabs";
 import { formatAmount, formatDate } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
@@ -357,8 +358,13 @@ const ZakazkyInner = () => {
                 {rows.map((order) => (
                   <article
                     key={order.id}
-                    className="grid gap-4 px-6 py-5 lg:grid-cols-[140px_minmax(0,1fr)_190px_minmax(320px,460px)] lg:items-start"
+                    className="hover:bg-ui-bg-base-hover transition-fg relative grid gap-4 px-6 py-5 lg:grid-cols-[140px_minmax(0,1fr)_190px_minmax(320px,460px)] lg:items-start"
                   >
+                    {/* Celý řádek vede na objednávku; co se dá kliknout, má `z-10`. */}
+                    <RowLink
+                      to={`/orders/${order.order_id}`}
+                      label={`Objednávka #${order.display_id ?? "—"}`}
+                    />
                     <div>
                       <Text size="small" weight="plus">
                         #{order.display_id ?? "—"}
@@ -410,7 +416,7 @@ const ZakazkyInner = () => {
                         </Text>
                       )}
                       {order.confirmation_pdf_url && (
-                        <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                        <Text size="xsmall" className="text-ui-fg-muted relative z-10 mt-1">
                           <a
                             href={order.confirmation_pdf_url}
                             target="_blank"
@@ -456,7 +462,7 @@ const ZakazkyInner = () => {
 
                     <PaymentBar order={order} />
 
-                    <div className="flex flex-col items-start gap-2 lg:items-end">
+                    <div className="relative z-10 flex flex-col items-start gap-2 lg:items-end">
                       <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                         {order.has_open_balance_request && (
                           <Badge size="2xsmall" color="orange">

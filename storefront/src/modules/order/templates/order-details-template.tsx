@@ -36,9 +36,6 @@ import s from "./styles/order-details.module.scss"
 
 type OrderDetailsTemplateProps = {
   order: HttpTypes.StoreOrder
-  /* Načítá ho stránka, ne tahle šablona: je klientská a datová vrstva je
-     `server-only`. Viz komentář v `carrier-damage`. */
-  claimForm?: { title: string; url: string } | null
   /** Vlákno zakázky. `null` = není zakázka → konverzace se nevykreslí. */
   commissionNotes?: CommissionNote[] | null
   /** Stav doplatku zakázky → panel „Doplatit", když něco zbývá. */
@@ -71,7 +68,6 @@ type OrderDetailsTemplateProps = {
 
 const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
   order,
-  claimForm = null,
   commissionNotes = null,
   commissionBalance = null,
   commissionCancellation,
@@ -198,7 +194,6 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
                 token={selfServiceToken}
                 claims={claims}
                 currencyCode={order.currency_code}
-                claimForm={claimForm}
                 withdrawalElsewhere
               />
               {claims.requests.length > 0 && (
@@ -230,7 +225,6 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
         <CarrierDamageNotice
           orderNumber={order.display_id}
           isCarrierDelivery={isCarrierShippingMethod(order as any)}
-          claimForm={claimForm}
           stage="delivered"
         />
 

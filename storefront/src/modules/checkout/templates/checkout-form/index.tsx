@@ -146,7 +146,14 @@ export default async function CheckoutForm({
       {/* Kde v pokladně jste — čtyři bublinky nahoře, jen na svislém telefonu,
           kde se levá lišta s čísly kroků scvrkne a pořadí se ztratí. */}
       <CheckoutStepBubbles />
-      <Addresses cart={cart} customer={customer} countryCode={countryCode} />
+      <Addresses
+        cart={cart}
+        customer={customer}
+        countryCode={countryCode}
+        /* Vypnuté v administraci schová políčko „Nakupuji na firmu"; chybějící
+           pole (starší backend) znamená zapnuto. */
+        companyPurchase={shopStatus?.company_purchase !== false}
+      />
       <Shipping
         cart={cart}
         availableShippingMethods={shippingMethods}

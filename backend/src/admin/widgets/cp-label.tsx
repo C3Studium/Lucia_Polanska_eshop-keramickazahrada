@@ -118,14 +118,16 @@ export const CpLabelPanel = ({ order }: { order: AdminOrder }) => {
   const label = data?.labels?.[0] ?? null;
 
   /*
-   * Odeslaná nebo zrušená objednávka bez štítku: nový už nikdo dělat nebude
-   * a karta by jen strašila „Zatím bez štítku" (3. 11. 2026). Se štítkem
-   * zůstává — jde stáhnout znovu.
+   * Hotová objednávka bez štítku: karta ZŮSTÁVÁ.
+   *
+   * Od 3. 11. 2026 se tady schovávala, ať u odeslané zásilky nestraší oranžové
+   * „Zatím bez štítku". Tím ale zmizela i jediná cesta ke štítku — a kdo ji
+   * hledá, nemá jak poznat, že karta vůbec existuje (hlášeno 5. 11. 2026).
+   * Místo schování se tedy jen utiší: šedý odznak a věta, proč štítek není.
    */
   const stage = stageQuery.data?.merchant_order?.stage;
-  if (!labelQuery.isLoading && !label && (stage === "shipped" || stage === "cancelled")) {
-    return null;
-  }
+  const hotovo = stage === "shipped" || stage === "cancelled";
+  const zrusena = stage === "cancelled";
   const filename =
     data?.filename || `Stitek-objednavka-${order.display_id ?? ""}.pdf`;
 
@@ -149,6 +151,9 @@ export const CpLabelPanel = ({ order }: { order: AdminOrder }) => {
           <Badge color="green">Vygenerováno</Badge>
         ) : data?.credentials_ready === false ? (
           <Badge color="grey">Čeká na přístupy</Badge>
+        ) : hotovo ? (
+          /* Odeslanou ani zrušenou objednávku už nikdo neurguje — šedě. */
+          <Badge color="grey">Bez štítku</Badge>
         ) : (
           <Badge color="orange">Zatím bez štítku</Badge>
         )}
@@ -246,32 +251,39 @@ export const CpLabelPanel = ({ order }: { order: AdminOrder }) => {
               data?.credentials_ready !== false && (
                 <div className="flex flex-col gap-y-2">
                   <Text size="small" className="text-ui-fg-subtle">
-                    {data?.reason ??
-                      "Zatím bez štítku. Podáním u České pošty vznikne štítek i číslo zásilky."}
+                    {zrusena
+                      ? "Objednávka je zrušená — štítek se k ní nevystavuje."
+                      : hotovo
+                        ? "Objednávka je označená jako odeslaná a štítek u ní nemáme — zásilka šla mimo systém a Česká pošta štítek znovu nevydá. Jestli část objednávky ještě leží, podat ji jde i teď."
+                        : (data?.reason ??
+                          "Zatím bez štítku. Podáním u České pošty vznikne štítek i číslo zásilky.")}
                   </Text>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      size="small"
-                      variant="primary"
-                      isLoading={generate.isPending && generate.variables !== true}
-                      disabled={generate.isPending}
-                      onClick={() => generate.mutate(false)}
-                    >
-                      Vygenerovat štítek pro Českou poštu
-                    </Button>
-                    {expert && (
+                  {/* Zrušená objednávka se nepodává — tlačítko by lhalo. */}
+                  {!zrusena && (
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button
                         size="small"
-                        variant="secondary"
-                        isLoading={generate.isPending && generate.variables === true}
+                        variant="primary"
+                        isLoading={generate.isPending && generate.variables !== true}
                         disabled={generate.isPending}
-                        onClick={() => generate.mutate(true)}
+                        onClick={() => generate.mutate(false)}
                       >
-                        Testovací generování
+                        Vygenerovat štítek pro Českou poštu
                       </Button>
-                    )}
-                  </div>
-                  {expert && (
+                      {expert && (
+                        <Button
+                          size="small"
+                          variant="secondary"
+                          isLoading={generate.isPending && generate.variables === true}
+                          disabled={generate.isPending}
+                          onClick={() => generate.mutate(true)}
+                        >
+                          Testovací generování
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  {expert && !zrusena && (
                     <Text size="xsmall" className="text-ui-fg-muted">
                       Testovací generování použije zkušební výdejnu, kterou ČP
                       testovací prostředí zná (reálnou výdejnu z widgetu test odmítá

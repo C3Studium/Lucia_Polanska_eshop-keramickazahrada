@@ -6,6 +6,7 @@ import {
 } from "../../modules/idoklad/types"
 import { ACTIVITY_LOG_MODULE } from "../../modules/activity-log"
 import type ActivityLogModuleService from "../../modules/activity-log/service"
+import { isPersonalPickupOrder } from "../personal-pickup"
 import type { Kontrola, NalezKontroly } from "./typy"
 
 /**
@@ -79,6 +80,25 @@ const soucetZachyceneho = (objednavka: Record<string, unknown>): number =>
     0
   )
 
+/**
+ * Leží zaplacená objednávka bez odeslání?
+ *
+ * Vlastní funkce, a ne podmínka schovaná ve filtru: právě tohle pravidlo bylo
+ * 3. 11. 2026 špatně a zaplavilo souhrn osobními odběry. Takhle se dá zkusit
+ * na datech, ne až na živém e-mailu.
+ */
+export const cekaNaOdeslani = (objednavka: Record<string, unknown>): boolean => {
+  if (String(objednavka.status) === "canceled") return false
+  // Nezaplacené řeší jiná kontrola (zachycení platby) — tady by to byl šum.
+  if (soucetZachyceneho(objednavka) < 0.005) return false
+  // Bez dopravy není co podat (elektronický poukaz, `requires_shipping: false`).
+  const zpusoby = (objednavka.shipping_methods ?? []) as Record<string, unknown>[]
+  if (!zpusoby.length) return false
+  // Osobní odběr se neodesílá — zákazník si přijde a platí u pultu.
+  if (isPersonalPickupOrder(objednavka as never)) return false
+  return String(objednavka.fulfillment_status ?? "not_fulfilled") === "not_fulfilled"
+}
+
 /* ------------------------------------------------------------------ */
 
 const databaze: Kontrola = {
@@ -116,7 +136,9 @@ const emailyZakaznikum: Kontrola = {
     )) as unknown as Record<string, unknown>[]
 
     if (!nezdarene.length) {
-      return { stav: "ok", zprava: "za 24 hodin se nepodařilo odeslat ani jeden" }
+      // Dřív tu stálo „za 24 hodin se nepodařilo odeslat ani jeden" — věta,
+      // která u zeleného ✓ čte přesně obráceně, než jak to je.
+      return { stav: "ok", zprava: "za 24 hodin neselhal ani jeden" }
     }
 
     return {
@@ -278,6 +300,20 @@ const faktury: Kontrola = {
  * Zaplaceno a po dvou dnech neodeslané. Není to vždy chyba stroje — může to
  * být i zapomenutá zásilka, a to je přesně ten případ, o kterém se jinak
  * nikdo nedozví.
+ *
+ * ## Co se do toho nepočítá (4. 11. 2026)
+ *
+ * **Osobní odběr.** Taková objednávka se nikdy neodešle — zákazník si pro ni
+ * přijde a zaplatit může až u pultu. Hlídka jich 3. 11. nahlásila 35 „bez
+ * odeslání", z toho většinu odběrů, a tím se celé hlášení stalo nečitelným:
+ * mezi odběry se ztratily dvě zásilky, které opravdu ležely.
+ *
+ * **Objednávka úplně bez dopravy.** Elektronický poukaz se neposílá
+ * (`requires_shipping: false`), takže není co podat.
+ *
+ * Číst osobní odběr je ošemetné: po výměně dopravy u zakázky může na metodě
+ * zůstat starý příznak, proto se používá `isPersonalPickupOrder` — kód
+ * služby dopravce přebíjí příznak odběru (lib/personal-pickup).
  */
 const zasilky: Kontrola = {
   klic: "zasilky",
@@ -296,23 +332,20 @@ const zasilky: Kontrola = {
         "status",
         "payment_collections.captured_amount",
         "shipping_methods.name",
+        // Kvůli `isPersonalPickupOrder`: rozhoduje `service_code`, ne název.
+        "shipping_methods.data",
       ],
       filters: { created_at: { $lt: hranice } },
       pagination: { take: 200, order: { created_at: "DESC" } },
     })
 
-    const lezi = (data as Record<string, unknown>[]).filter((objednavka) => {
-      if (String(objednavka.status) === "canceled") return false
-      if (soucetZachyceneho(objednavka) < 0.005) return false
-      return (
-        String(objednavka.fulfillment_status ?? "not_fulfilled") === "not_fulfilled"
-      )
-    })
+    const lezi = (data as Record<string, unknown>[]).filter(cekaNaOdeslani)
 
     if (!lezi.length) {
       return {
         stav: "ok",
-        zprava: "nic zaplaceného neleží přes dva dny bez odeslání",
+        zprava:
+          "nic zaplaceného neleží přes dva dny bez odeslání (osobní odběr se nepočítá)",
       }
     }
 

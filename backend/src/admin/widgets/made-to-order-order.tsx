@@ -22,6 +22,8 @@ import { formatAmount } from "../lib/format";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba } from "../lib/ceska-chyba";
 import { reloadOrderPageSoon } from "../lib/reload-order-page";
+import { PanelError } from "../components/panel-error";
+import { maZakazkovouPolozku } from "../lib/order-commission";
 import {
   productionStageMeta as stageMeta,
   productionStep as actionForStage,
@@ -705,7 +707,17 @@ export const MadeToOrderPanel = ({ order }: { order: AdminOrder }) => {
     );
   }
 
-  if (productionQuery.isError || !commissions.length) return null;
+  /*
+   * Chyba se hlásí jen tam, kde zakázka opravdu je — razítko na položce to ví
+   * i bez odpovědi serveru. U běžné objednávky by se karta „nenačteno" jinak
+   * objevila u každé a strašila zbytečně.
+   */
+  if (productionQuery.isError) {
+    return maZakazkovouPolozku(order) ? (
+      <PanelError title="Výroba na zakázku" onRetry={productionQuery.refetch} />
+    ) : null;
+  }
+  if (!commissions.length) return null;
 
   /*
    * Kde se ovládá postup výroby — a tím i odkud odcházejí e-maily o zahájení

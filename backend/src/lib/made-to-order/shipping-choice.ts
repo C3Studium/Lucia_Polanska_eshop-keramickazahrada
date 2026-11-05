@@ -38,32 +38,60 @@ const fold = (value: string) =>
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
 
-/**
- * Data, která se zapíšou metodě dopravy.
- *
- * Normálně je to `data` zvolené možnosti — z nich Česká pošta pozná službu.
- * Jedna věc se ale doplňuje: možnost „Česká Pošta - Křehké" má v datech
- * obyčejnou zásilku na adresu (`cp-address`) bez příznaku `fragile`, takže
- * by se křehký balík podal jako každý jiný. U keramiky je přitom „Křehce"
- * celý důvod, proč ta možnost existuje. Dokud se nespraví data té možnosti,
- * drží to tenhle doplněk; až se spraví, nic nezmění (příznak už tam bude).
- * Balíkovna si `fragile` zahodí sama — službu „Křehce" tam číselník ČP
- * nepřipouští (modules/ceskaPostaFulfillment).
- */
-export const methodDataFor = (option: {
-  name?: string | null
-  data?: Record<string, unknown> | null
-}): Record<string, unknown> => {
-  const data = { ...((option?.data ?? {}) as Record<string, unknown>) }
-  if (fold(String(option?.name ?? "")).includes("krehk")) {
-    data.fragile = true
-  }
-  return data
-}
-
 /** Osobní odběr má vlastní modul dopravy — pozná se podle provideru. */
 export const isPickupOption = (option: { provider_id?: string | null } | null | undefined): boolean =>
   String(option?.provider_id ?? "").includes("pickup")
+
+/**
+ * Osobní odběr podle možnosti. Rozhoduje provider; když ho volající nedodá,
+ * platí příznak z dat možnosti — tiše napsat „zásilka" by bylo horší.
+ */
+const jeOdber = (option: {
+  provider_id?: string | null
+  data?: Record<string, unknown> | null
+}): boolean =>
+  option?.provider_id
+    ? isPickupOption(option)
+    : (option?.data as Record<string, unknown> | null)?.personal_pickup === true
+
+/**
+ * Data, která se zapíšou metodě dopravy.
+ *
+ * Základ je `data` zvolené možnosti — z nich Česká pošta pozná službu. Dva
+ * příznaky se ale dopisují VŽDY, i když vyjdou `false`, a to je na téhle
+ * funkci to podstatné:
+ *
+ * **Medusa `data` metody dopravy SLUČUJE, nepřepisuje.** Co nová data
+ * nejmenují, zůstane po těch starých. Objednávka s cenou po domluvě přitom
+ * vzniká na osobní odběr (`personal_pickup: true`), a když majitelka vybrala
+ * Českou poštu, příznak odběru na metodě přežil: Denní práce dál nabízela
+ * „Připraveno k vyzvednutí", štítek ČP ani sledování zásilky se neukázaly
+ * a e-maily mluvily o pultu. Změřeno 3. 11. 2026 na objednávce #69 — metoda
+ * „Česká Pošta - Křehké" a v datech `personal_pickup: true`, který v datech
+ * TÉ možnosti vůbec není.
+ *
+ * Proto se oba nepovinné příznaky píšou natvrdo:
+ *
+ * - `personal_pickup` — jinak přežije odběr pod zásilkou (a naopak),
+ * - `fragile` — možnost „Česká Pošta - Křehké" má v datech obyčejnou zásilku
+ *   na adresu (`cp-address`) bez příznaku, takže by se křehký balík podal
+ *   jako každý jiný; u keramiky je „Křehce" celý důvod, proč ta možnost je.
+ *   Balíkovna si `fragile` zahodí sama — službu „Křehce" tam číselník ČP
+ *   nepřipouští (modules/ceskaPostaFulfillment).
+ *
+ * Ostatní klíče (`id`, `name`, `service_code`) mají data možností vyplněné
+ * všechny, takže je slučování přepíše samo.
+ */
+export const methodDataFor = (option: {
+  name?: string | null
+  provider_id?: string | null
+  data?: Record<string, unknown> | null
+}): Record<string, unknown> => {
+  const data = { ...((option?.data ?? {}) as Record<string, unknown>) }
+  data.fragile = fold(String(option?.name ?? "")).includes("krehk")
+  data.personal_pickup = jeOdber(option)
+  return data
+}
 
 export const loadShippingOption = async (
   container: MedusaContainer,

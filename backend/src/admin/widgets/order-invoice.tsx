@@ -5,6 +5,7 @@ import { useExpertMode } from "../lib/expert-mode";
 import { formatDateTime } from "../lib/format";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba } from "../lib/ceska-chyba";
+import { PanelError } from "../components/panel-error";
 
 type InvoiceState = {
   invoice_id: number | null;
@@ -84,7 +85,12 @@ export const OrderInvoicePanel = ({ order }: { order: AdminOrder }) => {
     );
   }
 
-  if (invoiceQuery.isError || !invoiceQuery.data) {
+  // Nenačtená faktura se neschovává — jinak to vypadá, že u objednávky žádná
+  // být nemá (viz components/panel-error).
+  if (invoiceQuery.isError) {
+    return <PanelError title="Faktura" onRetry={invoiceQuery.refetch} />;
+  }
+  if (!invoiceQuery.data) {
     return null;
   }
 

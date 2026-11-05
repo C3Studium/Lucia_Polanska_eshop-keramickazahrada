@@ -128,11 +128,19 @@ export const selhani = (zaznamy: ZaznamProvozu[], kolik = 20): string[] => {
   const radky = chyby.map((zaznam) => {
     const detail = zaznam.detail as Record<string, unknown> | null | undefined
     const duvod = detail?.chyba ?? detail?.stav ?? null
+    /*
+     * Sběr z HTTP zapisuje tutéž větu dvakrát — jako `detail.chyba` i jako
+     * `summary` (sber.ts). V souhrnu z toho bylo „odpověď 400 · odpověď 400",
+     * což vypadá jako dvě chyby. Shodný popis se tedy vypíše jednou.
+     */
+    const popis = zaznam.summary && String(duvod ?? "") !== zaznam.summary
+      ? zaznam.summary
+      : null
     return (
       `${NAZVY[zaznam.kind] ?? zaznam.kind} · ${zaznam.action}` +
       (zaznam.ref_id ? ` · ${zaznam.ref_type ?? "ref"} ${zaznam.ref_id}` : "") +
       (duvod ? ` · ${String(duvod)}` : "") +
-      (zaznam.summary ? ` · ${zaznam.summary}` : "")
+      (popis ? ` · ${popis}` : "")
     )
   })
   return radky.length > kolik

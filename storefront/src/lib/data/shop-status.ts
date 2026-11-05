@@ -12,6 +12,11 @@ export type ShopStatus = {
   /** Doběrečné in CZK — shown next to the dobírka payment option. The fee
       itself is added server-side; this number is display only. */
   dobirka_fee_czk?: number
+  /**
+   * Nabízí pokladna nákup na firmu? Chybí-li (starší build backendu), ano —
+   * výchozí stav je zapnuto a volbu nemá schovat chybějící pole.
+   */
+  company_purchase?: boolean
 }
 
 export async function getShopStatus(): Promise<ShopStatus | null> {

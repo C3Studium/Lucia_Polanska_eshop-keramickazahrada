@@ -457,11 +457,13 @@ describe("customer e-mail templates after the audit", () => {
         }) as React.ReactElement
       )
       expect(html).toContain("Dorazila zásilka poškozená")
-      // 14. 10. 2026 (právní audit §4.1): poškození hlásí zákazník nám,
-      // s dopravcem to řešíme my — žádná lhůta ani formulář pošty.
-      expect(html).toContain("s dopravcem si to vyřídím sama")
+      // 4. 11. 2026 (rozhodnutí majitelky): poškozená krabice se hlásí na
+      // poště (náhradu ČP vyplácí adresátovi), rozbitý kus v celé krabici
+      // u nás. Formulář ČP platí jen nad 30 kg → nikam se neodkazuje.
+      expect(html).toContain("na kterékoli poště")
+      expect(html).toContain("adresátovi")
+      expect(html).toContain("rozbitý jen kousek")
       expect(html).not.toContain(CP_CLAIM_FORM_URL)
-      expect(html).not.toContain("dva pracovní dny")
     })
 
     it("nese odkaz Odstoupit od smlouvy, když ho subscriber pošle (§ 1830a)", () => {
@@ -496,13 +498,19 @@ describe("customer e-mail templates after the audit", () => {
       expect(html).toContain("Zásilkovna")
     })
 
-    // 14. 10. 2026: kontrola obalu je prosba, ne podmínka; lhůta dopravce pryč.
-    it("převzetí: prosba zkontrolovat obal, žádná lhůta 2 dnů pro zákazníka", () => {
+    // 4. 11. 2026 (rozhodnutí majitelky): zkontrolovat obal při převzetí
+    // a poškozený obal nahlásit na poště do dvou pracovních dnů — náhradu
+    // ČP vyplácí adresátovi. Rozbitý kus v celé krabici řešíme my.
+    it("převzetí: kontrola obalu, pošta do dvou dnů, rozbitý kus u nás", () => {
       const html = renderToStaticMarkup(
         OrderShipmentEmail({ orderNumber: "#42" }) as React.ReactElement
       )
-      expect(html).toContain("Podmínkou to ale není")
-      expect(html).not.toContain("dvou pracovních dnů")
+      expect(html).toContain("před doručovatelem")
+      expect(html).toContain("na kterékoli poště")
+      expect(html).toContain("dvou pracovních dnů")
+      expect(html).toContain("rozbitý jen kousek")
+      // Lhůta pošty nesmí znít jako podmínka reklamace u nás (reklamační
+      // řád, čl. 5) — o odmítnutí reklamace se tu nemluví.
       expect(html).not.toContain("nepřijme")
     })
 

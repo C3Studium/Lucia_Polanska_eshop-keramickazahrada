@@ -20,6 +20,7 @@ import { otevritStitek, type StitekZasilky } from "../lib/stitky";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
 import { ceskaChyba, ceskyText } from "../lib/ceska-chyba";
+import { RowLink } from "./row-link";
 import {
   NEXT_STEP_LABELS,
   STAGE_LABELS,
@@ -501,7 +502,12 @@ export const OrderRow = ({
   return (
     /* Sloupec akcí má strop: dlouhá hláška (např. „Zbývá doplatek…") ho dřív
        roztáhla přes celý řádek a zákazník/stav se slily do sloupce o pár písmenech. */
-    <article className="bg-ui-bg-base grid gap-4 px-6 py-5 lg:grid-cols-[150px_minmax(9rem,1.3fr)_minmax(8rem,1fr)_160px_minmax(0,20rem)] lg:items-center">
+    <article className="bg-ui-bg-base hover:bg-ui-bg-base-hover transition-fg relative grid gap-4 px-6 py-5 lg:grid-cols-[150px_minmax(9rem,1.3fr)_minmax(8rem,1fr)_160px_minmax(0,20rem)] lg:items-center">
+      {/* Celý řádek vede na objednávku; tlačítka nad ním musí mít `z-10`. */}
+      <RowLink
+        to={`/orders/${order.order_id}`}
+        label={`Objednávka #${order.display_id ?? order.order_id.slice(-6)}`}
+      />
       <div>
         <Text size="xsmall" className="text-ui-fg-muted uppercase">
           Objednávka
@@ -572,7 +578,7 @@ export const OrderRow = ({
           </Text>
         )}
         {order.refund_due && (
-          <div className="mt-2 flex flex-wrap items-center gap-2">
+          <div className="relative z-10 mt-2 flex flex-wrap items-center gap-2">
             <Text size="small" className="text-ui-tag-orange-text">
               K vrácení: {order.refund_due.amount}{" "}
               {order.refund_due.currency_code === "czk"
@@ -646,10 +652,11 @@ export const OrderRow = ({
         )}
       </div>
 
-      <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
+      <div className="relative z-10 flex flex-wrap items-center justify-start gap-2 lg:justify-end">
         {/*
           `Link` keeps this inside the dashboard's router, so opening an order is an
-          instant client-side transition rather than a full page reload.
+          instant client-side transition rather than a full page reload. Tlačítko
+          zůstává i jako cesta pro klávesnici — překryv `RowLink` je mimo tabulátor.
         */}
         <Button variant="secondary" size="small" asChild>
           <Link to={`/orders/${order.order_id}`}>Otevřít objednávku</Link>

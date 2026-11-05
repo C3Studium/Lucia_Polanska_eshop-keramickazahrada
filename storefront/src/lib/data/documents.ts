@@ -12,6 +12,12 @@ import { getCacheOptions } from "./cookies"
  *
  * Selhání se schválně nepropaguje. Chybějící PDF nesmí shodit stránku
  * s potvrzením objednávky; ta je pro zákazníka důležitější než odkaz na ní.
+ *
+ * Od 4. 11. 2026 to odsud nikdo nevolá: formulář k reklamaci na potvrzení
+ * objednávky nahradil odkaz na vydávaný „Reklamační protokol" (právní
+ * dokumenty) a jiné zadrátované místo web nemá. Funkce zůstává, protože
+ * zůstává i cesta, pro kterou je — vlastní PDF nahrané v administraci
+ * (Právní věci › Dokumenty) se z kódu volá právě takhle.
  */
 export type SiteDocument = {
   key: string

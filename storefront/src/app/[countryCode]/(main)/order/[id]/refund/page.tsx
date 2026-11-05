@@ -2,10 +2,8 @@ import { getOrderClaims } from "@lib/data/claims"
 import { getGuestRefundContext } from "@lib/data/guest-refund"
 import { retrieveCustomer } from "@lib/data/customer"
 import { getContactEmails } from "@lib/data/site-copy"
-import { getSiteDocument } from "@lib/data/documents"
 import { listCommissionNotes } from "@lib/data/made-to-order"
 import { findOpenClaim } from "@lib/util/claims"
-import { CLAIM_FORM_KEY } from "@lib/constants/documents"
 import RefundRequest from "@modules/order/components/refund-request"
 import CommissionConversation from "@modules/order/components/commission-conversation"
 import OrderStateShell from "@modules/order/components/order-state-shell"
@@ -45,17 +43,13 @@ export default async function OrderRefundPage(props: Props) {
       `/${params.countryCode}/order/${params.id}/odstoupeni?token=${encodeURIComponent(token)}`
     )
   }
-  const [claims, context, claimForm] = token
+  const [claims, context] = token
     ? await Promise.all([
         getOrderClaims(params.id, token),
         // Jen kvůli číslu objednávky a měně v hlavičce; gating je z `claims`.
         getGuestRefundContext(params.id, token),
-        // Dokument „Formulář k reklamaci" (modul Dokumenty) — nepovinná
-        // příloha u volby „Balík dorazil poškozený"; reklamace jde podat
-        // i bez něj. `null` = nenahráno.
-        getSiteDocument(CLAIM_FORM_KEY),
       ])
-    : [null, null, null]
+    : [null, null]
   // `null` = není zakázka → konverzace se nevykreslí. Čte přes publishable key,
   // takže funguje i hostovi z e-mailu (bez přihlášení).
   const commissionNotes = await listCommissionNotes(params.id)
@@ -125,7 +119,6 @@ export default async function OrderRefundPage(props: Props) {
         claims={claims}
         initialKind={searchParams.kind}
         currencyCode={context?.currency_code}
-        claimForm={claimForm}
       />
       {commissionNotes && (
         <CommissionConversation orderId={params.id} notes={commissionNotes} />

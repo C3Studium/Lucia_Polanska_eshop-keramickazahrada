@@ -12,36 +12,45 @@ import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 /**
  * Poškozená zásilka — co udělat, když keramika dorazí rozbitá.
  *
- * ## Kdo za poškození odpovídá (14. 10. 2026, právní audit §4.1)
+ * ## Dva různé případy (4. 11. 2026, rozhodnutí majitelky)
  *
- * Prodávající odpovídá za to, že zboží při PŘEVZETÍ nemá vady (§ 2161 odst. 1
- * OZ), a nebezpečí škody přechází na zákazníka až převzetím (§ 2159 odst. 2).
- * Rozbitý kus v krabici je tedy vada při převzetí: zákazník ho reklamuje
- * u nás a škodu u dopravce si řeší prodávající (pojištění balíku). Lhůta
- * České pošty (2 pracovní dny) je vztah prodávající–dopravce — zákazníka
- * nezavazuje a reklamaci nepodmiňuje.
+ * Blok se rozděluje podle toho, v jakém stavu dorazila KRABICE, protože každý
+ * stav patří někomu jinému:
  *
- * Dřívější text („reklamaci u dopravce podává příjemce, máte na ni dva
- * pracovní dny, potom ji Česká pošta nepřijme") z toho dělal podmínku —
- * v rozporu se zákonem. Teď:
+ * - **poškozený obal** = škoda dopravce. Zabaleno je dobře, a co se s obalem
+ *   stalo po cestě, uznává a platí Česká pošta. Zákazník to tedy hlásí na
+ *   poště, a není to jen pohodlnější cesta: náhradu ČP vyplácí ADRESÁTOVI,
+ *   takže ji za něj nikdo jiný uplatnit nemůže, a nárok propadá do dvou
+ *   pracovních dnů od dodání;
+ * - **krabice v pořádku, rozbitý výrobek** = naše věc, běžná reklamace u nás.
  *
- * - prohlédnout obal při převzetí je PROSBA (pomůže nám s dopravcem);
- * - poškození hlásí zákazník nám — fotky vítány, obal schovat, pokud to jde;
- * - kdyby Česká pošta potřebovala jeho součinnost, ozveme se.
+ * Předchozí znění („s dopravcem si to vyřešíme sami, vy kvůli tomu nikam
+ * chodit nemusíte") mělo nechtěnou cenu: dvoudenní lhůta pošty propadla, než
+ * se k zásilce kdokoli dostal, a náhradu pak nedostal nikdo.
+ *
+ * ## Co v textu zůstává a proč
+ *
+ * Reklamační řád, čl. 5 (vydané znění od 3. 11. 2026) říká, že poškození při
+ * přepravě je vada při převzetí (§ 2161 odst. 1 OZ), reklamuje se U NÁS
+ * a žádná lhůta dopravce zákazníka nezavazuje. Dokud tohle znění platí,
+ * nesmí blok tvrdit, že se na nás obrátit nemůže — proto první krok končí
+ * tím, že jeho reklamaci vyřídíme, i kdyby na poště neuspěl. Udělat z pošty
+ * jedinou cestu znamená nové znění reklamačního řádu, ne jiný text tady.
+ *
+ * ## Vlastní protokol, žádný formulář dopravce
+ *
+ * „Reklamační protokol" je NÁŠ vydávaný právní dokument
+ * (`/reklamacni-protokol#formular`), ne nahrané PDF z administrace. Česká
+ * pošta formulář ke stažení pro obyčejné zásilky nevydává — ten jediný, co
+ * zveřejňuje, platí pro balíky nad 30 kg (viz `modules/dokumenty/catalogue`,
+ * kde kvůli tomu zmizel slot `reklamacni-formular`).
  *
  * ## Sbalené, dokud o to člověk nestojí
  *
- * Je to pojistka, ne zpráva: naprostá většina zásilek dorazí v pořádku a čtyři kroky
+ * Je to pojistka, ne zpráva: naprostá většina zásilek dorazí v pořádku a kroky
  * reklamace odsouvaly to, kvůli čemu na stránku člověk přišel — číslo objednávky
  * a co si koupil. Sbalené to zůstává jednou větou, kterou si přečte každý, a otevře
  * si ho ten, komu se zásilka poškodila.
- *
- * ## Formulář přichází jako prop, ne z fetche
- *
- * Tenhle blok visí i na stránce objednávky v účtu, a ta je klientská. Kdyby si dokument
- * načítal sám, přitáhl by si s sebou `server-only` část datové vrstvy a build spadne
- * na „that only works in a Server Component". Načíst ho tedy musí ta stránka, která je
- * serverová, a poslat sem hotový.
  *
  * ## Shown for carrier deliveries only
  *
@@ -64,9 +73,6 @@ const DELKA = 0.85
 
 type Props = {
   orderNumber?: string | number
-  /* Jen to, co se tu vypisuje — ne celý typ z datové vrstvy, ať si tahle
-     komponenta nepřitáhne nic serverového. */
-  claimForm?: { title: string; url: string } | null
   /** False for Osobní odběr — no carrier, no claim. */
   isCarrierDelivery: boolean
   /** `pending` before dispatch (warn), `delivered` after (how to claim). */
@@ -76,7 +82,6 @@ type Props = {
 export default function CarrierDamageNotice({
   orderNumber,
   isCarrierDelivery,
-  claimForm = null,
   stage = "pending",
 }: Props) {
   const [otevreno, setOtevreno] = useState(false)
@@ -140,55 +145,52 @@ export default function CarrierDamageNotice({
               {stage === "pending" ? (
                 <p className={styles.lede}>
                   Prohlédněte si prosím obal ještě při převzetí. Je-li promáčklý,
-                  protržený nebo něčím prosakuje, můžete zásilku rozbalit před
-                  doručovatelem a poškození s ním rovnou sepsat — usnadní nám to
-                  vyřízení s dopravcem. Podmínkou to ale není: keramika se rozbije
-                  tiše a poškození často najdete až doma.
+                  protržený nebo něčím prosakuje, rozbalte zásilku před
+                  doručovatelem a poškození s ním rovnou sepište — se záznamem
+                  pošta reklamaci vyřídí nejsnáz. Podmínkou to ale není:
+                  keramika se rozbije tiše a poškození často najdete až doma.
                 </p>
               ) : (
                 <p className={styles.lede}>
-                  Za to, že zboží dorazí v pořádku, odpovídáme my. Poškozený kus
-                  vyměníme nebo vrátíme peníze — a s dopravcem si to vyřešíme
-                  sami. Vy kvůli tomu nikam chodit nemusíte.
+                  Záleží na tom, v jakém stavu dorazila krabice. Poškozený obal
+                  je škoda dopravce a hlásí se na poště; rozbitý kus
+                  v nepoškozené krabici je na nás.
                 </p>
               )}
 
               <ol className={styles.steps}>
                 <li>
-                  <strong>Vyfoťte</strong> obal i obsah, pokud můžete — fotky nám
-                  s dopravcem pomohou.
+                  <strong>Poškozená krabice</strong> — nahlaste zásilku na
+                  kterékoli poště, nejlépe do dvou pracovních dnů od převzetí.
+                  Náhradu Česká pošta vyplácí adresátovi, tedy vám, a nikdo ji
+                  za vás uplatnit nemůže. Vezměte s sebou zásilku i s obalem
+                  a výplní, nebo aspoň fotky. Kdyby vám reklamaci nepřijali,
+                  napište nám — vyřídíme ji my.
                 </li>
                 <li>
-                  <strong>Napište nám</strong> — reklamaci podáte z odkazu
-                  v e-mailu u objednávky
+                  <strong>Krabice v pořádku, rozbitý výrobek</strong> —
+                  reklamaci podáte u nás z odkazu v e-mailu u objednávky
                   {orderNumber ? ` (objednávka ${orderNumber})` : ""}, nebo na{" "}
                   <ContactEmailLink role="objednavky" />
                   .
                 </li>
                 <li>
-                  <strong>Obal si prosím schovejte</strong>, dokud se vám
-                  neozveme. Kdyby Česká pošta potřebovala vaši pomoc (například
-                  sepsat záznam o poškození), dáme vám vědět — vaši reklamaci to
-                  nijak nepodmiňuje.
+                  <strong>Vyfoťte obal i obsah</strong> a obal si prosím
+                  schovejte, dokud se to nevyřeší — fotky potřebuje pošta
+                  i my.
                 </li>
               </ol>
 
-              {/* Nepovinná pomůcka (modul Dokumenty). Když chybí, nic se
-                  nevypisuje — reklamace jde podat i bez ní. */}
-              {claimForm ? (
-                <div className={styles.document}>
-                  <p className={styles.documentLabel}>
-                    {claimForm.title || "Formulář k reklamaci"}
-                  </p>
-                  <p className={styles.documentNote}>
-                    Pokud vám to tak vyhovuje víc, můžete nám poslat i vyplněný{" "}
-                    <a href={claimForm.url} target="_blank" rel="noreferrer">
-                      formulář k reklamaci
-                    </a>{" "}
-                    — povinné to není.
-                  </p>
-                </div>
-              ) : null}
+              <div className={styles.document}>
+                <p className={styles.documentLabel}>Reklamační protokol</p>
+                <p className={styles.documentNote}>
+                  K reklamaci u nás můžete použít i náš{" "}
+                  <LocalizedClientLink href="/reklamacni-protokol#formular">
+                    reklamační protokol
+                  </LocalizedClientLink>
+                  {" "}— povinné to není, stačí nám napsat.
+                </p>
+              </div>
 
               <p className={styles.more}>
                 Podrobný postup a vaše práva najdete v{" "}

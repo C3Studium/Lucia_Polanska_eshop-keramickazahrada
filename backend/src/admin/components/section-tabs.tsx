@@ -52,12 +52,15 @@ const SECTIONS: Record<SectionKey, { title: string; tabs: Tab[] }> = {
       { key: "dokumenty", label: "Dokumenty ke stažení", to: "/pravni/dokumenty" },
     ],
   },
+  /*
+   * „Návštěvnost" (Segment) zrušena 4. 11. 2026: služba nebyla nikdy
+   * připojená a stránka jen odkazovala do cizí aplikace. Měření drží
+   * Clarity a Google Analytics, zapojené ve Studiu — do administrace
+   * obchodu nevede. Zbyla jedna záložka, takže se lišta ani nevykresluje.
+   */
   web: {
     title: "Web",
-    tabs: [
-      { key: "obsah", label: "Obsah webu", to: "/web" },
-      { key: "navstevnost", label: "Návštěvnost", to: "/web/navstevnost" },
-    ],
+    tabs: [{ key: "obsah", label: "Obsah webu", to: "/web" }],
   },
 };
 
@@ -89,9 +92,13 @@ const SectionTabs = ({ section, active }: { section: SectionKey; active: string 
       <div className="px-6 pt-5">
         <Heading>{title}</Heading>
       </div>
+      {/* Jedna záložka není z čeho vybírat — lišta by jen zabírala místo. */}
       <nav
         aria-label={title}
-        className="flex flex-wrap items-center gap-x-1 gap-y-1 px-6 pb-3 pt-3"
+        className={clx(
+          "flex flex-wrap items-center gap-x-1 gap-y-1 px-6 pb-3 pt-3",
+          visible.length < 2 && "hidden"
+        )}
       >
         {visible.map((tab) => {
           const isActive = tab.key === active;

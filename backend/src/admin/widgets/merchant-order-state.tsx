@@ -8,6 +8,7 @@ import {
   type MerchantOrder,
   type MerchantOrderStage,
 } from "../components/merchant-order-queue";
+import { PanelError } from "../components/panel-error";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba, ceskyText } from "../lib/ceska-chyba";
 import { nextStepLabel, stageLabel } from "../lib/stage-words";
@@ -252,9 +253,18 @@ export const MerchantOrderStatePanel = ({ order }: { order: AdminOrder }) => {
     );
   }
 
-  // Orders placed before the module existed have no state row. Rendering nothing is
-  // correct here — the native page stays untouched.
-  if (stateQuery.isError || !merchantOrder) {
+  /*
+   * „Nenačteno" a „není co zobrazit" nejsou totéž.
+   *
+   * Objednávka z doby před modulem žádný stav nemá a nekreslit u ní nic je
+   * správně — nativní stránka zůstane, jak byla. Nedoručený dotaz ale kartu
+   * schovával taky, takže Denní práce — ta nejdůležitější karta na stránce —
+   * mizela přesně ve chvíli, kdy se něco děje (5. 11. 2026).
+   */
+  if (stateQuery.isError) {
+    return <PanelError title="Denní práce" onRetry={stateQuery.refetch} />;
+  }
+  if (!merchantOrder) {
     return null;
   }
 
