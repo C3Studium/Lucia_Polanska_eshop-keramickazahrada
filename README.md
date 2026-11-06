@@ -81,6 +81,34 @@ pnpm dev            # http://localhost:8000
 
 `pnpm dev` runs the style sync, starts a watcher for structural SCSS changes, and boots Next on port 8000. Backend setup is in [`backend/README.md`](backend/README.md).
 
+## Domény, e-maily a soubory
+
+**Adresy.** Obchod i administrace běží na poddoménách; apex a `www` patří do přepnutí starému WordPressu u Active24.
+
+| adresa | kam |
+| --- | --- |
+| `dev.keramickazahrada.cz` | storefront (Railway) |
+| `admin.keramickazahrada.cz` | backend, administrace na `/app` (Railway) |
+| `keramickazahrada.cz`, `www.…` | starý WordPress, hosting Active24 |
+| `store.` a `dev.matejforejt.com` | dočasné adresy z vývoje, při přepnutí odejdou |
+
+Administrace zůstává na vlastní poddoméně, **ne** na `www.keramickazahrada.cz/admin`. Přes téhož hostitele jde i `/store` API, webhooky ComGate a iDokladu a odkazy pro zákazníky (doplatek zakázky, úprava objednávky, reklamace), takže protlačit to přes storefront by znamenalo přesměrovat všechno včetně přihlašovací cookie. Pokud bude vadit slovo „admin“ v zákaznických odkazech, je levnější tu doménu přejmenovat na `api.`
+
+**Zóna.** Registrátor Active24, nameservery Websupportu, cíl Cloudflare (R2 vlastní doménu nikde jinde nezaloží). Před přepnutím NS **vypnout DNSSEC** — u CZ.NIC visí DS záznam a s ním by doména po přepnutí přestala odpovídat, web i pošta. Zástupný `*` odpovídá i do třetí úrovně, takže jméno, které se nezaloží, ukazuje na starý hosting. `mailin1` a `mailin2` jsou vlastní A záznamy mimo něj a míří na ně MX — při přenosu zóny se musí přenést ručně, automatický sken je nemusí najít.
+
+**E-maily.** Resend. Free tarif dává 3 000 zpráv měsíčně, **100 za den na celý účet** a 3 domény. Odesílatel se nastavuje v `RESEND_FROM_EMAIL` (backend) a `CMS_MAIL_FROM` (storefront), cílově `info@keramickazahrada.cz` — k tomu musí být v Resendu ověřený apex. Doména v Resendu rozhoduje jen o adrese odesílatele a s tím, kde běží web, nesouvisí.
+
+**Soubory.** R2 bucket `keramickazahrada-media`, veřejně přes vlastní doménu v `R2_PUBLIC_URL`. Dnes je to `img.matejforejt.com`, což je vlastní doména R2 na cloudflarové zóně `matejforejt.com`: drží celý katalog i právní PDF, takže ta zóna nesmí z Cloudflare odejít, dokud neproběhne přesun na `img.keramickazahrada.cz`:
+
+1. zóna `keramickazahrada.cz` v Cloudflare,
+2. `img.keramickazahrada.cz` jako další vlastní doména téhož bucketu (R2 jich bere 100, takže stará i nová adresa běží vedle sebe a nic nezhasne),
+3. `R2_PUBLIC_URL` na backendu,
+4. `node scripts/prepis-url-souboru.mjs --from img.matejforejt.com --to img.keramickazahrada.cz` — databáze má u produktů uložené absolutní adresy, samotná proměnná ovlivní jen nově nahrané soubory,
+5. `pnpm legal:build` a `legal:upload`,
+6. ověřit obrázky i PDF — a teprve pak uvolnit `matejforejt.com`.
+
+Odkazy v už odeslaných e-mailech zůstanou na staré doméně napořád, takže ta musí žít dál; jinak se zákazníkům rozbijí přílohy ve starých potvrzeních.
+
 ## 🚀 Launch checklist — Keramická zahrada (spuštění 09/2026)
 
 ### 1. Právní povinnosti e-shopu (BLOKÁTOR LAUNCHE — bez toho nespouštět)
