@@ -52,13 +52,21 @@ export const PRICE_ON_REQUEST_LINE_LABEL = "Po domluvě"
 export const PRICE_ON_REQUEST_PRODUCT_NOTE =
   "Objednáte teď za 0 Kč; cenu vám po domluvě pošlu e-mailem a pak zaplatíte zálohu nebo celou částku."
 
-/** Věta v souhrnu košíku/pokladny, když je v něm kus s cenou po domluvě. */
+/**
+ * Věta v souhrnu košíku/pokladny, když je v něm kus s cenou po domluvě.
+ *
+ * O poštovném tu nic nestojí schválně: kdy se platí, závisí na zbytku košíku
+ * (backendové `lib/deposit-split.ts`, `shippingTiming`) — sám se zakázkou až
+ * v doplatku, s běžným zbožím hned. Dřív tu bylo „teď platíte jen ostatní
+ * zboží a dopravu", což v košíku jen se zakázkou neplatilo. Kolik se opravdu
+ * platí, říká krok Platba z částky spočítané serverem.
+ */
 export const PRICE_ON_REQUEST_SUMMARY_NOTE =
-  "Cenu výrobků po domluvě vám pošlu e-mailem — teď platíte jen ostatní zboží a dopravu."
+  "Cenu výrobků po domluvě vám pošlu e-mailem a zaplatíte ji až potom."
 
 /** Věta u tlačítka, když se při objednání neplatí nic. */
 export const PRICE_ON_REQUEST_ZERO_NOTE =
-  "Teď se nic neplatí. Až spolu domluvíme cenu, pošlu vám ji e-mailem a zaplatíte zálohu nebo celou částku."
+  "Teď se nic neplatí. Až spolu domluvíme cenu, pošlu vám ji e-mailem — i s poštovným, pokud si kus necháte poslat — a zaplatíte zálohu nebo celou částku."
 
 /**
  * Tlačítko odeslání objednávky za 0 Kč.
@@ -75,28 +83,27 @@ export const VOUCHER_ZERO_BUTTON = "Odeslat objednávku"
 export const ZERO_PAYMENT_PROVIDER = "pp_system_default"
 
 /**
- * Objednávka s cenou po domluvě, ve které je teď k úhradě 0 (jen takový kus
- * a osobní odběr). ComGate 0 Kč nevezme → relace `pp_system_default`.
- */
-export const isZeroPriceOnRequestCart = (
-  cart: { total?: number | null; items?: LineLike[] | null } | null | undefined
-): boolean =>
-  Boolean(cart) &&
-  Number(cart?.total ?? 0) <= 0.005 &&
-  hasPriceOnRequestLine(cart?.items)
-
-/**
  * Košík, ve kterém je k úhradě 0 — cena po domluvě, nebo celou částku pokryl
  * dárkový poukaz. ComGate 0 Kč nevezme a kartu tu chtít nemá smysl: relace
  * `pp_system_default` (backend ji pustí jen na kolekci za 0 Kč, viz
  * `backend/src/lib/zero-payment-guard.ts`) a objednávka se rovnou odešle.
+ *
+ * Součet košíku na to NESTAČÍ. U zakázky stojí poštovné mimo zálohu a
+ * v košíku, kde není nic než zakázka, se odkládá do doplatku (backendové
+ * `lib/deposit-split.ts`, `shippingTiming`). Košík s cenou po domluvě a
+ * Českou poštou má tedy `total` třeba 150 Kč, ale k úhradě 0 — a tenhle
+ * rozdíl vznikl 6. 11. 2026, kdy si i takový kus smí vybrat dopravu.
+ * Kdo zná částku spočítanou serverem (`chargeSplit` nad režimem platby
+ * zakázky), ať ji předá: jinak by pokladna poslala ComGate platbu za nulu,
+ * kterou brána odmítne, a zákazník by uvízl na kroku Platba.
  */
 export const isZeroChargeCart = (
-  cart: { total?: number | null; items?: LineLike[] | null } | null | undefined
+  cart: { total?: number | null; items?: LineLike[] | null } | null | undefined,
+  chargeNow?: number | null
 ): boolean =>
   Boolean(cart) &&
   (cart?.items?.length ?? 0) > 0 &&
-  Number(cart?.total ?? 0) <= 0.005
+  Number(chargeNow ?? cart?.total ?? 0) <= 0.005
 
 /** Věta u tlačítka, když celou objednávku pokryl dárkový poukaz. */
 export const VOUCHER_ZERO_NOTE =

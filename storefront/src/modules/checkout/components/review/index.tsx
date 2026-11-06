@@ -151,10 +151,14 @@ const Review = ({
   const paidByGiftcard =
     cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0
 
-  /* Cena po domluvě a k úhradě 0 (jen takový kus + osobní odběr): žádná brána,
-     objednávka se dokončí s relací `pp_system_default` (lib/util/price-on-request).
-     Případná zbylá volba `?method=` z dřívějška se pak nepoužije. */
-  const zeroCharge = isZeroChargeCart(cart)
+  /* Cena po domluvě a k úhradě 0: žádná brána, objednávka se dokončí s relací
+     `pp_system_default` (lib/util/price-on-request). Případná zbylá volba
+     `?method=` z dřívějška se pak nepoužije.
+
+     Nula je `chargeNow` spočítané výš, ne `cart.total`: poštovné u košíku,
+     ve kterém není nic než zakázka, se platí až v doplatku, takže součet
+     košíku by tu tvrdil, že je co platit. */
+  const zeroCharge = isZeroChargeCart(cart, chargeNow)
   const zeroCopy = zeroChargeCopy(cart)
 
   const previousStepsCompleted =

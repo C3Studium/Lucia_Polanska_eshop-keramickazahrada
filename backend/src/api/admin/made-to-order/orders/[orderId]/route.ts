@@ -71,6 +71,10 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         // staví výběr dopravy (lib/made-to-order/shipping-choice).
         "shipping_methods.name",
         "shipping_methods.shipping_option_id",
+        // Kolik ta doprava stojí — blok „Domluvená cena" tím předplní
+        // poštovné. `total` nemusí projekce vrátit, `amount` ano.
+        "shipping_methods.amount",
+        "shipping_methods.total",
       ],
       filters: { id: req.params.orderId },
     })
@@ -187,6 +191,20 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       order_shipping_option_id:
         ((order?.shipping_methods ?? []) as any[])[0]?.shipping_option_id ?? null,
       order_shipping_name: ((order?.shipping_methods ?? []) as any[])[0]?.name ?? null,
+      /*
+       * Poštovné, které objednávka UŽ nese (6. 11. 2026).
+       *
+       * Od té doby si i kus s cenou po domluvě vybere dopravu v pokladně —
+       * a nezaplatí ji, protože v košíku jen se zakázkou se poštovné odkládá
+       * do doplatku. Tím ale vzniklo tiché riziko: kdyby ho Lucie v bloku
+       * „Domluvená cena" nevyplnila, dluh zakázky by poštovné neobsahoval a
+       * dopravu by zaplatil e-shop. Blok si tím pole předplní.
+       */
+      order_shipping_total: ((order?.shipping_methods ?? []) as any[]).reduce(
+        (sum: number, method: any) =>
+          sum + toNumber(method?.total ?? method?.amount),
+        0
+      ),
       // Cena po domluvě (lib/made-to-order/agreed-price.ts): položka objednaná
       // za 0 Kč — admin ukáže „Domluvená cena" a „Poslat domluvenou cenu".
       price_on_request: isAgreedPriceCommission(productionOrder),

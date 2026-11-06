@@ -52,6 +52,8 @@ export type AgreedPriceCommission = {
   /** Doprava, kterou objednávka nese teď (výchozí volba v bloku). */
   order_shipping_option_id?: string | null;
   order_shipping_name?: string | null;
+  /** Kolik ta doprava stojí — předplní pole poštovného, viz níž. */
+  order_shipping_total?: number | string | null;
 };
 
 /** Možnost dopravy z `GET /admin/made-to-order/shipping-options`. */
@@ -218,9 +220,20 @@ export const AgreedPriceBlock = ({
   const [shippingOptionId, setShippingOptionId] = useState<string>(
     commission.order_shipping_option_id ?? ""
   );
-  const [shipping, setShipping] = useState(
-    state.shipping > 0.005 ? String(round2(state.shipping)) : ""
-  );
+  /*
+   * Poštovné: co je uložené u zakázky, jinak to, co objednávka nese z pokladny.
+   *
+   * Od 6. 11. 2026 si dopravu vybírá i zákazník s cenou po domluvě — zvolí ji,
+   * ale nezaplatí (poštovné u takového košíku padá do doplatku). Objednávka
+   * tedy přijde s Českou poštou za 150 Kč a prázdným polem by se ta stopadesátka
+   * ztratila: dluh zakázky by ji neobsahoval a dopravu by zaplatil e-shop.
+   * Přepsat se dá pořád — domluva je domluva.
+   */
+  const [shipping, setShipping] = useState(() => {
+    if (state.shipping > 0.005) return String(round2(state.shipping));
+    const zObjednavky = toNum(commission.order_shipping_total);
+    return zObjednavky > 0.005 ? String(round2(zObjednavky)) : "";
+  });
   const [packaging, setPackaging] = useState(
     state.packaging > 0.005 ? String(round2(state.packaging)) : ""
   );
@@ -239,8 +252,11 @@ export const AgreedPriceBlock = ({
   const shippingOptions = dopravaData?.shipping_options ?? [];
   const chosenOption =
     shippingOptions.find((option) => option.id === shippingOptionId) ?? null;
-  /* Než se možnosti načtou, platí stav podle uloženého poštovného. */
-  const byPost = chosenOption ? !chosenOption.personal_pickup : state.shipping > 0.005;
+  /* Než se možnosti načtou, platí stav podle poštovného v poli (uloženého
+     u zakázky, nebo předplněného z objednávky). */
+  const byPost = chosenOption
+    ? !chosenOption.personal_pickup
+    : state.shipping > 0.005 || toNum(commission.order_shipping_total) > 0.005;
 
   /** Výběr dopravy: u zásilky napovíme poštovné z ceníku, pokud je pole prázdné. */
   const vybratDopravu = (id: string) => {
