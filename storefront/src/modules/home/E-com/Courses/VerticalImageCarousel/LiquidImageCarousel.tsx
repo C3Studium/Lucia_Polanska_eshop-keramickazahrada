@@ -148,8 +148,10 @@ export default function LiquidImageCarousel({
         this.container = container
         this.pixelRatio = Math.min(window.devicePixelRatio || 1, 1.4)
         this.resize()
+        /* Bez MSAA (5. 11. 2026): kreslí se jediný čtverec přes celé plátno, takže není
+           co vyhlazovat — vyhlazování jen přidávalo vyrovnávací paměť navíc. */
         this.renderer = new THREE.WebGLRenderer({
-          antialias: true,
+          antialias: false,
           alpha: true,
         })
         // Always transparent

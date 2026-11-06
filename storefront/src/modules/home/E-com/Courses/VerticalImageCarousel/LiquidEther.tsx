@@ -135,10 +135,19 @@ export default function LiquidEther({
       clock: THREE.Clock | null = null
       init(container: HTMLElement) {
         this.container = container
-        this.pixelRatio = Math.min(window.devicePixelRatio || 1, 2)
+        /*
+         * Hustota 1, ne až 2, a bez vyhlazování hran (5. 11. 2026).
+         *
+         * Výstup je jeden čtverec přes celé plátno, který vzorkuje rychlostní pole simulace
+         * v 0,2–0,35 rozlišení stránky a kreslí se s průhledností 10–20 %. Na retině se
+         * tak počítal čtyřnásobek pixelů obrazu, který je sám rozmazaný. MSAA na čtverci
+         * přes celé plátno nemá jakou hranu vyhladit, jen přidává vyrovnávací paměť
+         * a její rozlišení každý snímek.
+         */
+        this.pixelRatio = 1
         this.resize()
         this.renderer = new THREE.WebGLRenderer({
-          antialias: true,
+          antialias: false,
           alpha: true,
         })
         // Always transparent

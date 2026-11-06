@@ -14,6 +14,7 @@ import {
   useState,
 } from "react"
 
+import { useDeviceTier } from "@lib/hooks/use-device-tier"
 import styles from "./style.module.scss"
 
 type ScrollSection = {
@@ -117,6 +118,16 @@ export default function Scrollbar() {
   const [sectionProgress, setSectionProgress] = useState(0)
   const [hoveredMarker, setHoveredMarker] = useState<number | null>(null)
   const frame = useRef<number | null>(null)
+  /*
+   * Na dotyku lišta neběží vůbec (5. 11. 2026).
+   *
+   * CSS ji tam schovává (`@include touch { display: none }`), JS ale dál při každém
+   * snímku scrollu měřil polohu všech sekcí (getBoundingClientRect = vynucený layout
+   * hned po zápisech framera), překresloval React a pružiny animovaly čárky, které
+   * nikdo nevidí. Na telefonu to byl největší kus práce, který nebyl vidět. Hook
+   * používá tutéž media query jako mixin `touch`, takže se JS a CSS nerozejdou.
+   */
+  const { isTouch } = useDeviceTier()
 
   const measure = useCallback(() => {
     if (!sections.length) return
@@ -149,6 +160,11 @@ export default function Scrollbar() {
   }, [sections])
 
   useEffect(() => {
+    if (isTouch) {
+      setSections([])
+      return
+    }
+
     let discoveryFrame = 0
     let cancelled = false
 
@@ -178,9 +194,12 @@ export default function Scrollbar() {
       observer.disconnect()
       resizeObserver.disconnect()
     }
-  }, [pathname])
+  }, [pathname, isTouch])
 
   useEffect(() => {
+    // Bez sekcí (dotyk, nebo stránka bez nich) není co měřit — ani posluchač scrollu.
+    if (!sections.length) return
+
     const requestMeasure = () => {
       if (frame.current !== null) return
       frame.current = window.requestAnimationFrame(() => {

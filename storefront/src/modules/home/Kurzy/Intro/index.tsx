@@ -370,10 +370,14 @@ export default function Intro({
       >
         <motion.div
           className="kurzyTimeline__ambient"
+          /* Ve statickém toku je záře `display: none` (styles.scss) — framer by do ní jinak
+             dál psal polohu i barvu každý snímek scrollu, pro nic (5. 11. 2026). */
           style={
-            reduceMotion
-              ? { backgroundColor: ambientColor }
-              : { x: ambientX, y: ambientY, backgroundColor: ambientColor }
+            staticFlow
+              ? undefined
+              : reduceMotion
+                ? { backgroundColor: ambientColor }
+                : { x: ambientX, y: ambientY, backgroundColor: ambientColor }
           }
           aria-hidden="true"
         />
@@ -595,7 +599,8 @@ export default function Intro({
           {/* Totéž slovo jako v hlavičce scény — jedno pole, dvě místa. */}
           <span {...editable(about, "accent.0")}>{aboutMetaLeft}</span>
           <i>
-            <motion.b style={{ scaleX: progressScale }} />
+            {/* Lišta je ve statickém toku skrytá stejně jako záře — bez vazby na scroll. */}
+            <motion.b style={staticFlow ? undefined : { scaleX: progressScale }} />
           </i>
         </footer>
       </motion.div>

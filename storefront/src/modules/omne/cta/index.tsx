@@ -168,6 +168,9 @@ export default function AboutCta({ copy }: { copy?: CopyBlocks }) {
     const detailY = useTransform(imageY, (value) => value * -.65)
 
     const handlePointerMove = (event: React.PointerEvent<HTMLElement>) => {
+        // Paralaxa za myší; prst při scrollu jen cukl obrázkem a pružina ho vracela.
+        if (event.pointerType === "touch") return
+
         const bounds = event.currentTarget.getBoundingClientRect()
         const x = (event.clientX - bounds.left) / bounds.width - .5
         const y = (event.clientY - bounds.top) / bounds.height - .5

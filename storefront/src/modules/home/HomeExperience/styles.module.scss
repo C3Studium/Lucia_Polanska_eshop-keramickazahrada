@@ -21,6 +21,12 @@
     radial-gradient(circle at 66% 40%, rgb(var(--blush-01-rgb) / .16), transparent 36%);
   filter: blur(72px);
   mix-blend-mode: soft-light;
+  /*
+   * Vlastní vrstva (5. 11. 2026): `y` a `opacity` se mění každý snímek scrollu, a bez
+   * vrstvy prohlížeč pokaždé znovu maloval rozostření 72px přes plochu velkou jako
+   * obrazovka. S vrstvou se rozostření namaluje jednou a dál se jen posouvá.
+   */
+  will-change: transform, opacity;
 }
 
 .content {

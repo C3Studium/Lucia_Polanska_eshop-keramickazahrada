@@ -3,6 +3,7 @@
 import {
   easeInOut,
   motion,
+  useInView,
   useMotionValue,
   useScroll,
   useTransform,
@@ -160,6 +161,15 @@ export default function AboutMe ({
        aby i první šev byl jeden obraz. Táž cesta, jakou ji bere hero (viz
        `shaderImages` níž), včetně zálohy z kódu. */
     const heroPortrait = shaderImages(block, aboutImages)[1].src
+
+    /*
+     * Mávající ruka mává jen na obrazovce (5. 11. 2026). Smyčka je framer v JS, takže
+     * dřív zapisovala rotaci každý snímek i o pět obrazovek níž. Mimo okno se vrátí
+     * do klidu (0°, odkud smyčka stejně začíná) a při návratu se rozběhne znovu —
+     * okraj 120 px, aby se to stalo dřív, než je ruka vidět.
+     */
+    const handRef = useRef<HTMLSpanElement>(null)
+    const handInView = useInView(handRef, { margin: "120px 0px" })
 
     const timelineRef = useRef<HTMLDivElement>(null)
     const { scrollYProgress } = useScroll({
@@ -441,10 +451,10 @@ export default function AboutMe ({
                                 animate="show"
                                 custom={heroBeat.action}
                             >
-                                <span className="greetings__icon" aria-hidden="true">
+                                <span className="greetings__icon" aria-hidden="true" ref={handRef}>
                                     <motion.span
-                                        animate={animate2}
-                                        transition={transition3}
+                                        animate={handInView ? animate2 : handAtRest}
+                                        transition={handInView ? transition3 : handRestTransition}
                                     >
                                         <Image src="/assets/icons/wawing_hand.png" alt="" width={78} height={78}/>
                                     </motion.span>
@@ -547,4 +557,6 @@ const transition = { duration: .7, delay: .55, ease: [.22, 1, .36, 1] as [number
 const transition2 = { duration: 1.15, ease: [.76, 0, .24, 1] as [number, number, number, number] }
 const animate2 = { rotate: [0, 7, -3, 6, 0] }
 const transition3 = { duration: 1.65, repeat: Infinity, repeatDelay: 4.2, ease: "easeInOut" as const }
+const handAtRest = { rotate: 0 }
+const handRestTransition = { duration: 0 }
 const transition4 = { duration: 1, delay: .45, ease: [.76, 0, .24, 1] as [number, number, number, number] }

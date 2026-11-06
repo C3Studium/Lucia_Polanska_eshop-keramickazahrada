@@ -54,6 +54,13 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: "12mb",
     },
+    /*
+     * Obchod z Medusa UI bere ~30 drobností (clx, toast, Text, pár ikon), ale import
+     * přes barrel táhl na každou stránku celou knihovnu: všechny ikony, DataTable,
+     * kalendář s lokály i zvýrazňovač kódu (~680 kB). Tohle importy přepíše na
+     * přímé cesty, takže se stáhne jen to, co se opravdu používá (6. 11. 2026).
+     */
+    optimizePackageImports: ["@medusajs/ui", "@medusajs/icons"],
   },
   sassOptions: {
     includePaths: [path.join(__dirname, "src")],
