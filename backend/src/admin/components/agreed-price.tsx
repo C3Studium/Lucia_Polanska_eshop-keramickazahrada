@@ -54,6 +54,8 @@ export type AgreedPriceCommission = {
   order_shipping_name?: string | null;
   /** Kolik ta doprava stojí — předplní pole poštovného, viz níž. */
   order_shipping_total?: number | string | null;
+  /** Celá objednávka je na míru (balné a doběrečné se nepočítají). */
+  pure_commission?: boolean;
 };
 
 /** Možnost dopravy z `GET /admin/made-to-order/shipping-options`. */
@@ -221,18 +223,27 @@ export const AgreedPriceBlock = ({
     commission.order_shipping_option_id ?? ""
   );
   /*
-   * Poštovné: co je uložené u zakázky, jinak to, co objednávka nese z pokladny.
+   * Poštovné: co je uložené u zakázky, jinak to, co objednávka nese z pokladny
+   * a zákazník ještě nezaplatil.
    *
    * Od 6. 11. 2026 si dopravu vybírá i zákazník s cenou po domluvě — zvolí ji,
-   * ale nezaplatí (poštovné u takového košíku padá do doplatku). Objednávka
-   * tedy přijde s Českou poštou za 150 Kč a prázdným polem by se ta stopadesátka
-   * ztratila: dluh zakázky by ji neobsahoval a dopravu by zaplatil e-shop.
-   * Přepsat se dá pořád — domluva je domluva.
+   * ale nezaplatí, protože v objednávce, kde není nic než zakázka, se poštovné
+   * odkládá do doplatku. A protože domluvená cena NAHRADÍ `original_total`
+   * (`productionOutstanding` v `lib/ship-gate.ts`), ve kterém to poštovné
+   * jinak jede, musí ho tohle pole uvést znovu — jinak by z dluhu vypadlo a
+   * dopravu by zaplatil e-shop.
+   *
+   * `pure_commission` je tu podmínkou, ne kosmetikou: v objednávce s běžným
+   * zbožím se poštovné zaplatilo už v pokladně a předplněné pole by ho
+   * naúčtovalo podruhé. Přepsat se dá pořád — domluva je domluva.
    */
+  const nezaplacenePostovne =
+    commission.pure_commission === true
+      ? toNum(commission.order_shipping_total)
+      : 0;
   const [shipping, setShipping] = useState(() => {
     if (state.shipping > 0.005) return String(round2(state.shipping));
-    const zObjednavky = toNum(commission.order_shipping_total);
-    return zObjednavky > 0.005 ? String(round2(zObjednavky)) : "";
+    return nezaplacenePostovne > 0.005 ? String(round2(nezaplacenePostovne)) : "";
   });
   const [packaging, setPackaging] = useState(
     state.packaging > 0.005 ? String(round2(state.packaging)) : ""
@@ -256,7 +267,7 @@ export const AgreedPriceBlock = ({
      u zakázky, nebo předplněného z objednávky). */
   const byPost = chosenOption
     ? !chosenOption.personal_pickup
-    : state.shipping > 0.005 || toNum(commission.order_shipping_total) > 0.005;
+    : state.shipping > 0.005 || nezaplacenePostovne > 0.005;
 
   /** Výběr dopravy: u zásilky napovíme poštovné z ceníku, pokud je pole prázdné. */
   const vybratDopravu = (id: string) => {
