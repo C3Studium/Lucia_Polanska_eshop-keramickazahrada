@@ -561,20 +561,32 @@ const CommissionCard = ({
                 dvakrát.
               */}
               {!openBalance && !commission.price_on_request && (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col items-start gap-1 sm:items-end">
+                  <div className="flex items-center gap-2">
+                    <Text size="xsmall" className="text-ui-fg-muted">
+                      Poštovné vlastní zásilky
+                    </Text>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      size="small"
+                      className="w-24"
+                      placeholder={String(toNum(commission.shipping_total) || 0)}
+                      value={shippingDraft}
+                      onChange={(event) => setShippingDraft(event.target.value)}
+                    />
+                  </div>
+                  {/*
+                    Bez téhle věty je políčko past: poštovné z pokladny už
+                    v dluhu je (nese ho zakázka v `original_total`), takže by
+                    ho vyplnění naúčtovalo podruhé. Patří sem jen DALŠÍ zásilka.
+                  */}
                   <Text size="xsmall" className="text-ui-fg-muted">
-                    Poštovné vlastní zásilky
+                    Jen když tahle zakázka odejde zvlášť, jako další zásilka.
+                    U jediné zásilky nechte prázdné — poštovné z pokladny
+                    je v doplatku už spočítané.
                   </Text>
-                  <Input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    size="small"
-                    className="w-24"
-                    placeholder={String(toNum(commission.shipping_total) || 0)}
-                    value={shippingDraft}
-                    onChange={(event) => setShippingDraft(event.target.value)}
-                  />
                 </div>
               )}
               <Button
