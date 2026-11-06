@@ -204,12 +204,25 @@ export default function PreContractInfo({
         : ""
     deliveryLines.push(
       maxDays
-        ? `${titleOf(item)}: vyrábíme na zakázku, hotovo do ${maxDays} dnů od zahájení výroby${usual}. Pak zásilku odešleme, nebo vám dáme vědět, že je připravená k vyzvednutí.`
+        ? `${titleOf(item)}: na zakázku, hotovo do ${maxDays} dnů od zahájení výroby${usual}.`
         : lead?.label
-          ? `${titleOf(item)}: vyrábíme na zakázku, hotovo zhruba za ${lead.label}. Pak zásilku odešleme, nebo vám dáme vědět, že je připravená k vyzvednutí.`
-          : `${titleOf(item)}: vyrábíme na zakázku — s termínem se vám ozveme.`
+          ? `${titleOf(item)}: na zakázku, hotovo zhruba za ${lead.label}.`
+          : `${titleOf(item)}: na zakázku — s termínem se vám ozveme.`
     )
   })
+  /*
+   * Co se stane potom, JEN JEDNOU (6. 11. 2026).
+   *
+   * Věta „Pak zásilku odešleme, nebo vám dáme vědět, že je připravená
+   * k vyzvednutí" platí pro všechny zakázky stejně, takže se u dvou kusů
+   * četla dvakrát a blok povinných informací kvůli ní narostl o text, který
+   * nic nepřidává. Liší se jen čísla, zbytek ne.
+   */
+  if (madeToOrder.length > 0) {
+    deliveryLines.push(
+      "Hotovou zakázku odešleme, nebo dáme vědět, že je připravená k vyzvednutí."
+    )
+  }
 
   /*
    * Řádek „Zakázka" (audit § 0, Z10): smluvní záloha % a Kč proti tomu, co se
@@ -248,7 +261,8 @@ export default function PreContractInfo({
             title: titleOf(item),
             depositPercentage: paymentLine?.deposit_percentage ?? lead?.deposit_percentage,
             depositAmount: paymentLine?.deposit_amount,
-            maxDays: lead?.production_time_max_days,
+            /* Lhůtu sem NE: stojí o řádek výš v „Dodací lhůta" a tady by se
+               u každé zakázky opakovala podruhé. */
           },
           money
         )

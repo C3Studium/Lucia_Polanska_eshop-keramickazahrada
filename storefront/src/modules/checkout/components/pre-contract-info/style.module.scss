@@ -43,9 +43,12 @@
  * a druhý začíná (30. 10. 2026). Vlasová linka to rozdělí, aniž by z bloku
  * udělala tabulku: první řádek ji nahoře nemá a svislý rytmus se o ni opírá.
  */
+/* Drobné písmo, ne čtené odstavce. Je toho hodně, protože to hodně musí být
+   (§ 1820, § 1826 OZ) — tak ať to aspoň nezabírá dvě obrazovky. Zmenšeno
+   6. 11. 2026 po prvním testu pokladny. */
 .rows > div {
   display: grid;
-  padding: clamp(.55rem, 1.02vh, .85rem) 0;
+  padding: clamp(.45rem, .83vh, .7rem) 0;
   border-top: 1px solid var(--pci-divider);
   grid-template-columns: minmax(7.5rem, 11rem) 1fr;
   gap: 1.125rem;
@@ -58,15 +61,15 @@
 
 .rows dt {
   color: var(--pci-label);
-  font: 400 clamp(.9375rem, 1.25vw, 1.22rem)/1.45 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.875rem, 1.08vw, 1.05rem)/1.4 "Sansation-Regular", sans-serif;
 }
 
 .rows dd {
   display: grid;
   margin: 0;
   color: var(--pci-ink);
-  font: 400 clamp(.9375rem, 1.25vw, 1.22rem)/1.45 "Sansation-Regular", sans-serif;
-  gap: .2rem;
+  font: 400 clamp(.875rem, 1.08vw, 1.05rem)/1.4 "Sansation-Regular", sans-serif;
+  gap: .15rem;
 }
 
 .rows dd small {
