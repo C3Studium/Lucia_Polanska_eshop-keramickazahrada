@@ -17,6 +17,14 @@ export type ShopStatus = {
    * výchozí stav je zapnuto a volbu nemá schovat chybějící pole.
    */
   company_purchase?: boolean
+  /**
+   * Nabízí obchod kurzy? Vypnuto vymění na stránce `/kurzy` termíny
+   * a rezervační okno za tlačítko na kontaktní formulář.
+   *
+   * Chybí-li, platí zapnuto — ze stejného důvodu jako u nákupu na firmu:
+   * starší backend ani selhaný dotaz nemá zavřít stránku, která funguje.
+   */
+  courses_enabled?: boolean
 }
 
 export async function getShopStatus(): Promise<ShopStatus | null> {

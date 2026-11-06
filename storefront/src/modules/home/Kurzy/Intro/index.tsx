@@ -98,6 +98,7 @@ export default function Intro({
   gallery,
   about,
   onReserveAction,
+  coursesEnabled = true,
 }: {
   block?: KurzyIntroData
   /**
@@ -112,6 +113,8 @@ export default function Intro({
   about?: CopyBlock
   /** „Pro zájemce → Vybrat termín" — opens the reservation modal. */
   onReserveAction: () => void
+  /** Přepínač „Kurzy v obchodě" — vypnuto mění tlačítka na kontaktní. */
+  coursesEnabled?: boolean
 }) {
   /* Scény jedou jen ze scrollu — bez tohohle by po zapnutí editace zůstaly
      anotace prázdné. Viz hook. */
@@ -585,6 +588,7 @@ export default function Intro({
                 index={index}
                 staticFlow={staticFlow}
                 onReserve={onReserveAction}
+                coursesEnabled={coursesEnabled}
               />
             ))}
           </div>
@@ -671,6 +675,7 @@ function AudienceBlock({
   index,
   staticFlow = false,
   onReserve,
+  coursesEnabled = true,
 }: {
   block: (typeof audienceBlocks)[number]
   /** Fotka z CMS; chybí-li, kreslí se ta z `block`. */
@@ -690,6 +695,11 @@ function AudienceBlock({
   /** Svislý telefon: žádné scroll transformy, jen whileInView přiznání. */
   staticFlow?: boolean
   onReserve: () => void
+  /**
+   * Přepínač „Kurzy v obchodě". Vypnuto udělá z každého bloku kontaktní —
+   * rezervovat není co, ale zájemce má pořád kam napsat.
+   */
+  coursesEnabled?: boolean
 }) {
   /* All three arrive a beat apart, left to right, inside the scene's entrance. */
   const reduceMotion = useSiteReducedMotion()
@@ -746,7 +756,7 @@ function AudienceBlock({
       <div className="kurzyAudience__action">
         {/* Obal, ne tlačítko: obě si vykreslují vlastní vnitřek a datové atributy
             by skončily na prvku, který se při animaci přepisuje. */}
-        {block.action === "contact" ? (
+        {block.action === "contact" || !coursesEnabled ? (
           <span {...editTexts?.cta}>
             <ContactTrigger
               text={block.cta}

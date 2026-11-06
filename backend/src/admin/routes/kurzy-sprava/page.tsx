@@ -10,6 +10,7 @@ import {
   Label,
   Select,
   Skeleton,
+  Switch,
   Text,
   Textarea,
   toast,
@@ -28,7 +29,7 @@ import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-m
 import { SubTabs } from "../../components/work-tabs";
 import { formatCzk } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
-import { ceskyText } from "../../lib/ceska-chyba";
+import { ceskaChyba, ceskyText } from "../../lib/ceska-chyba";
 import {
   parseTimeOfDay,
   utcFromPragueWallClock,
@@ -1451,6 +1452,63 @@ const termMatchesSearch = (term: AdminTerm, query: string): boolean => {
   );
 };
 
+/**
+ * „Kurzy v obchodě" — jediný přepínač, kterým se kurzy zavřou a zase otevřou.
+ *
+ * Vypnuto vymění na stránce `/kurzy` termíny a rezervační okno za tlačítko na
+ * kontaktní formulář a backend odmítne novou rezervaci i žádost o místo
+ * (`lib/courses-enabled`). Vypsané termíny ani hotové rezervace se nemažou —
+ * po zapnutí je všechno tam, kde bylo.
+ *
+ * Ukládá se hned při přepnutí, bez tlačítka Uložit: je to jedna hodnota a
+ * čekat u ní na druhý klik nedává smysl. Klíč dotazu je týž jako na stránce
+ * Dovolená a oznámení, takže se obě obrazovky vidí navzájem.
+ */
+const KurzyVObchode = () => {
+  const queryClient = useQueryClient();
+  const { data, isPending } = useQuery<{
+    settings?: { courses_enabled?: boolean };
+  }>({
+    queryKey: ["merchant-settings"],
+    queryFn: () => sdk.client.fetch("/admin/merchant-settings"),
+  });
+
+  /* Výchozí zapnuto jako v backendu — chybějící hodnota kurzy nevypíná. */
+  const zapnuto = data?.settings?.courses_enabled !== false;
+
+  const ulozit = useMutation({
+    mutationFn: (dalsi: boolean) =>
+      sdk.client.fetch("/admin/merchant-settings", {
+        method: "POST",
+        body: { courses_enabled: dalsi },
+      }),
+    onSuccess: async (_odpoved, dalsi) => {
+      await queryClient.invalidateQueries({ queryKey: ["merchant-settings"] });
+      toast.success(
+        dalsi
+          ? "Kurzy se v obchodě zase nabízejí."
+          : "Kurzy jsou vypnuté — zájemcům se místo termínů ukáže kontaktní formulář."
+      );
+    },
+    onError: (error) =>
+      toast.error(ceskaChyba(error, "Přepnutí se nepodařilo uložit.")),
+  });
+
+  return (
+    <div className="flex items-center gap-2">
+      <Label htmlFor="kurzy-v-obchode" weight="plus" className="whitespace-nowrap">
+        Kurzy v obchodě
+      </Label>
+      <Switch
+        id="kurzy-v-obchode"
+        checked={zapnuto}
+        disabled={isPending || ulozit.isPending}
+        onCheckedChange={(dalsi) => ulozit.mutate(dalsi)}
+      />
+    </div>
+  );
+};
+
 const KurzySpravaInner = () => {
   // Přehled › „Čeká na vás" otevírá rovnou žádosti (?zalozka=mista|zadosti).
   const [searchParams] = useSearchParams();
@@ -1564,6 +1622,7 @@ const KurzySpravaInner = () => {
           </Text>
         </div>
         <div className="flex items-center gap-4">
+          <KurzyVObchode />
           <ExpertToggle />
           <CourseTermWizard
             termCounts={termCounts}

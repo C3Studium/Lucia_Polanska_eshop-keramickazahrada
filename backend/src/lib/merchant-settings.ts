@@ -134,6 +134,19 @@ const KEY_SCHEMAS = {
    */
   company_purchase_enabled: z.boolean(),
   /**
+   * Kurzy — nabízí je obchod právě teď?
+   *
+   * Vypnuto je pro období, kdy se kurzy nekonají: v obchodě zmizí termíny
+   * i rezervační okno a na jejich místě zůstane tlačítko na kontaktní
+   * formulář, aby zájemce nespadl do prázdné stránky. Backend k tomu odmítne
+   * novou rezervaci i žádost o místo — jinak by stačil starý odkaz a kurz by
+   * se dal objednat i po vypnutí.
+   *
+   * Co se NEDĚJE: vypsané termíny se nemažou a hotové rezervace platí dál.
+   * Přepínač je stav obchodu, ne úklid dat.
+   */
+  courses_enabled: z.boolean(),
+  /**
    * Zkušební režim — obchod běží nanečisto.
    *
    * Zapnuto znamená dvě věci naráz:
@@ -265,6 +278,8 @@ export const MERCHANT_SETTINGS_DEFAULTS: MerchantSettings = {
   /* Zapnuto: firemní nákup je běžná věc a vypínač je tu pro případ, že ho
      nebude chtít, ne naopak. */
   company_purchase_enabled: true,
+  /* Zapnuto: obchod bez uloženého nastavení kurzy nabízí, jako dosud. */
+  courses_enabled: true,
   /* Vypnuto: obchod, kterému nikdo nastavení neuložil, musí fakturovat. */
   test_mode_enabled: false,
   /* 39 Kč — částka dohodnutá při zavedení dobírky; v administraci jde změnit. */

@@ -23,6 +23,7 @@ export default function Kurzy({
   terms,
   legalFacts,
   countryCode,
+  coursesEnabled = true,
 }: {
   /** Bloky stránky `kurzy` z CMS; termíny níž jsou z Medusy. */
   copy: CopyBlocks
@@ -31,6 +32,15 @@ export default function Kurzy({
   legalFacts?: LegalFacts
   /** Kód země z adresy — kurzy jdou rezervovat jen v Česku (okno to řeší). */
   countryCode?: string
+  /**
+   * Přepínač „Kurzy v obchodě" z administrace.
+   *
+   * Vypnuto nechává stránku i její texty stát — mizí jen to, co vede
+   * k rezervaci: termíny, obě tlačítka „Vybrat termín" a celé okno. Na jejich
+   * místě je tlačítko na kontaktní formulář, tedy přesně ten stav, který
+   * stránka odjakživa umí, když nejsou vypsané žádné termíny.
+   */
+  coursesEnabled?: boolean
 }) {
   const [modalOpen, setModalOpen] = useState(false)
   /* Po přepnutí obchodu na Česko z okna rezervace přijde stránka s
@@ -72,24 +82,33 @@ export default function Kurzy({
         gallery={copy["kurzy.galerie"]}
         about={copy["kurzy.about"]}
         onReserveAction={openModal}
+        coursesEnabled={coursesEnabled}
       />
       <Rezervace
         terms={terms}
         onReserveAction={openModal}
         block={copy["kurzy.rezervace"]}
         okno={copy["kurzy.rezervace-okno"]}
+        coursesEnabled={coursesEnabled}
       />
       {/* Nadpis okna je týž blok jako nadpis sekce s termíny; ostatní texty
-          okna mají vlastní blok `kurzy.rezervace-okno`. */}
-      <RezervaceModal
-        open={modalOpen || studioOpen}
-        onCloseAction={closeModal}
-        initialTerms={terms}
-        legalFacts={legalFacts}
-        heading={copy["kurzy.rezervace"]}
-        block={copy["kurzy.rezervace-okno"]}
-        countryCode={countryCode}
-      />
+          okna mají vlastní blok `kurzy.rezervace-okno`.
+
+          Při vypnutých kurzech se okno nevykresluje vůbec — ani pro Studio.
+          Kdyby zůstalo v DOMu, otevřel by ho odkaz `?rezervace=1` ze starého
+          e-mailu a zájemce by došel až k formuláři, který backend stejně
+          odmítne. */}
+      {coursesEnabled && (
+        <RezervaceModal
+          open={modalOpen || studioOpen}
+          onCloseAction={closeModal}
+          initialTerms={terms}
+          legalFacts={legalFacts}
+          heading={copy["kurzy.rezervace"]}
+          block={copy["kurzy.rezervace-okno"]}
+          countryCode={countryCode}
+        />
+      )}
     </main>
   )
 }

@@ -35,9 +35,21 @@ type Props = {
    * (`termin.obsazeno`), aby zněla stejně jako v okně rezervace.
    */
   okno?: CopyBlock
+  /**
+   * Přepínač „Kurzy v obchodě". Vypnuto se chová jako „žádné vypsané
+   * termíny" — tedy nadpis, věta a tlačítko na kontakt. Je to tentýž stav,
+   * takže se pro něj nevymýšlí druhá podoba sekce ani druhý text v CMS.
+   */
+  coursesEnabled?: boolean
 }
 
-export default function Rezervace({ terms, onReserveAction, block, okno }: Props) {
+export default function Rezervace({
+  terms,
+  onReserveAction,
+  block,
+  okno,
+  coursesEnabled = true,
+}: Props) {
   /* Sekce sama o sobě nemá důvod k překreslení — bez tohohle by po zapnutí
      režimu editace zůstaly anotace prázdné. Viz hook. */
   useEditRerender()
@@ -74,7 +86,7 @@ export default function Rezervace({ terms, onReserveAction, block, okno }: Props
         <p {...editable(block, "body")}>{lede}</p>
       </header>
 
-      {terms.length === 0 ? (
+      {!coursesEnabled || terms.length === 0 ? (
         <div className="kurzyRezervace__empty">
           <h3 {...editable(block, "accent.3")}>{emptyTitle}</h3>
           <p {...editable(block, "accent.4")}>{emptyText}</p>
