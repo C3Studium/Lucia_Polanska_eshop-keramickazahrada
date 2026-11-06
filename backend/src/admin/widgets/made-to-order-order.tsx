@@ -78,6 +78,12 @@ type ProductionOrder = {
   /** Cena po domluvě: položka objednaná za 0 Kč, cenu Lucie pošle odsud. */
   price_on_request?: boolean;
   agreed_price_sent_at?: string | null;
+  /**
+   * Poštovné za VLASTNÍ zásilku této zakázky. Objednávka platí jedno poštovné
+   * v pokladně (nese ho první zakázka); každá další zásilka je jedno navíc
+   * a vybere se s doplatkem té zakázky, které patří.
+   */
+  shipping_total?: number | string | null;
   /** Položka zakázky (§ 0c) — objednávka může mít zakázek víc. */
   line_title?: string | null;
   line_variant_title?: string | null;
@@ -179,6 +185,8 @@ const CommissionCard = ({
   const [editingSurcharge, setEditingSurcharge] = useState(false);
   const [surchargeDraft, setSurchargeDraft] = useState("");
   const [notifyingSurcharge, setNotifyingSurcharge] = useState(false);
+  /* Poštovné za vlastní zásilku téhle zakázky — pole vedle výzvy k doplacení. */
+  const [shippingDraft, setShippingDraft] = useState("");
   const [surchargeReason, setSurchargeReason] = useState("");
 
   const runAction = useMutation({
@@ -540,14 +548,54 @@ const CommissionCard = ({
               vždy, když něco zbývá doplatit, ne jen ve fázi „čeká na doplatek". */}
           {canRequestBalance && (
             <div className="flex flex-col items-start gap-1 sm:items-end">
+              {/*
+                Poštovné za VLASTNÍ zásilku (6. 11. 2026).
+
+                Objednávka zaplatí jedno poštovné v pokladně a nese ho první
+                zakázka. Když tahle zakázka odejde zvlášť, je to jedno poštovné
+                navíc — napíše se sem a vybere se s touhle výzvou. Políčko je
+                vidět jen dokud žádná výzva neběží: po odeslání odkazu by změna
+                částky znamenala jiný odkaz, než jaký zákazník dostal.
+
+                Cena po domluvě má vlastní blok s týmž polem, tady by byla
+                dvakrát.
+              */}
+              {!openBalance && !commission.price_on_request && (
+                <div className="flex items-center gap-2">
+                  <Text size="xsmall" className="text-ui-fg-muted">
+                    Poštovné vlastní zásilky
+                  </Text>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    size="small"
+                    className="w-24"
+                    placeholder={String(toNum(commission.shipping_total) || 0)}
+                    value={shippingDraft}
+                    onChange={(event) => setShippingDraft(event.target.value)}
+                  />
+                </div>
+              )}
               <Button
                 variant={nextAction ? "secondary" : "primary"}
                 isLoading={runAction.isPending}
-                onClick={() =>
+                onClick={() => {
+                  /* Prázdné pole = nech, co je uložené. Vyplněné pošli s výzvou;
+                     server si ho uloží a dluh z něj spočítá jedinou definicí. */
+                  const zadano = shippingDraft.trim();
+                  const castka = zadano === "" ? null : Number(zadano.replace(",", "."));
+                  if (castka !== null && (!Number.isFinite(castka) || castka < 0)) {
+                    toast.error("Poštovné musí být nula nebo víc.");
+                    return;
+                  }
                   runAction.mutate({
                     action: openBalance ? "remind_balance" : "request_balance",
-                  })
-                }
+                    ...(castka !== null && !openBalance
+                      ? { shipping_total: castka }
+                      : {}),
+                  });
+                }}
               >
                 {openBalance
                   ? "Poslat připomínku doplatku"

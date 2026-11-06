@@ -90,7 +90,7 @@ const paidOf = (requests: CommissionPaymentRequestLike[] | null | undefined, typ
  * (0 u legacy). Je to součást `original_total`, proto se od ceny položky
  * odečítá.
  */
-const checkoutExtrasTotal = (productionOrder: CommissionMoneySource): number => {
+export const checkoutExtrasTotal = (productionOrder: CommissionMoneySource): number => {
   if (isLegacyCommission(productionOrder)) return 0
   if (productionOrder.line_total === null || productionOrder.line_total === undefined) return 0
   return Math.max(0, round2(toNumber(productionOrder.original_total) - toNumber(productionOrder.line_total)))

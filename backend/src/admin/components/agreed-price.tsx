@@ -42,6 +42,13 @@ export type AgreedPriceCommission = {
   /** Poštovné a balné domluvené spolu s cenou (0 u osobního odběru). */
   shipping_total?: number | string | null;
   packaging_total?: number | string | null;
+  /**
+   * Cena samotného výrobku z projekce (`commissionMoney.item_total`) a
+   * všechno, co zakázka nese za objednávku. `agreed_total` je celek obojího,
+   * takže cena výrobku se čte odsud — viz `agreedPriceState`.
+   */
+  item_total?: number | string | null;
+  order_extras_total?: number | string | null;
   paid_amount?: number | string | null;
   outstanding_amount?: number | string | null;
   price_on_request?: boolean;
@@ -52,10 +59,6 @@ export type AgreedPriceCommission = {
   /** Doprava, kterou objednávka nese teď (výchozí volba v bloku). */
   order_shipping_option_id?: string | null;
   order_shipping_name?: string | null;
-  /** Kolik ta doprava stojí — předplní pole poštovného, viz níž. */
-  order_shipping_total?: number | string | null;
-  /** Celá objednávka je na míru (balné a doběrečné se nepočítají). */
-  pure_commission?: boolean;
 };
 
 /** Možnost dopravy z `GET /admin/made-to-order/shipping-options`. */
@@ -97,12 +100,30 @@ export const useCommissionsOfOrder = (orderId: string, enabled = true) =>
   });
 
 export const agreedPriceState = (commission: AgreedPriceCommission) => {
-  const agreed = toNum(commission.agreed_total);
+  /*
+   * Domluvená cena, jak ji Lucie zadala = cena VÝROBKU. Ve sloupci
+   * `agreed_total` je od 6. 11. 2026 celek včetně toho, co zakázka nese za
+   * objednávku (doprava, balné, běžné zboží) — takový je kontrakt, protože
+   * `agreed_total` nahrazuje `original_total`. Cena výrobku se proto bere
+   * z `item_total`; kdyby se brala ze `agreed_total`, ukázalo by se nesené
+   * „navíc" jako cena kusu a při opravě ceny by se přičetlo podruhé.
+   */
+  const agreed = toNum(commission.item_total ?? commission.agreed_total);
   const sent = agreed > 0.005;
   const shipping = toNum(commission.shipping_total);
   const packaging = toNum(commission.packaging_total);
-  /** Co zákazník dluží celkem: cena výrobku + poštovné + balné. */
-  const total = round2(agreed + shipping + packaging);
+  /*
+   * Co zákazník dluží celkem: cena výrobku + všechno nesené. `order_extras_total`
+   * v sobě má jak poštovné a balné domluvené teď, tak dopravu a zboží
+   * z pokladny, takže se k ceně přičítá jedním číslem (sčítat zvlášť
+   * `shipping` a `packaging` by je počítalo dvakrát).
+   */
+  const total = round2(
+    agreed +
+      toNum(
+        commission.order_extras_total ?? round2(shipping + packaging)
+      )
+  );
   const deposit = toNum(commission.deposit_amount);
   const paid = toNum(commission.paid_amount);
   const outstanding = toNum(commission.outstanding_amount);
@@ -223,28 +244,23 @@ export const AgreedPriceBlock = ({
     commission.order_shipping_option_id ?? ""
   );
   /*
-   * Poštovné: co je uložené u zakázky, jinak to, co objednávka nese z pokladny
-   * a zákazník ještě nezaplatil.
+   * Poštovné: jen to, co je uložené u zakázky. Z objednávky se NEPŘEDPLŇUJE —
+   * a to je důležité vědět, protože to vypadá jako chybějící pohodlí.
    *
-   * Od 6. 11. 2026 si dopravu vybírá i zákazník s cenou po domluvě — zvolí ji,
-   * ale nezaplatí, protože v objednávce, kde není nic než zakázka, se poštovné
-   * odkládá do doplatku. A protože domluvená cena NAHRADÍ `original_total`
-   * (`productionOutstanding` v `lib/ship-gate.ts`), ve kterém to poštovné
-   * jinak jede, musí ho tohle pole uvést znovu — jinak by z dluhu vypadlo a
-   * dopravu by zaplatil e-shop.
+   * Dopravu, kterou si zákazník vybral v pokladně, nese zakázka už
+   * v `original_total` (u nosné zakázky = cena kusu + doprava, balné, běžné
+   * zboží) a `agreedTotalFor` ji při domluvené ceně přenese do
+   * `agreed_total`. Kdyby ji tohle pole uvedlo znovu, zákazník by poštovné
+   * zaplatil dvakrát.
    *
-   * `pure_commission` je tu podmínkou, ne kosmetikou: v objednávce s běžným
-   * zbožím se poštovné zaplatilo už v pokladně a předplněné pole by ho
-   * naúčtovalo podruhé. Přepsat se dá pořád — domluva je domluva.
+   * Sem patří jen poštovné, které v pokladně NEBYLO: když si kus objednaný na
+   * osobní odběr zákazník rozmyslí a necháte ho poslat (dopravu pak vybere
+   * `vybratDopravu` a cenu z ceníku napoví), nebo když zakázka odejde vlastní
+   * zásilkou navíc.
    */
-  const nezaplacenePostovne =
-    commission.pure_commission === true
-      ? toNum(commission.order_shipping_total)
-      : 0;
-  const [shipping, setShipping] = useState(() => {
-    if (state.shipping > 0.005) return String(round2(state.shipping));
-    return nezaplacenePostovne > 0.005 ? String(round2(nezaplacenePostovne)) : "";
-  });
+  const [shipping, setShipping] = useState(
+    state.shipping > 0.005 ? String(round2(state.shipping)) : ""
+  );
   const [packaging, setPackaging] = useState(
     state.packaging > 0.005 ? String(round2(state.packaging)) : ""
   );
@@ -263,11 +279,8 @@ export const AgreedPriceBlock = ({
   const shippingOptions = dopravaData?.shipping_options ?? [];
   const chosenOption =
     shippingOptions.find((option) => option.id === shippingOptionId) ?? null;
-  /* Než se možnosti načtou, platí stav podle poštovného v poli (uloženého
-     u zakázky, nebo předplněného z objednávky). */
-  const byPost = chosenOption
-    ? !chosenOption.personal_pickup
-    : state.shipping > 0.005 || nezaplacenePostovne > 0.005;
+  /* Než se možnosti načtou, platí stav podle uloženého poštovného. */
+  const byPost = chosenOption ? !chosenOption.personal_pickup : state.shipping > 0.005;
 
   /** Výběr dopravy: u zásilky napovíme poštovné z ceníku, pokud je pole prázdné. */
   const vybratDopravu = (id: string) => {
