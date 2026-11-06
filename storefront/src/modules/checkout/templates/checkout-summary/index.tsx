@@ -40,7 +40,12 @@ const CheckoutSummary = async ({
       souhrn nejvyšší (položky + součty + záloha + brief), takže se spodek
       bez tohohle atributu nedal dorolovat vůbec.
     */
-    <div className={styles.root} data-lenis-prevent>
+    <div className={styles.root}>
+      {/*
+        Panel 1 — souhrn objednávky a připomínka zálohy. Vlastní posuv, ať se
+        dá dorolovat k celkové částce, aniž by se hnula stránka.
+      */}
+      <div className={styles.pane} data-lenis-prevent>
       <div className={styles.summary}>
         <CmsText as="p" className={styles.eyebrow} doc={doc} field={itemFieldPath(copy, "oboci")}>
           {itemText(copy, "oboci", "Přehled objednávky")}
@@ -75,6 +80,7 @@ const CheckoutSummary = async ({
       <div className={styles.paymentRecap}>
         <ProductionPaymentRecap mode={productionMode} />
       </div>
+      </div>
 
       {/*
         Brief zakázky (poznámka + fotky) pod slevovým kódem v pravém sloupci —
@@ -82,7 +88,14 @@ const CheckoutSummary = async ({
         (`commissionBriefs` ho pod 1020px skryje) a ukáže se v toku Přehledu.
         Pro běžný košík (bez zakázky) komponenta nevykreslí nic.
       */}
-      <div className={styles.commissionBriefs}>
+      {/*
+        Panel 2 — zadání zakázky. SAMOSTATNĚ lepkavý a samostatně rolovatelný
+        (6. 11. 2026): dokud byl se souhrnem v jednom posuvu, byl pravý sloupec
+        u zakázky dvakrát vyšší než okno, pole pro text se schovávalo pod jeho
+        spodní hranu a přechod na Přehled trhnul celou stránkou. Teď si každý
+        panel drží svoji výšku a roluje se v tom, ve kterém zrovna jste.
+      */}
+      <div className={styles.commissionBriefs} data-lenis-prevent>
         <CheckoutCommissionBriefs cart={cart} />
       </div>
     </div>
