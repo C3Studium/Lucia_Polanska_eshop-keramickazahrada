@@ -27,6 +27,7 @@ import {
 import { formatMoney } from "../../../../../../lib/ship-gate"
 import {
   ensureBalanceCollection,
+  outstandingFor,
   findOpenBalanceCollection,
   stageAfterBalancePaid,
 } from "../../../../../../lib/balance-payment"
@@ -81,7 +82,15 @@ type ActionBody = {
    * se domlouvá částka, ne podíl. Nejvýš polovina ceny výrobku (Z2).
    */
   deposit_amount?: number | null
-  /** send_agreed_price: poštovné, když se kus posílá (jinak 0 = osobní odběr). */
+  /**
+   * Poštovné za VLASTNÍ zásilku této zakázky (0 = jede s jinou, nebo odběr).
+   *
+   * - `send_agreed_price`: poštovné domluvené spolu s cenou.
+   * - `request_balance` (6. 11. 2026): poštovné za zásilku, která odejde
+   *   zvlášť. Objednávka platí jedno poštovné v pokladně a nese ho první
+   *   zakázka; každá další zásilka je jedno poštovné navíc a vybere se
+   *   s doplatkem té zakázky, které patří.
+   */
   shipping_total?: number | null
   /**
    * send_agreed_price: zvolená doprava objednávky. U ceny po domluvě si
@@ -91,7 +100,7 @@ type ActionBody = {
    * (lib/made-to-order/shipping-choice).
    */
   shipping_option_id?: string | null
-  /** send_agreed_price: balné k té zásilce. */
+  /** Balné k té vlastní zásilce (`send_agreed_price`, `request_balance`). */
   packaging_total?: number | null
   /** adjust_surcharge: příplatek v Kč (hlavní jednotka). Navyšuje doplatek. */
   surcharge?: number
@@ -637,16 +646,51 @@ export const POST = async (
       "awaiting_balance",
     ])
     const order = await loadOrder(req)
+
+    /*
+     * Poštovné za vlastní zásilku (6. 11. 2026).
+     *
+     * Objednávka zaplatí v pokladně jedno poštovné a nese ho první zakázka.
+     * Když další zakázka odejde ZVLÁŠŤ, je to jedno poštovné navíc — zapíše
+     * se jí sem a vybere se s jejím doplatkem. Víc než jedno poštovné na
+     * zásilku tím vzniknout nemůže: číslo patří zakázce, ne košíku, a každá
+     * zakázka má svůj doplatek.
+     */
+    const extra = (value: unknown, label: string): number | undefined => {
+      if (value === null || value === undefined || value === "") return undefined
+      const amount = roundMoney(Number(value))
+      if (!Number.isFinite(amount) || amount < 0) {
+        throw new MedusaError(
+          MedusaError.Types.INVALID_DATA,
+          `${label} nemůže být záporné.`
+        )
+      }
+      return amount
+    }
+    const noveShipping = extra(body.shipping_total, "Poštovné")
+    const novePackaging = extra(body.packaging_total, "Balné")
+    if (noveShipping !== undefined || novePackaging !== undefined) {
+      productionOrder = await madeToOrder.updateProductionOrders({
+        id: productionOrder.id,
+        ...(noveShipping !== undefined ? { shipping_total: noveShipping } : {}),
+        ...(novePackaging !== undefined ? { packaging_total: novePackaging } : {}),
+      } as never)
+    }
+
     const payments = await madeToOrder.listProductionPaymentRequests({
       production_order_id: productionOrder.id,
     } as any)
-    const paid = payments
-      .filter((payment: any) => payment.status === "paid")
-      .reduce((sum: number, payment: any) => sum + toNumber(payment.amount), 0)
-    const total =
-      toNumber(productionOrder.agreed_total ?? productionOrder.original_total) +
-      toNumber(productionOrder.surcharge)
-    const outstanding = roundMoney(Math.max(0, total - paid))
+    /*
+     * Dluh přes JEDINOU definici (`ship-gate.productionOutstanding`).
+     *
+     * Dřív se tu počítalo `(agreed ?? original) + surcharge − paid` vlastní
+     * kopií, která vynechávala `shipping_total` a `packaging_total` — přesně
+     * to, před čím ta funkce varuje. Odkaz k zaplacení pak zněl na nižší
+     * částku, než jakou brána odeslání vyžaduje, takže zákazník „zaplatil
+     * všechno" a zásilka se přesto nepustila. Pro zakázky bez poštovného a
+     * balného (všechny do dneška) vrací obě cesty totéž.
+     */
+    const outstanding = outstandingFor(productionOrder, payments)
 
     if (outstanding <= 0.005) {
       // Zaplaceno — vyrobená zakázka jde do „připraveno", rozpracovaná zůstává.

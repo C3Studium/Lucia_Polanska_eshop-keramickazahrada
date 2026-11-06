@@ -12,6 +12,7 @@ import {
   orderNumber,
   sendCustomerEmail,
 } from "../customer-email"
+import { checkoutExtrasTotal } from "./commission-money"
 import { localizedCommissionTitle } from "./commission-title-i18n"
 import { clampContractPercentage } from "./contract-deposit"
 import { buildCommissionConfirmation } from "../potvrzeni-zakazky"
@@ -57,6 +58,29 @@ export const isAgreedPriceCommission = (productionOrder: any): boolean =>
     : toNumber(productionOrder?.original_total) <= 0.005
 
 export const SEND_AGREED_PRICE_STAGES = ["specification_pending", "confirmed"]
+
+/**
+ * Co se uloží do `agreed_total` (6. 11. 2026).
+ *
+ * `agreed_total` NAHRAZUJE `original_total` — tak ho čte jediná definice
+ * dluhu (`productionOutstanding` v `lib/ship-gate.ts`) i `commissionMoney`,
+ * které od něj nesené „navíc" odečítá, aby dostalo cenu položky. V
+ * `original_total` je u NOSNÉ zakázky kromě ceny kusu i doprava, balné a
+ * běžné zboží objednávky — takže do `agreed_total` musí přijít taky, jinak
+ * z dluhu beze zbytku vypadnou, zatímco jejich zaplacení se dál odečítá.
+ *
+ * Do 6. 11. 2026 se tu ukládala jen cena výrobku. U objednávky čistě na
+ * zakázku s osobním odběrem je nesené „navíc" nula, takže se to nikdy
+ * neprojevilo; v míchané objednávce vycházel dluh nižší, než byl.
+ *
+ * Lucie pořád zadává cenu VÝROBKU a strop zálohy (50 %, Z2) se počítá z ní —
+ * poštovné ani balné zálohu nezvyšují. Tahle funkce jen dopočítá, co k ní
+ * patří za objednávku.
+ */
+export const agreedTotalFor = (
+  productionOrder: any,
+  agreedPiecePrice: number
+): number => round2(Number(agreedPiecePrice) + checkoutExtrasTotal(productionOrder))
 
 /**
  * Záloha, kterou Lucie se zákazníkem domluvila.
@@ -151,6 +175,7 @@ export const sendAgreedPrice = async (
   const shipping = extra(input.shippingTotal, "Poštovné")
   const packaging = extra(input.packagingTotal, "Balné")
 
+  /* Strop zálohy drží na ceně VÝROBKU (Z2) — `agreed`, ne celek s neseným. */
   const { amount: depositAmount, percentage } = resolveAgreedDeposit({
     agreedTotal: agreed,
     depositAmount: input.depositAmount,
@@ -160,7 +185,7 @@ export const sendAgreedPrice = async (
 
   const updated = await madeToOrder.updateProductionOrders({
     id: po.id,
-    agreed_total: agreed,
+    agreed_total: agreedTotalFor(po, agreed),
     deposit_percentage: percentage,
     deposit_amount: depositAmount,
     shipping_total: shipping,
@@ -212,7 +237,14 @@ export const sendAgreedPrice = async (
   }
 
   const currency = order.currency_code || "czk"
-  const total = round2(agreed + shipping + packaging)
+  /*
+   * „Celkem" v e-mailu = co zákazník opravdu zaplatí, tedy dluh zakázky.
+   * Tlačítko „zaplatit celé" účtuje přesně tohle, takže jiné číslo v e-mailu
+   * by s ním nesedělo. U objednávky čistě na zakázku bez zaplacené zálohy to
+   * vyjde stejně jako dřív (cena + poštovné + balné); v míchané objednávce se
+   * tím odečte to, co zákazník zaplatil už v pokladně.
+   */
+  const total = owed
   const locale = await emailLocaleForOrder(container, order)
   const money = (value: number) => formatMoney(value, currency, locale)
   /*
