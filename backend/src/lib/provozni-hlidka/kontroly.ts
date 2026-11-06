@@ -6,6 +6,7 @@ import {
 } from "../../modules/idoklad/types"
 import { ACTIVITY_LOG_MODULE } from "../../modules/activity-log"
 import type ActivityLogModuleService from "../../modules/activity-log/service"
+import { jeMenaObchodu, MENA_ZAKLADNI, vypisMen } from "../currencies"
 import { isPersonalPickupOrder } from "../personal-pickup"
 import type { Kontrola, NalezKontroly } from "./typy"
 
@@ -538,6 +539,86 @@ const obchod: Kontrola = {
   },
 }
 
+/**
+ * Měny obchodu. Prodává se v korunách a eurech (lib/currencies) — další měna
+ * jde zapnout v administraci dvěma kliknutími a nikde jinde by to nebylo
+ * vidět, dokud by ji zákazník neuviděl v pokladně.
+ *
+ * Region bez zemí se nepočítá: ten si nikdo nevybere, takže jeho měna nikam
+ * nedosáhne. Produkci takový zůstal po zrušení zlotého (5. 11. 2026).
+ */
+const meny: Kontrola = {
+  klic: "meny",
+  nazev: "Měny obchodu",
+  spust: async (c) => {
+    const container = c as MedusaContainer
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+
+    const [obchod] = (await container
+      .resolve(Modules.STORE)
+      .listStores({}, { relations: ["supported_currencies"] })) as unknown as Record<
+      string,
+      unknown
+    >[]
+
+    const { data: regiony } = await query.graph({
+      entity: "region",
+      fields: ["id", "name", "currency_code", "countries.iso_2"],
+      pagination: { take: 100 },
+    })
+
+    const spatne: string[] = []
+
+    const nabizene = ((obchod?.supported_currencies ?? []) as Record<
+      string,
+      unknown
+    >[]).map((mena) => ({
+      kod: String(mena.currency_code ?? "").toLowerCase(),
+      vychozi: Boolean(mena.is_default),
+    }))
+
+    for (const mena of nabizene) {
+      if (!jeMenaObchodu(mena.kod)) {
+        spatne.push(
+          `obchod má zapnutou měnu ${mena.kod.toUpperCase()} — vypněte ji v Nastavení → Store`
+        )
+      }
+    }
+
+    const vychozi = nabizene.find((mena) => mena.vychozi)
+    if (vychozi && vychozi.kod !== MENA_ZAKLADNI) {
+      spatne.push(
+        `výchozí měna obchodu je ${vychozi.kod.toUpperCase()}, ne ${MENA_ZAKLADNI.toUpperCase()} — kurzy ČNB se počítají od koruny, takže se cizí ceny přestanou přepočítávat`
+      )
+    }
+
+    for (const region of regiony as Record<string, unknown>[]) {
+      const zeme = ((region.countries ?? []) as Record<string, unknown>[]).length
+      const kod = String(region.currency_code ?? "").toLowerCase()
+      if (zeme && !jeMenaObchodu(kod)) {
+        spatne.push(
+          `region ${text(region.name)} účtuje v ${kod.toUpperCase()} (${zeme} zemí)`
+        )
+      }
+    }
+
+    if (!spatne.length) {
+      return {
+        stav: "ok",
+        zprava: `obchod i regiony účtují jen v ${vypisMen()}`,
+      }
+    }
+
+    return {
+      stav: "chyba",
+      zprava:
+        `obchod počítá i s jinou měnou než ${vypisMen()} — ComGate ani iDoklad ` +
+        "na ni nemají účet, takže platba i doklad skončí v cizí měně bez pokrytí",
+      detail: podrobnosti(spatne),
+    }
+  },
+}
+
 /** Všechny kontroly v pořadí, v jakém se čtou v souhrnu. */
 export const KONTROLY: Kontrola[] = [
   databaze,
@@ -548,5 +629,6 @@ export const KONTROLY: Kontrola[] = [
   limitEmailu,
   zasilky,
   sklad,
+  meny,
   denik,
 ]

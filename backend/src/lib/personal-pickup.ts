@@ -20,6 +20,24 @@
  */
 const PICKUP_CODE = "PICKUP"
 
+const bezDiakritiky = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+
+/**
+ * Vodítka v pořadí, v jakém se jim dá věřit (5. 11. 2026):
+ *
+ * 1. **Kód služby dopravce** — zapsal ho dopravce, přebíjí všechno ostatní.
+ * 2. **Příznak `personal_pickup`** — zapisuje ho volba dopravy.
+ * 3. **Poskytovatel a název metody** — záloha pro objednávky, které v datech
+ *    metody nemají nic (starší objednávky, ručně založená doprava).
+ *
+ * Třetí patro přibylo, když se sem sešlo pět vlastních kopií tohoto pravidla
+ * rozházených po repu; každá uměla trochu jinou podmnožinu a každá se na
+ * objednávce #69 mýlila jinak.
+ */
 export const isPersonalPickupOrder = (
   order: { shipping_methods?: any[] | null } | null | undefined
 ): boolean =>
@@ -27,5 +45,13 @@ export const isPersonalPickupOrder = (
     const data = method?.data || {}
     const code = String(data.service_code ?? "")
     if (code && code !== PICKUP_CODE) return false
-    return data.personal_pickup === true || code === PICKUP_CODE
+    if (data.personal_pickup === true || code === PICKUP_CODE) return true
+
+    const provider = String(method?.shipping_option?.provider_id ?? "")
+    const nazev = bezDiakritiky(String(method?.name ?? ""))
+    return (
+      provider.includes("pickup") ||
+      nazev.includes("osobni") ||
+      nazev.includes("odber")
+    )
   })

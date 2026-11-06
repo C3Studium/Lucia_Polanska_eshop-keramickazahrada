@@ -1,12 +1,18 @@
 "use client"
 
-import LiquidEther from "@modules/home/E-com/Courses/VerticalImageCarousel/LiquidEther"
+import dynamic from "next/dynamic"
 import { usePathname } from "next/navigation"
 import { useMemo, type CSSProperties } from "react"
 
 import { useShadersEnabled } from "@lib/hooks/use-shaders-enabled"
 import styles from "./style.module.scss"
 import { palette } from "styles/palette.generated"
+
+/* three.js se stáhne, jen když se plátno opravdu vykreslí (desktop s myší na interaktivní stránce). */
+const LiquidEther = dynamic(
+  () => import("@modules/home/E-com/Courses/VerticalImageCarousel/LiquidEther"),
+  { ssr: false }
+)
 
 type AmbientPreset = {
   name: "showcase" | "legal" | "commerce" | "account"
@@ -124,6 +130,19 @@ export default function GlobalLiquidEther() {
      also the single most expensive thing on the site, which is why the stuttering machine gets it
      removed rather than merely downgraded. */
   if (!shadersEnabled) {
+    return null
+  }
+
+  /*
+   * Stránky bez interakce (právní, košík a pokladna, účet) plátno nedostanou (5. 11. 2026).
+   *
+   * Mají `mouseForce: 0` i `cursorSize: 0`, takže simulace nikdy nedostane žádnou sílu:
+   * rychlost zůstane nulová a výstupní shader vrací `bgColor` s alfou 0, tedy čistou
+   * průhlednost. Naměřeno screenshotem s plátnem a bez něj: smluvní podmínky i účet
+   * 0 změněných pixelů, košík 0,5 % pixelů o nejvýš 2 odstíny z 255. Celá simulace
+   * kapaliny přitom běžela 60× za sekundu — za nic.
+   */
+  if (!preset.interactive) {
     return null
   }
 

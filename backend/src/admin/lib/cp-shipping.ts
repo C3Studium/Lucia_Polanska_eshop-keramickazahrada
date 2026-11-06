@@ -43,7 +43,15 @@ export const isPersonalPickup = (order: OrderWithShipping): boolean =>
     const data = method?.data || {};
     const code = String(data.service_code ?? "");
     if (code && code !== "PICKUP") return false;
-    return data.personal_pickup === true || code === "PICKUP";
+    if (data.personal_pickup === true || code === "PICKUP") return true;
+    // Záloha pro metody bez dat — stejná jako v `lib/personal-pickup.ts`.
+    const provider = String(method?.shipping_option?.provider_id ?? "");
+    const nazev = fold(String(method?.name ?? ""));
+    return (
+      provider.includes("pickup") ||
+      nazev.includes("osobni") ||
+      nazev.includes("odber")
+    );
   });
 
 /** Zásilka České pošty (Balíkovna NB nebo Balík Do ruky DR). */

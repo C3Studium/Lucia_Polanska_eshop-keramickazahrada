@@ -8,6 +8,8 @@
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
+import { isPersonalPickupOrder } from "./personal-pickup"
+
 /** Okno, po kterém už se neptáme: pozdní prosba působí jako hromadná rozesílka. */
 export const REVIEW_WINDOW_DAYS = 30
 
@@ -98,16 +100,9 @@ export const claimVerdict = (claims: ClaimLike[] | null | undefined): ClaimVerdi
   return verdict
 }
 
-/** Osobní odběr podle dopravní metody — stejná trojice jako `complete-personal-pickup`. */
+/** Osobní odběr podle dopravní metody — jedno sdílené pravidlo pro celý repo. */
 export const isPickupOrder = (order: any): boolean =>
-  ((order?.shipping_methods ?? []) as any[]).some((method) => {
-    const data = method?.data || {}
-    return (
-      data.personal_pickup === true ||
-      data.service_code === "PICKUP" ||
-      String(method?.shipping_option?.provider_id ?? "").includes("pickup")
-    )
-  })
+  isPersonalPickupOrder(order)
 
 /** Nejpozdější odeslání nezrušeného fulfillmentu. */
 export const latestShippedAt = (

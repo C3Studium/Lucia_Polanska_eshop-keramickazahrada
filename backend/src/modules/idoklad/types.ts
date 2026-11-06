@@ -104,6 +104,27 @@ export type IdokladCurrency = {
   Code: string
 }
 
+/** Bankovní spojení agendy. Každá měna má svoje — Lucie má korunové i eurové. */
+export type IdokladBankAccount = {
+  Id: number
+  Name?: string | null
+  CurrencyId: number
+  AccountNumber?: string | null
+  Iban?: string | null
+  Swift?: string | null
+  IsDefault?: boolean
+}
+
+/** Řádek kurzovního lístku iDokladu (vlastní, denní, shodný s ČNB). */
+export type IdokladExchangeRate = {
+  Id: number
+  CurrencyId: number
+  Date: string
+  /** Kolik korun za `Amount` jednotek měny. */
+  ExchangeRateValue: number
+  Amount: number
+}
+
 export type IdokladPaymentOption = {
   Id: number
   Code?: string | null
@@ -182,6 +203,12 @@ export type IdokladInvoicePayload = {
   BankId?: number
   Iban?: string
   Swift?: string
+  /**
+   * Kurz pro fakturu v cizí měně: kolik korun za `ExchangeRateAmount`
+   * jednotek. Bez nich by doklad v eurech nesl korunovou hodnotu 1:1.
+   */
+  ExchangeRate?: number
+  ExchangeRateAmount?: number
 }
 
 export type IdokladIssuedInvoice = {

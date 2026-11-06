@@ -310,6 +310,9 @@ export default function AboutInfo () {
     )
 
     const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+        // Paralaxa za myší; prst při scrollu jen cukl obrázkem a pružina ho vracela.
+        if (event.pointerType === "touch") return
+
         const bounds = event.currentTarget.getBoundingClientRect()
         const x = (event.clientX - bounds.left) / bounds.width - .5
         const y = (event.clientY - bounds.top) / bounds.height - .5

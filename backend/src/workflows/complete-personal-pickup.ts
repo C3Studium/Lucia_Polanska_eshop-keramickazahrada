@@ -1,4 +1,5 @@
 import { MedusaError } from "@medusajs/framework/utils"
+import { isPersonalPickupOrder } from "../lib/personal-pickup"
 import {
   createStep,
   createWorkflow,
@@ -88,14 +89,9 @@ export const assertPersonalPickup = (order: any): {
   paymentId: string | null
   amountDue: number
 } => {
-  const isPickup = (order?.shipping_methods || []).some((method: any) => {
-    const data = method?.data || {}
-    return (
-      data.personal_pickup === true ||
-      data.service_code === "PICKUP" ||
-      String(method?.shipping_option?.provider_id ?? "").includes("pickup")
-    )
-  })
+  /* Sdílené pravidlo — jinak by šlo „vyzvednuto u pultu" i u zásilky, které
+     po výměně dopravy zůstal v datech starý příznak odběru. */
+  const isPickup = isPersonalPickupOrder(order)
 
   if (!isPickup) {
     throw new MedusaError(

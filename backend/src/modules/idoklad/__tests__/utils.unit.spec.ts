@@ -6,6 +6,7 @@ import {
   buildInvoiceItems,
   buildInvoicePayload,
   createTokenRequest,
+  pickBankAccount,
   pickPaymentOptionId,
   requestIdokladJson,
   toVariableSymbol,
@@ -249,6 +250,75 @@ describe("iDoklad utils", () => {
       expect(payload.NumericSequenceId).toBe(99)
       expect(payload.PaymentOptionId).toBe(33)
       expect(payload.CurrencyId).toBe(5)
+    })
+
+    /*
+     * Eurová faktura (5. 11. 2026). Bez kurzu iDoklad počítá korunovou
+     * hodnotu dokladu jedna ku jedné — 60 € by se v účetnictví objevilo jako
+     * 60 Kč — a bez eurového účtu by zákazník poslal eura na korunový.
+     */
+    it("faktura v cizí měně nese kurz i eurový účet", () => {
+      const payload = buildInvoicePayload({
+        order: order as any,
+        defaults,
+        partnerId: 555,
+        vatPayer: false,
+        currencyId: 2,
+        bankAccount: {
+          Id: 77,
+          Name: "Eurový účet",
+          CurrencyId: 2,
+          Iban: "CZ55 2010 0000 0027 0128 1289",
+          Swift: "FIOBCZPP",
+        },
+        exchangeRate: {
+          Id: 491909,
+          CurrencyId: 2,
+          Date: "2026-11-04",
+          ExchangeRateValue: 24.31,
+          Amount: 1,
+        },
+      })
+
+      expect(payload.ExchangeRate).toBe(24.31)
+      expect(payload.ExchangeRateAmount).toBe(1)
+      expect(payload.BankId).toBe(77)
+      /* Mezery v IBANu chodí z iDokladu i z nastavení — na dokladu nesmí být. */
+      expect(payload.Iban).toBe("CZ5520100000002701281289")
+      expect(payload.Swift).toBe("FIOBCZPP")
+    })
+
+    it("korunová faktura kurz nepřidává", () => {
+      const payload = buildInvoicePayload({
+        order: { ...order, currency_code: "czk" } as any,
+        defaults,
+        partnerId: 555,
+        vatPayer: false,
+      })
+
+      expect(payload.ExchangeRate).toBeUndefined()
+      expect(payload.ExchangeRateAmount).toBeUndefined()
+      expect(payload.BankId).toBeUndefined()
+    })
+  })
+
+  describe("pickBankAccount", () => {
+    const ucty = [
+      { Id: 19, Name: "Hlavní bankovní spojení", CurrencyId: 1, IsDefault: true },
+      { Id: 77, Name: "Eurový účet", CurrencyId: 2, IsDefault: false },
+      { Id: 78, Name: "Eurový záložní", CurrencyId: 2, IsDefault: true },
+    ]
+
+    it("vybere účet v měně dokladu a dá přednost výchozímu", () => {
+      expect(pickBankAccount(ucty, 2)?.Id).toBe(78)
+      expect(pickBankAccount(ucty, 1)?.Id).toBe(19)
+    })
+
+    /* Koruna účet nepředává — zůstane ten z nastavení agendy. */
+    it("bez měny nebo bez účtu v té měně nevrací nic", () => {
+      expect(pickBankAccount(ucty, undefined)).toBeUndefined()
+      expect(pickBankAccount(ucty, 8)).toBeUndefined()
+      expect(pickBankAccount([], 2)).toBeUndefined()
     })
   })
 

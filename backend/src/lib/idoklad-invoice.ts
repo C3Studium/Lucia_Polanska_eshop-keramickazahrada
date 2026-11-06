@@ -6,11 +6,14 @@ import type IdokladModuleService from "../modules/idoklad/service"
 import {
   IDOKLAD_BALANCE_METADATA_KEYS,
   IDOKLAD_METADATA_KEYS,
+  type IdokladBankAccount,
+  type IdokladExchangeRate,
   type IdokladInvoiceState,
 } from "../modules/idoklad/types"
 import {
   buildContactPayload,
   buildInvoicePayload,
+  pickBankAccount,
   pickPaymentOptionId,
   invoiceFlavourFor,
   pragueDate,
@@ -166,6 +169,55 @@ export const resolveIdokladService = (
  * `payment.captured`, so in-process callers serialize per order. Cross-process
  * duplicates are caught by the metadata check re-done inside the lock.
  */
+
+/**
+ * Co doklad potřebuje navíc, když se neplatí v korunách (5. 11. 2026).
+ *
+ * Obchod prodává v korunách a eurech (lib/currencies). Eurová faktura musí
+ * nést tři věci, které u korunové nejsou:
+ *
+ * 1. **Číslo měny** v číselníku iDokladu (EUR = 2).
+ * 2. **Eurový účet agendy.** Lucie má v iDokladu korunový i eurový; bez toho
+ *    by na faktuře stál korunový a zákazník by poslal eura tam, kde je banka
+ *    převede svým kurzem.
+ * 3. **Kurz.** Bez něj iDoklad počítá korunovou hodnotu dokladu jedna ku
+ *    jedné — faktura na 60 € by se v účetnictví objevila jako 60 Kč. Bere se
+ *    z lístku iDokladu, ne z našeho ČNB (`lib/cnb-rates`): čísla jsou stejná,
+ *    ale na dokladu má stát přesně ten kurz, který vidí účetní.
+ *
+ * Když cokoli z toho selže, doklad se vystaví bez toho — chybějící faktura je
+ * horší než faktura, u které se dopisuje kurz ručně.
+ */
+type MenaDokladu = {
+  currencyId?: number
+  bankAccount?: IdokladBankAccount | null
+  exchangeRate?: IdokladExchangeRate | null
+}
+
+const menaDokladu = async (
+  idoklad: IdokladModuleService,
+  currencyCode: unknown
+): Promise<MenaDokladu> => {
+  const kod = String(currencyCode ?? "czk").toUpperCase()
+  if (kod === "CZK") return {}
+
+  const currencyId = await idoklad
+    .findCurrencyIdByCode(kod)
+    .catch(() => undefined)
+  if (!currencyId) return {}
+
+  const [ucty, kurz] = await Promise.all([
+    idoklad.listBankAccounts().catch(() => [] as IdokladBankAccount[]),
+    idoklad.findExchangeRate(currencyId).catch(() => undefined),
+  ])
+
+  return {
+    currencyId,
+    bankAccount: pickBankAccount(ucty, currencyId) ?? null,
+    exchangeRate: kurz ?? null,
+  }
+}
+
 const orderLocks = new Map<string, Promise<unknown>>()
 
 const withOrderLock = async <T>(
@@ -402,11 +454,7 @@ export const ensureInvoiceForOrder = async (
         cod: isDobirkaOrder(order),
         defaultId: defaults.PaymentOptionId,
       })
-      const currencyCode = String(order.currency_code ?? "czk").toUpperCase()
-      const currencyId =
-        currencyCode === "CZK"
-          ? undefined
-          : await idoklad.findCurrencyIdByCode(currencyCode).catch(() => undefined)
+      const mena = await menaDokladu(idoklad, order.currency_code)
 
       // 3) Create, then stamp metadata immediately — the invoice id is the
       //    idempotency fact and must survive even if PDF or e-mail fail.
@@ -422,7 +470,7 @@ export const ensureInvoiceForOrder = async (
           vatPayer: idoklad.vatPayer,
           paymentOptionId,
           numericSequenceId: idoklad.numericSequenceId,
-          currencyId,
+          ...mena,
           description: [
             `Objednávka #${order.display_id ?? order.id}`,
             voucherNote,
@@ -569,7 +617,7 @@ export const ensureMadeToOrderInvoices = async (
     let partnerId: number | null = null
     let defaults: any = null
     let paymentOptionId: number | undefined
-    let currencyId: number | undefined
+    let mena: MenaDokladu = {}
     const prepareBits = async () => {
       if (partnerId !== null) return
       const email = String(order.email ?? "").trim()
@@ -592,13 +640,7 @@ export const ensureMadeToOrderInvoices = async (
         cod: false,
         defaultId: defaults.PaymentOptionId,
       })
-      const currencyCode = String(order.currency_code ?? "czk").toUpperCase()
-      currencyId =
-        currencyCode === "CZK"
-          ? undefined
-          : await idoklad
-              .findCurrencyIdByCode(currencyCode)
-              .catch(() => undefined)
+      mena = await menaDokladu(idoklad, order.currency_code)
     }
 
     // Jazyk e-mailu s fakturou (metadata košíku → země doručení) — částky
@@ -661,7 +703,7 @@ export const ensureMadeToOrderInvoices = async (
             vatPayer: idoklad.vatPayer,
             paymentOptionId,
             numericSequenceId: idoklad.numericSequenceId,
-            currencyId,
+            ...mena,
             items,
             description: [`${label} — obj. #${order.display_id ?? order.id}`, voucherNote]
               .filter(Boolean)
