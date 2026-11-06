@@ -16,16 +16,33 @@
   // Souhrn bývá vyšší než okno (5 položek + součty ≈ 760px), a lepkavý blok
   // vyšší než okno ukáže spodek až na konci stránky — proto strop výšky
   // a posuv uvnitř, aby celková částka byla vždycky na obrazovce.
+  //
+  // Od 6. 11. 2026 posouvá sloupec jako CELEK dva panely, ne jeden: souhrn
+  // a zadání zakázky. Dokud byly v jednom posuvu, u zakázky měl sloupec přes
+  // dvě výšky okna — pole pro text se schovávalo pod spodní hranu a přechod
+  // na Přehled trhnul stránkou. Teď si výšku okna rozdělí a roluje se v tom
+  // panelu, nad kterým je kurzor.
   @include from-px(1021px) {
     position: sticky;
     top: var(--summary-sticky-top);
+    display: flex;
     max-height: calc(100svh - var(--summary-sticky-top) - 1rem);
+    flex-direction: column;
+    gap: clamp(1rem, 2vh, 1.5rem);
+  }
+}
+
+/*
+ * Posuv je na PANELECH, ne na sloupci. Oba se chovají stejně, proto jedno
+ * pravidlo — a posuvník musí být VIDĚT, ne jen fungovat: nic jiného
+ * nenapoví, že se v panelu dá rolovat. Tenký a krémový, ať nekřičí.
+ */
+@include from-px(1021px) {
+  .pane,
+  .commissionBriefs {
+    min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
-
-    // Posuvník musí být VIDĚT, ne jen fungovat: u zakázky je souhrn dvakrát
-    // vyšší než okno a nic jiného nenapoví, že se v něm dá rolovat. Tenký
-    // a krémový, ať nekřičí na tmavém sloupci.
     scrollbar-width: thin;
     scrollbar-color: rgb(var(--cream-06-rgb) / .35) transparent;
 
@@ -42,6 +59,11 @@
     &::-webkit-scrollbar-thumb:hover {
       background: rgb(var(--cream-06-rgb) / .55);
     }
+  }
+
+  /* Odstup mezi panely dělá `gap` sloupce — vlastní margin by se přičetl. */
+  .commissionBriefs {
+    margin-top: 0;
   }
 }
 

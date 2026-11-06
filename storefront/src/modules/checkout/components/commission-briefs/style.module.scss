@@ -132,6 +132,19 @@
   }
 }
 
+/*
+ * Upozornění po automatickém přepnutí na další nevyplněnou zakázku. Výraznější
+ * než `.stav` (to je údaj, tohle je pokyn), ale pořád jen pruh, ne alarm.
+ */
+.vyzva {
+  margin: 0 0 clamp(.625rem, 1.4vh, .875rem);
+  padding: clamp(.5rem, 1.1vh, .7rem) clamp(.6rem, 1.2vw, .9rem);
+  border-left: 2px solid rgb(var(--ink-05-rgb) / .35);
+  background: rgb(var(--ink-05-rgb) / .06);
+  color: var(--ink-05);
+  font: 400 .8125rem/1.4 "Sansation-Regular", sans-serif;
+}
+
 .stav {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .62);

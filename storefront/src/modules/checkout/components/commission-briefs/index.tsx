@@ -7,7 +7,7 @@ import {
   readCommissionBrief,
 } from "@lib/util/made-to-order"
 import { saveCommissionBrief } from "@lib/data/commission-actions"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import CommissionBrief from "../commission-brief"
 import styles from "./style.module.scss"
@@ -135,6 +135,42 @@ export default function CheckoutCommissionBriefs({
     if (vseVyplneno) router.refresh()
   }, [vseVyplneno, router])
 
+  /*
+   * Po vyplnění přepnout na další zakázku, která zadání ještě nemá
+   * (6. 11. 2026).
+   *
+   * U víc zakázek se stávalo, že zákazník napsal zadání k prvnímu kusu,
+   * viděl pod polem „uloží se samo" a šel objednat — a pokladna ho zastavila
+   * na kroku Přehled, protože druhý kus zadání nemá. Přepínač to sice řekl
+   * („1 / 2 · 1 vyplněno"), ale to je údaj, ne upozornění.
+   *
+   * Přepíná se JEN tehdy, když se právě dovyplnilo to, co je na obrazovce —
+   * ruční listování stav vyplnění nemění, takže nikoho neodnese od kusu, na
+   * který se chtěl jen podívat.
+   */
+  const predchoziStav = useRef(complete)
+  const [vyzva, setVyzva] = useState<string | null>(null)
+  useEffect(() => {
+    const predtim = predchoziStav.current
+    predchoziStav.current = complete
+    if (!slots.length) return
+    const ted = Math.min(activeIndex, slots.length - 1)
+    const tenhle = slots[ted]
+    if (!tenhle || predtim[tenhle.key] || !complete[tenhle.key]) return
+    const dalsi = slots.findIndex(
+      (slot, poradi) => poradi !== ted && !complete[slot.key]
+    )
+    if (dalsi === -1) {
+      setVyzva(null)
+      return
+    }
+    const zbyva = slots.filter((slot) => !complete[slot.key]).length
+    setActiveIndex(dalsi)
+    setVyzva(
+      `Uloženo. Chybí ještě ${zbyva} zadání — přepnul jsem na „${slots[dalsi].title}".`
+    )
+  }, [complete, activeIndex, slots])
+
   if (!slots.length) {
     return null
   }
@@ -162,11 +198,15 @@ export default function CheckoutCommissionBriefs({
   }
 
   const hotovo = slots.filter((slot) => complete[slot.key]).length
-  const jdi = (delta: number) =>
+  /* Ruční listování upozornění zahazuje — platilo o přepnutí, které zákazník
+     právě přebil vlastní volbou. */
+  const jdi = (delta: number) => {
+    setVyzva(null)
     setActiveIndex((current) => {
       const base = Math.min(current, slots.length - 1)
       return (base + delta + slots.length) % slots.length
     })
+  }
 
   return (
     <div className={styles.root} id={COMMISSION_BRIEFS_ID}>
@@ -204,7 +244,10 @@ export default function CheckoutCommissionBriefs({
                 <li key={slot.key}>
                   <button
                     type="button"
-                    onClick={() => setActiveIndex(slotIndex)}
+                    onClick={() => {
+                      setVyzva(null)
+                      setActiveIndex(slotIndex)
+                    }}
                     aria-current={slotIndex === index ? "true" : undefined}
                     data-active={slotIndex === index}
                     data-done={Boolean(complete[slot.key])}
@@ -230,6 +273,14 @@ export default function CheckoutCommissionBriefs({
             </p>
           </div>
         </nav>
+      )}
+
+      {/* Upozornění po přepnutí. `role="status"` + `aria-live`, ať ho čtečka
+          přečte, aniž by ukradla pozornost z rozepsaného pole. */}
+      {vyzva && (
+        <p className={styles.vyzva} role="status" aria-live="polite">
+          {vyzva}
+        </p>
       )}
 
       {/*
