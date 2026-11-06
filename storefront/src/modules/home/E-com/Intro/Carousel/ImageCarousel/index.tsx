@@ -324,6 +324,64 @@ export default function ImageCarousel({
     let stopReveal: (() => void) | undefined
     let stopRotation: (() => void) | undefined
 
+    /*
+     * Samočinný posun jen tehdy, když je karusel vidět (5. 11. 2026).
+     *
+     * Dřív se točil každých 5,2 s pořád — i o pět obrazovek níž a i v záložce na pozadí.
+     * Každý posun přitom hýbe osmi transformacemi a ořezem u každého slidu v každém
+     * snímku; naměřeno 600 zápisů stylu za sekundu na stránce, kde se nikdo nedíval.
+     *
+     * Mimo obraz se další krok jen „odloží": běžící posun doběhne, nový nezačne. Až se
+     * karusel vrátí do obrazu, počká obvyklou pauzu a pokračuje, jako by nic. Ruční
+     * šipky (`navigation`) fungují vždycky — volají `move` napřímo.
+     */
+    let visible = true
+    let parked = false
+
+    const autoStep = () => {
+      autoTimeout = undefined
+      if (!visible || document.hidden) {
+        parked = true
+        return
+      }
+      move(retainedDirectionRef.current, 1)
+    }
+
+    const scheduleAuto = (ms: number) => {
+      if (autoTimeout) clearTimeout(autoTimeout)
+      autoTimeout = setTimeout(autoStep, ms)
+    }
+
+    const wake = () => {
+      visible = visible && !document.hidden
+      if (!parked || !visible || isDisposed) return
+      parked = false
+      scheduleAuto(holdDuration)
+    }
+
+    const wrapper = wrapperRef.current
+    const visibility =
+      wrapper && typeof IntersectionObserver !== "undefined"
+        ? new IntersectionObserver((entries) => {
+            visible = entries[entries.length - 1]?.isIntersecting ?? true
+            wake()
+          })
+        : null
+    if (wrapper) visibility?.observe(wrapper)
+
+    const onDocumentVisibility = () => {
+      if (document.hidden) return
+      visible = true
+      /* Po návratu do záložky rozhodne o viditelnosti zase observer; tady se jen
+         probudí karusel, pokud mezitím byl na obrazovce. */
+      if (wrapper) {
+        const rect = wrapper.getBoundingClientRect()
+        visible = rect.bottom > 0 && rect.top < window.innerHeight
+      }
+      wake()
+    }
+    document.addEventListener("visibilitychange", onDocumentVisibility)
+
     const move = (delta: -1 | 1, speed = 1) => {
       sequenceId += 1
       const currentSequence = sequenceId
@@ -387,18 +445,18 @@ export default function ImageCarousel({
         directionBlend.set(delta)
         revealPosition.set(targetStep)
         rotation.set(targetRotation)
-        autoTimeout = setTimeout(
-          () => move(retainedDirectionRef.current, 1),
-          holdDuration
-        )
+        scheduleAuto(holdDuration)
       })
     }
 
     moveRef.current = move
-    autoTimeout = setTimeout(() => move(1, 1), interval + delay * 1000)
+    /* První krok jde vždy doprava (delta 1) — `retainedDirectionRef` je tu ještě 1. */
+    scheduleAuto(interval + delay * 1000)
 
     return () => {
       isDisposed = true
+      visibility?.disconnect()
+      document.removeEventListener("visibilitychange", onDocumentVisibility)
       sequenceId += 1
       isAnimatingRef.current = false
       moveRef.current = null

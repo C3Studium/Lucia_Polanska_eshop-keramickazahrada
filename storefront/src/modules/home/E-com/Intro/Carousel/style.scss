@@ -346,7 +346,21 @@
     inset: 0;
     width: 100%;
     height: 100%;
-    will-change: transform, clip-path;
+  }
+
+  /*
+   * `will-change` jen tam, kde se opravdu něco mění (5. 11. 2026).
+   *
+   * Dřív ho měly všechny tři vrstvy slidu obě vlastnosti. JS ale hýbe jen transformem
+   * slidu a ořezem `__clip`; `__media` se nemění nikdy, a přesto byl každý slide
+   * kvůli ní o vrstvu s celou fotkou bohatší — 12 vrstev navíc na šířku, 6 na telefonu.
+   */
+  .ImageCarousel__slide {
+    will-change: transform;
+  }
+
+  .ImageCarousel__clip {
+    will-change: clip-path;
   }
 
   .ImageCarousel__media img {

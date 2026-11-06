@@ -359,6 +359,7 @@ export default function IntroHero({
           <div
             className="Hero__Intro"
             onPointerMove={(event) => {
+                if (event.pointerType === "touch") return;
                 const bounds = event.currentTarget.getBoundingClientRect();
                 pointerX.set((event.clientX - bounds.left) / Math.max(bounds.width, 1) - 0.5);
                 pointerY.set((event.clientY - bounds.top) / Math.max(bounds.height, 1) - 0.5);

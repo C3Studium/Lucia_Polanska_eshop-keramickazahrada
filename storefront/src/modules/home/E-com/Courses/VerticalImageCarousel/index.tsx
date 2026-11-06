@@ -2,8 +2,11 @@
 
 import Image from "next/image"
 import type { MotionValue } from "framer-motion"
-import LiquidImageCarousel from "./LiquidImageCarousel"
+import dynamic from "next/dynamic"
 import { useShadersEnabled } from "@lib/hooks/use-shaders-enabled"
+
+/* three.js se stáhne, jen když shadery poběží; pod vrstvou vždy leží statická fotka. */
+const LiquidImageCarousel = dynamic(() => import("./LiquidImageCarousel"), { ssr: false })
 
 export type VerticalCarouselImage = {
   id: number

@@ -74,5 +74,26 @@
         aspect-ratio: 1 / 2;
         border-radius: 999px;
         background-color: var(--bgWhite);
+        /*
+         * Pohyb je CSS animace, ne framer (5. 11. 2026). Framer tu `y` počítal v JS
+         * a zapisoval do stylu každý snímek, navždy — naměřeno 60 zápisů za sekundu
+         * na /kurzy v klidu. Transform v keyframes odjede na kompozitoru a hlavní
+         * vlákno o něm neví. Dráha i křivka jsou tytéž: -115 % → -50 % → -115 %
+         * výšky kolečka za 2 s, křivka [0.76, 0, 0.24, 1] na každém úseku (framer
+         * jedno `ease` u keyframes uplatňuje stejně, po úsecích).
+         */
+        transform: translateY(-115%);
+        animation: mouseAnimWheel 2s cubic-bezier(0.76, 0, 0.24, 1) infinite;
+    }
+}
+
+@keyframes mouseAnimWheel {
+    0%,
+    100% {
+        transform: translateY(-115%);
+    }
+
+    50% {
+        transform: translateY(-50%);
     }
 }
