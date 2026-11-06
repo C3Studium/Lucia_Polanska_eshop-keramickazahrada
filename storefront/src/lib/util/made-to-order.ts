@@ -494,17 +494,21 @@ export const commissionItemTermsLine = (
 }
 
 /**
- * Součet za víc zakázek: „Celkem záloha 1 200 Kč teď, doplatky 3 600 Kč po
- * dokončení." Částky jsou backendu (`chargeSplit` nad režimem platby) —
+ * Součet za víc zakázek: „Teď zaplatíte 1 200 Kč, po dokončení zakázek
+ * 3 600 Kč." Částky jsou backendu (`chargeSplit` nad režimem platby) —
  * sčítá se jen slovy.
+ *
+ * Slovo „záloha" tu dřív bylo, ale u košíku s běžným zbožím i zakázkou lhalo:
+ * v částce k úhradě je i zboží s dopravou placené CELÉ a zálohou je teprve
+ * zbytek. Rozpad na obojí ukazuje rekapitulace v Přehledu, tady stačí kdy.
  */
 export const commissionTotalsSentence = (
   { now, later }: { now: number; later: number },
   money: (amount: number) => string
 ): string =>
   later > 0.005
-    ? `Celkem záloha ${money(now)} teď, doplatky ${money(later)} po dokončení.`
-    : `Celkem ${money(now)} teď, bez doplatků.`
+    ? `Teď zaplatíte ${money(now)}, po dokončení zakázek ${money(later)}.`
+    : `Teď zaplatíte ${money(now)}, nic nedoplácíte.`
 
 /* ---------------------------------------------------------------------------
  * Stav zakázky v účtu a zrušení (Z3–Z7) — tvar odpovědí backendu a texty.
