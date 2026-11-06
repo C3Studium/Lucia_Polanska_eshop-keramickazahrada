@@ -32,6 +32,9 @@
 
 import crypto from "node:crypto"
 import https from "node:https"
+import tls from "node:tls"
+
+import { POSTSIGNUM_ROOT_QCA4 } from "./postsignum-ca"
 
 /** Host testovacího prostředí. Jediný, u kterého se toleruje self-signed řetěz. */
 const TEST_HOST = "b2b-test.postaonline.cz"
@@ -127,6 +130,8 @@ export const callCeskaPosta = (
         headers: buildAuthHeaders(telo, creds.apiSecret, creds.apiToken, nonce, timestamp),
         /* Jen testovací host — viz hlavička souboru. */
         rejectUnauthorized: base.hostname !== TEST_HOST,
+        /* Veřejné autority plus kořen ČP — ostrý host jede přes PostSignum. */
+        ca: [...tls.rootCertificates, POSTSIGNUM_ROOT_QCA4],
         timeout: timeoutMs,
       },
       (res) => {
