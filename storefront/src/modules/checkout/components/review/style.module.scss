@@ -262,6 +262,50 @@
   }
 }
 
+/* Zakázka: rozpis plateb pod „Celkem".
+
+   Odděluje ho TÁŽ linka jako „Celkem" od součtů výš (`.totalRow`), protože
+   je to další krok ve čtení: nejdřív co to stojí, pak kdy se to platí. */
+.payPlan {
+  margin-top: clamp(.6rem, 1.1vh, .95rem);
+  padding-top: clamp(.6rem, 1.1vh, .95rem);
+  border-top: 1px solid var(--review-rule);
+}
+
+/* Hlavní číslo rozpisu — to, co opravdu strhne brána. */
+.payNow dt,
+.payNow dd {
+  color: var(--review-ink);
+  font-weight: 600;
+}
+
+/* Z čeho se to skládá: odsazené, menším písmem, ať je vidět, že patří nad ně. */
+.paySub {
+  padding-left: clamp(.6rem, 1.1vw, 1rem);
+}
+
+.paySub dt,
+.paySub dd {
+  color: var(--review-label);
+  font-size: clamp(.8125rem, 1.08vw, 1.05rem);
+}
+
+/* „celou cenu" / „jen záloha" — to podstatné rozlišení, ale potichu. */
+.paySub dt span {
+  opacity: .72;
+}
+
+.paySub dt span::before {
+  content: " · ";
+}
+
+/* Co zbývá — oddělené linkou, protože je to jiný okamžik, ne další položka. */
+.payLater {
+  margin-top: clamp(.35rem, .65vh, .55rem);
+  padding-top: clamp(.5rem, .93vh, .8rem);
+  border-top: 1px solid var(--review-rule);
+}
+
 /* Zakázka: kolik se strhne teď a kolik po dokončení — hned pod „Celkem". */
 .depositNote {
   margin: clamp(.5rem, .93vh, .8rem) 0 0;
@@ -273,7 +317,10 @@
   font-weight: 600;
 }
 
-.vatNote {
+.vatNote,
+/* Poznámka pod rozpisem plateb — tatáž velikost a tón jako u DPH, vlastní
+   jméno proto, že s daní nesouvisí. */
+.sideNote {
   margin: clamp(.5rem, .93vh, .8rem) 0 0;
   color: var(--review-label);
   font: 400 clamp(.8125rem, 1.08vw, 1.05rem)/1.5 "Sansation-Regular", sans-serif;

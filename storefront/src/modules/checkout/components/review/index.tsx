@@ -181,10 +181,12 @@ const Review = ({
     paidByGiftcard: Boolean(paidByGiftcard),
   })
 
+  /* Stejné rozlišení jako v rozpisu nad tím, ale jednou větou: „zálohu" samo
+     o sobě u míchaného košíku lže, protože se v té částce platí i zboží. */
   const comgateNote =
     outstanding > 0
-      ? `Teď zaplatíte zálohu ${money(chargeNow)} online (${payment?.label ?? "ComGate"}, platební brána ComGate). Zbytek ${money(outstanding)} doplatíte po dokončení zakázky.`
-      : `Zaplatíte ${money(chargeNow)} hned online (${payment?.label ?? "ComGate"}, platební brána ComGate).`
+      ? `Teď se strhne ${money(chargeNow)} přes platební bránu ComGate, zbývajících ${money(outstanding)} po dokončení zakázky.`
+      : `Teď se strhne ${money(chargeNow)} přes platební bránu ComGate.`
 
   /**
    * Consent is written to the cart *before* the payment session is created — so the record
@@ -300,9 +302,24 @@ const Review = ({
             <motion.div variants={rowVariants} initial="hidden" animate="visible">
               <OrderRecap
                 cart={cart}
+                /*
+                 * Rozpad částky k úhradě, ne jen její součet. „Teď zaplatíte
+                 * zálohu X" u míchaného košíku mátlo: v tom X je i běžné
+                 * zboží s dopravou, které se platí CELÉ, takže to vypadalo
+                 * jako nesmyslně vysoká záloha. `always_now` je ta část
+                 * mimo zakázku, zbytek je záloha.
+                 */
                 deposit={
                   productionMode?.has_made_to_order
-                    ? { now: chargeNow, later: outstanding }
+                    ? {
+                        now: chargeNow,
+                        later: outstanding,
+                        goodsNow: productionMode.production_only?.always_now ?? 0,
+                        depositNow: Math.max(
+                          0,
+                          chargeNow - (productionMode.production_only?.always_now ?? 0)
+                        ),
+                      }
                     : null
                 }
               />

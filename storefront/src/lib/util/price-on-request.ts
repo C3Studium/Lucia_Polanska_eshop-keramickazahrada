@@ -62,7 +62,7 @@ export const PRICE_ON_REQUEST_PRODUCT_NOTE =
  * platí, říká krok Platba z částky spočítané serverem.
  */
 export const PRICE_ON_REQUEST_SUMMARY_NOTE =
-  "Cenu výrobků po domluvě vám pošlu e-mailem a zaplatíte ji až potom."
+  "Výrobky s cenou po domluvě nejsou v částkách výš — cenu vám pošlu e-mailem a zaplatíte ji potom."
 
 /** Věta u tlačítka, když se při objednání neplatí nic. */
 export const PRICE_ON_REQUEST_ZERO_NOTE =

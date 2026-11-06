@@ -22,13 +22,23 @@ import {
  * `deposit` = zakázka: kolik se platí TEĎ a kolik po dokončení. „Celkem" je
  * cena celé objednávky, ale brána vezme jen zálohu — předsmluvní informace
  * musí říct obojí (§ 1820 OZ), jinak „Celkem" vypadá jako to, co se strhne.
+ *
+ * `goodsNow` a `depositNow` rozpadají `now` na dvě věci, které se platí
+ * jinak: běžné zboží s dopravou se platí CELÉ, zakázka jen zálohou. Bez toho
+ * rozpadu čte zákazník jedno velké číslo jako „zálohu" a nechápe, proč je tak
+ * vysoká (6. 11. 2026, po prvním testu).
  */
 export default function OrderRecap({
   cart,
   deposit,
 }: {
   cart: any
-  deposit?: { now: number; later: number } | null
+  deposit?: {
+    now: number
+    later: number
+    goodsNow?: number
+    depositNow?: number
+  } | null
 }) {
   const currency_code = cart?.currency_code ?? "czk"
   const money = (amount?: number | null) =>
@@ -155,24 +165,53 @@ export default function OrderRecap({
               <dd>{money(cart?.total)}</dd>
             </div>
           </dl>
-          {/* Cena po domluvě: proč tam u výrobku není částka. */}
-          {hasPriceOnRequestLine(cart?.items) && (
-            <p className={styles.depositNote} data-testid="recap-price-on-request">
-              {PRICE_ON_REQUEST_SUMMARY_NOTE}
-            </p>
-          )}
+          {/*
+            Kdy se co platí — vlastní rozpis pod „Celkem", oddělený linkou.
+            Jsou to dvě různé otázky: „Celkem" je cena objednávky, tohle je,
+            co strhne brána teď.
+
+            Jedna věta to neunesla. „Teď zaplatíte zálohu 4 365,-" u košíku
+            s běžným zbožím i zakázkou nebyla pravda ani zpola: v té částce
+            je zboží a doprava placené CELÉ a teprve zbytek je záloha. Proto
+            se rozpis rozpadá na řádky a každý říká, čeho se týká.
+          */}
           {deposit && deposit.now > 0 && (
-            <p className={styles.depositNote} data-testid="recap-deposit">
-              {deposit.later > 0 ? (
+            <dl className={`${styles.totals} ${styles.payPlan}`} data-testid="recap-deposit">
+              <div className={styles.payNow}>
+                <dt>Zaplatíte teď</dt>
+                <dd>{money(deposit.now)}</dd>
+              </div>
+              {/* Rozpad jen tam, kde se opravdu míchá obojí — u samotné
+                  zakázky by řádek „Záloha" jen opakoval číslo nad sebou. */}
+              {(deposit.goodsNow ?? 0) > 0.005 && (deposit.depositNow ?? 0) > 0.005 && (
                 <>
-                  Teď zaplatíte zálohu <strong>{money(deposit.now)}</strong> ·
-                  zbytek {money(deposit.later)} po dokončení zakázky.
-                </>
-              ) : (
-                <>
-                  Teď zaplatíte celou částku <strong>{money(deposit.now)}</strong>.
+                  <div className={styles.paySub}>
+                    <dt>
+                      Zboží a doprava <span>celou cenu</span>
+                    </dt>
+                    <dd>{money(deposit.goodsNow)}</dd>
+                  </div>
+                  <div className={styles.paySub}>
+                    <dt>
+                      Zakázková výroba <span>jen záloha</span>
+                    </dt>
+                    <dd>{money(deposit.depositNow)}</dd>
+                  </div>
                 </>
               )}
+              {deposit.later > 0.005 && (
+                <div className={styles.payLater}>
+                  <dt>Po dokončení zakázky</dt>
+                  <dd>{money(deposit.later)}</dd>
+                </div>
+              )}
+            </dl>
+          )}
+          {/* Cena po domluvě: proč u takového výrobku žádná částka není, a že
+              přijde nad rámec čísel výš. Malým písmem hned pod rozpisem. */}
+          {hasPriceOnRequestLine(cart?.items) && (
+            <p className={styles.sideNote} data-testid="recap-price-on-request">
+              {PRICE_ON_REQUEST_SUMMARY_NOTE}
             </p>
           )}
           {/* Jen pro plátce DPH — viz `lib/util/dph.ts`. Bez daně by ta věta
