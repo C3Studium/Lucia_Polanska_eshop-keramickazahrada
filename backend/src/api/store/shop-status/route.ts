@@ -47,6 +47,15 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
      * chybě je horší než ji nechat.
      */
     company_purchase: settings?.company_purchase_enabled !== false,
+    /*
+     * Kurzy — má je stránka vůbec nabízet?
+     *
+     * Vypnuto vymění termíny a rezervační okno za kontaktní tlačítko. Stejně
+     * jako u nákupu na firmu platí, že selhané čtení nastavení kurzy
+     * NEVYPÍNÁ: chyba na pozadí nemá zavřít stránku, na kterou se někdo
+     * dívá.
+     */
+    courses_enabled: settings?.courses_enabled !== false,
     // Doběrečné — the checkout shows the surcharge next to the dobírka
     // option before it is chosen. Display only: the fee itself is added
     // server-side when the payment session is created (`lib/dobirka-fee.ts`).

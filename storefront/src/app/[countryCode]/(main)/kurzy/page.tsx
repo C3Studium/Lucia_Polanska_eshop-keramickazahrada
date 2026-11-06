@@ -3,6 +3,7 @@ import { listCollections } from "@lib/data/collections"
 import { listCourseTerms } from "@lib/data/courses"
 import { getLegalFacts } from "@lib/data/legal-facts"
 import { getRegion } from "@lib/data/regions"
+import { getShopStatus } from "@lib/data/shop-status"
 
 import Kurzy from "@modules/home/Kurzy"
 import KurzyPodminky from "@modules/kurzy/Podminky"
@@ -30,14 +31,24 @@ export default async function Home(props: {
    * jen redakční část stránky — úvodní text a fotky. Kdyby CMS někdy začalo
    * popisovat termíny, jsou to dva zdroje pravdy o jedné věci.
    */
-  const [region, { collections }, copy, terms, legalFacts] = await Promise.all([
-    getRegion(countryCode),
-    listCollections({ fields: "id, handle, title" }),
-    getPageCopyWithGlobal("kurzy"),
-    listCourseTerms(),
-    // Storno podmínky a e-mail v rezervaci — právní údaje z administrace obchodu.
-    getLegalFacts(),
-  ])
+  const [region, { collections }, copy, terms, legalFacts, shopStatus] =
+    await Promise.all([
+      getRegion(countryCode),
+      listCollections({ fields: "id, handle, title" }),
+      getPageCopyWithGlobal("kurzy"),
+      listCourseTerms(),
+      // Storno podmínky a e-mail v rezervaci — právní údaje z administrace obchodu.
+      getLegalFacts(),
+      // Přepínač „Kurzy v obchodě" z administrace.
+      getShopStatus(),
+    ])
+
+  /*
+   * Vypnuté kurzy stránku neruší, jen z ní zmizí termíny a rezervace
+   * a místo nich zůstane kontakt. Chybějící odpověď kurzy nevypíná — viz
+   * `ShopStatus.courses_enabled`.
+   */
+  const coursesEnabled = shopStatus?.courses_enabled !== false
 
   if (!collections || !region) {
     return null
@@ -45,7 +56,13 @@ export default async function Home(props: {
 
   return (
     <>
-      <Kurzy copy={copy} terms={terms} legalFacts={legalFacts} countryCode={countryCode} />
+      <Kurzy
+        copy={copy}
+        terms={terms}
+        legalFacts={legalFacts}
+        countryCode={countryCode}
+        coursesEnabled={coursesEnabled}
+      />
       {/* Poučení o vyloučení odstoupení (§ 1837 písm. j) OZ) a storno podmínky.
           Za <Kurzy>, protože ta vrací vlastní <main> a do modulu home/Kurzy
           se odsud nesahá; proto je to <aside> s vlastním nadpisem. */}

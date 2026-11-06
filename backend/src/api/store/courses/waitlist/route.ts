@@ -6,6 +6,10 @@ import { seatsLeft } from "../../../../modules/course/pricing"
 import { sendCourseRequestEmail } from "../../../../lib/course-request"
 import { formatCourseDate } from "../../../../lib/course-emails"
 import { notifyMerchant } from "../../../../lib/notify"
+import {
+  COURSES_DISABLED_MESSAGE,
+  areCoursesEnabled,
+} from "../../../../lib/courses-enabled"
 
 /**
  * „Dáme vědět, až se uvolní místo" — the waitlist form on a full term's card.
@@ -74,6 +78,13 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   if (input.website) {
     // A bot told it succeeded just goes away; a bot told it failed retries.
     res.status(201).json({ ok: true })
+    return
+  }
+
+  /* Vypnuté kurzy — hlídat se musí i tady, ne jen u rezervace: na plný termín
+     vede z e-mailu vlastní odkaz. */
+  if (!(await areCoursesEnabled(req.scope))) {
+    res.status(409).json({ message: COURSES_DISABLED_MESSAGE })
     return
   }
 

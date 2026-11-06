@@ -12,6 +12,10 @@ import {
   sendCourseReservationConfirmedEmail,
 } from "../../../../lib/course-emails"
 import { signCourseReservationToken } from "../../../../lib/course-reservation-link"
+import {
+  COURSES_DISABLED_MESSAGE,
+  areCoursesEnabled,
+} from "../../../../lib/courses-enabled"
 import { notifyMerchant } from "../../../../lib/notify"
 import { buildReservationConsents, parseReservation } from "./schema"
 
@@ -73,6 +77,13 @@ export const POST = async (
       message:
         "Přišlo příliš mnoho rezervací krátce po sobě. Zkuste to prosím za chvíli.",
     })
+    return
+  }
+
+  /* Až za honeypotem a limitem: vypnuté kurzy nejsou důvod odpovídat botovi
+     jinak než komukoli jinému. */
+  if (!(await areCoursesEnabled(req.scope))) {
+    res.status(409).json({ message: COURSES_DISABLED_MESSAGE })
     return
   }
 
