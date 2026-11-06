@@ -34,6 +34,7 @@ import ComgatePaymentSelector, {
   type ExtraPaymentOption,
 } from "@modules/common/components/comgate-payment-selector"
 import ProductionPaymentModeChoice from "@modules/checkout/components/production-payment-mode"
+import { chargeSplit } from "@modules/checkout/components/pre-contract-info"
 import { selectProductionPaymentMode } from "@lib/data/made-to-order-actions"
 import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 import Divider from "@modules/common/components/divider"
@@ -97,12 +98,19 @@ const Payment = ({
   const depositByCard = Boolean(productionMode?.has_made_to_order)
 
   /*
-   * Cena po domluvě a k úhradě 0 (jen takový kus + osobní odběr): ComGate
-   * 0 Kč nevezme a kartu tu chtít nemá smysl — relace `pp_system_default`
-   * a rovnou do Přehledu. Jakmile je k úhradě víc (běžné zboží, doprava),
-   * platí se normálně kartou jako u každé zakázky.
+   * Cena po domluvě a k úhradě 0: ComGate 0 Kč nevezme a kartu tu chtít nemá
+   * smysl — relace `pp_system_default` a rovnou do Přehledu. Jakmile je
+   * k úhradě víc (běžné zboží), platí se normálně kartou jako u zakázky.
+   *
+   * Rozhoduje částka spočítaná serverem, ne součet košíku. Od 6. 11. 2026 si
+   * i kus s cenou po domluvě vybírá dopravu, a poštovné v takovém košíku padá
+   * do doplatku — zvolená Česká pošta tedy `cart.total` zvedne, ale k úhradě
+   * je pořád nula. Bez toho by pokladna poslala ComGate platbu za 0 Kč.
    */
-  const zeroCharge = isZeroChargeCart(cart)
+  const zeroCharge = isZeroChargeCart(
+    cart,
+    chargeSplit(productionMode, cart?.total ?? 0).now
+  )
   const zeroCopy = zeroChargeCopy(cart)
 
   /*
