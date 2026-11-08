@@ -355,6 +355,12 @@ function RezervaceModalPanel({
   const [email, setEmail] = useState(draft?.email ?? "")
   const [phone, setPhone] = useState(draft?.phone ?? "")
   const [partySize, setPartySize] = useState(draft?.partySize ?? 1)
+  /*
+   * Kolik z nich jsou děti (8. 11. 2026). Druhé počítadlo se ukáže jen
+   * u termínu, který dětskou cenu opravdu má — jinak by zákazník vyplňoval
+   * údaj, který nic nemění.
+   */
+  const [children, setChildren] = useState(0)
   const [fieldErrors, setFieldErrors] = useState<{
     name?: string
     email?: string
@@ -536,14 +542,14 @@ function RezervaceModalPanel({
     const requestId = ++quoteRequest.current
     setQuoteLoading(true)
     const timeout = window.setTimeout(async () => {
-      const result = await quoteCourseTerm(selected.id, partySize)
+      const result = await quoteCourseTerm(selected.id, partySize, children)
       if (quoteRequest.current === requestId) {
         setQuote(result)
         setQuoteLoading(false)
       }
     }, 250)
     return () => window.clearTimeout(timeout)
-  }, [selected, partySize])
+  }, [selected, partySize, children])
 
   /* ---------------------------------------------------------- movement */
   const go = (next: Step) => {
@@ -629,6 +635,7 @@ function RezervaceModalPanel({
       email: email.trim(),
       phone: phone.trim(),
       party_size: partySize,
+      children,
       payment_method: paymentMethod,
       website,
       terms_accepted: termsAccepted,
@@ -1332,9 +1339,16 @@ function RezervaceModalPanel({
                               type="button"
                               aria-label="Méně osob"
                               disabled={partySize <= 1}
-                              onClick={() =>
-                                setPartySize((value) => Math.max(1, value - 1))
-                              }
+                              onClick={() => {
+                                /* S ubývajícím počtem osob ubývají i děti —
+                                   jinak by počítadlo ukazovalo jedno číslo
+                                   a v paměti drželo jiné. */
+                                setPartySize((value) => {
+                                  const dalsi = Math.max(1, value - 1)
+                                  setChildren((deti) => Math.min(deti, dalsi))
+                                  return dalsi
+                                })
+                              }}
                             >
                               −
                             </button>
@@ -1364,6 +1378,51 @@ function RezervaceModalPanel({
                             </p>
                           ) : null}
                         </div>
+
+                        {/*
+                          Z kolika z nich jsou děti. Jen u termínu s dětskou
+                          cenou — jinde by to bylo pole, které nic nemění.
+                          Strop je počet osob: víc dětí než lidí nedává smysl
+                          a server by to stejně ořízl.
+                        */}
+                        {selected.price_child != null ? (
+                          <div className="kurzyModal__count">
+                            <span id="kurzy-children">
+                              Z toho dětí do {selected.child_max_age ?? 15} let
+                            </span>
+                            <div>
+                              <button
+                                type="button"
+                                aria-label="Méně dětí"
+                                disabled={children <= 0}
+                                onClick={() =>
+                                  setChildren((value) => Math.max(0, value - 1))
+                                }
+                              >
+                                −
+                              </button>
+                              <output aria-labelledby="kurzy-children">
+                                {Math.min(children, partySize)}
+                              </output>
+                              <button
+                                type="button"
+                                aria-label="Více dětí"
+                                disabled={children >= partySize}
+                                onClick={() =>
+                                  setChildren((value) =>
+                                    Math.min(partySize, value + 1)
+                                  )
+                                }
+                              >
+                                +
+                              </button>
+                            </div>
+                            <p className="kurzyModal__countHint">
+                              Dítě platí {selected.price_child} Kč místo{" "}
+                              {selected.price_single} Kč.
+                            </p>
+                          </div>
+                        ) : null}
                       </div>
 
                       {/* Týž žebříček jako na kroku 1, teď ale se zvýrazněnou

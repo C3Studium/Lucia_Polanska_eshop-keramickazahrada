@@ -19,6 +19,8 @@ export type ReserveSeatsInput = {
   email?: string | null
   phone?: string | null
   party_size: number
+  /** Kolik z nich jsou děti — platí dětskou cenu termínu. */
+  children?: number
   payment_method: "online" | "on_site"
   source: "web" | "manual"
   customer_id?: string | null
@@ -113,7 +115,12 @@ export default class CourseModuleService extends MedusaService({
       )
     }
 
-    const quote = quoteFor(partySize, term)
+    /* Dětí nemůže být víc než lidí — `quoteFor` to ořízne, ale ukládá se
+       totéž číslo, se kterým se počítalo, ať sedí doklad s rezervací. */
+    const quote = quoteFor(
+      { people: partySize, children: Math.trunc(Number(input.children ?? 0)) },
+      term
+    )
 
     // Stored lowercased so the account page („Kurzy" v účtu) can match guest
     // bookings against the account's e-mail with a plain equality filter.
@@ -127,6 +134,7 @@ export default class CourseModuleService extends MedusaService({
         email,
         phone: input.phone || null,
         party_size: partySize,
+        children: quote.children,
         pricing_tier: quote.tier,
         total_price: quote.total,
         payment_method: input.payment_method,

@@ -99,6 +99,7 @@ export const POST = async (
       email: input.email,
       phone: input.phone,
       party_size: input.party_size,
+      children: input.children ?? 0,
       payment_method: input.payment_method,
       source: "web",
       customer_id: customerId,
