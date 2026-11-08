@@ -51,6 +51,9 @@ type WizardDraft = {
   status: "draft" | "published";
   price_single: string;
   price_two: string;
+  volume_pricing_enabled: boolean;
+  price_child: string;
+  child_max_age: string;
   group_min: string;
   price_group_per_person: string;
 };
@@ -65,6 +68,9 @@ const emptyDraft: WizardDraft = {
   status: "published",
   price_single: "",
   price_two: "",
+  volume_pricing_enabled: true,
+  price_child: "",
+  child_max_age: "",
   group_min: "",
   price_group_per_person: "",
 };
@@ -239,6 +245,9 @@ export const CourseTermWizard = ({
           capacity,
           price_single: priceSingle,
           price_two: parseAmount(draft.price_two),
+          volume_pricing_enabled: draft.volume_pricing_enabled,
+          price_child: parseAmount(draft.price_child),
+          child_max_age: parseAmount(draft.child_max_age),
           group_min: groupMin,
           price_group_per_person: groupPrice,
           status: draft.status,
@@ -480,6 +489,61 @@ export const CourseTermWizard = ({
                   <Text size="xsmall" className="text-ui-fg-muted">
                     Kolik zaplatí ten, kdo přijde sám.
                   </Text>
+                </div>
+                {/*
+                  Dětská cena hned vedle dospělé, protože tak to majitelka
+                  říká i zákazníkovi: „dospělák 500, děti 430 za lekci".
+                  Prázdné = děti platí jako dospělí, nic se nedopočítává.
+                */}
+                <div className="flex flex-col gap-y-2">
+                  <Label htmlFor="wizard-price-child">
+                    Cena za dítě — za osobu (Kč)
+                  </Label>
+                  <Input
+                    id="wizard-price-child"
+                    inputMode="decimal"
+                    placeholder="nepovinné"
+                    value={draft.price_child}
+                    onChange={(event) => set({ price_child: event.target.value })}
+                  />
+                  <Text size="xsmall" className="text-ui-fg-muted">
+                    Nevyplněné = dítě platí jako dospělý.
+                  </Text>
+                </div>
+                <div className="flex flex-col gap-y-2">
+                  <Label htmlFor="wizard-child-age">Dítě do (let)</Label>
+                  <Input
+                    id="wizard-child-age"
+                    inputMode="numeric"
+                    placeholder="15"
+                    value={draft.child_max_age}
+                    onChange={(event) => set({ child_max_age: event.target.value })}
+                  />
+                  <Text size="xsmall" className="text-ui-fg-muted">
+                    Nevyplněné = do 15 let.
+                  </Text>
+                </div>
+                {/*
+                  Vypínač množstevní slevy. U veřejných kurzů ji majitelka
+                  nechce vůbec — a mazat kvůli tomu obě ceny by znamenalo
+                  napsat je znovu, až je zase zapne. Vypnuté je tedy jen
+                  přestane nabízet.
+                */}
+                <div className="col-span-full flex items-center justify-between gap-x-4 rounded-lg border p-3">
+                  <div>
+                    <Label htmlFor="wizard-volume">Množstevní sleva</Label>
+                    <Text size="xsmall" className="text-ui-fg-muted">
+                      Vypnuté = jedna cena za osobu, ať přijde kdokoli. Ceny
+                      níž zůstanou uložené, jen se nenabídnou.
+                    </Text>
+                  </div>
+                  <Switch
+                    id="wizard-volume"
+                    checked={draft.volume_pricing_enabled}
+                    onCheckedChange={(hodnota) =>
+                      set({ volume_pricing_enabled: hodnota })
+                    }
+                  />
                 </div>
                 <div className="flex flex-col gap-y-2">
                   <Label htmlFor="wizard-price-two">
