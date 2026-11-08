@@ -6,6 +6,21 @@ import { HttpTypes } from "@medusajs/types"
 import { listCategories } from "./categories"
 import { listCollections } from "./collections"
 import { getAuthHeaders, getCacheOptions } from "./cookies"
+
+/**
+ * Pojistka na katalog (8. 11. 2026).
+ *
+ * Katalog se čte s `force-cache` a čistí se klepnutím z administrace
+ * (`subscribers/revalidate-storefront.ts` → `/api/revalidate`). Jenže
+ * `force-cache` BEZ lhůty znamená, že když to klepnutí jednou selže —
+ * přepíše se adresa obchodu, zmizí `REVALIDATE_SECRET`, spadne síť — zůstane
+ * stará podoba stránek viset navždy. Přesně to se stalo po přesunu domény:
+ * majitelka den upravovala ceny, názvy a fotky a v obchodě se neukázalo nic.
+ *
+ * Pět minut je kompromis: klepnutí z administrace dál funguje okamžitě,
+ * tohle je jen strop, po kterém se obchod vzpamatuje i bez něj.
+ */
+const KATALOG_REVALIDATE = 300
 import { getRegion, retrieveRegion } from "./regions"
 import { StoreProductReview } from "../../types/global"
 import { toCzechErrorMessage } from "@lib/util/error-messages"
@@ -83,7 +98,10 @@ export const listProducts = async ({
 
   // Živá data se nekešují ani netagují — jinak by se tag revalidace minul
   // s dotazem a Next by stejně servíroval uloženou podobu.
-  const next = cacheMode === "no-store" ? {} : { ...(await getCacheOptions("products")) }
+  const next =
+    cacheMode === "no-store"
+      ? {}
+      : { ...(await getCacheOptions("products")), revalidate: KATALOG_REVALIDATE }
 
   return sdk.client
     .fetch<{ products: (HttpTypes.StoreProduct & { bundle?: Omit<BundleProduct, "items"> })[]; count: number }>(
@@ -750,6 +768,7 @@ export const retrieveProduct = async (
 
   const next = {
     ...(await getCacheOptions(`product-${id}`)),
+    revalidate: KATALOG_REVALIDATE,
   }
 
   return sdk.client
