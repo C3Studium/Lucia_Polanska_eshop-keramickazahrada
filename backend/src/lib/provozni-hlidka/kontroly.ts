@@ -620,6 +620,218 @@ const meny: Kontrola = {
 }
 
 /** Všechny kontroly v pořadí, v jakém se čtou v souhrnu. */
+
+/**
+ * Obnova katalogu v obchodě — klepnutí z administrace.
+ *
+ * ## Proč to musí hlídat někdo zvenčí
+ *
+ * Katalog obchodu se čte z cache a čistí ho `subscribers/revalidate-storefront`
+ * klepnutím na `/api/revalidate`. Celý ten řetěz drží na dvou proměnných —
+ * adrese obchodu a sdíleném tajemství — a když kterákoli z nich chybí nebo je
+ * špatná, **nic se nestane a nikdo se to nedozví**: zápis do administrace
+ * proběhne, subscriber si chybu jen zaloguje (schválně, aby neshodil zápis),
+ * a obchod dál ukazuje stará data.
+ *
+ * Změřeno 8. 11. 2026: majitelka den upravovala ceny, názvy a fotky, založila
+ * nový výrobek — a v obchodě se neobjevilo nic. `REVALIDATE_SECRET` nebyl
+ * nastavený na obchodě, takže routa odpovídala 503. Nikde žádný alarm.
+ *
+ * ## Proč zrovna takhle
+ *
+ * Posílá se PRÁZDNÝ seznam cest, takže kontrola nic nemaže — jen projde touž
+ * cestou jako skutečné klepnutí. Rozliší se tím všechno, co se může pokazit:
+ * špatná adresa (404 nebo cizí web), chybějící tajemství (503), neshodné
+ * tajemství (401), nedostupný obchod (výjimka).
+ */
+const obnovaKatalogu: Kontrola = {
+  klic: "obnova-katalogu",
+  nazev: "Obnova katalogu v obchodě",
+  spust: async (): Promise<NalezKontroly> => {
+    const zaklad = (
+      process.env.STOREFRONT_PUBLIC_URL ||
+      process.env.MEDUSA_STOREFRONT_URL ||
+      ""
+    ).replace(/\/+$/, "")
+    const tajemstvi = process.env.REVALIDATE_SECRET
+
+    if (!zaklad) {
+      return {
+        stav: "nenastaveno",
+        zprava: "chybí STOREFRONT_PUBLIC_URL i MEDUSA_STOREFRONT_URL",
+      }
+    }
+    if (!tajemstvi) {
+      return {
+        stav: "chyba",
+        zprava: "chybí REVALIDATE_SECRET — obchod se po změnách v administraci neobnoví",
+        detail: [
+          "Tajemství musí být STEJNÉ na backendu i na obchodě.",
+          "Bez něj obchod ukazuje staré ceny, názvy i fotky, dokud cache sama nevyprší.",
+        ],
+      }
+    }
+
+    const url = `${zaklad}/api/revalidate`
+    try {
+      const odpoved = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-revalidate-secret": tajemstvi,
+        },
+        /* Prázdný seznam = projít cestou, ale nic nezahodit. */
+        body: JSON.stringify({ paths: [] }),
+        signal: AbortSignal.timeout(20_000),
+      })
+
+      if (!odpoved.ok) {
+        const telo = (await odpoved.text().catch(() => "")).slice(0, 300)
+        return {
+          stav: "chyba",
+          zprava: `${url} odpovídá ${odpoved.status}`,
+          detail: [
+            odpoved.status === 401
+              ? "Tajemství se neshoduje — backend a obchod mají každý jiné."
+              : odpoved.status === 404
+                ? "Na téhle adrese obchod nestojí (404). Ukazuje STOREFRONT_PUBLIC_URL na starý web?"
+                : `HTTP ${odpoved.status} ${odpoved.statusText}`,
+            telo || "(prázdná odpověď)",
+          ],
+        }
+      }
+      return { stav: "ok", zprava: "obchod obnovu přijímá" }
+    } catch (error) {
+      return {
+        stav: "chyba",
+        zprava: `${url} neodpověděla`,
+        detail: [String((error as Error)?.message ?? error)],
+      }
+    }
+  },
+}
+
+/**
+ * Spárování služeb — souhlasí si backend a obchod adresami?
+ *
+ * ## Proč zrovna takhle
+ *
+ * Obě služby se na sebe odkazují proměnnými a obě umí běžet dál, i když se ty
+ * odkazy rozejdou — jen přestane fungovat něco, co nikomu nehlásí chybu.
+ * Měřit to zvenčí nejde: z jedné strany není vidět, co si myslí druhá.
+ *
+ * Proto se každá umí ohlásit (`/hooks/parovani` a `/api/parovani`) a tahle
+ * kontrola obě odpovědi porovná křížem:
+ *
+ * - adresa obchodu, na kterou klepe backend  ==  za koho se obchod vydává
+ * - adresa backendu, ze které obchod čte      ==  za koho se vydává backend
+ *
+ * Nesoulad se vypíše s OBĚMA hodnotami, takže je hned vidět, která strana je
+ * pozadu. Změřeno 8. 11. 2026: backend klepal na starý WordPress na apexu,
+ * obchod neměl tajemství, a den práce majitelky se v obchodě neprojevil.
+ */
+const parovani: Kontrola = {
+  klic: "parovani",
+  nazev: "Spárování služeb",
+  spust: async (): Promise<NalezKontroly> => {
+    const tajemstvi =
+      process.env.SERVICE_PAIR_SECRET || process.env.REVALIDATE_SECRET || ""
+    const obchodUrl = (
+      process.env.STOREFRONT_PUBLIC_URL ||
+      process.env.MEDUSA_STOREFRONT_URL ||
+      ""
+    ).replace(/\/+$/, "")
+    const jaUrl = (process.env.BACKEND_PUBLIC_URL || "").replace(/\/+$/, "")
+
+    if (!tajemstvi) {
+      return {
+        stav: "chyba",
+        zprava: "chybí SERVICE_PAIR_SECRET i REVALIDATE_SECRET",
+        detail: [
+          "Tajemství musí být STEJNÉ na backendu i na obchodě.",
+          "Bez něj nejde ověřit, že si služby rozumí — a obchod se po změnách v administraci neobnoví.",
+        ],
+      }
+    }
+    if (!obchodUrl) {
+      return { stav: "nenastaveno", zprava: "chybí STOREFRONT_PUBLIC_URL" }
+    }
+
+    const url = `${obchodUrl}/api/parovani`
+    let odpoved: Response
+    try {
+      odpoved = await fetch(url, {
+        headers: { "x-pair-secret": tajemstvi },
+        signal: AbortSignal.timeout(20_000),
+      })
+    } catch (error) {
+      return {
+        stav: "chyba",
+        zprava: `${url} neodpověděla`,
+        detail: [String((error as Error)?.message ?? error)],
+      }
+    }
+
+    if (!odpoved.ok) {
+      const telo = (await odpoved.text().catch(() => "")).slice(0, 300)
+      return {
+        stav: "chyba",
+        zprava: `${url} odpovídá ${odpoved.status}`,
+        detail: [
+          odpoved.status === 401
+            ? "Tajemství se neshoduje — každá služba má jiné."
+            : odpoved.status === 404
+              ? "Na téhle adrese obchod nestojí. Ukazuje STOREFRONT_PUBLIC_URL na starý web?"
+              : `HTTP ${odpoved.status} ${odpoved.statusText}`,
+          telo || "(prázdná odpověď)",
+        ],
+      }
+    }
+
+    const hlaseni = (await odpoved.json().catch(() => null)) as {
+      ja?: string | null
+      backend?: string | null
+      revalidace?: boolean
+    } | null
+
+    if (!hlaseni) {
+      return { stav: "chyba", zprava: `${url} nevrátila čitelnou odpověď` }
+    }
+
+    const nesoulady: string[] = []
+
+    /* Klepe backend tam, kde obchod opravdu stojí? */
+    if (hlaseni.ja && hlaseni.ja !== obchodUrl) {
+      nesoulady.push(
+        `Backend klepe na ${obchodUrl}, ale obchod se vydává za ${hlaseni.ja}.`
+      )
+    }
+    /* Čte obchod z adresy, za kterou se backend vydává? */
+    if (jaUrl && hlaseni.backend && hlaseni.backend !== jaUrl) {
+      nesoulady.push(
+        `Obchod čte z ${hlaseni.backend}, ale backend se vydává za ${jaUrl}.`
+      )
+    }
+    /* Obě strany musí mít čím klepnout a co přijmout. */
+    if (!process.env.REVALIDATE_SECRET) {
+      nesoulady.push("Backend nemá REVALIDATE_SECRET — nemá čím klepnout.")
+    }
+    if (hlaseni.revalidace === false) {
+      nesoulady.push("Obchod nemá REVALIDATE_SECRET — obnovu katalogu odmítne.")
+    }
+
+    if (nesoulady.length) {
+      return {
+        stav: "chyba",
+        zprava: `služby si nerozumí (${nesoulady.length})`,
+        detail: nesoulady,
+      }
+    }
+
+    return { stav: "ok", zprava: "adresy i tajemství sedí" }
+  },
+}
+
 export const KONTROLY: Kontrola[] = [
   databaze,
   obchod,
@@ -630,5 +842,7 @@ export const KONTROLY: Kontrola[] = [
   zasilky,
   sklad,
   meny,
+  obnovaKatalogu,
+  parovani,
   denik,
 ]

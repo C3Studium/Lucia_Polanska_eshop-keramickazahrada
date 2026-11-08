@@ -25,7 +25,21 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
  * nespravil.
  */
 
-const CESTY_KATALOGU = ["/[countryCode]/store", "/[countryCode]"]
+const CESTY_KATALOGU = [
+  /* Výpis obchodu a úvodní stránka. */
+  "/[countryCode]/store",
+  "/[countryCode]",
+  /*
+   * Detail výrobku (8. 11. 2026). Chyběl, a byla to nejvíc vidět mezera:
+   * majitelka změnila cenu, název nebo fotku, výpis se obnovil — a stránka
+   * výrobku pořád ukazovala staré. `revalidatePath` se vzorem routy zahodí
+   * všechny její stránky najednou, takže není co vyjmenovávat.
+   */
+  "/[countryCode]/products/[handle]",
+  /* Kategorie a kolekce vypisují tytéž výrobky, takže stárnou stejně. */
+  "/[countryCode]/categories/[...category]",
+  "/[countryCode]/collections/[handle]",
+]
 
 export default async function revalidateStorefront({
   container,

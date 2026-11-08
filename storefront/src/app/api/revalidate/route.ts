@@ -28,7 +28,21 @@ import { NextResponse } from "next/server"
  */
 
 /** Co se zahazuje, když volající neřekne jinak. */
-const VYCHOZI_CESTY = ["/[countryCode]/store", "/[countryCode]"]
+const VYCHOZI_CESTY = [
+  /* Výpis obchodu a úvodní stránka. */
+  "/[countryCode]/store",
+  "/[countryCode]",
+  /*
+   * Detail výrobku (8. 11. 2026). Chyběl, a byla to nejvíc vidět mezera:
+   * majitelka změnila cenu, název nebo fotku, výpis se obnovil — a stránka
+   * výrobku pořád ukazovala staré. `revalidatePath` se vzorem routy zahodí
+   * všechny její stránky najednou, takže není co vyjmenovávat.
+   */
+  "/[countryCode]/products/[handle]",
+  /* Kategorie a kolekce vypisují tytéž výrobky, takže stárnou stejně. */
+  "/[countryCode]/categories/[...category]",
+  "/[countryCode]/collections/[handle]",
+]
 
 export async function POST(request: Request) {
   const tajemstvi = process.env.REVALIDATE_SECRET
