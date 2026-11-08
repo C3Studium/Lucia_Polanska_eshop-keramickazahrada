@@ -1,4 +1,5 @@
 import {
+  childMaxAge,
   fitsCapacity,
   hasGroupPricing,
   hasPairPricing,
@@ -7,6 +8,7 @@ import {
   seatsLeft,
   seatsTaken,
   toAmount,
+  volumePricingOn,
 } from "../pricing"
 
 /**
@@ -79,11 +81,15 @@ describe("quoteFor", () => {
     expect(quoteFor(1, fullRules)).toEqual({
       tier: "single",
       per_person: 1500,
+      child_per_person: 1500,
+      children: 0,
       total: 1500,
     })
     expect(quoteFor(3, fullRules)).toEqual({
       tier: "single",
       per_person: 1500,
+      child_per_person: 1500,
+      children: 0,
       total: 4500,
     })
   })
@@ -92,6 +98,8 @@ describe("quoteFor", () => {
     expect(quoteFor(2, fullRules)).toEqual({
       tier: "pair",
       per_person: 1300,
+      child_per_person: 1300,
+      children: 0,
       total: 2600,
     })
   })
@@ -100,11 +108,15 @@ describe("quoteFor", () => {
     expect(quoteFor(4, fullRules)).toEqual({
       tier: "group",
       per_person: 1100,
+      child_per_person: 1100,
+      children: 0,
       total: 4400,
     })
     expect(quoteFor(7, fullRules)).toEqual({
       tier: "group",
       per_person: 1100,
+      child_per_person: 1100,
+      children: 0,
       total: 7700,
     })
   })
@@ -194,5 +206,77 @@ describe("toAmount", () => {
     expect(toAmount({ value: "1200" })).toBe(1200)
     expect(toAmount(null)).toBe(0)
     expect(toAmount("nonsense")).toBe(0)
+  })
+})
+
+describe("vypínač množstevní slevy a dětská cena (8. 11. 2026)", () => {
+  const termin = {
+    price_single: 500,
+    price_two: 450,
+    group_min: 3,
+    price_group_per_person: 350,
+  }
+
+  it("bez vypínače platí ceny jako dřív", () => {
+    /* Termíny založené před tímhle sloupcem ho nemají — a nesmí kvůli tomu
+       zlevnit ani zdražit. */
+    expect(quoteFor(1, termin).total).toBe(500)
+    expect(quoteFor(2, termin).total).toBe(900)
+    expect(quoteFor(3, termin).total).toBe(1050)
+  })
+
+  it("vypnutá sleva znamená jednu cenu za osobu", () => {
+    const verejny = { ...termin, volume_pricing_enabled: false }
+    expect(quoteFor(1, verejny).total).toBe(500)
+    expect(quoteFor(2, verejny).total).toBe(1000)
+    expect(quoteFor(5, verejny).total).toBe(2500)
+    /* Ceny za dva a za skupinu zůstaly uložené, jen se nenabízejí. */
+    expect(hasPairPricing(verejny)).toBe(false)
+    expect(hasGroupPricing(verejny)).toBe(false)
+    expect(verejny.price_two).toBe(450)
+  })
+
+  it("vypínač přijme i text z databáze", () => {
+    expect(volumePricingOn({ price_single: 500, volume_pricing_enabled: "false" })).toBe(false)
+    expect(volumePricingOn({ price_single: 500, volume_pricing_enabled: "true" })).toBe(true)
+    expect(volumePricingOn({ price_single: 500 })).toBe(true)
+  })
+
+  it("dítě platí svou cenu, dospělý svou", () => {
+    /* Přání majitelky: dospělák 500, dítě 430 za lekci. */
+    const verejny = {
+      price_single: 500,
+      volume_pricing_enabled: false,
+      price_child: 430,
+    }
+    expect(quoteFor({ people: 1, children: 1 }, verejny).total).toBe(430)
+    expect(quoteFor({ people: 2, children: 1 }, verejny).total).toBe(930)
+    expect(quoteFor({ people: 3, children: 2 }, verejny).total).toBe(1360)
+  })
+
+  it("bez dětské ceny platí dítě jako dospělý", () => {
+    expect(quoteFor({ people: 2, children: 1 }, termin).total).toBe(900)
+  })
+
+  it("dětí nemůže být víc než lidí ani záporně", () => {
+    const verejny = { price_single: 500, volume_pricing_enabled: false, price_child: 430 }
+    expect(quoteFor({ people: 2, children: 5 }, verejny).total).toBe(860)
+    expect(quoteFor({ people: 2, children: -3 }, verejny).total).toBe(1000)
+  })
+
+  it("pásmo se počítá z celé party, sleva za dítě se přičte zvlášť", () => {
+    /* Tři lidé = skupinová cena 350; jedno z nich dítě za 430 by bylo DRAŽ,
+       ale to je rozhodnutí majitelky — dvě slevy se nesčítají a dětská je
+       vlastní cena, ne procento. Test to drží, aby se to nezměnilo omylem. */
+    const quote = quoteFor({ people: 3, children: 1 }, { ...termin, price_child: 430 })
+    expect(quote.tier).toBe("group")
+    expect(quote.per_person).toBe(350)
+    expect(quote.child_per_person).toBe(430)
+    expect(quote.total).toBe(1130)
+  })
+
+  it("věk dítěte má výchozí 15 let", () => {
+    expect(childMaxAge({ price_single: 500 })).toBe(15)
+    expect(childMaxAge({ price_single: 500, child_max_age: 12 })).toBe(12)
   })
 })

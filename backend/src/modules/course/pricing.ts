@@ -25,12 +25,26 @@ export type CoursePricingRules = {
   price_two?: unknown
   group_min?: unknown
   price_group_per_person?: unknown
+  /**
+   * Vypínač množstevní slevy (8. 11. 2026). Vypnuté = platí se za osobu, ať
+   * přijde kdokoli; ceny za dva a za skupinu zůstanou uložené, jen se
+   * nepoužijí. Nevyplněné znamená ZAPNUTO, aby starý termín nezlevnil ani
+   * nezdražil tím, že přibyl sloupec.
+   */
+  volume_pricing_enabled?: unknown
+  /** Cena za dítě (za osobu), a do kolika let se za dítě počítá. */
+  price_child?: unknown
+  child_max_age?: unknown
 }
 
 export type CourseQuote = {
   tier: PricingTier
-  /** CZK per person for the resolved tier. */
+  /** CZK per person for the resolved tier — cena DOSPĚLÉHO. */
   per_person: number
+  /** CZK za dítě. Bez dětské ceny je to totéž co `per_person`. */
+  child_per_person: number
+  /** Kolik z party se počítá jako děti (0 až počet osob). */
+  children: number
   /** CZK for the whole party — what the reservation stores. */
   total: number
 }
@@ -54,12 +68,38 @@ export const toAmount = (value: unknown): number => {
 
 const round2 = (value: number): number => Math.round(value * 100) / 100
 
+/**
+ * Je množstevní sleva zapnutá?
+ *
+ * Chybějící hodnota znamená ANO: termíny založené před 8. 11. 2026 sloupec
+ * nemají a jejich ceny za dva a za skupinu se nesmí přestat nabízet jen
+ * proto, že přibyl vypínač.
+ */
+export const volumePricingOn = (rules: CoursePricingRules): boolean => {
+  const hodnota = rules.volume_pricing_enabled
+  if (hodnota === null || hodnota === undefined) return true
+  if (typeof hodnota === "boolean") return hodnota
+  const text = String(hodnota).trim().toLowerCase()
+  return !(text === "false" || text === "0" || text === "")
+}
+
+/** Dětská cena je vyplněná a kladná. */
+export const hasChildPricing = (rules: CoursePricingRules): boolean =>
+  toAmount(rules.price_child) > 0
+
+/** Do kolika let se platí dětská cena. Nevyplněné = 15 (přání majitelky). */
+export const childMaxAge = (rules: CoursePricingRules): number => {
+  const vek = Math.trunc(toAmount(rules.child_max_age))
+  return vek > 0 ? vek : 15
+}
+
 /** A usable pair price exists — positive, not merely a null column. */
 export const hasPairPricing = (rules: CoursePricingRules): boolean =>
-  toAmount(rules.price_two) > 0
+  volumePricingOn(rules) && toAmount(rules.price_two) > 0
 
 /** Usable group pricing exists: a threshold of at least 2 and a positive rate. */
 export const hasGroupPricing = (rules: CoursePricingRules): boolean => {
+  if (!volumePricingOn(rules)) return false
   const min = toAmount(rules.group_min)
   return min >= 2 && toAmount(rules.price_group_per_person) > 0
 }
@@ -77,14 +117,38 @@ export const pricingTierFor = (
   return "single"
 }
 
+/**
+ * Kdo přišel. Číslo je zkratka pro „samí dospělí" — tak to volá většina
+ * míst a nemusí se kvůli dětem přepisovat.
+ */
+export type CourseParty = number | { people: number; children?: number }
+
 export const quoteFor = (
-  partySize: number,
+  party: CourseParty,
   rules: CoursePricingRules
 ): CourseQuote => {
+  const partySize =
+    typeof party === "number" ? party : Math.trunc(toAmount(party.people))
+
   if (!Number.isInteger(partySize) || partySize < 1) {
     throw new Error("Party size must be a whole number of at least 1")
   }
 
+  /*
+   * Dětí nemůže být víc než lidí a nemůže jich být záporně. Ořezat je tady
+   * je bezpečnější než věřit volajícímu: tenhle výpočet rozhoduje o tom, co
+   * se zákazníkovi strhne.
+   */
+  const deti =
+    typeof party === "number"
+      ? 0
+      : Math.min(Math.max(0, Math.trunc(toAmount(party.children))), partySize)
+
+  /*
+   * Pásmo se počítá z CELÉ party, dítě nevyjímaje: na kurz přišli tři lidé,
+   * ať je mezi nimi dítě nebo ne. Dětská sleva se pak uplatní na jejich
+   * místa zvlášť — jsou to dvě různé slevy a nemají si brát jedna druhé.
+   */
   const tier = pricingTierFor(partySize, rules)
   const perPerson =
     tier === "pair"
@@ -93,10 +157,17 @@ export const quoteFor = (
         ? toAmount(rules.price_group_per_person)
         : toAmount(rules.price_single)
 
+  /* Bez vyplněné dětské ceny platí dítě jako dospělý — nic se nevymýšlí. */
+  const perChild = hasChildPricing(rules)
+    ? toAmount(rules.price_child)
+    : perPerson
+
   return {
     tier,
     per_person: round2(perPerson),
-    total: round2(perPerson * partySize),
+    child_per_person: round2(perChild),
+    children: deti,
+    total: round2(perPerson * (partySize - deti) + perChild * deti),
   }
 }
 

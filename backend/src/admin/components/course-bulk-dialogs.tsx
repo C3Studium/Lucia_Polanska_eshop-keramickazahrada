@@ -3,6 +3,7 @@ import {
   Drawer,
   Input,
   Label,
+  Switch,
   Text,
   Textarea,
   toast,
@@ -38,6 +39,9 @@ export type BulkTerm = ScopeTerm & {
   price_two: number | null;
   group_min: number | null;
   price_group_per_person: number | null;
+  volume_pricing_enabled?: boolean | null;
+  price_child?: number | null;
+  child_max_age?: number | null;
   note: string | null;
 };
 
@@ -73,6 +77,10 @@ type PricingDraft = {
   price_two: string;
   group_min: string;
   price_group_per_person: string;
+  /* Vypínač množstevní slevy a dětská cena (8. 11. 2026). */
+  volume_pricing_enabled: boolean;
+  price_child: string;
+  child_max_age: string;
 };
 
 const pricingDraftOf = (term: BulkTerm): PricingDraft => ({
@@ -80,6 +88,11 @@ const pricingDraftOf = (term: BulkTerm): PricingDraft => ({
   price_two: amountToInput(term.price_two),
   group_min: amountToInput(term.group_min),
   price_group_per_person: amountToInput(term.price_group_per_person),
+  /* Chybějící sloupec u starého termínu znamená zapnuto — stejně jako
+     v `modules/course/pricing.ts`, ať admin a výpočet neříkají každý jinak. */
+  volume_pricing_enabled: term.volume_pricing_enabled !== false,
+  price_child: amountToInput(term.price_child ?? null),
+  child_max_age: amountToInput(term.child_max_age ?? null),
 });
 
 /** The tiers restated as arithmetic — labels alone leave „za dva = dohromady?" open. */
@@ -138,7 +151,16 @@ export const CoursePricingDrawer = ({
    * term, changing nothing but the pair price and applying it to the whole
    * autumn must not quietly drag every other term's single price to 500.
    */
-  const patch: Record<string, number | null> = {};
+  const patch: Record<string, number | boolean | null> = {};
+  if (draft.volume_pricing_enabled !== baseline.volume_pricing_enabled) {
+    patch.volume_pricing_enabled = draft.volume_pricing_enabled;
+  }
+  if (draft.price_child !== baseline.price_child) {
+    patch.price_child = parseAmount(draft.price_child);
+  }
+  if (draft.child_max_age !== baseline.child_max_age) {
+    patch.child_max_age = parseAmount(draft.child_max_age);
+  }
   if (draft.price_single !== baseline.price_single) {
     patch.price_single = parseAmount(draft.price_single);
   }
@@ -157,7 +179,11 @@ export const CoursePricingDrawer = ({
   if (!Object.keys(patch).length) {
     problems.push("Zatím jste žádnou cenu nezměnili.");
   }
-  if (patch.price_single !== undefined && (patch.price_single ?? -1) < 0) {
+  if (
+    typeof patch.price_single === "number"
+      ? patch.price_single < 0
+      : patch.price_single === null
+  ) {
     problems.push("Cena za jednoho musí být číslo.");
   }
   const groupMin = "group_min" in patch ? patch.group_min : term.group_min;
@@ -231,6 +257,48 @@ export const CoursePricingDrawer = ({
                 <Text size="xsmall" className="text-ui-fg-muted">
                   Kolik zaplatí ten, kdo přijde sám.
                 </Text>
+              </div>
+              {/* Dětská cena hned vedle dospělé — tak to majitelka říká
+                  i zákazníkovi. Prázdné = dítě platí jako dospělý. */}
+              <div className="flex flex-col gap-y-2">
+                <Label htmlFor="price-child">Cena za dítě — za osobu (Kč)</Label>
+                <Input
+                  id="price-child"
+                  inputMode="decimal"
+                  placeholder="nepovinné"
+                  value={draft.price_child}
+                  onChange={(event) => set({ price_child: event.target.value })}
+                />
+                <Text size="xsmall" className="text-ui-fg-muted">
+                  Nevyplněné = dítě platí jako dospělý.
+                </Text>
+              </div>
+              <div className="flex flex-col gap-y-2">
+                <Label htmlFor="child-age">Dítě do (let)</Label>
+                <Input
+                  id="child-age"
+                  inputMode="numeric"
+                  placeholder="15"
+                  value={draft.child_max_age}
+                  onChange={(event) => set({ child_max_age: event.target.value })}
+                />
+              </div>
+              {/* Vypínač množstevní slevy: u veřejných kurzů ji majitelka
+                  nechce. Ceny níž zůstanou uložené, jen se nenabídnou. */}
+              <div className="col-span-full flex items-center justify-between gap-x-4 rounded-lg border p-3">
+                <div>
+                  <Label htmlFor="volume-pricing">Množstevní sleva</Label>
+                  <Text size="xsmall" className="text-ui-fg-muted">
+                    Vypnuté = jedna cena za osobu, ať přijde kdokoli.
+                  </Text>
+                </div>
+                <Switch
+                  id="volume-pricing"
+                  checked={draft.volume_pricing_enabled}
+                  onCheckedChange={(hodnota) =>
+                    set({ volume_pricing_enabled: hodnota })
+                  }
+                />
               </div>
               <div className="flex flex-col gap-y-2">
                 <Label htmlFor="price-two">Cena za dva — za osobu (Kč)</Label>
