@@ -22,6 +22,7 @@ import { WorkTabs } from "../../../components/work-tabs";
 import { formatAmount, formatDate } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
 import { adminQueryClient } from "../../../lib/query-client"
+import { useUrlState } from "../../../lib/url-state"
 
 type ProductionOrder = {
   id: string;
@@ -189,14 +190,17 @@ const ZakazkyInner = () => {
     refetchOnWindowFocus: true,
   });
 
-  /* Vstup se mění hned; hledá se 350 ms po poslední klávese (jako Objednávky). */
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
+  /* Záložka i hledání v ADRESE, ne v paměti — jinak je odchod na detail
+     zahodí a člověk se vrací na začátek (8. 11. 2026, viz lib/url-state). */
+  const [search, setSearch] = useUrlState<string>("hledat", "");
+  /* Vstup se mění hned; hledá se 350 ms po poslední klávese (jako Objednávky).
+     Výchozí hodnota z adresy, ať políčko po návratu nelže. */
+  const [searchInput, setSearchInput] = useState(search);
   useEffect(() => {
     const timer = window.setTimeout(() => setSearch(searchInput.trim()), 350);
     return () => window.clearTimeout(timer);
   }, [searchInput]);
-  const [razeni, setRazeni] = useState<Razeni>("faze");
+  const [razeni, setRazeni] = useUrlState<Razeni>("razeni", "faze");
 
   /*
    * Jméno a e-mail zná objednávka, ne zakázka — řádek zakázky nese jen jméno,

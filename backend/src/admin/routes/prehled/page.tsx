@@ -27,6 +27,7 @@ import { StorefrontBridgeButton } from "../../components/storefront-bridge-butto
 import { formatAmount, formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
+import { useUrlState } from "../../lib/url-state"
 
 type EndingSoon = {
   type: "price_list" | "seasonal_selection";
@@ -849,8 +850,10 @@ const VitrinaCard = () => {
 
 const PrehledInner = () => {
   /* Volba platí do zavření stránky — ne do nastavení, je to pohled, ne nastavení. */
-  const [razeni, setRazeni] = useState<Razeni>("oldest");
-  const [vyber, setVyber] = useState<Vyber>("all");
+  /* V adrese, ne v paměti — odchod na detail a zpět jinak volbu zahodí
+     (8. 11. 2026, viz lib/url-state). */
+  const [razeni, setRazeni] = useUrlState<Razeni>("razeni", "oldest");
+  const [vyber, setVyber] = useUrlState<Vyber>("vyber", "all");
 
   const { data, isLoading, isError, refetch, isFetching } =
     useQuery<OperationsSummary>({
