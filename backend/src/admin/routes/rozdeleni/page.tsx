@@ -14,7 +14,7 @@ import {
 import {
   QueryClientProvider, useMutation, useQuery, useQueryClient,
 } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { CollectionDrawer } from "../../components/collection-drawer";
 import { ConfirmDialog } from "../../components/confirm-dialog";
@@ -25,6 +25,8 @@ import { ViewSwitcher, gridClassName, useViewMode } from "../../lib/view-mode";
 import { adminQueryClient } from "../../lib/query-client"
 import { useUrlFlag, useUrlState } from "../../lib/url-state"
 import { ceskaChyba } from "../../lib/ceska-chyba";
+import { useScrollMemory } from "../../lib/scroll-memory"
+import { ulozSeznam } from "../../lib/seznam-kontext"
 
 /**
  * Rozdělení — kolekce → kategorie → produkty as three columns
@@ -49,6 +51,9 @@ const kindBadge: Record<string, { label: string; color: "green" | "orange" | "bl
    Produkty+, so „the photo opens the photos" behaves the same everywhere. */
 
 const Inner = () => {
+  /* Návrat z detailu vrátí i tam, kde ve výpisu byla — ne nahoru
+     (8. 11. 2026, viz lib/scroll-memory). */
+  useScrollMemory("rozdeleni");
   const queryClient = useQueryClient();
   /*
    * Kde zrovna je — v ADRESE, ne v paměti komponenty (8. 11. 2026).
@@ -237,6 +242,20 @@ const Inner = () => {
   const listedProducts = visibleProducts.filter(
     (p) => kindTab === "vse" || p.kind === kindTab
   );
+
+  /*
+   * Ohlásit pořadí, v jakém výpis právě stojí — detail z něj skládá
+   * „Další" a cestu zpět (8. 11. 2026, lib/seznam-kontext). Posílá se
+   * i adresa s filtry, aby se šlo vrátit přesně sem.
+   */
+  useEffect(() => {
+    ulozSeznam(
+      "produkty",
+      listedProducts.map((polozka: { id: string }) => polozka.id),
+      window.location.pathname + window.location.search
+    );
+  }, [listedProducts]);
+
   const allListedSelected =
     listedProducts.length > 0 &&
     listedProducts.every((p) => selected.has(p.id));

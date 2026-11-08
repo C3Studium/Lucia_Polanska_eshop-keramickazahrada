@@ -60,6 +60,8 @@ import { SelectCheckbox } from "../../components/select-checkbox";
 import { ProductRowMore } from "../../components/product-row-more";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
+import { useScrollMemory } from "../../lib/scroll-memory"
+import { ulozSeznam } from "../../lib/seznam-kontext"
 
 /**
  * Produkty+ — the catalog workbench, one tab per kind of thing she sells
@@ -610,6 +612,9 @@ const tabs: { key: TabKey; label: string }[] = [
 ];
 
 const ProductsInner = () => {
+  /* Návrat z detailu vrátí i tam, kde ve výpisu byla — ne nahoru
+     (8. 11. 2026, viz lib/scroll-memory). */
+  useScrollMemory("produkty");
   const [active, setActive] = useState<TabKey>("produkty");
   /* Input je okamžitý, DOTAZ letí až 350 ms po dopsání — katalogový endpoint
      je nejtěžší v adminu a pálit ho na každé písmeno bolí hlavně na mobilu. */
@@ -750,6 +755,19 @@ const ProductsInner = () => {
                 ? archivedRows
                 : [];
   const rows = applyCatalogFilter(tabRows, catalog);
+  /*
+   * Ohlásit pořadí, v jakém výpis právě stojí — detail z něj skládá
+   * „Další" a cestu zpět (8. 11. 2026, lib/seznam-kontext). Posílá se
+   * i adresa s filtry, aby se šlo vrátit přesně sem.
+   */
+  useEffect(() => {
+    ulozSeznam(
+      "produkty",
+      rows.map((polozka: { id: string }) => polozka.id),
+      window.location.pathname + window.location.search
+    );
+  }, [rows]);
+
 
   type FlagKey = "cod_allowed" | "clearance" | "no_promo" | "fragile";
   const savedFlag = (product: WorkbenchProduct, key: FlagKey) =>

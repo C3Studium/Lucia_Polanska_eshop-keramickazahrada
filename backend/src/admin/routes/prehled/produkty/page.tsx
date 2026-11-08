@@ -30,6 +30,7 @@ import {
 } from "../../../components/catalog-filter";
 import { adminQueryClient } from "../../../lib/query-client"
 import { ceskaChyba } from "../../../lib/ceska-chyba";
+import { useScrollMemory } from "../../../lib/scroll-memory"
 
 /**
  * Produkty — the catalogue, sorted the way she thinks about it.
@@ -135,6 +136,9 @@ const DeleteProduct = ({ product }: { product: ProductRow }) => {
 };
 
 const ProduktyInner = () => {
+  /* Návrat z detailu vrátí i tam, kde ve výpisu byla — ne nahoru
+     (8. 11. 2026, viz lib/scroll-memory). */
+  useScrollMemory("prehled-produkty");
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   /* Tři styly seznamu — sdílený přepínač, volba se pamatuje per stránka. */

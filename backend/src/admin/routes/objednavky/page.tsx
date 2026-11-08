@@ -53,6 +53,7 @@ import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
 import { SelectCheckbox } from "../../components/select-checkbox";
 import { ceskaChyba } from "../../lib/ceska-chyba";
+import { useScrollMemory } from "../../lib/scroll-memory"
 
 /**
  * Objednávky — the advanced order worklist (admin-advanced-plan.md).
@@ -949,6 +950,9 @@ const buildPrintDocument = (orders: PrintableOrder[]) => {
 };
 
 const OrdersInner = () => {
+  /* Návrat z detailu vrátí i tam, kde ve výpisu byla — ne nahoru
+     (8. 11. 2026, viz lib/scroll-memory). */
+  useScrollMemory("objednavky");
   /* Záložka i hledání v ADRESE, ne v paměti — jinak je odchod na detail
      objednávky zahodí a člověk se vrací na začátek seznamu (8. 11. 2026,
      viz lib/url-state). */

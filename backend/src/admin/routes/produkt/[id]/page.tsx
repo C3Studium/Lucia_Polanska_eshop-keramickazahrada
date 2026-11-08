@@ -20,6 +20,7 @@ import {
 } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useSousedi } from "../../../lib/seznam-kontext";
 import { ConfirmDialog } from "../../../components/confirm-dialog";
 import { EmptyState, pieces } from "../../../components/empty-state";
 import {
@@ -1067,6 +1068,8 @@ const ReadinessCard = ({
 const ProduktDetailInner = ({ productId }: { productId: string }) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  /* Odkud přišla a co je další v řadě — z pořadí posledního výpisu. */
+  const sousedi = useSousedi("produkty", productId);
   const expert = useExpertMode();
   const [lightbox, setLightbox] = useState<{ id: string; title: string } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -1681,12 +1684,49 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
       {/* ————— Hlavička ————— */}
       <header className="px-6 pb-4 pt-4">
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-          <Link
-            to="/produkty-workbench"
-            className="text-ui-fg-muted txt-small hover:text-ui-fg-subtle"
-          >
-            ← Produkty
-          </Link>
+          {/*
+            Zpět přesně tam, odkud přišla — i s filtry — a vedle toho krok
+            na sousední kus. Bez toho je procházení katalogu u každého
+            produktu dvojí kliknutí navíc (8. 11. 2026, lib/seznam-kontext).
+            Když se do výpisu nevejde (přišla odjinud), zbude původní odkaz.
+          */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <Link
+              to={sousedi.zpet || "/produkty-workbench"}
+              className="text-ui-fg-muted txt-small hover:text-ui-fg-subtle"
+            >
+              ← {sousedi.zpet ? "Zpět na výpis" : "Produkty"}
+            </Link>
+            {sousedi.poradi ? (
+              <div className="flex items-center gap-x-1">
+                <Button
+                  size="small"
+                  variant="transparent"
+                  disabled={!sousedi.predchozi}
+                  onClick={() =>
+                    sousedi.predchozi && navigate(`/produkt/${sousedi.predchozi}`)
+                  }
+                  aria-label="Předchozí výrobek"
+                >
+                  ‹
+                </Button>
+                <Text size="xsmall" className="text-ui-fg-muted tabular-nums">
+                  {sousedi.poradi.index} / {sousedi.poradi.celkem}
+                </Text>
+                <Button
+                  size="small"
+                  variant="transparent"
+                  disabled={!sousedi.dalsi}
+                  onClick={() =>
+                    sousedi.dalsi && navigate(`/produkt/${sousedi.dalsi}`)
+                  }
+                  aria-label="Další výrobek"
+                >
+                  Další ›
+                </Button>
+              </div>
+            ) : null}
+          </div>
           {/* Jednou pro celou stránku místo „ukládá se při opuštění pole"
               u každého oddílu (Matěj, 3. 11. 2026). */}
           <Text size="xsmall" className="text-ui-fg-muted">
