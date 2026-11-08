@@ -16,14 +16,29 @@ import s from "./style.module.scss"
  * prokliknutelné (je to táž cesta, jakou nabízí jejich tlačítko „Upravit“),
  * ty před vámi ne: do doručení se nedá skočit dřív, než je vyplněná adresa.
  */
-const STEPS = [
+const ZAKLADNI = [
   { key: "address", label: "Adresa" },
   { key: "delivery", label: "Doručení" },
   { key: "payment", label: "Platba" },
   { key: "review", label: "Přehled" },
 ] as const
 
-export default function CheckoutStepBubbles() {
+/* Zadání zakázky stojí PŘED platbou: bez něj se k ní stejně nedá projít. */
+const SE_ZAKAZKOU = [
+  { key: "address", label: "Adresa" },
+  { key: "delivery", label: "Doručení" },
+  { key: "brief", label: "Zadání" },
+  { key: "payment", label: "Platba" },
+  { key: "review", label: "Přehled" },
+] as const
+
+export default function CheckoutStepBubbles({
+  hasBrief = false,
+}: {
+  /** Je v košíku zakázka? Pak je kroků pět, ne čtyři. */
+  hasBrief?: boolean
+}) {
+  const STEPS = hasBrief ? SE_ZAKAZKOU : ZAKLADNI
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()

@@ -19,6 +19,7 @@ import Review from "@modules/checkout/components/review"
 import Shipping from "@modules/checkout/components/shipping"
 import CheckoutStepBubbles from "@modules/checkout/components/step-bubbles"
 import CheckoutSteps from "@modules/checkout/components/stepper"
+import CheckoutBriefStep from "@modules/checkout/components/brief-step"
 import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 import { getShopStatus } from "@lib/data/shop-status"
 import { vacationSentence } from "@lib/util/vacation"
@@ -142,12 +143,15 @@ export default async function CheckoutForm({
       ).catch(() => [])
     : []
 
+  /* Zakázka v košíku přidává krok „Zadání" mezi doručení a platbu. */
+  const maZakazku = ((cart?.items ?? []) as any[]).some(isMadeToOrderLine)
+
   return (
     <div className={styles.root}>
       {/* Kde v pokladně jste — očíslovaná cesta nahoře, na všech šířkách.
           Od 8. 11. 2026 nese pořadí sama, protože kroky už pod sebou
           nestojí: vidět je vždycky jen ten, který je na řadě. */}
-      <CheckoutStepBubbles />
+      <CheckoutStepBubbles hasBrief={maZakazku} />
       <CheckoutSteps
         address={
       <Addresses
@@ -170,6 +174,7 @@ export default async function CheckoutForm({
         restriction={deliveryRestriction}
       />
         }
+        brief={maZakazku ? <CheckoutBriefStep cart={cart} /> : undefined}
         payment={
       <Payment
         cart={cart}
