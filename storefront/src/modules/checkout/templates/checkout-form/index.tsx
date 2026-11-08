@@ -18,6 +18,7 @@ import Payment from "@modules/checkout/components/payment"
 import Review from "@modules/checkout/components/review"
 import Shipping from "@modules/checkout/components/shipping"
 import CheckoutStepBubbles from "@modules/checkout/components/step-bubbles"
+import CheckoutSteps from "@modules/checkout/components/stepper"
 import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 import { getShopStatus } from "@lib/data/shop-status"
 import { vacationSentence } from "@lib/util/vacation"
@@ -143,9 +144,12 @@ export default async function CheckoutForm({
 
   return (
     <div className={styles.root}>
-      {/* Kde v pokladně jste — čtyři bublinky nahoře, jen na svislém telefonu,
-          kde se levá lišta s čísly kroků scvrkne a pořadí se ztratí. */}
+      {/* Kde v pokladně jste — očíslovaná cesta nahoře, na všech šířkách.
+          Od 8. 11. 2026 nese pořadí sama, protože kroky už pod sebou
+          nestojí: vidět je vždycky jen ten, který je na řadě. */}
       <CheckoutStepBubbles />
+      <CheckoutSteps
+        address={
       <Addresses
         cart={cart}
         customer={customer}
@@ -154,6 +158,8 @@ export default async function CheckoutForm({
            pole (starší backend) znamená zapnuto. */
         companyPurchase={shopStatus?.company_purchase !== false}
       />
+        }
+        delivery={
       <Shipping
         cart={cart}
         availableShippingMethods={shippingMethods}
@@ -163,6 +169,8 @@ export default async function CheckoutForm({
         }
         restriction={deliveryRestriction}
       />
+        }
+        payment={
       <Payment
         cart={cart}
         availablePaymentMethods={paymentMethods}
@@ -173,6 +181,8 @@ export default async function CheckoutForm({
         dobirkaFeeCzk={dobirkaFeeCzk}
         productionMode={productionMode}
       />
+        }
+        review={
       <Review
         cart={cart}
         countryCode={countryCode}
@@ -180,6 +190,8 @@ export default async function CheckoutForm({
         vacationNotice={vacationNotice}
         comgateMethods={comgateMethods}
         leadTimes={leadTimes}
+      />
+        }
       />
     </div>
   )
