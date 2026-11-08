@@ -33,12 +33,21 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
 
-  const quote = quoteFor(partySize, term)
+  /* Děti z dotazu — ořezání na počet osob dělá `quoteFor`, ať to pravidlo
+     existuje jen jednou. Nečíslo znamená nula, ne chybu: starší obchod
+     tenhle parametr neposílá vůbec. */
+  const children = Math.trunc(Number(req.query.children))
+  const quote = quoteFor(
+    { people: partySize, children: Number.isFinite(children) ? children : 0 },
+    term
+  )
   res.json({
     term_id: term.id,
     party_size: partySize,
+    children: quote.children,
     tier: quote.tier,
     per_person: quote.per_person,
+    child_per_person: quote.child_per_person,
     total: quote.total,
     seats_left: seatsLeft(term.capacity, term.reservations ?? []),
   })

@@ -22,6 +22,12 @@ export const CourseReservation = model.define("course_reservation", {
   email: model.text().nullable(),
   phone: model.text().nullable(),
   party_size: model.number(),
+  /*
+   * Kolik z party jsou děti (8. 11. 2026). Místa zabírají jako kdokoli jiný —
+   * kapacita se počítá z `party_size` — jen platí dětskou cenu termínu.
+   * Nevyplněné u starších rezervací znamená nula.
+   */
+  children: model.number().default(0),
   pricing_tier: model.enum(["single", "pair", "group"]),
   total_price: model.bigNumber(),
   /**

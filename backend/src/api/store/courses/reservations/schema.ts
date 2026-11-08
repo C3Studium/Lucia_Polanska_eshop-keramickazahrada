@@ -25,6 +25,13 @@ export const ReservationSchema = z.object({
     .max(320),
   phone: z.string().trim().min(6, "Zkontrolujte prosím telefon.").max(40),
   party_size: z.number().int().min(1).max(30),
+  /**
+   * Kolik z nich jsou děti — platí dětskou cenu termínu. Horní mez je
+   * stejná jako u party; že jich nesmí být víc než lidí, ořízne výpočet
+   * ceny (`quoteFor`), ne tenhle tvar: je to pravidlo o penězích a to
+   * nesmí mít dvě verze.
+   */
+  children: z.number().int().min(0).max(30).optional(),
   payment_method: z.enum(["online", "on_site"]),
   /** Honeypot — humans never see the field, so any content marks a bot. */
   website: z.string().max(400).optional(),

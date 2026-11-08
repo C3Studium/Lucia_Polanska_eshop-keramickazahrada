@@ -28,14 +28,22 @@ export type CourseTerm = {
   price_single: number
   price_two: number | null
   group_min: number | null
+  /* Dětská cena a do kolika let platí. Null = děti platí jako dospělí
+     a druhé počítadlo se v okně rezervace vůbec neukáže. */
+  price_child?: number | null
+  child_max_age?: number | null
   price_group_per_person: number | null
 }
 
 export type CourseQuote = {
   term_id: string
   party_size: number
+  /** Kolik z party server spočítal jako děti (po oříznutí). */
+  children?: number
   tier: "single" | "pair" | "group"
   per_person: number
+  /** Cena za dítě. Bez dětské ceny je to totéž co `per_person`. */
+  child_per_person?: number
   total: number
   seats_left: number
 }
@@ -46,6 +54,8 @@ export type CourseReservationInput = {
   email: string
   phone: string
   party_size: number
+  /** Kolik z nich jsou děti — platí dětskou cenu termínu. */
+  children?: number
   payment_method: "online" | "on_site"
   /** Honeypot — forwarded verbatim, humans never fill it. */
   website?: string
@@ -164,14 +174,20 @@ export const listCourseTerms = async (): Promise<CourseTerm[]> =>
     .then(({ terms }) => terms ?? [])
     .catch(() => [])
 
-/** The server's price for `partySize` people — display only. */
+/**
+ * The server's price for `partySize` people — display only.
+ *
+ * `children` jde s dotazem, protože dětskou cenu počítá server stejně jako
+ * všechno ostatní kolem peněz. Obchod si ji nikdy nedopočítává sám.
+ */
 export const quoteCourseTerm = async (
   termId: string,
-  partySize: number
+  partySize: number,
+  children = 0
 ): Promise<CourseQuote | null> =>
   sdk.client
     .fetch<CourseQuote>(
-      `/store/courses/terms/${termId}/quote?party_size=${partySize}`,
+      `/store/courses/terms/${termId}/quote?party_size=${partySize}&children=${children}`,
       { cache: "no-store" }
     )
     .catch(() => null)
