@@ -23,6 +23,7 @@ import { formatAmount, formatDate } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
 import { adminQueryClient } from "../../../lib/query-client"
 import { useUrlState } from "../../../lib/url-state"
+import { useScrollMemory } from "../../../lib/scroll-memory"
 
 type ProductionOrder = {
   id: string;
@@ -182,6 +183,9 @@ const PaymentBar = ({ order }: { order: ProductionOrder }) => {
 };
 
 const ZakazkyInner = () => {
+  /* Návrat z detailu vrátí i tam, kde ve výpisu byla — ne nahoru
+     (8. 11. 2026, viz lib/scroll-memory). */
+  useScrollMemory("zakazky");
   const { data, isLoading, isError } = useQuery<ProductionResponse>({
     queryKey: ["production-orders"],
     queryFn: () =>
