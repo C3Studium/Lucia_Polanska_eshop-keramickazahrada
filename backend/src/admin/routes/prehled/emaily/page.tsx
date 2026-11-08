@@ -21,6 +21,7 @@ import { WorkTabs } from "../../../components/work-tabs";
 import { formatDateTime } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
 import { adminQueryClient } from "../../../lib/query-client"
+import { useUrlState } from "../../../lib/url-state"
 import { ceskaChyba, ceskyText } from "../../../lib/ceska-chyba";
 
 type EmailRow = {
@@ -196,7 +197,9 @@ const EmailRowItem = ({ email }: { email: EmailRow }) => {
 };
 
 const EmailyInner = () => {
-  const [tab, setTab] = useState<TabKey>("failure");
+  /* V adrese, ne v paměti — odchod na detail a zpět jinak volbu zahodí
+     (8. 11. 2026, viz lib/url-state). */
+  const [tab, setTab] = useUrlState<TabKey>("zalozka", "failure");
 
   const { data, isLoading, isError, refetch } = useQuery<EmailsResponse>({
     queryKey: ["operations-emails", tab],

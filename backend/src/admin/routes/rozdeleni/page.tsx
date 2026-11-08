@@ -23,6 +23,7 @@ import { VisibilityEye } from "../../components/visibility-eye";
 import { sdk } from "../../lib/sdk";
 import { ViewSwitcher, gridClassName, useViewMode } from "../../lib/view-mode";
 import { adminQueryClient } from "../../lib/query-client"
+import { useUrlFlag, useUrlState } from "../../lib/url-state"
 import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
@@ -49,22 +50,36 @@ const kindBadge: Record<string, { label: string; color: "green" | "orange" | "bl
 
 const Inner = () => {
   const queryClient = useQueryClient();
-  const [collectionId, setCollectionId] = useState<string | null>(null);
+  /*
+   * Kde zrovna je — v ADRESE, ne v paměti komponenty (8. 11. 2026).
+   *
+   * Majitelka si proklikala kolekci a kategorii, otevřela produkt na úpravu
+   * a po návratu stála zase na začátku. U katalogu o dvou stech kusech to
+   * není drobnost: vybírat obojí znovu u každého produktu je práce navíc
+   * pokaždé. V adrese to tlačítko Zpět obnoví samo — a jde to i poslat
+   * odkazem. Viz `lib/url-state`.
+   */
+  const [collectionId, setCollectionId] = useUrlState("kolekce");
   // Panel „Zobrazit kolekci" — jméno, fotka a popisek vybrané kolekce.
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [categoryId, setCategoryId] = useState<string | "none" | null>(null);
+  const [categoryId, setCategoryId] = useUrlState<string | "none">("kategorie");
   const [newCollection, setNewCollection] = useState("");
   const [newCategory, setNewCategory] = useState("");
   const [newCategoryCollection, setNewCategoryCollection] = useState("");
-  const [kindTab, setKindTab] = useState<"vse" | "bezne" | "zakazka" | "balicek" | "poskozene">("vse");
+  const [kindTab, setKindTab] = useUrlState<
+    "vse" | "bezne" | "zakazka" | "balicek" | "poskozene"
+  >("druh", "vse");
   /* „Zobrazit všechny kategorie" — the middle column stops being scoped to a
      collection and lists every category, including orphans (Medusa seed data
      like Shirts/Pants) that belong to no collection and were otherwise
      unreachable, so she can rename or delete them. */
-  const [allCats, setAllCats] = useState(false);
+  const [allCats, setAllCats] = useUrlFlag("vsekategorie");
   /* Icon tabs of the all-categories view: everything · with a collection ·
      without one (the misclick she'll want to fix) · archived. */
-  const [catTab, setCatTab] = useState<"vse" | "skolekci" | "bez" | "archiv">("vse");
+  const [catTab, setCatTab] = useUrlState<"vse" | "skolekci" | "bez" | "archiv">(
+    "kategorie-zalozka",
+    "vse"
+  );
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [renamingCategory, setRenamingCategory] = useState<{ id: string; name: string } | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);

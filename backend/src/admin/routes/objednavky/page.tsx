@@ -38,6 +38,7 @@ import {
   stageLabels,
 } from "../../lib/workbench";
 import { formatDateTime } from "../../lib/format";
+import { useUrlState } from "../../lib/url-state";
 import {
   asNumber,
   isReturnKind,
@@ -948,11 +949,15 @@ const buildPrintDocument = (orders: PrintableOrder[]) => {
 };
 
 const OrdersInner = () => {
-  const [active, setActive] = useState("vse");
+  /* Záložka i hledání v ADRESE, ne v paměti — jinak je odchod na detail
+     objednávky zahodí a člověk se vrací na začátek seznamu (8. 11. 2026,
+     viz lib/url-state). */
+  const [active, setActive] = useUrlState<string>("zalozka", "vse");
+  const [search, setSearch] = useUrlState<string>("hledat", "");
   /* The input updates instantly; the QUERY fires 350 ms after she stops
-     typing — one request per thought, not one per keystroke. */
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
+     typing — one request per thought, not one per keystroke. Výchozí hodnota
+     z adresy, ať po návratu políčko ukazuje to, podle čeho se filtruje. */
+  const [searchInput, setSearchInput] = useState(search);
   const [pageLimit, setPageLimit] = useState(50);
   useEffect(() => {
     const timer = window.setTimeout(() => {
