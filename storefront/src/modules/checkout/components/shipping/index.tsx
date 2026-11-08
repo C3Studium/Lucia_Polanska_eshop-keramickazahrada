@@ -35,6 +35,7 @@ import PremiumActionButton from "@modules/common/components/premium-action-butto
 import { itemText } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
 import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
+import { isMadeToOrderLine } from "@lib/util/commission"
 
 type ShippingProps = {
   cart: HttpTypes.StoreCart
@@ -247,7 +248,15 @@ const Shipping: React.FC<ShippingProps> = ({
   }
 
   const handleSubmit = () => {
-    router.push(pathname + "?step=payment", { scroll: false })
+    /*
+     * Se zakázkou v košíku vede cesta přes zadání (8. 11. 2026). Není to
+     * jen pořadí kroků: bez zadání pokladna k platbě stejně nepustí, takže
+     * poslat člověka rovnou na platbu znamená poslat ho do zdi.
+     */
+    const dalsi = (cart?.items ?? []).some(isMadeToOrderLine)
+      ? "brief"
+      : "payment"
+    router.push(`${pathname}?step=${dalsi}`, { scroll: false })
   }
 
   const handleOpenWidget = () => {

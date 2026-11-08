@@ -26,7 +26,12 @@ import { useSearchParams } from "next/navigation"
  * otevřený. Tahle vrstva jim jen přestala dávat prostor, když nejsou.
  */
 
-export type CheckoutStepKey = "address" | "delivery" | "payment" | "review"
+export type CheckoutStepKey =
+  | "address"
+  | "delivery"
+  | "brief"
+  | "payment"
+  | "review"
 
 export const CHECKOUT_STEPS: { key: CheckoutStepKey; label: string }[] = [
   { key: "address", label: "Adresa" },
@@ -38,11 +43,14 @@ export const CHECKOUT_STEPS: { key: CheckoutStepKey; label: string }[] = [
 export default function CheckoutSteps({
   address,
   delivery,
+  brief,
   payment,
   review,
 }: {
   address: ReactNode
   delivery: ReactNode
+  /** Zadání zakázky — jen když je v košíku. Jinak krok neexistuje. */
+  brief?: ReactNode
   payment: ReactNode
   review: ReactNode
 }) {
@@ -56,9 +64,12 @@ export default function CheckoutSteps({
   const obsah: Record<CheckoutStepKey, ReactNode> = {
     address,
     delivery,
+    /* Bez zakázky v košíku krok neexistuje — adresa s `?step=brief` pak
+       spadne na první krok, ne na prázdnou stránku. */
+    brief: brief ?? null,
     payment,
     review,
   }
 
-  return <>{obsah[step] ?? address}</>
+  return <>{obsah[step] || address}</>
 }

@@ -1,6 +1,5 @@
 import OrderSummaryDisclosure from "@modules/checkout/components/order-summary-disclosure"
 import DiscountCode from "@modules/checkout/components/discount-code"
-import CheckoutCommissionBriefs from "@modules/checkout/components/commission-briefs"
 import ProductionPaymentRecap from "@modules/checkout/components/production-payment-recap"
 import CartTotals from "@modules/common/components/cart-totals"
 import Divider from "@modules/common/components/divider"
@@ -89,15 +88,11 @@ const CheckoutSummary = async ({
         Pro běžný košík (bez zakázky) komponenta nevykreslí nic.
       */}
       {/*
-        Panel 2 — zadání zakázky. SAMOSTATNĚ lepkavý a samostatně rolovatelný
-        (6. 11. 2026): dokud byl se souhrnem v jednom posuvu, byl pravý sloupec
-        u zakázky dvakrát vyšší než okno, pole pro text se schovávalo pod jeho
-        spodní hranu a přechod na Přehled trhnul celou stránkou. Teď si každý
-        panel drží svoji výšku a roluje se v tom, ve kterém zrovna jste.
+        Zadání zakázky tu stávalo jako druhý panel. Od 8. 11. 2026 má vlastní
+        krok pokladny (`components/brief-step`) — a tím se vyřešilo to, kvůli
+        čemu se sem vůbec stavěly dva panely: byl to nejvyšší kus stránky,
+        přerůstal okno a pole pro text padalo pod jeho spodní hranu.
       */}
-      <div className={styles.commissionBriefs} data-lenis-prevent>
-        <CheckoutCommissionBriefs cart={cart} />
-      </div>
     </div>
   )
 }

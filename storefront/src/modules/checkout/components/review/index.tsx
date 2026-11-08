@@ -20,9 +20,7 @@ import {
   commissionPiecesOf,
   readCommissionBrief,
 } from "@lib/util/made-to-order"
-import CheckoutCommissionBriefs, {
-  COMMISSION_BRIEFS_ID,
-} from "../commission-briefs"
+import { COMMISSION_BRIEFS_ID } from "../commission-briefs"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import { isZeroChargeCart, zeroChargeCopy } from "@lib/util/price-on-request"
 import { cartNeedsShipping } from "@lib/util/needs-shipping"
@@ -325,20 +323,10 @@ const Review = ({
               />
             </motion.div>
 
-            {/* The brief, one per commissioned line: what they want, and pictures of it.
-                On a wide screen it lives in the right summary column (under the
-                discount code); here it shows only on a phone/tablet, in the flow.
-                `briefsMobile` hides this copy from 1020px up — see style. */}
-            {commissionLines.length > 0 && (
-              <motion.div
-                className={styles.briefsMobile}
-                variants={rowVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                <CheckoutCommissionBriefs cart={cart} />
-              </motion.div>
-            )}
+            {/* Zadání zakázky má od 8. 11. 2026 vlastní krok pokladny
+                (`components/brief-step`), takže se tu nekopíruje. Dřív
+                stálo v pravém sloupci a na telefonu se muselo zopakovat
+                sem; dvě kopie téhož formuláře nad týmiž daty. */}
 
             {/* Předsmluvní informace (§ 1820, § 1826 OZ): platba, dodací
                 lhůta, odstoupení / jeho vyloučení u zakázky, prodávající,
