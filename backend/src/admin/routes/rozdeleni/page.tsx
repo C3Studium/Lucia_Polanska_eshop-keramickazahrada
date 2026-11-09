@@ -15,7 +15,7 @@ import {
   QueryClientProvider, useMutation, useQuery, useQueryClient,
 } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { CollectionDrawer } from "../../components/collection-drawer";
 import { ConfirmDialog } from "../../components/confirm-dialog";
 import { ProductLightbox, Thumb } from "../../components/product-thumb";
@@ -54,6 +54,7 @@ const Inner = () => {
   /* Návrat z detailu vrátí i tam, kde ve výpisu byla — ne nahoru
      (8. 11. 2026, viz lib/scroll-memory). */
   useScrollMemory("rozdeleni");
+  const adresa = useLocation();
   const queryClient = useQueryClient();
   /*
    * Kde zrovna je — v ADRESE, ne v paměti komponenty (8. 11. 2026).
@@ -247,14 +248,22 @@ const Inner = () => {
    * Ohlásit pořadí, v jakém výpis právě stojí — detail z něj skládá
    * „Další" a cestu zpět (8. 11. 2026, lib/seznam-kontext). Posílá se
    * i adresa s filtry, aby se šlo vrátit přesně sem.
+   *
+   * Závislostí je složený řetězec identifikátorů, ne pole: pole vzniká
+   * při každém překreslení nové, takže by se ukládalo pořád dokola.
+   * Řetězec je tu skutečná totožnost seznamu.
    */
+  const poradiIds = listedProducts
+    .map((polozka: { id: string }) => polozka.id)
+    .join(",");
+  const adresaVypisu = adresa.pathname + adresa.search;
   useEffect(() => {
     ulozSeznam(
       "produkty",
-      listedProducts.map((polozka: { id: string }) => polozka.id),
-      window.location.pathname + window.location.search
+      poradiIds ? poradiIds.split(",") : [],
+      adresaVypisu
     );
-  }, [listedProducts]);
+  }, [poradiIds, adresaVypisu]);
 
   const allListedSelected =
     listedProducts.length > 0 &&
