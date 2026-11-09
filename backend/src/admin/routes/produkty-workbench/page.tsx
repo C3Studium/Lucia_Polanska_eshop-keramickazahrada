@@ -759,14 +759,18 @@ const ProductsInner = () => {
    * Ohlásit pořadí, v jakém výpis právě stojí — detail z něj skládá
    * „Další" a cestu zpět (8. 11. 2026, lib/seznam-kontext). Posílá se
    * i adresa s filtry, aby se šlo vrátit přesně sem.
+   *
+   * Závislostí je složený řetězec, ne pole: pole vzniká při každém
+   * překreslení nové a ukládalo by se pořád dokola.
    */
+  const poradiIds = rows.map((polozka: { id: string }) => polozka.id).join(",");
   useEffect(() => {
     ulozSeznam(
       "produkty",
-      rows.map((polozka: { id: string }) => polozka.id),
+      poradiIds ? poradiIds.split(",") : [],
       window.location.pathname + window.location.search
     );
-  }, [rows]);
+  }, [poradiIds]);
 
 
   type FlagKey = "cod_allowed" | "clearance" | "no_promo" | "fragile";
