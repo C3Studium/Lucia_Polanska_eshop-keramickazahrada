@@ -604,7 +604,8 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                       backorderNote={
                         isMadeToOrder || isVoucher || isGiftVoucher
                           ? null
-                          : backorderWaitNote(product, texty["produkt.cekani"])
+                          : backorderWaitNote(product, texty["produkt.cekani"]) ||
+                            null
                       }
                       // Dobírka výchozí; ne u zakázky (profil i kategorie) a do zahraničí.
                       codAllowed={

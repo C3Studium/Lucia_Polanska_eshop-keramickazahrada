@@ -7,6 +7,7 @@ import { useTexty } from "@lib/context/texty"
 import {
   TEXTY_DEFAULTS,
   dosadZnacky,
+  slozStitek,
   type ShopTexty,
 } from "@lib/constants/texty"
 
@@ -44,6 +45,22 @@ export function MadeToOrderBadge({
   maxDays,
   priceOnRequest,
 }: TermsProps) {
+  /* Skladba štítku i jeho části se mění v administraci; prázdná část
+     z řádku sama vypadne (`slozStitek`). */
+  const texty = useTexty()
+  const zaloha = priceOnRequest
+    ? texty["zakazka.stitek_zaloha_po_domluve"]
+    : depositPercentage != null && depositPercentage > 0
+      ? dosadZnacky(texty["zakazka.stitek_zaloha"], { procento: depositPercentage })
+      : ""
+  const vyroba =
+    maxDays != null && maxDays > 0
+      ? dosadZnacky(texty["zakazka.stitek_vyroba"], { dny: maxDays })
+      : ""
+  const popisek = slozStitek(texty["zakazka.stitek"], { zaloha, vyroba })
+
+  if (!popisek) return null
+
   return (
     <LocalizedClientLink
       href={TERMS_ANCHOR}
@@ -53,7 +70,7 @@ export function MadeToOrderBadge({
       rel="noopener"
       data-testid="made-to-order-badge"
     >
-      {madeToOrderBadgeText({ depositPercentage, maxDays, priceOnRequest })}
+      {popisek}
     </LocalizedClientLink>
   )
 }
@@ -82,58 +99,75 @@ export function MadeToOrderAddNotice() {
 export const madeToOrderSteps = (
   maxDays?: number | null,
   texty: ShopTexty = TEXTY_DEFAULTS
-) => [
-  {
-    title: "Zahájení výroby",
-    text: texty["zakazka.krok_zahajeni"],
-  },
-  {
-    title: "Dokončení",
-    /* Lhůta se dosadí za `{{dny}}`; bez profilu platí znění bez lhůty —
-       slibovat termín, který nikdo nezná, by bylo horší než mlčet. */
-    text: maxDays
-      ? dosadZnacky(texty["zakazka.krok_dokonceni"], { dny: maxDays })
-      : texty["zakazka.krok_dokonceni_bez_lhuty"],
-  },
-  {
-    title: "Schválení před výpalem",
-    text: texty["zakazka.krok_schvaleni"],
-  },
-  {
-    title: "Odeslání",
-    text: texty["zakazka.krok_odeslani"],
-  },
-]
+) =>
+  [
+    {
+      title: texty["zakazka.krok_zahajeni_nazev"],
+      text: texty["zakazka.krok_zahajeni"],
+    },
+    {
+      title: texty["zakazka.krok_dokonceni_nazev"],
+      /* Lhůta se dosadí za `{{dny}}`; bez profilu platí znění bez lhůty —
+         slibovat termín, který nikdo nezná, by bylo horší než mlčet. */
+      text: maxDays
+        ? dosadZnacky(texty["zakazka.krok_dokonceni"], { dny: maxDays })
+        : texty["zakazka.krok_dokonceni_bez_lhuty"],
+    },
+    {
+      title: texty["zakazka.krok_schvaleni_nazev"],
+      text: texty["zakazka.krok_schvaleni"],
+    },
+    {
+      title: texty["zakazka.krok_odeslani_nazev"],
+      text: texty["zakazka.krok_odeslani"],
+    },
+    /* Vypnutý krok z výpisu zmizí celý — číslovaný seznam s prázdnou
+       položkou vypadá jako chyba, ne jako rozhodnutí. */
+  ].filter((step) => step.title || step.text)
 
 /** Blok „Jak zakázka probíhá" pod tlačítkem. */
 export function MadeToOrderSteps({ maxDays }: Pick<TermsProps, "maxDays">) {
   /* Znění kroků z administrace (Právní věci a texty → Texty obchodu) —
      právě tady se mění lhůta, která je na plastiky krátká. */
   const texty = useTexty()
+  const kroky = madeToOrderSteps(maxDays, texty)
+  const zruseni = texty["zakazka.kroky_zruseni"]
+  const nadpis = texty["zakazka.kroky_nadpis"]
+
+  /* Bez kroků i bez věty o zrušení není co ukazovat. */
+  if (!kroky.length && !zruseni && !nadpis) return null
+
   return (
     <section
       className={styles.steps}
       aria-labelledby="made-to-order-steps-title"
       data-testid="made-to-order-steps"
     >
-      <p id="made-to-order-steps-title" className={styles.stepsTitle}>
-        Jak zakázka probíhá
-      </p>
-      <ol className={styles.stepsList}>
-        {madeToOrderSteps(maxDays, texty).map((step) => (
-          <li key={step.title}>
-            <strong>{step.title}.</strong> {step.text}
-          </li>
-        ))}
-      </ol>
-      <p className={styles.stepsTerms}>
-        Zrušíte-li zakázku před zahájením výroby, vrátíme vám všechno; po
-        zahájení se záloha nevrací, zbytek ano. Celé znění v{" "}
-        <LocalizedClientLink href={TERMS_ANCHOR} target="_blank" rel="noopener">
-          obchodních podmínkách, čl. Výroba na zakázku
-        </LocalizedClientLink>
-        .
-      </p>
+      {nadpis ? (
+        <p id="made-to-order-steps-title" className={styles.stepsTitle}>
+          {nadpis}
+        </p>
+      ) : null}
+      {kroky.length ? (
+        <ol className={styles.stepsList}>
+          {kroky.map((step) => (
+            <li key={step.title || step.text}>
+              {step.title ? <strong>{step.title}.</strong> : null}{" "}
+              {step.text}
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      {/* Odkaz na podmínky patří k té větě; bez ní nemá kde stát. */}
+      {zruseni ? (
+        <p className={styles.stepsTerms}>
+          {zruseni}{" "}
+          <LocalizedClientLink href={TERMS_ANCHOR} target="_blank" rel="noopener">
+            obchodních podmínkách, čl. Výroba na zakázku
+          </LocalizedClientLink>
+          .
+        </p>
+      ) : null}
     </section>
   )
 }

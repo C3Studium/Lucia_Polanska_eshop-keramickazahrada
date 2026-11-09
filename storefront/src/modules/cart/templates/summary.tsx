@@ -25,6 +25,7 @@ import { itemText } from "@lib/util/site-copy"
 import type { CopyBlock } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
 import s from "./summary.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 import { motion } from 'framer-motion';
 
@@ -55,6 +56,8 @@ export function getCheckoutStep(cart: HttpTypes.StoreCart) {
 const Summary = ({ cart, shippingFrom, copy }: SummaryProps) => {
   /* Souhrn se po zapnutí editace sám nepřekreslí. Viz hook. */
   useEditRerender()
+  /* Vysvětlivky z administrace (Texty obchodu). */
+  const texty = useTexty()
   const step = getCheckoutStep(cart)
   const voucherPending = cartNeedsVoucherSetup(cart as never)
 
@@ -119,7 +122,9 @@ const Summary = ({ cart, shippingFrom, copy }: SummaryProps) => {
           >
             Nastavit dárkový poukaz
           </a>
-          <p className={s.blockedNote}>{VOUCHER_SETUP_BLOCK_NOTE}</p>
+          {texty["kosik.poukaz_nastavit"] && (
+            <p className={s.blockedNote}>{texty["kosik.poukaz_nastavit"]}</p>
+          )}
         </div>
       ) : (
         /* Text tlačítka bez anotace v místě — vnitřek si animuje tlačítko samo. */

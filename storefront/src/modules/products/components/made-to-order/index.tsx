@@ -9,7 +9,8 @@ import {
   type ProductionProfile,
 } from "@lib/util/made-to-order"
 import { convertToLocale } from "@lib/util/money"
-import { MADE_TO_ORDER_NO_RETURN } from "@modules/products/components/made-to-order-notice"
+import { useTexty } from "@lib/context/texty"
+import { dosadZnacky } from "@lib/constants/texty"
 
 import styles from "./style.module.scss"
 
@@ -53,53 +54,81 @@ export default function MadeToOrderPanel({
       ? Math.round((unitAmount * depositPercentage) / 100)
       : null
 
+  /*
+   * Celý panel se skládá z vět, které si majitelka mění v administraci
+   * (Právní věci a texty → Texty obchodu). Prázdná věta se nevykreslí —
+   * tak se projeví vypínač u každého textu.
+   */
+  const texty = useTexty()
+  const lhuta = maxDays
+    ? dosadZnacky(texty["zakazka.panel_lhuta"], {
+        dny: maxDays,
+        obvykle:
+          leadTime && leadTime !== `do ${maxDays} dní` ? ` (obvykle ${leadTime})` : "",
+      })
+    : leadTime
+      ? dosadZnacky(texty["zakazka.panel_lhuta_rozmezi"], { rozmezi: leadTime })
+      : ""
+  const zaloha = priceOnRequest
+    ? texty["zakazka.panel_zaloha_po_domluve"]
+    : depositPercentage != null
+      ? dosadZnacky(texty["zakazka.panel_zaloha"], {
+          procento: depositPercentage,
+          castka:
+            depositAmount != null
+              ? ` — ${convertToLocale({ amount: depositAmount, currency_code: currencyCode })}`
+              : "",
+        })
+      : ""
+
+  /* Prázdný panel se nekreslí vůbec — rámeček bez vět je jen rámeček. */
+  if (
+    !texty["zakazka.panel_nadpis"] &&
+    !lhuta &&
+    !zaloha &&
+    !texty["zakazka.panel_kosik"] &&
+    !texty["zakazka.panel_bez_vraceni"]
+  ) {
+    return null
+  }
+
   return (
     <section className={styles.root} aria-labelledby={`${fieldId}-title`}>
-      <p className={styles.eyebrow} id={`${fieldId}-title`}>
-        Vyrábí se na zakázku
-      </p>
-
-      {maxDays ? (
-        <p className={styles.lead}>
-          Hotovo do {maxDays} dnů od zahájení výroby
-          {leadTime && leadTime !== `do ${maxDays} dní` ? ` (obvykle ${leadTime})` : ""}.
+      {texty["zakazka.panel_nadpis"] ? (
+        <p className={styles.eyebrow} id={`${fieldId}-title`}>
+          {texty["zakazka.panel_nadpis"]}
         </p>
-      ) : (
-        leadTime && <p className={styles.lead}>Hotovo zhruba za {leadTime}.</p>
-      )}
+      ) : null}
+
+      {lhuta ? <p className={styles.lead}>{lhuta}</p> : null}
 
       {/*
         Cena po domluvě: procento ani částka zálohy tu nemají co dělat —
         obojí vychází z ceny, kterou teprve domluvíme. Místo toho se řekne
         pořadí: nejdřív cena, pak záloha (nebo rovnou celá částka).
       */}
-      {priceOnRequest ? (
-        <p className={styles.deposit} data-testid="made-to-order-deposit-on-request">
-          Zálohu domluvíme spolu s cenou — pošlu vám ji e-mailem po objednávce.
-          Zaplatíte buď zálohu, nebo rovnou celou částku; zbytek doplatíte,
-          až bude hotovo. Po zahájení výroby se záloha nevrací.
+      {zaloha ? (
+        <p
+          className={styles.deposit}
+          data-testid={
+            priceOnRequest ? "made-to-order-deposit-on-request" : undefined
+          }
+        >
+          {zaloha}
         </p>
-      ) : (
-        depositPercentage != null && (
-          <p className={styles.deposit}>
-            Platí se záloha {depositPercentage} %
-            {depositAmount != null && (
-              <> — {convertToLocale({ amount: depositAmount, currency_code: currencyCode })}</>
-            )}
-            . Zbytek doplatíte, až bude hotovo. Po zahájení výroby se záloha nevrací.
-          </p>
-        )
-      )}
+      ) : null}
 
-      <p className={styles.lead}>
-        Popis a fotky k zakázce přiložíte v košíku.
-      </p>
+      {texty["zakazka.panel_kosik"] ? (
+        <p className={styles.lead}>{texty["zakazka.panel_kosik"]}</p>
+      ) : null}
 
       {/* Poučení o vyloučení odstoupení PŘED objednávkou (§ 1820 odst. 1
           písm. j) OZ) — v pokladně ho zákazník ještě potvrdí zaškrtnutím. */}
-      <p className={styles.lead} data-testid="made-to-order-no-return">
-        {MADE_TO_ORDER_NO_RETURN}
-      </p>
+      {texty["zakazka.panel_bez_vraceni"] ? (
+        <p className={styles.lead} data-testid="made-to-order-no-return">
+          {texty["zakazka.panel_bez_vraceni"]}
+        </p>
+      ) : null}
     </section>
   )
 }

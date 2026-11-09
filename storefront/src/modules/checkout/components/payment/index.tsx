@@ -43,6 +43,8 @@ import { editableItem } from "@modules/common/components/cms-text"
 import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useTexty } from "@lib/context/texty"
+
 import styles from "./style.module.scss"
 
 const Payment = ({
@@ -70,8 +72,9 @@ const Payment = ({
   productionMode?: ProductionPaymentMode | null
 }) => {
   /* Z CMS (`pokladna.kroky`) jen otázka nad výběrem; věty o tom, kdy a jak
-     se platí (záloha, Balíkovna, dobírka), zůstávají v kódu. */
+     se platí, se mění v administraci (Texty obchodu). */
   const steps = useCopyBlock("pokladna.kroky")
+  const texty = useTexty()
   const activeSession = cart.payment_collection?.payment_sessions?.find(
     (paymentSession: any) => paymentSession.status === "pending"
   )
@@ -148,7 +151,7 @@ const Payment = ({
         id: provider.id,
         title: paymentInfoMap[provider.id]?.title ?? provider.id,
         detail: isPickupPayment(provider.id)
-          ? "Zaplatíte na místě, až si to vyzvednete v ateliéru"
+          ? texty["pokladna.platba_na_miste"]
           : isDobirkaPayment(provider.id)
           ? dobirkaFeeCzk > 0
             ? // The surcharge, said up front — the amount comes from the
@@ -417,13 +420,20 @@ const Payment = ({
                 <span {...editableItem(steps, "platba.otazka")}>
                   {itemText(steps, "platba.otazka", "Jak chcete zaplatit?")}
                 </span>
-                <p>
-                  {depositByCard
-                    ? "Zálohu u zakázky platíte předem kartou (nebo přes peněženku či banku). Při osobním odběru pak na místě doplatíte zbytek."
-                    : hasComgate
-                      ? "Vyberte si způsob platby. V dalším kroku uvidíte celou objednávku a teprve pak budete platit."
-                      : "Platit budete bezpečně až v dalším kroku."}
-                </p>
+                {/* Znění z administrace (Texty obchodu); vypnuté se neukáže. */}
+                {(depositByCard
+                  ? texty["pokladna.platba_zaloha_kartou"]
+                  : hasComgate
+                    ? texty["pokladna.platba_uvod"]
+                    : "Platit budete bezpečně až v dalším kroku.") && (
+                  <p>
+                    {depositByCard
+                      ? texty["pokladna.platba_zaloha_kartou"]
+                      : hasComgate
+                        ? texty["pokladna.platba_uvod"]
+                        : "Platit budete bezpečně až v dalším kroku."}
+                  </p>
+                )}
                 {dobirkaBlockedByPickupPoint && !depositByCard && (
                   <p>
                     Na výdejní místo Balíkovny posíláme jen s platbou předem

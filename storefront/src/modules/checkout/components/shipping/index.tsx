@@ -592,7 +592,7 @@ const Shipping: React.FC<ShippingProps> = ({
                 {itemText(steps, "doprava.otazka", "Kam a jak vám to máme poslat?")}
               </span>
             </div>
-            {restriction && (
+            {restriction && dopravaVeta(restriction) && (
               <p className={styles.commissionNotice} role="status">
                 {dopravaVeta(restriction)}
               </p>

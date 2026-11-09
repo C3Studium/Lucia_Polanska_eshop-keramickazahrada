@@ -13,6 +13,8 @@ import PremiumActionButton from "@modules/common/components/premium-action-butto
 import ErrorMessage from "../error-message"
 import { AnimatePresence, motion } from "framer-motion"
 
+import { useTexty } from "@lib/context/texty"
+
 import styles from "./style.module.scss"
 
 type DiscountCodeProps = {
@@ -37,6 +39,8 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({
   layout = "stacked",
 }) => {
   const [isOpen, setIsOpen] = React.useState(false)
+  /* Vysvětlivky pod políčkem — mění se v administraci (Texty obchodu). */
+  const texty = useTexty()
 
   const { items = [], promotions = [] } = cart
   const [removeError, setRemoveError] = React.useState<string | null>(null)
@@ -162,33 +166,32 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({
           </AnimatePresence>
         </form>
 
+        {/* Znění z administrace (Texty obchodu); vypnutá věta zmizí sama
+            a s ní i celý rámeček, když nezbude žádná. */}
         {(isOpen || maRucniKod || maPoukaz || maZlevnene) && (
           <div className={styles.poznamky}>
-            {(isOpen || maRucniKod || maPoukaz) && (
+            {(isOpen || maRucniKod || maPoukaz) && texty["slevy.jeden_kod"] && (
               <Text
                 className={styles.poznamka}
                 data-testid="discount-replace-note"
               >
-                Slevový kód jde na objednávku jen jeden — zůstane ten, který
-                slevuje víc. Dárkových poukazů můžete uplatnit víc, i spolu se
-                slevovým kódem.
+                {texty["slevy.jeden_kod"]}
               </Text>
             )}
-            {(isOpen || maPoukaz) && (
+            {(isOpen || maPoukaz) && texty["slevy.poukaz"] && (
               <Text
                 className={styles.poznamka}
                 data-testid="discount-voucher-note"
               >
-                Poukaz se odečítá ze zboží, které není ve slevě, ne z poštovného
-                — zbytek doplatíte.
+                {texty["slevy.poukaz"]}
               </Text>
             )}
-            {maZlevnene && (
+            {maZlevnene && texty["slevy.zlevnene"] && (
               <Text
                 className={styles.poznamka}
                 data-testid="discount-sale-note"
               >
-                Na zlevněné kusy se slevové kódy nevztahují.
+                {texty["slevy.zlevnene"]}
               </Text>
             )}
           </div>

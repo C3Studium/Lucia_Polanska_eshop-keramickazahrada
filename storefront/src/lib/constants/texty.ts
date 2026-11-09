@@ -8,35 +8,77 @@
  * z `GET /store/texty`. Tenhle soubor je jen záloha: když dotaz selže,
  * nebo komponenta stojí mimo poskytovatele, ukáže se tohle znění.
  *
- * Obě kopie musí být slovo od slova stejné — hlídá to test
- * `backend/src/lib/__tests__/shop-texty.unit.spec.ts`, který tenhle soubor
- * čte. Je to tentýž postup jako u právních údajů
- * (`lib/legal/facts.ts` × `backend/src/lib/legal-facts.ts`).
+ * Obsah se NEPÍŠE ručně — generuje se z katalogu backendu
+ * (scratchpad/generuj-texty-zalohu.js), aby se obě kopie nemohly rozejít
+ * překlepem. Že jsou stejné, hlídá navíc test
+ * `backend/src/lib/__tests__/shop-texty.unit.spec.ts`.
  *
  * Nepoužívat přímo. Komponenty berou texty z `useTexty()`, které tohle
- * doplní tím, co přišlo z backendu.
+ * doplní tím, co přišlo z backendu. Prázdná věta znamená „neukazovat" —
+ * buď ji majitelka vymazala, nebo vypnula přepínačem.
  */
 
 export const TEXTY_DEFAULTS = {
   "produkt.cekani": "Není skladem — výroba obvykle trvá 3–10 dní.",
   "produkt.cena_po_domluve":
     "Objednáte teď za 0 Kč; cenu vám po domluvě pošlu e-mailem a pak zaplatíte zálohu nebo celou částku.",
+  "produkt.recenze_pravidla":
+    "Recenze mohou psát přihlášení zákazníci. Štítek „Ověřený nákup“ má jen recenze od zákazníka, který si výrobek u nás koupil. Recenze schvalujeme ručně kvůli spamu a vulgaritám; negativní hodnocení nemažeme.",
 
+  "zakazka.panel_nadpis": "Vyrábí se na zakázku",
+  "zakazka.panel_lhuta": "Hotovo do {{dny}} dnů od zahájení výroby{{obvykle}}.",
+  "zakazka.panel_lhuta_rozmezi": "Hotovo zhruba za {{rozmezi}}.",
+  "zakazka.panel_zaloha":
+    "Platí se záloha {{procento}} %{{castka}}. Zbytek doplatíte, až bude hotovo. Po zahájení výroby se záloha nevrací.",
+  "zakazka.panel_zaloha_po_domluve":
+    "Zálohu domluvíme spolu s cenou — pošlu vám ji e-mailem po objednávce. Zaplatíte buď zálohu, nebo rovnou celou částku; zbytek doplatíte, až bude hotovo. Po zahájení výroby se záloha nevrací.",
+  "zakazka.panel_kosik": "Popis a fotky k zakázce přiložíte v košíku.",
+  "zakazka.panel_bez_vraceni":
+    "Zboží vyrobené na zakázku nelze vrátit ve 14denní lhůtě (§ 1837 písm. d) OZ); záloha se po zahájení výroby nevrací.",
+
+  "zakazka.stitek": "Na zakázku · {{zaloha}} · {{vyroba}} · bez 14denní lhůty na vrácení",
+  "zakazka.stitek_zaloha": "záloha {{procento}} %",
+  "zakazka.stitek_zaloha_po_domluve": "záloha po domluvě ceny",
+  "zakazka.stitek_vyroba": "výroba do {{dny}} dnů",
+
+  "zakazka.kroky_nadpis": "Jak zakázka probíhá",
+  "zakazka.krok_zahajeni_nazev": "Zahájení výroby",
   "zakazka.krok_zahajeni":
     "Začneme po připsání platby. V den, kdy začneme, vám pošleme e-mail „Zakázka je ve výrobě“ s datem a časem — od něj je výroba zahájena.",
+  "zakazka.krok_dokonceni_nazev": "Dokončení",
   "zakazka.krok_dokonceni":
     "Do {{dny}} dnů od zahájení výroby. Praskne-li kus při výpalu, uděláme ho znovu bez příplatku a dáme vědět o novém termínu.",
   "zakazka.krok_dokonceni_bez_lhuty":
     "Lhůtu od zahájení výroby najdete v potvrzení zakázky. Praskne-li kus při výpalu, uděláme ho znovu bez příplatku a dáme vědět o novém termínu.",
+  "zakazka.krok_schvaleni_nazev": "Schválení před výpalem",
   "zakazka.krok_schvaleni":
     "Pošleme vám fotografii hotového tvaru. Máte 5 pracovních dnů (připomeneme se). Schválená podoba je ujednanou vlastností výrobku; nesoulad se zadáním zůstává vadou vždy.",
+  "zakazka.krok_odeslani_nazev": "Odeslání",
   "zakazka.krok_odeslani":
     "Do 2 pracovních dnů od doplatku, pojištěný křehký balík — nebo vám dáme vědět, že je kus připravený k vyzvednutí.",
+  "zakazka.kroky_zruseni":
+    "Zrušíte-li zakázku před zahájením výroby, vrátíme vám všechno; po zahájení se záloha nevrací, zbytek ano. Celé znění v",
+
+  "bezpecnost.nadpis": "Bezpečné používání",
+  "bezpecnost.kotveni":
+    "Kotvěte do nosného podkladu hmoždinkami a vruty odpovídajícími zdivu a hmotnosti kusu; nezavěšujte nad místa, kde by pád mohl někoho zranit.",
+  "bezpecnost.mraz":
+    "V zimě v nádobě nenechávejte zamrznout vodu — led ji může roztrhnout.",
+  "bezpecnost.strepy":
+    "Keramika je křehká: rozbitý kus má ostré hrany, střepy ukliďte opatrně a mimo dosah dětí.",
 
   "kosik.cena_po_domluve":
     "Výrobky s cenou po domluvě nejsou v částkách výš — cenu vám pošlu e-mailem a zaplatíte ji potom.",
   "kosik.poukaz_vse":
     "Celou objednávku hradí dárkový poukaz — nic dalšího neplatíte.",
+  "kosik.poukaz_nastavit":
+    "Nejdřív prosím nastavte dárkový poukaz — hodnotu a podobu zvolíte u něj v košíku.",
+
+  "slevy.jeden_kod":
+    "Slevový kód jde na objednávku jen jeden — zůstane ten, který slevuje víc. Dárkových poukazů můžete uplatnit víc, i spolu se slevovým kódem.",
+  "slevy.poukaz":
+    "Poukaz se odečítá ze zboží, které není ve slevě, ne z poštovného — zbytek doplatíte.",
+  "slevy.zlevnene": "Na zlevněné kusy se slevové kódy nevztahují.",
 
   "pokladna.cena_po_domluve_nula":
     "Teď se nic neplatí. Až spolu domluvíme cenu, pošlu vám ji e-mailem — i s poštovným, pokud si kus necháte poslat — a zaplatíte zálohu nebo celou částku.",
@@ -47,9 +89,16 @@ export const TEXTY_DEFAULTS = {
   "pokladna.doprava_cena_po_domluve":
     "V košíku máte výrobek s cenou po domluvě. Vyberte si tady, jak vám ho mám doručit; posílám jen jako křehký balík, nebo si pro kus můžete přijet do ateliéru. Cenu výrobku vám pak pošlu e-mailem a zaplatíte ji až potom.",
 
+  "pokladna.platba_uvod":
+    "Vyberte si způsob platby. V dalším kroku uvidíte celou objednávku a teprve pak budete platit.",
+  "pokladna.platba_zaloha_kartou":
+    "Zálohu u zakázky platíte předem kartou (nebo přes peněženku či banku). Při osobním odběru pak na místě doplatíte zbytek.",
+  "pokladna.platba_na_miste": "Zaplatíte na místě, až si to vyzvednete v ateliéru",
+
   "objednavka.potvrzeni":
     "Potvrzení jsme poslali na {{email}}. Jakmile se něco pohne, ozveme se vám znovu.",
-} as const
+  "objednavka.poskozeny_obal":
+    "Poškozený obal je škoda dopravce: nahlaste prosím zásilku na kterékoli poště, nejlépe do dvou pracovních dnů od převzetí — náhradu Česká pošta vyplácí adresátovi, tedy vám. Vezměte s sebou zásilku i s obalem a výplní, nebo aspoň fotky obalu a zboží. Napište prosím i nám; pokud vám na poště reklamaci nepřijmou, vyřídíme ji my — vaše práva u nás na dopravci nezávisí.",} as const
 
 export type ShopTextKey = keyof typeof TEXTY_DEFAULTS
 export type ShopTexty = Record<ShopTextKey, string>
@@ -69,3 +118,17 @@ export const dosadZnacky = (
   }
   return out
 }
+
+/**
+ * Složí větu z částí oddělených tečkou a vynechá prázdné — štítek pod cenou
+ * se tím sám zkrátí, když nemá co říct (třeba bez vyplněné lhůty).
+ */
+export const slozStitek = (
+  sablona: string,
+  hodnoty: Record<string, string>
+): string =>
+  dosadZnacky(sablona, hodnoty)
+    .split("·")
+    .map((cast) => cast.trim())
+    .filter(Boolean)
+    .join(" · ")

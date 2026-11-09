@@ -29,6 +29,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import Thumbnail from "@modules/products/components/thumbnail"
 
 import styles from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 const MAX_PHOTOS = 6
 /* Horní mez VSTUPNÍHO souboru — komprese ho pak stlačí na pár set kB. */
@@ -203,6 +204,8 @@ export default function RefundRequest({
 }) {
   const router = useRouter()
   const { countryCode } = useParams<{ countryCode: string }>()
+  /* Poučení o poškozeném obalu z administrace (Texty obchodu). */
+  const texty = useTexty()
   const openClaim = findOpenClaim(claims)
   const withdrawBlocked = !claims.can_withdraw
   const blockText = withdrawBlockText(claims)
@@ -824,7 +827,7 @@ export default function RefundRequest({
           <p className={styles.carrierNoticeTitle}>
             Nahlaste to prosím i na poště
           </p>
-          <p>{CARRIER_DAMAGE_CUSTOMER_TEXT}</p>
+          <p>{texty["objednavka.poskozeny_obal"]}</p>
         </div>
       )}
 

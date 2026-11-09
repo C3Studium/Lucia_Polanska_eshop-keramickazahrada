@@ -284,7 +284,7 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
           {convertToLocale({ amount: total ?? 0, currency_code })}
         </span>
       </div>
-      {hasPriceOnRequestLine(totals.items as any) && (
+      {hasPriceOnRequestLine(totals.items as any) && texty["kosik.cena_po_domluve"] && (
         <p className={styles.priceOnRequestNote} data-testid="cart-price-on-request-note">
           {texty["kosik.cena_po_domluve"]}
         </p>

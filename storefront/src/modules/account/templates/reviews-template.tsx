@@ -14,6 +14,7 @@ import { accountListItemVariants, accountListVariants } from "../motion"
 import s from "./styles/reviews-template.module.scss"
 import AccountInteractiveSurface from "../components/account-interactive-surface"
 import { REVIEW_POLICY_TEXT } from "@modules/products/components/product-reviews/copy"
+import { useTexty } from "@lib/context/texty"
 
 type ReviewsTemplateProps = {
   reviews: any[]
@@ -34,6 +35,8 @@ export default function ReviewsTemplate({
   reviews,
   isPreview = false,
 }: ReviewsTemplateProps) {
+  /* Pravidla recenzí z administrace (Texty obchodu). */
+  const texty = useTexty()
   const visibleReviews = reviews?.filter(Boolean) || []
 
   return (
@@ -59,7 +62,7 @@ export default function ReviewsTemplate({
           className={s.accountReviewsDescription}
           style={{ marginTop: "0.75rem" }}
         >
-          {REVIEW_POLICY_TEXT}
+          {texty["produkt.recenze_pravidla"]}
         </p>
       </AccountSectionReveal>
 

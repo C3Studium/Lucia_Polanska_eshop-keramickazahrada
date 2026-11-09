@@ -6,7 +6,8 @@ import { HttpTypes } from "@medusajs/types"
 import { maxPurchasableQuantity } from "@lib/util/availability"
 import { isDobirkaFeeLine } from "@lib/util/dobirka"
 import { isMadeToOrderLine, type ProductionLeadTime } from "@lib/util/commission"
-import { madeToOrderBadgeText } from "@lib/util/made-to-order"
+import { stitekZakazky } from "@lib/util/made-to-order"
+import { useTexty } from "@lib/context/texty"
 import { isPriceOnRequestLine } from "@lib/util/price-on-request"
 import { isPackagingLine } from "@lib/util/packaging"
 import { GiftVoucherLineSetup } from "../gift-voucher-setup"
@@ -57,6 +58,8 @@ const Item = ({
 }: ItemProps) => {
   const [updating, setUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /* Štítek zakázky — stejné znění jako na stránce výrobku (Texty obchodu). */
+  const texty = useTexty()
 
   const changeQuantity = async (quantity: number) => {
     setError(null)
@@ -96,11 +99,11 @@ const Item = ({
      u položky, ne až u zamčeného tlačítka. */
   const voucherTodo = !voucherSummary && isGiftVoucherProductLine(item as never)
   const madeToOrderLabel = madeToOrder
-    ? madeToOrderBadgeText({
+    ? stitekZakazky(texty, {
         depositPercentage: madeToOrderTerms?.deposit_percentage,
         maxDays: madeToOrderTerms?.production_time_max_days,
         priceOnRequest: isPriceOnRequestLine(item as never),
-      })
+      }) || null
     : null
 
   /*

@@ -9,5 +9,8 @@
  * slib „negativní hodnocení nemažeme" je otevřená otázka pro majitelku
  * (sleduje orchestrátor) — změna tady = změna tam.
  */
-export const REVIEW_POLICY_TEXT =
-  "Recenze mohou psát přihlášení zákazníci. Štítek „Ověřený nákup“ má jen recenze od zákazníka, který si výrobek u nás koupil. Recenze schvalujeme ručně kvůli spamu a vulgaritám; negativní hodnocení nemažeme."
+import { TEXTY_DEFAULTS } from "@lib/constants/texty"
+
+/* Výchozí znění; co platí doopravdy, si vezme komponenta z `useTexty()`
+   (administrace → Právní věci a texty → Texty obchodu). */
+export const REVIEW_POLICY_TEXT = TEXTY_DEFAULTS["produkt.recenze_pravidla"]

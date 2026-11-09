@@ -212,7 +212,7 @@ export default function OrderRecap({
           )}
           {/* Cena po domluvě: proč u takového výrobku žádná částka není, a že
               přijde nad rámec čísel výš. Malým písmem hned pod rozpisem. */}
-          {hasPriceOnRequestLine(cart?.items) && (
+          {hasPriceOnRequestLine(cart?.items) && texty["kosik.cena_po_domluve"] && (
             <p className={styles.sideNote} data-testid="recap-price-on-request">
               {texty["kosik.cena_po_domluve"]}
             </p>
