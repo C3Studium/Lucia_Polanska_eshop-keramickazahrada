@@ -127,6 +127,43 @@ export const SHOP_TEXT_KEYS = [
   "objednavka.prevzeti_obal",
   "objednavka.prevzeti_stav",
   "objednavka.podrobnosti_email",
+  "order.carrier_damage_2",
+  "order.claim_status_8",
+  "order.commission_conversation_1",
+  "order.commission_conversation_2",
+  "order.order_edit_1",
+  "order.order_edit_2",
+  "order.order_edit_3",
+  "order.order_edit_4",
+  "order.order_edit_5",
+  "order.order_edit_6",
+  "order.order_edit_7",
+  "order.order_edit_8",
+  "order.order_edit_9",
+  "order.order_edit_10",
+  "order.order_edit_11",
+  "order.order_edit_12",
+  "order.order_edit_13",
+  "order.order_edit_14",
+  "order.order_edit_15",
+  "order.order_edit_22",
+  "order.order_edit_23",
+  "order.order_edit_24",
+  "order.order_edit_25",
+  "order.order_edit_26",
+  "order.order_edit_27",
+  "order.order_edit_28",
+  "order.order_edit_29",
+  "order.transfer_actions_1",
+  "order.transfer_actions_2",
+  "order.transfer_actions_3",
+  "order.withdrawal_1",
+  "order.withdrawal_2",
+  "order.templates_6",
+  "order.templates_7",
+  "order.templates_8",
+  "order.templates_9",
+  "order.templates_10",
 ] as const
 
 export type ShopTextKey = (typeof SHOP_TEXT_KEYS)[number]
@@ -204,6 +241,14 @@ export const SHOP_TEXT_GROUP_LIST = [
   { nazev: "Zboží v úpravě", oblast: "Úprava objednávky" },
   { nazev: "Doručení v úpravě", oblast: "Úprava objednávky" },
   { nazev: "Rozdíl ceny a doplacení", oblast: "Úprava objednávky" },
+
+  { nazev: "order: carrier damage", oblast: "Reklamace a vrácení" },
+  { nazev: "order: claim status", oblast: "Reklamace a vrácení" },
+  { nazev: "order: commission conversation", oblast: "Zakázková výroba" },
+  { nazev: "order: order edit", oblast: "Úprava objednávky" },
+  { nazev: "order: transfer actions", oblast: "Objednávka" },
+  { nazev: "order: withdrawal", oblast: "Reklamace a vrácení" },
+  { nazev: "order: order details template", oblast: "Objednávka" },
 ] as const
 
 export type ShopTextGroup = (typeof SHOP_TEXT_GROUP_LIST)[number]["nazev"]
@@ -878,6 +923,265 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     multiline: true,
     maxLength: 200,
   },
+  "order.carrier_damage_2": {
+    label: "Krabice v pořádku, rozbitý výrobek",
+    help: "Ukáže se v obchodě — order: carrier damage.",
+    group: "order: carrier damage",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.claim_status_8": {
+    label: "Vráceno méně než cena vybraných položek —…",
+    help: "Ukáže se v obchodě — order: claim status.",
+    group: "order: claim status",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.commission_conversation_1": {
+    label: "Napište mi — čtu to u rozdělané práce.",
+    help: "Ukáže se v obchodě — order: commission conversation.",
+    group: "order: commission conversation",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.commission_conversation_2": {
+    label: "Napadlo vás ještě něco? Napište mi.",
+    help: "Ukáže se v obchodě — order: commission conversation.",
+    group: "order: commission conversation",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_1": {
+    label: "K objednávce běží dřívější úprava, která…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: true,
+    maxLength: 350,
+  },
+  "order.order_edit_2": {
+    label: "Jiný kus, jiné provedení, něco přidat nebo…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: true,
+    maxLength: 350,
+  },
+  "order.order_edit_3": {
+    label: "Objednávka už se chystá na cestu — doručení…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_4": {
+    label: "Výdejní místo můžete změnit, dokud zásilku…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_5": {
+    label: "Doručovací adresu můžete změnit, dokud…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_6": {
+    label: "Objednávku si vyzvednete osobně — doručení…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_7": {
+    label: "Zatím žádná změna. Upravte počet, vyměňte…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: true,
+    maxLength: 250,
+  },
+  "order.order_edit_8": {
+    label: "Víc než 30 změn najednou uložit nejde —…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_9": {
+    label: "Přesměrováváme vás na platbu rozdílu…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_10": {
+    label: "Víc změn najednou uložit nejde — nejdřív…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_11": {
+    label: "Zabaleno — vyměnit jde jen varianta za…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_12": {
+    label: "Upravit můžete, dokud nezačneme balit.",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_13": {
+    label: "Úpravu jste uložili, ale rozdíl ještě není…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: true,
+    maxLength: 300,
+  },
+  "order.order_edit_14": {
+    label: "K objednávce běží nedokončená úprava. Když…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_15": {
+    label: "U dobírky nabízíme jen kusy, které jde…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_22": {
+    label: "Tohle provedení za váš kus vyměnit nejde —…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_23": {
+    label: "Tohle provedení za váš kus vyměnit nejde —…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_24": {
+    label: "Jen kusy, které jde k objednávce přidat.…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: true,
+    maxLength: 250,
+  },
+  "order.order_edit_25": {
+    label: "Objednávka je zabalená — vyměnit jde jen za…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_26": {
+    label: "Jiné provedení · rozdíl za kus",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_27": {
+    label: "Jiné provedení teď vybrat nejde. Kdybyste…",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_28": {
+    label: "Jen za výrobek ve stejné ceně.",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_29": {
+    label: "Cokoli z obchodu, rozdíl ceny se vyrovná.",
+    help: "Ukáže se v obchodě — order: order edit.",
+    group: "order: order edit",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.transfer_actions_1": {
+    label: "Objednávka teď patří novému majiteli.",
+    help: "Ukáže se v obchodě — order: transfer actions.",
+    group: "order: transfer actions",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.transfer_actions_2": {
+    label: "Podrobnosti najdete ve svém účtu.",
+    help: "Ukáže se v obchodě — order: transfer actions.",
+    group: "order: transfer actions",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.transfer_actions_3": {
+    label: "S touhle žádostí už nemusíte nic dělat.",
+    help: "Ukáže se v obchodě — order: transfer actions.",
+    group: "order: transfer actions",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.withdrawal_1": {
+    label: "Rozmysleli jste si to? Od smlouvy můžete…",
+    help: "Ukáže se v obchodě — order: withdrawal.",
+    group: "order: withdrawal",
+    multiline: true,
+    maxLength: 250,
+  },
+  "order.withdrawal_2": {
+    label: "Od smlouvy můžete odstoupit bez udání důvodu…",
+    help: "Ukáže se v obchodě — order: withdrawal.",
+    group: "order: withdrawal",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.templates_6": {
+    label: "05 · odstoupení, reklamace a vrácení",
+    help: "Ukáže se v obchodě — order: order details template.",
+    group: "order: order details template",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.templates_7": {
+    label: "Úprava objednávky čeká na zaplacení rozdílu…",
+    help: "Ukáže se v obchodě — order: order details template.",
+    group: "order: order details template",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.templates_8": {
+    label: "Potřebujete změnit doručovací adresu nebo…",
+    help: "Ukáže se v obchodě — order: order details template.",
+    group: "order: order details template",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.templates_9": {
+    label: "Objednávka je zabalená — vyměnit jde ještě…",
+    help: "Ukáže se v obchodě — order: order details template.",
+    group: "order: order details template",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.templates_10": {
+    label: "Objednávku můžete ještě upravit — počet…",
+    help: "Ukáže se v obchodě — order: order details template.",
+    group: "order: order details template",
+    multiline: true,
+    maxLength: 200,
+  },
 }
 
 /**
@@ -1031,6 +1335,80 @@ export const SHOP_TEXT_DEFAULTS: Readonly<ShopTextValues> = Object.freeze({
     "Záleží na tom, v jakém stavu dorazila krabice. Poškozený obal je škoda dopravce a hlásí se na poště; rozbitý kus v nepoškozené krabici je na nás.",
   "objednavka.podrobnosti_email":
     "Podrobnosti najdete v e-mailu s potvrzením nebo ve svém účtu.",
+  "order.carrier_damage_2":
+    "Krabice v pořádku, rozbitý výrobek",
+  "order.claim_status_8":
+    "Vráceno méně než cena vybraných položek — důvod najdete v protokolu a v e-mailu o vyřízení.",
+  "order.commission_conversation_1":
+    "Napište mi — čtu to u rozdělané práce.",
+  "order.commission_conversation_2":
+    "Napadlo vás ještě něco? Napište mi.",
+  "order.order_edit_1":
+    "K objednávce běží dřívější úprava, která čeká na doplacení rozdílu — do té doby objednávka zůstává, jak byla. Když ji nechcete dokončit, zrušte ji; o změnu se pak domluvíme spolu.",
+  "order.order_edit_2":
+    "Jiný kus, jiné provedení, něco přidat nebo ubrat? Změny zboží domlouváme osobně — napište, co potřebujete, a Lucie vám zavolá nebo odepíše. Do té doby objednávka zůstává, jak je.",
+  "order.order_edit_3":
+    "Objednávka už se chystá na cestu — doručení tady změnit nejde. Napište nám a domluvíme se.",
+  "order.order_edit_4":
+    "Výdejní místo můžete změnit, dokud zásilku nepřipravíme k odeslání.",
+  "order.order_edit_5":
+    "Doručovací adresu můžete změnit, dokud zásilku nepřipravíme k odeslání.",
+  "order.order_edit_6":
+    "Objednávku si vyzvednete osobně — doručení tu není co měnit.",
+  "order.order_edit_7":
+    "Zatím žádná změna. Upravte počet, vyměňte provedení nebo přidejte kus — rozdíl ceny uvidíte tady, ještě než cokoli uložíte.",
+  "order.order_edit_8":
+    "Víc než 30 změn najednou uložit nejde — nejdřív uložte tyhle.",
+  "order.order_edit_9":
+    "Přesměrováváme vás na platbu rozdílu…",
+  "order.order_edit_10":
+    "Víc změn najednou uložit nejde — nejdřív uložte tyhle.",
+  "order.order_edit_11":
+    "Zabaleno — vyměnit jde jen varianta za stejnou cenu.",
+  "order.order_edit_12":
+    "Upravit můžete, dokud nezačneme balit.",
+  "order.order_edit_13":
+    "Úpravu jste uložili, ale rozdíl ještě není zaplacený — do té doby objednávka zůstává, jak byla. Když platbu nedokončíte, úpravu zrušte a můžete ji udělat znovu.",
+  "order.order_edit_14":
+    "K objednávce běží nedokončená úprava. Když ji nechcete dokončit, zrušte ji a můžete začít znovu.",
+  "order.order_edit_15":
+    "U dobírky nabízíme jen kusy, které jde poslat na dobírku.",
+  "order.order_edit_22":
+    "Tohle provedení za váš kus vyměnit nejde — po zabalení jen za stejnou cenu, nebo ho nemáme na počet kusů.",
+  "order.order_edit_23":
+    "Tohle provedení za váš kus vyměnit nejde — vyberte prosím jiné.",
+  "order.order_edit_24":
+    "Jen kusy, které jde k objednávce přidat. Rozdíl ceny i poštovné uvidíte v souhrnu úpravy, ještě než cokoli uložíte.",
+  "order.order_edit_25":
+    "Objednávka je zabalená — vyměnit jde jen za provedení nebo výrobek ve stejné ceně.",
+  "order.order_edit_26":
+    "Jiné provedení · rozdíl za kus",
+  "order.order_edit_27":
+    "Jiné provedení teď vybrat nejde. Kdybyste potřebovali něco jiného, napište nám na",
+  "order.order_edit_28":
+    "Jen za výrobek ve stejné ceně.",
+  "order.order_edit_29":
+    "Cokoli z obchodu, rozdíl ceny se vyrovná.",
+  "order.transfer_actions_1":
+    "Objednávka teď patří novému majiteli.",
+  "order.transfer_actions_2":
+    "Podrobnosti najdete ve svém účtu.",
+  "order.transfer_actions_3":
+    "S touhle žádostí už nemusíte nic dělat.",
+  "order.withdrawal_1":
+    "Rozmysleli jste si to? Od smlouvy můžete odstoupit bez udání důvodu už teď — i před doručením. Lhůta 14 dnů poběží od převzetí zboží.",
+  "order.withdrawal_2":
+    "Od smlouvy můžete odstoupit bez udání důvodu do $",
+  "order.templates_6":
+    "05 · odstoupení, reklamace a vrácení",
+  "order.templates_7":
+    "Úprava objednávky čeká na zaplacení rozdílu — dokončete ji, nebo ji zrušte.",
+  "order.templates_8":
+    "Potřebujete změnit doručovací adresu nebo něco v objednávce? Adresu změníte sami, změnu zboží domluvíme osobně.",
+  "order.templates_9":
+    "Objednávka je zabalená — vyměnit jde ještě provedení za stejnou cenu.",
+  "order.templates_10":
+    "Objednávku můžete ještě upravit — počet kusů, provedení, přidat něco z obchodu.",
 })
 
 /** Jen známé klíče se string hodnotou — co přijde navíc, se zahodí. */

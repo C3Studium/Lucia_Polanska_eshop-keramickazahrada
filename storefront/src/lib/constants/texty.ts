@@ -162,7 +162,81 @@ export const TEXTY_DEFAULTS = {
   "objednavka.prevzeti_stav":
     "Záleží na tom, v jakém stavu dorazila krabice. Poškozený obal je škoda dopravce a hlásí se na poště; rozbitý kus v nepoškozené krabici je na nás.",
   "objednavka.podrobnosti_email":
-    "Podrobnosti najdete v e-mailu s potvrzením nebo ve svém účtu.",} as const
+    "Podrobnosti najdete v e-mailu s potvrzením nebo ve svém účtu.",
+  "order.carrier_damage_2":
+    "Krabice v pořádku, rozbitý výrobek",
+  "order.claim_status_8":
+    "Vráceno méně než cena vybraných položek — důvod najdete v protokolu a v e-mailu o vyřízení.",
+  "order.commission_conversation_1":
+    "Napište mi — čtu to u rozdělané práce.",
+  "order.commission_conversation_2":
+    "Napadlo vás ještě něco? Napište mi.",
+  "order.order_edit_1":
+    "K objednávce běží dřívější úprava, která čeká na doplacení rozdílu — do té doby objednávka zůstává, jak byla. Když ji nechcete dokončit, zrušte ji; o změnu se pak domluvíme spolu.",
+  "order.order_edit_2":
+    "Jiný kus, jiné provedení, něco přidat nebo ubrat? Změny zboží domlouváme osobně — napište, co potřebujete, a Lucie vám zavolá nebo odepíše. Do té doby objednávka zůstává, jak je.",
+  "order.order_edit_3":
+    "Objednávka už se chystá na cestu — doručení tady změnit nejde. Napište nám a domluvíme se.",
+  "order.order_edit_4":
+    "Výdejní místo můžete změnit, dokud zásilku nepřipravíme k odeslání.",
+  "order.order_edit_5":
+    "Doručovací adresu můžete změnit, dokud zásilku nepřipravíme k odeslání.",
+  "order.order_edit_6":
+    "Objednávku si vyzvednete osobně — doručení tu není co měnit.",
+  "order.order_edit_7":
+    "Zatím žádná změna. Upravte počet, vyměňte provedení nebo přidejte kus — rozdíl ceny uvidíte tady, ještě než cokoli uložíte.",
+  "order.order_edit_8":
+    "Víc než 30 změn najednou uložit nejde — nejdřív uložte tyhle.",
+  "order.order_edit_9":
+    "Přesměrováváme vás na platbu rozdílu…",
+  "order.order_edit_10":
+    "Víc změn najednou uložit nejde — nejdřív uložte tyhle.",
+  "order.order_edit_11":
+    "Zabaleno — vyměnit jde jen varianta za stejnou cenu.",
+  "order.order_edit_12":
+    "Upravit můžete, dokud nezačneme balit.",
+  "order.order_edit_13":
+    "Úpravu jste uložili, ale rozdíl ještě není zaplacený — do té doby objednávka zůstává, jak byla. Když platbu nedokončíte, úpravu zrušte a můžete ji udělat znovu.",
+  "order.order_edit_14":
+    "K objednávce běží nedokončená úprava. Když ji nechcete dokončit, zrušte ji a můžete začít znovu.",
+  "order.order_edit_15":
+    "U dobírky nabízíme jen kusy, které jde poslat na dobírku.",
+  "order.order_edit_22":
+    "Tohle provedení za váš kus vyměnit nejde — po zabalení jen za stejnou cenu, nebo ho nemáme na počet kusů.",
+  "order.order_edit_23":
+    "Tohle provedení za váš kus vyměnit nejde — vyberte prosím jiné.",
+  "order.order_edit_24":
+    "Jen kusy, které jde k objednávce přidat. Rozdíl ceny i poštovné uvidíte v souhrnu úpravy, ještě než cokoli uložíte.",
+  "order.order_edit_25":
+    "Objednávka je zabalená — vyměnit jde jen za provedení nebo výrobek ve stejné ceně.",
+  "order.order_edit_26":
+    "Jiné provedení · rozdíl za kus",
+  "order.order_edit_27":
+    "Jiné provedení teď vybrat nejde. Kdybyste potřebovali něco jiného, napište nám na",
+  "order.order_edit_28":
+    "Jen za výrobek ve stejné ceně.",
+  "order.order_edit_29":
+    "Cokoli z obchodu, rozdíl ceny se vyrovná.",
+  "order.transfer_actions_1":
+    "Objednávka teď patří novému majiteli.",
+  "order.transfer_actions_2":
+    "Podrobnosti najdete ve svém účtu.",
+  "order.transfer_actions_3":
+    "S touhle žádostí už nemusíte nic dělat.",
+  "order.withdrawal_1":
+    "Rozmysleli jste si to? Od smlouvy můžete odstoupit bez udání důvodu už teď — i před doručením. Lhůta 14 dnů poběží od převzetí zboží.",
+  "order.withdrawal_2":
+    "Od smlouvy můžete odstoupit bez udání důvodu do $",
+  "order.templates_6":
+    "05 · odstoupení, reklamace a vrácení",
+  "order.templates_7":
+    "Úprava objednávky čeká na zaplacení rozdílu — dokončete ji, nebo ji zrušte.",
+  "order.templates_8":
+    "Potřebujete změnit doručovací adresu nebo něco v objednávce? Adresu změníte sami, změnu zboží domluvíme osobně.",
+  "order.templates_9":
+    "Objednávka je zabalená — vyměnit jde ještě provedení za stejnou cenu.",
+  "order.templates_10":
+    "Objednávku můžete ještě upravit — počet kusů, provedení, přidat něco z obchodu.",} as const
 
 export type ShopTextKey = keyof typeof TEXTY_DEFAULTS
 export type ShopTexty = Record<ShopTextKey, string>

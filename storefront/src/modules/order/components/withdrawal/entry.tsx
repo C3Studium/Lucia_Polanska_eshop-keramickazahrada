@@ -6,6 +6,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import ContactEmailLink from "@modules/common/components/contact-email"
 
 import styles from "./style.module.scss"
+import { getTexty } from "@lib/data/texty"
 
 /**
  * Vstup do odstoupení od smlouvy online (§ 1830a OZ) — tlačítko
@@ -24,7 +25,7 @@ export const withdrawalHref = (orderId: string, token?: string | null) =>
     ? `/order/${orderId}/odstoupeni?token=${encodeURIComponent(token)}`
     : `/order/${orderId}/odstoupeni`
 
-export default function WithdrawalEntry({
+export default async function WithdrawalEntry({
   orderId,
   token,
   claims,
@@ -36,6 +37,8 @@ export default function WithdrawalEntry({
   /** `panel` = samostatný blok s nadpisem; `compact` = jen věta a tlačítko. */
   variant?: "panel" | "compact"
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = await getTexty()
   const state = withdrawalEntryState(claims)
   const basis = claims.withdrawal?.takeover_basis ?? claims.takeover_basis
   const claimsHref = token
@@ -48,9 +51,9 @@ export default function WithdrawalEntry({
   const lead =
     state.kind === "available"
       ? basis === "not_shipped" || basis === "in_transit"
-        ? "Rozmysleli jste si to? Od smlouvy můžete odstoupit bez udání důvodu už teď — i před doručením. Lhůta 14 dnů poběží od převzetí zboží."
+        ? texty["order.withdrawal_1"]
         : state.deadlineText
-          ? `Od smlouvy můžete odstoupit bez udání důvodu do ${state.deadlineText} (14 dnů od převzetí zboží).`
+          ? `{texty["order.withdrawal_2"]}{state.deadlineText} (14 dnů od převzetí zboží).`
           : "Od smlouvy můžete odstoupit bez udání důvodu do 14 dnů od převzetí zboží."
       : state.text
 

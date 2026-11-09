@@ -163,7 +163,7 @@ export default function CarrierDamageNotice({
                   napište nám — vyřídíme ji my.
                 </li>
                 <li>
-                  <strong>Krabice v pořádku, rozbitý výrobek</strong> —
+                  <strong>{texty["order.carrier_damage_2"]}</strong> —
                   reklamaci podáte u nás z odkazu v e-mailu u objednávky
                   {orderNumber ? ` (objednávka ${orderNumber})` : ""}, nebo na{" "}
                   <ContactEmailLink role="objednavky" />

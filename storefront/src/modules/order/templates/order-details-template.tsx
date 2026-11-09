@@ -33,6 +33,7 @@ import {
   AccountSectionReveal,
 } from "@modules/account/components/account-page-reveal"
 import s from "./styles/order-details.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 type OrderDetailsTemplateProps = {
   order: HttpTypes.StoreOrder
@@ -78,6 +79,8 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
   statusLabel = null,
   terms = null,
 }) => {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   return (
     <AccountPageReveal
       className={s.accountOrderDetailsRoot}
@@ -137,13 +140,13 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
             <div className={s.accountOrderEdit}>
               <p>
                 {edit.pending
-                  ? "Úprava objednávky čeká na zaplacení rozdílu — dokončete ji, nebo ji zrušte."
+                  ? texty["order.templates_7"]
                   : !ORDER_ITEM_EDITING_ENABLED
                     ? /* 12. 10. 2026, Matěj: zboží si zákazník sám neupravuje. */
-                      "Potřebujete změnit doručovací adresu nebo něco v objednávce? Adresu změníte sami, změnu zboží domluvíme osobně."
+                      texty["order.templates_8"]
                     : edit.mode === "swap_only"
-                      ? "Objednávka je zabalená — vyměnit jde ještě provedení za stejnou cenu."
-                      : "Objednávku můžete ještě upravit — počet kusů, provedení, přidat něco z obchodu."}
+                      ? texty["order.templates_9"]
+                      : texty["order.templates_10"]}
               </p>
               <LocalizedClientLink
                 className={s.accountOrderEditLink}
@@ -177,7 +180,7 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
         <section
           className={`${s.accountOrderDetailsSection} ${s.accountOrderDetailsClaims}`}
         >
-          <span>05 · odstoupení, reklamace a vrácení</span>
+          <span>{texty["order.templates_6"]}</span>
           {selfServiceToken && claims ? (
             <>
               {/* § 1830a OZ — tlačítko „Odstoupit od smlouvy" po celou lhůtu

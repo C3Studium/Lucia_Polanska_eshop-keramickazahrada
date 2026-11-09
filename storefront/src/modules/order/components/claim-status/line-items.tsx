@@ -7,6 +7,7 @@ import { convertToLocale } from "@lib/util/money"
 import Thumbnail from "@modules/products/components/thumbnail"
 
 import styles from "./style.module.scss"
+import { getTexty } from "@lib/data/texty"
 
 /**
  * Položky žádosti (§11.1) — náhled, název · varianta, počet, částka — a pod
@@ -20,7 +21,7 @@ import styles from "./style.module.scss"
  * Staré žádosti `line_items` nemají → nevykreslí se nic a karta vypadá jako
  * dřív (text `reason` nese, co se vracelo).
  */
-export default function ClaimLineItems({
+export default async function ClaimLineItems({
   claim,
   currencyCode,
   compact = false,
@@ -31,6 +32,8 @@ export default function ClaimLineItems({
   /** Souhrn na potvrzení: menší náhledy, bez jednotkové ceny a poznámky. */
   compact?: boolean
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = await getTexty()
   const items = claimLineItems(claim)
   if (!items.length) return null
 
@@ -84,9 +87,7 @@ export default function ClaimLineItems({
       </dl>
       {!compact && partial && (
         <p className={styles.lineNote}>
-          Vráceno méně než cena vybraných položek — důvod najdete v protokolu a
-          v e-mailu o vyřízení.
-        </p>
+          {texty["order.claim_status_8"]}</p>
       )}
     </div>
   )

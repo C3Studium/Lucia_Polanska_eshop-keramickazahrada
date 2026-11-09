@@ -4,10 +4,13 @@ import { acceptTransferRequest, declineTransferRequest } from "@lib/data/orders"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import { useState } from "react"
 import styles from "../styles/transfer-actions.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 type TransferStatus = "pending" | "success" | "error"
 
 const TransferActions = ({ id, token }: { id: string; token: string }) => {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [status, setStatus] = useState<{
     accept: TransferStatus | null
@@ -53,13 +56,13 @@ const TransferActions = ({ id, token }: { id: string; token: string }) => {
           </span>
           <strong>
             {status.accept === "success"
-              ? "Objednávka teď patří novému majiteli."
+              ? texty["order.transfer_actions_1"]
               : "Objednávka zůstává, jak byla."}
           </strong>
           <p>
             {status.accept === "success"
-              ? "Podrobnosti najdete ve svém účtu."
-              : "S touhle žádostí už nemusíte nic dělat."}
+              ? texty["order.transfer_actions_2"]
+              : texty["order.transfer_actions_3"]}
           </p>
         </div>
       ) : (
