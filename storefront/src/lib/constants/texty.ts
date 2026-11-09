@@ -98,7 +98,71 @@ export const TEXTY_DEFAULTS = {
   "objednavka.potvrzeni":
     "Potvrzení jsme poslali na {{email}}. Jakmile se něco pohne, ozveme se vám znovu.",
   "objednavka.poskozeny_obal":
-    "Poškozený obal je škoda dopravce: nahlaste prosím zásilku na kterékoli poště, nejlépe do dvou pracovních dnů od převzetí — náhradu Česká pošta vyplácí adresátovi, tedy vám. Vezměte s sebou zásilku i s obalem a výplní, nebo aspoň fotky obalu a zboží. Napište prosím i nám; pokud vám na poště reklamaci nepřijmou, vyřídíme ji my — vaše práva u nás na dopravci nezávisí.",} as const
+    "Poškozený obal je škoda dopravce: nahlaste prosím zásilku na kterékoli poště, nejlépe do dvou pracovních dnů od převzetí — náhradu Česká pošta vyplácí adresátovi, tedy vám. Vezměte s sebou zásilku i s obalem a výplní, nebo aspoň fotky obalu a zboží. Napište prosím i nám; pokud vám na poště reklamaci nepřijmou, vyřídíme ji my — vaše práva u nás na dopravci nezávisí.",
+  "kosik.prazdny":
+    "Zatím je prázdný. Podívejte se, co je v ateliéru — třeba vás něco chytne.",
+  "kosik.prihlaseni":
+    "Přihlaste se a nemusíte znovu vyplňovat adresu.",
+  "kosik.baleni":
+    "Všechno je dělané rukama. Než to pošleme, pečlivě to v ateliéru zabalíme.",
+  "kosik.dobirka_poplatek":
+    "Poplatek za dobírku — zmizí, když zvolíte jiný způsob platby.",
+  "kosik.platba_zrusena":
+    "Platba se nedokončila a nic jsme vám nestrhli.",
+  "kosik.platba_zrusena_vyzva":
+    "Zaplaťte prosím objednávku, ať ji můžeme co nejdřív poslat — do té doby ji nemáme jak odeslat. Zboží vám v košíku zůstalo, stačí pokračovat.",
+  "kosik.platba_ceka_brana":
+    "Platba k nám zatím nedorazila. Pokud jste ji na platební bráně nedokončili, dokončete ji tlačítkem níže. Pokud jste posílali převod, nemusíte nic dělat — jakmile peníze dorazí, objednávku dokončíme a pošleme potvrzení e-mailem.",
+  "kosik.platba_ceka_prevod":
+    "Platbu jsme odeslali, banka ji ale zatím nepotvrdila. U převodu to bývá i pár hodin, o víkendu klidně déle. Nemusíte nic dělat — jakmile ji potvrdíme, napíšeme vám.",
+  "kosik.platba_ceka_obnova":
+    "Stránka se sama každých pár vteřin obnoví. Klidně ji zavřete, na výsledek to nemá vliv.",
+  "kosik.platba_potvrzuje":
+    "Ještě chviličku — objednávku potvrzujeme a ukládáme. Stránku nemusíte obnovovat.",
+  "pokladna.adresa_vyber":
+    "Vyberte si uloženou adresu, nebo vyplňte novou níž.",
+  "pokladna.firma_uvod":
+    "Fakturační údaje firmy nebo OSVČ. Doklad vystavíme na ně, zboží pošleme na adresu výš.",
+  "pokladna.firma_nazev":
+    "U firmy název, u OSVČ jméno a příjmení tak, jak jsou v rejstříku.",
+  "pokladna.firma_dic":
+    "Tvar CZ a osm až deset číslic, například CZ27074358. Neplátce DPH nechá prázdné.",
+  "pokladna.doprava_poukaz":
+    "Doprava není potřeba — elektronický poukaz pošleme e-mailem.",
+  "pokladna.doprava_balikovna_vyber":
+    "Vyberte prosím Balíkovnu, kam vám balík pošleme.",
+  "pokladna.doprava_vydejni_vyber":
+    "Vyberte prosím výdejní místo v mapě.",
+  "pokladna.doprava_zmena":
+    "Dopravu můžete změnit, dokud objednávku nepotvrdíte.",
+  "pokladna.platba_balikovna_karta":
+    "Na výdejní místo Balíkovny posíláme jen s platbou předem kartou — zásilku si pak jen vyzvednete. Dobírku nabízíme při doručení na adresu.",
+  "zakazka.brief_uvod":
+    "Napište, jak si to představujete, a přiložte fotky. Podle toho se to vyrobí — bez zadání nevíme, co máme udělat.",
+  "zakazka.brief_kosik":
+    "Napište, jak si to představujete, a přiložte fotky. Podle toho to vyrobím.",
+  "zakazka.brief_vyzva":
+    "Napište prosím pár slov, nebo přiložte fotku.",
+  "zakazka.brief_poznamka":
+    "Napadlo vás ještě něco? Napište mi a klidně přiložte fotky — čtu to u rozdělané práce.",
+  "zakazka.doplatek_recap":
+    "Zbytek doplatíte, až bude zakázka hotová. Částku zvolíte v kroku Platba.",
+  "zakazka.seznam_uvod":
+    "Každá zakázka má svůj stav, zálohu a doplatek — níž po jedné.",
+  "objednavka.doplatek_prisel":
+    "Platba dorazila, děkuji. Potvrzení vám přijde e-mailem.",
+  "objednavka.doplatek_zrusen":
+    "Platba se zrušila a nic se nestrhlo. Zkusit to můžete znovu z odkazu v e-mailu, nebo mi napište.",
+  "objednavka.doplatek_zpracovava":
+    "Platba se ještě zpracovává. Jakmile dorazí, dám vám vědět e-mailem.",
+  "objednavka.doplatek_odkaz_neplati":
+    "Odkaz na platbu už neplatí. Napište mi prosím a pošlu vám nový.",
+  "objednavka.prevzeti_obal":
+    "Prohlédněte si prosím obal ještě při převzetí. Je-li promáčklý, protržený nebo něčím prosakuje, rozbalte zásilku před doručovatelem a poškození s ním rovnou sepište — se záznamem pošta reklamaci vyřídí nejsnáz. Podmínkou to ale není: keramika se rozbije tiše a poškození často najdete až doma.",
+  "objednavka.prevzeti_stav":
+    "Záleží na tom, v jakém stavu dorazila krabice. Poškozený obal je škoda dopravce a hlásí se na poště; rozbitý kus v nepoškozené krabici je na nás.",
+  "objednavka.podrobnosti_email":
+    "Podrobnosti najdete v e-mailu s potvrzením nebo ve svém účtu.",} as const
 
 export type ShopTextKey = keyof typeof TEXTY_DEFAULTS
 export type ShopTexty = Record<ShopTextKey, string>

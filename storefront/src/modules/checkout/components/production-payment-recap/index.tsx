@@ -2,6 +2,7 @@ import { convertToLocale } from "@lib/util/money"
 import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 
 import styles from "./style.module.scss"
+import { getTexty } from "@lib/data/texty"
 
 /**
  * Zjednodušená připomínka volby „kolik zaplatit teď" do pravého souhrnu.
@@ -14,11 +15,13 @@ import styles from "./style.module.scss"
  *
  * Bez zakázky (`has_made_to_order === false`) nevykreslí nic.
  */
-export default function ProductionPaymentRecap({
+export default async function ProductionPaymentRecap({
   mode,
 }: {
   mode?: ProductionPaymentMode | null
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = await getTexty()
   if (!mode?.has_made_to_order) {
     return null
   }
@@ -55,7 +58,7 @@ export default function ProductionPaymentRecap({
 
       <p className={styles.note}>
         {outstanding > 0
-          ? "Zbytek doplatíte, až bude zakázka hotová. Částku zvolíte v kroku Platba."
+          ? texty["zakazka.doplatek_recap"]
           : "Platíte celou částku — pak už nic neřešíte."}
       </p>
     </section>

@@ -544,8 +544,7 @@ const Shipping: React.FC<ShippingProps> = ({
           </h2>
         </div>
         <p className={styles.radioAddress}>
-          Doprava není potřeba — elektronický poukaz pošleme e-mailem.
-        </p>
+          {texty["pokladna.doprava_poukaz"]}</p>
         <Divider className="mt-8" />
       </div>
     )
@@ -733,8 +732,7 @@ const Shipping: React.FC<ShippingProps> = ({
             return !balikovnaPoint ? (
               <div className={styles.packetaNotice}>
                 <p className={styles.packetaNoticeText}>
-                  Vyberte prosím Balíkovnu, kam vám balík pošleme.
-                </p>
+                  {texty["pokladna.doprava_balikovna_vyber"]}</p>
                 <PremiumActionButton
                   text="Vybrat Balíkovnu"
                   onClickAction={() => setBalikovnaOpen(true)}
@@ -823,8 +821,7 @@ const Shipping: React.FC<ShippingProps> = ({
             !packetaPickupPointSelected && (
               <div className={styles.packetaNotice}>
                 <p className={styles.packetaNoticeText}>
-                  Vyberte prosím výdejní místo v mapě.
-                </p>
+                  {texty["pokladna.doprava_vydejni_vyber"]}</p>
                 <PremiumActionButton
                   text="Znovu vybrat místo"
                   onClickAction={handleOpenWidget}
@@ -890,7 +887,7 @@ const Shipping: React.FC<ShippingProps> = ({
                 })}
               </span>
             </div>
-            <p>Dopravu můžete změnit, dokud objednávku nepotvrdíte.</p>
+            <p>{texty["pokladna.doprava_zmena"]}</p>
           </div>
         )
       )}

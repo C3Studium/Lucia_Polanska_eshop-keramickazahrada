@@ -8,6 +8,7 @@ import type { CopyBlock } from "@lib/util/site-copy"
 import CmsText from "@modules/common/components/cms-text"
 import OrderStateShell from "@modules/order/components/order-state-shell"
 import styles from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 const REFRESH_INTERVAL_MS = 20_000
 
@@ -36,6 +37,8 @@ export default function PaymentPending({
    */
   block?: CopyBlock
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const router = useRouter()
 
   useEffect(() => {
@@ -56,7 +59,7 @@ export default function PaymentPending({
         eyebrow="Platba nedokončena"
         title="Ještě není zaplaceno."
         accent="Košík vám zůstal."
-        description="Platba k nám zatím nedorazila. Pokud jste ji na platební bráně nedokončili, dokončete ji tlačítkem níže. Pokud jste posílali převod, nemusíte nic dělat — jakmile peníze dorazí, objednávku dokončíme a pošleme potvrzení e-mailem."
+        description={texty["kosik.platba_ceka_brana"]}
         status="pending"
         primary={{ href: "/checkout?step=payment", label: "Dokončit platbu" }}
         secondary={{ href: "/cart", label: "Zobrazit košík" }}
@@ -82,7 +85,7 @@ export default function PaymentPending({
       accent={block?.headline?.trim() || "Teď čekáme na banku."}
       description={
         block?.bodyText?.trim() ||
-        "Platbu jsme odeslali, banka ji ale zatím nepotvrdila. U převodu to bývá i pár hodin, o víkendu klidně déle. Nemusíte nic dělat — jakmile ji potvrdíme, napíšeme vám."
+        texty["kosik.platba_ceka_prevod"]
       }
       status="pending"
       editDoc={block?.id ?? null}
@@ -109,7 +112,7 @@ export default function PaymentPending({
       </dl>
       <CmsText as="p" className={styles.note} doc={block?.id ?? null} field={itemFieldPath(block, "poznamka")}>
         {itemValue(block, "poznamka")?.trim() ||
-          "Stránka se sama každých pár vteřin obnoví. Klidně ji zavřete, na výsledek to nemá vliv."}
+          texty["kosik.platba_ceka_obnova"]}
       </CmsText>
     </OrderStateShell>
   )

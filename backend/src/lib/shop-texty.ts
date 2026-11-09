@@ -95,6 +95,38 @@ export const SHOP_TEXT_KEYS = [
   /* Hotová objednávka */
   "objednavka.potvrzeni",
   "objednavka.poskozeny_obal",
+  "kosik.prazdny",
+  "kosik.prihlaseni",
+  "kosik.baleni",
+  "kosik.dobirka_poplatek",
+  "kosik.platba_zrusena",
+  "kosik.platba_zrusena_vyzva",
+  "kosik.platba_ceka_brana",
+  "kosik.platba_ceka_prevod",
+  "kosik.platba_ceka_obnova",
+  "kosik.platba_potvrzuje",
+  "pokladna.adresa_vyber",
+  "pokladna.firma_uvod",
+  "pokladna.firma_nazev",
+  "pokladna.firma_dic",
+  "pokladna.doprava_poukaz",
+  "pokladna.doprava_balikovna_vyber",
+  "pokladna.doprava_vydejni_vyber",
+  "pokladna.doprava_zmena",
+  "pokladna.platba_balikovna_karta",
+  "zakazka.brief_uvod",
+  "zakazka.brief_kosik",
+  "zakazka.brief_vyzva",
+  "zakazka.brief_poznamka",
+  "zakazka.doplatek_recap",
+  "zakazka.seznam_uvod",
+  "objednavka.doplatek_prisel",
+  "objednavka.doplatek_zrusen",
+  "objednavka.doplatek_zpracovava",
+  "objednavka.doplatek_odkaz_neplati",
+  "objednavka.prevzeti_obal",
+  "objednavka.prevzeti_stav",
+  "objednavka.podrobnosti_email",
 ] as const
 
 export type ShopTextKey = (typeof SHOP_TEXT_KEYS)[number]
@@ -111,20 +143,86 @@ export type StoredShopTexts = Partial<Record<ShopTextKey, string>>
 /** Které věty jsou vypnuté. Chybějící klíč = zapnutá. */
 export type StoredShopTextsOff = Partial<Record<ShopTextKey, boolean>>
 
-/** Skupiny formuláře v pořadí, v jakém je stránka ukazuje. */
-export const SHOP_TEXT_GROUPS = [
-  "Stránka výrobku",
-  "Zakázka — panel u ceny",
-  "Zakázka — štítek pod cenou",
-  "Zakázka — jak probíhá",
-  "Bezpečné používání",
+/**
+ * Záložky stránky — podle toho, ČEHO se text týká.
+ *
+ * Bez nich by formulář byl sto čtyřicet polí pod sebou a nedalo by se v něm
+ * nic najít (Matěj, 9. 11. 2026). Uvnitř záložky pak skupiny říkají, KDE
+ * v obchodě text stojí — u zakázky třeba stránka výrobku, košík, pokladna
+ * a objednávka, protože tatáž věc se zákazníkovi připomíná na čtyřech
+ * místech a každé má jinou větu.
+ */
+export const SHOP_TEXT_OBLASTI = [
+  "Výrobek",
+  "Zakázková výroba",
   "Košík",
-  "Slevy a poukazy",
   "Pokladna",
-  "Hotová objednávka",
+  "Objednávka",
+  "Reklamace a vrácení",
+  "Úprava objednávky",
 ] as const
 
-export type ShopTextGroup = (typeof SHOP_TEXT_GROUPS)[number]
+export type ShopTextOblast = (typeof SHOP_TEXT_OBLASTI)[number]
+
+/**
+ * Skupiny v pořadí, v jakém je stránka ukazuje, každá se svou záložkou.
+ *
+ * Záložka se odvozuje od skupiny, ne od klíče: tím nemůže vzniknout text,
+ * který visí v jedné záložce a v nadpisu tvrdí něco jiného.
+ */
+export const SHOP_TEXT_GROUP_LIST = [
+  { nazev: "Dostupnost a cena", oblast: "Výrobek" },
+  { nazev: "Bezpečné používání", oblast: "Výrobek" },
+  { nazev: "Recenze", oblast: "Výrobek" },
+
+  { nazev: "Panel u ceny (stránka výrobku)", oblast: "Zakázková výroba" },
+  { nazev: "Štítek pod cenou (stránka výrobku)", oblast: "Zakázková výroba" },
+  { nazev: "Jak zakázka probíhá (stránka výrobku)", oblast: "Zakázková výroba" },
+  { nazev: "Zadání zakázky (košík a pokladna)", oblast: "Zakázková výroba" },
+  { nazev: "Zakázka v objednávce", oblast: "Zakázková výroba" },
+
+  { nazev: "Prázdný košík a přihlášení", oblast: "Košík" },
+  { nazev: "Souhrn košíku", oblast: "Košík" },
+  { nazev: "Slevy a poukazy", oblast: "Košík" },
+  { nazev: "Stavy platby", oblast: "Košík" },
+
+  { nazev: "Doručení", oblast: "Pokladna" },
+  { nazev: "Adresy a firemní údaje", oblast: "Pokladna" },
+  { nazev: "Platba", oblast: "Pokladna" },
+
+  { nazev: "Po odeslání", oblast: "Objednávka" },
+  { nazev: "Převzetí zásilky", oblast: "Objednávka" },
+  { nazev: "Doplatek", oblast: "Objednávka" },
+
+  { nazev: "Druhy žádostí", oblast: "Reklamace a vrácení" },
+  { nazev: "Formulář žádosti", oblast: "Reklamace a vrácení" },
+  { nazev: "Lhůty a poučení", oblast: "Reklamace a vrácení" },
+  { nazev: "Stav žádosti", oblast: "Reklamace a vrácení" },
+  { nazev: "Poškozená zásilka", oblast: "Reklamace a vrácení" },
+
+  { nazev: "Co jde měnit", oblast: "Úprava objednávky" },
+  { nazev: "Zboží v úpravě", oblast: "Úprava objednávky" },
+  { nazev: "Doručení v úpravě", oblast: "Úprava objednávky" },
+  { nazev: "Rozdíl ceny a doplacení", oblast: "Úprava objednávky" },
+] as const
+
+export type ShopTextGroup = (typeof SHOP_TEXT_GROUP_LIST)[number]["nazev"]
+
+/** Jen názvy — zpětně kompatibilní s dřívějším `SHOP_TEXT_GROUPS`. */
+export const SHOP_TEXT_GROUPS = SHOP_TEXT_GROUP_LIST.map(
+  (skupina) => skupina.nazev
+) as readonly ShopTextGroup[]
+
+/** Do které záložky skupina patří. */
+export const oblastSkupiny = (group: ShopTextGroup): ShopTextOblast =>
+  SHOP_TEXT_GROUP_LIST.find((skupina) => skupina.nazev === group)?.oblast ??
+  "Výrobek"
+
+/** Skupiny jedné záložky, v pořadí. */
+export const skupinyOblasti = (oblast: ShopTextOblast): ShopTextGroup[] =>
+  SHOP_TEXT_GROUP_LIST.filter((skupina) => skupina.oblast === oblast).map(
+    (skupina) => skupina.nazev
+  )
 
 export type ShopTextMeta = {
   /** Název pole ve formuláři. */
@@ -155,7 +253,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Není skladem — jak dlouho se čeká",
     help:
       "Věta pod dostupností u výrobku, který není skladem, ale jde objednat. Když má kus vlastní „Zprávu pro zákazníka“ na svém detailu, platí ta jeho.",
-    group: "Stránka výrobku",
+    group: "Dostupnost a cena",
     multiline: true,
     maxLength: 400,
     nahled: "/cz/store",
@@ -164,7 +262,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Cena po domluvě — věta pod cenou",
     help:
       "Ukáže se u výrobku, který má cenu po domluvě. Musí být jasné, že objednávka je závazná, ale teď se neplatí nic.",
-    group: "Stránka výrobku",
+    group: "Dostupnost a cena",
     multiline: true,
     maxLength: 400,
   },
@@ -173,7 +271,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Pravidla recenzí",
     help:
       "Ukáže se pod recenzemi u výrobku, ve formuláři na novou recenzi a v účtu. Vysvětluje, kdo smí psát a co znamená „Ověřený nákup“.",
-    group: "Stránka výrobku",
+    group: "Recenze",
     multiline: true,
     maxLength: 600,
     pravni: true,
@@ -182,7 +280,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
   "zakazka.panel_nadpis": {
     label: "Nadpis panelu",
     help: "Záhlaví rámečku u ceny zakázkového výrobku.",
-    group: "Zakázka — panel u ceny",
+    group: "Panel u ceny (stránka výrobku)",
     multiline: false,
     maxLength: 80,
   },
@@ -190,7 +288,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Lhůta (když je v profilu vyplněná)",
     help:
       "První věta panelu. Číslo dnů se bere z výrobního profilu toho kusu, takže jedno znění platí pro hrnek i pro plastiku.",
-    group: "Zakázka — panel u ceny",
+    group: "Panel u ceny (stránka výrobku)",
     multiline: true,
     maxLength: 300,
     znacky: [
@@ -201,7 +299,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
   "zakazka.panel_lhuta_rozmezi": {
     label: "Lhůta (jen rozpětí, bez nejdelší)",
     help: "Platí u zakázky, která má v profilu jen rozpětí, ne nejdelší lhůtu.",
-    group: "Zakázka — panel u ceny",
+    group: "Panel u ceny (stránka výrobku)",
     multiline: true,
     maxLength: 300,
     znacky: [{ znacka: "{{rozmezi}}", popis: "rozpětí z profilu, např. „14–42 dní“", povinna: true }],
@@ -210,7 +308,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Záloha v procentech",
     help:
       "Platí, když je cena známá. Procento je z profilu výroby; částka se dopočítá z ceny provedení a bez ní se vynechá.",
-    group: "Zakázka — panel u ceny",
+    group: "Panel u ceny (stránka výrobku)",
     multiline: true,
     maxLength: 400,
     znacky: [
@@ -222,14 +320,14 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Záloha u ceny po domluvě",
     help:
       "Platí u kusu s cenou po domluvě — procento ani částka tu nedávají smysl, počítaly by se z nuly.",
-    group: "Zakázka — panel u ceny",
+    group: "Panel u ceny (stránka výrobku)",
     multiline: true,
     maxLength: 500,
   },
   "zakazka.panel_kosik": {
     label: "Kde se zadává popis a fotky",
     help: "Věta, která zákazníkovi řekne, že zadání píše až v košíku, ne tady.",
-    group: "Zakázka — panel u ceny",
+    group: "Panel u ceny (stránka výrobku)",
     multiline: true,
     maxLength: 300,
   },
@@ -237,7 +335,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Poučení o 14denní lhůtě",
     help:
       "Zákazník to musí vědět PŘED objednávkou (§ 1820 odst. 1 písm. j) OZ) a v pokladně to ještě potvrdí zaškrtnutím. Totéž znění se krátí do štítku pod cenou.",
-    group: "Zakázka — panel u ceny",
+    group: "Panel u ceny (stránka výrobku)",
     multiline: true,
     maxLength: 400,
     pravni: true,
@@ -247,7 +345,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Štítek pod cenou — skladba",
     help:
       "Jednořádkový štítek pod cenou. Části oddělené tečkou se samy vynechají, když nemají co říct (třeba bez vyplněné lhůty).",
-    group: "Zakázka — štítek pod cenou",
+    group: "Štítek pod cenou (stránka výrobku)",
     multiline: true,
     maxLength: 300,
     znacky: [
@@ -259,7 +357,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
   "zakazka.stitek_zaloha": {
     label: "Štítek — část o záloze",
     help: "Dosadí se za {{zaloha}}, když je procento zálohy známé.",
-    group: "Zakázka — štítek pod cenou",
+    group: "Štítek pod cenou (stránka výrobku)",
     multiline: false,
     maxLength: 100,
     znacky: [{ znacka: "{{procento}}", popis: "záloha v procentech", povinna: true }],
@@ -267,14 +365,14 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
   "zakazka.stitek_zaloha_po_domluve": {
     label: "Štítek — záloha u ceny po domluvě",
     help: "Dosadí se za {{zaloha}} u kusu s cenou po domluvě.",
-    group: "Zakázka — štítek pod cenou",
+    group: "Štítek pod cenou (stránka výrobku)",
     multiline: false,
     maxLength: 100,
   },
   "zakazka.stitek_vyroba": {
     label: "Štítek — část o lhůtě",
     help: "Dosadí se za {{vyroba}}, když je v profilu nejdelší lhůta.",
-    group: "Zakázka — štítek pod cenou",
+    group: "Štítek pod cenou (stránka výrobku)",
     multiline: false,
     maxLength: 100,
     znacky: [{ znacka: "{{dny}}", popis: "nejdelší lhůta ve dnech", povinna: true }],
@@ -283,14 +381,14 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
   "zakazka.kroky_nadpis": {
     label: "Nadpis bloku",
     help: "Záhlaví čtyř kroků pod tlačítkem u zakázkového výrobku.",
-    group: "Zakázka — jak probíhá",
+    group: "Jak zakázka probíhá (stránka výrobku)",
     multiline: false,
     maxLength: 80,
   },
   "zakazka.krok_zahajeni_nazev": {
     label: "Krok 1 — název",
     help: "Tučné slovo na začátku prvního kroku.",
-    group: "Zakázka — jak probíhá",
+    group: "Jak zakázka probíhá (stránka výrobku)",
     multiline: false,
     maxLength: 60,
   },
@@ -298,14 +396,14 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Krok 1 — text",
     help:
       "Kdy se začíná vyrábět. Totéž čte zákazník i v PDF Potvrzení zakázky, bod 05.",
-    group: "Zakázka — jak probíhá",
+    group: "Jak zakázka probíhá (stránka výrobku)",
     multiline: true,
     maxLength: 600,
   },
   "zakazka.krok_dokonceni_nazev": {
     label: "Krok 2 — název",
     help: "Tučné slovo na začátku druhého kroku.",
-    group: "Zakázka — jak probíhá",
+    group: "Jak zakázka probíhá (stránka výrobku)",
     multiline: false,
     maxLength: 60,
   },
@@ -313,7 +411,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Krok 2 — text (se lhůtou)",
     help:
       "Platí u zakázky, která má ve výrobním profilu vyplněnou nejdelší lhůtu. Právě tady se mění ta lhůta, co je na plastiky krátká — číslo se bere z profilu, věta jen říká, jak se podá.",
-    group: "Zakázka — jak probíhá",
+    group: "Jak zakázka probíhá (stránka výrobku)",
     multiline: true,
     maxLength: 600,
     znacky: [{ znacka: "{{dny}}", popis: "nejdelší lhůta ve dnech z profilu výroby", povinna: true }],
@@ -322,35 +420,35 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Krok 2 — text (bez lhůty)",
     help:
       "Platí u zakázky, která lhůtu v profilu vyplněnou nemá. Nesmí slibovat termín — jen říct, kde ho zákazník najde.",
-    group: "Zakázka — jak probíhá",
+    group: "Jak zakázka probíhá (stránka výrobku)",
     multiline: true,
     maxLength: 600,
   },
   "zakazka.krok_schvaleni_nazev": {
     label: "Krok 3 — název",
     help: "Tučné slovo na začátku třetího kroku.",
-    group: "Zakázka — jak probíhá",
+    group: "Jak zakázka probíhá (stránka výrobku)",
     multiline: false,
     maxLength: 60,
   },
   "zakazka.krok_schvaleni": {
     label: "Krok 3 — text",
     help: "Kdy posíláte fotku hotového tvaru a kolik času má zákazník na odpověď.",
-    group: "Zakázka — jak probíhá",
+    group: "Jak zakázka probíhá (stránka výrobku)",
     multiline: true,
     maxLength: 600,
   },
   "zakazka.krok_odeslani_nazev": {
     label: "Krok 4 — název",
     help: "Tučné slovo na začátku čtvrtého kroku.",
-    group: "Zakázka — jak probíhá",
+    group: "Jak zakázka probíhá (stránka výrobku)",
     multiline: false,
     maxLength: 60,
   },
   "zakazka.krok_odeslani": {
     label: "Krok 4 — text",
     help: "Co se stane po doplatku — odeslání, nebo připravení k vyzvednutí.",
-    group: "Zakázka — jak probíhá",
+    group: "Jak zakázka probíhá (stránka výrobku)",
     multiline: true,
     maxLength: 600,
   },
@@ -358,7 +456,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Zrušení zakázky (věta pod kroky)",
     help:
       "Poslední odstavec bloku. Odkaz na obchodní podmínky se připojí sám za touhle větou.",
-    group: "Zakázka — jak probíhá",
+    group: "Jak zakázka probíhá (stránka výrobku)",
     multiline: true,
     maxLength: 400,
     pravni: true,
@@ -401,7 +499,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Cena po domluvě — věta v souhrnu",
     help:
       "Ukáže se v souhrnu košíku i pokladny, když je v košíku kus s cenou po domluvě. O poštovném tu schválně nic není: kdy se platí, závisí na zbytku košíku.",
-    group: "Košík",
+    group: "Souhrn košíku",
     multiline: true,
     maxLength: 400,
     nahled: "/cz/cart",
@@ -409,7 +507,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
   "kosik.poukaz_vse": {
     label: "Celou objednávku hradí poukaz",
     help: "Věta u tlačítka, když dárkový poukaz pokryl celou částku a nic se nedoplácí.",
-    group: "Košík",
+    group: "Souhrn košíku",
     multiline: true,
     maxLength: 400,
   },
@@ -418,7 +516,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Poukaz ještě není nastavený",
     help:
       "Ukáže se v košíku, když je v něm dárkový poukaz bez vybrané hodnoty nebo podoby. Do pokladny to tak jako tak nepustí.",
-    group: "Košík",
+    group: "Slevy a poukazy",
     multiline: true,
     maxLength: 300,
   },
@@ -451,7 +549,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Teď se neplatí nic",
     help:
       "Věta u odesílacího tlačítka v pokladně, když je k úhradě nula, protože v košíku je jen cena po domluvě.",
-    group: "Pokladna",
+    group: "Platba",
     multiline: true,
     maxLength: 500,
     nahled: "/cz/checkout",
@@ -460,14 +558,14 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Doručení — křehký kus",
     help:
       "Vysvětlení v kroku Doručení, proč jsou na výběr jen křehký balík a osobní odběr.",
-    group: "Pokladna",
+    group: "Doručení",
     multiline: true,
     maxLength: 500,
   },
   "pokladna.doprava_zakazka": {
     label: "Doručení — zakázková výroba",
     help: "Totéž u zakázkové výroby.",
-    group: "Pokladna",
+    group: "Doručení",
     multiline: true,
     maxLength: 500,
   },
@@ -475,7 +573,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Doručení — cena po domluvě",
     help:
       "Totéž u kusu s cenou po domluvě. Navíc musí být jasné, že dopravu si zákazník vybere teď, ale zaplatí ji až s domluvenou cenou.",
-    group: "Pokladna",
+    group: "Doručení",
     multiline: true,
     maxLength: 600,
   },
@@ -484,7 +582,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Úvodní věta kroku Platba",
     help:
       "Stojí pod otázkou „Jak chcete zaplatit?“ u běžné objednávky — uklidňuje, že se teď ještě neplatí.",
-    group: "Pokladna",
+    group: "Platba",
     multiline: true,
     maxLength: 400,
   },
@@ -492,14 +590,14 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Záloha u zakázky se platí kartou",
     help:
       "Nahrazuje úvodní větu, když je v košíku zakázka se zálohou — tam je karta povinná, i u osobního odběru.",
-    group: "Pokladna",
+    group: "Platba",
     multiline: true,
     maxLength: 400,
   },
   "pokladna.platba_na_miste": {
     label: "Platba při osobním odběru",
     help: "Popisek u způsobu platby „na místě“ v seznamu plateb.",
-    group: "Pokladna",
+    group: "Platba",
     multiline: false,
     maxLength: 200,
   },
@@ -508,7 +606,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Po odeslání objednávky",
     help:
       "První věta na stránce hotové objednávky, hned pod poděkováním. Říká, kam přišlo potvrzení a že se ozvete, jakmile se něco pohne.",
-    group: "Hotová objednávka",
+    group: "Po odeslání",
     multiline: true,
     maxLength: 400,
     znacky: [{ znacka: "{{email}}", popis: "e-mail, na který potvrzení odešlo", povinna: true }],
@@ -517,10 +615,268 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     label: "Poškozený obal zásilky",
     help:
       "Ukáže se v žádosti o reklamaci, když zákazník hlásí poškozený obal. Vysvětluje, že škodu na obalu hradí dopravce a náhradu vyplácí adresátovi — ale že se tím práva u vás neztrácejí.",
-    group: "Hotová objednávka",
+    group: "Poškozená zásilka",
     multiline: true,
     maxLength: 800,
     pravni: true,
+  },
+  "kosik.prazdny": {
+    label: "Prázdný košík",
+    help:
+      "Věta pod nadpisem, když v košíku nic není.",
+    group: "Prázdný košík a přihlášení",
+    multiline: true,
+    maxLength: 200,
+  },
+  "kosik.prihlaseni": {
+    label: "Pozvánka k přihlášení",
+    help:
+      "Věta nad tlačítkem Přihlásit se v košíku nepřihlášeného zákazníka.",
+    group: "Prázdný košík a přihlášení",
+    multiline: false,
+    maxLength: 200,
+  },
+  "kosik.baleni": {
+    label: "Jak balíte",
+    help:
+      "Věta u seznamu zboží v košíku — o tom, že se kusy balí ručně v ateliéru.",
+    group: "Souhrn košíku",
+    multiline: true,
+    maxLength: 200,
+  },
+  "kosik.dobirka_poplatek": {
+    label: "Poplatek za dobírku",
+    help:
+      "Popisek u řádku doběrečného v košíku.",
+    group: "Souhrn košíku",
+    multiline: true,
+    maxLength: 200,
+  },
+  "kosik.platba_zrusena": {
+    label: "Platba se nedokončila",
+    help:
+      "Ukáže se po návratu z platební brány, když zákazník platbu zrušil.",
+    group: "Stavy platby",
+    multiline: false,
+    maxLength: 200,
+  },
+  "kosik.platba_zrusena_vyzva": {
+    label: "Výzva k zaplacení po zrušené platbě",
+    help:
+      "Druhá věta téže stránky — proč se bez zaplacení nedá nic poslat.",
+    group: "Stavy platby",
+    multiline: true,
+    maxLength: 250,
+  },
+  "kosik.platba_ceka_brana": {
+    label: "Platba zatím nedorazila",
+    help:
+      "Ukáže se, když platba na bráně skončila nerozhodně — třeba zavřeným oknem.",
+    group: "Stavy platby",
+    multiline: true,
+    maxLength: 400,
+  },
+  "kosik.platba_ceka_prevod": {
+    label: "Čekání na potvrzení převodu",
+    help:
+      "Ukáže se u bankovního převodu, který banka ještě nepotvrdila.",
+    group: "Stavy platby",
+    multiline: true,
+    maxLength: 300,
+  },
+  "kosik.platba_ceka_obnova": {
+    label: "Stránka se obnoví sama",
+    help:
+      "Uklidňující věta pod čekáním na platbu.",
+    group: "Stavy platby",
+    multiline: true,
+    maxLength: 200,
+  },
+  "kosik.platba_potvrzuje": {
+    label: "Objednávka se ukládá",
+    help:
+      "Ukáže se mezi zaplacením a hotovou objednávkou.",
+    group: "Stavy platby",
+    multiline: true,
+    maxLength: 200,
+  },
+  "pokladna.adresa_vyber": {
+    label: "Výběr uložené adresy",
+    help:
+      "Věta nad seznamem uložených adres v kroku Doručení.",
+    group: "Adresy a firemní údaje",
+    multiline: false,
+    maxLength: 200,
+  },
+  "pokladna.firma_uvod": {
+    label: "Nákup na firmu — úvod",
+    help:
+      "Vysvětlení nad firemními poli: na co se vystaví doklad a kam půjde zboží.",
+    group: "Adresy a firemní údaje",
+    multiline: true,
+    maxLength: 200,
+  },
+  "pokladna.firma_nazev": {
+    label: "Nákup na firmu — název",
+    help:
+      "Nápověda u pole s názvem firmy.",
+    group: "Adresy a firemní údaje",
+    multiline: true,
+    maxLength: 200,
+  },
+  "pokladna.firma_dic": {
+    label: "Nákup na firmu — DIČ",
+    help:
+      "Nápověda pod polem DIČ v nákupu na firmu — jaký tvar se čeká a že neplátce DPH pole nechá prázdné.",
+    group: "Adresy a firemní údaje",
+    multiline: true,
+    maxLength: 200,
+  },
+  "pokladna.doprava_poukaz": {
+    label: "Elektronický poukaz bez dopravy",
+    help:
+      "Ukáže se, když je v košíku jen elektronický dárkový poukaz.",
+    group: "Doručení",
+    multiline: false,
+    maxLength: 200,
+  },
+  "pokladna.doprava_balikovna_vyber": {
+    label: "Vyberte Balíkovnu",
+    help:
+      "Výzva, dokud zákazník nevybral výdejní místo Balíkovny.",
+    group: "Doručení",
+    multiline: false,
+    maxLength: 200,
+  },
+  "pokladna.doprava_vydejni_vyber": {
+    label: "Vyberte výdejní místo",
+    help:
+      "Totéž u výdejních míst v mapě.",
+    group: "Doručení",
+    multiline: false,
+    maxLength: 200,
+  },
+  "pokladna.doprava_zmena": {
+    label: "Dopravu jde ještě změnit",
+    help:
+      "Uklidňující věta pod výběrem dopravy.",
+    group: "Doručení",
+    multiline: false,
+    maxLength: 200,
+  },
+  "pokladna.platba_balikovna_karta": {
+    label: "Na Balíkovnu jen kartou",
+    help:
+      "Vysvětlení, proč u Balíkovny není dobírka.",
+    group: "Platba",
+    multiline: true,
+    maxLength: 250,
+  },
+  "zakazka.brief_uvod": {
+    label: "Zadání zakázky — úvod (krok v pokladně)",
+    help:
+      "Věta nad poli pro zadání zakázky ve vlastním kroku pokladny.",
+    group: "Zadání zakázky (košík a pokladna)",
+    multiline: true,
+    maxLength: 200,
+  },
+  "zakazka.brief_kosik": {
+    label: "Zadání zakázky — úvod (košík)",
+    help:
+      "Totéž u zakázky v košíku.",
+    group: "Zadání zakázky (košík a pokladna)",
+    multiline: true,
+    maxLength: 200,
+  },
+  "zakazka.brief_vyzva": {
+    label: "Zadání zakázky — výzva",
+    help:
+      "Krátká výzva u prázdného zadání.",
+    group: "Zadání zakázky (košík a pokladna)",
+    multiline: false,
+    maxLength: 200,
+  },
+  "zakazka.brief_poznamka": {
+    label: "Zadání zakázky — poznámka",
+    help:
+      "Věta u pole pro doplňující poznámku vedle fotek.",
+    group: "Zadání zakázky (košík a pokladna)",
+    multiline: true,
+    maxLength: 200,
+  },
+  "zakazka.doplatek_recap": {
+    label: "Kdy se platí zbytek",
+    help:
+      "Věta v souhrnu pokladny u zakázky se zálohou.",
+    group: "Zadání zakázky (košík a pokladna)",
+    multiline: true,
+    maxLength: 200,
+  },
+  "zakazka.seznam_uvod": {
+    label: "Seznam zakázek v objednávce",
+    help:
+      "Věta nad výpisem zakázek na stránce objednávky.",
+    group: "Zakázka v objednávce",
+    multiline: true,
+    maxLength: 200,
+  },
+  "objednavka.doplatek_prisel": {
+    label: "Doplatek dorazil",
+    help:
+      "Ukáže se po úspěšném zaplacení doplatku z odkazu v e-mailu.",
+    group: "Doplatek",
+    multiline: false,
+    maxLength: 200,
+  },
+  "objednavka.doplatek_zrusen": {
+    label: "Doplatek se zrušil",
+    help:
+      "Ukáže se, když zákazník platbu doplatku zrušil.",
+    group: "Doplatek",
+    multiline: true,
+    maxLength: 200,
+  },
+  "objednavka.doplatek_zpracovava": {
+    label: "Doplatek se zpracovává",
+    help:
+      "Ukáže se, dokud banka platbu nepotvrdí.",
+    group: "Doplatek",
+    multiline: true,
+    maxLength: 200,
+  },
+  "objednavka.doplatek_odkaz_neplati": {
+    label: "Odkaz na doplatek vypršel",
+    help:
+      "Ukáže se u prošlého platebního odkazu.",
+    group: "Doplatek",
+    multiline: true,
+    maxLength: 200,
+  },
+  "objednavka.prevzeti_obal": {
+    label: "Co dělat při převzetí",
+    help:
+      "Hlavní rada u objednávky na cestě: prohlédnout obal a případně rozbalit před doručovatelem.",
+    group: "Převzetí zásilky",
+    multiline: true,
+    maxLength: 500,
+    pravni: true,
+  },
+  "objednavka.prevzeti_stav": {
+    label: "Kdo za co odpovídá",
+    help:
+      "Rozdíl mezi poškozeným obalem (dopravce) a rozbitým kusem v celé krabici (vy).",
+    group: "Převzetí zásilky",
+    multiline: true,
+    maxLength: 250,
+    pravni: true,
+  },
+  "objednavka.podrobnosti_email": {
+    label: "Kde najít podrobnosti",
+    help:
+      "Věta po návratu z platební brány, když se stránka objednávky nenačte.",
+    group: "Po odeslání",
+    multiline: true,
+    maxLength: 200,
   },
 }
 
@@ -611,6 +967,70 @@ export const SHOP_TEXT_DEFAULTS: Readonly<ShopTextValues> = Object.freeze({
     "Potvrzení jsme poslali na {{email}}. Jakmile se něco pohne, ozveme se vám znovu.",
   "objednavka.poskozeny_obal":
     "Poškozený obal je škoda dopravce: nahlaste prosím zásilku na kterékoli poště, nejlépe do dvou pracovních dnů od převzetí — náhradu Česká pošta vyplácí adresátovi, tedy vám. Vezměte s sebou zásilku i s obalem a výplní, nebo aspoň fotky obalu a zboží. Napište prosím i nám; pokud vám na poště reklamaci nepřijmou, vyřídíme ji my — vaše práva u nás na dopravci nezávisí.",
+  "kosik.prazdny":
+    "Zatím je prázdný. Podívejte se, co je v ateliéru — třeba vás něco chytne.",
+  "kosik.prihlaseni":
+    "Přihlaste se a nemusíte znovu vyplňovat adresu.",
+  "kosik.baleni":
+    "Všechno je dělané rukama. Než to pošleme, pečlivě to v ateliéru zabalíme.",
+  "kosik.dobirka_poplatek":
+    "Poplatek za dobírku — zmizí, když zvolíte jiný způsob platby.",
+  "kosik.platba_zrusena":
+    "Platba se nedokončila a nic jsme vám nestrhli.",
+  "kosik.platba_zrusena_vyzva":
+    "Zaplaťte prosím objednávku, ať ji můžeme co nejdřív poslat — do té doby ji nemáme jak odeslat. Zboží vám v košíku zůstalo, stačí pokračovat.",
+  "kosik.platba_ceka_brana":
+    "Platba k nám zatím nedorazila. Pokud jste ji na platební bráně nedokončili, dokončete ji tlačítkem níže. Pokud jste posílali převod, nemusíte nic dělat — jakmile peníze dorazí, objednávku dokončíme a pošleme potvrzení e-mailem.",
+  "kosik.platba_ceka_prevod":
+    "Platbu jsme odeslali, banka ji ale zatím nepotvrdila. U převodu to bývá i pár hodin, o víkendu klidně déle. Nemusíte nic dělat — jakmile ji potvrdíme, napíšeme vám.",
+  "kosik.platba_ceka_obnova":
+    "Stránka se sama každých pár vteřin obnoví. Klidně ji zavřete, na výsledek to nemá vliv.",
+  "kosik.platba_potvrzuje":
+    "Ještě chviličku — objednávku potvrzujeme a ukládáme. Stránku nemusíte obnovovat.",
+  "pokladna.adresa_vyber":
+    "Vyberte si uloženou adresu, nebo vyplňte novou níž.",
+  "pokladna.firma_uvod":
+    "Fakturační údaje firmy nebo OSVČ. Doklad vystavíme na ně, zboží pošleme na adresu výš.",
+  "pokladna.firma_nazev":
+    "U firmy název, u OSVČ jméno a příjmení tak, jak jsou v rejstříku.",
+  "pokladna.firma_dic":
+    "Tvar CZ a osm až deset číslic, například CZ27074358. Neplátce DPH nechá prázdné.",
+  "pokladna.doprava_poukaz":
+    "Doprava není potřeba — elektronický poukaz pošleme e-mailem.",
+  "pokladna.doprava_balikovna_vyber":
+    "Vyberte prosím Balíkovnu, kam vám balík pošleme.",
+  "pokladna.doprava_vydejni_vyber":
+    "Vyberte prosím výdejní místo v mapě.",
+  "pokladna.doprava_zmena":
+    "Dopravu můžete změnit, dokud objednávku nepotvrdíte.",
+  "pokladna.platba_balikovna_karta":
+    "Na výdejní místo Balíkovny posíláme jen s platbou předem kartou — zásilku si pak jen vyzvednete. Dobírku nabízíme při doručení na adresu.",
+  "zakazka.brief_uvod":
+    "Napište, jak si to představujete, a přiložte fotky. Podle toho se to vyrobí — bez zadání nevíme, co máme udělat.",
+  "zakazka.brief_kosik":
+    "Napište, jak si to představujete, a přiložte fotky. Podle toho to vyrobím.",
+  "zakazka.brief_vyzva":
+    "Napište prosím pár slov, nebo přiložte fotku.",
+  "zakazka.brief_poznamka":
+    "Napadlo vás ještě něco? Napište mi a klidně přiložte fotky — čtu to u rozdělané práce.",
+  "zakazka.doplatek_recap":
+    "Zbytek doplatíte, až bude zakázka hotová. Částku zvolíte v kroku Platba.",
+  "zakazka.seznam_uvod":
+    "Každá zakázka má svůj stav, zálohu a doplatek — níž po jedné.",
+  "objednavka.doplatek_prisel":
+    "Platba dorazila, děkuji. Potvrzení vám přijde e-mailem.",
+  "objednavka.doplatek_zrusen":
+    "Platba se zrušila a nic se nestrhlo. Zkusit to můžete znovu z odkazu v e-mailu, nebo mi napište.",
+  "objednavka.doplatek_zpracovava":
+    "Platba se ještě zpracovává. Jakmile dorazí, dám vám vědět e-mailem.",
+  "objednavka.doplatek_odkaz_neplati":
+    "Odkaz na platbu už neplatí. Napište mi prosím a pošlu vám nový.",
+  "objednavka.prevzeti_obal":
+    "Prohlédněte si prosím obal ještě při převzetí. Je-li promáčklý, protržený nebo něčím prosakuje, rozbalte zásilku před doručovatelem a poškození s ním rovnou sepište — se záznamem pošta reklamaci vyřídí nejsnáz. Podmínkou to ale není: keramika se rozbije tiše a poškození často najdete až doma.",
+  "objednavka.prevzeti_stav":
+    "Záleží na tom, v jakém stavu dorazila krabice. Poškozený obal je škoda dopravce a hlásí se na poště; rozbitý kus v nepoškozené krabici je na nás.",
+  "objednavka.podrobnosti_email":
+    "Podrobnosti najdete v e-mailu s potvrzením nebo ve svém účtu.",
 })
 
 /** Jen známé klíče se string hodnotou — co přijde navíc, se zahodí. */

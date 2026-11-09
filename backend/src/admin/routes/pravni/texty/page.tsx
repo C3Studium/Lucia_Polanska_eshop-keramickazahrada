@@ -17,16 +17,20 @@ import { ceskaChyba } from "../../../lib/ceska-chyba";
 import { formatDateTime } from "../../../lib/format";
 import { SaveBar } from "../../../components/save-bar";
 import { SectionPage } from "../../../components/section-tabs";
+import { useUrlState } from "../../../lib/url-state";
 /* `lib/shop-texty` je schválně bez jediného importu — jen tak smí do
    prohlížečového bundlu (viz `obsah/page.tsx`). Popisky, nápovědy i výchozí
    znění jsou tak na jednom místě se schématem, které hlídá zápis. */
 import {
   SHOP_TEXT_DEFAULTS,
-  SHOP_TEXT_GROUPS,
   SHOP_TEXT_KEYS,
   SHOP_TEXT_META,
+  SHOP_TEXT_OBLASTI,
+  oblastSkupiny,
   shopTextProblem,
+  skupinyOblasti,
   type ShopTextKey,
+  type ShopTextOblast,
   type ShopTextValues,
   type StoredShopTexts,
 } from "../../../../lib/shop-texty";
@@ -228,6 +232,13 @@ const Inner = () => {
   const maVlastni = (key: ShopTextKey) =>
     Object.prototype.hasOwnProperty.call(data?.ulozene ?? {}, key);
 
+  /* Vybraná záložka — v adrese, aby přežila odchod na obchod a zpět
+     (viz lib/url-state). */
+  const [vybranaOblast, setOblast] = useUrlState<ShopTextOblast>(
+    "oblast",
+    SHOP_TEXT_OBLASTI[0]
+  );
+
   /* Jen rozepsaná pole; ostatní ukazují, co právě platí. */
   const [edits, setEdits] = useState<Partial<Record<ShopTextKey, string>>>({});
   const valueOf = (key: ShopTextKey) => edits[key] ?? savedText(key);
@@ -316,7 +327,42 @@ const Inner = () => {
         </div>
       </section>
 
-      {SHOP_TEXT_GROUPS.map((group) => (
+      {/*
+        Záložky podle toho, čeho se text týká; uvnitř skupiny podle toho, kde
+        v obchodě stojí. Sto čtyřicet polí pod sebou se nedá projít — tohle
+        je ta orientace (Matěj, 9. 11. 2026).
+      */}
+      <nav
+        aria-label="Oblasti textů"
+        className="flex flex-wrap items-center gap-x-1 gap-y-1 px-6 py-3"
+      >
+        {SHOP_TEXT_OBLASTI.map((oblast) => {
+          const aktivni = oblast === vybranaOblast;
+          const pocet = SHOP_TEXT_KEYS.filter(
+            (key) => oblastSkupiny(SHOP_TEXT_META[key].group) === oblast
+          ).length;
+          return (
+            <button
+              key={oblast}
+              type="button"
+              aria-current={aktivni ? "page" : undefined}
+              onClick={() => setOblast(oblast)}
+              className={
+                aktivni
+                  ? "bg-ui-bg-base-pressed text-ui-fg-base rounded-md px-3 py-1.5"
+                  : "text-ui-fg-subtle hover:bg-ui-bg-base-hover hover:text-ui-fg-base rounded-md px-3 py-1.5"
+              }
+            >
+              <Text size="small" weight={aktivni ? "plus" : "regular"}>
+                {oblast}{" "}
+                <span className="text-ui-fg-muted">({pocet})</span>
+              </Text>
+            </button>
+          );
+        })}
+      </nav>
+
+      {skupinyOblasti(vybranaOblast).map((group) => (
         <section key={group} className="px-6 pb-1 pt-5">
           <Heading level="h2">{group}</Heading>
           <div className="divide-y">

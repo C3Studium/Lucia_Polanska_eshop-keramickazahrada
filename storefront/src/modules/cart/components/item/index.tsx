@@ -127,7 +127,7 @@ const Item = ({
           <p className={s.kicker}>K platbě na dobírku</p>
           <h3 className={s.title}>{item.title}</h3>
           <div className={s.options}>
-            <p>Poplatek za dobírku — zmizí, když zvolíte jiný způsob platby.</p>
+            <p>{texty["kosik.dobirka_poplatek"]}</p>
           </div>
         </div>
         <div className={s.cellPrice}>

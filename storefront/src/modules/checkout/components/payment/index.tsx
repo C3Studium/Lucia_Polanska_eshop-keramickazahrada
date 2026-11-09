@@ -436,10 +436,7 @@ const Payment = ({
                 )}
                 {dobirkaBlockedByPickupPoint && !depositByCard && (
                   <p>
-                    Na výdejní místo Balíkovny posíláme jen s platbou předem
-                    kartou — zásilku si pak jen vyzvednete. Dobírku nabízíme
-                    při doručení na adresu.
-                  </p>
+                    {texty["pokladna.platba_balikovna_karta"]}</p>
                 )}
               </div>
               {/* One grid, not two lists. Osobní odběr's „Zaplatíte při vyzvednutí" joins

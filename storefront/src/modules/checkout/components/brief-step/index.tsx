@@ -10,6 +10,7 @@ import {
 import CheckoutCommissionBriefs from "@modules/checkout/components/commission-briefs"
 
 import s from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 /**
  * Zadání zakázky jako vlastní krok pokladny.
@@ -30,6 +31,8 @@ import s from "./style.module.scss"
  * zaplatil a teprve pak se dozvěděl, že má ještě psát.
  */
 export default function CheckoutBriefStep({ cart }: { cart: any }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -55,9 +58,7 @@ export default function CheckoutBriefStep({ cart }: { cart: any }) {
       <header className={s.head}>
         <h2>Zadání zakázky</h2>
         <p>
-          Napište, jak si to představujete, a přiložte fotky. Podle toho se to
-          vyrobí — bez zadání nevíme, co máme udělat.
-        </p>
+          {texty["zakazka.brief_uvod"]}</p>
       </header>
 
       <CheckoutCommissionBriefs cart={cart} />

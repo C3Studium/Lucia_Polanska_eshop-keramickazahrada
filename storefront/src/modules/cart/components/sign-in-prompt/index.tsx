@@ -5,6 +5,7 @@ import type { CopyBlock } from "@lib/util/site-copy"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import s from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 /**
  * Výzva k přihlášení v košíku. Texty z bloku `kosik.prihlaseni` — nadpis
@@ -14,10 +15,12 @@ const SignInPrompt = ({ block }: { block?: CopyBlock }) => {
   /* Klidná sekce bez vlastního stavu — po zapnutí editace by se sama
      nepřekreslila a anotace by zůstaly prázdné. Viz hook. */
   useEditRerender()
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
 
   const title = block?.title?.trim() || "Máte u nás účet?"
   const text =
-    block?.bodyText?.trim() || "Přihlaste se a nemusíte znovu vyplňovat adresu."
+    block?.bodyText?.trim() || texty["kosik.prihlaseni"]
   const cta = block?.accent?.[0]?.trim() || "Přihlásit se"
 
   return (

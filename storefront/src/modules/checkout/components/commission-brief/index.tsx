@@ -11,6 +11,7 @@ import { toCommissionMessages } from "@lib/util/made-to-order"
 import { compressImage } from "@lib/util/compress-image"
 
 import styles from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 const MAX_PHOTOS = 6
 /* Pokladna ukládá sama: text po odkliknutí z pole a během psaní po téhle pauze,
@@ -95,6 +96,8 @@ export default function CommissionBrief({
   onSubmitAction,
   onCompletionChange,
 }: Props) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const [text, setText] = useState(note)
   const [kept, setKept] = useState(photos)
   const [drafts, setDrafts] = useState<Draft[]>([])
@@ -279,7 +282,7 @@ export default function CommissionBrief({
   const save = () => {
     if (isPending) return
     if (!text.trim() && !kept.length && !drafts.length) {
-      setStatus({ kind: "error", message: "Napište prosím pár slov, nebo přiložte fotku." })
+      setStatus({ kind: "error", message: texty["zakazka.brief_vyzva"] })
       return
     }
 
@@ -332,10 +335,10 @@ export default function CommissionBrief({
           {title && <p className={styles.piece}>{title}</p>}
           <p className={styles.lede}>
             {variant === "order"
-              ? "Napadlo vás ještě něco? Napište mi a klidně přiložte fotky — čtu to u rozdělané práce."
+              ? texty["zakazka.brief_poznamka"]
               : prompt?.trim()
               ? prompt
-              : "Napište, jak si to představujete, a přiložte fotky. Podle toho to vyrobím."}
+              : texty["zakazka.brief_kosik"]}
           </p>
         </header>
       )}

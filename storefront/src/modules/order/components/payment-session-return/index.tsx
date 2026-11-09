@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { retrieveOrderIdByPaymentSession } from "@lib/data/made-to-order"
 import BalancePaymentNotice from "@modules/order/components/balance-payment-notice"
 import OrderStateShell from "@modules/order/components/order-state-shell"
+import { getTexty } from "@lib/data/texty"
 
 /**
  * Where ComGate lands the customer after a balance payment when the session
@@ -24,6 +25,8 @@ export default async function PaymentSessionReturn({
   /** The query value the order page reads via `?platba=`. */
   outcome: "paid" | "zruseno" | "ceka"
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = await getTexty()
   const orderId = await retrieveOrderIdByPaymentSession(sessionId)
 
   if (orderId) {
@@ -36,7 +39,7 @@ export default async function PaymentSessionReturn({
       eyebrow="Platba"
       title={success ? "Máme to." : "Platba"}
       accent={success ? "Platba dorazila, děkuji." : undefined}
-      description="Podrobnosti najdete v e-mailu s potvrzením nebo ve svém účtu."
+      description={texty["objednavka.podrobnosti_email"]}
       status={success ? "success" : "pending"}
       primary={{ href: "/account/orders", label: "Moje objednávky" }}
     >

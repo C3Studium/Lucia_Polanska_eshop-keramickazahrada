@@ -10,6 +10,7 @@ import { itemText } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
 import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
 import styles from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 /*
  * Nájezdová geometrie v jednotce toho, proti čemu se pohybuje.
@@ -71,6 +72,8 @@ const ShippingAddress = ({
   /** Nabízet nákup na firmu? Z nastavení obchodu, jen zobrazení. */
   companyPurchase?: boolean
 }) => {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   /* Dvě pomocné věty z CMS (`pokladna.kroky`); popisky polí a pozdrav se
      jménem zůstávají v kódu. Bez provideru věty z kódu. */
   const steps = useCopyBlock("pokladna.kroky")
@@ -203,7 +206,7 @@ const ShippingAddress = ({
                 {itemText(
                   steps,
                   "adresa.ulozene",
-                  "Vyberte si uloženou adresu, nebo vyplňte novou níž."
+                  texty["pokladna.adresa_vyber"]
                 )}
               </p>
             </div>
@@ -386,7 +389,7 @@ const ShippingAddress = ({
                 {itemText(
                   steps,
                   "adresa.firma",
-                  "Fakturační údaje firmy nebo OSVČ. Doklad vystavíme na ně, zboží pošleme na adresu výš."
+                  texty["pokladna.firma_uvod"]
                 )}
               </p>
             </div>
@@ -400,7 +403,7 @@ const ShippingAddress = ({
                   onChange={handleChange}
                   autoComplete="organization"
                   required
-                  title="U firmy název, u OSVČ jméno a příjmení tak, jak jsou v rejstříku."
+                  title={texty["pokladna.firma_nazev"]}
                   data-testid="shipping-company-input"
                   className={`${styles.input} ${styles.firmaSiroke}`}
                   variant="contact"
@@ -424,7 +427,7 @@ const ShippingAddress = ({
                   value={formData["shipping_address.dic"]}
                   onChange={handleChange}
                   autoComplete="off"
-                  title="Tvar CZ a osm až deset číslic, například CZ27074358. Neplátce DPH nechá prázdné."
+                  title={texty["pokladna.firma_dic"]}
                   data-testid="shipping-dic-input"
                   className={styles.input}
                   variant="contact"

@@ -2,6 +2,7 @@
 import { itemFieldPath, itemValue } from "@lib/util/site-copy"
 import type { CopyBlock } from "@lib/util/site-copy"
 import OrderStateShell from "@modules/order/components/order-state-shell"
+import { useTexty } from "@lib/context/texty"
 
 /**
  * Návrat z brány, když platba neprošla — storno, zamítnutí i zavřené okno.
@@ -42,9 +43,11 @@ export default function PaymentCanceled({
    */
   block?: CopyBlock
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const callToAction =
     block?.bodyText?.trim() ||
-    "Zaplaťte prosím objednávku, ať ji můžeme co nejdřív poslat — do té doby ji nemáme jak odeslat. Zboží vám v košíku zůstalo, stačí pokračovat."
+    texty["kosik.platba_zrusena_vyzva"]
 
   return (
     <OrderStateShell
@@ -54,7 +57,7 @@ export default function PaymentCanceled({
       description={
         (duvod
           ? `Platba se nedokončila — ${duvod}. Nic jsme vám nestrhli. `
-          : "Platba se nedokončila a nic jsme vám nestrhli. ") + callToAction
+          : texty["kosik.platba_zrusena"]) + callToAction
       }
       status="canceled"
       primary={{

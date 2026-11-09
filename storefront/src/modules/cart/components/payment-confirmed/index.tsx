@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react"
 import { placeOrder } from "@lib/data/cart"
 import type { CopyBlock } from "@lib/util/site-copy"
 import OrderStateShell from "@modules/order/components/order-state-shell"
+import { useTexty } from "@lib/context/texty"
 
 /**
  * A successful `placeOrder` redirects to the order page, and Next signals that redirect by
@@ -54,6 +55,8 @@ export default function PaymentConfirmed({
    */
   preview?: boolean
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const [failed, setFailed] = useState(false)
   const startedRef = useRef(false)
 
@@ -117,7 +120,7 @@ export default function PaymentConfirmed({
       accent={block?.headline?.trim() || "Ještě ji dokončujeme."}
       description={
         block?.bodyText?.trim() ||
-        "Ještě chviličku — objednávku potvrzujeme a ukládáme. Stránku nemusíte obnovovat."
+        texty["kosik.platba_potvrzuje"]
       }
       status="pending"
       editDoc={block?.id ?? null}
