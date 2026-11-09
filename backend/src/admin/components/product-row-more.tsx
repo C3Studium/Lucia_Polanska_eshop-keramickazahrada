@@ -18,6 +18,25 @@ import { ShippingProfileEditor } from "./shipping-profile-editor";
  * Všechno v tomhle okně se ukládá HNED a dá se vrátit („Vrátit zpět" /
  * Ctrl+Z) — jeden způsob pro celé okno, žádné „Uložit" navíc. Profil dopravy a zakázka
  * otevírají své vlastní panely se svým Uložit, stejně jako dřív z řádku.
+ *
+ * ## Archiv není mazání (9. 11. 2026)
+ *
+ * Matěj: „když ho smažu, tak tam zůstane". Nezůstával — nebylo ho čím smazat.
+ * Produkty+ uměly jen archivovat, a archivovaný kus v Archivovaných z principu
+ * leží dál. Mazání tedy chybělo, ne selhávalo.
+ *
+ * Teď je tu obojí vedle sebe a liší se tím, co drží:
+ * - **Archivovat** kus schová, ale nechá ho. Vratné.
+ * - **Smazat** ho odstraní z obchodu i ze všech seznamů. Nevratné.
+ *
+ * Měřeno na nanečisto založeném kusu (9. 11. 2026): po smazání zmizí
+ * i ze záložky Archivované a jeho adresa se uvolní, takže kus stejného
+ * jména jde založit znovu. Objednávky si svůj záznam nechávají — řádek
+ * objednávky má vlastní kopii názvu i ceny, takže faktury zůstanou celé.
+ *
+ * Ptá se dvěma kroky uvnitř okna, ne dalším vyskakovacím dialogem: okno je
+ * modální a dialog nad dialogem je na ovládání i na čtení horší než
+ * potvrzovací řádek na místě. Jméno kusu stojí v hlavičce okna.
  */
 
 type FlagKey = "clearance" | "no_promo";
@@ -44,6 +63,7 @@ export const ProductRowMore = ({
   showShipping,
   showMakeCommission,
   showArchive,
+  showDelete,
   trigger,
 }: {
   product: {
@@ -61,13 +81,19 @@ export const ProductRowMore = ({
   showShipping: boolean;
   showMakeCommission: boolean;
   showArchive: boolean;
+  showDelete?: boolean;
   trigger: ReactNode;
 }) => {
   const [open, setOpen] = useState(false);
   /* Hodnota hned po kliknutí, než se seznam načte znovu. */
   const [local, setLocal] = useState<Partial<Record<FlagKey, boolean>>>({});
+  /* Druhý krok mazání — ptá se tady, ne dalším dialogem nad dialogem. */
+  const [ptaSeNaSmazani, setPtaSeNaSmazani] = useState(false);
   useEffect(() => {
-    if (open) setLocal({});
+    if (open) {
+      setLocal({});
+      setPtaSeNaSmazani(false);
+    }
   }, [open]);
   const queryClient = useQueryClient();
 
@@ -149,6 +175,21 @@ export const ProductRowMore = ({
     onError: (error) => toast.error(ceskaChyba(error, "Změna se nepodařila.")),
   });
 
+  /*
+   * Mazání se nevrací. Proto žádné `toastWithUndo` jako u archivace — toast
+   * s tlačítkem, které nic neumí, je horší než žádný.
+   */
+  const smazat = useMutation({
+    mutationFn: () =>
+      sdk.client.fetch(`/admin/products/${product.id}`, { method: "DELETE" }),
+    onSuccess: async () => {
+      setOpen(false);
+      await refresh();
+      toast.success(`${product.title} smazán.`);
+    },
+    onError: (error) => toast.error(ceskaChyba(error, "Smazání se nepodařilo.")),
+  });
+
   const flagKeys = (Object.keys(flags) as FlagKey[]).filter(
     (key) => flags[key] !== undefined
   );
@@ -220,6 +261,55 @@ export const ProductRowMore = ({
                 >
                   {archiving ? "Archivovat (zmizí z obchodu i ze seznamů)" : "Obnovit z archivu"}
                 </Button>
+              )}
+            </div>
+          )}
+
+          {showDelete !== false && (
+            <div className="border-ui-border-base flex flex-col gap-y-2 border-t pt-4">
+              {ptaSeNaSmazani ? (
+                <>
+                  <Text size="xsmall" className="text-ui-fg-subtle">
+                    Smazat natrvalo? Kus zmizí z obchodu i ze všech seznamů
+                    včetně archivu a zpátky už ho nevrátíte. Objednávky, ve
+                    kterých už je, si svůj záznam nechají — faktury zůstanou
+                    celé.
+                  </Text>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="small"
+                      variant="danger"
+                      isLoading={smazat.isPending}
+                      onClick={() => smazat.mutate()}
+                    >
+                      Smazat natrvalo
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="secondary"
+                      disabled={smazat.isPending}
+                      onClick={() => setPtaSeNaSmazani(false)}
+                    >
+                      Nechat
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Button
+                    size="small"
+                    variant="danger"
+                    className="justify-start"
+                    onClick={() => setPtaSeNaSmazani(true)}
+                  >
+                    Smazat produkt…
+                  </Button>
+                  {showArchive && archiving && (
+                    <Text size="xsmall" className="text-ui-fg-muted">
+                      Archiv kus jen schová a jde vrátit. Mazání ne.
+                    </Text>
+                  )}
+                </>
               )}
             </div>
           )}
