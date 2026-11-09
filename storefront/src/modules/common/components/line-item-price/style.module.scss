@@ -26,7 +26,7 @@
        1.15vw ho posouvá na 1252–1530, kam podle ARTEFAKTu patří. Podlaha .9rem je pořád
        dnešní vykreslení, takže na 1200 se nic nehne; roste to teprve od 1252.
        Oba krajní členy zůstávají v rem, takže je ramp nad 1921 dál zvedá. */
-    font-size: clamp(0.9rem, 1.15vw, 1.1rem);
+    font-size: clamp(0.9rem, calc(1.15vw * var(--ui-scale)), 1.1rem);
     font-family: "Sansation-Regular";
     font-weight: 300;
     color: var(--blackText);
@@ -57,7 +57,7 @@
          dopočítaný tak, aby poměr držel ~1.04× na celém kontinuu —
            1200 → 16.0 / 15.2   1366 → 17.8 / 17.1   1440 → 18.7 / 18.0   1500+ → 19.2 / 18.4
          Živé pásmo 1231–1477. Nad 1921 vede strop 1.2rem, který zvedá ramp. */
-      font-size: clamp(1rem, 1.3vw, 1.2rem);
+      font-size: clamp(1rem, calc(1.3vw * var(--ui-scale)), 1.2rem);
       font-weight: 400;
       font-family: "Sansation-Regular";
 

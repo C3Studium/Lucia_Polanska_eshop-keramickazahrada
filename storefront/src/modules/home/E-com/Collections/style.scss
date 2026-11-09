@@ -83,7 +83,7 @@
         /* 0.68vw between a 0.75rem floor and a 0.76rem ceiling was live across 23px of window —
            1765 to 1788 — which is a constant wearing a clamp. Same band as the card's own
            `.Item__meta`, because they are the same label at two scales. */
-        font-size: clamp(0.75rem, 0.95vw, 0.875rem);
+        font-size: clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.875rem);
         letter-spacing: 0.12em;
         text-transform: uppercase;
       }
@@ -100,7 +100,7 @@
          * 1351 / 1080 / 982 / 800 / 768 / 660 instead — one curve, no step. `max-width: 15ch` is
          * font-relative, so the two-line break holds at every size.
          */
-        font-size: clamp(2.6rem, min(4.15vw, 6.6vh), 5rem);
+        font-size: clamp(2.6rem, min(calc(4.15vw * var(--ui-scale)), calc(6.6vh * var(--ui-scale))), 5rem);
         font-weight: 400;
         line-height: 0.92;
         letter-spacing: -0.045em;
@@ -120,7 +120,7 @@
         color: rgb(var(--black-03-rgb) / .7);
         font-family: "Sansation-Light";
         /* The lede sits in the same band as the heading, so it is measured the same way. */
-        font-size: clamp(0.9rem, min(1.05vw, 1.8vh), 1.2rem);
+        font-size: clamp(0.9rem, min(calc(1.05vw * var(--ui-scale)), calc(1.8vh * var(--ui-scale))), 1.2rem);
         line-height: 1.4;
       }
     }
@@ -269,7 +269,7 @@
             font-family: "Sansation-Regular";
             /* Was clamp(0.75rem, 0.58vw, 0.75rem) — floor and ceiling equal, so the middle term
                could never be picked and the label was a flat 12px from 1200 to 1920. */
-            font-size: clamp(0.75rem, 0.95vw, 0.875rem);
+            font-size: clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.875rem);
             letter-spacing: 0.12em;
             text-transform: uppercase;
           }
@@ -278,7 +278,7 @@
             margin: 0.6rem 0 0.25rem;
             color: var(--cream-09);
             font-family: "Sentient-Regular";
-            font-size: clamp(1.75rem, 2vw, 2.35rem);
+            font-size: clamp(1.75rem, calc(2vw * var(--ui-scale)), 2.35rem);
             font-weight: 400;
             line-height: 1;
             letter-spacing: -0.035em;
@@ -290,7 +290,7 @@
             margin: 0;
             color: rgb(var(--white-rgb) / .9);
             font-family: "Sansation-Light";
-            font-size: clamp(0.88rem, 0.92vw, 1.05rem);
+            font-size: clamp(0.88rem, calc(0.92vw * var(--ui-scale)), 1.05rem);
             line-height: 1.35;
             text-shadow: 0 1px 12px rgb(var(--black-01-rgb) / .34);
           }
@@ -302,7 +302,7 @@
             margin-top: clamp(1rem, 1.5vh, 1.5rem);
             color: var(--cream-09);
             font-family: "Sansation-Regular";
-            font-size: clamp(0.8125rem, 0.82vw, 0.92rem);
+            font-size: clamp(0.8125rem, calc(0.82vw * var(--ui-scale)), 0.92rem);
 
             i {
               display: grid;
@@ -400,7 +400,7 @@
         }
 
         h2 {
-          font-size: clamp(3rem, 12vw, 5.2rem);
+          font-size: clamp(3rem, calc(12vw * var(--ui-scale)), 5.2rem);
         }
 
         > p {
@@ -439,7 +439,7 @@
         pointer-events: none;
 
         h2 {
-          font-size: clamp(2.4rem, 11vw, 4rem);
+          font-size: clamp(2.4rem, calc(11vw * var(--ui-scale)), 4rem);
         }
       }
 
@@ -558,7 +558,7 @@
 
     h2 {
       max-width: 100%;
-      font-size: clamp(2rem, 9vw, 2.9rem);
+      font-size: clamp(2rem, calc(9vw * var(--ui-scale)), 2.9rem);
     }
 
     > p {

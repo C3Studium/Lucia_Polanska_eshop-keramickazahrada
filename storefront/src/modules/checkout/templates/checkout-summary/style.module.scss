@@ -70,7 +70,7 @@
   // proti podlaze 15.95px), takže by clamp nikdy nerostl plynule — jen skokem
   // podlahy. 1.02vw je živý 1176…1275, tedy uvnitř laptopového pásma; nad 1921
   // zvedá strop ramp (15.95 → 17.3px na 2552).
-  font-size: clamp(.75rem, 1vw, 0.875rem);
+  font-size: clamp(.75rem, calc(1vw * var(--ui-scale)), 0.875rem);
   font-weight: 400;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -85,7 +85,7 @@
   // Jen kraje z px do rem — 3vw zůstává, pod 1921 je hodnota identická s původní.
   // Nad 1921 roste strop 3.375rem s rampem na 71.8px při 2552, takže nadpis souhrnu
   // už nepřetlačí h1 stránky (76px); až h1 dostane rem strop, hierarchie sedne.
-  font-size: clamp(2.375rem, 3vw, 3.375rem);
+  font-size: clamp(2.375rem, calc(3vw * var(--ui-scale)), 3.375rem);
   font-weight: 400;
   line-height: .94;
   letter-spacing: -.04em;
@@ -186,7 +186,7 @@
 
   .heading {
     margin: clamp(1rem, 2.2vh, 1.5rem) 0 clamp(.625rem, 1.4vh, 1rem);
-    font-size: clamp(1.625rem, 7vw, 2.125rem);
+    font-size: clamp(1.625rem, calc(7vw * var(--ui-scale)), 2.125rem);
   }
 }
 

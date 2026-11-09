@@ -71,7 +71,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   align-items: center;
   gap: clamp(.55rem, .95vw, .75rem);
   color: rgb(var(--ink-05-rgb) / .66);
-  font: 600 clamp(.75rem, 3.75vw, 0.825rem)/1 "Sansation-Regular", sans-serif;
+  font: 600 clamp(.75rem, calc(3.75vw * var(--ui-scale)), 0.825rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -93,7 +93,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   gap: .18em;
   flex-wrap: wrap;
   align-items: baseline;
-  font: 400 clamp(1.55rem, 3.6vw, 2.6rem)/.92 "Times New Roman", serif;
+  font: 400 clamp(1.55rem, calc(3.6vw * var(--ui-scale)), 2.6rem)/.92 "Times New Roman", serif;
   letter-spacing: -.055em;
 }
 
@@ -108,7 +108,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   max-width: 39ch;
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .7);
-  font: 400 clamp(.9rem, 1.1vw, 1.08rem)/1.6 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, calc(1.1vw * var(--ui-scale)), 1.08rem)/1.6 "Sansation-Regular", sans-serif;
 }
 
 .progress {
@@ -169,7 +169,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   /* .4 alpha was 2.4:1 — an inactive-but-reachable step still has to be
      readable. Truly unreachable steps keep the faded look via :disabled. */
   color: rgb(var(--ink-05-rgb) / .66);
-  font: 600 clamp(.8rem, 4vw, 0.88rem)/1 "Sansation-Regular", sans-serif;
+  font: 600 clamp(.8rem, calc(4vw * var(--ui-scale)), 0.88rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .12em;
   text-transform: uppercase;
   transition: color .3s ease;
@@ -205,7 +205,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   max-width: 100%;
   overflow: hidden;
   color: rgb(var(--ink-05-rgb) / .66);
-  font: 400 clamp(.8rem, 4vw, 0.88rem)/1.3 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.8rem, calc(4vw * var(--ui-scale)), 0.88rem)/1.3 "Sansation-Regular", sans-serif;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -284,7 +284,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   color: rgb(var(--ink-05-rgb) / .72);
   background: transparent;
   cursor: pointer;
-  font: 400 clamp(.9rem, 1.15vw, 1rem)/1.3 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, calc(1.15vw * var(--ui-scale)), 1rem)/1.3 "Sansation-Regular", sans-serif;
   letter-spacing: .04em;
   transition: color .25s ease, border-color .25s ease;
 }
@@ -351,7 +351,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   left: clamp(.65rem, 1.15vw, .875rem);
   bottom: clamp(.5rem, 1.1vh, .75rem);
   color: var(--cream-10);
-  font: 600 clamp(.75rem, 3.75vw, 0.825rem)/1 "Sansation-Regular", sans-serif;
+  font: 600 clamp(.75rem, calc(3.75vw * var(--ui-scale)), 0.825rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -365,7 +365,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
 
 .eyebrow {
   color: rgb(var(--ink-05-rgb) / .66);
-  font: 600 clamp(.75rem, 3.75vw, 0.825rem)/1.25 "Sansation-Regular", sans-serif;
+  font: 600 clamp(.75rem, calc(3.75vw * var(--ui-scale)), 0.825rem)/1.25 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -373,13 +373,13 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
 .productIdentity h2,
 .bundleItem h3 {
   margin: .4375rem 0 0;
-  font: 400 clamp(1.5rem, 2.6vw, 2.75rem)/.92 "Times New Roman", serif;
+  font: 400 clamp(1.5rem, calc(2.6vw * var(--ui-scale)), 2.75rem)/.92 "Times New Roman", serif;
   letter-spacing: -.035em;
 }
 
 .productIdentity strong {
   flex: 0 0 auto;
-  font: 400 clamp(1.05rem, 1.36vw, 1.2rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1.05rem, calc(1.36vw * var(--ui-scale)), 1.2rem)/1 "Sansation-Regular", sans-serif;
 }
 
 .optionGroups {
@@ -423,7 +423,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   float: left;
   padding: clamp(.45rem, 1vh, .6875rem) 0 0;
   color: rgb(var(--ink-05-rgb) / .7);
-  font: 600 clamp(.8rem, 4vw, 0.88rem)/1 "Sansation-Regular", sans-serif;
+  font: 600 clamp(.8rem, calc(4vw * var(--ui-scale)), 0.88rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -522,7 +522,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
 
 .quantity > span {
   color: rgb(var(--ink-05-rgb) / .66);
-  font: 600 clamp(.75rem, 3.75vw, 0.825rem)/1 "Sansation-Regular", sans-serif;
+  font: 600 clamp(.75rem, calc(3.75vw * var(--ui-scale)), 0.825rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -568,12 +568,12 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   border: 0;
   background: transparent;
   cursor: pointer;
-  font-size: clamp(1.05rem, 1.36vw, 1.2rem);
+  font-size: clamp(1.05rem, calc(1.36vw * var(--ui-scale)), 1.2rem);
 }
 
 .quantity output {
   text-align: center;
-  font: 400 clamp(.9rem, 1.15vw, 1rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, calc(1.15vw * var(--ui-scale)), 1rem)/1 "Sansation-Regular", sans-serif;
 }
 
 .primaryAction {
@@ -630,7 +630,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   border-radius: 50%;
   color: var(--cream-10);
   background: var(--ink-05);
-  font-size: clamp(.75rem, 3.75vw, 0.825rem);
+  font-size: clamp(.75rem, calc(3.75vw * var(--ui-scale)), 0.825rem);
 }
 
 .bundleItem {
@@ -640,7 +640,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
 .error {
   margin: 0;
   color: var(--clay-14);
-  font: 400 clamp(.9rem, 1.15vw, 1rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, calc(1.15vw * var(--ui-scale)), 1rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 .deliveryStep,
@@ -666,7 +666,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
 .sectionIntro p {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .7);
-  font: 400 clamp(.95rem, 1.22vw, 1.06rem)/1.55 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.95rem, calc(1.22vw * var(--ui-scale)), 1.06rem)/1.55 "Sansation-Regular", sans-serif;
 }
 
 .fields {
@@ -698,7 +698,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
 .field span,
 .countryField small {
   color: rgb(var(--ink-05-rgb) / .7);
-  font: 600 clamp(.8rem, 4vw, 0.88rem)/1 "Sansation-Regular", sans-serif;
+  font: 600 clamp(.8rem, calc(4vw * var(--ui-scale)), 0.88rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -712,7 +712,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   color: var(--ink-05);
   background: transparent !important;
   box-shadow: none !important;
-  font: 400 clamp(1rem, 1.28vw, 1.12rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1rem, calc(1.28vw * var(--ui-scale)), 1.12rem)/1.2 "Sansation-Regular", sans-serif;
 }
 
 .field:focus-within {
@@ -734,7 +734,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
 }
 
 .countryField strong {
-  font: 400 clamp(1rem, 1.28vw, 1.12rem)/1.15 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1rem, calc(1.28vw * var(--ui-scale)), 1.12rem)/1.15 "Sansation-Regular", sans-serif;
 }
 
 .methodSection {
@@ -761,7 +761,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
 
 .methodHeading > span:last-child {
   color: rgb(var(--ink-05-rgb) / .66);
-  font: 600 clamp(.75rem, 3.75vw, 0.825rem)/1 "Sansation-Regular", sans-serif;
+  font: 600 clamp(.75rem, calc(3.75vw * var(--ui-scale)), 0.825rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .12em;
   text-transform: uppercase;
 }
@@ -773,7 +773,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   border-left: 2px solid var(--clay-04);
   background: rgb(var(--clay-17-rgb) / .06);
   color: rgb(var(--ink-05-rgb) / .82);
-  font: 400 clamp(.86rem, 1.1vw, .98rem)/1.5 "Sansation-Light", sans-serif;
+  font: 400 clamp(.86rem, calc(1.1vw * var(--ui-scale)), .98rem)/1.5 "Sansation-Light", sans-serif;
   border-radius: 4px;
 }
 
@@ -855,17 +855,17 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
 }
 
 .methodCopy strong {
-  font: 400 clamp(1rem, 1.28vw, 1.12rem)/1.15 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1rem, calc(1.28vw * var(--ui-scale)), 1.12rem)/1.15 "Sansation-Regular", sans-serif;
 }
 
 .methodCopy small {
   /* Carries the chosen pickup point — decision text, not atmosphere. */
   color: rgb(var(--ink-05-rgb) / .7);
-  font: 400 clamp(.8rem, 4vw, 0.88rem)/1.35 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.8rem, calc(4vw * var(--ui-scale)), 0.88rem)/1.35 "Sansation-Regular", sans-serif;
 }
 
 .methodPrice {
-  font: 400 clamp(.9rem, 1.15vw, 1rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, calc(1.15vw * var(--ui-scale)), 1rem)/1 "Sansation-Regular", sans-serif;
 }
 
 .packetaEdit {
@@ -876,7 +876,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   color: var(--ink-05);
   background: transparent;
   cursor: pointer;
-  font: 400 clamp(.9rem, 1.15vw, 1rem)/1.25 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, calc(1.15vw * var(--ui-scale)), 1rem)/1.25 "Sansation-Regular", sans-serif;
 }
 
 .fullAction {
@@ -901,7 +901,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
 
 .orderMiniatureHeader > span:last-child {
   color: rgb(var(--ink-05-rgb) / .66);
-  font: 600 clamp(.75rem, 3.75vw, 0.825rem)/1 "Sansation-Regular", sans-serif;
+  font: 600 clamp(.75rem, calc(3.75vw * var(--ui-scale)), 0.825rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .12em;
   text-transform: uppercase;
 }
@@ -931,7 +931,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
 
 .miniItem strong {
   overflow: hidden;
-  font: 400 clamp(1rem, 1.28vw, 1.12rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1rem, calc(1.28vw * var(--ui-scale)), 1.12rem)/1.2 "Sansation-Regular", sans-serif;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -939,7 +939,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
 .miniItem small,
 .miniItem > span {
   color: rgb(var(--ink-05-rgb) / .7);
-  font: 400 clamp(.8rem, 4vw, 0.88rem)/1.3 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.8rem, calc(4vw * var(--ui-scale)), 0.88rem)/1.3 "Sansation-Regular", sans-serif;
 }
 
 .totalRows {
@@ -956,7 +956,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
 
 .totalRows small,
 .totalRows strong {
-  font: 400 clamp(.9rem, 1.15vw, 1rem)/1.25 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, calc(1.15vw * var(--ui-scale)), 1rem)/1.25 "Sansation-Regular", sans-serif;
 }
 
 .totalRows small {
@@ -972,7 +972,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
 .grandTotal small,
 .grandTotal strong {
   color: var(--ink-05);
-  font-size: clamp(1.05rem, 1.36vw, 1.2rem);
+  font-size: clamp(1.05rem, calc(1.36vw * var(--ui-scale)), 1.2rem);
 }
 
 .paymentConsent {
@@ -982,7 +982,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   margin: 0 0 clamp(.5rem, 1.1vh, .75rem);
   color: rgb(var(--ink-05-rgb) / .78);
   cursor: pointer;
-  font: 400 clamp(.9rem, 1.15vw, 1rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, calc(1.15vw * var(--ui-scale)), 1rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 /* The legal checkbox: browser default is ~13px — too small to hit and too
@@ -1044,7 +1044,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
 .payFooter p {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .66);
-  font: 400 clamp(.8rem, 4vw, 0.88rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.8rem, calc(4vw * var(--ui-scale)), 0.88rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 .paymentUnavailable {
@@ -1053,7 +1053,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   border: 1px solid rgb(var(--clay-14-rgb) / .32);
   border-radius: .875rem;
   color: var(--clay-06);
-  font: 400 clamp(.9rem, 1.15vw, 1rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, calc(1.15vw * var(--ui-scale)), 1rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 .trust {
@@ -1067,7 +1067,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   min-width: 0;
   padding: clamp(.55rem, 1.25vh, .8125rem) clamp(.2rem, .4vw, .3125rem);
   color: rgb(var(--ink-05-rgb) / .66);
-  font: 600 clamp(.75rem, 3.75vw, 0.825rem)/1.35 "Sansation-Regular", sans-serif;
+  font: 600 clamp(.75rem, calc(3.75vw * var(--ui-scale)), 0.825rem)/1.35 "Sansation-Regular", sans-serif;
   letter-spacing: .1em;
   text-align: center;
   text-transform: uppercase;

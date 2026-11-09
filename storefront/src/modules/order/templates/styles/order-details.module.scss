@@ -19,7 +19,7 @@
 .accountOrderDetailsAside > span {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .5);
-  font: 12px/1.25 "Sansation-Regular", sans-serif;
+  font: calc(12px * var(--ui-scale))/1.25 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -33,7 +33,7 @@
 
 .accountOrderDetailsHeading h1 {
   margin: 0;
-  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.4rem, 4.56vw, 6.5rem))/.82 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.4rem, calc(4.56vw * var(--ui-scale)), 6.5rem))/.82 "Sentient-Regular", serif;
   letter-spacing: -.06em;
 }
 
@@ -84,7 +84,7 @@
 
 .accountOrderDetailsSection > h2 {
   margin: 0;
-  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.4rem, 2.96vw, 4.4rem))/.9 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.4rem, calc(2.96vw * var(--ui-scale)), 4.4rem))/.9 "Sentient-Regular", serif;
   letter-spacing: -.05em;
 }
 
@@ -99,7 +99,7 @@
 .accountOrderClaimsLink {
   justify-self: start;
   color: var(--ink-05);
-  font: 400 calc(var(--account-zoom, 1) * clamp(.85rem, 0.9vw, 1rem))/1.4 "Sansation-Regular", sans-serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(.85rem, calc(0.9vw * var(--ui-scale)), 1rem))/1.4 "Sansation-Regular", sans-serif;
   text-decoration: underline;
 }
 
@@ -107,7 +107,7 @@
   max-width: 40rem;
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .72);
-  font: 300 calc(var(--account-zoom, 1) * clamp(.95rem, 1vw, 1.1rem))/1.5 "Sansation-Light", sans-serif;
+  font: 300 calc(var(--account-zoom, 1) * clamp(.95rem, calc(1vw * var(--ui-scale)), 1.1rem))/1.5 "Sansation-Light", sans-serif;
 
   a {
     color: var(--ink-05);
@@ -143,7 +143,7 @@
   p {
     margin: 0;
     color: rgb(var(--cream-06-rgb) / .78);
-    font: 300 calc(var(--account-zoom, 1) * clamp(.9rem, .95vw, 1rem))/1.5 "Sansation-Light", sans-serif;
+    font: 300 calc(var(--account-zoom, 1) * clamp(.9rem, calc(.95vw * var(--ui-scale)), 1rem))/1.5 "Sansation-Light", sans-serif;
   }
 }
 
@@ -158,7 +158,7 @@
   border-radius: 999px;
   background: var(--cream-06);
   color: var(--ink-05);
-  font: 400 calc(var(--account-zoom, 1) * clamp(.9rem, .95vw, 1rem))/1 "Sansation-Regular", sans-serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(.9rem, calc(.95vw * var(--ui-scale)), 1rem))/1 "Sansation-Regular", sans-serif;
   text-decoration: none;
   transition: background-color .3s ease, color .3s ease;
 

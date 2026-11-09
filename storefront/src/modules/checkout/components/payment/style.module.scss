@@ -31,7 +31,7 @@ $summary-col-gap: clamp(1rem, 1.6vw, 1.75rem);
     /* Jediná velikost pro všechny kroky pokladny — táž příčka jako addresses,
        shipping a review. Podlaha 32px do 1143 px, strop 50.4px od 1800 px,
        živé pásmo 1143–1800. Nad 1921 strop zvedá ramp (3.15rem). */
-    font-size: clamp(2rem, 2.8vw, 3.15rem);
+    font-size: clamp(2rem, calc(2.8vw * var(--ui-scale)), 3.15rem);
     font-weight: 400;
     font-family: "Sentient-Regular", serif;
     line-height: .98;
@@ -202,7 +202,7 @@ $summary-col-gap: clamp(1rem, 1.6vw, 1.75rem);
   left: 0;
   /* Táž značka jako 01, 02 a 04. Podlaha .75rem je čitelnostní dno projektu —
      .68rem = 10.88px bylo pod ním. Živé pásmo 1176…1373. */
-  font: 600 clamp(.75rem, 1.02vw, .875rem)/1 "Sansation-Regular", sans-serif;
+  font: 600 clamp(.75rem, calc(1.02vw * var(--ui-scale)), .875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .18em;
   opacity: .48;
 }

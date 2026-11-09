@@ -57,7 +57,7 @@
 
   h1 {
     margin: clamp(2rem, 6vh, 4.25rem) 0 0;
-    font: 400 clamp(2.75rem, 4vw, 4.75rem)/.88 "Sentient-Regular", serif;
+    font: 400 clamp(2.75rem, calc(4vw * var(--ui-scale)), 4.75rem)/.88 "Sentient-Regular", serif;
     letter-spacing: -.05em;
   }
 
@@ -79,7 +79,7 @@
   color: rgb(var(--cream-06-rgb) / .5);
   /* .75rem is the reading floor and never goes below; the ceiling is what lets
      the ramp carry the eyebrow past 2K instead of leaving it hairline-thin. */
-  font: 400 clamp(.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.75rem, calc(1vw * var(--ui-scale)), 0.875rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -88,7 +88,7 @@
   margin: 0;
   max-width: 34ch;
   color: rgb(var(--cream-06-rgb) / .62);
-  font: 300 clamp(.875rem, 1.1vw, 1.0625rem)/1.5 "Sansation-Light", sans-serif;
+  font: 300 clamp(.875rem, calc(1.1vw * var(--ui-scale)), 1.0625rem)/1.5 "Sansation-Light", sans-serif;
 }
 
 .mastheadAside {
@@ -109,7 +109,7 @@
   padding: clamp(.5rem, .78vw, .75rem) 0;
   border-bottom: 1px solid rgb(var(--cream-06-rgb) / .4);
   color: rgb(var(--cream-06-rgb) / .82);
-  font: 400 clamp(.75rem, 1vw, .875rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.75rem, calc(1vw * var(--ui-scale)), .875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .08em;
   text-transform: uppercase;
   transition: color 220ms ease, border-color 220ms ease;
@@ -157,7 +157,7 @@
   left: 0;
   content: "01—04 · ÚDAJE OBJEDNÁVKY";
   color: rgb(var(--cream-06-rgb) / .38);
-  font: 400 clamp(.75rem, 1vw, 0.875rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.75rem, calc(1vw * var(--ui-scale)), 0.875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -298,7 +298,7 @@
 
   .masthead h1 {
     margin-top: 14px;
-    font-size: clamp(2.25rem, 11vw, 3rem);
+    font-size: clamp(2.25rem, calc(11vw * var(--ui-scale)), 3rem);
   }
 
   .mastheadCopy {

@@ -20,7 +20,7 @@
   gap: 0.875rem;
   margin-bottom: clamp(2.125rem, 5vh, 3.625rem);
   color: rgb(var(--ink-05-rgb) / .48);
-  font: 400 clamp(0.75rem, 0.95vw, 0.85rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.85rem) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -51,7 +51,7 @@
   display: block;
   margin-bottom: 0.875rem;
   color: rgb(var(--ink-05-rgb) / .5);
-  font: 400 clamp(0.75rem, 0.95vw, 0.85rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.85rem) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -63,7 +63,7 @@
  */
 .invitation h2 {
   margin: 0;
-  font: 400 clamp(2rem, 3vw, 3.25rem) / 0.94 "Sentient-Regular", serif;
+  font: 400 clamp(2rem, calc(3vw * var(--ui-scale)), 3.25rem) / 0.94 "Sentient-Regular", serif;
   letter-spacing: -0.045em;
   text-wrap: balance;
 }
@@ -80,7 +80,7 @@
   max-width: 37ch;
   margin: clamp(1.125rem, 2.2vh, 1.5rem) 0 0;
   color: rgb(var(--ink-05-rgb) / .62);
-  font: 300 clamp(0.9375rem, 1.15vw, 1.0625rem) / 1.52 "Sansation-Light", sans-serif;
+  font: 300 clamp(0.9375rem, calc(1.15vw * var(--ui-scale)), 1.0625rem) / 1.52 "Sansation-Light", sans-serif;
 }
 
 /* Pravidla recenzí (§ 5 ZOS) — drobněji než pozvánka nad nimi, ať nepřebíjí
@@ -89,7 +89,7 @@
   max-width: 52ch;
   margin-top: 0.75rem;
   color: rgb(var(--ink-05-rgb) / .5);
-  font-size: clamp(0.8125rem, 1.02vw, 0.925rem);
+  font-size: clamp(0.8125rem, calc(1.02vw * var(--ui-scale)), 0.925rem);
   line-height: 1.5;
 }
 
@@ -151,13 +151,13 @@
 
 .reviewSeal span {
   margin-top: -0.5rem;
-  font: 400 clamp(1.5rem, 2.1vw, 2.125rem) / 1 "Sentient-Regular", serif;
+  font: 400 clamp(1.5rem, calc(2.1vw * var(--ui-scale)), 2.125rem) / 1 "Sentient-Regular", serif;
 }
 
 .reviewSeal small {
   position: absolute;
   bottom: 22%;
-  font: 400 clamp(0.75rem, 0.95vw, 0.85rem) / 1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.85rem) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -188,7 +188,7 @@
   max-width: 36ch;
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .66);
-  font: 300 clamp(1rem, 1.25vw, 1.125rem) / 1.5 "Sansation-Light", sans-serif;
+  font: 300 clamp(1rem, calc(1.25vw * var(--ui-scale)), 1.125rem) / 1.5 "Sansation-Light", sans-serif;
 }
 
 /*
@@ -215,7 +215,7 @@
   padding: 0 1.375rem;
   border: 1px solid var(--ink-05);
   border-radius: 999px;
-  font: 400 clamp(0.875rem, 1.1vw, 1rem) / 1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.875rem, calc(1.1vw * var(--ui-scale)), 1rem) / 1 "Sansation-Regular", sans-serif;
   text-decoration: none;
   transition:
     color 350ms ease,
@@ -268,7 +268,7 @@
   align-items: center;
   gap: 0.75rem;
   color: rgb(var(--ink-05-rgb) / .48);
-  font: 400 clamp(0.75rem, 0.95vw, 0.85rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.85rem) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -312,7 +312,7 @@
 }
 
 .formHeader > span {
-  font: 400 clamp(1.6875rem, 2.3vw, 2.375rem) / 1 "Sentient-Regular", serif;
+  font: 400 clamp(1.6875rem, calc(2.3vw * var(--ui-scale)), 2.375rem) / 1 "Sentient-Regular", serif;
 }
 
 .formHeader button {
@@ -320,7 +320,7 @@
   border: 0;
   border-bottom: 1px solid currentColor;
   color: rgb(var(--ink-05-rgb) / .6);
-  font: 400 clamp(0.8125rem, 1.02vw, 0.925rem) / 1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.8125rem, calc(1.02vw * var(--ui-scale)), 0.925rem) / 1 "Sansation-Regular", sans-serif;
   background: transparent;
   cursor: pointer;
 
@@ -357,7 +357,7 @@
 
 .label {
   color: rgb(var(--ink-05-rgb) / .56) !important;
-  font: 400 clamp(0.75rem, 0.95vw, 0.85rem) / 1.2 "Sansation-Regular", sans-serif !important;
+  font: 400 clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.85rem) / 1.2 "Sansation-Regular", sans-serif !important;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -374,7 +374,7 @@
   background: transparent !important;
   box-shadow: none !important;
   /* Floor stays at 1rem: under 16px iOS zooms the field on focus. */
-  font: 300 clamp(1rem, 1.25vw, 1.125rem) / 1.4 "Sansation-Light", sans-serif !important;
+  font: 300 clamp(1rem, calc(1.25vw * var(--ui-scale)), 1.125rem) / 1.4 "Sansation-Light", sans-serif !important;
 }
 
 .field textarea {
@@ -485,5 +485,5 @@
 }
 
 .perspectiveText {
-  font: 400 clamp(0.875rem, 1.1vw, 1rem) / 1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.875rem, calc(1.1vw * var(--ui-scale)), 1rem) / 1 "Sansation-Regular", sans-serif;
 }

@@ -211,7 +211,7 @@
      * Live band 1600-1800px; left at 1vw rather than retuned to the usual 1200-1500, because the
      * whole travel here is 16 -> 18px and moving it down would put 18px text on every laptop.
      */
-    font-size: clamp(1rem, 1vw, 1.125rem);
+    font-size: clamp(1rem, calc(1vw * var(--ui-scale)), 1.125rem);
     font-weight: 300;
 
     &::placeholder {

@@ -144,7 +144,7 @@
      (.75rem) — pod ni se s tímhle kontrastem jít nemá. Prostředek je .96vw, ne .62vw:
      .75rem je nad rampem .625vw, takže .62vw byl mrtvý člen a popisek stál na podlaze
      od 1200 až po ramp. Živé pásmo 1250–1417. */
-  font: 400 clamp(.75rem, .96vw, .85rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.75rem, calc(.96vw * var(--ui-scale)), .85rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -192,7 +192,7 @@
   /* Podlaha .75rem = dnešních 12px; níž ne, kontrast .62 je počítaný na 12px.
      Prostředek .96vw (ne .62vw, který je pod podlahou .75 × .8333 = .625vw, a tedy
      nikdy nesvítí): živé pásmo 1250–1417, pak strop .85rem, který nad 1921 nese ramp. */
-  font: 400 clamp(.75rem, .96vw, .85rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.75rem, calc(.96vw * var(--ui-scale)), .85rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -207,7 +207,7 @@
      stránky. Na 1920 z 57.6 px na 36.9. */
   /* Násobitel, aby se dal titulek stáhnout bez opisování clampu — nastavuje ho
      stránka košíku pro notebooky, viz `cart/templates/index.module.scss`. */
-  font: 400 calc(var(--cart-title-zoom, 1) * clamp(1.4rem, 1.92vw, 2.3rem))/.96 "Sentient-Regular", serif;
+  font: 400 calc(var(--cart-title-zoom, 1) * clamp(1.4rem, calc(1.92vw * var(--ui-scale)), 2.3rem))/.96 "Sentient-Regular", serif;
   letter-spacing: -.04em;
   transition: color 240ms ease;
 }
@@ -246,7 +246,7 @@
   border: 1px solid rgb(var(--cream-06-rgb) / .3);
   border-radius: 999px;
   color: rgb(var(--cream-06-rgb) / .82);
-  font: 400 clamp(.75rem, .9vw, .85rem)/1.3 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.75rem, calc(.9vw * var(--ui-scale)), .85rem)/1.3 "Sansation-Regular", sans-serif;
   letter-spacing: .02em;
   text-decoration: none;
 
@@ -372,7 +372,7 @@
 .cellUnit .controlLabel,
 .cellPrice .controlLabel {
   margin: 0;
-  font-size: clamp(.75rem, .96vw, .85rem);
+  font-size: clamp(.75rem, calc(.96vw * var(--ui-scale)), .85rem);
   white-space: nowrap;
 
   /* „CENA ZA KUS: 65,-" stojí na jedné lince, takže popisek potřebuje
@@ -520,7 +520,7 @@
     margin-top: 18px;
     align-items: center;
     gap: 12px;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale));
   }
   .mobileControls > *:nth-child(2) { margin-left: auto; }
   .title { font-size: 1.65rem; }
@@ -573,7 +573,7 @@
 
   .options {
     margin-top: 2px;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale));
     line-height: 1.25;
   }
 
@@ -619,7 +619,7 @@
     }
 
     .title {
-      font-size: clamp(1.25rem, 2.6vw, 1.6rem);
+      font-size: clamp(1.25rem, calc(2.6vw * var(--ui-scale)), 1.6rem);
     }
 
     .cellUnit,

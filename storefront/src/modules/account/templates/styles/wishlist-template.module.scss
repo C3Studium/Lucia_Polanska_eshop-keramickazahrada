@@ -27,7 +27,7 @@
 .accountWishlistImage > span {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .5);
-  font: calc(var(--account-zoom, 1) * clamp(.75rem, 0.624vw, .85rem)) / 1.2 "Sansation-Regular", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.624vw * var(--ui-scale)), .85rem)) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -55,7 +55,7 @@
      0.9 na svislém telefonu. Bez proměnné (desktop) je fallback 1 a hodnota
      je bit po bitu tatáž jako předtím. Na telefonu tím nadpis klesne
      z 54.4 na 49px a přestane brát dva a půl řádku. */
-  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.2rem, 4.12vw, 5.9rem)) / 0.84 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.2rem, calc(4.12vw * var(--ui-scale)), 5.9rem)) / 0.84 "Sentient-Regular", serif;
   letter-spacing: -0.06em;
 }
 
@@ -87,7 +87,7 @@
   max-width: 38rem;
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .62);
-  font: calc(var(--account-zoom, 1) * clamp(.95rem, 0.8vw, 1.15rem)) / 1.55 "Sansation-Light", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(.95rem, calc(0.8vw * var(--ui-scale)), 1.15rem)) / 1.55 "Sansation-Light", sans-serif;
 }
 
 .accountWishlistBody {
@@ -116,7 +116,7 @@
 
 .accountPreviewNotice span {
   color: var(--olive-11);
-  font: calc(var(--account-zoom, 1) * clamp(.75rem, 0.624vw, .85rem)) / 1.2 "Sansation-Bold", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.624vw * var(--ui-scale)), .85rem)) / 1.2 "Sansation-Bold", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -124,7 +124,7 @@
 .accountPreviewNotice p {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .65);
-  font-size: calc(var(--account-zoom, 1) * clamp(.84rem, 0.728vw, 1rem));
+  font-size: calc(var(--account-zoom, 1) * clamp(.84rem, calc(0.728vw * var(--ui-scale)), 1rem));
 }
 
 .accountWishlistGrid {
@@ -217,7 +217,7 @@
   border: 1px solid rgb(var(--ink-05-rgb) / .22);
   border-radius: 999px;
   background: rgb(var(--cream-07-rgb) / .88);
-  font: calc(var(--account-zoom, 1) * clamp(.75rem, 0.624vw, .85rem)) / 1 "Sansation-Regular", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.624vw * var(--ui-scale)), .85rem)) / 1 "Sansation-Regular", sans-serif;
   font-style: normal;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -283,7 +283,7 @@
   block-size: 1.92em;
   margin: 0;
   overflow: hidden;
-  font: 400 calc(var(--account-zoom, 1) * clamp(1.7rem, 1.84vw, 2.7rem)) / 0.96 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(1.7rem, calc(1.84vw * var(--ui-scale)), 2.7rem)) / 0.96 "Sentient-Regular", serif;
   letter-spacing: -0.04em;
   overflow-wrap: anywhere;
   -webkit-line-clamp: 2;
@@ -294,7 +294,7 @@
   margin: 0;
   overflow: hidden;
   color: rgb(var(--ink-05-rgb) / .55);
-  font-size: calc(var(--account-zoom, 1) * clamp(.88rem, 0.76vw, 1.05rem));
+  font-size: calc(var(--account-zoom, 1) * clamp(.88rem, calc(0.76vw * var(--ui-scale)), 1.05rem));
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -324,7 +324,7 @@
 }
 
 .accountWishlistEmpty > div > span {
-  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.5rem, 3.2vw, 4.8rem)) / 0.9 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.5rem, calc(3.2vw * var(--ui-scale)), 4.8rem)) / 0.9 "Sentient-Regular", serif;
   letter-spacing: -0.05em;
 }
 
@@ -382,11 +382,11 @@
     }
 
     .accountWishlistInfo h2 {
-      font-size: calc(var(--account-zoom, 1) * clamp(1.275rem, 1.38vw, 2.025rem));
+      font-size: calc(var(--account-zoom, 1) * clamp(1.275rem, calc(1.38vw * var(--ui-scale)), 2.025rem));
     }
 
     .accountWishlistInfo p {
-      font-size: calc(var(--account-zoom, 1) * clamp(0.72rem, 0.624vw, 0.85rem));
+      font-size: calc(var(--account-zoom, 1) * clamp(0.72rem, calc(0.624vw * var(--ui-scale)), 0.85rem));
     }
 
     .accountWishlistCardAction {

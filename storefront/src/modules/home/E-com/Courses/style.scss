@@ -20,7 +20,7 @@
    * to týž popisek v pěti sekcích pod sebou. Živý 1263–1474 px, podlaha 12 px na
    * čitelnostní čáře verzálek s prostrkáním 0.12em, strop zvedá rampa nad 1921.
    */
-  --courses-rail-type: clamp(0.75rem, 0.95vw, 0.875rem);
+  --courses-rail-type: clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.875rem);
 
   /*
    * Výška obou lišt — meta ve scéně a lišta v závěsu stojí v jedné rovině.
@@ -193,7 +193,7 @@
         /* Výškově vědomý jako hero: řádky jsou `nowrap`, takže na 660px obrazovce
            soupeřily 70px litery se 144 px paddingu ve stejném rámu. min() sráží
            velikost tam, kde chybí výška, aniž by se psalo pravidlo do lt. */
-        font-size: clamp(3rem, min(5.75vw, 10vh), 7rem);
+        font-size: clamp(3rem, min(calc(5.75vw * var(--ui-scale)), calc(10vh * var(--ui-scale))), 7rem);
         font-weight: 400;
         line-height: 0.9;
         letter-spacing: -0.048em;
@@ -227,7 +227,7 @@
         margin: 0;
         color: rgb(var(--white-rgb) / .74);
         font-family: "Sansation-Light";
-        font-size: clamp(1rem, 1.1vw, 1.25rem);
+        font-size: clamp(1rem, calc(1.1vw * var(--ui-scale)), 1.25rem);
         line-height: 1.45;
       }
 
@@ -394,7 +394,7 @@
          * místo 5.8 % — o ten rozdíl přesahovala řádka do kruhu. `min(…, 10.5vh)`
          * pak sráží velikost na krátké obrazovce (1220x660: 69.3 místo 70.8).
          */
-        font-size: clamp(3.4rem, min(calc(5.8 * var(--fvw)), 10.5vh), 7rem);
+        font-size: clamp(3.4rem, min(calc(5.8 * calc(var(--fvw) * var(--ui-scale))), calc(10.5vh * var(--ui-scale))), 7rem);
         font-weight: 400;
         line-height: 0.82;
         letter-spacing: -0.055em;
@@ -425,7 +425,7 @@
           margin: 0;
           color: rgb(var(--black-03-rgb) / .68);
           font-family: "Sansation-Light";
-          font-size: clamp(0.98rem, 1vw, 1.14rem);
+          font-size: clamp(0.98rem, calc(1vw * var(--ui-scale)), 1.14rem);
           line-height: 1.42;
         }
       }
@@ -446,7 +446,7 @@
           position: relative;
           color: rgb(var(--black-03-rgb) / .7);
           font-family: "Sansation-Regular";
-          font-size: clamp(0.8125rem, 0.82vw, 0.94rem);
+          font-size: clamp(0.8125rem, calc(0.82vw * var(--ui-scale)), 0.94rem);
           text-decoration: none;
 
           &::after {
@@ -520,7 +520,7 @@
         h2,
         em {
           width: auto;
-          font-size: clamp(3.4rem, 14vw, 6.2rem);
+          font-size: clamp(3.4rem, calc(14vw * var(--ui-scale)), 6.2rem);
           white-space: normal;
         }
 
@@ -583,7 +583,7 @@
         }
 
         h2 {
-          font-size: clamp(3.5rem, 14vw, 6rem);
+          font-size: clamp(3.5rem, calc(14vw * var(--ui-scale)), 6rem);
 
           em {
             margin-left: 0;
@@ -761,7 +761,7 @@
       transform: none;
 
       h2 {
-        font-size: clamp(2.4rem, 11vw, 3.4rem);
+        font-size: clamp(2.4rem, calc(11vw * var(--ui-scale)), 3.4rem);
         line-height: 0.92;
 
         em {

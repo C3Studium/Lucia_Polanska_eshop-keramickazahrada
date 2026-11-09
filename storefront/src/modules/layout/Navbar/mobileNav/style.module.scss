@@ -140,7 +140,7 @@
     border: 0;
     background: transparent;
     color: var(--bgBlack);
-    font: 400 clamp(1.35rem, 6vw, 1.75rem) / 1 "Sentient-Regular", serif;
+    font: 400 clamp(1.35rem, calc(6vw * var(--ui-scale)), 1.75rem) / 1 "Sentient-Regular", serif;
     letter-spacing: -0.02em;
     text-align: left;
     text-decoration: none;
@@ -152,7 +152,7 @@
     a,
     button {
       min-height: 46px;
-      font-size: clamp(1.1rem, 3.4vw, 1.35rem);
+      font-size: clamp(1.1rem, calc(3.4vw * var(--ui-scale)), 1.35rem);
     }
   }
 }

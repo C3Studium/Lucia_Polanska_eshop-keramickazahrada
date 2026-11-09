@@ -101,7 +101,7 @@
   font-family: "Sansation-Regular", sans-serif;
   // 13→15px, živé 1238–1429. Na 1220/1366 se text v úzkém sloupci míň láme,
   // od 1429 výš drží původních 15px a nad 1921 z nich ramp udělá 19.9px.
-  font-size: clamp(0.8125rem, 1.05vw, 0.9375rem);
+  font-size: clamp(0.8125rem, calc(1.05vw * var(--ui-scale)), 0.9375rem);
   line-height: 1.5;
 }
 
@@ -159,5 +159,5 @@
   color: var(--clay-41);
   font-family: "Sansation-Regular", sans-serif;
   // 13→14px, živé 1238–1333.
-  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
+  font-size: clamp(0.8125rem, calc(1.083vw * var(--ui-scale)), 0.948rem);
 }

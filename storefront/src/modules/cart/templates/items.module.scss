@@ -29,7 +29,7 @@
      clamp přelepený přes desktopový. 13vw je nad 443px trvale u stropu, takže nadpis měřil
      57.6px na 1200 i na 1920. Jeden clamp, živé pásmo 1067–1956. Podlaha 2.4rem drží dnešní
      telefonní vzhled (13vw × 443 ≈ 2.6rem tam beztak nedosáhne dřív než u podlahy). */
-  font: 400 clamp(2.4rem, 3.6vw, 4.4rem)/.9 "Sentient-Regular", serif;
+  font: 400 clamp(2.4rem, calc(3.6vw * var(--ui-scale)), 4.4rem)/.9 "Sentient-Regular", serif;
   letter-spacing: -.05em;
 }
 
@@ -41,7 +41,7 @@
   color: rgb(var(--cream-06-rgb) / .46);
   /* Podlaha .75rem = 12px. S .72rem měřilo pořadové číslo sekce na 1220 jen 11.52px,
      tedy pod hranicí, kterou rig hlásí jako vadu. Živé pásmo 1200–1520. */
-  font: 400 clamp(.75rem, 1vw, .95rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.75rem, calc(1vw * var(--ui-scale)), .95rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }

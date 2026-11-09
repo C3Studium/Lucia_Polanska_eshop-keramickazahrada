@@ -56,7 +56,7 @@
    a 28.8px na 390, tedy shodně s přihlášením. */
 .title {
   margin: 0;
-  font: 400 calc(var(--auth-zoom) * calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(1.8rem, 1.8vw, 2.6rem))) / 1 "Sentient-Regular", serif;
+  font: 400 calc(var(--auth-zoom) * calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(1.8rem, calc(1.8vw * var(--ui-scale)), 2.6rem))) / 1 "Sentient-Regular", serif;
   letter-spacing: -0.025em;
 }
 
@@ -465,7 +465,7 @@
 .email strong {
   overflow-wrap: anywhere;
   color: var(--olive-15);
-  font: 400 calc(var(--account-zoom, 1) * clamp(1.3rem, 1.36vw, 1.8rem)) / 1.1 "Sentient-LightItalic",
+  font: 400 calc(var(--account-zoom, 1) * clamp(1.3rem, calc(1.36vw * var(--ui-scale)), 1.8rem)) / 1.1 "Sentient-LightItalic",
     "Sentient-Regular", serif;
 }
 

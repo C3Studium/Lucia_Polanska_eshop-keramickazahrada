@@ -8,7 +8,7 @@
   border: 1px solid rgb(var(--cream-06-rgb) / .18);
   border-radius: clamp(.75rem, .95vw, .875rem);
   color: var(--clay-37);
-  font: 400 clamp(.8125rem, .95vw, .9rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.8125rem, calc(.95vw * var(--ui-scale)), .9rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 .title {

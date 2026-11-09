@@ -370,7 +370,7 @@
     display: -webkit-box;
     overflow: hidden;
     margin: clamp(0.25rem, 1.1vh, 0.5rem) 0 clamp(0.625rem, 2.2vh, 1rem);
-    font: 400 clamp(1.45rem, 1.8vw, 2rem) / 1.02 "Sentient-Regular", serif;
+    font: 400 clamp(1.45rem, calc(1.8vw * var(--ui-scale)), 2rem) / 1.02 "Sentient-Regular", serif;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
@@ -629,7 +629,7 @@
 
   .helperLabel {
     margin-bottom: 6px;
-    font-size: 11px;
+    font-size: calc(11px * var(--ui-scale));
   }
 
   /*
@@ -652,11 +652,11 @@
       justify-content: center;
       gap: 1px;
       padding: 5px 12px;
-      font-size: 13px;
+      font-size: calc(13px * var(--ui-scale));
       line-height: 1.2;
 
       small {
-        font-size: 9px;
+        font-size: calc(9px * var(--ui-scale));
         letter-spacing: 0.1em;
       }
 
@@ -687,7 +687,7 @@
     button {
       flex: 0 0 auto;
       padding: 0 12px;
-      font: 400 13px/1 "Sansation-Regular", sans-serif;
+      font: 400 calc(13px * var(--ui-scale))/1 "Sansation-Regular", sans-serif;
     }
   }
 

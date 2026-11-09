@@ -380,7 +380,7 @@
    * this changes nothing on a normal desktop (54px at 1920, 48.4 at 1512 — unmoved) and only
    * bites where the window is wider than it is tall, which is exactly the low laptop.
    */
-  font-size: clamp(1.875rem, min(3.2 * var(--fvw), 5.6vh), 3.375rem);
+  font-size: clamp(1.875rem, min(3.2 * calc(var(--fvw) * var(--ui-scale)), calc(5.6vh * var(--ui-scale))), 3.375rem);
   font-weight: 300;
   white-space: nowrap;
   writing-mode: vertical-rl;
@@ -410,7 +410,7 @@
        stacked height that competes with the card's. 8vh and 4.5vw agree at 16:9 — identical at
        1280×720 and 1366×768, unmoved at 1512 and 1920 — and the vh term takes over only on a
        window wider than it is tall. */
-    font-size: clamp(2.6875rem, min(4.5 * var(--fvw), 8vh), 4.5rem);
+    font-size: clamp(2.6875rem, min(4.5 * calc(var(--fvw) * var(--ui-scale)), calc(8vh * var(--ui-scale))), 4.5rem);
     font-weight: 400;
     line-height: 0.98;
     letter-spacing: -0.035em;
@@ -438,7 +438,7 @@
    * Set from here rather than in CategoryLink, the way the accordion below does it, so that
    * component keeps one definition and this stays a decision about the menu.
    */
-  --animated-link-font-size: clamp(1rem, min(1.55 * var(--fvw), 2.7vh), 1.75rem);
+  --animated-link-font-size: clamp(1rem, min(1.55 * calc(var(--fvw) * var(--ui-scale)), calc(2.7vh * var(--ui-scale))), 1.75rem);
 
   display: flex;
   flex-direction: column;
@@ -559,7 +559,7 @@
     max-width: 100%;
     height: calc(1.15em + 3px);
     color: rgb(var(--ink-04-rgb) / .74);
-    font-size: clamp(0.8125rem, 0.95 * var(--fvw), 1rem);
+    font-size: clamp(0.8125rem, 0.95 * calc(var(--fvw) * var(--ui-scale)), 1rem);
     transition: color 0.3s ease, opacity 0.3s ease;
 
     &:hover { opacity: 0.68; }
@@ -714,7 +714,7 @@
   .verticalTitle {
     position: static;
     padding: 13px 52px 14px 16px;
-    font-size: 19px;
+    font-size: calc(19px * var(--ui-scale));
     white-space: normal;
     writing-mode: horizontal-tb;
     transform: none;
@@ -729,13 +729,13 @@
 
     h3 {
       margin: 2px 0 6px;
-      font-size: 19px;
+      font-size: calc(19px * var(--ui-scale));
       line-height: 1.05;
     }
   }
 
   .cardEyebrow {
-    font-size: 11px;
+    font-size: calc(11px * var(--ui-scale));
   }
 
   /*
@@ -758,7 +758,7 @@
    * reader has already opened, not primary controls.
    */
   .categoryLinks {
-    --animated-link-font-size: 16px;
+    --animated-link-font-size: calc(16px * var(--ui-scale));
 
     width: 100%;
     gap: 0;
@@ -867,7 +867,7 @@
             align-items: center;
             min-height: 78px;
             padding-block: 10px;
-            font-size: 28px;
+            font-size: calc(28px * var(--ui-scale));
         }
 
         /*
@@ -904,7 +904,7 @@
 
         /* Ať titulek otevřením nezmenší — sbalený je teď 28px. */
         .expandedContent h3 {
-            font-size: 28px;
+            font-size: calc(28px * var(--ui-scale));
         }
     }
 }

@@ -21,7 +21,7 @@
        strop   1rem   = 16px   začíná na 16   / 0.0108 = 1481px
      Živé pásmo 1259…1481. Nad 1921 zvedá strop ramp z globals.scss
      (2552 → 21.27px) — to px override v cart/item nikdy neuměl. */
-  font-size: clamp(0.85rem, 1.08vw, 1rem);
+  font-size: clamp(0.85rem, calc(1.08vw * var(--ui-scale)), 1rem);
 
   /* Bylo 1.5rem natvrdo. S proměnnou velikostí písma by poměr ujel z 1.5 na 1.76
      na podlaze; bezrozměrné číslo drží proporci samo. */
@@ -50,7 +50,7 @@
          strop  1.15rem = 18.4px začíná na 18.4 / 0.0125 = 1472px
        Živé pásmo 1216…1472. Poměr k .root drží 1.12…1.15 přes celé kontinuum,
        takže cena je vždy větší než popisky kolem ní. */
-    font-size: clamp(0.95rem, 1.25vw, 1.15rem);
+    font-size: clamp(0.95rem, calc(1.25vw * var(--ui-scale)), 1.15rem);
     font-weight: 400;
     font-family: "Sansation-Light";
     color: var(--blackText);

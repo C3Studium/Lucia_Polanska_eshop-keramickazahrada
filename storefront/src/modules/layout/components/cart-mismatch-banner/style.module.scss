@@ -49,7 +49,7 @@
 .index,
 .copy > span {
   color: rgb(var(--cream-06-rgb) / .48);
-  font: 600 clamp(.75rem, .9vw, .9375rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: 600 clamp(.75rem, calc(.9vw * var(--ui-scale)), .9375rem) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -61,7 +61,7 @@
   p,
   small {
     margin: 0;
-    font: 300 clamp(.875rem, 1vw, 1.0625rem) / 1.4 "Sansation-Light", sans-serif;
+    font: 300 clamp(.875rem, calc(1vw * var(--ui-scale)), 1.0625rem) / 1.4 "Sansation-Light", sans-serif;
   }
 
   p {
@@ -101,7 +101,7 @@
   i {
     position: relative;
     z-index: 1;
-    font: 400 clamp(.8125rem, .95vw, 1rem) / 1 "Sansation-Regular", sans-serif;
+    font: 400 clamp(.8125rem, calc(.95vw * var(--ui-scale)), 1rem) / 1 "Sansation-Regular", sans-serif;
     font-style: normal;
   }
 

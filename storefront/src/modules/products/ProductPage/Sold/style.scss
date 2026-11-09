@@ -66,7 +66,7 @@
   max-width: 9.5em;
   margin: 0;
   /* Ziva 776–1731px, pak strop; nad 1921 ho zvedne rampa. */
-  font: 400 clamp(3.25rem, 6.7vw, 7.25rem) / 0.85 "Sentient-Regular", serif;
+  font: 400 clamp(3.25rem, calc(6.7vw * var(--ui-scale)), 7.25rem) / 0.85 "Sentient-Regular", serif;
   letter-spacing: -0.057em;
 }
 
@@ -83,7 +83,7 @@
   margin: 0 0 0.4em;
   color: rgb(var(--ink-05-rgb) / .64);
   /* 1.05vw bylo zive az od 1524px, tedy nad vetsinou laptopu; 1.2vw da pasmo 1333–1583. */
-  font: 300 clamp(1rem, 1.2vw, 1.1875rem) / 1.48 "Sansation-Light", sans-serif;
+  font: 300 clamp(1rem, calc(1.2vw * var(--ui-scale)), 1.1875rem) / 1.48 "Sansation-Light", sans-serif;
 }
 
 .soldProducts__viewport {
@@ -220,7 +220,7 @@
 .soldProducts__cardMeta h3 {
   overflow: hidden;
   margin: 0;
-  font: 400 clamp(1.5rem, 1.8vw, 2.1875rem) / 1 "Sentient-Regular", serif;
+  font: 400 clamp(1.5rem, calc(1.8vw * var(--ui-scale)), 2.1875rem) / 1 "Sentient-Regular", serif;
   letter-spacing: -0.038em;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -452,7 +452,7 @@
     max-width: 8.7em;
     /* Táž čísla, ale krajní členy v rem: v px by je rampa nad 1921 nezvedla. Tady ten
        blok sice nikdy neplatí, ale píše se to podle jednoho pravidla. */
-    font-size: clamp(2.875rem, 14vw, 4.5rem);
+    font-size: clamp(2.875rem, calc(14vw * var(--ui-scale)), 4.5rem);
   }
 
   .soldProducts__intro h2 em {
@@ -595,7 +595,7 @@
   .soldProducts__intro h2 {
     /* Nadpis tu soupeří o výšku, ne o šířku: 14vw ze 760 bloku dalo na 568x320 strop
        72px, tedy dva řádky za 122px ve 320px vysokém okně. Proto vh. */
-    font-size: clamp(1.875rem, 10vh, 3.25rem);
+    font-size: clamp(1.875rem, calc(10vh * var(--ui-scale)), 3.25rem);
   }
 
   /* --- odvolání nativního režimu, který zapnul below-px(760px) výš --------- */
@@ -658,7 +658,7 @@
   .soldProducts__cardMeta h3 {
     /* Karta je teď 193px široká; 24px z podlahy základního clampu z ní udělalo osm
        znaků a ellipsis. 16px na 568, 24px na 932. */
-    font-size: clamp(1rem, 2.6vw, 1.5rem);
+    font-size: clamp(1rem, calc(2.6vw * var(--ui-scale)), 1.5rem);
   }
 }
 

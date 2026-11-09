@@ -16,7 +16,7 @@
    (16px); .95vw would have parked the floor across the whole 1200-1500 band. */
 .topLabel {
   margin-bottom: .5rem;
-  font-size: clamp(.9rem, 1.15vw, 1rem);
+  font-size: clamp(.9rem, calc(1.15vw * var(--ui-scale)), 1rem);
   font-weight: 500;
 }
 
@@ -25,7 +25,7 @@
   display: flex;
   z-index: 0;
   width: 100%;
-  font-size: clamp(.9rem, 1.15vw, 1rem);
+  font-size: clamp(.9rem, calc(1.15vw * var(--ui-scale)), 1rem);
   font-weight: 500;
 }
 
@@ -128,7 +128,7 @@
   background: transparent;
   color: var(--ink-06);
   font-family: inherit;
-  font-size: clamp(1rem, 1.333vw, 1.167rem);
+  font-size: clamp(1rem, calc(1.333vw * var(--ui-scale)), 1.167rem);
   font-weight: 300;
   line-height: 1.35;
   cursor: text;

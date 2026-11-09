@@ -68,7 +68,7 @@
   h1 {
     grid-column: 1;
     margin: clamp(2.25rem, 6vh, 4.25rem) 0 0;
-    font: 400 clamp(2.75rem, 4vw, 4.75rem)/.9 "Sentient-Regular", serif;
+    font: 400 clamp(2.75rem, calc(4vw * var(--ui-scale)), 4.75rem)/.9 "Sentient-Regular", serif;
     letter-spacing: -.05em;
   }
 }
@@ -84,7 +84,7 @@
      dvanáctipixelovou hranici, kterou shoot.cjs hlásí jako vadu (naměřeno na 1220×660).
      12px je přesně to, co se tu vysází dnes. Živé pásmo 1200–1520, nad 1921 nese strop ramp
      — v px to na 2552 zůstávalo 12px vedle 76px nadpisu. */
-  font: 400 clamp(.75rem, 1vw, .95rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.75rem, calc(1vw * var(--ui-scale)), .95rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -94,7 +94,7 @@
   margin: 0;
   max-width: 34ch;
   color: rgb(var(--cream-06-rgb) / .62);
-  font: 300 clamp(.875rem, 1.05vw, 1.1rem)/1.5 "Sansation-Light", sans-serif;
+  font: 300 clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.1rem)/1.5 "Sansation-Light", sans-serif;
 }
 
 .objectMark {
@@ -214,7 +214,7 @@
   right: .6875rem;
   content: "02 · SOUHRN";
   color: rgb(var(--cream-06-rgb) / .38);
-  font: 400 clamp(.78rem, .95vw, 1rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.78rem, calc(.95vw * var(--ui-scale)), 1rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .15em;
 }
 
@@ -230,7 +230,7 @@
   padding-bottom: .6875rem;
   border-bottom: 1px solid rgb(var(--ink-05-rgb) / .2);
   color: rgb(var(--ink-05-rgb) / .5);
-  font: 400 clamp(.75rem, 1vw, .95rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.75rem, calc(1vw * var(--ui-scale)), .95rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }

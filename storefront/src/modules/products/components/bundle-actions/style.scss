@@ -202,7 +202,7 @@
     color: var(--bundle-olive);
     // 1.25vw mělo živé pásmo 1440–1760, tedy na 1220 i 1366 stálo na podlaze;
     // 1.35vw je posouvá na 1333–1630.
-    font: 400 clamp(1.125rem, 1.35vw, 1.375rem) / 1 "Sentient-LightItalic",
+    font: 400 clamp(1.125rem, calc(1.35vw * var(--ui-scale)), 1.375rem) / 1 "Sentient-LightItalic",
       "Sentient-Regular", serif;
     text-overflow: ellipsis;
     white-space: nowrap;

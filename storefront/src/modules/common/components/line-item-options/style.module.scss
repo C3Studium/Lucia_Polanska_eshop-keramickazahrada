@@ -9,7 +9,7 @@
   // h-layer už neemituje @layer, jen vnořené min-width media query v pořadí
   // mapy, takže poslední klíč (xxs, 400px) přebil všechny ostatní a na každé
   // landscape šířce platilo 0.85rem — ani základní 1rem, ani lg: 1rem nikdy.
-  font-size: clamp(0.85rem, 1.1vw, 1rem);
+  font-size: clamp(0.85rem, calc(1.1vw * var(--ui-scale)), 1rem);
   font-weight: 300;
   font-family: "Sansation-Light";
   color: var(--handle);

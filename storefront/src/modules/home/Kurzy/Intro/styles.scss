@@ -65,7 +65,7 @@
     /* Was `clamp(0.75rem, 0.56vw, 0.75rem)` — floor equal to ceiling, so the middle term never
        applied and this was 12px from 1200 to 2552. A real band instead: floor holds to 1333px,
        ceiling from 1600px, and above 1921 the root ramp carries both ends up with it. */
-    font-size: clamp(0.75rem, 0.9vw, 0.9rem);
+    font-size: clamp(0.75rem, calc(0.9vw * var(--ui-scale)), 0.9rem);
     letter-spacing: 0.12em;
     text-transform: uppercase;
     mix-blend-mode: difference;
@@ -127,7 +127,7 @@
   gap: clamp(0.875rem, 1.5vw, 1.5rem);
   color: rgb(var(--cream-06-rgb) / .5);
   /* Same dead clamp as the rail's, same band — the two are one grade of micro-type. */
-  font-size: clamp(0.75rem, 0.9vw, 0.9rem);
+  font-size: clamp(0.75rem, calc(0.9vw * var(--ui-scale)), 0.9rem);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   mix-blend-mode: difference;
@@ -162,7 +162,7 @@
     align-items: center;
     justify-content: center;
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(9rem, 15.6vw, 19rem);
+    font-size: clamp(9rem, calc(15.6vw * var(--ui-scale)), 19rem);
     font-weight: 400;
     line-height: 0.75;
     letter-spacing: -0.075em;
@@ -244,7 +244,7 @@
     h1 {
       margin: clamp(0.9375rem, 1.8vh, 1.375rem) 0 0;
       font-family: "Sentient-Regular", serif;
-      font-size: clamp(2.7rem, 3.35vw, 4.5rem);
+      font-size: clamp(2.7rem, calc(3.35vw * var(--ui-scale)), 4.5rem);
       font-weight: 400;
       line-height: 0.9;
       letter-spacing: -0.052em;
@@ -260,7 +260,7 @@
     p {
       max-width: 33rem;
       margin: clamp(1rem, 2vh, 1.5rem) 0 0;
-      font-size: clamp(0.9rem, 0.91vw, 1.04rem);
+      font-size: clamp(0.9rem, calc(0.91vw * var(--ui-scale)), 1.04rem);
       font-weight: 300;
       line-height: 1.48;
     }
@@ -379,7 +379,7 @@
     h2 {
       margin: 1.25rem 0 0;
       font-family: "Sentient-Regular", serif;
-      font-size: clamp(3.2rem, 4.5vw, 5.6rem);
+      font-size: clamp(3.2rem, calc(4.5vw * var(--ui-scale)), 5.6rem);
       font-weight: 400;
       line-height: 0.88;
       letter-spacing: -0.056em;
@@ -422,7 +422,7 @@
     p {
       margin: 0;
       color: rgb(var(--ink-05-rgb) / .7);
-      font-size: clamp(0.96rem, 1.02vw, 1.16rem);
+      font-size: clamp(0.96rem, calc(1.02vw * var(--ui-scale)), 1.16rem);
       font-weight: 300;
       line-height: 1.58;
     }
@@ -537,7 +537,7 @@
   h3 {
     margin: 0.5rem 0 0;
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(1.7rem, 2.3vw, 2.8rem);
+    font-size: clamp(1.7rem, calc(2.3vw * var(--ui-scale)), 2.8rem);
     font-weight: 400;
     line-height: 0.98;
     letter-spacing: -0.042em;
@@ -555,7 +555,7 @@
        shortest laptop instead of locking: 1.4vh·660 = 9.24px, 2vh·660 = 13.2px. */
     margin: clamp(0.5rem, 1.4vh, 1rem) 0 0;
     color: rgb(var(--ink-05-rgb) / .66);
-    font-size: clamp(0.88rem, 0.94vw, 1.04rem);
+    font-size: clamp(0.88rem, calc(0.94vw * var(--ui-scale)), 1.04rem);
     font-weight: 300;
     line-height: 1.48;
   }
@@ -636,29 +636,29 @@
   .kurzyAbout {
     &__intro h2 {
       /* 0.81x — z 60.4 na 49.0 na 1342, ze 57.6 na 46.7 na 1280. */
-      font-size: clamp(2.6rem, 3.65vw, 4.6rem);
+      font-size: clamp(2.6rem, calc(3.65vw * var(--ui-scale)), 4.6rem);
     }
 
     &__lede p {
-      font-size: clamp(0.9rem, 0.94vw, 1.06rem);
+      font-size: clamp(0.9rem, calc(0.94vw * var(--ui-scale)), 1.06rem);
     }
   }
 
   .kurzyAudience {
     h3 {
       /* 0.82x — z 30.9 na 25.2 na 1342. Dva řádky, takže ~12px dolů. */
-      font-size: clamp(1.4rem, 1.88vw, 2.3rem);
+      font-size: clamp(1.4rem, calc(1.88vw * var(--ui-scale)), 2.3rem);
     }
 
     p {
-      font-size: clamp(0.82rem, 0.87vw, 0.96rem);
+      font-size: clamp(0.82rem, calc(0.87vw * var(--ui-scale)), 0.96rem);
     }
   }
 }
 
 @include below-px(980px) {
   .kurzyHero__titleRow {
-    font-size: clamp(7rem, 16vw, 11rem);
+    font-size: clamp(7rem, calc(16vw * var(--ui-scale)), 11rem);
   }
 
   .kurzyAbout {
@@ -760,7 +760,7 @@
 
     &__titleRow {
       justify-content: flex-start;
-      font-size: clamp(4.6rem, 23vw, 7.2rem);
+      font-size: clamp(4.6rem, calc(23vw * var(--ui-scale)), 7.2rem);
 
       figure {
         height: 68px;
@@ -775,7 +775,7 @@
       width: auto;
 
       h1 {
-        font-size: clamp(2.8rem, 12.5vw, 4.3rem);
+        font-size: clamp(2.8rem, calc(12.5vw * var(--ui-scale)), 4.3rem);
       }
 
       p {
@@ -798,7 +798,7 @@
       width: calc(100% - 40px);
 
       h2 {
-        font-size: clamp(2.8rem, 12.5vw, 4.2rem);
+        font-size: clamp(2.8rem, calc(12.5vw * var(--ui-scale)), 4.2rem);
       }
     }
 
@@ -859,7 +859,7 @@
 
     h3 {
       margin: 0;
-      font-size: clamp(1.4rem, 6.4vw, 1.9rem);
+      font-size: clamp(1.4rem, calc(6.4vw * var(--ui-scale)), 1.9rem);
 
       em {
         display: inline;
@@ -1120,7 +1120,7 @@
       }
 
       &__titleRow {
-        font-size: clamp(8.05rem, 18.4vw, 12.65rem);
+        font-size: clamp(8.05rem, calc(18.4vw * var(--ui-scale)), 12.65rem);
       }
 
       /* Vpravo dole, ale text zarovnaný doleva — blok se stěhuje, sazba ne. */

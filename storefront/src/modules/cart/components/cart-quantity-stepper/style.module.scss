@@ -52,7 +52,7 @@
      (17 / 0.014 … 20 / 0.014), so the growth happens where the users are and
      the ramp takes the 1.25rem ceiling on from 1921. */
   font-family: "Sansation-Regular", sans-serif;
-  font-size: var(--qty-stepper-glyph, clamp(1.0625rem, 1.4vw, 1.25rem));
+  font-size: var(--qty-stepper-glyph, clamp(1.0625rem, calc(1.4vw * var(--ui-scale)), 1.25rem));
   font-weight: 400;
   line-height: 1;
   transition: color 220ms ease, background-color 220ms ease;
@@ -81,7 +81,7 @@
   color: var(--qty-stepper-ink, var(--cream-06));
   /* Was a flat 14px. Live 1197–1453px (14 / 0.0117 … 17 / 0.0117). */
   font-family: "Sansation-Regular", sans-serif;
-  font-size: clamp(.875rem, 1.17vw, 1.0625rem);
+  font-size: clamp(.875rem, calc(1.17vw * var(--ui-scale)), 1.0625rem);
   font-weight: 400;
   line-height: 1;
   font-variant-numeric: tabular-nums;

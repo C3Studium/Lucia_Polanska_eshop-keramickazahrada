@@ -24,7 +24,7 @@
 
 @mixin modal-title {
   margin: 0;
-  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.8rem, 4vw, 4.8rem))/.86 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.8rem, calc(4vw * var(--ui-scale)), 4.8rem))/.86 "Sentient-Regular", serif;
   letter-spacing: -.055em;
 }
 
@@ -62,7 +62,7 @@
   /* 14px was frozen at every viewport; it must not get smaller on a laptop, so the
      floor holds it at 14 and the ceiling lets the ramp lift it: 14 -> 15.2px,
      live 1400-1520, 20.2px at 2552. */
-  font-size: calc(var(--account-zoom, 1) * clamp(.875rem, 0.934vw, 1.021rem));
+  font-size: calc(var(--account-zoom, 1) * clamp(.875rem, calc(0.934vw * var(--ui-scale)), 1.021rem));
 }
 
 @mixin button-row {
@@ -96,7 +96,7 @@
   @include below-px(1180px) {
     @include v(md) {
       .title {
-        font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.1rem, 3vw, 3.6rem));
+        font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.1rem, calc(3vw * var(--ui-scale)), 3.6rem));
       }
 
       .fields {

@@ -40,7 +40,7 @@ $col-gap: clamp(1rem, 1.6vw, 1.75rem);
 			   Předtím byl tenhle clamp mrtvý kód: hb/vb mapy sázely min-width dotazy
 			   v pořadí mapy, takže poslední klíč (xxs = min-width:400) přebíjel všechny
 			   ostatní a nadpis stál plochých 1.6rem na 1280 i na 1920. */
-			font-size: clamp(2rem, 2.8vw, 3.15rem);
+			font-size: clamp(2rem, calc(2.8vw * var(--ui-scale)), 3.15rem);
 			font-weight: 400;
             font-family: "Sentient-Regular", serif;
             line-height: .98;
@@ -148,7 +148,7 @@ $col-gap: clamp(1rem, 1.6vw, 1.75rem);
 	left: 0;
 	/* Táž značka jako 02, 03 a 04. Podlaha .75rem je čitelnostní dno projektu —
 	   původních .68rem = 10.88px bylo pod ním. Živé pásmo 1176…1373. */
-	font: 600 clamp(.75rem, 1.02vw, .875rem)/1 "Sansation-Regular", sans-serif;
+	font: 600 clamp(.75rem, calc(1.02vw * var(--ui-scale)), .875rem)/1 "Sansation-Regular", sans-serif;
 	letter-spacing: .18em;
 	opacity: .48;
 }

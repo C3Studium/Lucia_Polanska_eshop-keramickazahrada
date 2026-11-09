@@ -200,7 +200,7 @@
     h2 {
         margin: 0;
         font-family: "Sentient-Regular", serif;
-        font-size: clamp(3.25rem, 4.75vw, 6.2rem);
+        font-size: clamp(3.25rem, calc(4.75vw * var(--ui-scale)), 6.2rem);
         font-weight: 400;
         line-height: .88;
         letter-spacing: -.05em;
@@ -251,7 +251,7 @@
             width: min(26 * var(--fvw), 23.125rem);
             margin: 0;
             color: rgb(var(--black-03-rgb) / .6);
-            font-size: clamp(.82rem, .86vw, .98rem);
+            font-size: clamp(.82rem, calc(.86vw * var(--ui-scale)), .98rem);
             font-weight: 300;
             line-height: 1.45;
         }
@@ -337,7 +337,7 @@
         }
 
         h2 {
-            font-size: clamp(3rem, 13vw, 4.8rem);
+            font-size: clamp(3rem, calc(13vw * var(--ui-scale)), 4.8rem);
         }
 
         &__line--accent {

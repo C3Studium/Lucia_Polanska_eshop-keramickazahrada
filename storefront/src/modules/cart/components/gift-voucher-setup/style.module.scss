@@ -55,7 +55,7 @@
   margin: 0;
   overflow: hidden;
   color: rgb(var(--cream-06-rgb) / .72);
-  font: 400 clamp(.85rem, 1vw, .95rem)/1.4 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.85rem, calc(1vw * var(--ui-scale)), .95rem)/1.4 "Sansation-Regular", sans-serif;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -65,7 +65,7 @@
   margin: 0;
   margin-left: var(--voucher-indent, 0);
   color: rgb(var(--cream-06-rgb) / .6);
-  font: 400 clamp(.78rem, .9vw, .85rem)/1.4 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.78rem, calc(.9vw * var(--ui-scale)), .85rem)/1.4 "Sansation-Regular", sans-serif;
 }
 
 .actions {
@@ -84,7 +84,7 @@
   background: var(--cream-06);
   color: var(--ink-05);
   cursor: pointer;
-  font: 400 clamp(.85rem, 1vw, .95rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.85rem, calc(1vw * var(--ui-scale)), .95rem)/1 "Sansation-Regular", sans-serif;
 
   @include touch { min-height: 2.75rem; }
 }
@@ -102,7 +102,7 @@
   background: transparent;
   color: rgb(var(--cream-06-rgb) / .8);
   cursor: pointer;
-  font: 400 clamp(.85rem, 1vw, .95rem)/1.4 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.85rem, calc(1vw * var(--ui-scale)), .95rem)/1.4 "Sansation-Regular", sans-serif;
   text-decoration: underline;
   text-underline-offset: .25em;
 
@@ -129,7 +129,7 @@
   margin: 0;
   margin-left: var(--voucher-indent, 0);
   color: var(--clay-41);
-  font: 400 clamp(.82rem, .95vw, .9rem)/1.4 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.82rem, calc(.95vw * var(--ui-scale)), .9rem)/1.4 "Sansation-Regular", sans-serif;
 }
 
 /*

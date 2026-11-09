@@ -221,7 +221,7 @@
      * the middle of the range people actually use; the 0.75rem floor is the readability line
      * this label cannot go under, and above 1921 the root ramp lifts the ceiling.
      */
-    font-size: clamp(0.75rem, 0.95vw, 0.875rem);
+    font-size: clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.875rem);
     letter-spacing: 0.12em;
     text-transform: uppercase;
 
@@ -424,7 +424,7 @@
     flex-direction: column;
     color: inherit;
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(2.6rem, 11vw, 4.4rem);
+    font-size: clamp(2.6rem, calc(11vw * var(--ui-scale)), 4.4rem);
     font-weight: 400;
     letter-spacing: -0.045em;
     line-height: 0.92;
@@ -440,16 +440,16 @@
      * and short-but-wide ones come down in proportion to the height they actually have.
      */
     @include h(sm) {
-      font-size: clamp(3.2rem, min(6.6vw, 11vh), 7.4rem);
+      font-size: clamp(3.2rem, min(calc(6.6vw * var(--ui-scale)), calc(11vh * var(--ui-scale))), 7.4rem);
     }
 
     @include v(lg) {
-      font-size: clamp(3.2rem, min(6.6vw, 11vh), 7.4rem);
+      font-size: clamp(3.2rem, min(calc(6.6vw * var(--ui-scale)), calc(11vh * var(--ui-scale))), 7.4rem);
     }
 
     /* Sideways on a phone the headline competes with the image for 430px of height. */
     @include phl-h {
-      font-size: clamp(2.2rem, 6vw, 3.2rem);
+      font-size: clamp(2.2rem, calc(6vw * var(--ui-scale)), 3.2rem);
     }
   }
 
@@ -479,18 +479,18 @@
     margin-left: clamp(4rem, 11vw, 12rem);
     color: var(--sage-02);
     font-family: "ooohBaby-Regular", cursive;
-    font-size: clamp(1.6rem, 6vw, 2.2rem);
+    font-size: clamp(1.6rem, calc(6vw * var(--ui-scale)), 2.2rem);
     font-weight: 300;
     line-height: 1;
     transform: rotate(-1.2deg);
     transform-origin: left center;
 
     @include h(sm) {
-      font-size: clamp(1.9rem, min(2.5vw, 4.2vh), 2.75rem);
+      font-size: clamp(1.9rem, min(calc(2.5vw * var(--ui-scale)), calc(4.2vh * var(--ui-scale))), 2.75rem);
     }
 
     @include v(lg) {
-      font-size: clamp(1.9rem, min(2.5vw, 4.2vh), 2.75rem);
+      font-size: clamp(1.9rem, min(calc(2.5vw * var(--ui-scale)), calc(4.2vh * var(--ui-scale))), 2.75rem);
     }
   }
 
@@ -531,12 +531,12 @@
        term reaches the 0.95rem floor at 894px on its own and the step is gone. */
     @include h(sm) {
       max-width: none;
-      font-size: clamp(0.95rem, min(1vw, 1.7vh), 1.16rem);
+      font-size: clamp(0.95rem, min(calc(1vw * var(--ui-scale)), calc(1.7vh * var(--ui-scale))), 1.16rem);
     }
 
     @include v(lg) {
       max-width: none;
-      font-size: clamp(0.95rem, min(1vw, 1.7vh), 1.16rem);
+      font-size: clamp(0.95rem, min(calc(1vw * var(--ui-scale)), calc(1.7vh * var(--ui-scale))), 1.16rem);
     }
   }
 
@@ -574,7 +574,7 @@
     font-family: "Sansation-Regular";
     /* Same dead clamp as the topline, and the same replacement — the two labels are one
        type size and have to stay one. See the note at .Hero__Intro__Topline. */
-    font-size: clamp(0.75rem, 0.95vw, 0.875rem);
+    font-size: clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.875rem);
     letter-spacing: 0.12em;
     text-transform: uppercase;
     will-change: opacity;
@@ -642,7 +642,7 @@
    * Stejnou opatrnost si u téhož tlačítka poznamenaly i kurzy.
    */
   .Hero__Intro__Updates__Rail .Hero__Intro__Updates__Cta {
-    --web-button-label-size: clamp(0.8125rem, 0.9vw, 1rem);
+    --web-button-label-size: clamp(0.8125rem, calc(0.9vw * var(--ui-scale)), 1rem);
     /*
      * Svisle nula, vodorovně plná míra.
      *

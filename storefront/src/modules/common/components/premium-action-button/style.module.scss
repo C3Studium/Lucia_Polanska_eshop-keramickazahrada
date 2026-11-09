@@ -105,7 +105,7 @@
   /* The CTA for the whole purchase flow — the 15px UI floor applies, so
      .9375rem is the floor of the clamp and never goes below it.
      15 -> 17px, live 1304-1478. */
-  font: 400 clamp(.9375rem, 1.15vw, 1.0625rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9375rem, calc(1.15vw * var(--ui-scale)), 1.0625rem)/1 "Sansation-Regular", sans-serif;
 }
 
 /* The arrow sits inside the button, so it rides the same vh axis at a fixed
@@ -122,7 +122,7 @@
   border-radius: 50%;
   color: inherit;
   /* Glyph on the same axis as its circle: 13/50 * 5 = 1.3vh, 12 -> 14px. */
-  font-size: clamp(.75rem, 1.3vh, .875rem);
+  font-size: clamp(.75rem, calc(1.3vh * var(--ui-scale)), .875rem);
   transform: rotate(0deg);
   will-change: transform;
 }
@@ -146,7 +146,7 @@
 }
 
 .compact .label {
-  font-size: calc(clamp(.875rem, 1.05vw, 1rem) * var(--premium-button-scale, 1));
+  font-size: calc(clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1rem) * var(--premium-button-scale, 1));
 }
 /* .6 of the compact height (24/40). Flat like the height it sits in, so the
    ratio holds at every size instead of drifting across two axes. The old

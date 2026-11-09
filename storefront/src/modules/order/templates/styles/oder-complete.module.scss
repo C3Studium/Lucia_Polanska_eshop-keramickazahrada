@@ -137,7 +137,7 @@
   margin: 0;
   /* 0.75x puvodniho (3.8 / 7.1vw / 7.6). Podekovani ma stranku otevrit,
      ne ji zabrat - pod nim je objednavka, kvuli ktere sem clovek prisel. */
-  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.85rem, 4.24vw, 5.7rem))/.86 "Sentient-Regular", Georgia, serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.85rem, calc(4.24vw * var(--ui-scale)), 5.7rem))/.86 "Sentient-Regular", Georgia, serif;
   letter-spacing: -.06em;
 }
 
@@ -320,7 +320,7 @@
 .selfServiceLead {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .62);
-  font: 400 clamp(.9rem, 1vw, 1.05rem)/1.4 "Sansation-Light", sans-serif;
+  font: 400 clamp(.9rem, calc(1vw * var(--ui-scale)), 1.05rem)/1.4 "Sansation-Light", sans-serif;
 }
 
 .selfServiceActions {
@@ -338,7 +338,7 @@
   border-radius: 999px;
   background: var(--olive);
   color: var(--cream-06);
-  font: 400 clamp(.85rem, .95vw, 1rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.85rem, calc(.95vw * var(--ui-scale)), 1rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .01em;
   text-decoration: none;
   transition: background .2s ease, color .2s ease, border-color .2s ease;
@@ -367,7 +367,7 @@
   flex: 1 1 100%;
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .68);
-  font: 300 clamp(.85rem, .95vw, .98rem)/1.5 "Sansation-Light", sans-serif;
+  font: 300 clamp(.85rem, calc(.95vw * var(--ui-scale)), .98rem)/1.5 "Sansation-Light", sans-serif;
 
   strong {
     color: var(--ink);
@@ -432,7 +432,7 @@
 .support h2 {
   margin: 0;
   /* 0.75x puvodniho (2.4 / 4.2vw / 4.6): nadpis sekce, ne nadpis stranky. */
-  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(1.8rem, 2.52vw, 3.45rem))/.94 "Sentient-Regular", Georgia, serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(1.8rem, calc(2.52vw * var(--ui-scale)), 3.45rem))/.94 "Sentient-Regular", Georgia, serif;
   letter-spacing: -.045em;
 }
 
@@ -497,7 +497,7 @@
   margin: 0 0 .55rem;
   /* 0.8x puvodniho (1.6 / 2.3vw / 2.45): v seznamu objednavky je nazev
      popisek radku, ne nadpis. */
-  font: 400 calc(var(--account-zoom, 1) * clamp(1.28rem, 1.48vw, 1.95rem))/1.05 "Sentient-Regular", Georgia, serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(1.28rem, calc(1.48vw * var(--ui-scale)), 1.95rem))/1.05 "Sentient-Regular", Georgia, serif;
   letter-spacing: -.035em;
 }
 
@@ -565,7 +565,7 @@
   max-width: 8ch;
   margin: 1.2rem 0 2.25rem;
   /* 0.75x puvodniho (2.8 / 4vw / 4.6). */
-  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.1rem, 2.4vw, 3.45rem))/.9 "Sentient-Regular", Georgia, serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.1rem, calc(2.4vw * var(--ui-scale)), 3.45rem))/.9 "Sentient-Regular", Georgia, serif;
   letter-spacing: -.05em;
 }
 

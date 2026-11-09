@@ -21,7 +21,7 @@
     max-width: 62ch;
     margin: clamp(.5rem, .93vh, .8rem) 0 0;
     color: var(--olive-04);
-    font: 400 clamp(.875rem, 1.17vw, 1.15rem)/1.5 "Sansation-Regular", sans-serif;
+    font: 400 clamp(.875rem, calc(1.17vw * var(--ui-scale)), 1.15rem)/1.5 "Sansation-Regular", sans-serif;
   }
 
   /* Variant hook if needed later */
@@ -137,6 +137,6 @@
      nad 1921 ho zvedne ramp — přesně to, co dosud nešlo, protože 15px byl px. */
   font-family: "Sansation-Regular", sans-serif;
   font-weight: 400;
-  font-size: clamp(.875rem, 1.135vw, 1.1rem);
+  font-size: clamp(.875rem, calc(1.135vw * var(--ui-scale)), 1.1rem);
   line-height: 1;
 }

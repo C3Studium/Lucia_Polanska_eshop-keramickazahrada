@@ -20,7 +20,7 @@
   h2 {
     margin: 0;
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(2rem, 3.6vw, 4rem);
+    font-size: clamp(2rem, calc(3.6vw * var(--ui-scale)), 4rem);
     font-weight: 400;
     line-height: 0.95;
     letter-spacing: -0.045em;
@@ -29,7 +29,7 @@
   p {
     margin: 0;
     color: rgb(var(--ink-06-rgb) / .76);
-    font-size: clamp(1rem, 1.1vw, 1.1875rem);
+    font-size: clamp(1rem, calc(1.1vw * var(--ui-scale)), 1.1875rem);
     font-weight: 300;
     line-height: 1.45;
   }
@@ -55,7 +55,7 @@
   h3 {
     margin: 0 0 0.5rem;
     color: rgb(var(--ink-06-rgb) / .58);
-    font-size: clamp(0.75rem, 0.95vw, 0.875rem);
+    font-size: clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.875rem);
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -78,7 +78,7 @@
     min-height: max(44px, clamp(3.5rem, 6vh, 4.75rem));
     padding: 0.75rem 0.25rem;
     color: var(--blackText);
-    font-size: clamp(1rem, 1.15vw, 1.25rem);
+    font-size: clamp(1rem, calc(1.15vw * var(--ui-scale)), 1.25rem);
     font-weight: 300;
     line-height: 1.25;
     list-style: none;
@@ -132,7 +132,7 @@
     max-width: 44rem;
     margin: 0 0 0.75em;
     color: rgb(var(--ink-06-rgb) / .76);
-    font-size: clamp(0.9375rem, 1.05vw, 1.125rem);
+    font-size: clamp(0.9375rem, calc(1.05vw * var(--ui-scale)), 1.125rem);
     font-weight: 300;
     line-height: 1.48;
 

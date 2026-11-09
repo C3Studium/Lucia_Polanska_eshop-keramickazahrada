@@ -103,7 +103,7 @@
        (zive 1600–1728) a patri rozevrit — ale je to vlastnost DVOJICE, takze se
        meni v obou souborech naraz, nebo v zadnem. Rozevreni jen tady dalo
        „Cesko" 17.35 px vedle 16px poli na 1366 a 18.4 vedle 17.28 na 1920. */
-    font-size: clamp(1rem, 1.333vw, 1.167rem);
+    font-size: clamp(1rem, calc(1.333vw * var(--ui-scale)), 1.167rem);
   }
 
   .icon {

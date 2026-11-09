@@ -112,21 +112,21 @@
   max-width: 72ch;
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .58);
-  font: 300 clamp(0.8125rem, 1.02vw, 0.925rem) / 1.5 "Sansation-Light", sans-serif;
+  font: 300 clamp(0.8125rem, calc(1.02vw * var(--ui-scale)), 0.925rem) / 1.5 "Sansation-Light", sans-serif;
 }
 
 .headerCopy > span {
   display: block;
   margin-bottom: 0.9375rem;
   color: rgb(var(--ink-05-rgb) / .48);
-  font: 400 clamp(0.75rem, 0.95vw, 0.85rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.85rem) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .title {
   margin: 0;
-  font: 400 clamp(2.8125rem, 5.4vw, 5.5rem) / 0.86 "Sentient-Regular", serif;
+  font: 400 clamp(2.8125rem, calc(5.4vw * var(--ui-scale)), 5.5rem) / 0.86 "Sentient-Regular", serif;
   letter-spacing: -0.05em;
 }
 
@@ -152,7 +152,7 @@
 
 .count {
   color: rgb(var(--ink-05-rgb) / .55);
-  font: 400 clamp(0.75rem, 0.95vw, 0.85rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.85rem) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -230,7 +230,7 @@
   border-top: 1px solid rgb(var(--ink-05-rgb) / .2);
   border-bottom: 1px solid rgb(var(--ink-05-rgb) / .2);
   color: rgb(var(--ink-05-rgb) / .66);
-  font: 300 clamp(0.9375rem, 1.15vw, 1.0625rem) / 1.52 "Sansation-Light", sans-serif;
+  font: 300 clamp(0.9375rem, calc(1.15vw * var(--ui-scale)), 1.0625rem) / 1.52 "Sansation-Light", sans-serif;
 }
 
 .reviewMeta {
@@ -240,7 +240,7 @@
   gap: 1.125rem;
   margin-bottom: clamp(1.75rem, 4vh, 2.75rem);
   color: rgb(var(--ink-05-rgb) / .43);
-  font: 400 clamp(0.75rem, 0.95vw, 0.85rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.85rem) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -255,7 +255,7 @@
 
 .reviewHeader strong {
   max-width: 18ch;
-  font: 400 clamp(1.375rem, 1.8vw, 1.875rem) / 1.02 "Sentient-Regular", serif;
+  font: 400 clamp(1.375rem, calc(1.8vw * var(--ui-scale)), 1.875rem) / 1.02 "Sentient-Regular", serif;
   letter-spacing: -0.025em;
 }
 
@@ -271,7 +271,7 @@
   margin-top: auto;
   padding-top: 1.125rem;
   color: rgb(var(--ink-05-rgb) / .48);
-  font-size: clamp(0.8125rem, 1.02vw, 0.925rem);
+  font-size: clamp(0.8125rem, calc(1.02vw * var(--ui-scale)), 0.925rem);
 }
 
 .reviewFooter i {
@@ -283,7 +283,7 @@
 .error {
   grid-column: 1 / -1;
   color: var(--clay-06);
-  font: 300 clamp(0.875rem, 1.1vw, 1rem) / 1.4 "Sansation-Light", sans-serif;
+  font: 300 clamp(0.875rem, calc(1.1vw * var(--ui-scale)), 1rem) / 1.4 "Sansation-Light", sans-serif;
 }
 
 .reviewPagination {
@@ -310,7 +310,7 @@
 .reviewPagination > p {
   margin: 0.625rem 0 1.1875rem;
   color: rgb(var(--ink-05-rgb) / .5);
-  font: 400 clamp(0.8125rem, 1.02vw, 0.925rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.8125rem, calc(1.02vw * var(--ui-scale)), 0.925rem) / 1.2 "Sansation-Regular", sans-serif;
 }
 
 .reviewPagination > button {
@@ -321,7 +321,7 @@
   border: 1px solid var(--ink-05);
   border-radius: 999px;
   color: var(--ink-05);
-  font: 400 clamp(0.8125rem, 1.02vw, 0.925rem) / 1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.8125rem, calc(1.02vw * var(--ui-scale)), 0.925rem) / 1 "Sansation-Regular", sans-serif;
   background: transparent;
   cursor: pointer;
   transition:

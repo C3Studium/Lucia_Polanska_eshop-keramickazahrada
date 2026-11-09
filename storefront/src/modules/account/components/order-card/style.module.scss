@@ -34,13 +34,13 @@
 .label,
 .meta dt {
   color: rgb(var(--ink-05-rgb) / .48);
-  font: calc(var(--account-zoom, 1) * clamp(.75rem, 0.8vw, 0.875rem))/1.2 "Sansation-Regular", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.8vw * var(--ui-scale)), 0.875rem))/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .orderNumber {
-  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.5rem, 2.6vw, 4rem)) / 0.82 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.5rem, calc(2.6vw * var(--ui-scale)), 4rem)) / 0.82 "Sentient-Regular", serif;
   letter-spacing: -0.045em;
 }
 
@@ -68,12 +68,12 @@
   margin: 0;
   overflow-wrap: anywhere;
   color: rgb(var(--ink-05-rgb) / .78);
-  font: 400 calc(var(--account-zoom, 1) * clamp(.875rem, 0.8vw, 1.06rem)) / 1.35 "Sansation-Regular", sans-serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(.875rem, calc(0.8vw * var(--ui-scale)), 1.06rem)) / 1.35 "Sansation-Regular", sans-serif;
 }
 
 .meta .metaAmount {
   color: var(--ink-05);
-  font-size: calc(var(--account-zoom, 1) * clamp(1rem, 0.92vw, 1.19rem));
+  font-size: calc(var(--account-zoom, 1) * clamp(1rem, calc(0.92vw * var(--ui-scale)), 1.19rem));
 }
 
 /* Z-A: stav zakázek pod třemi údaji, přes celou šířku `dl` (čtvrtý sloupec by
@@ -88,7 +88,7 @@
 .commissionLine {
   display: block;
   color: var(--ink-05);
-  font: 400 calc(var(--account-zoom, 1) * clamp(.875rem, 0.8vw, 1.06rem)) / 1.4 "Sansation-Regular", sans-serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(.875rem, calc(0.8vw * var(--ui-scale)), 1.06rem)) / 1.4 "Sansation-Regular", sans-serif;
 }
 
 .products {
@@ -228,7 +228,7 @@
 
   /* Číslo o pětinu dolů: vedle něj teď stojí dvě částky, ne prázdno. */
   .orderNumber {
-    font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2rem, 2.08vw, 3.2rem));
+    font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2rem, calc(2.08vw * var(--ui-scale)), 3.2rem));
   }
 
   /* Vytvořeno pod číslo. */
@@ -253,7 +253,7 @@
   /* Obě částky větší — je to to, co se z karty čte nejčastěji. */
   .meta > div:nth-child(2) dd,
   .meta > div:nth-child(3) dd {
-    font-size: calc(var(--account-zoom, 1) * clamp(1.15rem, 1.52vw, 1.5rem));
+    font-size: calc(var(--account-zoom, 1) * clamp(1.15rem, calc(1.52vw * var(--ui-scale)), 1.5rem));
   }
 
   .products,
@@ -308,7 +308,7 @@
   }
 
   .orderNumber {
-    font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.5rem, 2.6vw, 4rem));
+    font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.5rem, calc(2.6vw * var(--ui-scale)), 4rem));
   }
 
   .meta > div,

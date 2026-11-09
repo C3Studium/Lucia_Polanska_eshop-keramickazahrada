@@ -365,6 +365,45 @@ html[data-app="studio"] *::-webkit-scrollbar-thumb {
 }
 
 /*
+ * Měřítko písma a ovládání na šířku (9. 11. 2026).
+ *
+ * U klientky bylo všechno o kus větší, než kolik se do sloupců vejde — text a tlačítka se
+ * tlačily. Na šířku proto do `huge` (1730px) 0.85 a nad ním 0.95; na výšku (telefon, tablet
+ * na výšku) zůstává 1, tam se to ladilo zvlášť.
+ *
+ * Proč takhle a ne CSS `zoom`: zoom v Chromiu násobí i `100vw` a `100vh`, takže sekce na celou
+ * obrazovku (sticky scény úvodu, Výroby, Kurzů) by vyšly na 85 % okna s prázdným okrajem.
+ * Místo toho dvě páky, které dohromady pokryjí každou velikost písma:
+ *   - kořen: `rem` je 100 % × měřítko, takže se pohne každá velikost v rem (366 holých
+ *     `font-size: Nrem` i dolní a horní mez každého clampu, a s nimi rem odsazení tlačítek);
+ *   - prostřední člen clampů ve vw/vh/px a `var(--fvw)` v deklaracích písma je obalený
+ *     `calc(… * var(--ui-scale))` přímo v souborech komponent.
+ * Rozvržení ve vw (šířky sloupců, okraje) zůstává, takže text má víc místa, ne míň.
+ */
+:root {
+  --ui-scale: 1;
+  /* 100 %, ne 16px: drží si výchozí velikost písma, kterou si člověk nastavil v prohlížeči. */
+  font-size: calc(100% * var(--ui-scale));
+}
+
+@media (orientation: landscape) and (max-width: 1729.98px) {
+  :root {
+    --ui-scale: 0.85;
+  }
+}
+
+@media (orientation: landscape) and (min-width: 1730px) {
+  :root {
+    --ui-scale: 0.95;
+  }
+}
+
+/* Studio je aplikace s vlastním rozvržením — měřítko webu se ho netýká. */
+html[data-app="studio"] {
+  --ui-scale: 1;
+}
+
+/*
  * Ramp nad 1921 — jedno číslo pro celý web.
  *
  * Clamp má vadu: nad určitou šířkou každý narazí o strop a stránka přestane
@@ -390,7 +429,8 @@ html[data-app="studio"] *::-webkit-scrollbar-thumb {
        obrazovky: 4850x1310 dával 21.5px do rámu širokého 2329px, kam patří 19.4px, takže
        totéž rozvržení vycházelo o 10 % větší než na 16:9 monitoru stejné šířky. Bez rámu
        je --fvw přesně 1vw, takže tam se nemění nic. */
-    font-size: clamp(16px, 0.8333 * var(--fvw), 21.5px);
+    /* × --ui-scale: ramp určuje, jak rem roste s monitorem, měřítko pak celé zmenší (0.95). */
+    font-size: calc(clamp(16px, 0.8333 * var(--fvw), 21.5px) * var(--ui-scale));
   }
 }
 
