@@ -1,8 +1,8 @@
 import {
   Badge,
-  Button,
   Container,
   Heading,
+  Switch,
   Text,
   Textarea,
   toast,
@@ -59,6 +59,7 @@ import {
 type TextyResponse = {
   texty: ShopTextValues;
   ulozene: StoredShopTexts;
+  vypnute: Partial<Record<ShopTextKey, boolean>>;
   updated_at: string | null;
   storefront_url: string;
 };
@@ -70,9 +71,11 @@ const TextField = ({
   value,
   saved,
   zmeneno,
+  zapnuto,
   storefrontUrl,
   onChange,
   onReset,
+  onToggle,
 }: {
   textKey: ShopTextKey;
   value: string;
@@ -80,9 +83,12 @@ const TextField = ({
   saved: string;
   /** Má tenhle text vlastní znění, nebo platí výchozí z kódu? */
   zmeneno: boolean;
+  /** Ukazuje se věta zákazníkovi? */
+  zapnuto: boolean;
   storefrontUrl: string;
   onChange: (value: string) => void;
   onReset: () => void;
+  onToggle: (zapnuto: boolean) => void;
 }) => {
   const meta = SHOP_TEXT_META[textKey];
   const id = fieldId(textKey);
@@ -102,17 +108,39 @@ const TextField = ({
         {zmeneno && !prazdne ? (
           <Badge size="2xsmall" color="blue">Vlastní znění</Badge>
         ) : null}
-        {prazdne ? (
-          <Badge size="2xsmall" color="orange">Neukazuje se</Badge>
+        {!zapnuto ? (
+          <Badge size="2xsmall" color="orange">Vypnuto</Badge>
+        ) : null}
+        {prazdne && zapnuto ? (
+          <Badge size="2xsmall" color="orange">Prázdné</Badge>
         ) : null}
         {neulozeno ? (
           <Badge size="2xsmall" color="orange">Neuloženo</Badge>
         ) : null}
+        {/* Vypínač vpravo: vypnutá věta se neukáže, ale znění zůstává. */}
+        <label className="ml-auto flex cursor-pointer items-center gap-2">
+          <Text size="xsmall" className="text-ui-fg-subtle">
+            {zapnuto ? "Ukazuje se" : "Neukazuje se"}
+          </Text>
+          <Switch
+            checked={zapnuto}
+            aria-label={`Ukazovat „${meta.label}“ zákazníkům`}
+            onCheckedChange={onToggle}
+          />
+        </label>
       </div>
 
       <Text size="small" className="text-ui-fg-subtle max-w-3xl">
         {meta.help}
       </Text>
+
+      {meta.pravni ? (
+        <Text size="xsmall" className="text-ui-fg-muted max-w-3xl">
+          <strong>Pozor:</strong> tahle věta musí souhlasit s obchodními
+          podmínkami. Když ji změníte nebo vypnete, upravte i podmínky ve
+          Studiu — jinak web tvrdí něco jiného než smlouva.
+        </Text>
+      ) : null}
 
       {meta.znacky?.length ? (
         <Text size="xsmall" className="text-ui-fg-muted max-w-3xl">
@@ -133,7 +161,12 @@ const TextField = ({
         rows={meta.multiline ? 3 : 2}
         value={value}
         aria-invalid={problem ? true : undefined}
-        className="min-h-[88px] max-w-3xl"
+        className={
+          meta.multiline
+            ? "min-h-[88px] max-w-3xl"
+            : "min-h-[44px] max-w-3xl"
+        }
+        disabled={!zapnuto}
         onChange={(event) => onChange(event.target.value)}
       />
 
@@ -167,6 +200,11 @@ const TextField = ({
           <Text size="xsmall" className="text-ui-fg-error">
             {problem}
           </Text>
+        ) : !zapnuto ? (
+          <Text size="xsmall" className="text-ui-fg-muted">
+            Vypnuto — zákazník větu nevidí. Znění zůstává uložené, přepínačem
+            se vrátí.
+          </Text>
         ) : prazdne ? (
           <Text size="xsmall" className="text-ui-fg-muted">
             Prázdné pole znamená, že se věta zákazníkovi vůbec neukáže.
@@ -193,6 +231,7 @@ const Inner = () => {
   /* Jen rozepsaná pole; ostatní ukazují, co právě platí. */
   const [edits, setEdits] = useState<Partial<Record<ShopTextKey, string>>>({});
   const valueOf = (key: ShopTextKey) => edits[key] ?? savedText(key);
+  const zapnutoSaved = (key: ShopTextKey) => data?.vypnute?.[key] !== true;
 
   const changedKeys = SHOP_TEXT_KEYS.filter(
     (key) => key in edits && (edits[key] ?? "").trim() !== savedText(key)
@@ -215,6 +254,28 @@ const Inner = () => {
       toast.success("Uloženo — obchod to ukáže do minuty.");
     },
     onError: (error) => toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
+  });
+
+  /*
+   * Vypínač se ukládá HNED, bez lišty Uložit. Je to jedno ťuknutí s jasným
+   * výsledkem — „ukazuje se / neukazuje se" — a schovávat ho za Uložit by
+   * znamenalo, že si člověk přepne tři věty a pak neví, co je rozepsané.
+   */
+  const toggle = useMutation({
+    mutationFn: ({ key, zapnuto }: { key: ShopTextKey; zapnuto: boolean }) =>
+      sdk.client.fetch("/admin/texty", {
+        method: "POST",
+        body: { vypnute: { [key]: !zapnuto } },
+      }),
+    onSuccess: async (_response, { zapnuto }) => {
+      await queryClient.invalidateQueries({ queryKey: ["shop-texty"] });
+      toast.success(
+        zapnuto
+          ? "Věta se zase ukazuje — obchod to vezme do minuty."
+          : "Věta se přestala ukazovat. Znění zůstává uložené."
+      );
+    },
+    onError: (error) => toast.error(ceskaChyba(error, "Nepodařilo se přepnout.")),
   });
 
   return (
@@ -267,6 +328,8 @@ const Inner = () => {
                   value={valueOf(key)}
                   saved={savedText(key)}
                   zmeneno={maVlastni(key)}
+                  zapnuto={zapnutoSaved(key)}
+                  onToggle={(zapnuto) => toggle.mutate({ key, zapnuto })}
                   storefrontUrl={storefrontUrl}
                   onChange={(value) =>
                     setEdits((current) => ({ ...current, [key]: value }))

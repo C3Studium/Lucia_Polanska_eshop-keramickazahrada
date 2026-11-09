@@ -6,10 +6,14 @@ import {
   SHOP_TEXT_KEYS,
   SHOP_TEXT_META,
   dosadZnacky,
+  isShopTextOff,
   pickStoredShopTexts,
   resolveShopTexts,
+  resolveVisibleShopTexts,
   sameShopTexts,
+  sameShopTextsOff,
   shopTextProblem,
+  slozStitek,
 } from "../shop-texty"
 
 /**
@@ -100,6 +104,59 @@ describe("pickStoredShopTexts a sameShopTexts", () => {
       true
     )
     expect(sameShopTexts({}, { "produkt.cekani": "jiné" })).toBe(false)
+  })
+})
+
+describe("vypínače", () => {
+  it("vypnutá věta přijde do obchodu prázdná, ale znění zůstává uložené", () => {
+    const ulozene = { "produkt.cekani": "Vyrábím do 14 dnů." }
+    const vypnute = { "produkt.cekani": true }
+
+    /* Co vidí zákazník: nic. */
+    expect(resolveVisibleShopTexts(ulozene, vypnute)["produkt.cekani"]).toBe("")
+    /* Co vidí formulář: pořád to, co napsala — zapnutím se to vrátí. */
+    expect(resolveShopTexts(ulozene)["produkt.cekani"]).toBe("Vyrábím do 14 dnů.")
+  })
+
+  it("zapnutá věta prochází beze změny", () => {
+    expect(
+      resolveVisibleShopTexts({}, { "produkt.cekani": false })["produkt.cekani"]
+    ).toBe(SHOP_TEXT_DEFAULTS["produkt.cekani"])
+  })
+
+  it("poškozené vypínače nic neshodí", () => {
+    expect(
+      resolveVisibleShopTexts({}, { "produkt.cekani": "ano", vymyslene: true })[
+        "produkt.cekani"
+      ]
+    ).toBe(SHOP_TEXT_DEFAULTS["produkt.cekani"])
+  })
+
+  it("isShopTextOff odpovídá na jednu větu", () => {
+    expect(isShopTextOff({ "kosik.poukaz_vse": true }, "kosik.poukaz_vse")).toBe(true)
+    expect(isShopTextOff({}, "kosik.poukaz_vse")).toBe(false)
+  })
+
+  it("sameShopTextsOff pozná změnu", () => {
+    expect(sameShopTextsOff({}, { "produkt.cekani": false })).toBe(true)
+    expect(sameShopTextsOff({}, { "produkt.cekani": true })).toBe(false)
+  })
+})
+
+describe("slozStitek", () => {
+  it("vynechá prázdné části, ať nezbydou dvě tečky za sebou", () => {
+    expect(
+      slozStitek(SHOP_TEXT_DEFAULTS["zakazka.stitek"], { zaloha: "", vyroba: "" })
+    ).toBe("Na zakázku · bez 14denní lhůty na vrácení")
+  })
+
+  it("se všemi částmi složí celý štítek", () => {
+    expect(
+      slozStitek(SHOP_TEXT_DEFAULTS["zakazka.stitek"], {
+        zaloha: "záloha 25 %",
+        vyroba: "výroba do 42 dnů",
+      })
+    ).toBe("Na zakázku · záloha 25 % · výroba do 42 dnů · bez 14denní lhůty na vrácení")
   })
 })
 

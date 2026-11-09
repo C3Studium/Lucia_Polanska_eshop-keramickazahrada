@@ -420,7 +420,7 @@ export const Shipping = ({
             {withCount(shownMethods.length, "možnost", "možnosti", "možností")}
           </span>
         </div>
-        {restriction && (
+        {restriction && dopravaVeta(restriction) && (
           <p className={styles.restrictionNote}>
             {dopravaVeta(restriction)}
           </p>

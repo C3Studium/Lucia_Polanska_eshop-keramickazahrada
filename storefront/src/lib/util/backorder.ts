@@ -63,5 +63,12 @@ export const backorderNote = (
 export const backorderWaitNote = (
   product?: { metadata?: Record<string, unknown> | null } | null,
   spolecna?: string | null
-): string =>
-  backorderNote(product) ?? (spolecna?.trim() || DEFAULT_BACKORDER_NOTE)
+): string => {
+  const vlastni = backorderNote(product)
+  if (vlastni) return vlastni
+  /* `undefined` = volající texty nemá (starší volání) → výchozí znění.
+     `""` = majitelka větu vypnula nebo smazala → nic. Ten rozdíl je tu
+     podstatný: jinak by vypnutá věta vracela výchozí a vypínač by nefungoval. */
+  if (spolecna === undefined) return DEFAULT_BACKORDER_NOTE
+  return spolecna?.trim() ?? ""
+}

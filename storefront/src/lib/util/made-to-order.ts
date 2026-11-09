@@ -5,6 +5,12 @@
  * `@lib/data/made-to-order`, which reaches for server-only cookies.
  */
 
+import {
+  dosadZnacky,
+  slozStitek,
+  type ShopTexty,
+} from "@lib/constants/texty"
+
 export type ProductionVariantRule = {
   variant_id: string
   deposit_percentage_override?: number | null
@@ -398,6 +404,38 @@ export const madeToOrderBadgeText = ({
   ]
     .filter(Boolean)
     .join(" · ")
+
+/**
+ * Totéž, ale ze znění, které si majitelka mění v administraci
+ * (Texty obchodu → Zakázka — štítek pod cenou). Prázdná část z řádku sama
+ * vypadne, takže vypnutý kus štítku nenechá „· ·".
+ *
+ * Stojí vedle té původní schválně: `madeToOrderBadgeText` zůstává jako
+ * záloha pro místa bez poskytovatele textů (a jako výchozí znění).
+ */
+export const stitekZakazky = (
+  texty: ShopTexty,
+  {
+    depositPercentage,
+    maxDays,
+    priceOnRequest = false,
+  }: {
+    depositPercentage?: number | null
+    maxDays?: number | null
+    priceOnRequest?: boolean
+  } = {}
+): string =>
+  slozStitek(texty["zakazka.stitek"], {
+    zaloha: priceOnRequest
+      ? texty["zakazka.stitek_zaloha_po_domluve"]
+      : depositPercentage != null && depositPercentage > 0
+        ? dosadZnacky(texty["zakazka.stitek_zaloha"], { procento: depositPercentage })
+        : "",
+    vyroba:
+      maxDays != null && maxDays > 0
+        ? dosadZnacky(texty["zakazka.stitek_vyroba"], { dny: maxDays })
+        : "",
+  })
 
 /**
  * Smluvní podmínky zakázky pro řádek „Zakázka" v předsmluvních informacích

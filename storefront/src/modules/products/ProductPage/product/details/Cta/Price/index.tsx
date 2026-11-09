@@ -121,7 +121,7 @@ export default function ProductPrice({
         </span>
 
         {/* Cena po domluvě: do košíku za 0 Kč, cena přijde e-mailem. */}
-        {priceOnRequest && (
+        {priceOnRequest && texty["produkt.cena_po_domluve"] && (
           <p className={styles.line} data-testid="price-on-request-note">
             <span className={styles.note}>{texty["produkt.cena_po_domluve"]}</span>
           </p>

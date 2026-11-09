@@ -16,6 +16,7 @@ import { itemText } from "@lib/util/site-copy"
 import type { CopyBlock } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
 import styles from "./form.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 type ProductReviewsFormProps = {
   productId: string
@@ -36,6 +37,8 @@ export default function ProductReviewsForm({
 }: ProductReviewsFormProps) {
   /* Pozvánka se před přihlášením nepřekresluje. Viz hook. */
   useEditRerender()
+  /* Pravidla recenzí z administrace (Texty obchodu). */
+  const texty = useTexty()
   const [customer, setCustomer] = useState<HttpTypes.StoreCustomer | null>(null)
   const [hasResolvedCustomer, setHasResolvedCustomer] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -157,7 +160,9 @@ export default function ProductReviewsForm({
             {itemText(texts, "recenze.text", "Ostatním to hodně pomůže při výběru — a mně taky.")}
           </p>
           {/* § 5 ZOS: kdo smí psát, co znamená štítek, jak se schvaluje. */}
-          <p className={styles.policy}>{REVIEW_POLICY_TEXT}</p>
+          {texty["produkt.recenze_pravidla"] && (
+            <p className={styles.policy}>{texty["produkt.recenze_pravidla"]}</p>
+          )}
         </div>
 
         <div className={styles.reviewSeal} aria-hidden="true">

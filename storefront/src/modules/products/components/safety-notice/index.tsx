@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { useTexty } from "@lib/context/texty"
+import { TEXTY_DEFAULTS, type ShopTexty } from "@lib/constants/texty"
 
 import styles from "./style.module.scss"
 
@@ -49,21 +51,22 @@ const FOOD_CLAIM = /zdravotně\s+nezávadn|nezávadn[ýáéí]\w*\s+(materi|glaz
 
 export const safetySentencesFor = (
   categoryHandles: readonly string[],
-  description: string | null | undefined
+  description: string | null | undefined,
+  /* Znění z administrace; bez něj platí výchozí z kódu. Prázdná věta se
+     do výpisu nedostane — tak se projeví vypínač. */
+  texty: ShopTexty = TEXTY_DEFAULTS
 ): { sentences: string[]; foodClaim: boolean } => {
   const sentences: string[] = []
   if (categoryHandles.some((handle) => WALL_MOUNTED.has(handle))) {
-    sentences.push(
-      "Kotvěte do nosného podkladu hmoždinkami a vruty odpovídajícími zdivu a hmotnosti kusu; nezavěšujte nad místa, kde by pád mohl někoho zranit."
-    )
+    sentences.push(texty["bezpecnost.kotveni"])
   }
   if (categoryHandles.some((handle) => WATER_VESSELS.has(handle))) {
-    sentences.push("V zimě v nádobě nenechávejte zamrznout vodu — led ji může roztrhnout.")
+    sentences.push(texty["bezpecnost.mraz"])
   }
-  sentences.push("Keramika je křehká: rozbitý kus má ostré hrany, střepy ukliďte opatrně a mimo dosah dětí.")
+  sentences.push(texty["bezpecnost.strepy"])
   const text = description ?? ""
   const foodClaim = FOOD_CLAIM.test(text) && !/\bnen[íi]\b[^.]*(potravin|nezávadn)|nevhodn/i.test(text)
-  return { sentences, foodClaim }
+  return { sentences: sentences.filter(Boolean), foodClaim }
 }
 
 export default function SafetyNotice({
@@ -73,11 +76,22 @@ export default function SafetyNotice({
   categoryHandles: readonly string[]
   description: string | null | undefined
 }) {
-  const { sentences, foodClaim } = safetySentencesFor(categoryHandles, description)
+  const texty = useTexty()
+  const { sentences, foodClaim } = safetySentencesFor(
+    categoryHandles,
+    description,
+    texty
+  )
   const protocols = useGlazeProtocols(foodClaim)
+
+  /* Všechny věty vypnuté = blok se nekreslí. */
+  if (!sentences.length && !foodClaim) return null
+
   return (
     <aside className={styles.notice} aria-label="Bezpečnostní upozornění" data-testid="safety-notice">
-      <p className={styles.title}>Bezpečné používání</p>
+      {texty["bezpecnost.nadpis"] ? (
+        <p className={styles.title}>{texty["bezpecnost.nadpis"]}</p>
+      ) : null}
       <ul className={styles.list}>
         {sentences.map((sentence) => (
           <li key={sentence}>{sentence}</li>
