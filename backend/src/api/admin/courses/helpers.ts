@@ -71,6 +71,12 @@ export const serializeAdminTerm = (term: any) => {
       term.price_group_per_person != null
         ? toAmount(term.price_group_per_person)
         : null,
+    /* Bez těchhle tří admin po uložení ukazoval prázdná pole a dialog Ceny
+       si myslel, že se nic nezměnilo (9. 11. 2026). */
+    volume_pricing_enabled: term.volume_pricing_enabled !== false,
+    price_child: term.price_child != null ? toAmount(term.price_child) : null,
+    child_max_age:
+      term.child_max_age != null ? Math.trunc(toAmount(term.child_max_age)) : null,
     status: term.status,
     note: term.note ?? null,
     created_at: term.created_at,

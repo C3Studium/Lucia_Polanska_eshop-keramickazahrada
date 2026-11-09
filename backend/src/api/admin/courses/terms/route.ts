@@ -34,8 +34,36 @@ const groupPricingRefinement = (
   }
 }
 
+/**
+ * Vypínač množstevní slevy a dětská cena (model 8. 11. 2026). Admin je posílá
+ * z průvodce, z dialogu Ceny i z úpravy termínu, ale schémata routy je
+ * neznala — zod neznámé klíče tiše zahodí, takže se nikdy neuložily
+ * (9. 11. 2026). Jedna definice pro všechny tři cesty, ať se znovu nerozejdou.
+ */
+export const childPricingFields = {
+  volume_pricing_enabled: z.boolean().optional(),
+  price_child: z.number().gt(0).nullable().optional(),
+  child_max_age: z.number().int().min(1).max(25).nullable().optional(),
+}
+
+/** Jen klíče, které přišly — `undefined` termín nemění. */
+export const childPricingPatch = (input: {
+  volume_pricing_enabled?: boolean
+  price_child?: number | null
+  child_max_age?: number | null
+}) => ({
+  ...(input.volume_pricing_enabled !== undefined
+    ? { volume_pricing_enabled: input.volume_pricing_enabled }
+    : {}),
+  ...(input.price_child !== undefined ? { price_child: input.price_child } : {}),
+  ...(input.child_max_age !== undefined
+    ? { child_max_age: input.child_max_age }
+    : {}),
+})
+
 export const PostCourseTermSchema = z
   .object({
+    ...childPricingFields,
     title: z.string().trim().min(1, "Vyplňte název termínu.").max(200),
     location: z.string().trim().min(1, "Vyplňte místo konání.").max(200),
     /**
@@ -87,6 +115,7 @@ export const PostCourseTermSchema = z
 
 export const PatchCourseTermSchema = z
   .object({
+    ...childPricingFields,
     title: z.string().trim().min(1).max(200).optional(),
     location: z.string().trim().min(1).max(200).optional(),
     starts_at: z.string().datetime({ offset: true }).optional(),
@@ -205,6 +234,7 @@ export async function POST(
     price_two: input.price_two ?? null,
     group_min: input.group_min ?? null,
     price_group_per_person: input.price_group_per_person ?? null,
+    ...childPricingPatch(input),
     status: input.status,
     note: input.note || null,
   })
