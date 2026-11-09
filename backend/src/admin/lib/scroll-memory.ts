@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useLayoutEffect, useRef } from "react"
 import { useLocation } from "react-router-dom"
 
 /**
@@ -31,6 +31,22 @@ import { useLocation } from "react-router-dom"
  * ani v historii. Sezení prohlížeče je přesně ta životnost, kterou tohle
  * potřebuje: drží přes navigaci, zmizí se zavřením panelu.
  *
+ * ## Proč se odhlašuje v „layout" fázi
+ *
+ * Tady byla druhá tichá chyba (změřeno 9. 11. 2026): pozice se ukládala
+ * správně, a při odchodu ji někdo přepsal nulou.
+ *
+ * Odchodem na detail se výpis zbourá, obsah posuvníku se scvrkne a prohlížeč
+ * posuvník srovná na nulu — a ohlásí to jako obyčejné rolování. Události
+ * rolování se ale doručují až na hranici snímku, zatímco úklid `useEffect`
+ * React plánuje přes scheduler, klidně až po vykreslení. Nula tedy stihla
+ * přijít dřív, než jsme přestali poslouchat, a zapsala se.
+ *
+ * `useLayoutEffect` běží ještě ve chvíli potvrzování změn, tedy před hranicí
+ * snímku: odhlásíme se dřív, než zpráva o srovnání na nulu vůbec vznikne.
+ * Zapisuje se k tomu poslední hodnota, kterou jsme VIDĚLI, ne čerstvé čtení
+ * z DOMu, který už nemusí stát.
+ *
  * ## Proč se obnovuje opakovaně, a ne jednou
  *
  * Výpis se načítá ze serveru, takže v okamžiku připojení komponenty ještě
@@ -44,8 +60,15 @@ import { useLocation } from "react-router-dom"
  * přednost před naším.
  */
 
-/** Jak dlouho čekat, než se výpis dorovná do potřebné výšky. */
-const NEJDELE_MS = 1500
+/**
+ * Jak dlouho čekat, než se výpis dorovná do potřebné výšky.
+ *
+ * Při návratu je obvykle hotovo hned (data drží mezipaměť dotazů), ale po
+ * studeném načtení se dvě stě položek chvíli skládá. Čtyři vteřiny jsou
+ * kompromis: déle už by skok působil, jako by stránka žila vlastním životem —
+ * a vlastní pohyb ho stejně kdykoli zastaví.
+ */
+const NEJDELE_MS = 4000
 
 const klicPro = (stranka: string, adresa: string) =>
   `kz-scroll:${stranka}:${adresa}`
@@ -97,23 +120,33 @@ export const useScrollMemory = (stranka: string): void => {
   const klic = klicPro(stranka, adresa)
   /* Ref, ne stav: změna by překreslovala výpis při každém pohybu posuvníku. */
   const obnovaBezi = useRef(true)
+  /* Poslední pozice, kterou jsme opravdu VIDĚLI od posuvníku. */
+  const videno = useRef<number | null>(null)
 
   /* ── zapamatovat ──────────────────────────────────────────────────── */
-  useEffect(() => {
+  useLayoutEffect(() => {
     const rolovatko = najdiRolovatko()
-    const zapis = () => {
+    /* Jiná adresa = jiný výpis; co jsme viděli u toho minulého, sem nepatří. */
+    videno.current = null
+    const zapis = (kam: number) => {
       try {
-        sessionStorage.setItem(klic, String(Math.round(rolovatko.pozice())))
+        sessionStorage.setItem(klic, String(kam))
       } catch {
         /* Soukromé okno nebo zakázané úložiště — pozice se prostě nepamatuje. */
       }
     }
+    const sleduj = () => {
+      const kam = Math.round(rolovatko.pozice())
+      videno.current = kam
+      zapis(kam)
+    }
     /* Pasivně: zápis nesmí zdržovat rolování. */
-    rolovatko.cil.addEventListener("scroll", zapis, { passive: true })
+    rolovatko.cil.addEventListener("scroll", sleduj, { passive: true })
     return () => {
-      /* Ještě při odchodu, ať se uloží i poslední pohyb před kliknutím. */
-      zapis()
-      rolovatko.cil.removeEventListener("scroll", zapis)
+      /* Nejdřív přestat poslouchat, teprve pak zapsat — pořadí je tu to
+         podstatné, viz vysvětlení výš. */
+      rolovatko.cil.removeEventListener("scroll", sleduj)
+      if (videno.current !== null) zapis(videno.current)
     }
   }, [klic])
 
