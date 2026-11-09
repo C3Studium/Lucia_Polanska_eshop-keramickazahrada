@@ -31,21 +31,27 @@ import { useLocation } from "react-router-dom"
  * ani v historii. Sezení prohlížeče je přesně ta životnost, kterou tohle
  * potřebuje: drží přes navigaci, zmizí se zavřením panelu.
  *
- * ## Proč se odhlašuje v „layout" fázi
+ * ## Proč se pamět při kliknutí zamrazí
  *
  * Tady byla druhá tichá chyba (změřeno 9. 11. 2026): pozice se ukládala
- * správně, a při odchodu ji někdo přepsal nulou.
+ * správně — 1100 — a při odchodu ji někdo přepsal nulou.
  *
- * Odchodem na detail se výpis zbourá, obsah posuvníku se scvrkne a prohlížeč
- * posuvník srovná na nulu — a ohlásí to jako obyčejné rolování. Události
- * rolování se ale doručují až na hranici snímku, zatímco úklid `useEffect`
- * React plánuje přes scheduler, klidně až po vykreslení. Nula tedy stihla
- * přijít dřív, než jsme přestali poslouchat, a zapsala se.
+ * Vinit se nabízí bourání stránky, ale měření ukázalo něco jiného: 69 ms po
+ * kliknutí přišlo „zarolováno na nulu" u posuvníku, jehož obsah se ani
+ * nezměnil, a naše stránka zmizela až o 136 ms později. To není srovnání
+ * zkráceného obsahu, to si nativní detail objednávky roluje nahoru. Takže
+ * „poslední viděná pozice" nestačí — mezi kliknutím a odchodem se stihne
+ * stát ledacos.
  *
- * `useLayoutEffect` běží ještě ve chvíli potvrzování změn, tedy před hranicí
- * snímku: odhlásíme se dřív, než zpráva o srovnání na nulu vůbec vznikne.
- * Zapisuje se k tomu poslední hodnota, kterou jsme VIDĚLI, ne čerstvé čtení
- * z DOMu, který už nemusí stát.
+ * Rozhoduje tedy pozice ve chvíli KLIKNUTÍ: kliknutí je okamžik, kdy člověk
+ * odchází, a nic po něm už o jeho místě ve výpisu nevypovídá. Od kliknutí se
+ * proto rolování ignoruje. Rozmrazí ho až vlastní pohyb — kolečko, dotyk,
+ * klávesa nebo chycení posuvníku — protože to zase znamená, že nikam nešel
+ * a čte dál.
+ *
+ * Odhlašujeme se k tomu v „layout" fázi, ještě při potvrzování změn: úklid
+ * `useEffect` React plánuje přes scheduler, klidně až po vykreslení, a to je
+ * na zprávy o rolování pozdě.
  *
  * ## Proč se obnovuje opakovaně, a ne jednou
  *
@@ -128,6 +134,8 @@ export const useScrollMemory = (stranka: string): void => {
     const rolovatko = najdiRolovatko()
     /* Jiná adresa = jiný výpis; co jsme viděli u toho minulého, sem nepatří. */
     videno.current = null
+    let zamrzlo = false
+
     const zapis = (kam: number) => {
       try {
         sessionStorage.setItem(klic, String(kam))
@@ -135,17 +143,43 @@ export const useScrollMemory = (stranka: string): void => {
         /* Soukromé okno nebo zakázané úložiště — pozice se prostě nepamatuje. */
       }
     }
-    const sleduj = () => {
+    const poznamenej = () => {
       const kam = Math.round(rolovatko.pozice())
       videno.current = kam
       zapis(kam)
     }
+    const sleduj = () => {
+      if (zamrzlo) return
+      poznamenej()
+    }
+    /* Kliknutí = odchod. Co se s posuvníkem stane potom, už není její pohyb. */
+    const zmrazit = () => {
+      poznamenej()
+      zamrzlo = true
+    }
+    /* Vlastní pohyb znamená, že nikam nešla a čte dál. */
+    const rozmrazit = () => {
+      zamrzlo = false
+    }
+    const vlastniPohyb = ["wheel", "touchstart", "keydown", "mousedown"] as const
+
     /* Pasivně: zápis nesmí zdržovat rolování. */
     rolovatko.cil.addEventListener("scroll", sleduj, { passive: true })
+    /* Zachytávání: chceme vědět o kliknutí dřív, než se podle něj zařídí
+       zbytek administrace. */
+    window.addEventListener("click", zmrazit, true)
+    for (const udalost of vlastniPohyb) {
+      window.addEventListener(udalost, rozmrazit, { passive: true, capture: true })
+    }
+
     return () => {
       /* Nejdřív přestat poslouchat, teprve pak zapsat — pořadí je tu to
          podstatné, viz vysvětlení výš. */
       rolovatko.cil.removeEventListener("scroll", sleduj)
+      window.removeEventListener("click", zmrazit, true)
+      for (const udalost of vlastniPohyb) {
+        window.removeEventListener(udalost, rozmrazit, true)
+      }
       if (videno.current !== null) zapis(videno.current)
     }
   }, [klic])
