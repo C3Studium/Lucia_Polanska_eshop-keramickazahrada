@@ -1,3 +1,6 @@
+import { useTexty } from "@lib/context/texty"
+import type { ShopTexty } from "@lib/constants/texty"
+
 import styles from "./style.module.scss"
 
 /**
@@ -8,18 +11,23 @@ import styles from "./style.module.scss"
  * `paid` / `zruseno` / `ceka` posílá ComGate na stránku objednávky po platbě;
  * `chyba` / `neplatny-odkaz` posílá backendová pay-balance route při chybě.
  */
-const MESSAGES: Record<string, { tone: "ok" | "warn"; text: string }> = {
+/* Znění se bere z administrace, takže to nemůže být konstanta modulu —
+   musí vzniknout až ve chvíli, kdy jsou texty po ruce. Chybová hláška
+   zůstává v kódu schválně: ta má popisovat příčinu, ne tón obchodu. */
+const zpravy = (
+  texty: ShopTexty
+): Record<string, { tone: "ok" | "warn"; text: string }> => ({
   paid: {
     tone: "ok",
-    text: "Platba dorazila, děkuji. Potvrzení vám přijde e-mailem.",
+    text: texty["objednavka.doplatek_prisel"],
   },
   zruseno: {
     tone: "warn",
-    text: "Platba se zrušila a nic se nestrhlo. Zkusit to můžete znovu z odkazu v e-mailu, nebo mi napište.",
+    text: texty["objednavka.doplatek_zrusen"],
   },
   ceka: {
     tone: "warn",
-    text: "Platba se ještě zpracovává. Jakmile dorazí, dám vám vědět e-mailem.",
+    text: texty["objednavka.doplatek_zpracovava"],
   },
   chyba: {
     tone: "warn",
@@ -27,9 +35,9 @@ const MESSAGES: Record<string, { tone: "ok" | "warn"; text: string }> = {
   },
   "neplatny-odkaz": {
     tone: "warn",
-    text: "Odkaz na platbu už neplatí. Napište mi prosím a pošlu vám nový.",
+    text: texty["objednavka.doplatek_odkaz_neplati"],
   },
-}
+})
 
 export default function BalancePaymentNotice({
   outcome,
@@ -39,7 +47,8 @@ export default function BalancePaymentNotice({
   /** Inside OrderStateShell the page already provides the margins. */
   inline?: boolean
 }) {
-  const message = outcome ? MESSAGES[outcome] : undefined
+  const texty = useTexty()
+  const message = outcome ? zpravy(texty)[outcome] : undefined
 
   if (!message) {
     return null

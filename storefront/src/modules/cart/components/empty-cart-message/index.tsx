@@ -2,17 +2,20 @@ import s from "./style.module.scss"
 import LinkButton from "@modules/common/components/Buttons/LinkButton"
 import CmsText from "@modules/common/components/cms-text"
 import type { CopyBlock } from "@lib/util/site-copy"
+import { getTexty } from "@lib/data/texty"
 
 /**
  * Prázdný košík. Texty z bloku `kosik.prazdny` — nadpis (`title`), věta
  * (`body`) a tlačítko (`accent.0`); cíl tlačítka (`/store`) drží kód.
  */
-const EmptyCartMessage = ({ block }: { block?: CopyBlock }) => {
+const EmptyCartMessage = async ({ block }: { block?: CopyBlock }) => {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = await getTexty()
   const doc = block?.id ?? null
   const title = block?.title?.trim() || "Košík"
   const text =
     block?.bodyText?.trim() ||
-    "Zatím je prázdný. Podívejte se, co je v ateliéru — třeba vás něco chytne."
+    texty["kosik.prazdny"]
   const cta = block?.accent?.[0]?.trim() || "Prozkoumat produkty"
 
   return (

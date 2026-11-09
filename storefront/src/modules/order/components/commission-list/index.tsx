@@ -14,6 +14,7 @@ import CommissionConversation from "@modules/order/components/commission-convers
 import CommissionPanel from "@modules/order/components/commission-panel"
 
 import s from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 type Props = {
   orderId: string
@@ -61,6 +62,8 @@ export default function CommissionList({
   notesById = null,
   className,
 }: Props) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const commissions = commissionsOf(balance)
   if (!commissions.length) return null
 
@@ -102,8 +105,7 @@ export default function CommissionList({
             </div>
           </dl>
           <p className={s.hint}>
-            Každá zakázka má svůj stav, zálohu a doplatek — níž po jedné.
-          </p>
+            {texty["zakazka.seznam_uvod"]}</p>
         </section>
       )}
 

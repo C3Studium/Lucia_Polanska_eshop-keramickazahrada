@@ -15,6 +15,7 @@ import { isMadeToOrderLine } from "@lib/util/commission"
 import { listCartShippingMethods } from "@lib/data/fulfillment"
 import { listProductionLeadTimes } from "@lib/data/cart"
 import { shippingFromOptions } from "../shipping-from"
+import { getTexty } from "@lib/data/texty"
 
 /* Zakázkový blok (volba zálohy „Kolik chcete zaplatit hned?" i brief s fotkami)
    do KOŠÍKU NEPATŘÍ — majitelčino přání. Sbírá se až v pokladně (Přehled) a v
@@ -30,6 +31,8 @@ const CartTemplate = async ({
   /** Bloky stránky `kosik` — `kosik.uvod`, `kosik.prazdny`, `kosik.prihlaseni`, `kosik.vypis`. */
   copy?: CopyBlocks
 }) => {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = await getTexty()
   // Kusy zboží — balné a doběrečné do počtu nepatří.
   const itemCount = productLines(cart?.items).reduce((total, item) => total + item.quantity, 0)
 
@@ -45,7 +48,7 @@ const CartTemplate = async ({
   const introEyebrow = itemValue(intro, "oboci")?.trim() || "Váš výběr"
   const introCopy =
     intro?.bodyText?.trim() ||
-    "Všechno je dělané rukama. Než to pošleme, pečlivě to v ateliéru zabalíme."
+    texty["kosik.baleni"]
   const secureNote = itemValue(intro, "souhrn")?.trim() || "Bezpečná platba · pečlivé balení"
   const introId = intro?.id ?? null
 

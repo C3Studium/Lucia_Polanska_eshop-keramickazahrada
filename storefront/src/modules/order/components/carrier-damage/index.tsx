@@ -9,6 +9,7 @@ import ContactEmailLink from "@modules/common/components/contact-email"
 import styles from "./style.module.scss"
 
 import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
+import { useTexty } from "@lib/context/texty"
 /**
  * Poškozená zásilka — co udělat, když keramika dorazí rozbitá.
  *
@@ -84,6 +85,8 @@ export default function CarrierDamageNotice({
   isCarrierDelivery,
   stage = "pending",
 }: Props) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const [otevreno, setOtevreno] = useState(false)
   const bezPohybu = useSiteReducedMotion()
   const idObsahu = useId()
@@ -144,18 +147,10 @@ export default function CarrierDamageNotice({
             <div className={styles.body}>
               {stage === "pending" ? (
                 <p className={styles.lede}>
-                  Prohlédněte si prosím obal ještě při převzetí. Je-li promáčklý,
-                  protržený nebo něčím prosakuje, rozbalte zásilku před
-                  doručovatelem a poškození s ním rovnou sepište — se záznamem
-                  pošta reklamaci vyřídí nejsnáz. Podmínkou to ale není:
-                  keramika se rozbije tiše a poškození často najdete až doma.
-                </p>
+                  {texty["objednavka.prevzeti_obal"]}</p>
               ) : (
                 <p className={styles.lede}>
-                  Záleží na tom, v jakém stavu dorazila krabice. Poškozený obal
-                  je škoda dopravce a hlásí se na poště; rozbitý kus
-                  v nepoškozené krabici je na nás.
-                </p>
+                  {texty["objednavka.prevzeti_stav"]}</p>
               )}
 
               <ol className={styles.steps}>
