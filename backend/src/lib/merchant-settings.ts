@@ -65,6 +65,16 @@ import {
   type LegalFactValues,
   type StoredLegalFacts,
 } from "./legal-facts"
+import {
+  SHOP_TEXT_KEYS,
+  pickStoredShopTexts,
+  resolveShopTexts,
+  sameShopTexts,
+  shopTextProblem,
+  type ShopTextKey,
+  type ShopTextValues,
+  type StoredShopTexts,
+} from "./shop-texty"
 
 /** Sub-key of `store.metadata` that holds the whole settings object. */
 export const MERCHANT_SETTINGS_METADATA_KEY = "merchant_settings"
@@ -88,6 +98,26 @@ const legalFactsWriteSchema = z.strictObject(
         .optional(),
     ])
   ) as Record<LegalFactKey, z.ZodOptional<z.ZodString>>
+)
+
+/**
+ * Texty obchodu při zápisu: jen známé klíče, každý nejvýš `maxLength` znaků
+ * a s povinnými značkami (`{{dny}}`). Prázdný text projde — znamená „větu
+ * neukazovat"; klíč, který se neposlal, zůstává, jak byl.
+ */
+const shopTextsWriteSchema = z.strictObject(
+  Object.fromEntries(
+    SHOP_TEXT_KEYS.map((key) => [
+      key,
+      z
+        .string()
+        .superRefine((value, ctx) => {
+          const problem = shopTextProblem(key, value)
+          if (problem) ctx.addIssue({ code: "custom", message: problem })
+        })
+        .optional(),
+    ])
+  ) as Record<ShopTextKey, z.ZodOptional<z.ZodString>>
 )
 
 /** ISO okamžik, nebo `""` (údaje se ještě nikdy neuložily). */
@@ -216,6 +246,15 @@ const KEY_SCHEMAS = {
    */
   legal_facts_updated_at: isoInstantOrEmpty,
   /**
+   * Texty obchodu („Texty" v administraci) — věty u výrobku, v košíku,
+   * v pokladně a na hotové objednávce (`lib/shop-texty.ts`). Uložené jsou jen
+   * klíče, které se někdy měnily: chybějící klíč = výchozí znění z kódu,
+   * `""` = větu neukazovat. Slučuje se po klíčích jako `legal_facts`.
+   */
+  shop_texts: shopTextsWriteSchema,
+  /** Kdy se texty naposledy opravdu změnily (ISO). Zapisuje server. */
+  shop_texts_updated_at: isoInstantOrEmpty,
+  /**
    * Slevový kód pro stálé zákazníky (Zákazníci+, `lib/loyalty-code.ts`):
    * výchozí sleva a platnost ručně posílaného kódu a automat „po N. zaplacené
    * objednávce". Jeden objekt, zapisuje se vždy celý (formulář má všechna
@@ -236,12 +275,21 @@ const KEY_SCHEMAS = {
  * jinak shodil celý objekt — a s ním všechny údaje na webu i v e-mailech.
  * Čtení proto nechá každý známý textový údaj, jak je, a zahodí jen zbytek.
  */
-const READ_SCHEMAS: { legal_facts: z.ZodType<StoredLegalFacts> } = {
+const READ_SCHEMAS: {
+  legal_facts: z.ZodType<StoredLegalFacts>
+  shop_texts: z.ZodType<StoredShopTexts>
+} = {
   legal_facts: z.record(z.string(), z.unknown()).transform(pickStoredLegalFacts),
+  /* Totéž u textů: jeden text delší, než dovolí pozdější limit, nesmí shodit
+     všechny ostatní věty v obchodě. */
+  shop_texts: z.record(z.string(), z.unknown()).transform(pickStoredShopTexts),
 }
 
 /** Keys only the server writes — a patch that sends them is rejected. */
-const SERVER_OWNED_KEYS = { legal_facts_updated_at: true } as const
+const SERVER_OWNED_KEYS = {
+  legal_facts_updated_at: true,
+  shop_texts_updated_at: true,
+} as const
 
 /** Full settings object — every key present, defaults filled in. */
 export const merchantSettingsSchema = z.strictObject(KEY_SCHEMAS)
@@ -296,6 +344,8 @@ export const MERCHANT_SETTINGS_DEFAULTS: MerchantSettings = {
   /* Nic uloženého = všude výchozí hodnoty z `lib/legal-facts.ts`. */
   legal_facts: {},
   legal_facts_updated_at: "",
+  shop_texts: {},
+  shop_texts_updated_at: "",
   /* Stejné hodnoty jako LOYALTY_CODE_DEFAULTS v lib/loyalty-code-rules.ts. */
   loyalty_code: { auto_enabled: false, after_orders: 3, percentage: 10, valid_days: 60 },
 }
@@ -315,6 +365,7 @@ export const parseMerchantSettings = (
     ...MERCHANT_SETTINGS_DEFAULTS,
     onboarding_dismissals: { ...MERCHANT_SETTINGS_DEFAULTS.onboarding_dismissals },
     legal_facts: { ...MERCHANT_SETTINGS_DEFAULTS.legal_facts },
+    shop_texts: { ...MERCHANT_SETTINGS_DEFAULTS.shop_texts },
   }
 
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
@@ -389,6 +440,17 @@ export const applyMerchantSettingsPatch = (
     }
     if (!sameLegalFacts(current.legal_facts, next.legal_facts)) {
       next.legal_facts_updated_at = now.toISOString()
+    }
+  }
+
+  if (parsed.data.shop_texts !== undefined) {
+    // Stejně jako u údajů: co se neposlalo, zůstává.
+    next.shop_texts = {
+      ...current.shop_texts,
+      ...pickStoredShopTexts(parsed.data.shop_texts),
+    }
+    if (!sameShopTexts(current.shop_texts, next.shop_texts)) {
+      next.shop_texts_updated_at = now.toISOString()
     }
   }
 
@@ -503,6 +565,22 @@ export const getLegalFacts = async (
       // Ani logger — nic dalšího se dělat nedá, výchozí údaje stačí.
     }
     return { facts: resolveLegalFacts(undefined), updated_at: null, source: "defaults" }
+  }
+}
+
+/**
+ * Texty obchodu tak, jak teď platí (`lib/shop-texty.ts`). Nikdy nevyhodí —
+ * stejný důvod jako u právních údajů: stránka výrobku se nesmí rozbít jen
+ * proto, že nejde přečíst nastavení. Pak platí výchozí znění z kódu.
+ */
+export const getShopTexty = async (
+  container: MedusaContainer
+): Promise<ShopTextValues> => {
+  try {
+    const settings = await getMerchantSettings(container)
+    return resolveShopTexts(settings.shop_texts)
+  } catch {
+    return resolveShopTexts(undefined)
   }
 }
 

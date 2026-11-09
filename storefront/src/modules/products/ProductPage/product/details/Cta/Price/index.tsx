@@ -14,6 +14,7 @@ import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import styles from "./style.module.scss"
 import { usePriceReference } from "./use-price-reference"
+import { useTexty } from "@lib/context/texty"
 
 /**
  * Cena na stránce výrobku.
@@ -67,6 +68,8 @@ export default function ProductPrice({
   className?: string
   countryCode: string
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const { cheapestPrice, variantPrice } = getProductPrice({
     product,
     variantId: variant?.id,
@@ -120,7 +123,7 @@ export default function ProductPrice({
         {/* Cena po domluvě: do košíku za 0 Kč, cena přijde e-mailem. */}
         {priceOnRequest && (
           <p className={styles.line} data-testid="price-on-request-note">
-            <span className={styles.note}>{PRICE_ON_REQUEST_PRODUCT_NOTE}</span>
+            <span className={styles.note}>{texty["produkt.cena_po_domluve"]}</span>
           </p>
         )}
 

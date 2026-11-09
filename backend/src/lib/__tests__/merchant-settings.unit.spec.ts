@@ -32,6 +32,8 @@ describe("merchant settings allowlist", () => {
       "return_address",
       "return_instructions",
       "review_request_days",
+      "shop_texts",
+      "shop_texts_updated_at",
       "test_mode_enabled",
       "vacation_enabled",
       "vacation_message",

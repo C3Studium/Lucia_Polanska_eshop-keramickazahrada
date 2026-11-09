@@ -10,6 +10,8 @@ import { getMerchantIdentity } from "@lib/data/merchant"
 import { ContactDialogProvider } from "@modules/layout/ContactDialog"
 import { getPageCopy } from "@lib/data/site-copy"
 import { ContactEmailsProvider } from "@lib/context/contact-emails"
+import { TextyProvider } from "@lib/context/texty"
+import { getTexty } from "@lib/data/texty"
 import { CONTACT_EMAILS_BLOCK, contactEmailsFrom } from "@lib/constants/contact"
 import EditModeRemount from "@modules/common/components/cms-text/edit-remount"
 import GlobalLiquidEther from "@modules/layout/components/global-liquid-ether"
@@ -40,9 +42,13 @@ export default async function CheckoutLayout({
   const globalCopy = await getPageCopy("global")
   const dialogCopy = globalCopy["global.kontaktni-okno"]
   const contactEmails = contactEmailsFrom(globalCopy[CONTACT_EMAILS_BLOCK])
+  // Texty obchodu z administrace (Právní věci a texty → Texty obchodu)
+  // pro klientské komponenty — věty u výrobku, v košíku a v pokladně.
+  const texty = await getTexty()
 
   return (
     <ContactEmailsProvider emails={contactEmails}>
+    <TextyProvider texty={texty}>
     <ContactDialogProvider merchant={merchant} copy={dialogCopy}>
       <div className={styles.root}>
         <GlobalLiquidEther />
@@ -63,6 +69,7 @@ export default async function CheckoutLayout({
         </div>
       </div>
     </ContactDialogProvider>
+    </TextyProvider>
     </ContactEmailsProvider>
   )
 }

@@ -36,6 +36,8 @@ import { itemText } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
 import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
 import { isMadeToOrderLine } from "@lib/util/commission"
+import { useTexty } from "@lib/context/texty"
+import { DOPRAVA_TEXT_KEY } from "@lib/util/fragile"
 
 type ShippingProps = {
   cart: HttpTypes.StoreCart
@@ -86,6 +88,10 @@ const Shipping: React.FC<ShippingProps> = ({
   /* Jen úvodní věta kroku z CMS (`pokladna.kroky`, poskytuje stránka
      pokladny); mimo pokladnu (bez provideru) věta z kódu. */
   const steps = useCopyBlock("pokladna.kroky")
+  /* Věta o omezení doručení — mění se v administraci (Texty obchodu). */
+  const texty = useTexty()
+  const dopravaVeta = (omezeni: NonNullable<DeliveryRestriction>) =>
+    texty[DOPRAVA_TEXT_KEY[omezeni]]
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingPrices, setIsLoadingPrices] = useState(true)
 
@@ -588,7 +594,7 @@ const Shipping: React.FC<ShippingProps> = ({
             </div>
             {restriction && (
               <p className={styles.commissionNotice} role="status">
-                {restrictionNotice[restriction]}
+                {dopravaVeta(restriction)}
               </p>
             )}
             <div
