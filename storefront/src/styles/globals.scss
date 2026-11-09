@@ -386,7 +386,11 @@ html[data-app="studio"] *::-webkit-scrollbar-thumb {
  */
 @include h(xxl) {
   :root {
-    font-size: clamp(16px, 0.8333vw, 21.5px);
+    /* Z rámu, ne z okna (6. 11. 2026). Na ultrawide se `rem` jinak počítal z celé šířky
+       obrazovky: 4850x1310 dával 21.5px do rámu širokého 2329px, kam patří 19.4px, takže
+       totéž rozvržení vycházelo o 10 % větší než na 16:9 monitoru stejné šířky. Bez rámu
+       je --fvw přesně 1vw, takže tam se nemění nic. */
+    font-size: clamp(16px, 0.8333 * var(--fvw), 21.5px);
   }
 }
 
