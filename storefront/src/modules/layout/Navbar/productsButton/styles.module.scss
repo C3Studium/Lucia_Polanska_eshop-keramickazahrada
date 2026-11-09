@@ -83,8 +83,10 @@
 
 .collectionList {
   position: fixed;
-  inset: 0;
-  width: 100vw;
+  /* Uvnitř 16:9 rámu na ultrawide (globals.scss). `fixed` se měří od okna, ne od rámu, takže
+     menu jinak jelo přes celou obrazovku. Pod 1921px je --page-inset 0 a šířka 100vw. */
+  inset: 0 var(--page-inset, 0px);
+  width: var(--page-max-w, 100vw);
   z-index: -1;
   overflow-x: hidden;
   overflow-y: auto;
@@ -164,11 +166,11 @@
 
   /* The rail's own width, out of the same gutter and padding that draw the panel. The card
      photograph is sized off this rather than describing the same box a second time. */
-  --rail-w: calc(100vw - (var(--panel-inset) + var(--panel-pad-x) + 1px) * 2);
+  --rail-w: calc(var(--page-max-w, 100vw) - (var(--panel-inset) + var(--panel-pad-x) + 1px) * 2);
 
   position: relative;
   z-index: 2;
-  width: calc(100vw - var(--panel-inset) * 2);
+  width: calc(var(--page-max-w, 100vw) - var(--panel-inset) * 2);
   margin: var(--panel-inset) auto 0;
   padding: var(--panel-pad-top) var(--panel-pad-x) var(--panel-pad-bottom);
   overflow: hidden;
@@ -378,7 +380,7 @@
    * this changes nothing on a normal desktop (54px at 1920, 48.4 at 1512 — unmoved) and only
    * bites where the window is wider than it is tall, which is exactly the low laptop.
    */
-  font-size: clamp(1.875rem, min(3.2vw, 5.6vh), 3.375rem);
+  font-size: clamp(1.875rem, min(3.2 * var(--fvw), 5.6vh), 3.375rem);
   font-weight: 300;
   white-space: nowrap;
   writing-mode: vertical-rl;
@@ -395,7 +397,7 @@
   bottom: clamp(2.5rem, 4.8vh, 3.25rem);
   /* Split axes: the block sits inside the card and its top and bottom padding come out of the
      card's height, which is the scarce dimension on a laptop. */
-  padding: clamp(1rem, 2.6vh, 2.125rem) clamp(1.25rem, 2.5vw, 2.125rem);
+  padding: clamp(1rem, 2.6vh, 2.125rem) clamp(1.25rem, 2.5 * var(--fvw), 2.125rem);
   color: var(--whiteText);
   pointer-events: none;
 
@@ -408,7 +410,7 @@
        stacked height that competes with the card's. 8vh and 4.5vw agree at 16:9 — identical at
        1280×720 and 1366×768, unmoved at 1512 and 1920 — and the vh term takes over only on a
        window wider than it is tall. */
-    font-size: clamp(2.6875rem, min(4.5vw, 8vh), 4.5rem);
+    font-size: clamp(2.6875rem, min(4.5 * var(--fvw), 8vh), 4.5rem);
     font-weight: 400;
     line-height: 0.98;
     letter-spacing: -0.035em;
@@ -436,7 +438,7 @@
    * Set from here rather than in CategoryLink, the way the accordion below does it, so that
    * component keeps one definition and this stays a decision about the menu.
    */
-  --animated-link-font-size: clamp(1rem, min(1.55vw, 2.7vh), 1.75rem);
+  --animated-link-font-size: clamp(1rem, min(1.55 * var(--fvw), 2.7vh), 1.75rem);
 
   display: flex;
   flex-direction: column;
@@ -557,7 +559,7 @@
     max-width: 100%;
     height: calc(1.15em + 3px);
     color: rgb(var(--ink-04-rgb) / .74);
-    font-size: clamp(0.8125rem, 0.95vw, 1rem);
+    font-size: clamp(0.8125rem, 0.95 * var(--fvw), 1rem);
     transition: color 0.3s ease, opacity 0.3s ease;
 
     &:hover { opacity: 0.68; }
