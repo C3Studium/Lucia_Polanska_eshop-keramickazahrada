@@ -3,6 +3,12 @@
 import { madeToOrderBadgeText } from "@lib/util/made-to-order"
 import { LEGAL_LINKS } from "@modules/checkout/components/legal-consent/labels"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { useTexty } from "@lib/context/texty"
+import {
+  TEXTY_DEFAULTS,
+  dosadZnacky,
+  type ShopTexty,
+} from "@lib/constants/texty"
 
 import styles from "./style.module.scss"
 
@@ -73,29 +79,37 @@ export function MadeToOrderAddNotice() {
  * dostane v příloze. Lhůta dokončení jen s profilem (Z9); bez něj krok říká,
  * že lhůta bude v potvrzení zakázky.
  */
-export const madeToOrderSteps = (maxDays?: number | null) => [
+export const madeToOrderSteps = (
+  maxDays?: number | null,
+  texty: ShopTexty = TEXTY_DEFAULTS
+) => [
   {
     title: "Zahájení výroby",
-    text: "Začneme po připsání platby. V den, kdy začneme, vám pošleme e-mail „Zakázka je ve výrobě“ s datem a časem — od něj je výroba zahájena.",
+    text: texty["zakazka.krok_zahajeni"],
   },
   {
     title: "Dokončení",
+    /* Lhůta se dosadí za `{{dny}}`; bez profilu platí znění bez lhůty —
+       slibovat termín, který nikdo nezná, by bylo horší než mlčet. */
     text: maxDays
-      ? `Do ${maxDays} dnů od zahájení výroby. Praskne-li kus při výpalu, uděláme ho znovu bez příplatku a dáme vědět o novém termínu.`
-      : "Lhůtu od zahájení výroby najdete v potvrzení zakázky. Praskne-li kus při výpalu, uděláme ho znovu bez příplatku a dáme vědět o novém termínu.",
+      ? dosadZnacky(texty["zakazka.krok_dokonceni"], { dny: maxDays })
+      : texty["zakazka.krok_dokonceni_bez_lhuty"],
   },
   {
     title: "Schválení před výpalem",
-    text: "Pošleme vám fotografii hotového tvaru. Máte 5 pracovních dnů (připomeneme se). Schválená podoba je ujednanou vlastností výrobku; nesoulad se zadáním zůstává vadou vždy.",
+    text: texty["zakazka.krok_schvaleni"],
   },
   {
     title: "Odeslání",
-    text: "Do 2 pracovních dnů od doplatku, pojištěný křehký balík — nebo vám dáme vědět, že je kus připravený k vyzvednutí.",
+    text: texty["zakazka.krok_odeslani"],
   },
 ]
 
 /** Blok „Jak zakázka probíhá" pod tlačítkem. */
 export function MadeToOrderSteps({ maxDays }: Pick<TermsProps, "maxDays">) {
+  /* Znění kroků z administrace (Právní věci a texty → Texty obchodu) —
+     právě tady se mění lhůta, která je na plastiky krátká. */
+  const texty = useTexty()
   return (
     <section
       className={styles.steps}
@@ -106,7 +120,7 @@ export function MadeToOrderSteps({ maxDays }: Pick<TermsProps, "maxDays">) {
         Jak zakázka probíhá
       </p>
       <ol className={styles.stepsList}>
-        {madeToOrderSteps(maxDays).map((step) => (
+        {madeToOrderSteps(maxDays, texty).map((step) => (
           <li key={step.title}>
             <strong>{step.title}.</strong> {step.text}
           </li>

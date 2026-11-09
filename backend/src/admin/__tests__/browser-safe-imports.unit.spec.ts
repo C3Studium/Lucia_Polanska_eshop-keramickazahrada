@@ -26,6 +26,9 @@ const PURE_MODULE_ALLOWLIST = [
   // Právní údaje: klíče, popisky, nápovědy a kontrola hodnot pro stránku
   // „Právní údaje" — tytéž, které hlídají zápis do nastavení.
   "lib/legal-facts",
+  // Texty obchodu: klíče, popisky, výchozí znění a kontrola hodnot pro
+  // stránku „Texty obchodu" — tytéž, které hlídají zápis do nastavení.
+  "lib/shop-texty",
   // Prezenční listina kurzu: řádky a peníze — sdílí admin (tisk), PDF i job.
   "lib/course-attendance",
   "modules/course/pricing",

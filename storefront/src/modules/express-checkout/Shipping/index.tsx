@@ -30,6 +30,8 @@ import PremiumActionButton from "@modules/common/components/premium-action-butto
 import { AnimatePresence, motion } from "framer-motion"
 import { useEffect, useMemo, useState } from "react"
 import styles from "../style.module.scss"
+import { useTexty } from "@lib/context/texty"
+import { DOPRAVA_TEXT_KEY } from "@lib/util/fragile"
 
 /** Pickup se pozná z typu fulfillment setu — stejně jako v běžném checkoutu. */
 const isPickupOption = (option: HttpTypes.StoreCartShippingOption) =>
@@ -68,6 +70,10 @@ export const Shipping = ({
   onContinueAction,
 }: ShippingProps) => {
   const current = cart.shipping_address
+  /* Věta o omezení doručení — mění se v administraci (Texty obchodu). */
+  const texty = useTexty()
+  const dopravaVeta = (omezeni: NonNullable<DeliveryRestriction>) =>
+    texty[DOPRAVA_TEXT_KEY[omezeni]]
 
   /* Zakázka, křehký kus i samotný dárkový poukaz smí jen podmnožinu dopravy —
      stejné omezení jako v běžném checkoutu (express ho dosud neměl, ukazoval
@@ -416,7 +422,7 @@ export const Shipping = ({
         </div>
         {restriction && (
           <p className={styles.restrictionNote}>
-            {restrictionNotice[restriction]}
+            {dopravaVeta(restriction)}
           </p>
         )}
         <div

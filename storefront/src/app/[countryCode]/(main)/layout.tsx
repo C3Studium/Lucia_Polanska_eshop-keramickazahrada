@@ -18,6 +18,8 @@ import { getButtons, getPageCopy } from "@lib/data/site-copy"
 import { ContactDialogProvider } from "@modules/layout/ContactDialog"
 import { CopyProvider } from "@modules/common/components/cms-text/copy-context"
 import { ContactEmailsProvider } from "@lib/context/contact-emails"
+import { TextyProvider } from "@lib/context/texty"
+import { getTexty } from "@lib/data/texty"
 import { CONTACT_EMAILS_BLOCK, contactEmailsFrom } from "@lib/constants/contact"
 import EditModeRemount from "@modules/common/components/cms-text/edit-remount"
 import AdminBar from "@modules/layout/AdminBar"
@@ -81,9 +83,13 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
    * Z téhož čtení bloku `global` jako zbytek layoutu, žádný dotaz navíc.
    */
   const contactEmails = contactEmailsFrom(globalCopy[CONTACT_EMAILS_BLOCK])
+  // Texty obchodu z administrace (Právní věci a texty → Texty obchodu)
+  // pro klientské komponenty — věty u výrobku, v košíku a v pokladně.
+  const texty = await getTexty()
 
   return (
     <ContactEmailsProvider emails={contactEmails}>
+    <TextyProvider texty={texty}>
     <ContactDialogProvider merchant={merchant} copy={globalCopy["global.kontaktni-okno"]}>
       <CopyProvider blocks={chromeCopy}>
         <ShopBanner status={shopStatus} />
@@ -118,6 +124,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
         <AdminBar />
       </CopyProvider>
     </ContactDialogProvider>
+    </TextyProvider>
     </ContactEmailsProvider>
   )
 }

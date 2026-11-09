@@ -14,15 +14,20 @@
  * guard, so a missing or malformed value renders the default instead of garbage.
  */
 
+import { TEXTY_DEFAULTS } from "@lib/constants/texty"
+
 /**
  * The shop's standard wait, said in the shop's voice.
  *
  * Phrased to be true of both kinds of „Na objednávku" the storefront shows — a
  * backordered piece that has run out, and an untracked one the atelier makes on
  * demand — because a customer cannot tell those apart and should not have to.
+ *
+ * Od 9. 11. 2026 si ji majitelka mění v administraci (Právní věci a texty →
+ * Texty obchodu). Tohle je jen výchozí znění — kdo kreslí, bere větu
+ * z `useTexty()`, aby se změna projevila bez nasazení.
  */
-export const DEFAULT_BACKORDER_NOTE =
-  "Není skladem — výroba obvykle trvá 3–10 dní."
+export const DEFAULT_BACKORDER_NOTE = TEXTY_DEFAULTS["produkt.cekani"]
 
 /** The merchant's own sentence, when she wrote one on the product. */
 export const backorderNote = (
@@ -36,34 +41,27 @@ export const backorderNote = (
   return trimmed.length ? trimmed : null
 }
 
-/**
- * Zakázková výroba mluví jinak.
- *
- * Kus, co došel, se dá dorobit podle stejné předlohy, a proto se u něj dá slíbit
- * rozmezí dní. Zakázka žádnou předlohu nemá — teprve se domlouvá, co má vzniknout —,
- * takže by stejná věta slibovala termín, který v tu chvíli nikdo nezná.
- *
- * Stojí tady vedle té běžné schválně: obě věty odpovídají na tutéž otázku
- * („kdy to budu mít?") a musí se měnit společně.
+/*
+ * Dvě věty tady dřív stály navíc — pro zakázku a pro balíček, ve kterém něco
+ * chybí. Obě byly mrtvé: nikdo je nevykresloval. Zjistilo se to 9. 11. 2026
+ * při skládání katalogu textů, a smazaly se právě proto, aby se v administraci
+ * neobjevilo políčko, které nic nemění. Zakázka o lhůtě mluví vlastním blokem
+ * („Jak zakázka probíhá"), balíček větou běžnou.
  */
-export const COMMISSION_WAIT_NOTE =
-  "Jde o zakázkovou výrobu na míru — doba zpracování se liší od běžných výrobků, ozveme se vám s termínem."
-
-/**
- * Věta pro balíček, ve kterém něco chybí.
- *
- * Zákazník si nekupuje jednotlivé kusy, ale balíček, takže se mu neříká, který
- * z nich zrovna došel — jen že se na něj čeká a jak dlouho.
- */
-export const BUNDLE_BACKORDER_NOTE =
-  "Součástí balíčku je výrobek, který nemáme skladem — Výroba obvykle trvá 3–7 dní."
 
 /**
  * What the customer actually reads under „Na objednávku".
  *
  * Never null: a piece that can be bought but not shipped from a shelf always
  * owes the customer a timeframe.
+ *
+ * Pořadí je od nejkonkrétnějšího: věta napsaná u tohohle kusu, pak společná
+ * věta z administrace, a teprve když se texty nedají načíst, výchozí znění
+ * z kódu. Vlastní věta u produktu má přednost schválně — je o něm, ne o celém
+ * obchodě.
  */
 export const backorderWaitNote = (
-  product?: { metadata?: Record<string, unknown> | null } | null
-): string => backorderNote(product) ?? DEFAULT_BACKORDER_NOTE
+  product?: { metadata?: Record<string, unknown> | null } | null,
+  spolecna?: string | null
+): string =>
+  backorderNote(product) ?? (spolecna?.trim() || DEFAULT_BACKORDER_NOTE)

@@ -28,6 +28,7 @@ import {
   variantAvailability,
 } from "@lib/util/availability"
 import { backorderWaitNote } from "@lib/util/backorder"
+import { useTexty } from "@lib/context/texty"
 import { COMMISSION_CATEGORY_HANDLE } from "@lib/util/commission"
 import { DOBIRKA_COUNTRIES, productAllowsDobirka } from "@lib/util/dobirka"
 import { addToCart } from "@lib/data/cart"
@@ -126,6 +127,10 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   /* Bez výběru provedení se panel nákupu po zapnutí editace sám nepřekreslí
      a texty z `global.produkt` by zůstaly bez anotací. Viz hook. */
   useEditRerender()
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). Jmenuje se
+     `texty`, aby si to nepletlo s `texts` ze Studia — tohle jsou provozní
+     věty obchodu, ne obsah webu. */
+  const texty = useTexty()
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [addState, setAddState] = useState<AddToCartState>({ kind: "idle" })
   const [quantity, setQuantity] = useState(1)
@@ -599,7 +604,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                       backorderNote={
                         isMadeToOrder || isVoucher || isGiftVoucher
                           ? null
-                          : backorderWaitNote(product)
+                          : backorderWaitNote(product, texty["produkt.cekani"])
                       }
                       // Dobírka výchozí; ne u zakázky (profil i kategorie) a do zahraničí.
                       codAllowed={

@@ -1,3 +1,5 @@
+import { Fragment } from "react"
+import { getTexty } from "@lib/data/texty"
 import {
   isDobirkaPayment,
   isPickupPayment,
@@ -101,6 +103,9 @@ export default async function OrderCompletedTemplate({
 }: OrderCompletedTemplateProps) {
   const thanks = copy?.["kosik.objednavka-hotova"]
   const help = copy?.["kosik.objednavka-pomoc"]
+  /* Provozní věty z administrace. Poděkování nahoře je dál ze Studia
+     (`kosik.objednavka-hotova`) — to je obsah webu, tohle je obchod. */
+  const texty = await getTexty()
   const money = (amount?: number | null) =>
     convertToLocale({
       amount: amount ?? 0,
@@ -249,10 +254,23 @@ export default async function OrderCompletedTemplate({
           </div>
 
           <div className={s.heroAside}>
-            <p>
-              Potvrzení jsme poslali na <strong>{order.email}</strong>. Jakmile
-              se něco pohne, ozveme se vám znovu.
-            </p>
+            {/* Znění z administrace (Právní věci a texty → Texty obchodu);
+                `{{email}}` se nahradí adresou a zvýrazní. Prázdné znění
+                znamená, že si majitelka větu vypnula. */}
+            {texty["objednavka.potvrzeni"] ? (
+              <p>
+                {texty["objednavka.potvrzeni"]
+                  .split("{{email}}")
+                  .map((cast, index, vsechny) => (
+                    <Fragment key={index}>
+                      {cast}
+                      {index < vsechny.length - 1 ? (
+                        <strong>{order.email}</strong>
+                      ) : null}
+                    </Fragment>
+                  ))}
+              </p>
+            ) : null}
             {/* Znění OP, podle kterého se objednávka uzavřela (OP čl. III
                 a IV, § 1827 OZ) — stejné jako v účtu u objednávky. */}
             {terms && (

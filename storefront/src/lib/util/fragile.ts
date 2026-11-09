@@ -3,6 +3,7 @@ import {
   deliveryAllowsCommission,
 } from "./commission"
 import { hasPriceOnRequestLine } from "./price-on-request"
+import { TEXTY_DEFAULTS, type ShopTextKey } from "@lib/constants/texty"
 
 /**
  * Which deliveries may carry this basket, and why.
@@ -109,16 +110,29 @@ export const deliveryAllowedUnder = (
   restriction: DeliveryRestriction = null
 ) => (restriction === null ? true : deliveryAllowsCommission(option, isPickup))
 
+/**
+ * Který text z administrace patří ke kterému omezení (9. 11. 2026).
+ *
+ * Věty se mění v Právní věci a texty → Texty obchodu; tenhle převod je to
+ * jediné, co o nich kód ví. Komponenta si vezme `useTexty()` a sáhne sem.
+ */
+export const DOPRAVA_TEXT_KEY: Record<
+  NonNullable<DeliveryRestriction>,
+  ShopTextKey
+> = {
+  fragile: "pokladna.doprava_krehke",
+  commission: "pokladna.doprava_zakazka",
+  price_on_request: "pokladna.doprava_cena_po_domluve",
+}
+
+/** Výchozí znění — platí, dokud se texty nenačtou z backendu. */
 export const restrictionNotice: Record<
   NonNullable<DeliveryRestriction>,
   string
 > = {
-  fragile:
-    "Vybrali jste křehký kus. Aby dorazil v pořádku, posíláme ho jen jako křehký balík Českou poštou — nebo si pro něj můžete přijet do ateliéru.",
-  commission:
-    "Zakázkovou výrobu posíláme jen jako křehký balík. Nebo si pro ni můžete přijet do ateliéru.",
-  price_on_request:
-    "V košíku máte výrobek s cenou po domluvě. Vyberte si tady, jak vám ho mám doručit; posílám jen jako křehký balík, nebo si pro kus můžete přijet do ateliéru. Cenu výrobku vám pak pošlu e-mailem a zaplatíte ji až potom.",
+  fragile: TEXTY_DEFAULTS["pokladna.doprava_krehke"],
+  commission: TEXTY_DEFAULTS["pokladna.doprava_zakazka"],
+  price_on_request: TEXTY_DEFAULTS["pokladna.doprava_cena_po_domluve"],
 }
 
 export const restrictionRowHint: Record<

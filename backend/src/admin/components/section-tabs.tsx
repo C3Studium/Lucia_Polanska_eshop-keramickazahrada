@@ -45,10 +45,17 @@ const SECTIONS: Record<SectionKey, { title: string; tabs: Tab[] }> = {
       },
     ],
   },
+  /*
+   * Texty obchodu přibyly 9. 11. 2026 a položka se kvůli nim přejmenovala na
+   * „Právní věci a texty": věty u výrobku a v pokladně nejsou právní věc, ale
+   * patří sem ze stejného důvodu jako právní údaje — obchod je čte i bez
+   * Studia a sahá se na ně zřídka. Dvě položky v menu by to jen roztrhaly.
+   */
   pravni: {
-    title: "Právní věci",
+    title: "Právní věci a texty",
     tabs: [
       { key: "udaje", label: "Právní údaje", to: "/pravni" },
+      { key: "texty", label: "Texty obchodu", to: "/pravni/texty" },
       { key: "dokumenty", label: "Dokumenty ke stažení", to: "/pravni/dokumenty" },
     ],
   },

@@ -1,4 +1,5 @@
 import { isMadeToOrderLine } from "@lib/util/commission"
+import { TEXTY_DEFAULTS } from "@lib/constants/texty"
 
 /**
  * „Cena po domluvě" — zakázka, jejíž cenu Lucie domluví až po objednávce
@@ -50,7 +51,7 @@ export const PRICE_ON_REQUEST_LINE_LABEL = "Po domluvě"
 
 /** Věta pod cenou na stránce výrobku. */
 export const PRICE_ON_REQUEST_PRODUCT_NOTE =
-  "Objednáte teď za 0 Kč; cenu vám po domluvě pošlu e-mailem a pak zaplatíte zálohu nebo celou částku."
+  TEXTY_DEFAULTS["produkt.cena_po_domluve"]
 
 /**
  * Věta v souhrnu košíku/pokladny, když je v něm kus s cenou po domluvě.
@@ -62,11 +63,11 @@ export const PRICE_ON_REQUEST_PRODUCT_NOTE =
  * platí, říká krok Platba z částky spočítané serverem.
  */
 export const PRICE_ON_REQUEST_SUMMARY_NOTE =
-  "Výrobky s cenou po domluvě nejsou v částkách výš — cenu vám pošlu e-mailem a zaplatíte ji potom."
+  TEXTY_DEFAULTS["kosik.cena_po_domluve"]
 
 /** Věta u tlačítka, když se při objednání neplatí nic. */
 export const PRICE_ON_REQUEST_ZERO_NOTE =
-  "Teď se nic neplatí. Až spolu domluvíme cenu, pošlu vám ji e-mailem — i s poštovným, pokud si kus necháte poslat — a zaplatíte zálohu nebo celou částku."
+  TEXTY_DEFAULTS["pokladna.cena_po_domluve_nula"]
 
 /**
  * Tlačítko odeslání objednávky za 0 Kč.
@@ -106,8 +107,7 @@ export const isZeroChargeCart = (
   Number(chargeNow ?? cart?.total ?? 0) <= 0.005
 
 /** Věta u tlačítka, když celou objednávku pokryl dárkový poukaz. */
-export const VOUCHER_ZERO_NOTE =
-  "Celou objednávku hradí dárkový poukaz — nic dalšího neplatíte."
+export const VOUCHER_ZERO_NOTE = TEXTY_DEFAULTS["kosik.poukaz_vse"]
 
 /** Název platby u objednávky zaplacené celou dárkovým poukazem. */
 export const VOUCHER_PAYMENT_TITLE = "Uhrazeno dárkovým poukazem"

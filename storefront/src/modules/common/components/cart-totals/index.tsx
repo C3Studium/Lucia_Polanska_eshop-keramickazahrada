@@ -14,6 +14,7 @@ import type { ShippingFrom } from "@modules/cart/shipping-from"
 import React from "react"
 import styles from "./style.module.scss"
 import { Divider } from "@medusajs/ui"
+import { useTexty } from "@lib/context/texty"
 
 /**
  * ## Proč `item_subtotal`, a ne `item_total`
@@ -105,6 +106,8 @@ export const ShippingNotChosen = ({
   )
 
 const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const {
     currency_code,
     item_total,
@@ -283,7 +286,7 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
       </div>
       {hasPriceOnRequestLine(totals.items as any) && (
         <p className={styles.priceOnRequestNote} data-testid="cart-price-on-request-note">
-          {PRICE_ON_REQUEST_SUMMARY_NOTE}
+          {texty["kosik.cena_po_domluve"]}
         </p>
       )}
   <div className={`${styles.divider} ${styles.mt}`} />

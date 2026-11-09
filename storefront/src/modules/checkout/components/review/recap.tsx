@@ -8,6 +8,7 @@ import { isPackagingLine } from "@lib/util/packaging"
 import { discountRowLabel } from "@lib/util/gift-voucher-code"
 import { packagingFor } from "@modules/common/components/packaging-line"
 import Thumbnail from "@modules/products/components/thumbnail"
+import { useTexty } from "@lib/context/texty"
 import {
   hasPriceOnRequestLine,
   isPriceOnRequestLine,
@@ -40,6 +41,8 @@ export default function OrderRecap({
     depositNow?: number
   } | null
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const currency_code = cart?.currency_code ?? "czk"
   const money = (amount?: number | null) =>
     convertToLocale({ amount: amount ?? 0, currency_code })
@@ -211,7 +214,7 @@ export default function OrderRecap({
               přijde nad rámec čísel výš. Malým písmem hned pod rozpisem. */}
           {hasPriceOnRequestLine(cart?.items) && (
             <p className={styles.sideNote} data-testid="recap-price-on-request">
-              {PRICE_ON_REQUEST_SUMMARY_NOTE}
+              {texty["kosik.cena_po_domluve"]}
             </p>
           )}
           {/* Jen pro plátce DPH — viz `lib/util/dph.ts`. Bez daně by ta věta

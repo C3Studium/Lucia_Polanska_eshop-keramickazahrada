@@ -11,6 +11,7 @@ import {
 import { useLegalFacts } from "@lib/legal/facts-context"
 import { renderInline } from "@lib/legal/inline"
 import { backorderWaitNote } from "@lib/util/backorder"
+import { useTexty } from "@lib/context/texty"
 import {
   comgateMethodForOption,
   type ComgatePaymentMethod,
@@ -170,6 +171,7 @@ export default function PreContractInfo({
   compact = false,
 }: PreContractInfoProps) {
   const facts = useLegalFacts()
+  const texty = useTexty()
   // Jen fakta (bez odkazů) — odkazy jsou `DocLink`, aby se otevíraly vedle.
   const inline = (text: string) =>
     renderInline(text, { placeholderClassName: styles.placeholder, facts })
@@ -191,7 +193,9 @@ export default function PreContractInfo({
     deliveryLines.push(inline("Zboží skladem: {{delivery.dispatchTime}}."))
   }
   untracked.forEach((item) =>
-    deliveryLines.push(`${titleOf(item)}: ${backorderWaitNote(item.product)}`)
+    deliveryLines.push(
+      `${titleOf(item)}: ${backorderWaitNote(item.product, texty["produkt.cekani"])}`
+    )
   )
   madeToOrder.forEach((item) => {
     const lead = leadFor(item)
