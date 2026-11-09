@@ -291,7 +291,7 @@
      * 199px inside a 1319px frame-wide column, where at 1920 it was 150px inside 1160 — the same
      * column, a fatter headline. Hung off the frame it stays 12.8% of its own box at every width.
      */
-    font-size: clamp(5rem, 7.8 * var(--fvw), 9.8rem);
+    font-size: clamp(5rem, 7.8 * calc(var(--fvw) * var(--ui-scale)), 9.8rem);
     font-weight: 400;
     line-height: 0.82;
     letter-spacing: -0.058em;
@@ -341,7 +341,7 @@
     > p {
       margin: 0;
       color: rgb(var(--cream-06-rgb) / .7);
-      font-size: clamp(0.82rem, 0.88vw, 1rem);
+      font-size: clamp(0.82rem, calc(0.88vw * var(--ui-scale)), 1rem);
       font-weight: 300;
       line-height: 1.32;
     }
@@ -474,7 +474,7 @@
     }
 
     &__copy h1 {
-      font-size: clamp(4rem, 18.5vw, 7rem);
+      font-size: clamp(4rem, calc(18.5vw * var(--ui-scale)), 7rem);
     }
 
     &__line--accent {

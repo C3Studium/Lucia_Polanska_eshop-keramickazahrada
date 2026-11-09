@@ -202,7 +202,7 @@
        * do 562px sloupce a `overflow: hidden` na .atelierProcess by mu uřízl 46 px. Lead
        * i odstavec se zalomí samy, proto ty zůstávají na vw i s rampou.
        */
-      font-size: clamp(3.8rem, calc(5.5 * var(--fvw)), 7rem);
+      font-size: clamp(3.8rem, calc(5.5 * calc(var(--fvw) * var(--ui-scale))), 7rem);
       font-weight: 400;
       line-height: 0.84;
       letter-spacing: -0.055em;
@@ -241,7 +241,7 @@
     margin: clamp(1.625rem, 3.2vh, 2.75rem) 0 0;
     color: rgb(var(--cream-06-rgb) / .9);
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(1.55rem, 2vw, 2.65rem);
+    font-size: clamp(1.55rem, calc(2vw * var(--ui-scale)), 2.65rem);
     line-height: 1.02;
     letter-spacing: -0.032em;
 
@@ -256,7 +256,7 @@
     max-width: 27.5rem;
     margin: clamp(1.125rem, 2.3vh, 1.875rem) 0 0;
     color: rgb(var(--cream-06-rgb) / .56);
-    font-size: clamp(0.9rem, 0.94vw, 1.06rem);
+    font-size: clamp(0.9rem, calc(0.94vw * var(--ui-scale)), 1.06rem);
     font-weight: 300;
     line-height: 1.52;
   }
@@ -349,7 +349,7 @@
     margin: 0;
     color: var(--cream-06);
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(3.2rem, 5.4vw, 7rem);
+    font-size: clamp(3.2rem, calc(5.4vw * var(--ui-scale)), 7rem);
     font-weight: 400;
     line-height: 0.9;
     letter-spacing: -0.05em;
@@ -457,7 +457,7 @@
           margin: 16px 0 0;
           color: var(--process-cream);
           font-family: "Sentient-Regular", serif;
-          font-size: clamp(3.8rem, 17vw, 6rem);
+          font-size: clamp(3.8rem, calc(17vw * var(--ui-scale)), 6rem);
           font-weight: 400;
           line-height: 0.84;
           letter-spacing: -0.055em;
@@ -478,7 +478,7 @@
       margin: 24px 0 0;
       color: rgb(var(--cream-06-rgb) / .9);
       font-family: "Sentient-Regular", serif;
-      font-size: clamp(1.7rem, 8vw, 2.5rem);
+      font-size: clamp(1.7rem, calc(8vw * var(--ui-scale)), 2.5rem);
       line-height: 1.02;
 
       em {
@@ -663,10 +663,10 @@
   }
 
   .atelierProcess__lead {
-    font-size: clamp(1.9rem, 4.2vw, 3rem);
+    font-size: clamp(1.9rem, calc(4.2vw * var(--ui-scale)), 3rem);
   }
 
   .atelierProcess__body {
-    font-size: clamp(1rem, 1.5vw, 1.2rem);
+    font-size: clamp(1rem, calc(1.5vw * var(--ui-scale)), 1.2rem);
   }
 }

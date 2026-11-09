@@ -46,7 +46,7 @@
   h1 {
     margin: 12px 0 22px;
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(58px, 8.2vw, 132px);
+    font-size: clamp(calc(58px * var(--ui-scale)), calc(8.2vw * var(--ui-scale)), calc(132px * var(--ui-scale)));
     font-weight: 400;
     letter-spacing: -0.055em;
     line-height: 0.82;
@@ -72,7 +72,7 @@
 
 .eyebrow {
   margin: 0;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-scale));
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -80,7 +80,7 @@
 .intro {
   max-width: 500px;
   margin: 0;
-  font-size: clamp(15px, 1.3vw, 20px);
+  font-size: clamp(calc(15px * var(--ui-scale)), calc(1.3vw * var(--ui-scale)), calc(20px * var(--ui-scale)));
   font-weight: 300;
   line-height: 1.35;
 }
@@ -92,7 +92,7 @@
   z-index: 1;
   display: flex;
   gap: clamp(18px, 3vw, 48px);
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-scale));
   text-transform: uppercase;
 
   span { display: flex; gap: 8px; }
@@ -107,7 +107,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-scale));
   letter-spacing: 0.12em;
   text-transform: uppercase;
 
@@ -122,7 +122,7 @@
   /* 17vw set the longest Czech word wider than the screen and it was clipped at the right
      edge. Sized off the longest word rather than the viewport, and allowed to break. */
   .copy h1 {
-    font-size: clamp(38px, 12.5vw, 82px);
+    font-size: clamp(calc(38px * var(--ui-scale)), calc(12.5vw * var(--ui-scale)), calc(82px * var(--ui-scale)));
     overflow-wrap: break-word;
     hyphens: auto;
   }
@@ -148,7 +148,7 @@
 
   .copy h1 {
     margin: 4px 0 10px;
-    font-size: clamp(28px, 5.4vw, 42px);
+    font-size: clamp(calc(28px * var(--ui-scale)), calc(5.4vw * var(--ui-scale)), calc(42px * var(--ui-scale)));
     overflow-wrap: break-word;
   }
   .copy button { margin-top: 14px; }

@@ -100,7 +100,7 @@
      * wants, because with a hard floor a wider ratio can only be bought at the top and 14px is
      * already the largest this label can take without reading as a heading.
      */
-    font-size: clamp(0.75rem, 0.95vw, 0.875rem);
+    font-size: clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.875rem);
     letter-spacing: 0.12em;
     text-transform: uppercase;
 
@@ -129,7 +129,7 @@
       margin: 0;
       color: var(--blackText);
       font-family: "Sentient-Regular";
-      font-size: clamp(3.4rem, 15vw, 6rem);
+      font-size: clamp(3.4rem, calc(15vw * var(--ui-scale)), 6rem);
       font-weight: 400;
       line-height: 0.82;
       letter-spacing: -0.055em;
@@ -201,7 +201,7 @@
       h2 {
         color: var(--olive-15);
         font-family: "Sentient-LightItalic";
-        font-size: clamp(4.2rem, min(7.8vw, 13vh), 8.8rem);
+        font-size: clamp(4.2rem, min(calc(7.8vw * var(--ui-scale)), calc(13vh * var(--ui-scale))), 8.8rem);
         letter-spacing: -0.045em;
       }
 
@@ -271,7 +271,7 @@
       /* 1.35vw against clamp(1rem, 1.05vw, 1.15rem) in `lt-h` dropped the body 18.4 → 16px over
          the height line. 2.4vh meets 1.35vw almost exactly at 16:9 (18.43 vs 18.44px at
          1366×768), so the step is gone rather than softened. Live 1185…1837 on width. */
-      font-size: clamp(1rem, min(1.35vw, 2.4vh), 1.55rem);
+      font-size: clamp(1rem, min(calc(1.35vw * var(--ui-scale)), calc(2.4vh * var(--ui-scale))), 1.55rem);
       line-height: 1.38;
 
       span {
@@ -287,7 +287,7 @@
       padding-top: 1.2rem;
       border-top: 1px solid rgb(var(--black-03-rgb) / .24);
       font-family: "Sansation-Light";
-      font-size: clamp(0.95rem, 1vw, 1.12rem);
+      font-size: clamp(0.95rem, calc(1vw * var(--ui-scale)), 1.12rem);
       line-height: 1.45;
     }
   }

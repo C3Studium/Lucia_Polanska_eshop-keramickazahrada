@@ -989,7 +989,7 @@
 
     .navbar__center > button span,
     .navbar__center > a span {
-      font-size: 15px;
+      font-size: calc(15px * var(--ui-scale));
     }
 
     /*

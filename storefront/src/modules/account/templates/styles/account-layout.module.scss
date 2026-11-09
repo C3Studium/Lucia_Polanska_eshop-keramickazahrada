@@ -40,7 +40,7 @@
   bottom: -3vh;
   z-index: -1;
   color: transparent;
-  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(9rem, 18.4vw, 28rem))/.7 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(9rem, calc(18.4vw * var(--ui-scale)), 28rem))/.7 "Sentient-Regular", serif;
   letter-spacing: -.08em;
   -webkit-text-stroke: 1px rgb(var(--black-03-rgb) / .055);
   pointer-events: none;
@@ -214,7 +214,7 @@
   .children::before {
     top: 24px;
     right: 18px;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale));
   }
 
   .center,

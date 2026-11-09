@@ -82,7 +82,7 @@
                         z-index: 2;
                         color: rgb(var(--white-rgb) / .92);
                         font-family: "Sentient-Regular", serif;
-                        font-size: clamp(1rem, 1.2vw, 1.28rem);
+                        font-size: clamp(1rem, calc(1.2vw * var(--ui-scale)), 1.28rem);
                         line-height: 1.06;
                         letter-spacing: -.02em;
 
@@ -113,7 +113,7 @@
             .process__eyebrow{
                 margin: 0 0 18px;
                 color: rgb(var(--black-03-rgb) / .54);
-                font-size: clamp(0.75rem, 1vw, 0.875rem);
+                font-size: clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem);
                 letter-spacing: 0.12em;
                 text-transform: uppercase;
             }
@@ -134,7 +134,7 @@
                     align-items: center;
                     gap: 7px;
                     color: rgb(var(--black-03-rgb) / .4);
-                    font-size: clamp(0.8125rem, .88vw, .98rem);
+                    font-size: clamp(0.8125rem, calc(.88vw * var(--ui-scale)), .98rem);
                     font-weight: 400;
                     white-space: nowrap;
                     transition: color .45s ease, transform .45s cubic-bezier(.22, 1, .36, 1);
@@ -216,7 +216,7 @@
                         .text__chapter{
                             flex: 0 0 auto;
                             color: rgb(var(--black-03-rgb) / .58);
-                            font-size: clamp(0.75rem, 1vw, 0.875rem);
+                            font-size: clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem);
                             letter-spacing: 0.12em;
                             text-transform: uppercase;
                         }
@@ -243,7 +243,7 @@
                         max-width: 100%;
                         color: var(--process-ink);
                         font-family: "Sentient-Regular", serif;
-                        font-size: clamp(2.75rem, 4.2vw, 5.2rem);
+                        font-size: clamp(2.75rem, calc(4.2vw * var(--ui-scale)), 5.2rem);
                         font-weight: 400;
                         line-height: .96;
                         letter-spacing: -.045em;
@@ -254,7 +254,7 @@
                         width: min(72%, 620px);
                         margin-top: clamp(24px, 3vw, 44px);
                         color: rgb(var(--black-03-rgb) / .65);
-                        font-size: clamp(1rem, 1.12vw, 1.28rem);
+                        font-size: clamp(1rem, calc(1.12vw * var(--ui-scale)), 1.28rem);
                         font-weight: 300;
                         line-height: 1.35;
                         text-align: right;
@@ -325,7 +325,7 @@
 
                 .text__lead{
                     max-width: 96%;
-                    font-size: clamp(2.15rem, 9vw, 3.8rem);
+                    font-size: clamp(2.15rem, calc(9vw * var(--ui-scale)), 3.8rem);
                     text-align: left;
                 }
 

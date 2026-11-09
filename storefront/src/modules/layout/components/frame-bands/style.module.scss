@@ -1,0 +1,34 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+/* Pruhy vedle rámu (viz index.tsx). Pod 1921px / 2:1 je --page-inset 0, takže nejsou vidět. */
+.band {
+  display: none;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: var(--page-inset, 0px);
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+@media (min-width: 1921px) and (min-aspect-ratio: 2 / 1) {
+  .band {
+    display: block;
+  }
+}
+
+.left {
+  left: 0;
+}
+
+.right {
+  right: 0;
+}
+
+.segment {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  background-repeat: no-repeat;
+}

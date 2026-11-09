@@ -14,7 +14,7 @@
   // Živé pásmo: 12 / .009 = 1333px … 13 / .009 = 1444px, tedy uprostřed 1200–1500.
   // Oba krajní členy jsou v rem, takže je ramp nad 1921 zvedne sám
   // (na 2552 je root 21.27px → strop 17.28px). Do xxl/qhd se proto nic nepíše.
-  font: 400 clamp(.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif !important;
+  font: 400 clamp(.75rem, calc(1vw * var(--ui-scale)), 0.875rem)/1.2 "Sansation-Regular", sans-serif !important;
   letter-spacing: .02em;
 
   .labelStrong {

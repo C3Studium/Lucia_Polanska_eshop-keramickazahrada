@@ -309,7 +309,7 @@
 
   span {
     /* Same story as the mark: 22px flat became 19.2 -> 24px, live 1324-1655. */
-    font: 400 clamp(1.2rem, max(1.45vw, 1.6vh), 1.5rem)/1 "Times New Roman", serif;
+    font: 400 clamp(1.2rem, max(calc(1.45vw * var(--ui-scale)), calc(1.6vh * var(--ui-scale))), 1.5rem)/1 "Times New Roman", serif;
     letter-spacing: -.035em;
   }
 

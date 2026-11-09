@@ -156,7 +156,7 @@
     h2 {
       margin: 0.625rem 0 0;
       font-family: "Sentient-Regular", serif;
-      font-size: clamp(1.7rem, 2.6vw, 2.5rem);
+      font-size: clamp(1.7rem, calc(2.6vw * var(--ui-scale)), 2.5rem);
       font-weight: 400;
       line-height: 0.95;
       letter-spacing: -0.04em;
@@ -498,7 +498,7 @@
 
     strong {
       font-family: "Sentient-Regular", serif;
-      font-size: clamp(1.2rem, 1.5vw, 1.55rem);
+      font-size: clamp(1.2rem, calc(1.5vw * var(--ui-scale)), 1.55rem);
       font-weight: 400;
       line-height: 1.05;
       letter-spacing: -0.03em;
@@ -736,7 +736,7 @@
 
     strong {
       font-family: "Sentient-Regular", serif;
-      font-size: clamp(1.5rem, 1.9vw, 2rem);
+      font-size: clamp(1.5rem, calc(1.9vw * var(--ui-scale)), 2rem);
       font-weight: 400;
       color: var(--kurzy-charcoal);
     }
@@ -961,7 +961,7 @@
     strong {
       overflow: hidden;
       font-family: "Sentient-Regular", serif;
-      font-size: clamp(1rem, 1.15vw, 1.2rem);
+      font-size: clamp(1rem, calc(1.15vw * var(--ui-scale)), 1.2rem);
       font-weight: 400;
       line-height: 1.15;
       letter-spacing: -0.02em;
@@ -1100,7 +1100,7 @@
     strong {
       display: block;
       font-family: "Sentient-Regular", serif;
-      font-size: clamp(1.3rem, 1.6vw, 1.7rem);
+      font-size: clamp(1.3rem, calc(1.6vw * var(--ui-scale)), 1.7rem);
       font-weight: 400;
       line-height: 1.1;
       letter-spacing: -0.03em;
@@ -1128,7 +1128,7 @@
     h3 {
       margin: 0;
       font-family: "Sentient-Regular", serif;
-      font-size: clamp(1.6rem, 2.2vw, 2.3rem);
+      font-size: clamp(1.6rem, calc(2.2vw * var(--ui-scale)), 2.3rem);
       font-weight: 400;
       line-height: 1.05;
       letter-spacing: -0.035em;
@@ -1221,7 +1221,7 @@
 
     strong {
       font-family: "Sentient-Regular", serif;
-      font-size: clamp(1.15rem, 1.4vw, 1.4rem);
+      font-size: clamp(1.15rem, calc(1.4vw * var(--ui-scale)), 1.4rem);
       font-weight: 400;
       letter-spacing: -0.02em;
       text-transform: capitalize;

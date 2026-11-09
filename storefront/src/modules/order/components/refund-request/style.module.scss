@@ -23,7 +23,7 @@
 .legend {
   padding: 0 0 0.4rem;
   color: rgb(var(--ink-05-rgb) / 0.62);
-  font: 400 clamp(0.72rem, 0.9vw, 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.72rem, calc(0.9vw * var(--ui-scale)), 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -105,11 +105,11 @@
   }
 
   .kindLabel {
-    font-size: clamp(0.9rem, 1.05vw, 1rem);
+    font-size: clamp(0.9rem, calc(1.05vw * var(--ui-scale)), 1rem);
   }
 
   .kindHelp {
-    font-size: clamp(0.76rem, 0.9vw, 0.84rem);
+    font-size: clamp(0.76rem, calc(0.9vw * var(--ui-scale)), 0.84rem);
   }
 }
 
@@ -214,7 +214,7 @@
 }
 
 .itemTitle {
-  font: 400 clamp(0.92rem, 1.1vw, 1rem) / 1.3 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.92rem, calc(1.1vw * var(--ui-scale)), 1rem) / 1.3 "Sansation-Regular", sans-serif;
   overflow-wrap: anywhere;
 }
 
@@ -383,7 +383,7 @@
 }
 
 .componentTitle {
-  font: 400 clamp(0.86rem, 1vw, 0.94rem) / 1.3 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.86rem, calc(1vw * var(--ui-scale)), 0.94rem) / 1.3 "Sansation-Regular", sans-serif;
   overflow-wrap: anywhere;
 }
 
@@ -492,7 +492,7 @@
 }
 
 .carrierNoticeTitle {
-  font: 400 clamp(0.95rem, 1.2vw, 1.05rem) / 1.3 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.95rem, calc(1.2vw * var(--ui-scale)), 1.05rem) / 1.3 "Sansation-Regular", sans-serif;
   color: var(--clay-06);
 }
 
@@ -518,17 +518,17 @@
 }
 
 .kindLabel {
-  font: 400 clamp(0.95rem, 1.2vw, 1.1rem) / 1.3 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.95rem, calc(1.2vw * var(--ui-scale)), 1.1rem) / 1.3 "Sansation-Regular", sans-serif;
 }
 
 .kindHelp {
   color: rgb(var(--ink-05-rgb) / 0.6);
-  font: 300 clamp(0.8rem, 1vw, 0.9rem) / 1.4 "Sansation-Light", sans-serif;
+  font: 300 clamp(0.8rem, calc(1vw * var(--ui-scale)), 0.9rem) / 1.4 "Sansation-Light", sans-serif;
 }
 
 .label {
   color: rgb(var(--ink-05-rgb) / 0.62);
-  font: 400 clamp(0.72rem, 0.9vw, 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.72rem, calc(0.9vw * var(--ui-scale)), 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -570,7 +570,7 @@
 
 .photosLabel {
   color: rgb(var(--ink-05-rgb) / 0.62);
-  font: 400 clamp(0.72rem, 0.9vw, 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.72rem, calc(0.9vw * var(--ui-scale)), 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -703,7 +703,7 @@
   max-width: 34rem;
   margin: 0 auto;
   color: var(--ink-05);
-  font: 400 clamp(1rem, 1.3vw, 1.2rem) / 1.5 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1rem, calc(1.3vw * var(--ui-scale)), 1.2rem) / 1.5 "Sansation-Regular", sans-serif;
 }
 
 .sent a {

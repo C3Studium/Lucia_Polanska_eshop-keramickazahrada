@@ -39,7 +39,7 @@
      tenhle na plochých 13px, takže v jednom sloupci byly dvě velikosti a jedna z nich
      nad 1921 nerostla vůbec. Podlaha .75rem je čitelnostní dno projektu, strop nese
      ramp. Živé pásmo 1176…1373. */
-  font: 600 clamp(.75rem, 1.02vw, .875rem)/1 "Sansation-Regular", sans-serif;
+  font: 600 clamp(.75rem, calc(1.02vw * var(--ui-scale)), .875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.18em;
 }
 
@@ -58,7 +58,7 @@
   /* Jedna příčka pro všechny čtyři kroky — addresses, shipping i payment stojí na
      témž clampu. Živé pásmo 1143…1800 px šířky. Předchozí clamp(2rem, 3.3vw, 3.6rem)
      dělal z neaktivního „Přehled" největší text na stránce. */
-  font: 400 clamp(2rem, 2.8vw, 3.15rem) / 0.98 "Sentient-Regular", serif;
+  font: 400 clamp(2rem, calc(2.8vw * var(--ui-scale)), 3.15rem) / 0.98 "Sentient-Regular", serif;
 }
 
 .content {
@@ -79,7 +79,7 @@
 .recapBlock h3 {
   margin: 0 0 clamp(.65rem, 1.11vh, .95rem);
   color: var(--review-label);
-  font: 500 clamp(.8125rem, 1.08vw, 1.05rem)/1.3 "Sansation-Regular", sans-serif;
+  font: 500 clamp(.8125rem, calc(1.08vw * var(--ui-scale)), 1.05rem)/1.3 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -126,7 +126,7 @@
 
 .itemLine {
   color: var(--review-ink);
-  font: 400 clamp(.8125rem, 1.05vw, 1rem)/1.35 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.8125rem, calc(1.05vw * var(--ui-scale)), 1rem)/1.35 "Sansation-Regular", sans-serif;
   white-space: nowrap;
 }
 
@@ -170,30 +170,30 @@
 
 .itemTitle {
   color: var(--review-ink);
-  font: 400 clamp(1rem, 1.33vw, 1.3rem)/1.45 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1rem, calc(1.33vw * var(--ui-scale)), 1.3rem)/1.45 "Sansation-Regular", sans-serif;
 }
 
 .itemQuantity {
   color: var(--review-label);
-  font: 400 clamp(.9375rem, 1.25vw, 1.22rem)/1.4 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9375rem, calc(1.25vw * var(--ui-scale)), 1.22rem)/1.4 "Sansation-Regular", sans-serif;
 }
 
 .itemTotal {
   color: var(--review-ink);
-  font: 400 clamp(1rem, 1.33vw, 1.3rem)/1.4 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1rem, calc(1.33vw * var(--ui-scale)), 1.3rem)/1.4 "Sansation-Regular", sans-serif;
   white-space: nowrap;
 }
 
 .recapText {
   margin: 0;
   color: var(--review-ink);
-  font: 400 clamp(1rem, 1.33vw, 1.3rem)/1.55 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1rem, calc(1.33vw * var(--ui-scale)), 1.3rem)/1.55 "Sansation-Regular", sans-serif;
 }
 
 .recapNote {
   margin: clamp(.5rem, .93vh, .8rem) 0 0;
   color: var(--review-label);
-  font: 400 clamp(.9375rem, 1.25vw, 1.22rem)/1.45 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9375rem, calc(1.25vw * var(--ui-scale)), 1.22rem)/1.45 "Sansation-Regular", sans-serif;
 }
 
 /* Výdejní místo stávalo stěsnané v úzkém levém sloupci Doručení. Teď je to
@@ -206,13 +206,13 @@
   padding-top: clamp(.9rem, 1.8vh, 1.5rem);
   border-top: 1px solid var(--review-rule);
   color: var(--review-ink);
-  font: 400 clamp(.9375rem, 1.25vw, 1.22rem)/1.45 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9375rem, calc(1.25vw * var(--ui-scale)), 1.22rem)/1.45 "Sansation-Regular", sans-serif;
   gap: .25rem;
 }
 
 .pickupPoint span {
   color: var(--review-label);
-  font-size: clamp(.8125rem, 1.08vw, 1.05rem);
+  font-size: clamp(.8125rem, calc(1.08vw * var(--ui-scale)), 1.05rem);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -232,13 +232,13 @@
 
 .totals dt {
   color: var(--review-label);
-  font: 400 clamp(.9375rem, 1.25vw, 1.22rem)/1.4 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9375rem, calc(1.25vw * var(--ui-scale)), 1.22rem)/1.4 "Sansation-Regular", sans-serif;
 }
 
 .totals dd {
   margin: 0;
   color: var(--review-ink);
-  font: 400 clamp(1rem, 1.33vw, 1.3rem)/1.4 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1rem, calc(1.33vw * var(--ui-scale)), 1.3rem)/1.4 "Sansation-Regular", sans-serif;
 }
 
 .totalRow {
@@ -250,7 +250,7 @@
 .totalRow dt,
 .totalRow dd {
   color: var(--review-ink);
-  font: 400 clamp(1.25rem, 1.67vw, 1.62rem)/1.3 "Sentient-Regular", serif;
+  font: 400 clamp(1.25rem, calc(1.67vw * var(--ui-scale)), 1.62rem)/1.3 "Sentient-Regular", serif;
 }
 
 /* Brief (poznámka + fotky) bydlí na širokém v pravém sloupci (souhrn, pod
@@ -287,7 +287,7 @@
 .paySub dt,
 .paySub dd {
   color: var(--review-label);
-  font-size: clamp(.8125rem, 1.08vw, 1.05rem);
+  font-size: clamp(.8125rem, calc(1.08vw * var(--ui-scale)), 1.05rem);
 }
 
 /* „celou cenu" / „jen záloha" — to podstatné rozlišení, ale potichu. */
@@ -310,7 +310,7 @@
 .depositNote {
   margin: clamp(.5rem, .93vh, .8rem) 0 0;
   color: var(--review-ink);
-  font: 400 clamp(.9375rem, 1.25vw, 1.22rem)/1.45 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9375rem, calc(1.25vw * var(--ui-scale)), 1.22rem)/1.45 "Sansation-Regular", sans-serif;
 }
 
 .depositNote strong {
@@ -323,7 +323,7 @@
 .sideNote {
   margin: clamp(.5rem, .93vh, .8rem) 0 0;
   color: var(--review-label);
-  font: 400 clamp(.8125rem, 1.08vw, 1.05rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.8125rem, calc(1.08vw * var(--ui-scale)), 1.05rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 /* ---------- consent ---------- */
@@ -346,7 +346,7 @@
   background: var(--review-ink);
   color: var(--cream-06);
   cursor: pointer;
-  font: 400 clamp(1rem, 1.33vw, 1.3rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1rem, calc(1.33vw * var(--ui-scale)), 1.3rem)/1 "Sansation-Regular", sans-serif;
   transition:
     background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
     color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
@@ -371,7 +371,7 @@
 .gateHint {
   margin: clamp(.5rem, .93vh, .8rem) 0 0;
   color: var(--review-label);
-  font: 400 clamp(.875rem, 1.17vw, 1.15rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.875rem, calc(1.17vw * var(--ui-scale)), 1.15rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 /* Jak a kolik se platí — věta pod „Objednávka zavazující k platbě“. Způsob
@@ -380,7 +380,7 @@
   max-width: 62ch;
   margin: clamp(.5rem, .93vh, .8rem) 0 0;
   color: var(--review-ink);
-  font: 400 clamp(.9375rem, 1.25vw, 1.22rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9375rem, calc(1.25vw * var(--ui-scale)), 1.22rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 /* Výzva u zakázky NAD zamčeným tlačítkem — výraznější než drobný gateHint, ať
@@ -393,7 +393,7 @@
   border-radius: .625rem;
   background: rgb(var(--clay-17-rgb) / .08);
   color: var(--review-ink);
-  font: 400 clamp(.9rem, 1.2vw, 1.14rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, calc(1.2vw * var(--ui-scale)), 1.14rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 /* Dovolená — jen informace, nic neblokuje (14. 10. 2026). Tišší než
@@ -405,7 +405,7 @@
   border-radius: .625rem;
   background: rgb(var(--clay-24-rgb, var(--ink-05-rgb)) / .1);
   color: var(--review-ink);
-  font: 400 clamp(.9rem, 1.2vw, 1.14rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, calc(1.2vw * var(--ui-scale)), 1.14rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 .error {
@@ -415,7 +415,7 @@
   border-radius: .625rem;
   background: rgb(var(--blush-02-rgb) / .66);
   color: var(--clay-06);
-  font: 400 clamp(.9375rem, 1.25vw, 1.22rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9375rem, calc(1.25vw * var(--ui-scale)), 1.22rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 /* Telefon: jiný DRUH — recap se skládá na jeden sloupec a levá lišta se zužuje.

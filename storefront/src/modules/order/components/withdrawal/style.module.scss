@@ -43,7 +43,7 @@
   margin: 0;
   padding: 0 0 0.3rem;
   color: rgb(var(--ink-05-rgb) / 0.62);
-  font: 400 clamp(0.72rem, 0.9vw, 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.72rem, calc(0.9vw * var(--ui-scale)), 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 
@@ -183,7 +183,7 @@
 }
 
 .itemTitle {
-  font: 400 clamp(0.92rem, 1.1vw, 1rem) / 1.3 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.92rem, calc(1.1vw * var(--ui-scale)), 1rem) / 1.3 "Sansation-Regular", sans-serif;
   overflow-wrap: anywhere;
 }
 
@@ -281,7 +281,7 @@
 
 .statementTitle {
   margin: 0;
-  font: 400 clamp(1.05rem, 1.4vw, 1.25rem) / 1.3 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1.05rem, calc(1.4vw * var(--ui-scale)), 1.25rem) / 1.3 "Sansation-Regular", sans-serif;
 }
 
 .statementItems {
@@ -316,7 +316,7 @@
 }
 
 .doneTitle {
-  font: 400 clamp(1.05rem, 1.4vw, 1.25rem) / 1.3 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1.05rem, calc(1.4vw * var(--ui-scale)), 1.25rem) / 1.3 "Sansation-Regular", sans-serif;
 }
 
 .nextSteps {

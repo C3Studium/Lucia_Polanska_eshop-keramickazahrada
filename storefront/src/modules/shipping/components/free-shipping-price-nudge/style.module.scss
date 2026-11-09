@@ -131,7 +131,7 @@
   h2 {
     margin: 0;
     /* Živé pásmo 1067–1600px šířky (32/0.03 … 48/0.03). */
-    font: 400 clamp(2rem, 3vw, 3rem) / 0.95 "Sentient-Regular", serif;
+    font: 400 clamp(2rem, calc(3vw * var(--ui-scale)), 3rem) / 0.95 "Sentient-Regular", serif;
     color: var(--cream-06);
     letter-spacing: -0.04em;
   }

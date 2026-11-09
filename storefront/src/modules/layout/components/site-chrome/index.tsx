@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation"
 import { useEffect } from "react"
 import LenisProvider from "@lib/context/LenisContext"
+import FrameBands from "@modules/layout/components/frame-bands"
 
 /**
  * Chrome webu — a jeho vypnutí nad Studiem.
@@ -55,6 +56,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
 
   return (
     <LenisProvider>
+      <FrameBands />
       <main className="pageFrame relative">{children}</main>
     </LenisProvider>
   )

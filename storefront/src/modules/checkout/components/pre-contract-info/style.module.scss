@@ -24,7 +24,7 @@
 .title {
   margin: 0 0 clamp(.65rem, 1.11vh, .95rem);
   color: var(--pci-label);
-  font: 400 clamp(.8125rem, 1.08vw, 1.05rem)/1.3 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.8125rem, calc(1.08vw * var(--ui-scale)), 1.05rem)/1.3 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -61,20 +61,20 @@
 
 .rows dt {
   color: var(--pci-label);
-  font: 400 clamp(.875rem, 1.08vw, 1.05rem)/1.4 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.875rem, calc(1.08vw * var(--ui-scale)), 1.05rem)/1.4 "Sansation-Regular", sans-serif;
 }
 
 .rows dd {
   display: grid;
   margin: 0;
   color: var(--pci-ink);
-  font: 400 clamp(.875rem, 1.08vw, 1.05rem)/1.4 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.875rem, calc(1.08vw * var(--ui-scale)), 1.05rem)/1.4 "Sansation-Regular", sans-serif;
   gap: .15rem;
 }
 
 .rows dd small {
   color: var(--pci-label);
-  font-size: clamp(.8125rem, 1.08vw, 1.05rem);
+  font-size: clamp(.8125rem, calc(1.08vw * var(--ui-scale)), 1.05rem);
 }
 
 .line {
@@ -104,7 +104,7 @@
 .docs {
   margin: clamp(.75rem, 1.39vh, 1.15rem) 0 0;
   color: var(--pci-label);
-  font: 400 clamp(.875rem, 1.17vw, 1.15rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.875rem, calc(1.17vw * var(--ui-scale)), 1.15rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 /* Zástupný text `[[DOPLNIT: …]]` — vidět, ale ne křiklavě. */
@@ -127,14 +127,14 @@
 }
 
 .compact .rows dt {
-  font-size: clamp(.75rem, 3.75vw, .825rem);
+  font-size: clamp(.75rem, calc(3.75vw * var(--ui-scale)), .825rem);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .compact .rows dd,
 .compact .docs {
-  font-size: clamp(.875rem, 1.1vw, .975rem);
+  font-size: clamp(.875rem, calc(1.1vw * var(--ui-scale)), .975rem);
 }
 
 @media (max-width: 640px) {

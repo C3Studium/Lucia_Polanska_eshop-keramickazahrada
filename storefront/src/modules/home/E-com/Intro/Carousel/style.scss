@@ -77,7 +77,7 @@
      * the page — so it carries the page's one rail step. Live 1263…1474px, floor on the 12px
      * readability line for 0.12em uppercase, ceiling lifted by the root ramp above 1921.
      */
-    font-size: clamp(0.75rem, 0.95vw, 0.875rem);
+    font-size: clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.875rem);
     letter-spacing: 0.12em;
     text-transform: uppercase;
 
@@ -145,7 +145,7 @@
           margin: 0;
           color: var(--blackText);
           font-family: "Sentient-Regular";
-          font-size: clamp(1.65rem, 2.2vw, 2.8rem);
+          font-size: clamp(1.65rem, calc(2.2vw * var(--ui-scale)), 2.8rem);
           line-height: 1;
           letter-spacing: -0.03em;
         }

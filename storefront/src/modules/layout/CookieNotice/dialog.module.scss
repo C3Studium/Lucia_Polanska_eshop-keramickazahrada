@@ -62,7 +62,7 @@
 /* 12px is the smallest type on the page and stays the floor. */
 .eyebrow {
   margin: 0 0 .25rem;
-  font: 400 clamp(.75rem, .95vw, .9375rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.75rem, calc(.95vw * var(--ui-scale)), .9375rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.18em;
   opacity: 0.6;
   text-transform: uppercase;
@@ -71,7 +71,7 @@
 /* 3vw put the ceiling at 933px, i.e. every desktop sat on it. 2vw is live from 1100 to 1400. */
 .title {
   margin: 0;
-  font: 400 clamp(1.375rem, 2vw, 1.75rem) / 1.1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1.375rem, calc(2vw * var(--ui-scale)), 1.75rem) / 1.1 "Sansation-Regular", sans-serif;
 }
 
 /*
@@ -90,7 +90,7 @@
   background: transparent;
   color: var(--ink-05);
   cursor: pointer;
-  font-size: clamp(1.5rem, 2.5vh, 1.75rem);
+  font-size: clamp(1.5rem, calc(2.5vh * var(--ui-scale)), 1.75rem);
   line-height: 1;
   place-items: center;
   transition:
@@ -111,7 +111,7 @@
 
 .lede {
   margin: 0;
-  font: 400 clamp(.875rem, 1.1vw, 1.0625rem)/1.6 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.875rem, calc(1.1vw * var(--ui-scale)), 1.0625rem)/1.6 "Sansation-Regular", sans-serif;
 }
 
 .link {
@@ -257,7 +257,7 @@
 .categoryTitle {
   display: flex;
   align-items: center;
-  font: 400 clamp(1rem, 1.2vw, 1.1875rem)/1.3 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1rem, calc(1.2vw * var(--ui-scale)), 1.1875rem)/1.3 "Sansation-Regular", sans-serif;
   gap: clamp(.5rem, .6vw, .625rem);
 }
 
@@ -267,7 +267,7 @@
   padding: .1875rem clamp(.5rem, .55vw, .625rem);
   border: 1px solid rgb(var(--ink-05-rgb) / .28);
   border-radius: 999px;
-  font: 400 clamp(.6875rem, .85vw, .875rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.6875rem, calc(.85vw * var(--ui-scale)), .875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.06em;
   opacity: 0.75;
   text-transform: uppercase;
@@ -275,7 +275,7 @@
 
 .categoryDescription {
   color: var(--olive-04);
-  font: 400 clamp(.875rem, 1.1vw, 1.0625rem)/1.55 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.875rem, calc(1.1vw * var(--ui-scale)), 1.0625rem)/1.55 "Sansation-Regular", sans-serif;
 }
 
 /*
@@ -298,7 +298,7 @@
   padding: 0 clamp(1.25rem, 1.5vw, 1.75rem);
   border-radius: 999px;
   cursor: pointer;
-  font: 400 clamp(.9375rem, 1.15vw, 1.125rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9375rem, calc(1.15vw * var(--ui-scale)), 1.125rem)/1 "Sansation-Regular", sans-serif;
   transition:
     background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
     color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
@@ -388,7 +388,7 @@
   }
 
   .title {
-    font-size: 20px;
+    font-size: calc(20px * var(--ui-scale));
   }
 
   .categoryLabel {

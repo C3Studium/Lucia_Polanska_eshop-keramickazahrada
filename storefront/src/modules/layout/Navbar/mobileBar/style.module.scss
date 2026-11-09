@@ -27,7 +27,7 @@
   --bar-slot: calc(44px * var(--bar-scale));
   --bar-mark: calc(27px * var(--bar-scale));
   --bar-badge: calc(14px * var(--bar-scale));
-  --bar-badge-text: calc(10px * var(--bar-scale));
+  --bar-badge-text: calc(calc(10px * var(--ui-scale)) * var(--bar-scale));
 
   display: grid;
   position: fixed;

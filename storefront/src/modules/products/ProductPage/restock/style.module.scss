@@ -33,7 +33,7 @@
     color: var(--sage-01);
     // Týž clamp jako dřív, jen krajní členy v rem — v px se nad 1921 zastavil.
     // 25→34px, živé 1250–1700; na 2552 je strop 45.2px místo 34px.
-    font: 400 clamp(1.5625rem, 2vw, 2.125rem) / 1 "Sentient-LightItalic",
+    font: 400 clamp(1.5625rem, calc(2vw * var(--ui-scale)), 2.125rem) / 1 "Sentient-LightItalic",
       "Sentient-Regular", serif;
   }
 

@@ -150,7 +150,7 @@
      `font-size: 30vw`, což je na 320px přesně 96px = 6rem, tedy jeho podlaha.
      Sloučeno do jednoho clampu. Podlaha je živá jen pod 480px (tam je 20vw
      menší než 96px), takže landscape nad 1200 se nemění. */
-  font: 400 calc(var(--auth-zoom) * calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(6rem, 16vw, 22rem))) / 0.72 "Sentient-Regular", serif;
+  font: 400 calc(var(--auth-zoom) * calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(6rem, calc(16vw * var(--ui-scale)), 22rem))) / 0.72 "Sentient-Regular", serif;
   letter-spacing: -0.075em;
   -webkit-text-stroke: 1px rgb(var(--black-03-rgb) / .075);
   pointer-events: none;
@@ -300,7 +300,7 @@
      a tam nadpis konečně sleduje osu, o kterou soupeří — výšku. Naměřeno
      57.6px na 568×320, 64.8 na 800×360, 70.7 na 851×393, 73.6 (beze změny)
      na 932×430. Přes 1200 na šířku je hodnota bit po bitu stejná jako dřív. */
-  font-size: calc(var(--auth-zoom) * calc(var(--account-zoom, 1) * clamp(min(4.6rem, 18vh), 7.4vw, 9rem)));
+  font-size: calc(var(--auth-zoom) * calc(var(--account-zoom, 1) * clamp(min(4.6rem, calc(18vh * var(--ui-scale))), calc(7.4vw * var(--ui-scale)), 9rem)));
   font-weight: 400;
   line-height: 0.72;
   letter-spacing: -0.07em;
@@ -769,7 +769,7 @@
        stropu by 18.5vw na 559 dalo 103px a na hraně by nadpis skočil o 29 %.
        S ním je skok 3 %. Podlaha 3.7rem ožívá až pod 320px, tedy nikde —
        je tam jen proto, aby clamp držel tvar. */
-    font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.7rem, 14.8vw, 4.75rem));
+    font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.7rem, calc(14.8vw * var(--ui-scale)), 4.75rem));
 
     /* Řádek místo sloupce, ale se ZALOMENÍM. Nadpisy chodí z CMS a čtyři
        režimy portálu mají různě dlouhé: při téže velikosti je „Vítejte zpět."

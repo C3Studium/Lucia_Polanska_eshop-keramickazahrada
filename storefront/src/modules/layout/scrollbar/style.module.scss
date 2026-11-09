@@ -100,7 +100,7 @@
   /* Podlaha přesně 12 px — pod ni text nesmí. Živé pásmo 12/0.0095 = 1263 px … 14/0.0095
      = 1474 px, tedy uvnitř 1200–1500. Znaky se v index.tsx posouvají o 0.85em, takže
      dráha té animace se přeškáluje s tímhle clampem sama. */
-  font: 400 clamp(0.75rem, 0.95vw, 0.875rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   transform: translateX(0.75rem);

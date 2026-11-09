@@ -27,7 +27,7 @@
      measured against, and it is also the rig's legibility floor. 0.9vw releases
      it at 1333px, so the live band is 1333–1511 — inside the target 1200–1500. */
   color: rgb(var(--ink-05-rgb) / .66);
-  font: calc(var(--account-zoom, 1) * clamp(0.75rem, 0.72vw, 0.85rem)) / 1.2 "Sansation-Regular", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(0.75rem, calc(0.72vw * var(--ui-scale)), 0.85rem)) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -53,7 +53,7 @@
   /* Týž násobitel jako zbytek účtu — stránka kurzů v něm sedí a nemá
      důvod mít vlastní velikost. `--account-zoom` nastavuje account-layout
      (0.75 svislý tablet, 0.9 svislý telefon); bez ní je fallback 1. */
-  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.2rem, 4.12vw, 5.9rem)) / 0.84 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.2rem, calc(4.12vw * var(--ui-scale)), 5.9rem)) / 0.84 "Sentient-Regular", serif;
   letter-spacing: -0.06em;
 }
 
@@ -69,7 +69,7 @@
   max-width: 38rem;
   margin: 0 0 0 auto;
   color: rgb(var(--ink-05-rgb) / .68);
-  font: calc(var(--account-zoom, 1) * clamp(0.94rem, 0.92vw, 1.14rem)) / 1.55 "Sansation-Light", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(0.94rem, calc(0.92vw * var(--ui-scale)), 1.14rem)) / 1.55 "Sansation-Light", sans-serif;
 }
 
 .body {
@@ -87,7 +87,7 @@
 
   > div span {
     color: rgb(var(--ink-05-rgb) / .5);
-    font: calc(var(--account-zoom, 1) * clamp(0.75rem, 0.72vw, 0.85rem)) / 1.2 "Sansation-Regular", sans-serif;
+    font: calc(var(--account-zoom, 1) * clamp(0.75rem, calc(0.72vw * var(--ui-scale)), 0.85rem)) / 1.2 "Sansation-Regular", sans-serif;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
@@ -96,7 +96,7 @@
     max-width: 30rem;
     margin: 0.75rem 0 0;
     color: rgb(var(--ink-05-rgb) / .65);
-    font: calc(var(--account-zoom, 1) * clamp(0.94rem, 0.92vw, 1.1rem)) / 1.55 "Sansation-Light", sans-serif;
+    font: calc(var(--account-zoom, 1) * clamp(0.94rem, calc(0.92vw * var(--ui-scale)), 1.1rem)) / 1.55 "Sansation-Light", sans-serif;
   }
 }
 
@@ -156,14 +156,14 @@
 
   h2 {
     margin: 0.375rem 0 0;
-    font: 400 calc(var(--account-zoom, 1) * clamp(1.35rem, 1.52vw, 1.9rem)) / 1.02 "Sentient-Regular", serif;
+    font: 400 calc(var(--account-zoom, 1) * clamp(1.35rem, calc(1.52vw * var(--ui-scale)), 1.9rem)) / 1.02 "Sentient-Regular", serif;
     letter-spacing: -0.03em;
   }
 
   p {
     margin: 0.375rem 0 0;
     color: rgb(var(--ink-05-rgb) / .62);
-    font: calc(var(--account-zoom, 1) * clamp(0.85rem, 0.88vw, 1.05rem)) / 1.45 "Sansation-Light", sans-serif;
+    font: calc(var(--account-zoom, 1) * clamp(0.85rem, calc(0.88vw * var(--ui-scale)), 1.05rem)) / 1.45 "Sansation-Light", sans-serif;
   }
 }
 
@@ -178,7 +178,7 @@
   grid-column: 1 / -1;
 
   strong {
-    font: 400 calc(var(--account-zoom, 1) * clamp(1rem, 1vw, 1.35rem)) / 1 "Sentient-Regular", serif;
+    font: 400 calc(var(--account-zoom, 1) * clamp(1rem, calc(1vw * var(--ui-scale)), 1.35rem)) / 1 "Sentient-Regular", serif;
   }
 
   i {

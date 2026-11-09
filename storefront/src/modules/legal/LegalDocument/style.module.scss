@@ -70,7 +70,7 @@
  * these pages are set in Sansation. See the note at the foot of this file.
  */
 @mixin micro-label {
-  font-size: clamp(0.75rem, 1vw, 0.875rem);
+  font-size: clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -460,28 +460,28 @@
     font-family: "Sentient-Regular", serif;
     /* 44px keeps "Odstoupení" — the longest unbreakable word in any of the six titles — inside
        the 284px measure a 320px viewport leaves. */
-    font-size: clamp(2.75rem, 13.5vw, 4.625rem);
+    font-size: clamp(2.75rem, calc(13.5vw * var(--ui-scale)), 4.625rem);
     font-weight: 400;
     line-height: 0.86;
     letter-spacing: -0.055em;
     text-wrap: balance;
 
     @include h(xs) {
-      font-size: clamp(3.5rem, 7.6vw, 6.5rem);
+      font-size: clamp(3.5rem, calc(7.6vw * var(--ui-scale)), 6.5rem);
     }
 
     /* 9.84rem is 1.2 x 8.2, so the ceiling arrives at 1920 rather than at 1829 — that 92px of
        standstill, and the 40px jump at 2200 that followed it, were the most visible half of the
        dead band. 177px at 2552 against the 190px the qhd rung used to write by hand. */
     @include h(md) {
-      font-size: clamp(4.75rem, calc(8.2 * var(--fvw)), 9.84rem);
+      font-size: clamp(4.75rem, calc(8.2 * calc(var(--fvw) * var(--ui-scale))), 9.84rem);
     }
 
     /* 40px at 568 and 56px at 932 was the same title read at two sizes, so it is one clamp: the
        floor engages below 615px and the ceiling from 861px, which puts the live band across the
        middle of the stop where the real devices are. */
     @include h(phs) {
-      font-size: clamp(2.5rem, 6.5vw, 3.5rem);
+      font-size: clamp(2.5rem, calc(6.5vw * var(--ui-scale)), 3.5rem);
     }
 
     /* One portrait ladder in place of the base's 13.5vw and v(md)'s 9.5vw, which met at 600px
@@ -490,7 +490,7 @@
        11vw holds the 44px floor to 400px, reaches 66px at 600 where v(md) wrote 64, and hits the
        6rem ceiling at 872, so 1000px portrait still lands on the 96px v(md) used to give it. */
     @include v(xs) {
-      font-size: clamp(2.75rem, 11vw, 6rem);
+      font-size: clamp(2.75rem, calc(11vw * var(--ui-scale)), 6rem);
     }
   }
 
@@ -500,23 +500,23 @@
     margin: 0.08em 0 0 clamp(1rem, 5vw, 2.5rem);
     color: var(--legal-accent);
     font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
-    font-size: clamp(1.875rem, 9vw, 3rem);
+    font-size: clamp(1.875rem, calc(9vw * var(--ui-scale)), 3rem);
     font-weight: 400;
     line-height: 0.92;
 
     @include h(xs) {
       margin-left: clamp(1.75rem, 5vw, 5rem);
-      font-size: clamp(2.25rem, 4.6vw, 4rem);
+      font-size: clamp(2.25rem, calc(4.6vw * var(--ui-scale)), 4rem);
     }
 
     @include h(md) {
       margin-left: clamp(2.5rem, calc(7 * var(--fvw)), 8.4rem);
-      font-size: clamp(3rem, calc(5 * var(--fvw)), 6rem);
+      font-size: clamp(3rem, calc(5 * calc(var(--fvw) * var(--ui-scale))), 6rem);
     }
 
     @include h(phs) {
       margin-left: clamp(0.875rem, 2.45vw, 1.375rem);
-      font-size: clamp(1.5625rem, 4vw, 2.125rem);
+      font-size: clamp(1.5625rem, calc(4vw * var(--ui-scale)), 2.125rem);
     }
 
     /* The floor comes down from 30px to 26px on the narrowest portrait, and it is the one place
@@ -525,7 +525,7 @@
        back at 34px by 430 and at 48px by 600, where v(md) used to write 42. */
     @include v(xs) {
       margin-left: clamp(1rem, 5.5vw, 4.5rem);
-      font-size: clamp(1.625rem, 8vw, 4rem);
+      font-size: clamp(1.625rem, calc(8vw * var(--ui-scale)), 4rem);
     }
   }
 }
@@ -596,18 +596,18 @@
      read one notch tighter, and at 24px the difference is under a pixel and a half. */
   > p {
     margin: 0;
-    font-size: clamp(1.0625rem, calc(1.25 * var(--fvw)), 1.5rem);
+    font-size: clamp(1.0625rem, calc(1.25 * calc(var(--fvw) * var(--ui-scale))), 1.5rem);
     line-height: 1.55;
 
     @include h(phs) {
-      font-size: clamp(0.875rem, 1.167vw, 1.021rem);
+      font-size: clamp(0.875rem, calc(1.167vw * var(--ui-scale)), 1.021rem);
     }
 
     /* 15px rather than 17px on the narrowest portrait. The lead sets three lines at 320px and
        every one of them is 1.55 line-heights the button below has to clear; from 500px up 3vw
        has it back above 17px, where the base clamp left it. */
     @include v(xs) {
-      font-size: clamp(0.9375rem, 3vw, 1.5rem);
+      font-size: clamp(0.9375rem, calc(3vw * var(--ui-scale)), 1.5rem);
     }
   }
 
@@ -1223,31 +1223,31 @@
     max-width: 16ch;
     margin: 0;
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(1.875rem, 9vw, 2.875rem);
+    font-size: clamp(1.875rem, calc(9vw * var(--ui-scale)), 2.875rem);
     font-weight: 400;
     line-height: 0.98;
     letter-spacing: -0.035em;
     text-wrap: balance;
 
     @include h(xs) {
-      font-size: clamp(2.125rem, 4.4vw, 3.5rem);
+      font-size: clamp(2.125rem, calc(4.4vw * var(--ui-scale)), 3.5rem);
     }
 
     /* 4.8rem is 1.2 x 4: the ceiling used to arrive at 1700 and hold flat for five hundred
        pixels. 86.5px at 2552, against the 88px the qhd rung wrote by hand. */
     @include h(md) {
-      font-size: clamp(2.5rem, calc(4 * var(--fvw)), 4.8rem);
+      font-size: clamp(2.5rem, calc(4 * calc(var(--fvw) * var(--ui-scale))), 4.8rem);
     }
 
     @include h(phs) {
-      font-size: clamp(1.625rem, 3.9vw, 2.125rem);
+      font-size: clamp(1.625rem, calc(3.9vw * var(--ui-scale)), 2.125rem);
     }
 
     /* One portrait clamp for what the base's 9vw and v(md)'s 5.4vw drew between them: 30px holds
        to 428px, 42px at 600 where v(md) wrote 40, and the 3.375rem ceiling arrives at 771 so
        1000px portrait still lands on the 54px v(md) gave it. */
     @include v(xs) {
-      font-size: clamp(1.875rem, 7vw, 3.375rem);
+      font-size: clamp(1.875rem, calc(7vw * var(--ui-scale)), 3.375rem);
     }
   }
 }
@@ -1328,7 +1328,7 @@
        so does the type, which keeps the line at 52-54 characters across the 1921 step. On plain
        vw the type would grow with the window instead and the line would fall to 44. */
     @include h(md) {
-      font-size: clamp(1rem, calc(1.08 * var(--fvw)), 1.3rem);
+      font-size: clamp(1rem, calc(1.08 * calc(var(--fvw) * var(--ui-scale))), 1.3rem);
     }
 
     /* One value, not a pair: 15px is the floor a 320px-tall viewport can carry and phl inherits
@@ -1341,7 +1341,7 @@
     /* 17px at 600 and 18px from 636 up — the two numbers v(md) and v(lg) wrote by hand — with
        the 1rem floor holding every portrait phone, which is where it already was. */
     @include v(xs) {
-      font-size: clamp(1rem, 2.83vw, 1.125rem);
+      font-size: clamp(1rem, calc(2.83vw * var(--ui-scale)), 1.125rem);
     }
   }
 
@@ -1403,7 +1403,7 @@
   h3 {
     margin: 0 0 0.9em;
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(1.25rem, calc(1.5 * var(--fvw)), 1.8rem);
+    font-size: clamp(1.25rem, calc(1.5 * calc(var(--fvw) * var(--ui-scale))), 1.8rem);
     font-weight: 400;
     line-height: 1.1;
     letter-spacing: -0.02em;
@@ -1608,7 +1608,7 @@
     margin-top: 0.75rem;
     color: var(--legal-ink);
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(1.625rem, calc(1.9 * var(--fvw)), 2.28rem);
+    font-size: clamp(1.625rem, calc(1.9 * calc(var(--fvw) * var(--ui-scale))), 2.28rem);
     font-weight: 400;
   }
 

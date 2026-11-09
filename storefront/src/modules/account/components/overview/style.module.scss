@@ -39,7 +39,7 @@
   // Podlaha .75rem, ne .72rem: .72rem je 11.52px a rig hlídá čitelnost pod 12px
   // (.rdshots/acct-shot.cjs ohlásí každý text s fs < 12). Takhle drží mikropopisek
   // dnešních 12px až do 1600 a nad 1921 ho zvedne ramp přes strop v rem.
-  font: calc(var(--account-zoom, 1) * clamp(.75rem, 0.8vw, 0.875rem))/1.2 "Sansation-Regular", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.8vw * var(--ui-scale)), 0.875rem))/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -63,7 +63,7 @@
 
 .accountOverviewHeading h1 {
   margin: 0;
-  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.4rem, 4.56vw, 6.5rem))/.83 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.4rem, calc(4.56vw * var(--ui-scale)), 6.5rem))/.83 "Sentient-Regular", serif;
   letter-spacing: -.06em;
 }
 
@@ -83,7 +83,7 @@
   margin: clamp(.5rem, 1.1vh, .8rem) 0 0;
   overflow-wrap: anywhere;
   color: rgb(var(--ink-05-rgb) / .7);
-  font-size: calc(var(--account-zoom, 1) * clamp(.94rem, 0.8vw, 1.125rem));
+  font-size: calc(var(--account-zoom, 1) * clamp(.94rem, calc(0.8vw * var(--ui-scale)), 1.125rem));
 }
 
 .accountOverviewStats {
@@ -138,7 +138,7 @@
 }
 
 .accountOverviewStatValue strong {
-  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(4.6rem, 5.6vw, 8.5rem))/.7 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(4.6rem, calc(5.6vw * var(--ui-scale)), 8.5rem))/.7 "Sentient-Regular", serif;
   letter-spacing: -.07em;
 }
 
@@ -150,7 +150,7 @@
   max-width: 9rem;
   margin: 0 0 .2rem;
   color: rgb(var(--ink-05-rgb) / .62);
-  font-size: calc(var(--account-zoom, 1) * clamp(.85rem, 0.72vw, .95rem));
+  font-size: calc(var(--account-zoom, 1) * clamp(.85rem, calc(0.72vw * var(--ui-scale)), .95rem));
 }
 
 // height: 3px zůstává v px schválně — hairline pruh je fyzická věc (pravidlo 3).
@@ -174,7 +174,7 @@
   min-height: clamp(2.6rem, 5vh, 3.2rem);
   margin: 0 0 clamp(1.2rem, 3vh, 2.1rem);
   color: rgb(var(--ink-05-rgb) / .6);
-  font: calc(var(--account-zoom, 1) * clamp(.9rem, 0.76vw, 1rem))/1.5 "Sansation-Light", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(.9rem, calc(0.76vw * var(--ui-scale)), 1rem))/1.5 "Sansation-Light", sans-serif;
 }
 
 .accountOverviewAction {
@@ -200,7 +200,7 @@
 
 .accountOverviewSectionHead h2 {
   margin: clamp(.6rem, 1.4vh, .95rem) 0 0;
-  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.7rem, 3.2vw, 4.8rem))/.9 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.7rem, calc(3.2vw * var(--ui-scale)), 4.8rem))/.9 "Sentient-Regular", serif;
   letter-spacing: -.05em;
 }
 
@@ -230,7 +230,7 @@
 
 .accountOverviewEmpty p {
   margin: 0;
-  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(1.8rem, 2.4vw, 3.2rem))/1 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(1.8rem, calc(2.4vw * var(--ui-scale)), 3.2rem))/1 "Sentient-Regular", serif;
 }
 
 
@@ -306,7 +306,7 @@
      Procento i „00" jdou s ním: znak % je 0.34em toho čísla, takže se
      zmenší sám a poměr zůstane. */
   .accountOverviewStatValue strong {
-    font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.6rem, 9.6vw, 3.4rem));
+    font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.6rem, calc(9.6vw * var(--ui-scale)), 3.4rem));
   }
 
   .accountOverviewEmpty {

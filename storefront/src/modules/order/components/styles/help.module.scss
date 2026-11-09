@@ -19,7 +19,7 @@
 
 .title {
   margin: 0;
-  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.8rem, 3.2vw, 4.8rem))/.86 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.8rem, calc(3.2vw * var(--ui-scale)), 4.8rem))/.86 "Sentient-Regular", serif;
   letter-spacing: -.055em;
 }
 
@@ -36,14 +36,14 @@
   gap: 7px;
   margin: 0;
   color: rgb(var(--cream-06-rgb) / .5);
-  font: 12px/1.2 "Sansation-Regular", sans-serif;
+  font: calc(12px * var(--ui-scale))/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .contactInfo {
   color: rgb(var(--cream-06-rgb) / .74);
-  font: 15px/1.45 "Sansation-Light", sans-serif;
+  font: calc(15px * var(--ui-scale))/1.45 "Sansation-Light", sans-serif;
   letter-spacing: 0;
   text-transform: none;
 }
@@ -51,7 +51,7 @@
 .link {
   display: inline-block;
   color: var(--cream-06);
-  font-size: 15px;
+  font-size: calc(15px * var(--ui-scale));
   text-decoration: underline;
   text-underline-offset: 6px;
 }

@@ -69,7 +69,7 @@
 .title {
   margin: 0;
   font-family: "Sentient-Regular", serif;
-  font-size: clamp(2.5rem, 3.9vw, 5rem);
+  font-size: clamp(2.5rem, calc(3.9vw * var(--ui-scale)), 5rem);
   font-weight: 400;
   letter-spacing: -0.05em;
   line-height: 0.95;
@@ -88,7 +88,7 @@
   max-width: 34rem;
   margin: clamp(1.25rem, 2.6vh, 2rem) 0 0;
   color: rgb(var(--black-03-rgb) / .78);
-  font-size: clamp(1rem, 1.05vw, 1.125rem);
+  font-size: clamp(1rem, calc(1.05vw * var(--ui-scale)), 1.125rem);
   font-weight: 300;
   line-height: 1.5;
 }
@@ -111,7 +111,7 @@
   h3 {
     margin: 0;
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(1.125rem, 1.3vw, 1.375rem);
+    font-size: clamp(1.125rem, calc(1.3vw * var(--ui-scale)), 1.375rem);
     font-weight: 400;
     letter-spacing: -0.02em;
     line-height: 1.2;
@@ -204,7 +204,7 @@
 .cardTitle {
   margin: calc(-1 * clamp(0.75rem, 2vh, 1.5rem)) 0 0;
   font-family: "Sentient-Regular", serif;
-  font-size: clamp(1.75rem, 2.3vw, 2.5rem);
+  font-size: clamp(1.75rem, calc(2.3vw * var(--ui-scale)), 2.5rem);
   font-weight: 400;
   letter-spacing: -0.035em;
   line-height: 1.05;
@@ -285,7 +285,7 @@
   color: var(--inq-ink);
   cursor: text;
   font-family: inherit;
-  font-size: clamp(1rem, 1.2vw, 1.125rem);
+  font-size: clamp(1rem, calc(1.2vw * var(--ui-scale)), 1.125rem);
   font-weight: 300;
   line-height: 1.4;
 
@@ -593,7 +593,7 @@
 /* WebButton nese vlastní výšku a proměnné na jedné třídě — dvě třídy ji
    přebijí deterministicky (stejný tah jako `.panel .submitButton` v dialogu). */
 .card .submit {
-  --web-button-label-size: clamp(0.9375rem, 1.05vw, 1rem);
+  --web-button-label-size: clamp(0.9375rem, calc(1.05vw * var(--ui-scale)), 1rem);
   --web-button-label-padding: clamp(0.375rem, 0.9vh, 0.625rem) clamp(0.875rem, 1.2vw, 1.1875rem);
 
   flex-shrink: 0;
@@ -610,7 +610,7 @@
   h3 {
     margin: 0;
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(1.75rem, 2.4vw, 2.5rem);
+    font-size: clamp(1.75rem, calc(2.4vw * var(--ui-scale)), 2.5rem);
     font-weight: 400;
     letter-spacing: -0.03em;
     line-height: 1.05;
@@ -643,7 +643,7 @@
   }
 
   .title {
-    font-size: clamp(2.5rem, 7vw, 3.75rem);
+    font-size: clamp(2.5rem, calc(7vw * var(--ui-scale)), 3.75rem);
   }
 }
 

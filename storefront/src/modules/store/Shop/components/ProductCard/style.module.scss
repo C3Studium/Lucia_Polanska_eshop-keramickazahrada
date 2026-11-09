@@ -81,7 +81,7 @@
   padding: 0;
   overflow: hidden;
   border-radius: 999px;
-  font-size: clamp(.78rem, .72vw, .92rem);
+  font-size: clamp(.78rem, calc(.72vw * var(--ui-scale)), .92rem);
   clip-path: inset(0 0 0 calc((var(--discover-w) - var(--discover-h)) * var(--discover-clip-k)));
   pointer-events: none;
   isolation: isolate;
@@ -167,7 +167,7 @@
   height: var(--index-size);
   border: 1px solid rgb(var(--black-03-rgb) / .35);
   border-radius: 50%;
-  font-size: clamp(.75rem, 1vw, 0.875rem);
+  font-size: clamp(.75rem, calc(1vw * var(--ui-scale)), 0.875rem);
 }
 
 /* Size and leading from ProductGrid for the same reason as the title: the skeleton's second bar

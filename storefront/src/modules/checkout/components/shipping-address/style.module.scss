@@ -54,7 +54,7 @@
       color: rgb(var(--ink-05-rgb) / .5);
       /* Podlaha .75rem = původních 12px, drží do 1200px; strop .95rem od 1520.
          V rem, aby popisek nad 1921 vyrostl s rampem místo aby ztuhl na 12px. */
-      font: clamp(.75rem, 1vw, .95rem)/1.2 "Sansation-Regular", sans-serif;
+      font: clamp(.75rem, calc(1vw * var(--ui-scale)), .95rem)/1.2 "Sansation-Regular", sans-serif;
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
@@ -67,7 +67,7 @@
 
     h3 {
       margin: 0;
-      font: 400 clamp(1.9rem, 3vw, 3.2rem)/.92 "Sentient-Regular", serif;
+      font: 400 clamp(1.9rem, calc(3vw * var(--ui-scale)), 3.2rem)/.92 "Sentient-Regular", serif;
       letter-spacing: -.04em;
     }
 
@@ -78,7 +78,7 @@
       /* Kraje v rem. Prostředek zvednut z 1vw na 1.15vw, aby živé pásmo
          (1217-1391) padlo do laptopového rozsahu; s 1vw začínalo až na 1400
          a přes celý notebook byl clamp mrtvý na podlaze. */
-      font: clamp(.875rem, 1.15vw, 1rem)/1.5 "Sansation-Light", sans-serif;
+      font: clamp(.875rem, calc(1.15vw * var(--ui-scale)), 1rem)/1.5 "Sansation-Light", sans-serif;
     }
   }
 
@@ -225,7 +225,7 @@
 .firmaPopis {
   margin: 0;
   color: rgb(var(--ink-06-rgb) / .62);
-  font-size: clamp(.8125rem, 1vw, .9375rem);
+  font-size: clamp(.8125rem, calc(1vw * var(--ui-scale)), .9375rem);
   line-height: 1.45;
 }
 

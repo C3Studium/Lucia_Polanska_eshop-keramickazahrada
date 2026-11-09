@@ -20,7 +20,7 @@
 
     .title {
       margin: 0;
-      font-size: clamp(2rem,2.4vw,2.8rem);
+      font-size: clamp(2rem,calc(2.4vw * var(--ui-scale)),2.8rem);
       line-height: 1;
       font-weight: 400;
       color: inherit;
@@ -35,7 +35,7 @@
          1.2rem the author wrote for desktop never rendered once, and the
          sentence ran at 1.1rem from 400px all the way to 2552px.
          15.2 -> 19.2px, live 1169-1477. */
-      font-size: clamp(.95rem, 1.3vw, 1.2rem);
+      font-size: clamp(.95rem, calc(1.3vw * var(--ui-scale)), 1.2rem);
       /* Unitless, so it tracks the clamp instead of standing at a flat 20px
          while the type grows past it. */
       line-height: 1.35;

@@ -7,14 +7,14 @@
 .head h2 {
   margin: 0;
   color: var(--ink-05);
-  font: 400 clamp(1.5rem, 3.2vw, 2.1rem)/1.15 "Sentient-Regular", serif;
+  font: 400 clamp(1.5rem, calc(3.2vw * var(--ui-scale)), 2.1rem)/1.15 "Sentient-Regular", serif;
 }
 
 .head p {
   margin: clamp(.4rem, .9vh, .7rem) 0 0;
   max-width: 48ch;
   color: rgb(var(--ink-05-rgb) / .72);
-  font: 400 clamp(.9375rem, 1.25vw, 1.08rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9375rem, calc(1.25vw * var(--ui-scale)), 1.08rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 .actions {
@@ -44,7 +44,7 @@
   background: var(--ink-05);
   color: var(--cream-07);
   cursor: pointer;
-  font: 400 clamp(.9375rem, 1.25vw, 1.05rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9375rem, calc(1.25vw * var(--ui-scale)), 1.05rem)/1.2 "Sansation-Regular", sans-serif;
 
   &:disabled {
     opacity: .45;

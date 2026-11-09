@@ -24,7 +24,7 @@
          03 payment, 04 review stojí na témž clampu) — krok 02 na ní byl jediný o 18 %
          níž, takže aktivní krok byl vizuálně nejmenší ze čtyř.
          od 1280 až po 1920. */
-      font-size: clamp(2rem, 2.8vw, 3.15rem);
+      font-size: clamp(2rem, calc(2.8vw * var(--ui-scale)), 3.15rem);
       font-weight: 400;
       gap: 0.5rem;
       align-items: baseline;
@@ -68,7 +68,7 @@
         font-family: "Sansation-Regular";
         /* Živé pásmo 1371…1752. Váha zpět na 400 — 300 prosákla z xs položky mapy,
            která přes min-width 400 platila i na 1920. */
-        font-size: clamp(.9rem, 1.05vw, 1.15rem);
+        font-size: clamp(.9rem, calc(1.05vw * var(--ui-scale)), 1.15rem);
 				font-weight: 400;
 				color: var(--blackText);
 				margin-bottom: 0.25rem;
@@ -76,7 +76,7 @@
       .radioAddress{
         margin: 0 !important;
         /* Živé pásmo 1333…1752. */
-        font-size: clamp(.875rem, 1.05vw, 1.15rem);
+        font-size: clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem);
 				font-weight: 300;
 				color: var(--blackText);
 				margin-bottom: 0.25rem;
@@ -128,7 +128,7 @@
         /* Živé pásmo 1333…1752. `white-space: nowrap` z xs/xxs položky mapy bylo
            naměřeno činné na 1920 — na desktopu jen bránilo zalomení dlouhých jmen
            dopravců, proto je pryč. */
-        font-size: clamp(.875rem, 1.05vw, 1.15rem);
+        font-size: clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem);
         font-weight: 400;
         color: var(--blackText);
       }
@@ -140,7 +140,7 @@
     .radioPrice {
       justify-self: end;
       /* Živé pásmo 1333…1752. */
-      font-size: clamp(.875rem, 1.05vw, 1.15rem);
+      font-size: clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem);
       font-weight: 400;
       font-family: "Sansation-Regular";
       color: var(--blackText);
@@ -177,7 +177,7 @@
 
     .packetaConfirmationLabel{
       /* Živé pásmo 1333…1752. */
-      font-size: clamp(.875rem, 1.05vw, 1.15rem);
+      font-size: clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem);
       font-weight: 500;
       color: var(--blackText);
       margin-bottom: 0.25rem;
@@ -186,7 +186,7 @@
 
     .packetaConfirmationValue{
       /* Živé pásmo 1333…1752. */
-      font-size: clamp(.875rem, 1.05vw, 1.15rem);
+      font-size: clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem);
       color: var(--blackText);
       word-break: break-word;
       font-family: "Sansation-Light";
@@ -271,7 +271,7 @@
     .methodLabel {
       /* Stejný clamp jako u .radioContent .methodLabel výš — tenhle zápis má nižší
          specificitu a je pro tenhle JSX vždy přebitý, ale ať se ty dvě neliší. */
-      font-size: clamp(.875rem, 1.05vw, 1.15rem);
+      font-size: clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem);
       font-weight: 500;
       color: var(--ui-fg-base, var(--ink-03));
       margin-bottom: 0.25rem;
@@ -293,7 +293,7 @@
      které si projekt drží (page.module.scss ho tak pojmenoval); původních .68rem
      = 10.88px bylo pod ním, a krok 04 měl přitom natvrdo 0.8125rem, takže
      v jednom sloupci stály dvě velikosti. Živé pásmo 1176…1373. */
-  font: 600 clamp(.75rem, 1.02vw, .875rem)/1 "Sansation-Regular", sans-serif;
+  font: 600 clamp(.75rem, calc(1.02vw * var(--ui-scale)), .875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .18em;
   opacity: .48;
 }

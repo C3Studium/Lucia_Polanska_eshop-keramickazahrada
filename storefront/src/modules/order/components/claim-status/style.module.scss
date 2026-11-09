@@ -56,14 +56,14 @@
 
 .eyebrow {
   color: rgb(var(--ink-05-rgb) / 0.62);
-  font: 400 clamp(0.72rem, 0.9vw, 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.72rem, calc(0.9vw * var(--ui-scale)), 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .status {
   color: var(--ink-05);
-  font: 400 clamp(1.15rem, 1.4vw, 1.4rem) / 1.2 "Sentient-Regular", "Sentient", serif;
+  font: 400 clamp(1.15rem, calc(1.4vw * var(--ui-scale)), 1.4rem) / 1.2 "Sentient-Regular", "Sentient", serif;
   letter-spacing: -0.01em;
 
   .card[data-status="resolved"] & { color: var(--olive-07); }
@@ -385,7 +385,7 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.2rem 0.6rem;
-  font: 400 clamp(0.95rem, 1.1vw, 1.05rem) / 1.3 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.95rem, calc(1.1vw * var(--ui-scale)), 1.05rem) / 1.3 "Sansation-Regular", sans-serif;
 }
 
 .stepDate {
@@ -440,7 +440,7 @@
 
 .trackingLabel {
   color: rgb(var(--ink-05-rgb) / 0.62);
-  font: 400 clamp(0.72rem, 0.9vw, 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.72rem, calc(0.9vw * var(--ui-scale)), 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 
@@ -664,7 +664,7 @@
 
   strong {
     display: block;
-    font: 400 clamp(0.95rem, 1.05vw, 1.05rem) / 1.3 "Sansation-Regular", sans-serif;
+    font: 400 clamp(0.95rem, calc(1.05vw * var(--ui-scale)), 1.05rem) / 1.3 "Sansation-Regular", sans-serif;
   }
 
   p {

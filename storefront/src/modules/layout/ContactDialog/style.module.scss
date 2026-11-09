@@ -306,7 +306,7 @@
   max-width: 10.5em;
   margin: clamp(0.625rem, 1.5vh, 1.25rem) 0 0;
   font-family: "Sentient-Regular", serif;
-  font-size: calc(var(--contact-title-zoom, 1) * clamp(3.125rem, 4.2vw, 4.5rem));
+  font-size: calc(var(--contact-title-zoom, 1) * clamp(3.125rem, calc(4.2vw * var(--ui-scale)), 4.5rem));
   font-weight: 400;
   letter-spacing: -0.052em;
   line-height: 0.92;
@@ -437,7 +437,7 @@
   color: var(--contact-ink);
   cursor: text;
   font-family: inherit;
-  font-size: clamp(1.0625rem, 1.3vw, 1.1875rem);
+  font-size: clamp(1.0625rem, calc(1.3vw * var(--ui-scale)), 1.1875rem);
   font-weight: 300;
   line-height: 1.35;
 }
@@ -537,7 +537,7 @@
  * back on a 720/768-tall laptop instead of standing at 48px there and at 48px on 2K.
  */
 .panel .submitButton {
-  --web-button-label-size: clamp(0.875rem, 1.05vw, 1rem);
+  --web-button-label-size: clamp(0.875rem, calc(1.05vw * var(--ui-scale)), 1rem);
   --web-button-label-padding: clamp(0.375rem, 0.9vh, 0.625rem) clamp(0.875rem, 1.2vw, 1.1875rem);
 
   height: clamp(2.75rem, 4.4vh, 3.25rem);
@@ -572,7 +572,7 @@
 .successPanel h3 {
   margin: 0;
   font-family: "Sentient-Regular", serif;
-  font-size: clamp(1.75rem, 2.4vw, 2.375rem);
+  font-size: clamp(1.75rem, calc(2.4vw * var(--ui-scale)), 2.375rem);
   font-weight: 400;
   letter-spacing: -0.03em;
   line-height: 1.05;
@@ -667,7 +667,7 @@
 .mapAddress {
   max-width: 28ch;
   margin: 0;
-  font-size: clamp(0.875rem, 1.1vw, 1rem);
+  font-size: clamp(0.875rem, calc(1.1vw * var(--ui-scale)), 1rem);
   line-height: 1.35;
 }
 
@@ -680,7 +680,7 @@
   background: var(--cream-07);
   color: var(--ink-05);
   cursor: pointer;
-  font: 400 clamp(0.9375rem, 1.1vw, 1.0625rem)/1.25 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.9375rem, calc(1.1vw * var(--ui-scale)), 1.0625rem)/1.25 "Sansation-Regular", sans-serif;
   transition:
     background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
     color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
@@ -785,7 +785,7 @@
   margin: 0;
   padding: 0;
   color: var(--contact-ink);
-  font-size: clamp(0.875rem, 1.167vw, 1.021rem);
+  font-size: clamp(0.875rem, calc(1.167vw * var(--ui-scale)), 1.021rem);
   font-weight: 300;
   line-height: 1.35;
   text-decoration: none;
@@ -829,7 +829,7 @@
   }
 
   .title h2 {
-    font-size: calc(var(--contact-title-zoom, 1) * clamp(44px, 5.4vw, 60px));
+    font-size: calc(var(--contact-title-zoom, 1) * clamp(calc(44px * var(--ui-scale)), calc(5.4vw * var(--ui-scale)), calc(60px * var(--ui-scale))));
   }
 
   .fieldGrid {
@@ -877,7 +877,7 @@
   }
 
   .title h2 {
-    font-size: clamp(42px, 12vw, 58px);
+    font-size: clamp(calc(42px * var(--ui-scale)), calc(12vw * var(--ui-scale)), calc(58px * var(--ui-scale)));
   }
 
   .topics > div {
@@ -950,7 +950,7 @@
 
   .title h2 {
     margin-top: 0.5rem;
-    font-size: clamp(1.875rem, 8.6vw, 2.5rem);
+    font-size: clamp(1.875rem, calc(8.6vw * var(--ui-scale)), 2.5rem);
     letter-spacing: -0.045em;
   }
 
@@ -991,7 +991,7 @@
   .topics button {
     min-width: 0;
     padding: 0 0.25rem;
-    font-size: clamp(0.625rem, 2.9vw, 0.75rem);
+    font-size: clamp(0.625rem, calc(2.9vw * var(--ui-scale)), 0.75rem);
     text-align: center;
     white-space: nowrap;
 
@@ -1189,7 +1189,7 @@
      */
     .title h2 {
       max-width: none;
-      font-size: clamp(2.25rem, 4.6vw, 3.25rem);
+      font-size: clamp(2.25rem, calc(4.6vw * var(--ui-scale)), 3.25rem);
     }
 
     .title h2 em {
@@ -1319,7 +1319,7 @@
 
 .scrollCueInner span {
   color: var(--contact-secondary);
-  font: 400 clamp(0.7rem, 0.76vw, 0.8rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.7rem, calc(0.76vw * var(--ui-scale)), 0.8rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;

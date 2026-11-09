@@ -61,7 +61,7 @@
   border: 0;
   background: transparent;
   color: inherit;
-  font-size: clamp(1.4rem, 1.85vw, 1.75rem);
+  font-size: clamp(1.4rem, calc(1.85vw * var(--ui-scale)), 1.75rem);
   cursor: pointer;
 }
 .root button:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: 3px; }
@@ -91,7 +91,7 @@
     border: 0;
     background: transparent;
     color: var(--grey-05);
-    font-size: clamp(.85rem, 1.05vw, .9375rem);
+    font-size: clamp(.85rem, calc(1.05vw * var(--ui-scale)), .9375rem);
     text-align: left;
     cursor: pointer;
     transition: color .25s ease;
@@ -246,7 +246,7 @@
   gap: clamp(.35rem, .56vw, .5rem);
   color: var(--grey-04);
   // Podlaha .75rem, ne .72rem: 13px text nesmí spadnout na 11.5px. Živé 1348–1461.
-  font-size: clamp(.75rem, 1vw, 0.875rem);
+  font-size: clamp(.75rem, calc(1vw * var(--ui-scale)), 0.875rem);
 
   label {
     display: flex;
@@ -264,7 +264,7 @@
     border-radius: clamp(.45rem, .63vw, .5625rem);
     background: transparent;
     color: var(--cream-07);
-    font-size: clamp(.8rem, 1.067vw, 0.934rem);
+    font-size: clamp(.8rem, calc(1.067vw * var(--ui-scale)), 0.934rem);
     appearance: textfield;
     -moz-appearance: textfield;
     transition: border-color 0.25s ease;
@@ -308,7 +308,7 @@
   /* Tlačítko nedědí velikost písma a UA default 13.3px ramp nezvedne — jediné
      místo v panelu, které by na 2K zůstalo stát. Žebřík subkategorií: na 1280
      dá 12.8px místo 13.3, od 1429 rovných 14 a na 2K 18.6. */
-  font-size: clamp(.8rem, 1.067vw, 0.934rem);
+  font-size: clamp(.8rem, calc(1.067vw * var(--ui-scale)), 0.934rem);
   cursor: pointer;
 
   > span {
@@ -345,7 +345,7 @@
   padding: clamp(.7rem, 1.7vh, 1.0625rem) clamp(1rem, 1.54vw, 1.375rem) clamp(.8rem, 2vh, 1.25rem);
   color: var(--grey-04);
   // Táž podlaha jako u cenových polí — 13px text má dno na 12px.
-  font-size: clamp(.75rem, 1vw, 0.875rem);
+  font-size: clamp(.75rem, calc(1vw * var(--ui-scale)), 0.875rem);
 
   button {
     padding: clamp(.4rem, 1vh, .625rem) clamp(.2rem, .28vw, .25rem);
@@ -353,7 +353,7 @@
     background: transparent;
     color: var(--cream-06);
     cursor: pointer;
-    font-size: clamp(.8rem, 1.067vw, 0.934rem);
+    font-size: clamp(.8rem, calc(1.067vw * var(--ui-scale)), 0.934rem);
     text-decoration: underline;
   }
   button:disabled { opacity: .3; cursor: default; }

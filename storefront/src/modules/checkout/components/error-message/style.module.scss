@@ -12,7 +12,7 @@
   border: 1px solid rgb(var(--clay-18-rgb) / .32);
   background: rgb(var(--clay-18-rgb) / .055);
   color: var(--clay-05);
-  font: 400 clamp(.85rem, .9vw, .95rem)/1.45 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.85rem, calc(.9vw * var(--ui-scale)), .95rem)/1.45 "Sansation-Regular", sans-serif;
 }
 
 .root::before {
@@ -20,7 +20,7 @@
   place-items: center;
   border-right: 1px solid rgb(var(--clay-18-rgb) / .24);
   content: "!";
-  font: 400 clamp(.8rem, .85vw, .9rem)/1 "Sentient-Regular", serif;
+  font: 400 clamp(.8rem, calc(.85vw * var(--ui-scale)), .9rem)/1 "Sentient-Regular", serif;
 }
 
 .root span {

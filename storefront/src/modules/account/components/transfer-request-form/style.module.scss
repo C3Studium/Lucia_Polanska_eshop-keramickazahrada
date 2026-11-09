@@ -20,14 +20,14 @@
 
 .title {
   margin: 0;
-  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.2rem, 2.72vw, 4rem))/.92 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.2rem, calc(2.72vw * var(--ui-scale)), 4rem))/.92 "Sentient-Regular", serif;
   letter-spacing: -.045em;
 }
 
 .desc {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .62);
-  font: 15px/1.5 "Sansation-Light", sans-serif;
+  font: calc(15px * var(--ui-scale))/1.5 "Sansation-Light", sans-serif;
 }
 
 .form,
@@ -58,7 +58,7 @@
   border-left: 2px solid var(--clay-21);
   background: rgb(var(--clay-21-rgb) / .09);
   color: var(--clay-01);
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-scale));
 }
 
 .success {
@@ -93,12 +93,12 @@
 }
 
 .successTitle {
-  font-size: 15px;
+  font-size: calc(15px * var(--ui-scale));
 }
 
 .successDesc {
   color: rgb(var(--ink-05-rgb) / .6);
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-scale));
 }
 
 .closeBtn {

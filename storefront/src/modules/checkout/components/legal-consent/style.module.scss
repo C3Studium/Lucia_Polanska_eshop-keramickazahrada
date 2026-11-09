@@ -118,7 +118,7 @@ $consent-pad: 10px;
   /* Zarovnané pod text souhlasu: 24px čtvereček + 1.5rem mezera. */
   padding-left: calc(24px + 1.5rem);
   color: var(--consent-label);
-  font: 400 clamp(.875rem, 1.17vw, 1.15rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.875rem, calc(1.17vw * var(--ui-scale)), 1.15rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 .express {
@@ -128,7 +128,7 @@ $consent-pad: 10px;
 .privacyCompact {
   margin: 0 0 clamp(.5rem, 1.1vh, .75rem);
   color: rgb(var(--ink-05-rgb) / .7);
-  font: 400 clamp(.85rem, 1.05vw, .95rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.85rem, calc(1.05vw * var(--ui-scale)), .95rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 @media (orientation: portrait) and (max-width: 599.98px) {

@@ -18,7 +18,7 @@
 .results,
 .skeletonGrid,
 .empty {
-  --grid-text: clamp(.8125rem, 1vw, .95rem);
+  --grid-text: clamp(.8125rem, calc(1vw * var(--ui-scale)), .95rem);
 }
 
 /*
@@ -36,7 +36,7 @@
   // 21.6–31.2px, živé 1309–1891.
   /* 0.8× původního clamp(1.35rem, 1.65vw, 1.95rem). Jedno místo, protože
      stejnou míru čte i kostra načítání níž — dvě čísla by se rozešla. */
-  --card-title-size: clamp(1.08rem, 1.32vw, 1.56rem);
+  --card-title-size: clamp(1.08rem, calc(1.32vw * var(--ui-scale)), 1.56rem);
   --card-title-leading: 1.08;
 
   // 12–14.1px, živé 1200–1408. Podlaha .75rem, ne .72rem: rig naměřil popisek
@@ -162,7 +162,7 @@
   border-radius: 999px;
   background: transparent;
   color: var(--black-03);
-  font-size: clamp(.9375rem, 1.15vw, 1.1rem);   // 15–17.6px, živé 1304–1530
+  font-size: clamp(.9375rem, calc(1.15vw * var(--ui-scale)), 1.1rem);   // 15–17.6px, živé 1304–1530
   cursor: pointer;
   transition: background-color .25s ease, color .25s ease;
 }

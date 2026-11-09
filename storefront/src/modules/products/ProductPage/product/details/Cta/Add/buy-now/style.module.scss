@@ -140,7 +140,7 @@
      obsahový box 150 px proti 75.8 px inkoustu „Koupit ihned" a 85.3 px
      u „Připravujeme…", takže `overflow: hidden` výše nemá co uříznout. */
   font-family: "Sansation-Regular", sans-serif;
-  font-size: var(--cta-pill-label, clamp(0.8125rem, 1.05vw, 1rem));
+  font-size: var(--cta-pill-label, clamp(0.8125rem, calc(1.05vw * var(--ui-scale)), 1rem));
   font-weight: 400;
   line-height: 1;
 }
@@ -150,7 +150,7 @@
   /* .48 was 4.2:1 on the ink stage — this line is the only place that says
      where a one-click purchase ships. .64 clears 6:1. */
   color: rgb(var(--cream-06-rgb) / .64);
-  font: 400 clamp(0.75rem, 0.95vw, 0.875rem) / 1.35 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.875rem) / 1.35 "Sansation-Regular", sans-serif;
   text-align: right;
 }
 
@@ -158,7 +158,7 @@
   margin: 0;
   color: var(--clay-41);
   font-family: "Sansation-Regular", sans-serif;
-  font-size: clamp(0.75rem, 0.95vw, 0.875rem);
+  font-size: clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.875rem);
   line-height: 1.5;
   text-align: right;
 }

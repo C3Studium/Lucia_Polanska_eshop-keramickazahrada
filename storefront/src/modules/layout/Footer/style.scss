@@ -95,7 +95,7 @@
   border-top: 1px solid var(--footer-line);
   border-bottom: 1px solid var(--footer-line);
   color: var(--footer-muted);
-  font: 400 clamp(0.75rem, 0.95vw, 0.85rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.85rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -155,7 +155,7 @@
 .footer__eyebrow,
 .footer__newsletterCopy > span {
   color: var(--footer-muted);
-  font: 400 clamp(0.75rem, 0.95vw, 0.85rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.85rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -182,7 +182,7 @@
   /* Below the smallest portrait stop it wraps instead: at the minimum legible size the lockup is
      still wider than a 320px phone, and nowrap there put the whole page into horizontal scroll. */
   @include below-px(374px) {
-    font-size: 38px;
+    font-size: calc(38px * var(--ui-scale));
     white-space: normal;
   }
 }
@@ -199,7 +199,7 @@
   width: min(100%, 23.125rem);
   margin: clamp(0.75rem, 2.2vh, 1.75rem) 0 0;
   color: var(--footer-muted);
-  font: 300 clamp(1rem, 1vw, 1.125rem)/1.48 "Sansation-Light", sans-serif;
+  font: 300 clamp(1rem, calc(1vw * var(--ui-scale)), 1.125rem)/1.48 "Sansation-Light", sans-serif;
 }
 
 .footer__socials {
@@ -272,7 +272,7 @@
 .footer__newsletterCopy > .footer__newsletterTitle {
   max-width: 26.875rem;
   margin: 0.625rem 0 0.5rem;
-  font: 400 clamp(1.4375rem, 1.7vw, 2.0625rem)/0.98 "Sentient-Regular", serif;
+  font: 400 clamp(1.4375rem, calc(1.7vw * var(--ui-scale)), 2.0625rem)/0.98 "Sentient-Regular", serif;
   letter-spacing: -0.042em;
 }
 
@@ -280,7 +280,7 @@
   max-width: 22.5rem;
   margin: 0;
   color: var(--footer-muted);
-  font: 300 clamp(0.875rem, 0.85vw, 1rem)/1.45 "Sansation-Light", sans-serif;
+  font: 300 clamp(0.875rem, calc(0.85vw * var(--ui-scale)), 1rem)/1.45 "Sansation-Light", sans-serif;
 }
 
 .newsletter__container {
@@ -415,7 +415,7 @@ p.newsletter__error {
   min-width: 0;
   margin: 0;
   color: var(--footer-ink);
-  font: 300 clamp(0.9375rem, 0.94vw, 1.0625rem)/1.5 "Sansation-Light", sans-serif;
+  font: 300 clamp(0.9375rem, calc(0.94vw * var(--ui-scale)), 1.0625rem)/1.5 "Sansation-Light", sans-serif;
 }
 
 /*
@@ -460,7 +460,7 @@ p.newsletter__error {
 .footer__identity dd {
   margin: 0;
   color: var(--footer-ink);
-  font: 400 clamp(0.9375rem, 1.25vw, 1.094rem)/1.45 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.9375rem, calc(1.25vw * var(--ui-scale)), 1.094rem)/1.45 "Sansation-Regular", sans-serif;
 }
 
 .footer__identity a {
@@ -496,7 +496,7 @@ p.newsletter__error {
   color: var(--footer-muted);
   /* Same caption clamp as .footer__eyebrow above — it was the third copy of the 12px/12px
      constant. */
-  font: 400 clamp(0.75rem, 0.95vw, 0.85rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(0.95vw * var(--ui-scale)), 0.85rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -519,7 +519,7 @@ p.newsletter__error {
 }
 
 .footer__animatedLink {
-  --animated-link-font-size: clamp(0.9375rem, 1vw, 1.125rem);
+  --animated-link-font-size: clamp(0.9375rem, calc(1vw * var(--ui-scale)), 1.125rem);
 }
 
 .footer__animatedLink span {
@@ -533,7 +533,7 @@ p.newsletter__error {
   background: none;
   color: var(--footer-ink);
   cursor: pointer;
-  font: 400 clamp(0.9375rem, 1vw, 1.125rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.9375rem, calc(1vw * var(--ui-scale)), 1.125rem)/1.2 "Sansation-Regular", sans-serif;
   text-align: left;
   transition: opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -563,7 +563,7 @@ p.newsletter__error {
   align-items: baseline;
   gap: 0.5rem;
   color: var(--footer-ink);
-  font: 400 clamp(0.9375rem, 1vw, 1.125rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.9375rem, calc(1vw * var(--ui-scale)), 1.125rem)/1.2 "Sansation-Regular", sans-serif;
   text-decoration: none;
   transition: opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -648,7 +648,7 @@ p.newsletter__error {
 .footer__legal p {
   margin: 0;
   color: var(--footer-muted);
-  font: 300 clamp(0.8125rem, 1.083vw, 0.948rem)/1.38 "Sansation-Light", sans-serif;
+  font: 300 clamp(0.8125rem, calc(1.083vw * var(--ui-scale)), 0.948rem)/1.38 "Sansation-Light", sans-serif;
 }
 
 .maker__link {
@@ -884,7 +884,7 @@ p.newsletter__error {
 
   .footer__wordmark {
     grid-area: mark;
-    font-size: 21px;
+    font-size: calc(21px * var(--ui-scale));
     letter-spacing: -0.02em;
     white-space: normal;
   }
@@ -905,7 +905,7 @@ p.newsletter__error {
 
   .footer__newsletterCopy > .footer__newsletterTitle {
     margin: 6px 0 0;
-    font-size: 21px;
+    font-size: calc(21px * var(--ui-scale));
   }
 
   /* The title already says it. */
@@ -930,7 +930,7 @@ p.newsletter__error {
   }
 
   .footer__animatedLink {
-    --animated-link-font-size: 15px;
+    --animated-link-font-size: calc(15px * var(--ui-scale));
   }
 
   .footer__identity {
@@ -940,12 +940,12 @@ p.newsletter__error {
   }
 
   .footer__identity dt {
-    font-size: 11px;
+    font-size: calc(11px * var(--ui-scale));
     letter-spacing: 0.1em;
   }
 
   .footer__identity dd {
-    font-size: 14px;
+    font-size: calc(14px * var(--ui-scale));
   }
 
   .footer__bottom {
@@ -990,11 +990,11 @@ p.newsletter__error {
  */
 @include below-px(360px) {
   .footer__animatedLink {
-    --animated-link-font-size: 14px;
+    --animated-link-font-size: calc(14px * var(--ui-scale));
   }
 
   .footer__dialogLink {
-    font-size: 14px;
+    font-size: calc(14px * var(--ui-scale));
   }
 
   .footer__navigation {
@@ -1039,7 +1039,7 @@ p.newsletter__error {
   }
 
   .footer__wordmark {
-    font-size: 26px;
+    font-size: calc(26px * var(--ui-scale));
   }
 
   .footer__utility {

@@ -20,7 +20,7 @@
    */
   --close-inset: clamp(0.4rem, 0.71vw, 0.7rem);    /* was right: 10px  — live 901…1577 */
   --close-pad: clamp(0.25rem, 0.42vw, 0.45rem);    /* was padding: 6px — live 952…1714 */
-  --close-glyph: clamp(0.8125rem, 1.1vw, 1.05rem); /* was 15px         — live 1182…1527 */
+  --close-glyph: clamp(0.8125rem, calc(1.1vw * var(--ui-scale)), 1.05rem); /* was 15px         — live 1182…1527 */
 
   /* One space value for the row: the flex gap and the pill's own offset are the same distance. */
   --banner-gap: clamp(0.5rem, 0.85vw, 0.95rem);    /* was 12px — live 941…1788 */
@@ -68,7 +68,7 @@
   /* 1.15× původního clamp(0.8125rem, 1.05vw, 1rem) — pás byl proti okolí drobný.
      Násobí se všechny tři členy, takže živé pásmo (1238…1524) zůstává tam, kde bylo;
      mění se jen velikost, ne to, kde se přestává zvětšovat. 15…18.4px při rem 16. */
-  font-size: clamp(0.934rem, 1.208vw, 1.15rem);
+  font-size: clamp(0.934rem, calc(1.208vw * var(--ui-scale)), 1.15rem);
   line-height: 1.4;
   text-align: center;
 }
@@ -226,7 +226,7 @@
  * jedna třída, a při shodné váze by rozhodovalo pořadí načtení stylů.
  */
 .banner .action {
-  --web-button-label-size: clamp(0.8125rem, 0.9vw, 1rem);
+  --web-button-label-size: clamp(0.8125rem, calc(0.9vw * var(--ui-scale)), 1rem);
   /* Svisle nula (drží nízkou výšku), vodorovně plná míra komponentu. Nula na obou osách
      popisek ustřihla — `WebButton` má `overflow: hidden` kvůli najíždějící výplni, takže
      text bez odsazení dolehl na okraje pilulky a konce písmen zmizely pod obrysem. */

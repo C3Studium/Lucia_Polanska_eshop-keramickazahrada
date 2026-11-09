@@ -27,13 +27,13 @@
 
 .title {
   margin: 0;
-  font: 400 clamp(1.75rem, 3.4vw, 2.6rem)/1.15 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1.75rem, calc(3.4vw * var(--ui-scale)), 2.6rem)/1.15 "Sansation-Regular", sans-serif;
   text-wrap: balance;
 }
 
 .subtitle {
   margin: 0 0 .6rem;
-  font: 400 clamp(1.15rem, 1.8vw, 1.4rem)/1.25 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1.15rem, calc(1.8vw * var(--ui-scale)), 1.4rem)/1.25 "Sansation-Regular", sans-serif;
 }
 
 .lead,
@@ -43,7 +43,7 @@
 .scope {
   max-width: 66ch;
   margin: 0;
-  font-size: clamp(.95rem, 1.05vw, 1.05rem);
+  font-size: clamp(.95rem, calc(1.05vw * var(--ui-scale)), 1.05rem);
   line-height: 1.55;
 }
 
@@ -72,7 +72,7 @@
 }
 
 .glaze {
-  font-size: clamp(1.05rem, 1.3vw, 1.2rem);
+  font-size: clamp(1.05rem, calc(1.3vw * var(--ui-scale)), 1.2rem);
 }
 
 .meta {

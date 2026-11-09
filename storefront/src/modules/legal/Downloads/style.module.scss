@@ -28,7 +28,7 @@
    * `font-size` změnil z pevných 0.64rem na clamp, kopie zůstala na staré
    * hodnotě a odsazení přestalo sedět pod značku. Jedna míra, jedno místo.
    */
-  --dl-kind-fs: clamp(0.75rem, 0.96vw, 0.9rem);
+  --dl-kind-fs: clamp(0.75rem, calc(0.96vw * var(--ui-scale)), 0.9rem);
   --dl-kind-pad-x: 0.5625rem;
 
   /* Odluka bloku od dokumentu. Zůstává na `vh`, i když tablet na výšku má výšky
@@ -67,7 +67,7 @@
   span {
     /* stálo 0.72rem = 11.5 px, tedy pod hranicí čitelnosti;
        podlaha 0.78rem = 12.5 px, živé pásmo 1248–1520 px šířky */
-    font-size: clamp(0.78rem, 1vw, 0.95rem);
+    font-size: clamp(0.78rem, calc(1vw * var(--ui-scale)), 0.95rem);
     letter-spacing: 0.14em;
     text-transform: uppercase;
     opacity: 0.55;
@@ -75,7 +75,7 @@
 
   h2 {
     margin: 0;
-    font-size: clamp(1.15rem, 1.8vw, 1.5rem);
+    font-size: clamp(1.15rem, calc(1.8vw * var(--ui-scale)), 1.5rem);
     font-weight: 500;
   }
 }
@@ -185,13 +185,13 @@
 
 .extraTitle {
   margin: 0;
-  font-size: clamp(1rem, 1.4vw, 1.2rem);
+  font-size: clamp(1rem, calc(1.4vw * var(--ui-scale)), 1.2rem);
   font-weight: 500;
 }
 
 .extraNote {
   margin: 0.375rem 0 clamp(0.875rem, 1.8vh, 1.5rem);
-  font-size: clamp(0.82rem, 1.05vw, 1rem);
+  font-size: clamp(0.82rem, calc(1.05vw * var(--ui-scale)), 1rem);
   opacity: 0.6;
 }
 
@@ -230,7 +230,7 @@
 
   small {
     /* pásmo 1250–1524 px */
-    font-size: clamp(0.82rem, 1.05vw, 1rem);
+    font-size: clamp(0.82rem, calc(1.05vw * var(--ui-scale)), 1rem);
     opacity: 0.6;
   }
 }
@@ -238,7 +238,7 @@
 .size {
   flex: none;
   /* pásmo 1255–1537 px */
-  font-size: clamp(0.8rem, 1.02vw, 0.98rem);
+  font-size: clamp(0.8rem, calc(1.02vw * var(--ui-scale)), 0.98rem);
   font-variant-numeric: tabular-nums;
   opacity: 0.5;
 }

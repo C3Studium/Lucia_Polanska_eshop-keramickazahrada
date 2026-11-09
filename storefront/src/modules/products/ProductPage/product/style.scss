@@ -133,7 +133,7 @@
   padding-bottom: 0.625rem;
   border-bottom: 1px solid var(--pdp-line-dark);
   color: rgb(var(--cream-06-rgb) / .5);
-  font: 400 clamp(0.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -141,7 +141,7 @@
 .product__identity h1 {
   max-width: 9ch;
   margin: clamp(3.25rem, 8vh, 5.5rem) 0 0;
-  font: 400 clamp(2.75rem, 4vw, 4.75rem) / 0.9 "Sentient-Regular", serif;
+  font: 400 clamp(2.75rem, calc(4vw * var(--ui-scale)), 4.75rem) / 0.9 "Sentient-Regular", serif;
   letter-spacing: -0.05em;
   text-wrap: balance;
 }
@@ -150,14 +150,14 @@
   max-width: 9em;
   margin: 0.75rem 0 clamp(2.75rem, 6vh, 4.125rem) clamp(1.5rem, 2.4vw, 2.875rem);
   color: var(--pdp-olive);
-  font: 400 clamp(1.25rem, 1.7vw, 1.875rem) / 1.02 "Sentient-LightItalic", "Sentient-Regular", serif;
+  font: 400 clamp(1.25rem, calc(1.7vw * var(--ui-scale)), 1.875rem) / 1.02 "Sentient-LightItalic", "Sentient-Regular", serif;
 }
 
 .product__lead {
   max-width: 36ch;
   margin: 0;
   color: rgb(var(--cream-06-rgb) / .62);
-  font: 300 clamp(0.9375rem, 1.05vw, 1.0625rem) / 1.5 "Sansation-Light", sans-serif;
+  font: 300 clamp(0.9375rem, calc(1.05vw * var(--ui-scale)), 1.0625rem) / 1.5 "Sansation-Light", sans-serif;
 }
 
 .product__leadMore {
@@ -192,13 +192,13 @@
   align-items: center;
   gap: 0.6875rem;
   margin-top: clamp(2rem, 6vh, 4rem);
-  font: 400 clamp(0.75rem, 1vw, 0.875rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.11em;
   text-transform: uppercase;
 }
 
 .product__ratingValue {
-  font: 400 clamp(1.25rem, 1.667vw, 1.459rem)/1 "Sentient-Regular", serif;
+  font: 400 clamp(1.25rem, calc(1.667vw * var(--ui-scale)), 1.459rem)/1 "Sentient-Regular", serif;
   letter-spacing: 0;
 }
 
@@ -368,7 +368,7 @@
   right: 0.625rem;
   bottom: 0.5rem;
   color: rgb(var(--ink-05-rgb) / .54);
-  font: 400 clamp(0.8125rem, 1.083vw, 0.948rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.8125rem, calc(1.083vw * var(--ui-scale)), 0.948rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
 }
 
@@ -393,7 +393,7 @@
   padding-top: 0.5rem;
   border-top: 1px solid rgb(var(--white-rgb) / .42);
   color: rgb(var(--white-rgb) / .82);
-  font: 400 clamp(0.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   text-shadow: 0 1px 8px rgb(var(--black-01-rgb) / .4);
@@ -412,7 +412,7 @@
 
 .product__galleryOutro span {
   color: rgb(var(--cream-06-rgb) / .46);
-  font: 400 clamp(0.75rem, 1vw, 0.875rem)/1.3 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem)/1.3 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -421,7 +421,7 @@
   max-width: 15ch;
   margin: 0 0 0 auto;
   text-align: right;
-  font: 400 clamp(1.625rem, 2.45vw, 2.75rem) / 0.98 "Sentient-LightItalic", "Sentient-Regular", serif;
+  font: 400 clamp(1.625rem, calc(2.45vw * var(--ui-scale)), 2.75rem) / 0.98 "Sentient-LightItalic", "Sentient-Regular", serif;
   letter-spacing: -0.035em;
 }
 
@@ -435,7 +435,7 @@
   align-items: center;
   gap: clamp(0.625rem, 1.1vw, 1.125rem);
   color: rgb(var(--cream-06-rgb) / .38);
-  font: 400 clamp(0.75rem, 1vw, 0.875rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -507,7 +507,7 @@
 }
 
 .product__purchase[data-bundle="true"] .product__purchaseHeader {
-  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
+  font-size: clamp(0.8125rem, calc(1.083vw * var(--ui-scale)), 0.948rem);
 }
 
 .product__purchase[data-bundle="true"] .product__selection {
@@ -515,18 +515,18 @@
 }
 
 .product__purchase[data-bundle="true"] .product__selection small {
-  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
+  font-size: clamp(0.8125rem, calc(1.083vw * var(--ui-scale)), 0.948rem);
 }
 
 .product__purchase[data-bundle="true"] .product__selection span {
   margin-top: 0.8125rem;
-  font-size: clamp(1.6875rem, 2vw, 2.1875rem);
+  font-size: clamp(1.6875rem, calc(2vw * var(--ui-scale)), 2.1875rem);
 }
 
 .product__purchase[data-bundle="true"] .product__serviceNotes {
   margin-top: 1.75rem;
   padding: 1.125rem 0;
-  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
+  font-size: clamp(0.8125rem, calc(1.083vw * var(--ui-scale)), 0.948rem);
 }
 
 .product__selection {
@@ -537,7 +537,7 @@
 .product__selection small {
   display: block;
   color: rgb(var(--cream-06-rgb) / .62);
-  font: 400 clamp(0.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -546,7 +546,7 @@
   display: block;
   margin-top: 0.625rem;
   color: var(--pdp-olive);
-  font: 400 clamp(1.375rem, 1.8vw, 1.9375rem) / 1.05 "Sentient-LightItalic", "Sentient-Regular", serif;
+  font: 400 clamp(1.375rem, calc(1.8vw * var(--ui-scale)), 1.9375rem) / 1.05 "Sentient-LightItalic", "Sentient-Regular", serif;
 }
 
 .product__optionPanel {
@@ -584,7 +584,7 @@
 .product__details__subDetails__colors > p {
   margin: 0;
   color: rgb(var(--cream-06-rgb) / .62);
-  font: 400 clamp(0.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -620,7 +620,7 @@
 .product__variantNote {
   margin: 0;
   color: rgb(var(--cream-06-rgb) / .6);
-  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
+  font-size: clamp(0.8125rem, calc(1.083vw * var(--ui-scale)), 0.948rem);
   line-height: 1.45;
 }
 
@@ -636,13 +636,13 @@
   p {
     margin: 0.35rem 0 0;
     color: rgb(var(--cream-06-rgb) / .72);
-    font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
+    font-size: clamp(0.8125rem, calc(1.083vw * var(--ui-scale)), 0.948rem);
     line-height: 1.45;
   }
 }
 
 .product__clearanceNoteLabel {
-  font-size: clamp(0.6875rem, 0.9vw, 0.78rem);
+  font-size: clamp(0.6875rem, calc(0.9vw * var(--ui-scale)), 0.78rem);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgb(var(--cream-06-rgb) / .5);
@@ -660,7 +660,7 @@
   margin: 0;
   padding-bottom: 1.25rem;
   color: var(--pdp-cream);
-  font: 400 clamp(1.4rem, 2vw, 2.1rem)/1 "Sentient-Regular", serif;
+  font: 400 clamp(1.4rem, calc(2vw * var(--ui-scale)), 2.1rem)/1 "Sentient-Regular", serif;
   letter-spacing: -0.02em;
   text-align: right;
 }
@@ -670,7 +670,7 @@
   max-width: 42ch;
   margin: 0 0 clamp(0.75rem, 1.6vh, 1.1rem);
   color: rgb(var(--cream-06-rgb) / .72);
-  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
+  font-size: clamp(0.8125rem, calc(1.083vw * var(--ui-scale)), 0.948rem);
   line-height: 1.45;
 }
 
@@ -685,7 +685,7 @@
 .product__details__cta__price > p {
   margin: 0.3125rem 0 0;
   color: rgb(var(--cream-06-rgb) / .62);
-  font: 400 clamp(0.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -701,13 +701,13 @@
 
 .product__details__cta__price__main > span:first-child {
   color: var(--pdp-cream);
-  font: 400 clamp(2.125rem, 2.8vw, 3.25rem) / 0.9 "Sentient-Regular", serif;
+  font: 400 clamp(2.125rem, calc(2.8vw * var(--ui-scale)), 3.25rem) / 0.9 "Sentient-Regular", serif;
   letter-spacing: -0.04em;
 }
 
 .product__details__cta__price__main > .product__priceUnavailable {
   max-width: 8ch;
-  font-size: clamp(1.3125rem, 1.6vw, 1.75rem);
+  font-size: clamp(1.3125rem, calc(1.6vw * var(--ui-scale)), 1.75rem);
   line-height: 1;
   letter-spacing: -0.025em;
 }
@@ -720,7 +720,7 @@
 .product__details__cta__price__main > p {
   margin: 0;
   color: rgb(var(--cream-06-rgb) / .62);
-  font: 300 clamp(0.8125rem, 1.083vw, 0.948rem)/1.35 "Sansation-Light", sans-serif;
+  font: 300 clamp(0.8125rem, calc(1.083vw * var(--ui-scale)), 0.948rem)/1.35 "Sansation-Light", sans-serif;
 }
 
 .product__priceOriginalLabel {
@@ -734,7 +734,7 @@
 }
 
 .product__priceDiscount {
-  font: 400 clamp(0.8125rem, 1.083vw, 0.948rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.8125rem, calc(1.083vw * var(--ui-scale)), 0.948rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .08em;
 }
 
@@ -787,7 +787,7 @@
   width: 100%;
   margin: 0;
   font-family: "Sansation-Regular", sans-serif;
-  font-size: clamp(0.875rem, 1.167vw, 1.021rem);
+  font-size: clamp(0.875rem, calc(1.167vw * var(--ui-scale)), 1.021rem);
   line-height: 1.5;
   text-align: right;
 }
@@ -810,7 +810,7 @@
   margin: 0;
   font-family: "Sansation-Regular", sans-serif;
   /* 0,8× (Matěj 12. 10.: poznámky pod tlačítky menší na všech zařízeních) */
-  font-size: clamp(0.65rem, 0.866vw, 0.758rem);
+  font-size: clamp(0.65rem, calc(0.866vw * var(--ui-scale)), 0.758rem);
   line-height: 1.5;
   text-align: right;
   color: var(--cream-02);
@@ -830,7 +830,7 @@
   border-radius: 999px;
   background: var(--cream-06);
   color: var(--pdp-ink, #20211c);
-  font: 400 clamp(0.875rem, 1.167vw, 1.021rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.875rem, calc(1.167vw * var(--ui-scale)), 1.021rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.02em;
   text-decoration: none;
 }
@@ -847,7 +847,7 @@
   margin: 0;
   font-family: "Sansation-Regular", sans-serif;
   /* 0,8× (Matěj 12. 10.) */
-  font-size: clamp(0.65rem, 0.866vw, 0.758rem);
+  font-size: clamp(0.65rem, calc(0.866vw * var(--ui-scale)), 0.758rem);
   line-height: 1.5;
   text-align: right;
   color: var(--cream-02);
@@ -865,7 +865,7 @@
 .product__details__cta__quantity > span {
   color: var(--pdp-cream, var(--cream-06));
   font-family: "Sansation-Regular", sans-serif;
-  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
+  font-size: clamp(0.8125rem, calc(1.083vw * var(--ui-scale)), 0.948rem);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -1001,7 +1001,7 @@
   /* 0,8× původní velikosti (Matěj 12. 10.: dostupnost, výroba, balné,
      dobírka — menší na všech zařízeních; tohle pravidlo vyhrává nad
      třídami poznámek, proto se zmenšuje tady). */
-  font: 400 clamp(0.7rem, 0.934vw, 0.817rem)/1.4 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.7rem, calc(0.934vw * var(--ui-scale)), 0.817rem)/1.4 "Sansation-Regular", sans-serif;
 }
 
 .product__serviceNotes {
@@ -1013,7 +1013,7 @@
   padding: 0.9375rem 0;
   border-top: 1px solid var(--pdp-line-dark);
   color: rgb(var(--cream-06-rgb) / .62);
-  font: 400 clamp(0.75rem, 0.85vw, 0.83rem)/1.35 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, calc(0.85vw * var(--ui-scale)), 0.83rem)/1.35 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -1067,7 +1067,7 @@
   max-width: 12ch;
   margin: 0 0 0 auto;
   text-align: right;
-  font: 400 clamp(3.25rem, 5.8vw, 6.5rem) / 0.84 "Sentient-Regular", serif;
+  font: 400 clamp(3.25rem, calc(5.8vw * var(--ui-scale)), 6.5rem) / 0.84 "Sentient-Regular", serif;
   letter-spacing: -0.055em;
 }
 
@@ -1193,7 +1193,7 @@
   max-width: 28ch;
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .7);
-  font: 300 clamp(0.9375rem, 0.95vw, 1.125rem) / 1.5 "Sansation-Light", sans-serif;
+  font: 300 clamp(0.9375rem, calc(0.95vw * var(--ui-scale)), 1.125rem) / 1.5 "Sansation-Light", sans-serif;
 }
 
 .product__chapterButton {
@@ -1420,7 +1420,7 @@
   .product__identity h1 {
     max-width: none;
     margin: clamp(1rem, 2.5vh, 1.75rem) 0 0;
-    font-size: clamp(1.85rem, 9vw, 2.5rem);
+    font-size: clamp(1.85rem, calc(9vw * var(--ui-scale)), 2.5rem);
   }
 
   /*
@@ -1712,7 +1712,7 @@
    */
   .product__identity h1 {
     max-width: none;
-    font-size: clamp(3rem, 7.5vw, 5rem);
+    font-size: clamp(3rem, calc(7.5vw * var(--ui-scale)), 5rem);
   }
 }
 
@@ -1836,7 +1836,7 @@
 
   .product__identity h1 {
     max-width: 9ch;
-    font-size: clamp(2.75rem, 4vw, 4.75rem);
+    font-size: clamp(2.75rem, calc(4vw * var(--ui-scale)), 4.75rem);
   }
 }
 /*
@@ -1926,7 +1926,7 @@
          dolů proti 7.5vw ze stopy výš. Odsazení shora je v základu až 5.5rem —
          to je psané pro stránku, která začíná prázdnem, ne pro sevřený sloupec. */
       margin-top: clamp(1.25rem, 2.4vh, 2rem);
-      font-size: clamp(1.75rem, 4.2vw, 2.5rem);
+      font-size: clamp(1.75rem, calc(4.2vw * var(--ui-scale)), 2.5rem);
     }
 
     /*
@@ -1943,7 +1943,7 @@
       max-width: 34ch;
       margin-top: clamp(0.875rem, 1.8vh, 1.25rem);
       margin-left: auto;
-      font-size: clamp(0.8125rem, 0.95vw, 0.9375rem);
+      font-size: clamp(0.8125rem, calc(0.95vw * var(--ui-scale)), 0.9375rem);
       line-height: 1.45;
     }
 

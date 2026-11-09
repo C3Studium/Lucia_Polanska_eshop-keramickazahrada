@@ -71,7 +71,7 @@
 /* 14px is the floor, never the value: live from 1273px to 1545px wide, 17px above that. */
 .text {
   margin: 0;
-  font: 400 clamp(.875rem, 1.1vw, 1.0625rem)/1.55 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.875rem, calc(1.1vw * var(--ui-scale)), 1.0625rem)/1.55 "Sansation-Regular", sans-serif;
 }
 
 .link {
@@ -105,7 +105,7 @@
   padding: 0 clamp(1.25rem, 1.5vw, 1.75rem);
   border-radius: 999px;
   cursor: pointer;
-  font: 400 clamp(.9375rem, 1.15vw, 1.125rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9375rem, calc(1.15vw * var(--ui-scale)), 1.125rem)/1 "Sansation-Regular", sans-serif;
   transition:
     background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
     color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
