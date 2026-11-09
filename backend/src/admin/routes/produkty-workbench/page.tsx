@@ -996,6 +996,36 @@ const ProductsInner = () => {
     onError: (e) => toast.error(ceskaChyba(e, "Archivace se nepodařila.")),
   });
 
+  /*
+   * Mazání vedle archivace, ne místo ní (9. 11. 2026). Archiv kus schová
+   * a drží; tohle ho odstraní. Žádné „Vrátit zpět" — vracet není co, a toast
+   * s tlačítkem, které nic neumí, je horší než žádný.
+   */
+  const bulkDelete = useMutation({
+    mutationFn: () =>
+      zapisPoJednom(
+        [...selected],
+        (id) => sdk.client.fetch(`/admin/products/${id}`, { method: "DELETE" }),
+        (id) => id
+      ),
+    onSuccess: async ({ hotove, neuspesne }) => {
+      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+      await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
+      setSelected(new Set(neuspesne));
+      if (hotove.length > 0) {
+        toast.success(
+          hotove.length === 1 ? "Kus smazán." : `Smazáno ${hotove.length} kusů.`
+        );
+      }
+      if (neuspesne.length > 0) {
+        toast.error(
+          `U ${neuspesne.length} kusů se to nepodařilo — zůstaly vybrané, zkuste to znovu.`
+        );
+      }
+    },
+    onError: (e) => toast.error(ceskaChyba(e, "Mazání se nepodařilo.")),
+  });
+
   const bulkHide = useMutation({
     mutationFn: () =>
       zapisPoJednom(
@@ -1446,6 +1476,7 @@ const ProductsInner = () => {
                   showShipping
                   showMakeCommission={active === "produkty"}
                   showArchive
+                  showDelete
                   trigger={
                     <button
                       type="button"
@@ -1765,6 +1796,30 @@ const ProductsInner = () => {
             }
             isPending={bulkArchive.isPending}
             onConfirm={() => bulkArchive.mutate()}
+          />
+          {/*
+            Mazání vedle archivace: v Archivovaných je to jediná cesta, jak se
+            zkušebních kusů opravdu zbavit (9. 11. 2026).
+          */}
+          <ConfirmDialog
+            trigger={
+              <Button size="small" variant="danger" className="shrink-0">
+                Smazat
+              </Button>
+            }
+            title={
+              selected.size === 1
+                ? "Smazat tenhle kus?"
+                : `Smazat ${selected.size < 5 ? `tyhle ${selected.size} kusy` : `těchhle ${selected.size} kusů`}?`
+            }
+            description="Zmizí z obchodu i ze všech seznamů včetně archivu. Když je chcete jen stáhnout z obchodu a nechat si je, použijte Archivovat."
+            items={selectedRows.map((row) => row.title)}
+            consequence="Smazané kusy se nevrátí ani přes Ctrl+Z. Objednávky, ve kterých už jsou, si svůj záznam nechají — faktury zůstanou celé."
+            confirmLabel={
+              selected.size === 1 ? "Smazat kus" : `Smazat ${selected.size} kusů`
+            }
+            isPending={bulkDelete.isPending}
+            onConfirm={() => bulkDelete.mutate()}
           />
         </BulkBar>
       )}
