@@ -152,6 +152,12 @@
         font-size: inherit;
         white-space: nowrap;
       }
+
+      /* Slovo drží písmena pohromadě — láme se jen v mezeře mezi slovy (viz charSplit). */
+      .precise__word {
+        display: inline-block;
+        white-space: nowrap;
+      }
     }
 
     .Hero__Intro__Container {
@@ -201,7 +207,9 @@
       h2 {
         color: var(--olive-15);
         font-family: "Sentient-LightItalic";
-        font-size: clamp(4.2rem, min(calc(7.8vw * var(--ui-scale)), calc(13vh * var(--ui-scale))), 8.8rem);
+        /* Podlaha min(4.2rem, 15vw): na telefonu s větším písmem byla 4.2rem širší než
+           sloupec a „Keramické" se do řádku nevešlo. */
+        font-size: clamp(min(4.2rem, 15vw), min(calc(7.8vw * var(--ui-scale)), calc(13vh * var(--ui-scale))), 8.8rem);
         letter-spacing: -0.045em;
       }
 

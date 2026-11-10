@@ -368,8 +368,7 @@ html[data-app="studio"] *::-webkit-scrollbar-thumb {
  * Měřítko písma a ovládání na šířku (9. 11. 2026).
  *
  * U klientky bylo všechno o kus větší, než kolik se do sloupců vejde — text a tlačítka se
- * tlačily. Na šířku proto do `huge` (1730px) 0.85 a nad ním 0.95; na výšku (telefon, tablet
- * na výšku) zůstává 1, tam se to ladilo zvlášť.
+ * tlačily. Na šířku proto do `huge` (1730px) 0.85 a nad ním 0.95; telefony a tablety viz níž.
  *
  * Proč takhle a ne CSS `zoom`: zoom v Chromiu násobí i `100vw` a `100vh`, takže sekce na celou
  * obrazovku (sticky scény úvodu, Výroby, Kurzů) by vyšly na 85 % okna s prázdným okrajem.
@@ -395,6 +394,38 @@ html[data-app="studio"] *::-webkit-scrollbar-thumb {
 @media (orientation: landscape) and (min-width: 1730px) {
   :root {
     --ui-scale: 0.95;
+  }
+}
+
+/*
+ * Telefony a tablety (10. 11. 2026): na výšku o pětinu menší (1 → 0.8) — na iPhonu se pokladna
+ * a košík nevešly do sloupce a tlačítka byla přerostlá. Dotyková zařízení na šířku (tablet,
+ * telefon bokem) 0.85 → 0.75, ne o celou pětinu: při 0.68 měla většina textu v obchodě
+ * na 1180×820 jen 8–10px.
+ */
+@media (orientation: portrait) {
+  :root {
+    --ui-scale: 0.8;
+  }
+}
+
+@media (orientation: landscape) and (hover: none) and (pointer: coarse) and (max-width: 1729.98px) {
+  :root {
+    --ui-scale: 0.75;
+  }
+}
+
+/*
+ * iPhone a iPad přiblíží celou stránku, jakmile se klepne do políčka s písmem menším než
+ * 16px — a po zmenšení výš má většina políček 12–13px. Jen pro Safari na iOS
+ * (`-webkit-touch-callout` nikde jinde není); `!important`, protože velikost políček
+ * nastavují třídy modulů s vyšší specifičností.
+ */
+@supports (-webkit-touch-callout: none) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: max(16px, 1em) !important;
   }
 }
 

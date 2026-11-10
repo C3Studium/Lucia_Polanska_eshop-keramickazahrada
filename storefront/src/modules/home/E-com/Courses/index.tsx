@@ -89,14 +89,24 @@ export default function Courses({ copy }: { copy?: CopyBlocks }) {
     "Ručně tvořená keramika pro zahradu i domov. Všechno vzniká pomalu a jen v malém počtu."
 
   const sectionRef = useRef<HTMLElement>(null)
-  const { isPhone } = useDeviceTier()
+  const { isPhone, isTouch } = useDeviceTier()
+  /*
+   * Na telefonu a tabletu dvojnásobná dráha (10. 11. 2026): prstem se scéna projela jedním
+   * švihnutím a přechod přeskakoval. Nájezd končí o obrazovku později a teprve odtud běží
+   * připnutá část, taky dvakrát delší — sekce je proto na dotyku ve stylech dvakrát vyšší.
+   */
+  const touchHandOff = isTouch ? "start -100vh" : "start start"
+  const touchRef = useRef(isTouch)
+  touchRef.current = isTouch
+  const isPhoneRef = useRef(isPhone)
+  isPhoneRef.current = isPhone
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    offset: ["start start", "end end"],
+    offset: [touchHandOff, "end end"],
   })
   const { scrollYProgress: entryProgress } = useScroll({
     target: sectionRef,
-    offset: ["start end", "start start"],
+    offset: ["start end", touchHandOff],
   })
   const revealProgress = useSpring(scrollYProgress, {
     stiffness: 60,
@@ -134,11 +144,14 @@ export default function Courses({ copy }: { copy?: CopyBlocks }) {
    * place, it just does so from below its own box rather than from above it, and never covers
    * anything but itself.
    */
-  const stageLead = useTransform(
-    entry,
-    [0, 0.6],
-    [isPhone ? "8%" : "-26%", "0%"]
-  )
+  /* Předbíhání drží geometrii, ne dráhu: končí, když je horní hrana sekce 40 % okna pod
+     horním okrajem — to je 0.6 nájezdu, na dotyku (dvojnásobný nájezd) 0.3. Z refů, protože
+     tier se zjistí až po prvním vykreslení. */
+  const stageLead = useTransform(entry, (value: number) => {
+    const end = touchRef.current ? 0.3 : 0.6
+    const from = isPhoneRef.current ? 8 : -26
+    return `${from * (1 - Math.min(1, Math.max(0, value / end)))}%`
+  })
   const entryCoverClip = useTransform(
     entry,
     [0.02, 0.18],

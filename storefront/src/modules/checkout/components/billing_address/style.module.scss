@@ -11,6 +11,8 @@
 		/* Add more nested selectors if needed for custom input styling */
 		.input {
 			margin: 0.25rem 0.25rem;
+			/* Pole má z modulu `width: 100%`; s okrajem 0.25rem pak přečnívalo sloupec o 4px. */
+			width: auto;
 		}
 		.countryField {
 			display: flex;

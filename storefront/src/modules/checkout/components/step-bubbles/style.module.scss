@@ -13,7 +13,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  /* Na úzkém telefonu se zvětšeným písmem se bublinky a „1/4 ADRESA" do řádku nevejdou;
+     popisek pak spadne pod ně místo toho, aby vytlačil celý formulář z panelu. */
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
   margin-bottom: 1.25rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid rgb(var(--ink-05-rgb) / .14);

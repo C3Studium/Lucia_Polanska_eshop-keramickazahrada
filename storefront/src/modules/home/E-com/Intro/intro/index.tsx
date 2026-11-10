@@ -306,17 +306,35 @@ const charSplit = (text: string, isInView: boolean, baseDelay = 0) => {
         })
     }
 
-    return text.split('').map((char, index) => (
-        <motion.span
-            key={index}
-            animate={isInView ? "enter" : "start"}
-            variants={charAnim}
-            custom={index}
-            className="precise__char"
-        >
-            {char === " " ? " " : char}
-        </motion.span>
-    ));
+    /* Písmena po slovech (10. 11. 2026): každé písmeno je inline-block, a mezi dvěma takovými
+       smí prohlížeč zalomit — na telefonu s větším písmem tak z „Keramické" zbylo
+       „Keramick / é". Slovo je teď nedělitelný obal a řádek se láme jen v mezeře.
+       Zpoždění dál počítá písmena včetně mezer, takže vlna jede stejně jako dřív. */
+    let index = 0
+    return text.split(/(\s+)/).filter(Boolean).map((part, partIndex) => {
+        if (/^\s+$/.test(part)) {
+            index += part.length
+            return " "
+        }
+        return (
+            <span key={partIndex} className="precise__word">
+                {part.split('').map((char) => {
+                    const i = index++
+                    return (
+                        <motion.span
+                            key={i}
+                            animate={isInView ? "enter" : "start"}
+                            variants={charAnim}
+                            custom={i}
+                            className="precise__char"
+                        >
+                            {char}
+                        </motion.span>
+                    )
+                })}
+            </span>
+        )
+    });
 }
 
 

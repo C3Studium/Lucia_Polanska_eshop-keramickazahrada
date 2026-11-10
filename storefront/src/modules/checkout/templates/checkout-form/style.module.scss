@@ -1,6 +1,10 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 .root {
   display: grid;
+  /* minmax(0, 1fr), ne výchozí `auto`: automatický sloupec se natáhl na nejširší obsah
+     (kroky, tlačítko) a na iPhonu se zvětšeným písmem vyjel celý formulář z panelu
+     doprava — useknutá pole i „Pokračovat k doručení" (10. 11. 2026). */
+  grid-template-columns: minmax(0, 1fr);
   width: 100%;
   gap: 0;
   padding: 0;

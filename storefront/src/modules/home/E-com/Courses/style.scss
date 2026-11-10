@@ -829,3 +829,72 @@
     @include courses-cta-phone(min(30vw, 15rem), 26vh, 30%);
   }
 }
+
+/*
+ * Telefony a tablety (10. 11. 2026).
+ *
+ * Dvojnásobná dráha: index.tsx na dotyku posouvá konec nájezdu o obrazovku dál
+ * (`start -100vh`) a připnutá část běží až odtud. Aby byla i ona dvakrát delší, je sekce
+ * dvakrát vyšší: připnutí je výška − 200vh, tedy 2 × (původní výška − 100vh).
+ * Pořadí bloků drží přednost jako u výšek výš: 760 pod základem, phs-h nakonec.
+ */
+@include touch {
+  .courses__section {
+    height: 600vh;
+  }
+}
+
+@include touch {
+  @include below-px(760px) {
+    .courses__section {
+      height: 440vh;
+    }
+  }
+}
+
+@include touch {
+  @include phs-h {
+    .courses__section {
+      height: 340vh;
+    }
+  }
+}
+
+/*
+ * Ovál na telefonu pryč (10. 11. 2026) — v úzkém panelu působil divně. Bez masky je plocha
+ * závěsu celá plná a výřez s popiskem se nekreslí; tablety ho mají dál.
+ */
+@mixin courses-cta-no-window {
+  .courses__section .Courses__footerCurtain {
+    .Courses__ctaSurface {
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+
+    .Courses__ctaWindow {
+      display: none;
+    }
+
+    /* Bez oválu by nad textem zbyla prázdná půlka panelu — text jde doprostřed. */
+    .Courses__cta {
+      top: 50%;
+      bottom: auto;
+      transform: translateY(-50%);
+    }
+  }
+}
+
+@include below-px(760px) {
+  @include courses-cta-no-window;
+}
+
+@include phs-h {
+  @include courses-cta-no-window;
+}
+
+/* Telefon na výšku: „Objevit kurzy" leželo pod spodní lištou (ta zabírá ~70px odspodu). */
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .courses__section .Courses__content {
+    padding-bottom: calc(80px + 2vh);
+  }
+}

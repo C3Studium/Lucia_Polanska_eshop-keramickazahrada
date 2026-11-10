@@ -149,6 +149,9 @@
 
     button {
         position: relative;
+        /* Pod 1100 je řada vodorovně posuvná; bez tohohle se čipy místo posuvu smrskly
+           a `overflow: hidden` jim ustřihl popisek („Zakázková výr…") — 10. 11. 2026. */
+        flex: 0 0 auto;
         /* Plochych 38px prepsano stejnou metodou jako vyska pole: 3.5vh = 37.8 na 1080. */
         height: clamp(2.125rem, 3.5vh, 2.875rem);
         /* Podlaha 1rem je puvodnich 16px — pod 1524 se pilulka nezuzi, jen prestane byt
@@ -373,6 +376,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    /* Pojistka pro úzký telefon se zvětšeným písmem: číslo spadne pod tlačítko,
+       místo aby ho `overflow: hidden` na `.faqContact` ustřihl (10. 11. 2026). */
+    flex-wrap: wrap;
     gap: 1rem;
     margin-top: clamp(1.25rem, 2.6vh, 2rem);
 

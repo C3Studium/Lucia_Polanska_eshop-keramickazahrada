@@ -56,6 +56,14 @@
         xs: (height: 45px),
     ));
 
+    /* Telefon na výšku (10. 11. 2026): i po zmenšení na 0.8 působilo „Prohlédnout výrobky"
+       vedle 12px textu přerostle. Násobek místo přepsání velikosti, aby hodnota, kterou si
+       nastaví volající přes --web-button-label-size, platila dál. Výška zůstává 45px
+       (dotykový cíl), jen popisek je menší. */
+    @media (orientation: portrait) and (max-width: 599.98px) {
+        --web-button-phone-k: 0.82;
+    }
+
     .slider{
         position: relative;
         /*
@@ -115,7 +123,7 @@
             justify-content: center;
             align-items: center;
             p{
-                font-size: var(--web-button-label-size);
+                font-size: calc(var(--web-button-label-size) * var(--web-button-phone-k, 1));
                 padding: var(--web-button-label-padding);
                 margin: 0px;
             }

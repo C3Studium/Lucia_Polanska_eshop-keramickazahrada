@@ -179,6 +179,9 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 0.625rem;
+    /* Když se nadpis a tlačítko vedle sebe nevejdou (iPhone se zvětšeným písmem, 320px),
+       spadne slevový kód pod nadpis — dřív tlačítko vyjelo z panelu (10. 11. 2026). */
+    flex-wrap: wrap;
   }
 
   .heading {

@@ -580,6 +580,13 @@
   .mobileControls {
     margin-top: 8px;
     gap: 8px;
+    /* Na 320px se ovladač, cena a „Odebrat" do 186px sloupce nevešly: „+" se ustřihlo
+       a cena zalezla pod tlačítko. Radši spadne „Odebrat" na další řádek. */
+    flex-wrap: wrap;
+
+    > * {
+      flex-shrink: 0;
+    }
   }
 }
 
