@@ -549,6 +549,14 @@
    * edge and the whole page scrolled sideways to reach it.
    */
   .header {
+    /* V široké scéně je nadpis `absolute` přes lištu karet. V koloně to nechávalo
+       „Stejný postup, pokaždé jiný výsledek." ležet přes první kartu a nad kartami zbylo
+       prázdné místo — margin níž bez toho nic neudělal (10. 11. 2026, i na živém webu). */
+    position: static;
+    /* Odsazení 5.5rem drželo nadpis pod navigací, když ležel přes panel; v toku ho
+       nese `.sticky` výš. */
+    padding-top: 0;
+    pointer-events: auto;
     width: 100%;
     min-height: 0;
     grid-template-columns: minmax(0, 1fr);

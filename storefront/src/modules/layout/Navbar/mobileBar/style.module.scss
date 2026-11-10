@@ -27,7 +27,8 @@
   --bar-slot: calc(44px * var(--bar-scale));
   --bar-mark: calc(27px * var(--bar-scale));
   --bar-badge: calc(14px * var(--bar-scale));
-  --bar-badge-text: calc(calc(10px * var(--ui-scale)) * var(--bar-scale));
+  /* Bez --ui-scale (10. 11. 2026): číslo v bublině by na telefonu vyšlo na 8px. */
+  --bar-badge-text: calc(10px * var(--bar-scale));
 
   display: grid;
   position: fixed;

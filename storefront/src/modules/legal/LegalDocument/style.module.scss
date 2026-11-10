@@ -1431,7 +1431,10 @@
       border-top: 1px solid var(--legal-rule);
       text-align: left;
       vertical-align: top;
-      overflow-wrap: anywhere;
+      /* break-word, ne anywhere (10. 11. 2026): `anywhere` dovolí sloupci smrsknout se pod
+         délku slova, takže ceník na telefonu ukazoval „90 K / č" a „zdar / ma". Tabulka má
+         vlastní vodorovný posuv (.tableScroll), slova se tu dělit nemusí. */
+      overflow-wrap: break-word;
     }
 
     thead th {

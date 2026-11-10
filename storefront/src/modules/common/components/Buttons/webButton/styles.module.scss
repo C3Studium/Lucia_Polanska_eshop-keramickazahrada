@@ -123,7 +123,9 @@
             justify-content: center;
             align-items: center;
             p{
-                font-size: calc(var(--web-button-label-size) * var(--web-button-phone-k, 1));
+                /* Podlaha 11px: malá tlačítka („Vybrat termín", „Napište mi") vycházela po
+                   zmenšení na telefonu na 9px. */
+                font-size: max(11px, calc(var(--web-button-label-size) * var(--web-button-phone-k, 1)));
                 padding: var(--web-button-label-padding);
                 margin: 0px;
             }

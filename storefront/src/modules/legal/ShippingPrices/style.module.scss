@@ -24,6 +24,20 @@
   table {
     min-width: 28rem;
   }
+
+  /* Cena (první <td>, řádek začíná <th>) drží v jednom řádku: na telefonu se lámala
+     na „250 / Kč" (10. 11. 2026). */
+  td:nth-of-type(1) {
+    white-space: nowrap;
+  }
+}
+
+/* Na telefonu se tabulka vejde celá, když se nelámou slova — minimální šířka 28rem
+   by poslední sloupec („vyzvednutí v ateliéru po domluvě") jen schovala za posuv. */
+@media (max-width: 599.98px) {
+  .prices .tableScroll table {
+    min-width: 0;
+  }
 }
 
 .small {

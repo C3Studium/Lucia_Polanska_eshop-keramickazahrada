@@ -54,7 +54,7 @@
 
     small {
       color: rgb(var(--ink-05-rgb) / .58);
-      font-size: 0.6875rem;
+      font-size: max(10px, 0.6875rem);
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }

@@ -86,6 +86,15 @@
    žádné rozměry se nikde neopisují. */
 .labelStack {
   display: inline-block;
+  /* Písmo a nezalamování na obalu, ne jen na spodní kopii (10. 11. 2026): horní,
+     světlá kopie je vidět, když je tlačítko vybrané, a bez nich dědila písmo
+     tlačítka — byla větší a na telefonu se zalomila, „Pokračovat k přehledu"
+     mělo useknutý druhý řádek. */
+  white-space: nowrap;
+  /* The CTA for the whole purchase flow — the 15px UI floor applies, so
+     .9375rem is the floor of the clamp and never goes below it.
+     15 -> 17px, live 1304-1478. */
+  font: 400 clamp(.9375rem, calc(1.15vw * var(--ui-scale)), 1.0625rem)/1 "Sansation-Regular", sans-serif;
 }
 
 .labelOver {
@@ -101,11 +110,6 @@
      Bez tohohle by ji přebarvila animace barvy, která běží na tlačítku kvůli
      šipce, a obě kopie by v jednu chvíli svítily světle. */
   color: var(--premium-button-ink, var(--ink-05));
-  white-space: nowrap;
-  /* The CTA for the whole purchase flow — the 15px UI floor applies, so
-     .9375rem is the floor of the clamp and never goes below it.
-     15 -> 17px, live 1304-1478. */
-  font: 400 clamp(.9375rem, calc(1.15vw * var(--ui-scale)), 1.0625rem)/1 "Sansation-Regular", sans-serif;
 }
 
 /* The arrow sits inside the button, so it rides the same vh axis at a fixed
@@ -145,7 +149,7 @@
     calc(clamp(.75rem, 1vw, 1rem) * var(--premium-button-scale, 1));
 }
 
-.compact .label {
+.compact .labelStack {
   font-size: calc(clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1rem) * var(--premium-button-scale, 1));
 }
 /* .6 of the compact height (24/40). Flat like the height it sits in, so the
