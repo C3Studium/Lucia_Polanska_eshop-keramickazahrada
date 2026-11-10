@@ -13,9 +13,14 @@ import type { ShopFilters } from "./types"
  * Proto snímek v `sessionStorage`: přežije přechod mezi stránkami, ale ne
  * zavření panelu prohlížeče — zítra má obchod začínat čistý.
  *
- * Zapisuje se JEN při odchodu na výrobek (viz posluchač v index.tsx) a při
- * návratu se hned spotřebuje. Vstup do obchodu z menu tedy žádný snímek
- * nenajde a otevře se čistý, jak má.
+ * Zapisuje se JEN při odchodu na výrobek (viz posluchač v index.tsx).
+ *
+ * Spotřebovat se ale smí jen při NÁVRATU, tedy po stisku Zpět — tady bývalo
+ * napsáno, že příchod z menu žádný snímek nenajde, a nebyla to pravda:
+ * snímek leží v paměti až do příští návštěvy obchodu, ať se tam člověk
+ * dostane jakkoli. Kdo si prohlédl výrobek a pak klepl na „E-shop“, spadl
+ * doprostřed výpisu. O to, jestli jde o návrat, se ptá `prisliJsmeZpet()`
+ * (`lib/helpers/navigace-zpet.ts`); při jiném příchodu se snímek zahodí.
  */
 export type ShopSnapshot = {
   filters: ShopFilters

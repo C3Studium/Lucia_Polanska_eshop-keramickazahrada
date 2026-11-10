@@ -102,6 +102,10 @@ const CartQuantityStepper = ({
         onClick={increase}
         disabled={disabled || value >= max}
         aria-label="Zvýšit množství"
+        /* Zakázané plus je u ručně dělané keramiky běžný stav — kusů je často
+           jen jeden. Bez vysvětlení to ale vypadá jako chyba obchodu: první
+           čtenářka (10. 11. 2026) hlásila, že plus „nevidí“. */
+        title={value >= max && !disabled ? "Víc kusů tohohle výrobku objednat nejde" : undefined}
       >
         +
       </button>

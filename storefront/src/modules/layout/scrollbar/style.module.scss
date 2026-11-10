@@ -1,30 +1,43 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
-.sidebar {
+
+/*
+ * Tvar, který lidi znají: dráha u pravé hrany a v ní úchop.
+ *
+ * Dvě šířky, ne jedna. Vidět je vlásek (`--listva-sirka`), ale chytá se celá
+ * `.draha` — ta je o řád širší a průhledná. Čtyřpixelový pruh by se myší
+ * trefoval stěží a prstem vůbec; dotyková podlaha se tím drží, aniž by lišta
+ * ukrojila kus stránky.
+ *
+ * `mix-blend-mode: difference` zůstává po předchozí verzi a má proč: stránka
+ * střídá krémové a tmavé pásy a lišta jede přes obojí. Jedna barva by na
+ * jednom z nich zmizela — rozdíl se obrátí spolu s podkladem.
+ */
+.listva {
   position: fixed;
   /*
    * Pod rodinou překryvů (500: kontaktní dialog, rezervace kurzu, cookie
-   * dialog), nad pruhem s cookies (400).
-   *
-   * Bylo 20000, takže se lišta kreslila PŘES otevřený dialog — a protože má
-   * `mix-blend-mode: difference`, invertovala pod sebou panel a četla se jako
-   * tmavý pruh u pravé hrany. V kontaktním dialogu to vypadalo jako divný
-   * stín; ve skutečnosti to byl posuvník stránky nad modálem.
+   * dialog), nad pruhem s cookies (400). Vyšší hodnota by lištu kreslila
+   * PŘES otevřený dialog a `difference` by pod ní panel invertovala — vypadalo
+   * to jako divný stín u pravé hrany.
    */
   z-index: 450;
-  top: 50%;
+  top: clamp(0.5rem, 1.5vh, 1rem);
+  bottom: clamp(0.5rem, 1.5vh, 1rem);
   right: calc(var(--page-inset, 0px) + 7px);
   display: flex;
-  justify-content: flex-end;
   color: var(--cream-06);
   mix-blend-mode: difference;
   pointer-events: none;
-  transform: translateY(-50%);
+  transition: opacity 260ms ease;
 
-  /* Both stops re-declare `right`, so the --page-inset on the base rule was being overridden and
-     the rail sat against the screen edge outside the 16:10 frame on ultrawide.
-     Krajní členy v rem, ne v px: nad 1921 je zvedne ramp, takže se lišta na 2K odsune od
-     rámu ve stejném poměru, v jakém rám povyrostl (2552: 30.6 px místo dřívějších 24).
-     Živé pásmo 10/0.012 = 833 px … 24/0.012 = 2000 px. */
+  /* Vlásek v klidu, pilulka po najetí. */
+  --listva-sirka: 0.25rem;
+  /* Plocha, kterou lze chytit. */
+  --listva-chyt: 1rem;
+
+  /* Oba zarážky přepisovaly `right`, takže `--page-inset` ze základního
+     pravidla neplatilo a lišta seděla na hraně obrazovky mimo 16:10 rám.
+     Krajní členy v rem, ať je nad 1921 zvedne ramp spolu s rámem. */
   @include v(md) {
     right: calc(var(--page-inset, 0px) + clamp(0.625rem, 1.2vw, 1.5rem));
   }
@@ -32,82 +45,127 @@
   @include h(xs) {
     right: calc(var(--page-inset, 0px) + clamp(0.625rem, 1.2vw, 1.5rem));
   }
-
-  /* A hover-revealed rail of hairline marks. On touch the labels can never appear, the marks are
-     far under the target floor, and the rail sits over the content on a narrow screen. It is a
-     pointer affordance, so it belongs to pointer devices.
-
-     Stojí až za základním pravidlem schválně: h-layer už neemituje @layer, jen obyčejné
-     vnořené media query, takže při stejné specificitě rozhoduje pořadí v souboru. Nahoře
-     nad `display: flex` to sice zatím vyhrávalo (Sass vysype vnořená at-pravidla za
-     deklarace), ale za cenu deseti mixed-decls deprecations a s tím, že po ohlášené změně
-     chování Sassu by `display: flex` skončil za tímhle blokem a přebil ho. */
-  @include touch {
-    display: none;
-  }
 }
 
-.rail {
-  display: flex;
-  align-items: flex-end;
-  flex-direction: column;
-  gap: 8px;
+.listva[data-aktivni="ano"] {
+  --listva-sirka: 0.625rem;
+}
 
-  /* Bylo `padding: 12px 0 12px 18px` a o dva řádky níž znovu `padding-left: 8px` — těch
-     18 px neplatilo nikdy. Jedna deklarace, a v ní každá osa na svém: svisle vh, protože
-     lišta soupeří o výšku obrazovky (živé pásmo 8/0.011 = 727 px … 14/0.011 = 1272 px
-     výšky), vodorovně vw (živé pásmo 6/0.0055 = 1091 px … 10/0.0055 = 1818 px). */
-  padding: clamp(0.5rem, 1.1vh, 0.875rem) 0 clamp(0.5rem, 1.1vh, 0.875rem)
-    clamp(0.375rem, 0.55vw, 0.625rem);
-  cursor: pointer;
+/*
+ * Na dotyku se lišta chová jako na telefonu zvykem: při posunu se ukáže, po
+ * chvíli zmizí. Trvale viditelná by na úzké obrazovce jen ukusovala místo —
+ * a zmizet úplně, jako dřív, znamenalo, že o možnosti posunout se nikdo neví.
+ *
+ * Spodní odsazení je větší kvůli plovoucí spodní navigaci: úchop na konci
+ * stránky by jinak skončil pod ní.
+ */
+.listva[data-dotyk="ano"] {
+  --listva-sirka: 0.3125rem;
+  --listva-chyt: 0.5rem;
+  bottom: clamp(4.75rem, 11vh, 6.25rem);
+}
+
+/*
+ * Na dotyku je lišta jen ukazatel, nechytá se.
+ *
+ * Chytací plocha je na myši 16 px široká a sahá přes celou výšku okna. Na
+ * telefonu by tentýž pruh u pravé hrany po každém posunu na vteřinu ukusoval
+ * klepnutí — kdo by se trefil vedle, místo otevření výrobku by stránkou
+ * skočil. Prsty se navíc roluje máváním, ne tahem za pětipixelový úchop;
+ * tak se to na telefonech chová i mimo tenhle web.
+ */
+.listva[data-dotyk="ano"] .draha {
+  pointer-events: none;
+  cursor: default;
+}
+
+/* Krátká stránka posuvník nepotřebuje, prázdná dráha u hrany by jen mátla. */
+.listva[data-vidi="ne"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.listva[data-vidi="ano"] {
+  opacity: 1;
+}
+
+.draha {
+  position: relative;
+  width: var(--listva-chyt);
+  height: 100%;
   pointer-events: auto;
-
-  /* vh, a je to tady správně: mezera mezi značkami je to hlavní, čím celá lišta roste do
-     výšky. Na 1366×768 vyjde 5 px (podlaha), na 1080 7.02, na 1351 8.78.
-     Živé pásmo 5/0.0065 = 769 px … 8/0.0065 = 1231 px výšky. */
-  @include v(md) {
-    gap: clamp(0.3125rem, 0.65vh, 0.5rem);
-  }
-
-  @include h(xs) {
-    gap: clamp(0.3125rem, 0.65vh, 0.5rem);
-  }
-}
-
-.item {
-  display: flex;
-
-  /* Výška řádku značky je druhá polovina toho součtu, tak taky na vh. Na 1366×768 10 px,
-     na 1080 11.88, na 1351 14.86. Živé pásmo 10/0.011 = 909 px … 14/0.011 = 1272 px výšky. */
-  min-height: clamp(0.625rem, 1.1vh, 0.875rem);
-  align-items: center;
-  justify-content: flex-end;
-
-  /* Odstup popisku od čárky je vodorovný → vw. Živé pásmo 8/0.0072 = 1111 px … 1944 px,
-     strop navazuje na ramp beze skoku (2552: vw 18.4 vs rem-strop 18.6). */
-  gap: clamp(0.5rem, 0.72vw, 0.875rem);
-  color: currentColor;
   cursor: pointer;
-  text-decoration: none;
+  /* Tažení úchopu nesmí zároveň posouvat stránku pod prstem — polohu píše
+     `pointermove`, ne prohlížeč. */
+  touch-action: none;
 }
 
-.label {
+.draha:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+
+/* Samotná dráha — vlásek uprostřed chytací plochy. */
+.draha::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: var(--listva-sirka);
+  content: "";
+  border-radius: 999px;
+  background: rgb(var(--cream-06-rgb) / .16);
+  transform: translateX(-50%);
+  transition: width 240ms cubic-bezier(.22, 1, .36, 1),
+    background-color 240ms ease;
+}
+
+.uchop {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: var(--listva-sirka);
+  margin-left: calc(var(--listva-sirka) / -2);
+  border-radius: 999px;
+  background: rgb(var(--cream-06-rgb) / .58);
+  transition: width 240ms cubic-bezier(.22, 1, .36, 1),
+    margin-left 240ms cubic-bezier(.22, 1, .36, 1),
+    background-color 240ms ease;
+  /* Polohu píše pružina přes `transform` — prohlížeč si pro ni může držet
+     vlastní vrstvu, místo aby překresloval dráhu pod ní. */
+  will-change: transform;
+}
+
+.listva[data-aktivni="ano"] .uchop {
+  background: var(--cream-06);
+}
+
+/*
+ * Popisek sekce, nad kterou ukazatel stojí. Zůstal z předchozí lišty, jen
+ * z ozdoby je náhled: říká, kam klik skočí, ne kde zrovna jsme.
+ */
+.popisek {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + clamp(0.5rem, 0.72vw, 0.875rem));
   display: none;
   max-width: 0;
   overflow: hidden;
-  color: rgb(var(--cream-06-rgb) / .78);
+  color: rgb(var(--cream-06-rgb) / .82);
 
-  /* Podlaha přesně 12 px — pod ni text nesmí. Živé pásmo 12/0.0095 = 1263 px … 14/0.0095
-     = 1474 px, tedy uvnitř 1200–1500. Znaky se v index.tsx posouvají o 0.85em, takže
-     dráha té animace se přeškáluje s tímhle clampem sama. */
+  /* Podlaha přesně 12 px — pod ni text nesmí. Živé pásmo 1263–1474 px,
+     tedy uvnitř 1200–1500. Znaky se v index.tsx posouvají o 0.85em, takže
+     se dráha té animace přeškáluje s tímhle clampem sama. */
   font: 400 clamp(0.75rem, 0.95vw, 0.875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  transform: translateX(0.75rem);
+  transform: translate(0.75rem, -50%);
   transition: max-width 560ms cubic-bezier(0.76, 0, 0.24, 1),
     transform 560ms cubic-bezier(0.76, 0, 0.24, 1);
   white-space: nowrap;
   text-shadow: 0 1px 10px rgb(var(--ink-05-rgb) / .5);
+  pointer-events: none;
 
   @include v(md) {
     display: flex;
@@ -118,78 +176,17 @@
   }
 }
 
-.label i {
+.popisek i {
   display: inline-block;
   font: inherit;
   font-style: normal;
 }
 
-.lineTrack,
-.minorTrack {
-  position: relative;
-  display: block;
-  overflow: hidden;
-
-  /* Vlásek. Fyzický rozměr, zůstává v px. */
-  height: 1px;
-  flex: 0 0 auto;
-}
-
-.lineTrack {
-  /* Bylo 30 px v základu a 44 px ve v(md) i h(xs) — dvojice media query nesoucí čistou
-     velikost, tedy clamp. Živé pásmo 30/0.024 = 1250 px … 44/0.024 = 1833 px; strop
-     v rem, takže nad 1921 roste dál (2552: 2.75rem = 58.5 px proti 44 px předtím,
-     +33 %, přesně o kolik povyrostla obrazovka). */
-  width: clamp(1.875rem, 2.4vw, 2.75rem);
-  transform-origin: right center;
-}
-
-.minorTrack {
-  /* Totéž: 11 → 17 px. Živé pásmo 11.2/0.01 = 1120 px … 16.8/0.01 = 1680 px. */
-  width: clamp(0.7rem, 1vw, 1.05rem);
-  padding: 0;
-  border: 0;
-
-  /* A 1 → 2 px odsazení s ním. Koeficient je odvozený, ne odhadnutý: 2/17 = 0.118 podílu
-     šířky, takže 0.118 × 1vw ≈ 0.12vw. Obě pásma tak končí na stejné šířce (1667 vs 1680)
-     a mezera zůstává ve stejném poměru ke značce na každé šířce. */
-  margin-right: clamp(0.0625rem, 0.12vw, 0.125rem);
-  appearance: none;
-  background: transparent;
-  color: currentColor;
-  cursor: pointer;
-  transform-origin: right center;
-}
-
-.lineBase,
-.lineProgress {
-  position: absolute;
-  inset: 0;
-  display: block;
-  background: currentColor;
-}
-
-.lineBase {
-  opacity: 0.5;
-}
-
-.lineProgress {
-  opacity: 1;
-  transform: scaleX(var(--line-progress, 0));
-  transform-origin: right center;
-  transition: transform 100ms linear;
-}
-
-.label[data-visible],
-.item:focus-visible .label {
-  /* Prostý rem, ne clamp: písmo drží podlahu 12 px až do 1263 px, takže clamp, který by
-     šířku pod tou hranicí stahoval, by nejdelší popisek („DALŠÍ VÝROBKY", ~116 px při
-     12 px) začal ořezávat. V rem to zároveň nad 1921 roste společně se stropem písma. */
+.popisek[data-videt] {
+  /* Prostý rem, ne clamp: písmo drží podlahu 12 px až do 1263 px, takže clamp
+     stahující šířku pod tou hranicí by nejdelší popisek („DALŠÍ VÝROBKY",
+     ~116 px při 12 px) začal ořezávat. V rem to nad 1921 roste se stropem
+     písma. */
   max-width: 11.875rem;
-  transform: translateX(0);
-}
-
-.item:focus-visible .label {
-  text-decoration: underline;
-  text-underline-offset: 0.25rem;
+  transform: translate(0, -50%);
 }

@@ -7,7 +7,9 @@ import Thumbnail from "@modules/products/components/thumbnail"
 import { convertToLocale } from "@lib/util/money"
 import { vyrobek } from "@lib/util/plurals"
 import { formatVoucherCode, looksLikeVoucherCode } from "@lib/util/gift-voucher-code"
+import { productLines } from "@lib/util/packaging"
 import styles from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 /**
  * Celý souhrn objednávky pod jedno klepnutí — na svislé obrazovce.
@@ -48,13 +50,21 @@ type Props = {
 }
 
 const OrderSummaryDisclosure = ({ cart, children }: Props) => {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const [otevreno, setOtevreno] = useState(false)
 
   /*
    * Řadí se stejně jako ve výpisu (`templates/preview.tsx`), a na kopii:
    * `sort` mění pole na místě a to tady patří komponentě nad námi.
    */
-  const polozky = [...(cart.items ?? [])].sort((a, b) =>
+  /*
+   * Jen zboží. Balné a doběrečné jsou v košíku vlastní řádky, takže se
+   * počítaly jako výrobky a nad jedním hrnkem na dobírku stálo „3 výrobky"
+   * — nahlášeno zákaznicí 10. 11. 2026. Do náhledů nepatří ze stejného
+   * důvodu: miniaturu nemají a místo nich by se ukázala prázdná políčka.
+   */
+  const polozky = productLines([...(cart.items ?? [])]).sort((a, b) =>
     (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
   )
 
@@ -77,7 +87,7 @@ const OrderSummaryDisclosure = ({ cart, children }: Props) => {
   const kod = slevovy?.code ?? (poukazy[0] ? formatVoucherCode(poukazy[0].code) : undefined)
   const kodPopis = slevovy
     ? poukazy.length
-      ? "slevový kód a dárkový poukaz"
+      ? texty["checkout.order_summary_disclosure_1"]
       : "uplatněný slevový kód"
     : poukazy.length > 1
       ? "uplatněné dárkové poukazy"

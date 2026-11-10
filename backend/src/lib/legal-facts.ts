@@ -308,7 +308,7 @@ export const LEGAL_FACT_META: Record<LegalFactKey, LegalFactMeta> = {
   "voucher.validity": {
     label: "Platnost dárkového poukazu",
     help:
-      "Jak dlouho poukaz platí. V obchodních podmínkách: „Platnost: … od data nákupu“ a v častých dotazech („Platnost: … od nákupu“). Stačí doba.",
+      "Jak dlouho poukaz platí — JEN doba, například „12 měsíců“. „Od nákupu“ si věty dopisují samy: v obchodních podmínkách „Platnost: … od data nákupu“, v častých dotazech „Platnost: … od nákupu“.",
     example: "12 měsíců",
     group: "Dárkové poukazy",
     multiline: false,
@@ -347,6 +347,25 @@ export const LEGAL_FACT_META: Record<LegalFactKey, LegalFactMeta> = {
 export const isLegalFactKey = (key: string): key is LegalFactKey =>
   Object.prototype.hasOwnProperty.call(LEGAL_FACT_META, key)
 
+/*
+ * „1 rok od nákupu od nákupu."
+ *
+ * Věty kolem platnosti poukazu si „od nákupu" dopisují samy — v obchodních
+ * podmínkách „Platnost: … od data nákupu", v častých dotazech „Platnost: …
+ * od nákupu". Do pole se ale dá napsat celá vazba, a přesně to se stalo:
+ * uložená hodnota zněla „1 rok od nákupu“, takže v dotazech stálo „1 rok od
+ * nákupu od nákupu“ (nahlásila první čtenářka 10. 11. 2026).
+ *
+ * Nápověda u pole říká „stačí doba“, jenže na nápovědu se nedá spolehnout a
+ * chyba se ukáže až ve vydaném dokumentu. Zdvojení se proto ořízne tady, ve
+ * dveřích, kterými uložené údaje vedou na web i do e-mailů — a protože tudy
+ * vede i ZÁPIS, opraví se hodnota natrvalo při nejbližším uložení.
+ */
+const KONCOVKA_OD_NAKUPU = /\s*,?\s*od\s+(?:data\s+)?(?:nákupu|zakoupení|koupě)\s*$/i
+
+const ocistiFakt = (key: LegalFactKey, value: string): string =>
+  key === "voucher.validity" ? value.replace(KONCOVKA_OD_NAKUPU, "").trim() : value
+
 /**
  * Jen to, co do uloženého objektu patří: známé klíče s textovou hodnotou.
  * Čtení nastavení přes to prožene i poškozený objekt — jeden špatný údaj
@@ -360,7 +379,7 @@ export const pickStoredLegalFacts = (raw: unknown): StoredLegalFacts => {
   for (const key of LEGAL_FACT_KEYS) {
     const value = source[key]
     if (Object.prototype.hasOwnProperty.call(source, key) && typeof value === "string") {
-      out[key] = value
+      out[key] = ocistiFakt(key, value)
     }
   }
   return out
@@ -383,7 +402,7 @@ export const resolveLegalFacts = (stored: unknown): LegalFactValues => {
     if (!Object.prototype.hasOwnProperty.call(source, key)) continue
     const value = source[key]
     if (value === null) out[key] = null
-    else if (typeof value === "string") out[key] = value.trim() || null
+    else if (typeof value === "string") out[key] = ocistiFakt(key, value.trim()) || null
   }
   return out
 }

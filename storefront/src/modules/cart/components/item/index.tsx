@@ -178,8 +178,7 @@ const Item = ({
           )}
           {voucherTodo && (
             <span className={s.voucherTodo} data-testid="cart-gift-voucher-todo">
-              Zatím nenastavený — hodnotu a podobu zvolte níž
-            </span>
+              {texty["cart.item_1"]}</span>
           )}
         </div>
 
@@ -211,7 +210,10 @@ const Item = ({
               onChange={changeQuantity}
               data-testid="product-select-button"
             />
-            <LineItemPrice item={item} style="tight" currencyCode={currencyCode} />
+            {/* Obal jen kvůli barvě — proč, viz `.mobilePrice` v sešitu. */}
+            <span className={s.mobilePrice}>
+              <LineItemPrice item={item} style="tight" currencyCode={currencyCode} />
+            </span>
             <DeleteButton
               id={item.id}
               data-testid="product-delete-button"
