@@ -8,7 +8,7 @@ import type CourseModuleService from "../../../../../modules/course/service"
 import { seatsTaken, toAmount } from "../../../../../modules/course/pricing"
 import { notifyCourseWaitlist } from "../../../../../lib/course-waitlist"
 import { serializeAdminTerm } from "../../helpers"
-import { PatchCourseTermSchema } from "../route"
+import { PatchCourseTermSchema, childPricingPatch } from "../route"
 
 const loadTerm = async (
   req: AuthenticatedMedusaRequest
@@ -99,6 +99,7 @@ export async function PATCH(
     ...(input.price_group_per_person !== undefined
       ? { price_group_per_person: input.price_group_per_person }
       : {}),
+    ...childPricingPatch(input),
     ...(input.status !== undefined ? { status: input.status } : {}),
     ...(input.note !== undefined ? { note: input.note || null } : {}),
   } as never)

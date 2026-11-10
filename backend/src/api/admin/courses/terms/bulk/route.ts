@@ -11,6 +11,7 @@ import {
 import { seatsTaken } from "../../../../../modules/course/pricing"
 import type CourseModuleService from "../../../../../modules/course/service"
 import { serializeAdminTerm } from "../../helpers"
+import { childPricingFields, childPricingPatch } from "../route"
 
 /**
  * One edit, many terms — what the „Ceny" and „Poznámky" dialogs post.
@@ -52,6 +53,8 @@ const PatchSchema = z
     group_min: z.number().int().min(2).max(500).nullable().optional(),
     price_group_per_person: z.number().gt(0).nullable().optional(),
     capacity: z.number().int().min(1).max(500).optional(),
+    // Dialog Ceny je posílá od 8. 11.; bez nich zbyl prázdný patch a „Není co uložit".
+    ...childPricingFields,
   })
   .superRefine((value, ctx) => {
     if (!Object.keys(value).length) {
@@ -134,6 +137,7 @@ export async function POST(
       ? { price_group_per_person: patch.price_group_per_person }
       : {}),
     ...(patch.capacity !== undefined ? { capacity: patch.capacity } : {}),
+    ...childPricingPatch(patch),
   }
 
   const updatedIds: string[] = []
