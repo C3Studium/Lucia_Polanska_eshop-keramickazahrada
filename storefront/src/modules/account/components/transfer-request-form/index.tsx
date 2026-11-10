@@ -10,8 +10,11 @@ import { AnimatePresence, motion } from "framer-motion"
 import Input from "@modules/common/components/input"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import { accountDisclosureVariants } from "../../motion"
+import { useTexty } from "@lib/context/texty"
 
 export default function TransferRequestForm() {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const [showSuccess, setShowSuccess] = useState(false)
 
   const [state, formAction] = useActionState(createTransferRequest, {
@@ -32,8 +35,7 @@ export default function TransferRequestForm() {
         <div className={s.intro}>
           <h3 className={s.title}>Převod objednávek</h3>
           <p className={s.desc}>
-            Nevidíte tu objednávku, kterou hledáte?
-            <br /> Napište její číslo a připojíme ji k vašemu účtu.
+            {texty["account.transfer_request_form_1"]}<br /> Napište její číslo a připojíme ji k vašemu účtu.
           </p>
         </div>
         <form action={formAction} className={s.form}>

@@ -39,6 +39,7 @@ import {
 import SwapSheet from "./swap-sheet"
 import { useEditPreview } from "./use-edit-preview"
 import s from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(min, Math.floor(value)), Math.max(min, max))
@@ -71,6 +72,8 @@ export default function OrderEditor({
   /** Na stránce je konverzace k zakázce — zamčený zakázkový řádek ji otevře. */
   hasConversation: boolean
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const router = useRouter()
   const headingId = useId()
   // Úprava objednávky → e-mail pro objednávky a zakázky ze Studia.
@@ -269,7 +272,7 @@ export default function OrderEditor({
     return (
       <div className={s.root}>
         <div className={s.notice} role="status">
-          <p className={s.noticeTitle}>Přesměrováváme vás na platbu rozdílu…</p>
+          <p className={s.noticeTitle}>{texty["order.order_edit_9"]}</p>
           <p className={s.noticeText}>
             Když se nic neděje,{" "}
             <a className={s.textButton} href={paymentUrl}>
@@ -294,8 +297,8 @@ export default function OrderEditor({
       ? context.reason ??
         `Tuhle objednávku už upravit nejde. Kdybyste něco potřebovali, napište nám na ${orderEmail}.`
       : statusTone === "packed"
-        ? "Zabaleno — vyměnit jde jen varianta za stejnou cenu."
-        : "Upravit můžete, dokud nezačneme balit."
+        ? texty["order.order_edit_11"]
+        : texty["order.order_edit_12"]
   const showRemaining =
     context.editable && context.edits.limit > 0 && context.edits.remaining > 0
 
@@ -330,8 +333,8 @@ export default function OrderEditor({
           </p>
           <p className={s.noticeText}>
             {context.pending_change.awaiting_payment
-              ? "Úpravu jste uložili, ale rozdíl ještě není zaplacený — do té doby objednávka zůstává, jak byla. Když platbu nedokončíte, úpravu zrušte a můžete ji udělat znovu."
-              : "K objednávce běží nedokončená úprava. Když ji nechcete dokončit, zrušte ji a můžete začít znovu."}
+              ? texty["order.order_edit_13"]
+              : texty["order.order_edit_14"]}
           </p>
           <button
             type="button"
@@ -406,7 +409,7 @@ export default function OrderEditor({
           <p className={s.sectionLead}>
             Vyberte cokoli z obchodu — pošleme to spolu s objednávkou.
             {context.payment === "dobirka" &&
-              " U dobírky nabízíme jen kusy, které jde poslat na dobírku."}
+              texty["order.order_edit_15"]}
           </p>
 
           {draft.adds.length > 0 && (
@@ -425,8 +428,7 @@ export default function OrderEditor({
 
           {atLimit ? (
             <p className={s.hint}>
-              Víc změn najednou uložit nejde — nejdřív uložte tyhle.
-            </p>
+              {texty["order.order_edit_10"]}</p>
           ) : (
             <LocalizedClientLink
               className={s.addLink}

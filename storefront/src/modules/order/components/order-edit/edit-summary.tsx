@@ -6,6 +6,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import { czk, signedCzk } from "./shared"
 import type { PreviewState } from "./use-edit-preview"
 import s from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 export type EditConfirmation = {
   message: string
@@ -47,6 +48,8 @@ export default function EditSummary({
   onSave: () => void
   onDismissConfirmation: () => void
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   if (actionsCount === 0) {
     if (confirmation) {
       return (
@@ -76,9 +79,7 @@ export default function EditSummary({
     return (
       <section className={s.summary}>
         <p className={s.summaryText}>
-          Zatím žádná změna. Upravte počet, vyměňte provedení nebo přidejte kus —
-          rozdíl ceny uvidíte tady, ještě než cokoli uložíte.
-        </p>
+          {texty["order.order_edit_7"]}</p>
       </section>
     )
   }
@@ -143,8 +144,7 @@ export default function EditSummary({
         )}
         {atLimit && (
           <p className={s.summaryMeta}>
-            Víc než 30 změn najednou uložit nejde — nejdřív uložte tyhle.
-          </p>
+            {texty["order.order_edit_8"]}</p>
         )}
       </div>
 

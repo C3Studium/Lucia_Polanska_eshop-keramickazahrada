@@ -6,12 +6,15 @@ import AccountInfo from "../account-info"
 import { HttpTypes } from "@medusajs/types"
 import { toast } from "@medusajs/ui"
 import s from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 type MyInformationProps = {
   customer: HttpTypes.StoreCustomer
 }
 
 const ProfilePassword: React.FC<MyInformationProps> = ({ customer }) => {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const [successState, setSuccessState] = React.useState(false)
 
   const updatePassword = async (formData: FormData) => {
@@ -28,7 +31,7 @@ const ProfilePassword: React.FC<MyInformationProps> = ({ customer }) => {
       return
     }
     if (new_password.length < 8) {
-      toast.error("Nové heslo musí mít aspoň 8 znaků.")
+      toast.error(texty["account.profile_password_1"])
       return
     }
 

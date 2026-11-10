@@ -11,6 +11,7 @@ import {
 import type { CommissionNote } from "@lib/util/made-to-order"
 
 import s from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 type Props = {
   /** Medusa order id — jediný klíč, který každá stránka objednávky drží. */
@@ -47,6 +48,8 @@ export default function CommissionConversation({
   title = null,
   className,
 }: Props) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const [open, setOpen] = useState(false)
   const [thread, setThread] = useState(notes)
   const [, startRefresh] = useTransition()
@@ -89,8 +92,8 @@ export default function CommissionConversation({
           <span className={s.title}>{heading}</span>
           <span className={s.sub}>
             {count > 0
-              ? "Napište mi — čtu to u rozdělané práce."
-              : "Napadlo vás ještě něco? Napište mi."}
+              ? texty["order.commission_conversation_1"]
+              : texty["order.commission_conversation_2"]}
           </span>
         </span>
         {count > 0 && (

@@ -127,6 +127,145 @@ export const SHOP_TEXT_KEYS = [
   "objednavka.prevzeti_obal",
   "objednavka.prevzeti_stav",
   "objednavka.podrobnosti_email",
+  "order.carrier_damage_2",
+  "order.claim_status_8",
+  "order.commission_conversation_1",
+  "order.commission_conversation_2",
+  "order.order_edit_1",
+  "order.order_edit_2",
+  "order.order_edit_3",
+  "order.order_edit_4",
+  "order.order_edit_5",
+  "order.order_edit_6",
+  "order.order_edit_7",
+  "order.order_edit_8",
+  "order.order_edit_9",
+  "order.order_edit_10",
+  "order.order_edit_11",
+  "order.order_edit_12",
+  "order.order_edit_13",
+  "order.order_edit_14",
+  "order.order_edit_15",
+  "order.order_edit_22",
+  "order.order_edit_23",
+  "order.order_edit_24",
+  "order.order_edit_25",
+  "order.order_edit_26",
+  "order.order_edit_27",
+  "order.order_edit_28",
+  "order.order_edit_29",
+  "order.transfer_actions_1",
+  "order.transfer_actions_2",
+  "order.transfer_actions_3",
+  "order.withdrawal_1",
+  "order.withdrawal_2",
+  "order.templates_6",
+  "order.templates_7",
+  "order.templates_8",
+  "order.templates_9",
+  "order.templates_10",
+  "kurzy.accountkurzy_1",
+  "kurzy.accountkurzy_2",
+  "kurzy.rezervacemodal_2",
+  "kurzy.rezervacemodal_3",
+  "kurzy.rezervacemodal_4",
+  "kurzy.rezervacemodal_5",
+  "kurzy.rezervacemodal_6",
+  "kurzy.rezervacemodal_7",
+  "kurzy.rezervacemodal_8",
+  "kurzy.rezervacemodal_9",
+  "kurzy.rezervacemodal_10",
+  "kurzy.rezervacemodal_11",
+  "kurzy.rezervacemodal_12",
+  "kurzy.rezervacemodal_13",
+  "account.address_card_1",
+  "account.delete_account_1",
+  "account.delete_account_2",
+  "account.profile_password_1",
+  "account.share_button_1",
+  "account.transfer_request_form_1",
+  "account.templates_2",
+  "account.templates_3",
+  "account.templates_4",
+  "account.templates_7",
+  "account.templates_8",
+  "account.templates_9",
+  "account.templates_10",
+  "account.templates_11",
+  "account.templates_12",
+  "account.templates_13",
+  "account.templates_14",
+  "account.templates_15",
+  "account.templates_16",
+  "account.templates_17",
+  "account.templates_18",
+  "account.templates_19",
+  "account.templates_20",
+  "account.templates_21",
+  "account.templates_22",
+  "account.templates_23",
+  "account.templates_24",
+  "account.templates_25",
+  "account.templates_26",
+  "products.bundle_actions_1",
+  "products.bundle_actions_2",
+  "products.made_to_order_notice_1",
+  "products.product_reviews_1",
+  "products.product_reviews_2",
+  "products.product_reviews_3",
+  "products.product_reviews_4",
+  "products.details_2",
+  "products.chapter_1",
+  "products.chapter_2",
+  "products.chapter_3",
+  "products.chapter_4",
+  "products.buy_now_1",
+  "products.price_1",
+  "products.price_3",
+  "products.price_4",
+  "products.price_5",
+  "products.details_3",
+  "products.sold_1",
+  "products.sold_2",
+  "products.sold_3",
+  "checkout.address_select_1",
+  "checkout.addresses_1",
+  "checkout.addresses_2",
+  "checkout.commission_brief_1",
+  "checkout.discount_code_1",
+  "checkout.order_summary_disclosure_1",
+  "checkout.payment_1",
+  "checkout.payment_2",
+  "checkout.production_payment_mode_1",
+  "checkout.shipping_1",
+  "checkout.shipping_2",
+  "checkout.shipping_address_1",
+  "poukaz.poukazdetail_1",
+  "poukaz.poukazdetail_2",
+  "poukaz.poukazdetail_3",
+  "poukaz.poukazdetail_4",
+  "poukaz.poukazdetail_5",
+  "poukaz.poukazdetail_7",
+  "poukaz.poukazdetail_8",
+  "poukaz.poukazdetail_9",
+  "poukaz.poukazdetail_10",
+  "poukaz.poukazdetail_12",
+  "poukaz.poukazdetail_14",
+  "poukaz.poukazdetail_15",
+  "poukaz.poukazdetail_16",
+  "poukaz.poukazdetail_17",
+  "poukaz.poukazkarta_1",
+  "store.shophero_1",
+  "legal.downloads_1",
+  "legal.legaldocument_1",
+  "certifikaty.certifikaty_1",
+  "certifikaty.certifikaty_2",
+  "certifikaty.certifikaty_3",
+  "certifikaty.certifikaty_4",
+  "certifikaty.certifikaty_5",
+  "certifikaty.certifikaty_6",
+  "certifikaty.certifikaty_7",
+  "cart.item_1",
 ] as const
 
 export type ShopTextKey = (typeof SHOP_TEXT_KEYS)[number]
@@ -160,6 +299,9 @@ export const SHOP_TEXT_OBLASTI = [
   "Objednávka",
   "Reklamace a vrácení",
   "Úprava objednávky",
+  "Kurzy",
+  "Dárkové poukazy",
+  "Účet zákazníka",
 ] as const
 
 export type ShopTextOblast = (typeof SHOP_TEXT_OBLASTI)[number]
@@ -204,6 +346,58 @@ export const SHOP_TEXT_GROUP_LIST = [
   { nazev: "Zboží v úpravě", oblast: "Úprava objednávky" },
   { nazev: "Doručení v úpravě", oblast: "Úprava objednávky" },
   { nazev: "Rozdíl ceny a doplacení", oblast: "Úprava objednávky" },
+
+  { nazev: "Objednávka — poškozená zásilka", oblast: "Reklamace a vrácení" },
+  { nazev: "Objednávka — stav žádosti", oblast: "Reklamace a vrácení" },
+  { nazev: "Objednávka — konverzace k zakázce", oblast: "Zakázková výroba" },
+  { nazev: "Objednávka — úprava", oblast: "Úprava objednávky" },
+  { nazev: "Objednávka — převod na jiný účet", oblast: "Objednávka" },
+  { nazev: "Objednávka — odstoupení od smlouvy", oblast: "Reklamace a vrácení" },
+  { nazev: "Objednávka — detail", oblast: "Objednávka" },
+
+  { nazev: "Kurzy — moje rezervace", oblast: "Kurzy" },
+  { nazev: "Kurzy — rezervační okno", oblast: "Kurzy" },
+
+  { nazev: "Účet — uložené adresy", oblast: "Účet zákazníka" },
+  { nazev: "Účet — zrušení účtu", oblast: "Účet zákazníka" },
+  { nazev: "Účet — změna hesla", oblast: "Účet zákazníka" },
+  { nazev: "Účet — sdílení", oblast: "Účet zákazníka" },
+  { nazev: "Účet — převod objednávky", oblast: "Účet zákazníka" },
+  { nazev: "Účet — zapomenuté heslo", oblast: "Účet zákazníka" },
+  { nazev: "Účet — nastavení nového hesla", oblast: "Účet zákazníka" },
+  { nazev: "Účet — moje recenze", oblast: "Účet zákazníka" },
+  { nazev: "Účet — ověření e-mailu znovu", oblast: "Účet zákazníka" },
+  { nazev: "Účet — ověření e-mailu", oblast: "Účet zákazníka" },
+  { nazev: "Účet — oblíbené", oblast: "Účet zákazníka" },
+
+  { nazev: "Výrobek — balíček", oblast: "Výrobek" },
+  { nazev: "Výrobek — poučení u zakázky", oblast: "Zakázková výroba" },
+  { nazev: "Výrobek — recenze", oblast: "Výrobek" },
+  { nazev: "Výrobek — stránka výrobku", oblast: "Výrobek" },
+
+  { nazev: "Pokladna — výběr adresy", oblast: "Pokladna" },
+  { nazev: "Pokladna — adresy", oblast: "Pokladna" },
+  { nazev: "Pokladna — zadání zakázky", oblast: "Zakázková výroba" },
+  { nazev: "Pokladna — slevový kód", oblast: "Pokladna" },
+  { nazev: "Pokladna — souhrn objednávky", oblast: "Pokladna" },
+  { nazev: "Pokladna — platba", oblast: "Pokladna" },
+  { nazev: "Pokladna — záloha u zakázky", oblast: "Pokladna" },
+  { nazev: "Pokladna — doručení", oblast: "Pokladna" },
+  { nazev: "Pokladna — dodací adresa", oblast: "Pokladna" },
+
+  { nazev: "Poukaz — stránka poukazu", oblast: "Dárkové poukazy" },
+  { nazev: "Poukaz — karta poukazu", oblast: "Dárkové poukazy" },
+
+  { nazev: "Obchod — výpis výrobků", oblast: "Výrobek" },
+
+  { nazev: "Doprava zdarma — upozornění", oblast: "Objednávka" },
+
+  { nazev: "Dokumenty ke stažení", oblast: "Objednávka" },
+  { nazev: "Právní dokument na webu", oblast: "Objednávka" },
+
+  { nazev: "Certifikáty a protokoly", oblast: "Objednávka" },
+
+  { nazev: "Košík — řádek zboží", oblast: "Košík" },
 ] as const
 
 export type ShopTextGroup = (typeof SHOP_TEXT_GROUP_LIST)[number]["nazev"]
@@ -878,6 +1072,979 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     multiline: true,
     maxLength: 200,
   },
+  "order.carrier_damage_2": {
+    label: "Krabice v pořádku, rozbitý výrobek",
+    help: "Kde se ukáže: order: carrier damage.",
+    group: "Objednávka — poškozená zásilka",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.claim_status_8": {
+    label: "Vráceno méně než cena vybraných položek —…",
+    help: "Kde se ukáže: order: claim status.",
+    group: "Objednávka — stav žádosti",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.commission_conversation_1": {
+    label: "Napište mi — čtu to u rozdělané práce.",
+    help: "Kde se ukáže: order: commission conversation.",
+    group: "Objednávka — konverzace k zakázce",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.commission_conversation_2": {
+    label: "Napadlo vás ještě něco? Napište mi.",
+    help: "Kde se ukáže: order: commission conversation.",
+    group: "Objednávka — konverzace k zakázce",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_1": {
+    label: "K objednávce běží dřívější úprava, která…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: true,
+    maxLength: 350,
+  },
+  "order.order_edit_2": {
+    label: "Jiný kus, jiné provedení, něco přidat nebo…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: true,
+    maxLength: 350,
+  },
+  "order.order_edit_3": {
+    label: "Objednávka už se chystá na cestu — doručení…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_4": {
+    label: "Výdejní místo můžete změnit, dokud zásilku…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_5": {
+    label: "Doručovací adresu můžete změnit, dokud…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_6": {
+    label: "Objednávku si vyzvednete osobně — doručení…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_7": {
+    label: "Zatím žádná změna. Upravte počet, vyměňte…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: true,
+    maxLength: 250,
+  },
+  "order.order_edit_8": {
+    label: "Víc než 30 změn najednou uložit nejde —…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_9": {
+    label: "Přesměrováváme vás na platbu rozdílu…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_10": {
+    label: "Víc změn najednou uložit nejde — nejdřív…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_11": {
+    label: "Zabaleno — vyměnit jde jen varianta za…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_12": {
+    label: "Upravit můžete, dokud nezačneme balit.",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_13": {
+    label: "Úpravu jste uložili, ale rozdíl ještě není…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: true,
+    maxLength: 300,
+  },
+  "order.order_edit_14": {
+    label: "K objednávce běží nedokončená úprava. Když…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_15": {
+    label: "U dobírky nabízíme jen kusy, které jde…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_22": {
+    label: "Tohle provedení za váš kus vyměnit nejde —…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_23": {
+    label: "Tohle provedení za váš kus vyměnit nejde —…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_24": {
+    label: "Jen kusy, které jde k objednávce přidat.…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: true,
+    maxLength: 250,
+  },
+  "order.order_edit_25": {
+    label: "Objednávka je zabalená — vyměnit jde jen za…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_26": {
+    label: "Jiné provedení · rozdíl za kus",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_27": {
+    label: "Jiné provedení teď vybrat nejde. Kdybyste…",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.order_edit_28": {
+    label: "Jen za výrobek ve stejné ceně.",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.order_edit_29": {
+    label: "Cokoli z obchodu, rozdíl ceny se vyrovná.",
+    help: "Kde se ukáže: order: order edit.",
+    group: "Objednávka — úprava",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.transfer_actions_1": {
+    label: "Objednávka teď patří novému majiteli.",
+    help: "Kde se ukáže: order: transfer actions.",
+    group: "Objednávka — převod na jiný účet",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.transfer_actions_2": {
+    label: "Podrobnosti najdete ve svém účtu.",
+    help: "Kde se ukáže: order: transfer actions.",
+    group: "Objednávka — převod na jiný účet",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.transfer_actions_3": {
+    label: "S touhle žádostí už nemusíte nic dělat.",
+    help: "Kde se ukáže: order: transfer actions.",
+    group: "Objednávka — převod na jiný účet",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.withdrawal_1": {
+    label: "Rozmysleli jste si to? Od smlouvy můžete…",
+    help: "Kde se ukáže: order: withdrawal.",
+    group: "Objednávka — odstoupení od smlouvy",
+    multiline: true,
+    maxLength: 250,
+  },
+  "order.withdrawal_2": {
+    label: "Od smlouvy můžete odstoupit bez udání důvodu…",
+    help: "Kde se ukáže: order: withdrawal.",
+    group: "Objednávka — odstoupení od smlouvy",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.templates_6": {
+    label: "05 · odstoupení, reklamace a vrácení",
+    help: "Kde se ukáže: order: order details template.",
+    group: "Objednávka — detail",
+    multiline: false,
+    maxLength: 200,
+  },
+  "order.templates_7": {
+    label: "Úprava objednávky čeká na zaplacení rozdílu…",
+    help: "Kde se ukáže: order: order details template.",
+    group: "Objednávka — detail",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.templates_8": {
+    label: "Potřebujete změnit doručovací adresu nebo…",
+    help: "Kde se ukáže: order: order details template.",
+    group: "Objednávka — detail",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.templates_9": {
+    label: "Objednávka je zabalená — vyměnit jde ještě…",
+    help: "Kde se ukáže: order: order details template.",
+    group: "Objednávka — detail",
+    multiline: true,
+    maxLength: 200,
+  },
+  "order.templates_10": {
+    label: "Objednávku můžete ještě upravit — počet…",
+    help: "Kde se ukáže: order: order details template.",
+    group: "Objednávka — detail",
+    multiline: true,
+    maxLength: 200,
+  },
+  "kurzy.accountkurzy_1": {
+    label: "Rezervovaná místa v ateliéru — termín, počet…",
+    help: "Kde se ukáže: kurzy: AccountKurzy.",
+    group: "Kurzy — moje rezervace",
+    multiline: true,
+    maxLength: 200,
+  },
+  "kurzy.accountkurzy_2": {
+    label: "Vypsané termíny kurzů najdete na stránce…",
+    help: "Kde se ukáže: kurzy: AccountKurzy.",
+    group: "Kurzy — moje rezervace",
+    multiline: true,
+    maxLength: 200,
+  },
+  "kurzy.rezervacemodal_2": {
+    label: "Kurzy probíhají v ateliéru v Písku a…",
+    help: "Kde se ukáže: kurzy: RezervaceModal.",
+    group: "Kurzy — rezervační okno",
+    multiline: true,
+    maxLength: 350,
+  },
+  "kurzy.rezervacemodal_3": {
+    label: "Ceny se u jednotlivých termínů liší —…",
+    help: "Kde se ukáže: kurzy: RezervaceModal.",
+    group: "Kurzy — rezervační okno",
+    multiline: true,
+    maxLength: 200,
+  },
+  "kurzy.rezervacemodal_4": {
+    label: "E-mail a telefon použijeme jen k vyřízení…",
+    help: "Kde se ukáže: kurzy: RezervaceModal.",
+    group: "Kurzy — rezervační okno",
+    multiline: true,
+    maxLength: 200,
+  },
+  "kurzy.rezervacemodal_5": {
+    label: "Bezpečně přes ComGate, místo máte jisté hned.",
+    help: "Kde se ukáže: kurzy: RezervaceModal.",
+    group: "Kurzy — rezervační okno",
+    multiline: false,
+    maxLength: 200,
+  },
+  "kurzy.rezervacemodal_6": {
+    label: "Hotově nebo převodem na účet před začátkem…",
+    help: "Kde se ukáže: kurzy: RezervaceModal.",
+    group: "Kurzy — rezervační okno",
+    multiline: false,
+    maxLength: 200,
+  },
+  "kurzy.rezervacemodal_7": {
+    label: "Kurz má pevný termín, proto u něj neplatí…",
+    help: "Kde se ukáže: kurzy: RezervaceModal.",
+    group: "Kurzy — rezervační okno",
+    multiline: true,
+    maxLength: 300,
+  },
+  "kurzy.rezervacemodal_8": {
+    label: "Souhlasím s pořízením fotografií z kurzu a…",
+    help: "Kde se ukáže: kurzy: RezervaceModal.",
+    group: "Kurzy — rezervační okno",
+    multiline: true,
+    maxLength: 250,
+  },
+  "kurzy.rezervacemodal_9": {
+    label: "Vyberte prosím termín s volnými místy.",
+    help: "Kde se ukáže: kurzy: RezervaceModal.",
+    group: "Kurzy — rezervační okno",
+    multiline: false,
+    maxLength: 200,
+  },
+  "kurzy.rezervacemodal_10": {
+    label: "Před rezervací prosím potvrďte souhlas s…",
+    help: "Kde se ukáže: kurzy: RezervaceModal.",
+    group: "Kurzy — rezervační okno",
+    multiline: true,
+    maxLength: 200,
+  },
+  "kurzy.rezervacemodal_11": {
+    label: "Čím víc vás přijde, tím méně platí každý.…",
+    help: "Kde se ukáže: kurzy: RezervaceModal.",
+    group: "Kurzy — rezervační okno",
+    multiline: true,
+    maxLength: 200,
+  },
+  "kurzy.rezervacemodal_12": {
+    label: "Vyberte termín v seznamu nebo v kalendáři",
+    help: "Kde se ukáže: kurzy: RezervaceModal.",
+    group: "Kurzy — rezervační okno",
+    multiline: false,
+    maxLength: 200,
+  },
+  "kurzy.rezervacemodal_13": {
+    label: "Nejdřív prosím potvrďte obchodní podmínky.",
+    help: "Kde se ukáže: kurzy: RezervaceModal.",
+    group: "Kurzy — rezervační okno",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.address_card_1": {
+    label: "Opravdu chcete odstranit tuto adresu? Tuto…",
+    help: "Kde se ukáže: account: address card.",
+    group: "Účet — uložené adresy",
+    multiline: true,
+    maxLength: 200,
+  },
+  "account.delete_account_1": {
+    label: "Objednávky nám musí zůstat kvůli účetnictví,…",
+    help: "Kde se ukáže: account: delete account.",
+    group: "Účet — zrušení účtu",
+    multiline: true,
+    maxLength: 250,
+  },
+  "account.delete_account_2": {
+    label: "Nic se nestane, dokud to nepotvrdíte tímhle…",
+    help: "Kde se ukáže: account: delete account.",
+    group: "Účet — zrušení účtu",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.profile_password_1": {
+    label: "Nové heslo musí mít aspoň 8 znaků.",
+    help: "Kde se ukáže: account: profile password.",
+    group: "Účet — změna hesla",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.share_button_1": {
+    label: "Moje oblíbené · Keramická zahrada",
+    help: "Kde se ukáže: account: share button.",
+    group: "Účet — sdílení",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.transfer_request_form_1": {
+    label: "Nevidíte tu objednávku, kterou hledáte?",
+    help: "Kde se ukáže: account: transfer request form.",
+    group: "Účet — převod objednávky",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.templates_2": {
+    label: "Zadejte prosím platnou e-mailovou adresu.",
+    help: "Kde se ukáže: account: forgot password page.",
+    group: "Účet — zapomenuté heslo",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.templates_3": {
+    label: "Pokud u nás účet s tímhle e-mailem máte,…",
+    help: "Kde se ukáže: account: forgot password page.",
+    group: "Účet — zapomenuté heslo",
+    multiline: true,
+    maxLength: 200,
+  },
+  "account.templates_4": {
+    label: "Napište e-mail, na který máte účet. Pošleme…",
+    help: "Kde se ukáže: account: forgot password page.",
+    group: "Účet — zapomenuté heslo",
+    multiline: true,
+    maxLength: 200,
+  },
+  "account.templates_7": {
+    label: "Odkaz není celý — otevřete ho prosím z…",
+    help: "Kde se ukáže: account: reset password page.",
+    group: "Účet — nastavení nového hesla",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.templates_8": {
+    label: "Heslo musí mít aspoň 8 znaků.",
+    help: "Kde se ukáže: account: reset password page.",
+    group: "Účet — nastavení nového hesla",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.templates_9": {
+    label: "Nové přístupové údaje · 03",
+    help: "Kde se ukáže: account: reset password page.",
+    group: "Účet — nastavení nového hesla",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.templates_10": {
+    label: "Zvolte si nové heslo a vraťte se ke svým…",
+    help: "Kde se ukáže: account: reset password page.",
+    group: "Účet — nastavení nového hesla",
+    multiline: true,
+    maxLength: 200,
+  },
+  "account.templates_11": {
+    label: "Co jste napsali o věcech, které už máte…",
+    help: "Kde se ukáže: account: reviews template.",
+    group: "Účet — moje recenze",
+    multiline: true,
+    maxLength: 200,
+  },
+  "account.templates_12": {
+    label: "Tohle jsou jen ukázky. Zmizí, jakmile…",
+    help: "Kde se ukáže: account: reviews template.",
+    group: "Účet — moje recenze",
+    multiline: true,
+    maxLength: 200,
+  },
+  "account.templates_13": {
+    label: "Recenzi napíšete u výrobku, který už máte doma.",
+    help: "Kde se ukáže: account: reviews template.",
+    group: "Účet — moje recenze",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.templates_14": {
+    label: "Váš účet · poslední krok",
+    help: "Kde se ukáže: account: send email verification again page.",
+    group: "Účet — ověření e-mailu znovu",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.templates_15": {
+    label: "Odkazem si potvrdíte e-mail a rovnou se…",
+    help: "Kde se ukáže: account: send email verification again page.",
+    group: "Účet — ověření e-mailu znovu",
+    multiline: true,
+    maxLength: 200,
+  },
+  "account.templates_16": {
+    label: "Nový odkaz je na cestě.",
+    help: "Kde se ukáže: account: send email verification again page.",
+    group: "Účet — ověření e-mailu znovu",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.templates_17": {
+    label: "Mrkněte do doručené pošty i do spamu. Někdy…",
+    help: "Kde se ukáže: account: send email verification again page.",
+    group: "Účet — ověření e-mailu znovu",
+    multiline: true,
+    maxLength: 200,
+  },
+  "account.templates_18": {
+    label: "Odkaz není celý — zkopírujte ho prosím z…",
+    help: "Kde se ukáže: account: verify email page.",
+    group: "Účet — ověření e-mailu",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.templates_19": {
+    label: "Ověřujeme odkaz, chviličku to zabere.",
+    help: "Kde se ukáže: account: verify email page.",
+    group: "Účet — ověření e-mailu",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.templates_20": {
+    label: "E-mail je potvrzený. Účet máte hotový.",
+    help: "Kde se ukáže: account: verify email page.",
+    group: "Účet — ověření e-mailu",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.templates_21": {
+    label: "S odkazem něco není v pořádku",
+    help: "Kde se ukáže: account: verify email page.",
+    group: "Účet — ověření e-mailu",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.templates_22": {
+    label: "Můžete se podívat na objednávky i na uložené…",
+    help: "Kde se ukáže: account: verify email page.",
+    group: "Účet — ověření e-mailu",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.templates_23": {
+    label: "Nový e-mail je na cestě.",
+    help: "Kde se ukáže: account: verify email page.",
+    group: "Účet — ověření e-mailu",
+    multiline: false,
+    maxLength: 200,
+  },
+  "account.templates_24": {
+    label: "Kousky, které se vám líbí. Zůstanou tu,…",
+    help: "Kde se ukáže: account: wishlist template.",
+    group: "Účet — oblíbené",
+    multiline: true,
+    maxLength: 200,
+  },
+  "account.templates_25": {
+    label: "Tohle jsou jen ukázky. Zmizí, jakmile si…",
+    help: "Kde se ukáže: account: wishlist template.",
+    group: "Účet — oblíbené",
+    multiline: true,
+    maxLength: 200,
+  },
+  "account.templates_26": {
+    label: "Až vás něco zaujme, klepněte na srdíčko a…",
+    help: "Kde se ukáže: account: wishlist template.",
+    group: "Účet — oblíbené",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.bundle_actions_1": {
+    label: "Ukázka · koupit půjde, až budou napojená data.",
+    help: "Kde se ukáže: products: bundle actions.",
+    group: "Výrobek — balíček",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.bundle_actions_2": {
+    label: "Všechny vybrané kusy přidáme do košíku najednou.",
+    help: "Kde se ukáže: products: bundle actions.",
+    group: "Výrobek — balíček",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.made_to_order_notice_1": {
+    label: "obchodních podmínkách, čl. Výroba na zakázku",
+    help: "Kde se ukáže: products: made to order notice.",
+    group: "Výrobek — poučení u zakázky",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.product_reviews_1": {
+    label: "Doplňte prosím text recenze a hvězdičky.",
+    help: "Kde se ukáže: products: product reviews.",
+    group: "Výrobek — recenze",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.product_reviews_2": {
+    label: "Toto je dočasný designový náhled. Recenze…",
+    help: "Kde se ukáže: products: product reviews.",
+    group: "Výrobek — recenze",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.product_reviews_3": {
+    label: "Recenzi jsme dostali, ještě ji projdeme a…",
+    help: "Kde se ukáže: products: product reviews.",
+    group: "Výrobek — recenze",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.product_reviews_4": {
+    label: "Jak se vám to doma osvědčilo?",
+    help: "Kde se ukáže: products: product reviews.",
+    group: "Výrobek — recenze",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.details_2": {
+    label: "Odvíjí se od velikosti a váhy zásilky.…",
+    help: "Kde se ukáže: products: ProductPage.",
+    group: "Výrobek — stránka výrobku",
+    multiline: true,
+    maxLength: 200,
+  },
+  "products.chapter_1": {
+    label: "02 · Jak to vzniká",
+    help: "Kde se ukáže: products: ProductPage.",
+    group: "Výrobek — stránka výrobku",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.chapter_2": {
+    label: "Ruce · materiál · čas",
+    help: "Kde se ukáže: products: ProductPage.",
+    group: "Výrobek — stránka výrobku",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.chapter_3": {
+    label: "Od prvního nápadu až po poslední výpal.",
+    help: "Kde se ukáže: products: ProductPage.",
+    group: "Výrobek — stránka výrobku",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.chapter_4": {
+    label: "Aby vám to dlouho vydrželo.",
+    help: "Kde se ukáže: products: ProductPage.",
+    group: "Výrobek — stránka výrobku",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.buy_now_1": {
+    label: "Doručíme na vaši uloženou adresu.",
+    help: "Kde se ukáže: products: ProductPage.",
+    group: "Výrobek — stránka výrobku",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.price_1": {
+    label: "Záznam cen za celých 30 dní před slevou nemáme.",
+    help: "Kde se ukáže: products: ProductPage.",
+    group: "Výrobek — stránka výrobku",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.price_3": {
+    label: "Nejnižší cena za 30 dní před slevou:",
+    help: "Kde se ukáže: products: ProductPage.",
+    group: "Výrobek — stránka výrobku",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.price_4": {
+    label: "— v eurech ji přepočteme kurzem ČNB.",
+    help: "Kde se ukáže: products: ProductPage.",
+    group: "Výrobek — stránka výrobku",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.price_5": {
+    label: "Balné u tohoto výrobku neúčtujeme.",
+    help: "Kde se ukáže: products: ProductPage.",
+    group: "Výrobek — stránka výrobku",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.details_3": {
+    label: "Cena se odvíjí od rozsahu — pošlete nám…",
+    help: "Kde se ukáže: products: ProductPage.",
+    group: "Výrobek — stránka výrobku",
+    multiline: true,
+    maxLength: 200,
+  },
+  "products.sold_1": {
+    label: "Další kusy ze stejné kolekce.",
+    help: "Kde se ukáže: products: ProductPage.",
+    group: "Výrobek — stránka výrobku",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.sold_2": {
+    label: "Další kusy, které mám teď v ateliéru.",
+    help: "Kde se ukáže: products: ProductPage.",
+    group: "Výrobek — stránka výrobku",
+    multiline: false,
+    maxLength: 200,
+  },
+  "products.sold_3": {
+    label: "Všechno vzniká ručně a jen v malém počtu.",
+    help: "Kde se ukáže: products: ProductPage.",
+    group: "Výrobek — stránka výrobku",
+    multiline: false,
+    maxLength: 200,
+  },
+  "checkout.address_select_1": {
+    label: "Kam vám to máme poslat?",
+    help: "Kde se ukáže: checkout: address select.",
+    group: "Pokladna — výběr adresy",
+    multiline: false,
+    maxLength: 200,
+  },
+  "checkout.addresses_1": {
+    label: "Použijeme stejnou adresu jako pro doručení.",
+    help: "Kde se ukáže: checkout: addresses.",
+    group: "Pokladna — adresy",
+    multiline: false,
+    maxLength: 200,
+  },
+  "checkout.addresses_2": {
+    label: "Používáme vaši uloženou adresu — změnit ji…",
+    help: "Kde se ukáže: checkout: addresses.",
+    group: "Pokladna — adresy",
+    multiline: true,
+    maxLength: 200,
+  },
+  "checkout.commission_brief_1": {
+    label: "Uloženo — díky, mám to.",
+    help: "Kde se ukáže: checkout: commission brief.",
+    group: "Pokladna — zadání zakázky",
+    multiline: false,
+    maxLength: 200,
+  },
+  "checkout.discount_code_1": {
+    label: "Mám slevový kód nebo poukaz",
+    help: "Kde se ukáže: checkout: discount code.",
+    group: "Pokladna — slevový kód",
+    multiline: false,
+    maxLength: 200,
+  },
+  "checkout.order_summary_disclosure_1": {
+    label: "slevový kód a dárkový poukaz",
+    help: "Kde se ukáže: checkout: order summary disclosure.",
+    group: "Pokladna — souhrn objednávky",
+    multiline: false,
+    maxLength: 200,
+  },
+  "checkout.payment_1": {
+    label: "Zaplatíte doručovateli, až vám zásilku předá",
+    help: "Kde se ukáže: checkout: payment.",
+    group: "Pokladna — platba",
+    multiline: false,
+    maxLength: 200,
+  },
+  "checkout.payment_2": {
+    label: "Platit budete bezpečně až v dalším kroku.",
+    help: "Kde se ukáže: checkout: payment.",
+    group: "Pokladna — platba",
+    multiline: false,
+    maxLength: 200,
+  },
+  "checkout.production_payment_mode_1": {
+    label: "celá částka, pak už nic neřešíte",
+    help: "Kde se ukáže: checkout: production payment mode.",
+    group: "Pokladna — záloha u zakázky",
+    multiline: false,
+    maxLength: 200,
+  },
+  "checkout.shipping_1": {
+    label: "Network error while saving Balíkovna point:",
+    help: "Kde se ukáže: checkout: shipping.",
+    group: "Pokladna — doručení",
+    multiline: false,
+    maxLength: 200,
+  },
+  "checkout.shipping_2": {
+    label: "Ještě načítáme mapu výdejních míst, moment…",
+    help: "Kde se ukáže: checkout: shipping.",
+    group: "Pokladna — doručení",
+    multiline: false,
+    maxLength: 200,
+  },
+  "checkout.shipping_address_1": {
+    label: "Podle verze obchodu, kterou máte zvolenou",
+    help: "Kde se ukáže: checkout: shipping address.",
+    group: "Pokladna — dodací adresa",
+    multiline: false,
+    maxLength: 200,
+  },
+  "poukaz.poukazdetail_1": {
+    label: "V obchodě zadejte kód v košíku nebo v…",
+    help: "Kde se ukáže: poukaz: PoukazDetail.",
+    group: "Poukaz — stránka poukazu",
+    multiline: true,
+    maxLength: 350,
+  },
+  "poukaz.poukazdetail_2": {
+    label: "V dílně stačí poukaz ukázat.",
+    help: "Kde se ukáže: poukaz: PoukazDetail.",
+    group: "Poukaz — stránka poukazu",
+    multiline: false,
+    maxLength: 200,
+  },
+  "poukaz.poukazdetail_3": {
+    label: "Platí na keramiku i na zakázky, na kurzy…",
+    help: "Kde se ukáže: poukaz: PoukazDetail.",
+    group: "Poukaz — stránka poukazu",
+    multiline: true,
+    maxLength: 200,
+  },
+  "poukaz.poukazdetail_4": {
+    label: "Peníze za tenhle poukaz se vrátily, takže ho…",
+    help: "Kde se ukáže: poukaz: PoukazDetail.",
+    group: "Poukaz — stránka poukazu",
+    multiline: true,
+    maxLength: 200,
+  },
+  "poukaz.poukazdetail_5": {
+    label: "Zrušený poukaz už nejde uplatnit. Pokud si…",
+    help: "Kde se ukáže: poukaz: PoukazDetail.",
+    group: "Poukaz — stránka poukazu",
+    multiline: true,
+    maxLength: 200,
+  },
+  "poukaz.poukazdetail_7": {
+    label: "Celá hodnota poukazu už byla uplatněna,…",
+    help: "Kde se ukáže: poukaz: PoukazDetail.",
+    group: "Poukaz — stránka poukazu",
+    multiline: true,
+    maxLength: 200,
+  },
+  "poukaz.poukazdetail_8": {
+    label: "Po konci platnosti už poukaz uplatnit nejde.…",
+    help: "Kde se ukáže: poukaz: PoukazDetail.",
+    group: "Poukaz — stránka poukazu",
+    multiline: true,
+    maxLength: 200,
+  },
+  "poukaz.poukazdetail_9": {
+    label: "Platba je na cestě, jen se k nám ještě…",
+    help: "Kde se ukáže: poukaz: PoukazDetail.",
+    group: "Poukaz — stránka poukazu",
+    multiline: true,
+    maxLength: 300,
+  },
+  "poukaz.poukazdetail_10": {
+    label: "Někdy to bance trvá déle. Pokud vám peníze z…",
+    help: "Kde se ukáže: poukaz: PoukazDetail.",
+    group: "Poukaz — stránka poukazu",
+    multiline: true,
+    maxLength: 300,
+  },
+  "poukaz.poukazdetail_12": {
+    label: "Peníze se vám nestrhly. Můžete to zkusit…",
+    help: "Kde se ukáže: poukaz: PoukazDetail.",
+    group: "Poukaz — stránka poukazu",
+    multiline: true,
+    maxLength: 200,
+  },
+  "poukaz.poukazdetail_14": {
+    label: "a posílám ho i e-mailem.",
+    help: "Kde se ukáže: poukaz: PoukazDetail.",
+    group: "Poukaz — stránka poukazu",
+    multiline: false,
+    maxLength: 200,
+  },
+  "poukaz.poukazdetail_15": {
+    label: "— vytisknu ho a pošlu poštou.",
+    help: "Kde se ukáže: poukaz: PoukazDetail.",
+    group: "Poukaz — stránka poukazu",
+    multiline: false,
+    maxLength: 200,
+  },
+  "poukaz.poukazdetail_16": {
+    label: "Hned po zaplacení vám poukaz přijde e-mailem…",
+    help: "Kde se ukáže: poukaz: PoukazDetail.",
+    group: "Poukaz — stránka poukazu",
+    multiline: true,
+    maxLength: 200,
+  },
+  "poukaz.poukazdetail_17": {
+    label: "Po zaplacení poukaz vytisknu a pošlu poštou.…",
+    help: "Kde se ukáže: poukaz: PoukazDetail.",
+    group: "Poukaz — stránka poukazu",
+    multiline: true,
+    maxLength: 200,
+  },
+  "poukaz.poukazkarta_1": {
+    label: "V obchodě zadejte kód do pole Slevový kód…",
+    help: "Kde se ukáže: poukaz: PoukazKarta.",
+    group: "Poukaz — karta poukazu",
+    multiline: true,
+    maxLength: 350,
+  },
+  "store.shophero_1": {
+    label: "Každý kus dělám rukama. Dva úplně stejné mi…",
+    help: "Kde se ukáže: store: Shop.",
+    group: "Obchod — výpis výrobků",
+    multiline: true,
+    maxLength: 200,
+  },
+  "legal.downloads_1": {
+    label: "Doplňkové materiály k dokumentu. Závazné je…",
+    help: "Kde se ukáže: legal: Downloads.",
+    group: "Dokumenty ke stažení",
+    multiline: true,
+    maxLength: 200,
+  },
+  "legal.legaldocument_1": {
+    label: "Nebo uložit jako PDF přes tisk v prohlížeči",
+    help: "Kde se ukáže: legal: LegalDocument.",
+    group: "Právní dokument na webu",
+    multiline: false,
+    maxLength: 200,
+  },
+  "certifikaty.certifikaty_1": {
+    label: "Certifikáty a protokoly o nezávadnosti glazur",
+    help: "Kde se ukáže: certifikaty: index.",
+    group: "Certifikáty a protokoly",
+    multiline: false,
+    maxLength: 200,
+  },
+  "certifikaty.certifikaty_2": {
+    label: "Keramika, kterou nabízím na jídlo a pití…",
+    help: "Kde se ukáže: certifikaty: index.",
+    group: "Certifikáty a protokoly",
+    multiline: true,
+    maxLength: 500,
+  },
+  "certifikaty.certifikaty_3": {
+    label: "Elektrozařízení nepatří do směsného odpadu —…",
+    help: "Kde se ukáže: certifikaty: index.",
+    group: "Certifikáty a protokoly",
+    multiline: true,
+    maxLength: 200,
+  },
+  "certifikaty.certifikaty_4": {
+    label: "Co to znamená v praxi",
+    help: "Kde se ukáže: certifikaty: index.",
+    group: "Certifikáty a protokoly",
+    multiline: false,
+    maxLength: 200,
+  },
+  "certifikaty.certifikaty_5": {
+    label: "Výrobek bez uvedené nezávadnosti (dekorace,…",
+    help: "Kde se ukáže: certifikaty: index.",
+    group: "Certifikáty a protokoly",
+    multiline: true,
+    maxLength: 200,
+  },
+  "certifikaty.certifikaty_6": {
+    label: "Keramika je křehká: rozbitý kus má ostré…",
+    help: "Kde se ukáže: certifikaty: index.",
+    group: "Certifikáty a protokoly",
+    multiline: true,
+    maxLength: 200,
+  },
+  "certifikaty.certifikaty_7": {
+    label: "V zimě v pítku ani jiné nádobě nenechávejte…",
+    help: "Kde se ukáže: certifikaty: index.",
+    group: "Certifikáty a protokoly",
+    multiline: true,
+    maxLength: 200,
+  },
+  "cart.item_1": {
+    label: "Zatím nenastavený — hodnotu a podobu zvolte níž",
+    help: "Kde se ukáže: cart: item.",
+    group: "Košík — řádek zboží",
+    multiline: false,
+    maxLength: 200,
+  },
 }
 
 /**
@@ -1031,6 +2198,284 @@ export const SHOP_TEXT_DEFAULTS: Readonly<ShopTextValues> = Object.freeze({
     "Záleží na tom, v jakém stavu dorazila krabice. Poškozený obal je škoda dopravce a hlásí se na poště; rozbitý kus v nepoškozené krabici je na nás.",
   "objednavka.podrobnosti_email":
     "Podrobnosti najdete v e-mailu s potvrzením nebo ve svém účtu.",
+  "order.carrier_damage_2":
+    "Krabice v pořádku, rozbitý výrobek",
+  "order.claim_status_8":
+    "Vráceno méně než cena vybraných položek — důvod najdete v protokolu a v e-mailu o vyřízení.",
+  "order.commission_conversation_1":
+    "Napište mi — čtu to u rozdělané práce.",
+  "order.commission_conversation_2":
+    "Napadlo vás ještě něco? Napište mi.",
+  "order.order_edit_1":
+    "K objednávce běží dřívější úprava, která čeká na doplacení rozdílu — do té doby objednávka zůstává, jak byla. Když ji nechcete dokončit, zrušte ji; o změnu se pak domluvíme spolu.",
+  "order.order_edit_2":
+    "Jiný kus, jiné provedení, něco přidat nebo ubrat? Změny zboží domlouváme osobně — napište, co potřebujete, a Lucie vám zavolá nebo odepíše. Do té doby objednávka zůstává, jak je.",
+  "order.order_edit_3":
+    "Objednávka už se chystá na cestu — doručení tady změnit nejde. Napište nám a domluvíme se.",
+  "order.order_edit_4":
+    "Výdejní místo můžete změnit, dokud zásilku nepřipravíme k odeslání.",
+  "order.order_edit_5":
+    "Doručovací adresu můžete změnit, dokud zásilku nepřipravíme k odeslání.",
+  "order.order_edit_6":
+    "Objednávku si vyzvednete osobně — doručení tu není co měnit.",
+  "order.order_edit_7":
+    "Zatím žádná změna. Upravte počet, vyměňte provedení nebo přidejte kus — rozdíl ceny uvidíte tady, ještě než cokoli uložíte.",
+  "order.order_edit_8":
+    "Víc než 30 změn najednou uložit nejde — nejdřív uložte tyhle.",
+  "order.order_edit_9":
+    "Přesměrováváme vás na platbu rozdílu…",
+  "order.order_edit_10":
+    "Víc změn najednou uložit nejde — nejdřív uložte tyhle.",
+  "order.order_edit_11":
+    "Zabaleno — vyměnit jde jen varianta za stejnou cenu.",
+  "order.order_edit_12":
+    "Upravit můžete, dokud nezačneme balit.",
+  "order.order_edit_13":
+    "Úpravu jste uložili, ale rozdíl ještě není zaplacený — do té doby objednávka zůstává, jak byla. Když platbu nedokončíte, úpravu zrušte a můžete ji udělat znovu.",
+  "order.order_edit_14":
+    "K objednávce běží nedokončená úprava. Když ji nechcete dokončit, zrušte ji a můžete začít znovu.",
+  "order.order_edit_15":
+    "U dobírky nabízíme jen kusy, které jde poslat na dobírku.",
+  "order.order_edit_22":
+    "Tohle provedení za váš kus vyměnit nejde — po zabalení jen za stejnou cenu, nebo ho nemáme na počet kusů.",
+  "order.order_edit_23":
+    "Tohle provedení za váš kus vyměnit nejde — vyberte prosím jiné.",
+  "order.order_edit_24":
+    "Jen kusy, které jde k objednávce přidat. Rozdíl ceny i poštovné uvidíte v souhrnu úpravy, ještě než cokoli uložíte.",
+  "order.order_edit_25":
+    "Objednávka je zabalená — vyměnit jde jen za provedení nebo výrobek ve stejné ceně.",
+  "order.order_edit_26":
+    "Jiné provedení · rozdíl za kus",
+  "order.order_edit_27":
+    "Jiné provedení teď vybrat nejde. Kdybyste potřebovali něco jiného, napište nám na",
+  "order.order_edit_28":
+    "Jen za výrobek ve stejné ceně.",
+  "order.order_edit_29":
+    "Cokoli z obchodu, rozdíl ceny se vyrovná.",
+  "order.transfer_actions_1":
+    "Objednávka teď patří novému majiteli.",
+  "order.transfer_actions_2":
+    "Podrobnosti najdete ve svém účtu.",
+  "order.transfer_actions_3":
+    "S touhle žádostí už nemusíte nic dělat.",
+  "order.withdrawal_1":
+    "Rozmysleli jste si to? Od smlouvy můžete odstoupit bez udání důvodu už teď — i před doručením. Lhůta 14 dnů poběží od převzetí zboží.",
+  "order.withdrawal_2":
+    "Od smlouvy můžete odstoupit bez udání důvodu do $",
+  "order.templates_6":
+    "05 · odstoupení, reklamace a vrácení",
+  "order.templates_7":
+    "Úprava objednávky čeká na zaplacení rozdílu — dokončete ji, nebo ji zrušte.",
+  "order.templates_8":
+    "Potřebujete změnit doručovací adresu nebo něco v objednávce? Adresu změníte sami, změnu zboží domluvíme osobně.",
+  "order.templates_9":
+    "Objednávka je zabalená — vyměnit jde ještě provedení za stejnou cenu.",
+  "order.templates_10":
+    "Objednávku můžete ještě upravit — počet kusů, provedení, přidat něco z obchodu.",
+  "kurzy.accountkurzy_1":
+    "Rezervovaná místa v ateliéru — termín, počet lidí a stav platby na jednom místě.",
+  "kurzy.accountkurzy_2":
+    "Vypsané termíny kurzů najdete na stránce Kurzy — rezervace zabere minutu.",
+  "kurzy.rezervacemodal_2":
+    "Kurzy probíhají v ateliéru v Písku a rezervují se v korunách, proto je jde rezervovat jen v české verzi obchodu. Přepněte si obchod na Česko — okno rezervace zůstane otevřené.",
+  "kurzy.rezervacemodal_3":
+    "Ceny se u jednotlivých termínů liší — najdete je u každého termínu.",
+  "kurzy.rezervacemodal_4":
+    "E-mail a telefon použijeme jen k vyřízení téhle žádosti — nic dalšího na ně posílat nebudeme.",
+  "kurzy.rezervacemodal_5":
+    "Bezpečně přes ComGate, místo máte jisté hned.",
+  "kurzy.rezervacemodal_6":
+    "Hotově nebo převodem na účet před začátkem kurzu.",
+  "kurzy.rezervacemodal_7":
+    "Kurz má pevný termín, proto u něj neplatí zákonné odstoupení do 14 dnů bez udání důvodu (§ 1837 písm. j) občanského zákoníku). Místo něj platí storno podmínky výše.",
+  "kurzy.rezervacemodal_8":
+    "Souhlasím s pořízením fotografií z kurzu a jejich zveřejněním na webu a sociálních sítích (za dítě souhlasí zákonný zástupce).",
+  "kurzy.rezervacemodal_9":
+    "Vyberte prosím termín s volnými místy.",
+  "kurzy.rezervacemodal_10":
+    "Před rezervací prosím potvrďte souhlas s obchodními podmínkami.",
+  "kurzy.rezervacemodal_11":
+    "Čím víc vás přijde, tím méně platí každý. Cena se spočítá podle počtu osob v dalším kroku.",
+  "kurzy.rezervacemodal_12":
+    "Vyberte termín v seznamu nebo v kalendáři",
+  "kurzy.rezervacemodal_13":
+    "Nejdřív prosím potvrďte obchodní podmínky.",
+  "account.address_card_1":
+    "Opravdu chcete odstranit tuto adresu? Tuto akci nelze vrátit zpět.",
+  "account.delete_account_1":
+    "Objednávky nám musí zůstat kvůli účetnictví, ale přijdete o svůj profil, adresy, recenze i uložené kousky. Zpátky to už nevrátíme.",
+  "account.delete_account_2":
+    "Nic se nestane, dokud to nepotvrdíte tímhle tlačítkem.",
+  "account.profile_password_1":
+    "Nové heslo musí mít aspoň 8 znaků.",
+  "account.share_button_1":
+    "Moje oblíbené · Keramická zahrada",
+  "account.transfer_request_form_1":
+    "Nevidíte tu objednávku, kterou hledáte?",
+  "account.templates_2":
+    "Zadejte prosím platnou e-mailovou adresu.",
+  "account.templates_3":
+    "Pokud u nás účet s tímhle e-mailem máte, poslali jsme na něj odkaz pro nastavení nového hesla.",
+  "account.templates_4":
+    "Napište e-mail, na který máte účet. Pošleme vám odkaz pro nastavení nového hesla.",
+  "account.templates_7":
+    "Odkaz není celý — otevřete ho prosím z e-mailu znovu.",
+  "account.templates_8":
+    "Heslo musí mít aspoň 8 znaků.",
+  "account.templates_9":
+    "Nové přístupové údaje · 03",
+  "account.templates_10":
+    "Zvolte si nové heslo a vraťte se ke svým objednávkám i uloženým kouskům.",
+  "account.templates_11":
+    "Co jste napsali o věcech, které už máte doma. Ostatním to hodně pomáhá při výběru.",
+  "account.templates_12":
+    "Tohle jsou jen ukázky. Zmizí, jakmile napíšete první vlastní recenzi.",
+  "account.templates_13":
+    "Recenzi napíšete u výrobku, který už máte doma.",
+  "account.templates_14":
+    "Váš účet · poslední krok",
+  "account.templates_15":
+    "Odkazem si potvrdíte e-mail a rovnou se dostanete do svého účtu.",
+  "account.templates_16":
+    "Nový odkaz je na cestě.",
+  "account.templates_17":
+    "Mrkněte do doručené pošty i do spamu. Někdy odkaz dorazí s malým zpožděním.",
+  "account.templates_18":
+    "Odkaz není celý — zkopírujte ho prosím z e-mailu znovu.",
+  "account.templates_19":
+    "Ověřujeme odkaz, chviličku to zabere.",
+  "account.templates_20":
+    "E-mail je potvrzený. Účet máte hotový.",
+  "account.templates_21":
+    "S odkazem něco není v pořádku",
+  "account.templates_22":
+    "Můžete se podívat na objednávky i na uložené kousky.",
+  "account.templates_23":
+    "Nový e-mail je na cestě.",
+  "account.templates_24":
+    "Kousky, které se vám líbí. Zůstanou tu, dokud se nerozhodnete.",
+  "account.templates_25":
+    "Tohle jsou jen ukázky. Zmizí, jakmile si uložíte první vlastní kousek.",
+  "account.templates_26":
+    "Až vás něco zaujme, klepněte na srdíčko a uloží se to sem.",
+  "products.bundle_actions_1":
+    "Ukázka · koupit půjde, až budou napojená data.",
+  "products.bundle_actions_2":
+    "Všechny vybrané kusy přidáme do košíku najednou.",
+  "products.made_to_order_notice_1":
+    "obchodních podmínkách, čl. Výroba na zakázku",
+  "products.product_reviews_1":
+    "Doplňte prosím text recenze a hvězdičky.",
+  "products.product_reviews_2":
+    "Toto je dočasný designový náhled. Recenze nebyla odeslána.",
+  "products.product_reviews_3":
+    "Recenzi jsme dostali, ještě ji projdeme a zveřejníme.",
+  "products.product_reviews_4":
+    "Jak se vám to doma osvědčilo?",
+  "products.details_2":
+    "Odvíjí se od velikosti a váhy zásilky. Přesnou částku uvidíte v pokladně ještě před dokončením objednávky.",
+  "products.chapter_1":
+    "02 · Jak to vzniká",
+  "products.chapter_2":
+    "Ruce · materiál · čas",
+  "products.chapter_3":
+    "Od prvního nápadu až po poslední výpal.",
+  "products.chapter_4":
+    "Aby vám to dlouho vydrželo.",
+  "products.buy_now_1":
+    "Doručíme na vaši uloženou adresu.",
+  "products.price_1":
+    "Záznam cen za celých 30 dní před slevou nemáme.",
+  "products.price_3":
+    "Nejnižší cena za 30 dní před slevou:",
+  "products.price_4":
+    "— v eurech ji přepočteme kurzem ČNB.",
+  "products.price_5":
+    "Balné u tohoto výrobku neúčtujeme.",
+  "products.details_3":
+    "Cena se odvíjí od rozsahu — pošlete nám poptávku a připravíme nabídku s cenou, lhůtou a výší zálohy.",
+  "products.sold_1":
+    "Další kusy ze stejné kolekce.",
+  "products.sold_2":
+    "Další kusy, které mám teď v ateliéru.",
+  "products.sold_3":
+    "Všechno vzniká ručně a jen v malém počtu.",
+  "checkout.address_select_1":
+    "Kam vám to máme poslat?",
+  "checkout.addresses_1":
+    "Použijeme stejnou adresu jako pro doručení.",
+  "checkout.addresses_2":
+    "Používáme vaši uloženou adresu — změnit ji můžete tlačítkem Upravit.",
+  "checkout.commission_brief_1":
+    "Uloženo — díky, mám to.",
+  "checkout.discount_code_1":
+    "Mám slevový kód nebo poukaz",
+  "checkout.order_summary_disclosure_1":
+    "slevový kód a dárkový poukaz",
+  "checkout.payment_1":
+    "Zaplatíte doručovateli, až vám zásilku předá",
+  "checkout.payment_2":
+    "Platit budete bezpečně až v dalším kroku.",
+  "checkout.production_payment_mode_1":
+    "celá částka, pak už nic neřešíte",
+  "checkout.shipping_1":
+    "Network error while saving Balíkovna point:",
+  "checkout.shipping_2":
+    "Ještě načítáme mapu výdejních míst, moment…",
+  "checkout.shipping_address_1":
+    "Podle verze obchodu, kterou máte zvolenou",
+  "poukaz.poukazdetail_1":
+    "V obchodě zadejte kód v košíku nebo v pokladně do pole Slevový kód nebo dárkový poukaz — částka se odečte hned. Odečítá se ze zboží, které není ve slevě; poštovné doplatíte.",
+  "poukaz.poukazdetail_2":
+    "V dílně stačí poukaz ukázat.",
+  "poukaz.poukazdetail_3":
+    "Platí na keramiku i na zakázky, na kurzy zatím ne. Co neutratíte, zůstane na poukazu.",
+  "poukaz.poukazdetail_4":
+    "Peníze za tenhle poukaz se vrátily, takže ho už nejde uplatnit. Kdyby vám něco nesedělo, napište mi na",
+  "poukaz.poukazdetail_5":
+    "Zrušený poukaz už nejde uplatnit. Pokud si myslíte, že jde o omyl, ozvěte se mi na",
+  "poukaz.poukazdetail_7":
+    "Celá hodnota poukazu už byla uplatněna, takže na něm nic nezbývá. Kdyby vám něco nesedělo, napište mi na",
+  "poukaz.poukazdetail_8":
+    "Po konci platnosti už poukaz uplatnit nejde. Kdybyste se chtěli na cokoli zeptat, ozvěte se mi na",
+  "poukaz.poukazdetail_9":
+    "Platba je na cestě, jen se k nám ještě nedostala zpráva od banky. Stránka se sama obnoví, jakmile dorazí — nemusíte nic dělat ani platit znovu.",
+  "poukaz.poukazdetail_10":
+    "Někdy to bance trvá déle. Pokud vám peníze z účtu odešly, neplaťte prosím znovu — zkuste platbu za pár minut zkontrolovat, nebo mi napište na",
+  "poukaz.poukazdetail_12":
+    "Peníze se vám nestrhly. Můžete to zkusit znovu, nebo mi napište na",
+  "poukaz.poukazdetail_14":
+    "a posílám ho i e-mailem.",
+  "poukaz.poukazdetail_15":
+    "— vytisknu ho a pošlu poštou.",
+  "poukaz.poukazdetail_16":
+    "Hned po zaplacení vám poukaz přijde e-mailem a uvidíte ho i tady, i s kódem.",
+  "poukaz.poukazdetail_17":
+    "Po zaplacení poukaz vytisknu a pošlu poštou. Kód uvidíte i tady, hned jak platba dorazí.",
+  "poukaz.poukazkarta_1":
+    "V obchodě zadejte kód do pole Slevový kód nebo dárkový poukaz v košíku, v dílně v Písku stačí poukaz ukázat. Platí na keramiku i na zakázky, na kurzy zatím ne. Co neutratíte, zůstane na poukazu.",
+  "store.shophero_1":
+    "Každý kus dělám rukama. Dva úplně stejné mi nevyjdou, ani kdybych chtěla.",
+  "legal.downloads_1":
+    "Doplňkové materiály k dokumentu. Závazné je znění dokumentu výše.",
+  "legal.legaldocument_1":
+    "Nebo uložit jako PDF přes tisk v prohlížeči",
+  "certifikaty.certifikaty_1":
+    "Certifikáty a protokoly o nezávadnosti glazur",
+  "certifikaty.certifikaty_2":
+    "Keramika, kterou nabízím na jídlo a pití nebo u které uvádím „zdravotně nezávadné glazury“, musí splňovat limity pro uvolňování olova a kadmia (nařízení (ES) č. 1935/2004, vyhláška č. 38/2001 Sb.). Tady jsou protokoly ze zkoušek — u každého je datum a glazura, které se týká.",
+  "certifikaty.certifikaty_3":
+    "Elektrozařízení nepatří do směsného odpadu — vysloužilý zvonek odevzdejte na sběrném místě nebo nám ho vraťte.",
+  "certifikaty.certifikaty_4":
+    "Co to znamená v praxi",
+  "certifikaty.certifikaty_5":
+    "Výrobek bez uvedené nezávadnosti (dekorace, výrobky z kurzů) pro jídlo a pití nepoužívejte.",
+  "certifikaty.certifikaty_6":
+    "Keramika je křehká: rozbitý kus má ostré hrany, střepy ukliďte opatrně a mimo dosah dětí.",
+  "certifikaty.certifikaty_7":
+    "V zimě v pítku ani jiné nádobě nenechávejte zamrznout vodu — led ji může roztrhnout.",
+  "cart.item_1":
+    "Zatím nenastavený — hodnotu a podobu zvolte níž",
 })
 
 /** Jen známé klíče se string hodnotou — co přijde navíc, se zahodí. */

@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation"
 import { useEffect, useRef } from "react"
 
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
+import { prisliJsmeZpet, sledujNavigaciZpet } from "@lib/helpers/navigace-zpet"
 
 /*
  * Každá stránka začíná nahoře.
@@ -20,16 +21,38 @@ import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
  */
 
 /*
- * Katalog je jediná výjimka: drží si snímek scrollu, aby se návrat od výrobku
- * vrátil přesně tam, kde člověk přestal listovat (viz `Shop/restore.ts`).
- * Odrolování nahoru by ten snímek přebilo. Studio je aplikace ValeCMS, ne
- * stránka obchodu — tomu do scrollu nesaháme vůbec.
+ * Studio je aplikace ValeCMS, ne stránka obchodu — tomu do scrollu nesaháme
+ * vůbec.
+ *
+ * Katalog tu stával jako druhá výjimka, protože si drží snímek scrollu kvůli
+ * návratu od výrobku. Jenže výjimka platila na KAŽDÝ příchod do obchodu, i
+ * na ten z menu: kdo si prohlédl výrobek a pak klepl na „E-shop“, spadl
+ * doprostřed výpisu (nahlášeno z telefonu 10. 11. 2026). Snímek je od toho,
+ * aby fungovalo Zpět — a na Zpět se teď ptáme přímo, takže obchod může
+ * odrolovat nahoru jako každá jiná stránka.
  */
-const VYNECHAT = [/(?:^|\/)store(?:\/|$)/, /^\/studio(?:\/|$)/]
+const VYNECHAT = [/^\/studio(?:\/|$)/]
+
+/*
+ * Odrolování se po příchodu ještě dvakrát zopakuje.
+ *
+ * „Někdy když otevřu něco z e-shopu, tak se mi ukáže konec stránky a ne
+ * začátek“ — hlášeno z notebooku. Příčina: stránka se po přechodu teprve
+ * skládá (obrázky, dodatečně načtené bloky) a je v tu chvíli kratší než ta
+ * předchozí. Prohlížeč proto scroll ořízne na její konec a když vzápětí
+ * doroste, zůstane tam, kde ořez skončil.
+ *
+ * Opakuje se jen do chvíle, než člověk sám sáhne na kolečko, obrazovku nebo
+ * klávesy — od té chvíle má přednost on. `scroll` jako signál nestačí: ten
+ * vyvolá i tohle vlastní rolování.
+ */
+const OPAKOVANI_MS = [120, 360]
 
 export default function ScrollResetOnRoute() {
   const pathname = usePathname()
   const predchozi = useRef<string | null>(null)
+
+  useEffect(() => sledujNavigaciZpet(), [])
 
   useEffect(() => {
     const drive = predchozi.current
@@ -44,16 +67,41 @@ export default function ScrollResetOnRoute() {
 
     if (VYNECHAT.some((cesta) => cesta.test(pathname))) return
 
+    /* Zpět vrací člověka tam, kde byl — ne na začátek stránky. */
+    if (prisliJsmeZpet()) return
+
     /*
-     * Dvakrát: obnova scrollu z historie umí přijít až po připojení efektu
-     * a jediné odrolování by přebila. Dvakrát nula za sebou nic nestojí.
+     * Dvakrát hned: obnova scrollu z historie umí přijít až po připojení
+     * efektu a jediné odrolování by přebila. Dvakrát nula za sebou nic nestojí.
      */
     scrollWithLenis(0, { immediate: true })
     const snimek = window.requestAnimationFrame(() => {
       scrollWithLenis(0, { immediate: true })
     })
 
-    return () => window.cancelAnimationFrame(snimek)
+    let saheNaTo = false
+    const prestat = () => {
+      saheNaTo = true
+    }
+    const signaly = ["wheel", "touchstart", "keydown", "pointerdown"] as const
+    for (const signal of signaly) {
+      window.addEventListener(signal, prestat, { passive: true, once: true })
+    }
+
+    const casovace = OPAKOVANI_MS.map((za) =>
+      window.setTimeout(() => {
+        if (saheNaTo || window.scrollY === 0) return
+        scrollWithLenis(0, { immediate: true })
+      }, za)
+    )
+
+    return () => {
+      window.cancelAnimationFrame(snimek)
+      for (const casovac of casovace) window.clearTimeout(casovac)
+      for (const signal of signaly) {
+        window.removeEventListener(signal, prestat)
+      }
+    }
   }, [pathname])
 
   return null

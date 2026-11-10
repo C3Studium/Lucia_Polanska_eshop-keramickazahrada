@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import styles from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 type BuyNowButtonProps = {
   variantId?: string
@@ -36,6 +37,8 @@ export default function BuyNowButton({
   initialEligible = false,
   disabled = false,
 }: BuyNowButtonProps) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const router = useRouter()
   const [eligible, setEligible] = useState(initialEligible)
   const [isStarting, setIsStarting] = useState(false)
@@ -116,7 +119,7 @@ export default function BuyNowButton({
           {isStarting ? "Připravujeme…" : "Koupit ihned"}
         </span>
       </motion.button>
-      <p className={styles.hint}>Doručíme na vaši uloženou adresu.</p>
+      <p className={styles.hint}>{texty["products.buy_now_1"]}</p>
       {error && (
         <p className={styles.error} role="alert">
           {error}

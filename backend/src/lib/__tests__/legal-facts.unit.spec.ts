@@ -166,6 +166,28 @@ describe("helpers", () => {
     expect(pickStoredLegalFacts(null)).toEqual({})
   })
 
+  it("nezdvojuje „od nákupu“ u platnosti poukazu", () => {
+    /* Věty kolem hodnoty si „od nákupu“ dopisují samy — nahlášeno z obchodu
+       jako „1 rok od nákupu od nákupu“ v častých dotazech. */
+    expect(resolveLegalFacts({ "voucher.validity": "1 rok od nákupu" })["voucher.validity"]).toBe(
+      "1 rok"
+    )
+    expect(
+      resolveLegalFacts({ "voucher.validity": "12 měsíců od data nákupu" })["voucher.validity"]
+    ).toBe("12 měsíců")
+    expect(resolveLegalFacts({ "voucher.validity": "12 měsíců" })["voucher.validity"]).toBe(
+      "12 měsíců"
+    )
+    /* Zápis jde týmiž dveřmi, takže se hodnota opraví natrvalo při uložení. */
+    expect(pickStoredLegalFacts({ "voucher.validity": "1 rok od nákupu" })).toEqual({
+      "voucher.validity": "1 rok",
+    })
+    /* Ostatních údajů se to netýká — „do 14 dnů od nákupu“ je jinde celá věta. */
+    expect(resolveLegalFacts({ "mto.deposit": "40 % od nákupu" })["mto.deposit"]).toBe(
+      "40 % od nákupu"
+    )
+  })
+
   it("explains in Czech why a value cannot be saved", () => {
     expect(legalFactProblem("seller.email", "")).toBeNull()
     expect(legalFactProblem("seller.email", "info@keramickazahrada.cz")).toBeNull()

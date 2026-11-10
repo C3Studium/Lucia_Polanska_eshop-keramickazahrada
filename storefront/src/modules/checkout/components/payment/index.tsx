@@ -143,7 +143,7 @@ const Payment = ({
    * involved and the money changes hands in the workshop.
    */
   // Dobírka jen na adresu (Balíkovna ji nemá) — peníze vybere doručovatel.
-  const dobirkaDetail = "Zaplatíte doručovateli, až vám zásilku předá"
+  const dobirkaDetail = texty["checkout.payment_1"]
 
   const extraPaymentOptions = useMemo<ExtraPaymentOption[]>(
     () =>
@@ -425,7 +425,7 @@ const Payment = ({
                   ? texty["pokladna.platba_zaloha_kartou"]
                   : hasComgate
                     ? texty["pokladna.platba_uvod"]
-                    : "Platit budete bezpečně až v dalším kroku.") && (
+                    : texty["checkout.payment_2"]) && (
                   <p>
                     {depositByCard
                       ? texty["pokladna.platba_zaloha_kartou"]

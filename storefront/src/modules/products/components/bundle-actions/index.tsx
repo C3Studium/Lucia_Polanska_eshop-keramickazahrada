@@ -13,6 +13,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { isEqual } from "lodash"
 import { useParams } from "next/navigation"
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react"
+import { useTexty } from "@lib/context/texty"
 
 type BundleActionsProps = {
   bundle: BundleProduct
@@ -63,6 +64,8 @@ export default function BundleActions({
   price,
   wishlistVariantId,
 }: BundleActionsProps) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const [productOptions, setProductOptions] = useState(() =>
     getInitialOptions(bundle)
   )
@@ -260,8 +263,8 @@ export default function BundleActions({
         )}
         <p>
           {isPreview
-            ? "Ukázka · koupit půjde, až budou napojená data."
-            : "Všechny vybrané kusy přidáme do košíku najednou."}
+            ? texty["products.bundle_actions_1"]
+            : texty["products.bundle_actions_2"]}
         </p>
       </div>
     </div>

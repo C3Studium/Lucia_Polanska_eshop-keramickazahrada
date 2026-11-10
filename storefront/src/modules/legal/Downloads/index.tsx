@@ -1,6 +1,7 @@
 "use client"
 
 import styles from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 /**
  * „Ke stažení" pod právním textem — PDF dané verze, tisk a další znění,
@@ -56,6 +57,8 @@ export default function LegalDownloads({
   items: LegalDownloadItem[]
   files?: LegalExtraFile[]
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   if (!items.length && !files.length) return null
 
   return (
@@ -125,8 +128,7 @@ export default function LegalDownloads({
             Další soubory ke stažení
           </h3>
           <p className={styles.extraNote}>
-            Doplňkové materiály k dokumentu. Závazné je znění dokumentu výše.
-          </p>
+            {texty["legal.downloads_1"]}</p>
           <ul className={styles.list} aria-labelledby="dalsi-soubory">
             {files.map((file, index) => (
               <li key={`${file.href}-${index}`}>

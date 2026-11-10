@@ -9,6 +9,7 @@ import ContactEmailLink from "@modules/common/components/contact-email"
 
 import { czk, signedCzk } from "./shared"
 import s from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 /**
  * Výměna — dlaždice variant téhož výrobku s rozdílem ceny u každé a pod nimi
@@ -47,6 +48,8 @@ export default function SwapSheet({
   onChoose: (variantId: string) => void
   onClose: () => void
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const open = Boolean(item)
   const packed = mode === "swap_only"
 
@@ -86,9 +89,7 @@ export default function SwapSheet({
               </p>
               {packed && (
                 <p className={s.sheetNote}>
-                  Objednávka je zabalená — vyměnit jde jen za provedení nebo
-                  výrobek ve stejné ceně.
-                </p>
+                  {texty["order.order_edit_25"]}</p>
               )}
               {quantityChanged && (
                 <p className={s.sheetNote}>
@@ -99,7 +100,7 @@ export default function SwapSheet({
 
               {tiles.length > 1 && (
                 <>
-                  <p className={s.sheetLabel}>Jiné provedení · rozdíl za kus</p>
+                  <p className={s.sheetLabel}>{texty["order.order_edit_26"]}</p>
                   <ul className={s.tiles}>
                     {tiles.map((variant) => {
                       const current = variant.id === item.variant_id
@@ -169,8 +170,8 @@ export default function SwapSheet({
                     </strong>
                     <span>
                       {packed
-                        ? "Jen za výrobek ve stejné ceně."
-                        : "Cokoli z obchodu, rozdíl ceny se vyrovná."}
+                        ? texty["order.order_edit_28"]
+                        : texty["order.order_edit_29"]}
                     </span>
                   </span>
                   <i aria-hidden="true">→</i>
@@ -178,8 +179,7 @@ export default function SwapSheet({
               ) : (
                 tiles.length <= 1 && (
                   <p className={s.sheetNote}>
-                    Jiné provedení teď vybrat nejde. Kdybyste potřebovali něco
-                    jiného, napište nám na <ContactEmailLink role="objednavky" />.
+                    {texty["order.order_edit_27"]}<ContactEmailLink role="objednavky" />.
                   </p>
                 )
               )}

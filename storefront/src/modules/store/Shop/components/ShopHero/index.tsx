@@ -6,6 +6,7 @@ import Image from "next/image"
 import { useRef } from "react"
 import styles from "./style.module.scss"
 import { palette } from "styles/palette.generated"
+import { useTexty } from "@lib/context/texty"
 
 type ShopHeroProps = {
   productCount: number
@@ -39,6 +40,8 @@ const parallaxSpring = {
 }
 
 export default function ShopHero({ productCount, onExplore }: ShopHeroProps) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const ref = useRef<HTMLElement>(null)
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] })
   const progress = useSpring(scrollYProgress, parallaxSpring)
@@ -73,8 +76,7 @@ export default function ShopHero({ productCount, onExplore }: ShopHeroProps) {
           Keramika, která<br />vydrží roky.
         </motion.h1>
         <motion.p custom={0.2} variants={reveal} initial="hidden" animate="show" className={styles.intro}>
-          Každý kus dělám rukama. Dva úplně stejné mi nevyjdou, ani kdybych chtěla.
-        </motion.p>
+          {texty["store.shophero_1"]}</motion.p>
         <motion.button custom={0.28} variants={reveal} initial="hidden" animate="show" type="button" onClick={onExplore}>
           Prohlédnout {productCount} kusů
           <ArrowRight size={18} color={palette.black03} />

@@ -83,7 +83,7 @@ export default function ProductReviewsForm({
   const submitReview = async () => {
     if (!activeCustomer || !content || !rating) {
       toast.error("Chybí hodnocení", {
-        description: "Doplňte prosím text recenze a hvězdičky.",
+        description: texty["products.product_reviews_1"],
       })
       return
     }
@@ -91,7 +91,7 @@ export default function ProductReviewsForm({
     if (previewMode) {
       toast.success("Náhled formuláře", {
         description:
-          "Toto je dočasný designový náhled. Recenze nebyla odeslána.",
+          texty["products.product_reviews_2"],
       })
       return
     }
@@ -112,7 +112,7 @@ export default function ProductReviewsForm({
         setContent("")
         setRating(0)
         toast.success("Děkujeme", {
-          description: "Recenzi jsme dostali, ještě ji projdeme a zveřejníme.",
+          description: texty["products.product_reviews_3"],
         })
       })
       .catch((error) => {
@@ -202,7 +202,7 @@ export default function ProductReviewsForm({
           <p>
             {activeCustomer.first_name
               ? `${activeCustomer.first_name}, jak se vám to doma osvědčilo?`
-              : "Jak se vám to doma osvědčilo?"}
+              : texty["products.product_reviews_4"]}
           </p>
           <ClickButton
             text="Napsat recenzi"

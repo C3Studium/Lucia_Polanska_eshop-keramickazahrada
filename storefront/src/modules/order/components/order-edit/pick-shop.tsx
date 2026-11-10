@@ -12,6 +12,7 @@ import type {
 
 import PickBar, { type PickSwapInfo } from "./pick-bar"
 import { editPath, pickProductPath } from "./shared"
+import { useTexty } from "@lib/context/texty"
 
 /**
  * Mini obchod úpravy objednávky — stávající výpis obchodu v režimu výběru.
@@ -47,6 +48,8 @@ export default function OrderPickShop({
   categories: ShopCategory[]
   navCollections: ShopNavCollection[]
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const pick = useMemo<ShopPickMode>(
     () => ({
       intro: swap
@@ -62,7 +65,7 @@ export default function OrderPickShop({
             eyebrow: `Přidat k objednávce #${orderNumber}`,
             title: "Vyberte, co přidat,",
             accent: "pošleme to spolu.",
-            text: "Jen kusy, které jde k objednávce přidat. Rozdíl ceny i poštovné uvidíte v souhrnu úpravy, ještě než cokoli uložíte.",
+            text: texty["order.order_edit_24"],
           },
       productIds,
       productHref: (product) =>

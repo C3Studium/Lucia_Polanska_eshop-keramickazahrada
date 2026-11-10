@@ -103,7 +103,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({
           <div className={styles.label}>
             <PremiumActionButton
               compact
-              text="Mám slevový kód nebo poukaz"
+              text={texty["checkout.discount_code_1"]}
               onClickAction={() => setIsOpen((current) => !current)}
               active={isOpen}
               type="button"

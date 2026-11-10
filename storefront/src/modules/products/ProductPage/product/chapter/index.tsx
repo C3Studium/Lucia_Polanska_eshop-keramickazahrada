@@ -3,8 +3,11 @@
 import WebButton from "@modules/common/components/Buttons/webButton"
 import { motion } from "framer-motion"
 import Image from "next/image"
+import { useTexty } from "@lib/context/texty"
 
 export default function ProductChapter() {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   return (
     <section
       className="productChapter"
@@ -22,7 +25,7 @@ export default function ProductChapter() {
           transition={transition}
         >
           <div className="product__chapterVisualHeader">
-            <span>02 · Jak to vzniká</span>
+            <span>{texty["products.chapter_1"]}</span>
             <i />
             <span>7 kroků</span>
           </div>
@@ -42,7 +45,7 @@ export default function ProductChapter() {
                 sizes="(max-width: 900px) 88vw, 32vw"
                 className="product__chapterPreviewImage"
               />
-              <figcaption>Ruce · materiál · čas</figcaption>
+              <figcaption>{texty["products.chapter_2"]}</figcaption>
             </motion.figure>
 
             <motion.figure
@@ -64,7 +67,7 @@ export default function ProductChapter() {
           </div>
 
           <div className="product__chapterAction">
-            <p>Od prvního nápadu až po poslední výpal.</p>
+            <p>{texty["products.chapter_3"]}</p>
             <WebButton
               Kind="Link"
               href="/vyroba"
@@ -81,7 +84,7 @@ export default function ProductChapter() {
           transition={transition4}
         >
           Dělám to pomalu.
-          <em> Aby vám to dlouho vydrželo.</em>
+          <em> {texty["products.chapter_4"]}</em>
         </motion.p>
       </div>
     </section>
