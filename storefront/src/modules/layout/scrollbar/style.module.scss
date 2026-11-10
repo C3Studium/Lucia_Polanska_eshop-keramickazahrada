@@ -21,8 +21,8 @@
    * to jako divný stín u pravé hrany.
    */
   z-index: 450;
-  top: clamp(0.5rem, 1.5vh, 1rem);
-  bottom: clamp(0.5rem, 1.5vh, 1rem);
+  top: clamp(8px, 1.5vh, 16px);
+  bottom: clamp(8px, 1.5vh, 16px);
   right: calc(var(--page-inset, 0px) + 7px);
   display: flex;
   color: var(--cream-06);
@@ -30,10 +30,27 @@
   pointer-events: none;
   transition: opacity 260ms ease;
 
+  /*
+   * Rozměry ukazatele jsou v px, ne v rem — jediné místo na webu, kde je to
+   * takhle schválně.
+   *
+   * Kořenový rem nese `--ui-scale`, zmenšení písma a ovládání na šířku
+   * (0,85 na notebooku, na dotyku níž). Ta páka je psaná pro typografii;
+   * vlásek u hrany obrazovky pod ni nepatří. Naměřeno na nasazeném webu:
+   * zamýšlené 4 px se vykreslily jako 3,4, a na dotyku by z pěti zbyly
+   * necelé čtyři. Celá tahle lišta přitom vznikla proto, že si čtenářka
+   * všimla, že žádný posuvník nevidí — zmenšovat ukazatel je přesně to,
+   * co se tu dělat nemá.
+   *
+   * Nad 1921 px ho ramp taky nezvětší, a je to tak správně: čtyřpixelový
+   * vlásek je čtyřpixelový na každé obrazovce, stejně jako hranice doteku
+   * níž. Popisek na najetí je text, ten v rem zůstává a měřítko se ho drží.
+   */
+
   /* Vlásek v klidu, pilulka po najetí. */
-  --listva-sirka: 0.25rem;
+  --listva-sirka: 4px;
   /* Plocha, kterou lze chytit. */
-  --listva-chyt: 1rem;
+  --listva-chyt: 16px;
 
   /* Oba zarážky přepisovaly `right`, takže `--page-inset` ze základního
      pravidla neplatilo a lišta seděla na hraně obrazovky mimo 16:10 rám.
@@ -48,7 +65,7 @@
 }
 
 .listva[data-aktivni="ano"] {
-  --listva-sirka: 0.625rem;
+  --listva-sirka: 10px;
 }
 
 /*
@@ -60,9 +77,9 @@
  * stránky by jinak skončil pod ní.
  */
 .listva[data-dotyk="ano"] {
-  --listva-sirka: 0.3125rem;
-  --listva-chyt: 0.5rem;
-  bottom: clamp(4.75rem, 11vh, 6.25rem);
+  --listva-sirka: 5px;
+  --listva-chyt: 8px;
+  bottom: clamp(76px, 11vh, 100px);
 }
 
 /*
