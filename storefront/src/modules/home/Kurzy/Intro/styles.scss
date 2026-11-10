@@ -913,8 +913,11 @@
    ten slib plní. Svislé tablety proto dostávají pinned scénu jako laptopy
    a tvarují se blokem pod tímhle. */
 
-@include below-px(600px) {
-@include v(xs) {
+/* Statický tok scén (bez připnutí) — telefon na výšku i naležato. Naležato měl telefon
+   připnutou scénu stavěnou pro široké okno a na 375px výšky v ní nadpis „Nejdřív hlína.
+   Potom nápad." ležel přes text i fotky (10. 11. 2026). Přepínač v index.tsx bere tytéž
+   dvě podmínky. */
+@mixin kurzy-static-flow {
   .kurzyTimeline {
     height: auto;
 
@@ -1060,6 +1063,11 @@
   }
 }
 
+@include below-px(600px) {
+@include v(xs) {
+  @include kurzy-static-flow;
+}
+
 @include v(sm) {
   .kurzyScene {
     padding: 2rem 20px 3.5rem;
@@ -1098,6 +1106,11 @@
 }
 
 } /* konec stropu 600px pro svislé telefony */
+
+/* Telefon naležato — týž statický tok (viz mixin výš). */
+@include phs-h {
+  @include kurzy-static-flow;
+}
 
 /* ── Svislé tablety: hero na výšku ──
 

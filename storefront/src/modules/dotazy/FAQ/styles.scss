@@ -550,3 +550,11 @@
     }
   }
 }
+
+/* Telefon naležato (10. 11. 2026): 13vw dávalo nadpisu „Na co se ptáte nejčastěji" 76px,
+   tedy polovinu 375px výšky, a tlačítko „Přejít na odpovědi" vypadlo z první obrazovky. */
+@include phs-h {
+  .faqIntro h2 {
+    font-size: clamp(2rem, 11vh, 3rem);
+  }
+}

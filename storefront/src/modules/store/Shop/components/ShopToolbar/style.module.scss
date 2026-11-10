@@ -166,3 +166,23 @@
   .sort { grid-column: 1 / -1; justify-content: space-between; min-height: 42px; }
   .sort span { display: inline; }
 }
+
+/*
+ * Dotyk (10. 11. 2026): globální podlaha 44px natáhla kroužek „i" (19px široký) do oválu,
+ * který přečníval pilulku řazení. Kresba zůstává kolečkem, cíl pro prst zvětšuje
+ * průhledný přesah — stejně jako u bublinek kroků v pokladně.
+ */
+@include touch {
+  .sortInfoButton {
+    position: relative;
+    width: 1.75rem;
+    height: 1.75rem;
+    min-height: 0 !important;
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: -0.6rem;
+    }
+  }
+}

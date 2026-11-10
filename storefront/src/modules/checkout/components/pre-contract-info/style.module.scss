@@ -143,3 +143,8 @@
     gap: .1rem;
   }
 }
+
+/* Úsek, který se nesmí zalomit (telefonní číslo prodávajícího). */
+.nowrap {
+  white-space: nowrap;
+}

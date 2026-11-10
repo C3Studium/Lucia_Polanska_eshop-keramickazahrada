@@ -11,6 +11,7 @@ import { editableItem } from "@modules/common/components/cms-text"
 import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
 import styles from "./style.module.scss"
 import { useTexty } from "@lib/context/texty"
+import { countryNameCs } from "@lib/util/country-name-cs"
 
 /*
  * Nájezdová geometrie v jednotce toho, proti čemu se pohybuje.
@@ -286,7 +287,7 @@ const ShippingAddress = ({
         />
         <div className={styles.countryField}>
           <span className={styles.countryLabel}>Země doručení</span>
-          <strong>{cart?.region?.countries?.find((country) => country.iso_2 === routeCountry)?.display_name || routeCountry.toUpperCase()}</strong>
+          <strong>{countryNameCs(routeCountry, cart?.region?.countries?.find((country) => country.iso_2 === routeCountry)?.display_name)}</strong>
           <span>{texty["checkout.shipping_address_1"]}</span>
         </div>
         <input

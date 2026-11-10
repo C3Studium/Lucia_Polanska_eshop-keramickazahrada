@@ -175,9 +175,10 @@
     column-gap: 0.5rem;
   }
 
-  /* Adresa, Společnost a Země doručení — pořadí polí viz index.tsx. */
+  /* Adresa a Země doručení — pořadí polí viz index.tsx. Dřív tu bylo i 4. pole
+     (Společnost); to z formuláře zmizelo, 4. je teď PSČ a natahovalo se přes oba
+     sloupce, takže Město zůstalo samo v polovině řádku (10. 11. 2026). */
   .root .formGrid > *:nth-child(3),
-  .root .formGrid > *:nth-child(4),
   .root .formGrid > .countryField {
     grid-column: 1 / -1;
   }

@@ -887,7 +887,9 @@
     .Hero__Intro__Header {
       top: auto;
       right: 1.3rem;
-      bottom: $bottom;
+      /* Nad spodní lištou (10. 11. 2026): 7.5vh je na 375x667 jen 50px a lišta zabírá
+         ~70px, takže „Prohlédnout výrobky" leželo pod ní. Místo i pro lištu „Pokračovat". */
+      bottom: max(#{$bottom}, calc(var(--nav-bottom-clearance, 68px) + 2.75rem));
       left: 1.3rem;
       display: flex;
       flex-direction: column;
@@ -925,6 +927,11 @@
 
     .Hero__Intro__Lede > p {
       max-width: 34ch;
+    }
+
+    /* „Pokračovat … 01" bylo celé pod spodní lištou; stojí nad ní. */
+    .Hero__Intro__FooterRail {
+      bottom: calc(var(--nav-bottom-clearance, 68px) + 0.75rem);
     }
   }
 }

@@ -277,7 +277,9 @@
       margin-bottom: 0.25rem;
     }
     .methodText {
-      font-size: 1rem;
+      /* Menší než název možnosti (10. 11. 2026): 1rem bylo větší než název dopravy nad
+         ním (0.875rem), adresa ateliéru u osobního odběru tak vypadala jako nadpis. */
+      font-size: 0.8125rem;
       color: var(--ui-fg-subtle, var(--blue-02));
     }
   }

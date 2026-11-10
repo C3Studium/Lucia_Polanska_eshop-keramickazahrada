@@ -77,7 +77,9 @@
   top: 74px;
   right: 12px;
   left: 12px;
-  max-height: calc(100dvh - 90px);
+  /* Končí nad spodní lištou, ne pod ní (10. 11. 2026): naležato ležela lišta přes
+     poslední položku „Kontakt". Delší seznam se v panelu posune. */
+  max-height: calc(100dvh - 74px - var(--nav-bottom-clearance, 68px) - 8px);
   overflow-y: auto;
   padding: 10px;
   border: 1px solid rgb(var(--ink-09-rgb) / .16);
@@ -88,7 +90,7 @@
   /* Sideways on a phone the bar sits higher and there is far less room beneath it. */
   @include phs-h {
     top: 62px;
-    max-height: calc(100dvh - 74px);
+    max-height: calc(100dvh - 62px - var(--nav-bottom-clearance, 68px) - 8px);
   }
 }
 

@@ -933,6 +933,12 @@ p.newsletter__error {
     --animated-link-font-size: calc(15px * var(--ui-scale));
   }
 
+  /* Táž velikost i pro „Nastavení cookies" a „Kontakt" (tlačítka): zůstaly na rem, takže
+     s větším písmem v telefonu byly o pětinu větší než odkazy vedle (10. 11. 2026). */
+  .footer__dialogLink {
+    font-size: calc(15px * var(--ui-scale));
+  }
+
   .footer__identity {
     padding: 14px 0;
     gap: 10px 16px;
@@ -1130,5 +1136,41 @@ p.newsletter__error {
   /* Same bottom-bar clearance as portrait; the bar is there in landscape too. */
   .Mainfooter {
     padding-bottom: 76px;
+  }
+}
+
+/*
+ * Telefon naležato (10. 11. 2026). Mřížka značky („logo socials / mark mark") tu byla
+ * zapsaná, ale přiřazení oblastí jen v bloku pro telefon na výšku — naležato se proto věta
+ * „Keramika pro zahradu i domov…" naskládala do úzkého sloupce slovo pod slovo a popisek
+ * „00 · Patička" ležel přes logo. A newsletter: text a formulář vedle sebe nechávaly nadpisu
+ * „Ozveme se, když bude co říct." pět řádků — pod sebou se vejdou.
+ */
+@include phs-h {
+  .footer__brandMeta {
+    margin-bottom: 0;
+    grid-area: logo;
+  }
+
+  .footer__brandMeta span {
+    display: none;
+  }
+
+  .footer__socials {
+    margin-top: 0;
+    grid-area: socials;
+    justify-self: end;
+  }
+
+  .footer__wordmark {
+    grid-area: mark;
+  }
+
+  .footer__statement {
+    display: none;
+  }
+
+  .footer__newsletter {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

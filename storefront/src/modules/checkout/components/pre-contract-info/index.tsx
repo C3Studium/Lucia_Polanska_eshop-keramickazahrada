@@ -403,8 +403,10 @@ export default function PreContractInfo({
           <dd>
             <span>
               {inline(
-                "{{seller.name}}, {{seller.address}}, IČO {{seller.ico}}, {{seller.email}}, {{seller.phone}}"
+                "{{seller.name}}, {{seller.address}}, IČO {{seller.ico}}, {{seller.email}}, "
               )}
+              {/* Telefon v celku — na telefonu se lámal na „+420 / 775 211 578". */}
+              <span className={styles.nowrap}>{inline("{{seller.phone}}")}</span>
             </span>
           </dd>
         </div>

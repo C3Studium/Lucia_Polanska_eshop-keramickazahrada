@@ -474,7 +474,9 @@
     }
 
     &__lead {
-      max-width: 13ch;
+      /* 18ch, ne 13 (10. 11. 2026): s menším písmem na telefonu zbyly z 13 znaků
+         dvě třetiny šířky prázdné a věta se lámala po dvou slovech. */
+      max-width: 18ch;
       margin: 24px 0 0;
       color: rgb(var(--cream-06-rgb) / .9);
       font-family: "Sentient-Regular", serif;

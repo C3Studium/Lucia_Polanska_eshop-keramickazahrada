@@ -185,7 +185,8 @@ export default function Intro({
   const [staticFlow, setStaticFlow] = useState(false)
   useEffect(() => {
     const query = window.matchMedia(
-      "(orientation: portrait) and (max-width: 599.98px)"
+      /* Telefon na výšku, nebo naležato (phs-h ve stylech) — viz mixin kurzy-static-flow. */
+      "(orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (min-width: 480px) and (max-height: 520px)"
     )
     const sync = () => setStaticFlow(query.matches)
     sync()

@@ -348,3 +348,20 @@
     background: var(--olive-15);
   }
 }
+
+/*
+ * Dotyk (10. 11. 2026): 2.75rem bylo 44px, po zmenšení písma na telefonu jen 35px. Globální
+ * podlaha 44px pak natáhla košík (je to <button>) do svislého oválu vedle kulaté záložky.
+ * Obě kolečka proto drží 40px a podlaha výšky se tu nepoužije — jinak by se rozešla.
+ */
+@include touch {
+  .iconSlot,
+  .quickAdd {
+    width: max(2.75rem, 40px);
+    height: max(2.75rem, 40px);
+  }
+
+  .quickAdd {
+    min-height: 0 !important;
+  }
+}

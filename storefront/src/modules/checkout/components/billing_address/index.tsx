@@ -3,6 +3,7 @@ import Input from "@modules/common/components/input"
 import PhoneInput from "@modules/common/components/phone-input"
 import React, { useState } from "react"
 import s from "./style.module.scss"
+import { countryNameCs } from "@lib/util/country-name-cs"
 
 const BillingAddress = ({ cart, countryCode }: { cart: HttpTypes.StoreCart | null, countryCode: string }) => {
   const routeCountry = countryCode.toLowerCase()
@@ -98,7 +99,7 @@ const BillingAddress = ({ cart, countryCode }: { cart: HttpTypes.StoreCart | nul
         />
         <div className={s.countryField}>
           <span>Země fakturace</span>
-          <strong>{cart?.region?.countries?.find((country) => country.iso_2 === routeCountry)?.display_name || routeCountry.toUpperCase()}</strong>
+          <strong>{countryNameCs(routeCountry, cart?.region?.countries?.find((country) => country.iso_2 === routeCountry)?.display_name)}</strong>
         </div>
         <input
           type="hidden"

@@ -898,3 +898,21 @@
     padding-bottom: calc(80px + 2vh);
   }
 }
+
+/*
+ * Telefon naležato (10. 11. 2026): nadpis „U hlíny se nedá spěchat. A to je na tom to
+ * nejlepší." měl 14vw šířky, tedy 70px na 667 — a do 375px výšky se vešla jen polovina.
+ * Na šířku rozhoduje výška, tak z ní.
+ */
+@include phs-h {
+  .courses__section .Courses__content .title {
+    h2,
+    em {
+      font-size: clamp(1.9rem, 10vh, 2.8rem);
+    }
+  }
+
+  .courses__section .Courses__footerCurtain .Courses__cta h2 {
+    font-size: clamp(1.9rem, 10vh, 2.8rem);
+  }
+}

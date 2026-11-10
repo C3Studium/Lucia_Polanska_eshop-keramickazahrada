@@ -6,7 +6,9 @@
 .page {
   width: min(100% - 2 * clamp(1rem, 4vw, 2.5rem), 52rem);
   margin: 0 auto;
-  padding: clamp(2.5rem, 6vh, 4.5rem) 0 clamp(3rem, 8vh, 6rem);
+  /* Shora jako právní dokumenty (LegalDocument): dřív 2.5–4.5rem a na telefonu nadpis
+     začínal pod kulatými tlačítky navigace (10. 11. 2026, i na živém webu). */
+  padding: clamp(6.5rem, 12vh, 8.75rem) 0 clamp(3rem, 8vh, 6rem);
   color: var(--ink-05);
   font-family: "Sansation-Regular", sans-serif;
 }

@@ -246,3 +246,14 @@
     justify-self: end;
   }
 }
+
+/*
+ * Patička pod lepkavým pruhem (10. 11. 2026). Pruh visí nad spodní lištou i na konci
+ * stránky a ležel přes poslední řádky patičky („© 2026 …"). Patička si rezervuje jen
+ * spodní lištu, tak tady, kde pruh je, dostane navíc jeho výšku (~4rem) a mezeru nad ním.
+ */
+@media (orientation: portrait) and (max-width: 1179.98px) {
+  :global(body):has(.root) :global(.Mainfooter) {
+    padding-bottom: calc(var(--nav-bottom-clearance, 68px) + 10px + 2.5vh + 4.5rem) !important;
+  }
+}

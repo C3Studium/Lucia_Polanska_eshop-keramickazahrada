@@ -101,7 +101,8 @@ export default function ProductPrice({
 
   return (
     <div className="product__details__cta__price">
-      <p>Cena |</p>
+      {/* Nezlomitelná mezera: na 320px se „|" zalamovalo na vlastní řádek. */}
+      <p>Cena&nbsp;|</p>
       <div className="product__details__cta__price__main">
         <span
           className={[
