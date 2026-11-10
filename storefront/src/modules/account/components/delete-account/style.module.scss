@@ -67,7 +67,7 @@
 .index,
 .account span {
   color: rgb(var(--black-03-rgb) / .56);
-  font: calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.8vw * var(--ui-scale)), 0.875rem))/1.2 "Sansation-Regular", sans-serif;
+  font: max(10px, calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.8vw * var(--ui-scale)), 0.875rem)))/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }

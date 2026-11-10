@@ -78,7 +78,8 @@
   color: rgb(var(--black-03-rgb) / .54) !important;
   /* floor 12.8px keeps the .54-alpha uppercase caption above the 12px legibility
      floor; same caption size as register */
-  font-size: calc(var(--account-zoom, 1) * clamp(.8rem, calc(0.68vw * var(--ui-scale)), .9rem)) !important;
+  /* Podlaha 10px: s --account-zoom a měřítkem 0.8 vycházel popisek naležato na 8px. */
+  font-size: max(10px, calc(var(--account-zoom, 1) * clamp(.8rem, calc(0.68vw * var(--ui-scale)), .9rem))) !important;
   letter-spacing: .1em;
   text-transform: uppercase;
 }

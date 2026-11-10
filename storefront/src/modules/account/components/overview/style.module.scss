@@ -39,7 +39,7 @@
   // Podlaha .75rem, ne .72rem: .72rem je 11.52px a rig hlídá čitelnost pod 12px
   // (.rdshots/acct-shot.cjs ohlásí každý text s fs < 12). Takhle drží mikropopisek
   // dnešních 12px až do 1600 a nad 1921 ho zvedne ramp přes strop v rem.
-  font: calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.8vw * var(--ui-scale)), 0.875rem))/1.2 "Sansation-Regular", sans-serif;
+  font: max(10px, calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.8vw * var(--ui-scale)), 0.875rem)))/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }

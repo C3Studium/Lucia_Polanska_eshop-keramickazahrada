@@ -18,7 +18,7 @@
 .accountMeta span {
   margin: 0 0 .75rem;
   color: rgb(var(--cream-06-rgb) / .5);
-  font: calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.8vw * var(--ui-scale)), 0.875rem)) / 1.2 "Sansation-Regular", sans-serif;
+  font: max(10px, calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.8vw * var(--ui-scale)), 0.875rem))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -116,12 +116,12 @@
 }
 
 .linkIndex {
-  font-size: calc(var(--account-zoom, 1) * clamp(.78rem, calc(0.76vw * var(--ui-scale)), .88rem));
+  font-size: max(10px, calc(var(--account-zoom, 1) * clamp(.78rem, calc(0.76vw * var(--ui-scale)), .88rem)));
   letter-spacing: 0.1em;
 }
 
 .linkTitle {
-  font-size: calc(var(--account-zoom, 1) * clamp(.8rem, calc(0.784vw * var(--ui-scale)), .94rem));
+  font-size: max(10px, calc(var(--account-zoom, 1) * clamp(.8rem, calc(0.784vw * var(--ui-scale)), .94rem)));
 }
 
 .linkLine {
@@ -148,7 +148,7 @@
   margin: 0;
   overflow: hidden;
   color: rgb(var(--cream-06-rgb) / .7);
-  font-size: calc(var(--account-zoom, 1) * clamp(.78rem, calc(0.76vw * var(--ui-scale)), .88rem));
+  font-size: max(10px, calc(var(--account-zoom, 1) * clamp(.78rem, calc(0.76vw * var(--ui-scale)), .88rem)));
   text-overflow: ellipsis;
   white-space: nowrap;
 }

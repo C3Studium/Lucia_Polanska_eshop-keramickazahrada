@@ -42,7 +42,7 @@
        tentyz label. Podlaha .75rem je 12px, kterou kontroluje rig; nad 1921 ji
        ramp zvedne sam na ~16px. */
     font-family: "Sansation-Regular", sans-serif;
-    font-size: calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.496vw * var(--ui-scale)), .9rem));
+    font-size: max(10px, calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.496vw * var(--ui-scale)), .9rem)));
     line-height: 1.2;
     letter-spacing: 0.12em;
     text-transform: uppercase;

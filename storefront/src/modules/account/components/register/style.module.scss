@@ -75,7 +75,7 @@
   margin-left: 0 !important;
   color: rgb(var(--black-03-rgb) / .54) !important;
   /* floor 12.8px keeps the .54-alpha uppercase caption above the 12px legibility floor */
-  font-size: calc(var(--account-zoom, 1) * clamp(.8rem, calc(0.68vw * var(--ui-scale)), .9rem)) !important;
+  font-size: max(10px, calc(var(--account-zoom, 1) * clamp(.8rem, calc(0.68vw * var(--ui-scale)), .9rem))) !important;
   letter-spacing: .1em;
   text-transform: uppercase;
 }

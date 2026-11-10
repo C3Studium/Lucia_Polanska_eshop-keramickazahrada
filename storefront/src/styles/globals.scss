@@ -400,8 +400,8 @@ html[data-app="studio"] *::-webkit-scrollbar-thumb {
 /*
  * Telefony a tablety (10. 11. 2026): na výšku o pětinu menší (1 → 0.8) — na iPhonu se pokladna
  * a košík nevešly do sloupce a tlačítka byla přerostlá. Dotyková zařízení na šířku (tablet,
- * telefon bokem) 0.85 → 0.75, ne o celou pětinu: při 0.68 měla většina textu v obchodě
- * na 1180×820 jen 8–10px.
+ * telefon bokem) 0.85 → 0.8, ne o celou pětinu: při 0.68 měla většina textu v obchodě
+ * na 1180×820 jen 8–10px a při 0.75 měly popisky verzálkami 9px (změřeno na 6 velikostech).
  */
 @media (orientation: portrait) {
   :root {
@@ -411,7 +411,7 @@ html[data-app="studio"] *::-webkit-scrollbar-thumb {
 
 @media (orientation: landscape) and (hover: none) and (pointer: coarse) and (max-width: 1729.98px) {
   :root {
-    --ui-scale: 0.75;
+    --ui-scale: 0.8;
   }
 }
 

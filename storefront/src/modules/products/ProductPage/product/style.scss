@@ -1001,7 +1001,8 @@
   /* 0,8× původní velikosti (Matěj 12. 10.: dostupnost, výroba, balné,
      dobírka — menší na všech zařízeních; tohle pravidlo vyhrává nad
      třídami poznámek, proto se zmenšuje tady). */
-  font: 400 clamp(0.7rem, calc(0.934vw * var(--ui-scale)), 0.817rem)/1.4 "Sansation-Regular", sans-serif;
+  /* Podlaha 10px: s měřítkem 0.8 na telefonu vycházelo 0.7rem na 9px (10. 11. 2026). */
+  font: 400 max(10px, clamp(0.7rem, calc(0.934vw * var(--ui-scale)), 0.817rem))/1.4 "Sansation-Regular", sans-serif;
 }
 
 .product__serviceNotes {
