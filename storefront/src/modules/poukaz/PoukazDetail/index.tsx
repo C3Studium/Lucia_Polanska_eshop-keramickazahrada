@@ -14,6 +14,7 @@ import { czk } from "../format"
 import { formatVoucherCode } from "@lib/util/gift-voucher-code"
 import styles from "../panel.module.scss"
 import PoukazKarta from "../PoukazKarta"
+import { useTexty } from "@lib/context/texty"
 
 /**
  * Stránka dárkového poukazu — vzor `kurzy/RezervaceDetail`.
@@ -65,6 +66,8 @@ export default function PoukazDetail({
   /** Kartička k oboustrannému tisku (dvě stránky A4). */
   printPdfUrl?: string | null
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const [voucher, setVoucher] = useState(initialVoucher)
   const paid = voucher.payment_status === "paid"
   const returnedFromPayment = outcome === "paid" || outcome === "pending"
@@ -145,8 +148,8 @@ export default function PoukazDetail({
           <p className={styles.notice} role="status">
             Platba dorazila, děkuji! Poukaz je platný
             {voucher.kind === "electronic"
-              ? " a posílám ho i e-mailem."
-              : " — vytisknu ho a pošlu poštou."}
+              ? texty["poukaz.poukazdetail_14"]
+              : texty["poukaz.poukazdetail_15"]}
           </p>
         ) : null}
 
@@ -156,15 +159,10 @@ export default function PoukazDetail({
           <h2 className={styles.howToTitle}>Jak poukaz uplatnit</h2>
           <ul>
             <li>
-              V obchodě zadejte kód v košíku nebo v pokladně do pole Slevový
-              kód nebo dárkový poukaz — částka se odečte hned. Odečítá se ze
-              zboží, které není ve slevě; poštovné doplatíte.
-            </li>
-            <li>V dílně stačí poukaz ukázat.</li>
+              {texty["poukaz.poukazdetail_1"]}</li>
+            <li>{texty["poukaz.poukazdetail_2"]}</li>
             <li>
-              Platí na keramiku i na zakázky, na kurzy zatím ne. Co
-              neutratíte, zůstane na poukazu.
-            </li>
+              {texty["poukaz.poukazdetail_3"]}</li>
             <li>
               Platí do {voucher.valid_until_label}. Kolik na něm zbývá, uvidíte
               vždycky tady na této stránce.
@@ -300,17 +298,18 @@ function StateText({
   phase: Phase
   outcome?: string
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const afterPayment =
     voucher.kind === "electronic"
-      ? "Hned po zaplacení vám poukaz přijde e-mailem a uvidíte ho i tady, i s kódem."
-      : "Po zaplacení poukaz vytisknu a pošlu poštou. Kód uvidíte i tady, hned jak platba dorazí."
+      ? texty["poukaz.poukazdetail_16"]
+      : texty["poukaz.poukazdetail_17"]
 
   switch (voucher.state) {
     case "refunded":
       return (
         <Head eyebrow="Neplatný poukaz" title="Za poukaz se" accent="vrátily peníze." tone="warn">
-          Peníze za tenhle poukaz se vrátily, takže ho už nejde uplatnit.
-          Kdyby vám něco nesedělo, napište mi na <Mail />.
+          {texty["poukaz.poukazdetail_4"]}<Mail />.
         </Head>
       )
     case "cancelled":
@@ -321,15 +320,13 @@ function StateText({
           accent="je zrušený."
           tone="warn"
         >
-          Zrušený poukaz už nejde uplatnit. Pokud si myslíte, že jde o omyl,
-          ozvěte se mi na <Mail /> a podívám se na to.
+          {texty["poukaz.poukazdetail_5"]}<Mail /> a podívám se na to.
         </Head>
       )
     case "used":
       return (
         <Head eyebrow="Vyčerpaný poukaz" title="Poukaz je" accent="vyčerpaný." tone="warn">
-          Celá hodnota poukazu už byla uplatněna, takže na něm nic nezbývá.
-          Kdyby vám něco nesedělo, napište mi na <Mail />.
+          {texty["poukaz.poukazdetail_7"]}<Mail />.
         </Head>
       )
     case "expired":
@@ -340,8 +337,7 @@ function StateText({
           accent={`skončila ${voucher.valid_until_label}.`}
           tone="warn"
         >
-          Po konci platnosti už poukaz uplatnit nejde. Kdybyste se chtěli
-          na cokoli zeptat, ozvěte se mi na <Mail />.
+          {texty["poukaz.poukazdetail_8"]}<Mail />.
         </Head>
       )
     default:
@@ -366,19 +362,14 @@ function StateText({
           <i />
           <i />
         </span>
-        Platba je na cestě, jen se k nám ještě nedostala zpráva od banky.
-        Stránka se sama obnoví, jakmile dorazí — nemusíte nic dělat ani platit
-        znovu.
-      </Head>
+        {texty["poukaz.poukazdetail_9"]}</Head>
     )
   }
 
   if (phase === "timeout") {
     return (
       <Head eyebrow="Ověřuji platbu" title="Platba se zatím" accent="neukázala." tone="warn">
-        Někdy to bance trvá déle. Pokud vám peníze z účtu odešly, neplaťte
-        prosím znovu — zkuste platbu za pár minut zkontrolovat, nebo mi napište
-        na <Mail />. Pokud jste platbu nedokončili, můžete to zkusit znovu.
+        {texty["poukaz.poukazdetail_10"]}<Mail />. Pokud jste platbu nedokončili, můžete to zkusit znovu.
       </Head>
     )
   }
@@ -386,8 +377,7 @@ function StateText({
   if (outcome === "cancelled") {
     return (
       <Head eyebrow="Platba nedokončena" title="Platba se" accent="nedokončila." tone="warn">
-        Peníze se vám nestrhly. Můžete to zkusit znovu, nebo mi
-        napište na <Mail /> a domluvíme se na převodu.
+        {texty["poukaz.poukazdetail_12"]}<Mail /> a domluvíme se na převodu.
       </Head>
     )
   }

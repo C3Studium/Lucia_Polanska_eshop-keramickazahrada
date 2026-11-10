@@ -2,6 +2,7 @@ import {
   Badge,
   Container,
   Heading,
+  Input,
   Switch,
   Text,
   Textarea,
@@ -23,6 +24,7 @@ import { useUrlState } from "../../../lib/url-state";
    znění jsou tak na jednom místě se schématem, které hlídá zápis. */
 import {
   SHOP_TEXT_DEFAULTS,
+  SHOP_TEXT_GROUPS,
   SHOP_TEXT_KEYS,
   SHOP_TEXT_META,
   SHOP_TEXT_OBLASTI,
@@ -238,11 +240,30 @@ const Inner = () => {
     "oblast",
     SHOP_TEXT_OBLASTI[0]
   );
+  /*
+   * Hledání. Při dvou stech textech je nutnost: člověk větu zná ze stránky
+   * obchodu a potřebuje ji najít, ne hádat, do které záložky ji kdo zařadil.
+   * Hledá se v názvu pole, v nápovědě i v samotném znění, a napříč všemi
+   * záložkami — jinak by hledání selhávalo přesně tehdy, když je potřeba.
+   */
+  const [hledat, setHledat] = useUrlState<string>("hledat", "");
+  const hledaneSlovo = hledat.trim().toLowerCase();
 
   /* Jen rozepsaná pole; ostatní ukazují, co právě platí. */
   const [edits, setEdits] = useState<Partial<Record<ShopTextKey, string>>>({});
   const valueOf = (key: ShopTextKey) => edits[key] ?? savedText(key);
   const zapnutoSaved = (key: ShopTextKey) => data?.vypnute?.[key] !== true;
+
+  const sedi = (key: ShopTextKey) => {
+    if (!hledaneSlovo) return true;
+    const meta = SHOP_TEXT_META[key];
+    return (
+      `${meta.label} ${meta.help} ${valueOf(key)} ${meta.group}`
+        .toLowerCase()
+        .includes(hledaneSlovo)
+    );
+  };
+  const nalezeno = SHOP_TEXT_KEYS.filter(sedi);
 
   const changedKeys = SHOP_TEXT_KEYS.filter(
     (key) => key in edits && (edits[key] ?? "").trim() !== savedText(key)
@@ -332,9 +353,27 @@ const Inner = () => {
         v obchodě stojí. Sto čtyřicet polí pod sebou se nedá projít — tohle
         je ta orientace (Matěj, 9. 11. 2026).
       */}
+      <div className="flex flex-wrap items-center gap-3 px-6 pt-4">
+        <Input
+          type="search"
+          size="small"
+          className="max-w-md flex-1"
+          placeholder="Najít větu — podle znění, názvu pole nebo stránky"
+          value={hledat}
+          onChange={(event) => setHledat(event.target.value)}
+        />
+        <Text size="small" className="text-ui-fg-subtle">
+          {hledaneSlovo
+            ? `Nalezeno ${nalezeno.length} z ${SHOP_TEXT_KEYS.length}`
+            : `Celkem ${SHOP_TEXT_KEYS.length} textů`}
+        </Text>
+      </div>
+
       <nav
         aria-label="Oblasti textů"
-        className="flex flex-wrap items-center gap-x-1 gap-y-1 px-6 py-3"
+        className={`flex flex-wrap items-center gap-x-1 gap-y-1 px-6 py-3 ${
+          hledaneSlovo ? "hidden" : ""
+        }`}
       >
         {SHOP_TEXT_OBLASTI.map((oblast) => {
           const aktivni = oblast === vybranaOblast;
@@ -362,11 +401,22 @@ const Inner = () => {
         })}
       </nav>
 
-      {skupinyOblasti(vybranaOblast).map((group) => (
+      {/* Při hledání se záložky obcházejí — hledá se napříč celým obchodem. */}
+      {(hledaneSlovo
+        ? SHOP_TEXT_GROUPS.filter((group) =>
+            nalezeno.some((key) => SHOP_TEXT_META[key].group === group)
+          )
+        : skupinyOblasti(vybranaOblast)
+      ).map((group) => (
         <section key={group} className="px-6 pb-1 pt-5">
           <Heading level="h2">{group}</Heading>
+          {hledaneSlovo ? (
+            <Text size="xsmall" className="text-ui-fg-muted">
+              {oblastSkupiny(group)}
+            </Text>
+          ) : null}
           <div className="divide-y">
-            {SHOP_TEXT_KEYS.filter((key) => SHOP_TEXT_META[key].group === group).map(
+            {nalezeno.filter((key) => SHOP_TEXT_META[key].group === group).map(
               (key) => (
                 <TextField
                   key={key}

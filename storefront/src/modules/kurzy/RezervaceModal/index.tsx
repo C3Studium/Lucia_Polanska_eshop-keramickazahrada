@@ -53,6 +53,7 @@ import KurzyCalendar from "./Calendar"
 const ONLINE_PARTY_MAX = 30
 
 import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
+import { useTexty } from "@lib/context/texty"
 /**
  * The reservation modal — „Vybrat termín" opens it over the kurzy page.
  *
@@ -162,6 +163,8 @@ export default function RezervaceModal({
   block,
   countryCode = COURSE_COUNTRY,
 }: Props) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   if (typeof document === "undefined") {
     return null
   }
@@ -197,6 +200,8 @@ function RezervaceModalPanel({
   block?: CopyBlock
   countryCode: string
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const regionLocked = countryCode.toLowerCase() !== COURSE_COUNTRY
   const [switching, setSwitching] = useState(false)
   const [switchError, setSwitchError] = useState<string | null>(null)
@@ -590,7 +595,7 @@ function RezervaceModalPanel({
     if (!termDone) {
       setStepError({
         step: "termin",
-        message: "Vyberte prosím termín s volnými místy.",
+        message: texty["kurzy.rezervacemodal_9"],
       })
       return
     }
@@ -622,7 +627,7 @@ function RezervaceModalPanel({
       setStepError({
         step: "platba",
         message:
-          "Před rezervací prosím potvrďte souhlas s obchodními podmínkami.",
+          texty["kurzy.rezervacemodal_10"],
       })
       return
     }
@@ -819,9 +824,7 @@ function RezervaceModalPanel({
         {regionLocked ? (
           <div className="kurzyModal__regionLock" role="status">
             <p>
-              Kurzy probíhají v ateliéru v Písku a rezervují se v korunách, proto je jde rezervovat jen
-              v české verzi obchodu. Přepněte si obchod na Česko — okno rezervace zůstane otevřené.
-            </p>
+              {texty["kurzy.rezervacemodal_2"]}</p>
             {switchError ? (
               <p className="kurzyModal__error" role="alert">
                 {switchError}
@@ -988,13 +991,11 @@ function RezervaceModalPanel({
                             return spolecne ? (
                               <PriceLadder
                                 tiers={spolecne}
-                                note="Čím víc vás přijde, tím méně platí každý. Cena se spočítá podle počtu osob v dalším kroku."
+                                note={texty["kurzy.rezervacemodal_11"]}
                               />
                             ) : (
                               <p className="kurzyModal__hint">
-                                Ceny se u jednotlivých termínů liší — najdete
-                                je u každého termínu.
-                              </p>
+                                {texty["kurzy.rezervacemodal_3"]}</p>
                             )
                           })()}
 
@@ -1192,10 +1193,7 @@ function RezervaceModalPanel({
                                   />
 
                                   <p className="kurzyModal__consent">
-                                    E-mail a telefon použijeme jen k vyřízení
-                                    téhle žádosti — nic dalšího na ně posílat
-                                    nebudeme.
-                                  </p>
+                                    {texty["kurzy.rezervacemodal_4"]}</p>
 
                                   {wlError ? (
                                     <p className="kurzyModal__error" role="alert">
@@ -1236,7 +1234,7 @@ function RezervaceModalPanel({
                                 <span className="kurzyModal__chosenBarMeta">
                                   {termDone && selected
                                     ? formatPrague(selected.starts_at)
-                                    : "Vyberte termín v seznamu nebo v kalendáři"}
+                                    : texty["kurzy.rezervacemodal_12"]}
                                 </span>
                               </p>
                               <button
@@ -1513,8 +1511,7 @@ function RezervaceModalPanel({
                           <span>
                             <strong>Zaplatit předem kartou</strong>
                             <small>
-                              Bezpečně přes ComGate, místo máte jisté hned.
-                            </small>
+                              {texty["kurzy.rezervacemodal_5"]}</small>
                           </span>
                         </label>
                         <label
@@ -1529,7 +1526,7 @@ function RezervaceModalPanel({
                           />
                           <span>
                             <strong>Zaplatím na místě</strong>
-                            <small>Hotově nebo převodem na účet před začátkem kurzu.</small>
+                            <small>{texty["kurzy.rezervacemodal_6"]}</small>
                           </span>
                         </label>
                       </fieldset>
@@ -1546,11 +1543,7 @@ function RezervaceModalPanel({
                           {renderInline("{{course.cancellation}}", { facts: legalFacts })}
                         </p>
                         <p className="kurzyModal__storno" data-testid="course-exception-notice">
-                          Kurz má pevný termín, proto u něj neplatí zákonné
-                          odstoupení do 14 dnů bez udání důvodu (§ 1837 písm. j)
-                          občanského zákoníku). Místo něj platí storno podmínky
-                          výše.
-                        </p>
+                          {texty["kurzy.rezervacemodal_7"]}</p>
                         <label className="kurzyModal__check">
                           <input
                             type="checkbox"
@@ -1581,10 +1574,7 @@ function RezervaceModalPanel({
                             data-testid="course-photo-checkbox"
                           />
                           <span>
-                            Souhlasím s pořízením fotografií z kurzu a jejich
-                            zveřejněním na webu a sociálních sítích (za dítě
-                            souhlasí zákonný zástupce).
-                            <small>
+                            {texty["kurzy.rezervacemodal_8"]}<small>
                               Nepovinné. Souhlas můžete kdykoli odvolat e-mailem
                               na {renderInline("{{seller.email}}", { facts: legalFacts })}.
                             </small>
@@ -1637,7 +1627,7 @@ function RezervaceModalPanel({
                       </div>
                       <p className="kurzyModal__payNote" aria-live="polite">
                         {!legalReady
-                          ? "Nejdřív prosím potvrďte obchodní podmínky."
+                          ? texty["kurzy.rezervacemodal_13"]
                           : !quote || quoteLoading
                             ? "Počítáme cenu…"
                             : paymentMethod === "online"

@@ -23,6 +23,7 @@ import { useEditRerender } from "@lib/hooks/use-edit-rerender"
 import { itemValue } from "@lib/util/site-copy"
 import type { CopyBlock } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
+import { useTexty } from "@lib/context/texty"
 type SoldProductsProps = {
   products: HttpTypes.StoreProduct[]
   /** Blok `global.produkt` — hlavička sekce (`dalsi.*`). */
@@ -379,6 +380,8 @@ function ProductRail({ products }: ProductRailProps) {
 }
 
 export default function SoldProducts({ products, block }: SoldProductsProps) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   /* Hlavička se po zapnutí editace sama nepřekreslí (karusel jede z motion
      hodnot). Viz hook. Před návratem níž — hook musí běžet pokaždé. */
   useEditRerender()
@@ -436,11 +439,11 @@ export default function SoldProducts({ products, block }: SoldProductsProps) {
         <p>
           <span {...editableItem(block, introLabel)}>
             {isCollectionSelection
-              ? text("dalsi.text-kolekce", "Další kusy ze stejné kolekce.")
-              : text("dalsi.text-atelier", "Další kusy, které mám teď v ateliéru.")}
+              ? text("dalsi.text-kolekce", texty["products.sold_1"])
+              : text("dalsi.text-atelier", texty["products.sold_2"])}
           </span>{" "}
           <span {...editableItem(block, "dalsi.dovetek")}>
-            {text("dalsi.dovetek", "Všechno vzniká ručně a jen v malém počtu.")}
+            {text("dalsi.dovetek", texty["products.sold_3"])}
           </span>
         </p>
       </div>

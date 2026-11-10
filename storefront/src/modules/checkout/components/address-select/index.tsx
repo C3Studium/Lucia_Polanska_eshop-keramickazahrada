@@ -9,6 +9,7 @@ import compareAddresses from "@lib/util/compare-addresses"
 import Radio from "@modules/common/components/radio"
 import { HttpTypes } from "@medusajs/types"
 import s from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 type AddressSelectProps = {
   addresses: HttpTypes.StoreCustomerAddress[]
@@ -62,6 +63,8 @@ const AddressSelect = ({
   addressInput,
   onSelect,
 }: AddressSelectProps) => {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const handleSelect = (id: string) => {
     const savedAddress = addresses.find((address) => address.id === id)
     if (savedAddress) {
@@ -88,7 +91,7 @@ const AddressSelect = ({
               <strong>
                 {selectedAddress
                   ? `${selectedAddress.first_name} ${selectedAddress.last_name}`
-                  : "Kam vám to máme poslat?"}
+                  : texty["checkout.address_select_1"]}
               </strong>
               <span>
                 {selectedAddress

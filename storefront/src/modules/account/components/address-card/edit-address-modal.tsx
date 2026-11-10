@@ -18,6 +18,7 @@ import s from "./styles.module.scss"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import { accountBackdropVariants, accountModalVariants } from "../../motion"
 import AccountInteractiveSurface from "../account-interactive-surface"
+import { useTexty } from "@lib/context/texty"
 
 type EditAddressProps = {
   region: HttpTypes.StoreRegion
@@ -30,6 +31,8 @@ const EditAddress: React.FC<EditAddressProps> = ({
   address,
   isActive = false,
 }) => {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const [removing, setRemoving] = useState(false)
   const [successState, setSuccessState] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
@@ -259,9 +262,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
             >
               <h2>Odstranit adresu</h2>
               <p>
-                Opravdu chcete odstranit tuto adresu? Tuto akci nelze vrátit
-                zpět.
-              </p>
+                {texty["account.address_card_1"]}</p>
               <div className={s.modalActions}>
                 <PremiumActionButton
                   text="Zrušit"

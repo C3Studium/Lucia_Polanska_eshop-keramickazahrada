@@ -15,6 +15,7 @@ import BillingAddress from "../billing_address"
 import ErrorMessage from "../error-message"
 import ShippingAddress from "../shipping-address"
 import s from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 const Addresses = ({
   cart,
@@ -28,6 +29,8 @@ const Addresses = ({
   /** Nabízet nákup na firmu? Nastavení obchodu, jen zobrazení. */
   companyPurchase?: boolean
 }) => {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
@@ -134,14 +137,11 @@ const Addresses = ({
             <div className={s.col + " billing"}>
               <Text className={s.label}>Fakturační údaje</Text>
               <Text className={s.note}>
-                Použijeme stejnou adresu jako pro doručení.
-              </Text>
+                {texty["checkout.addresses_1"]}</Text>
             </div>
           </div>
           <Text className={s.note} role="status">
-            Používáme vaši uloženou adresu — změnit ji můžete tlačítkem
-            Upravit.
-          </Text>
+            {texty["checkout.addresses_2"]}</Text>
         </div>
       ) : isOpen ? (
         <form action={formAction} className={s.form}>

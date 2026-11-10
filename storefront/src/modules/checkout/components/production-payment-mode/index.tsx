@@ -10,6 +10,7 @@ import type {
 
 import styles from "./style.module.scss"
 import { palette } from "styles/palette.generated"
+import { useTexty } from "@lib/context/texty"
 
 type Props = {
   initial: ProductionPaymentMode
@@ -40,6 +41,8 @@ export default function ProductionPaymentModeChoice({
   onSelect,
   variant = "checkout",
 }: Props) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const [state, setState] = useState(initial)
   const [isPending, startTransition] = useTransition()
   const [saveError, setSaveError] = useState(false)
@@ -216,7 +219,7 @@ export default function ProductionPaymentModeChoice({
         <span>
           {outstanding > 0
             ? `zbývá ${money(outstanding)} — doplatíte, až bude hotovo`
-            : "celá částka, pak už nic neřešíte"}
+            : texty["checkout.production_payment_mode_1"]}
         </span>
       </output>
 

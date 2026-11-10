@@ -149,7 +149,7 @@ const Shipping: React.FC<ShippingProps> = ({
       )
       setError(null)
     } catch (err) {
-      console.error("Network error while saving Balíkovna point:", err)
+      console.error(texty["checkout.shipping_1"], err)
       setBalikovnaPoint(null)
       setError("Spojení vypadlo, Balíkovna se neuložila. Zkuste to prosím znovu.")
     }
@@ -385,7 +385,7 @@ const Shipping: React.FC<ShippingProps> = ({
         () => console.error("Failed to load Packeta widget script"),
         { once: true }
       )
-      setError("Ještě načítáme mapu výdejních míst, moment…")
+      setError(texty["checkout.shipping_2"])
       return
     }
 

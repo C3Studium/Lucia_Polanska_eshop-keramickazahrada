@@ -14,6 +14,7 @@ import {
 import { accountListItemVariants, accountListVariants } from "../motion"
 import s from "./styles/wishlist-template.module.scss"
 import AccountInteractiveSurface from "../components/account-interactive-surface"
+import { useTexty } from "@lib/context/texty"
 
 function getVariantOptionsSummary(variant: any): string {
   if (!variant) return ""
@@ -33,6 +34,8 @@ export default function WishlistTemplate({
   items,
   isPreview = false,
 }: WishlistTemplateProps) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   return (
     <AccountPageReveal
       className={s.accountWishlistRoot}
@@ -49,8 +52,7 @@ export default function WishlistTemplate({
         </div>
         <div className={s.accountWishlistIntro}>
           <p>
-            Kousky, které se vám líbí. Zůstanou tu, dokud se nerozhodnete.
-          </p>
+            {texty["account.templates_24"]}</p>
           {items.length > 0 && !isPreview && (
             <ShareButton data-testid="share-button" />
           )}
@@ -62,8 +64,7 @@ export default function WishlistTemplate({
           <div className={s.accountPreviewNotice}>
             <span>Vývojový náhled</span>
             <p>
-              Tohle jsou jen ukázky. Zmizí, jakmile si uložíte první vlastní kousek.
-            </p>
+              {texty["account.templates_25"]}</p>
           </div>
         )}
 
@@ -71,7 +72,7 @@ export default function WishlistTemplate({
           <div className={s.accountWishlistEmpty}>
             <div>
               <span>Zatím je tu prázdno</span>
-              <p>Až vás něco zaujme, klepněte na srdíčko a uloží se to sem.</p>
+              <p>{texty["account.templates_26"]}</p>
             </div>
             <PremiumActionLink
               href="/store"
