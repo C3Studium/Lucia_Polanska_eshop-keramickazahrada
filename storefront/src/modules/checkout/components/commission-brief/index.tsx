@@ -532,7 +532,7 @@ export default function CommissionBrief({
               ? "Nahrávám fotky…"
               : "Ukládám…"
             : status.kind === "saved"
-            ? "Uloženo — díky, mám to."
+            ? texty["checkout.commission_brief_1"]
             : autoSave
             ? `Ukládá se samo · ${total}/${MAX_PHOTOS} fotek`
             : `${total}/${MAX_PHOTOS} fotek`}

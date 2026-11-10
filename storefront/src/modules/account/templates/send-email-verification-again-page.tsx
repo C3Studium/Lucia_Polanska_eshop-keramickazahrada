@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Toaster, toast } from "@medusajs/ui"
 import { resendVerification } from "@lib/data/customer"
 import AuthPortal from "../components/auth-portal"
+import { useTexty } from "@lib/context/texty"
 import {
   SupportButton,
   SupportEmail,
@@ -21,6 +22,8 @@ type Props = {
 }
 
 export default function VerifyEmailReminderPage({ customer }: Props) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const [loading, setLoading] = useState(false)
   const [resent, setResent] = useState(false)
   const handleResend = async () => {
@@ -40,13 +43,13 @@ export default function VerifyEmailReminderPage({ customer }: Props) {
     <AuthPortal mode="verification">
       <SupportPanel>
         <SupportHeader
-          eyebrow="Váš účet · poslední krok"
+          eyebrow={texty["account.templates_14"]}
           title={
             <>
               Zkontrolujte <em>poštu.</em>
             </>
           }
-          description="Odkazem si potvrdíte e-mail a rovnou se dostanete do svého účtu."
+          description={texty["account.templates_15"]}
         />
         <SupportEmail>{customer.email}</SupportEmail>
         <SupportNotice
@@ -54,8 +57,8 @@ export default function VerifyEmailReminderPage({ customer }: Props) {
           tone={resent ? "success" : "neutral"}
         >
           {resent
-            ? "Nový odkaz je na cestě."
-            : "Mrkněte do doručené pošty i do spamu. Někdy odkaz dorazí s malým zpožděním."}
+            ? texty["account.templates_16"]
+            : texty["account.templates_17"]}
         </SupportNotice>
         <SupportButton type="button" onClick={handleResend} disabled={loading}>
           {loading

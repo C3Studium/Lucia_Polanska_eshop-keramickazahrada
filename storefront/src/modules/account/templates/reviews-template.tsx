@@ -54,9 +54,7 @@ export default function ReviewsTemplate({
           <span>{String(visibleReviews.length).padStart(2, "0")} recenzí</span>
         </div>
         <p className={s.accountReviewsDescription}>
-          Co jste napsali o věcech, které už máte doma. Ostatním to hodně
-          pomáhá při výběru.
-        </p>
+          {texty["account.templates_11"]}</p>
         {/* § 5 ZOS — stejná pravidla jako u formuláře recenze. */}
         <p
           className={s.accountReviewsDescription}
@@ -71,8 +69,7 @@ export default function ReviewsTemplate({
           <div className={s.accountPreviewNotice}>
             <span>Vývojový náhled</span>
             <p>
-              Tohle jsou jen ukázky. Zmizí, jakmile napíšete první vlastní recenzi.
-            </p>
+              {texty["account.templates_12"]}</p>
           </div>
         )}
 
@@ -80,7 +77,7 @@ export default function ReviewsTemplate({
           <div className={s.accountReviewsEmpty}>
             <div>
               <span>Zatím tu nic není</span>
-              <p>Recenzi napíšete u výrobku, který už máte doma.</p>
+              <p>{texty["account.templates_13"]}</p>
             </div>
             <PremiumActionLink
               href="/store"

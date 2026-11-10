@@ -13,6 +13,7 @@ import { motion, useInView } from "framer-motion"
 import type { ReactNode } from "react"
 import { Fragment, useCallback, useEffect, useRef, useState } from "react"
 import styles from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 /*
  * Právní dokument ze sloučeného registru (`@lib/legal/registry`).
@@ -248,6 +249,8 @@ export default function LegalDocument({
   files = [],
   supplements,
 }: LegalDocumentProps) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const sections = doc.sections
   const chaptersWord = "kapitol"
   const indexHeading = "Obsah"
@@ -310,7 +313,7 @@ export default function LegalDocument({
       : {
           kind: "print",
           title: `Vytisknout ${doc.title.toLocaleLowerCase("cs")}`,
-          description: "Nebo uložit jako PDF přes tisk v prohlížeči",
+          description: texty["legal.legaldocument_1"],
         },
     ...versions.map<LegalDownloadItem>((version) => ({
       kind: "link",

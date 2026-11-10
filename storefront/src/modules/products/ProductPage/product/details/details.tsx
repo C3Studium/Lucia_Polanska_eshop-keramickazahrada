@@ -590,9 +590,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                           Poptat výrobu
                         </LocalizedClientLink>
                         <p className="product__details__cta__codNote">
-                          Cena se odvíjí od rozsahu — pošlete nám poptávku a připravíme nabídku
-                          s cenou, lhůtou a výší zálohy.
-                        </p>
+                          {texty["products.details_3"]}</p>
                       </div>
                     ) : (
                     <CTA

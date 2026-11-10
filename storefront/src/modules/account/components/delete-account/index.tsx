@@ -10,6 +10,7 @@ import XIcon from "@modules/common/icons/x"
 
 import { accountEase, accountSweepEase } from "../../motion"
 import styles from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 type DeleteAccountModalProps = {
   countryCode: string
@@ -130,6 +131,8 @@ const DeleteAccountModal = ({
   open,
   onClose,
 }: DeleteAccountModalProps) => {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const titleId = useId()
   const descriptionId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
@@ -305,9 +308,7 @@ const DeleteAccountModal = ({
               className={styles.description}
               variants={contentVariants}
             >
-              Objednávky nám musí zůstat kvůli účetnictví, ale přijdete o svůj
-              profil, adresy, recenze i uložené kousky. Zpátky to už nevrátíme.
-            </motion.p>
+              {texty["account.delete_account_1"]}</motion.p>
 
             {customerEmail && (
               <motion.div className={styles.account} variants={contentVariants}>
@@ -351,8 +352,7 @@ const DeleteAccountModal = ({
             </motion.div>
 
             <motion.p className={styles.note} variants={contentVariants}>
-              Nic se nestane, dokud to nepotvrdíte tímhle tlačítkem.
-            </motion.p>
+              {texty["account.delete_account_2"]}</motion.p>
           </motion.div>
         </motion.div>
       )}

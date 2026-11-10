@@ -133,7 +133,7 @@ export default function ProductPrice({
             <p className={styles.line} data-testid="price-reference">
               <span className="product__priceOriginalLabel">
                 {reference.status === "ready" && reference.reference.complete
-                  ? "Nejnižší cena za 30 dní před slevou: "
+                  ? texty["products.price_3"]
                   : "Nejnižší cena před slevou: "}
               </span>
               <span className={styles.amount} data-value={lowest}>
@@ -141,8 +141,7 @@ export default function ProductPrice({
               </span>
               {reference.status === "ready" && !reference.reference.complete && (
                 <span className={styles.note}>
-                  Záznam cen za celých 30 dní před slevou nemáme.
-                </span>
+                  {texty["products.price_1"]}</span>
               )}
             </p>
           </>
@@ -180,11 +179,11 @@ export default function ProductPrice({
                   Cena balení je u každého výrobku jiná a účtuje se zvlášť
                   {currencyCode.toLowerCase() === "czk"
                     ? "."
-                    : " — v eurech ji přepočteme kurzem ČNB."}
+                    : texty["products.price_4"]}
                 </span>
               </>
             ) : (
-              "Balné u tohoto výrobku neúčtujeme."
+              texty["products.price_5"]
             )}
           </p>
         )}

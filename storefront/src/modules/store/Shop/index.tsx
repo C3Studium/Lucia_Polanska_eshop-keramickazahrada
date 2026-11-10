@@ -2,6 +2,7 @@
 
 import { editable } from "@c3studium/valecms/edit"
 import { listStoreCatalogue } from "@lib/data/products"
+import { prisliJsmeZpet } from "@lib/helpers/navigace-zpet"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import { useEditRerender } from "@lib/hooks/use-edit-rerender"
 import type { CopyBlock } from "@lib/util/site-copy"
@@ -266,6 +267,19 @@ export default function ECom({
 
     const snapshot = peekShopSnapshot()
     if (!snapshot) return
+
+    /*
+     * Snímek platí JEN pro Zpět.
+     *
+     * Dřív stačilo, že v paměti je — a tím se obnova pouštěla i při příchodu
+     * z menu. Kdo si prohlédl výrobek a pak klepl na „E-shop“, spadl
+     * doprostřed výpisu, ze kterého předtím odešel (nahlášeno z telefonu
+     * 10. 11. 2026). Z menu se do obchodu vchází znovu, ne zpátky.
+     */
+    if (!prisliJsmeZpet()) {
+      clearShopSnapshot()
+      return
+    }
 
     restoreStarted.current = true
     restoreInFlight.current = true

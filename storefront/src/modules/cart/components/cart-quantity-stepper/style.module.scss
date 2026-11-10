@@ -66,7 +66,14 @@
 
 .control:disabled {
   cursor: default;
-  opacity: .28;
+  /*
+   * Bylo .28. Na tmavém řádku košíku z toho zbyl krémový glyf na 28 %, tedy
+   * nic — a protože u jednoho kusu ručně dělané keramiky je plus zakázané
+   * skoro vždycky, hlásila první čtenářka (10. 11. 2026) prostě „nevidím
+   * plus“. Zakázané tlačítko má vypadat zakázaně, ne zmizet; .45 ho drží
+   * zřetelně pod sousedním mínuskem a nad hranicí čitelnosti.
+   */
+  opacity: .45;
 }
 
 .value {

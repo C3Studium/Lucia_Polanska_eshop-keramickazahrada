@@ -2,6 +2,7 @@ import type { Certificates } from "@lib/data/certificates"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import styles from "./style.module.scss"
+import { getTexty } from "@lib/data/texty"
 
 const formatDate = (iso: string): string => {
   const [y, m, d] = iso.split("-").map(Number)
@@ -15,25 +16,23 @@ const formatDate = (iso: string): string => {
  * a závěrečné texty jsou v kódu — říkají, co protokol musí pokrýt. Bez
  * protokolů stránka neříká, že něco je ověřené — jen kde se ptát.
  */
-export default function Certifikaty({
+export default async function Certifikaty({
   email,
   certificates,
 }: {
   email: string
   certificates: Certificates
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = await getTexty()
   const { glazes, declarations } = certificates
   return (
     <main className={styles.page}>
       <header className={styles.header}>
         <p className={styles.eyebrow}>Nezávadnost · doklady</p>
-        <h1 className={styles.title}>Certifikáty a protokoly o nezávadnosti glazur</h1>
+        <h1 className={styles.title}>{texty["certifikaty.certifikaty_1"]}</h1>
         <p className={styles.lead}>
-          Keramika, kterou nabízím na jídlo a pití nebo u které uvádím „zdravotně nezávadné
-          glazury“, musí splňovat limity pro uvolňování olova a kadmia (nařízení (ES)
-          č. 1935/2004, vyhláška č. 38/2001 Sb.). Tady jsou protokoly ze zkoušek — u každého
-          je datum a glazura, které se týká.
-        </p>
+          {texty["certifikaty.certifikaty_2"]}</p>
       </header>
 
       {glazes.length > 0 ? (
@@ -98,27 +97,19 @@ export default function Certifikaty({
             ))}
           </ul>
           <p>
-            Elektrozařízení nepatří do směsného odpadu — vysloužilý zvonek odevzdejte na sběrném
-            místě nebo nám ho vraťte.
-          </p>
+            {texty["certifikaty.certifikaty_3"]}</p>
         </section>
       )}
 
       <section className={styles.notes}>
-        <h2 className={styles.subtitle}>Co to znamená v praxi</h2>
+        <h2 className={styles.subtitle}>{texty["certifikaty.certifikaty_4"]}</h2>
         <ul>
           <li>
-            Výrobek bez uvedené nezávadnosti (dekorace, výrobky z kurzů) pro jídlo a pití
-            nepoužívejte.
-          </li>
+            {texty["certifikaty.certifikaty_5"]}</li>
           <li>
-            Keramika je křehká: rozbitý kus má ostré hrany, střepy ukliďte opatrně a mimo
-            dosah dětí.
-          </li>
+            {texty["certifikaty.certifikaty_6"]}</li>
           <li>
-            V zimě v pítku ani jiné nádobě nenechávejte zamrznout vodu — led ji může
-            roztrhnout.
-          </li>
+            {texty["certifikaty.certifikaty_7"]}</li>
         </ul>
         <p>
           Další odpovědi jsou v{" "}

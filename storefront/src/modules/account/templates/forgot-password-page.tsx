@@ -6,6 +6,7 @@ import { useState } from "react"
 
 import type { CopyBlock } from "@lib/util/site-copy"
 import AuthPortal from "../components/auth-portal"
+import { useTexty } from "@lib/context/texty"
 import {
   SupportButton,
   SupportField,
@@ -17,6 +18,8 @@ import {
 } from "../components/auth-support"
 
 export default function RequestResetPassword({ block }: { block?: CopyBlock }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState("")
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -29,7 +32,7 @@ export default function RequestResetPassword({ block }: { block?: CopyBlock }) {
        se za zjevný překlep nechodilo přes síť. O tom, kdo u nás účet má,
        neprozrazuje nic — je to informace o napsaném textu. */
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
-      toast.error("Zadejte prosím platnou e-mailovou adresu.")
+      toast.error(texty["account.templates_2"])
       return
     }
     setLoading(true)
@@ -46,7 +49,7 @@ export default function RequestResetPassword({ block }: { block?: CopyBlock }) {
     }
 
     toast.success(
-      "Pokud u nás účet s tímhle e-mailem máte, poslali jsme na něj odkaz pro nastavení nového hesla."
+      texty["account.templates_3"]
     )
   }
 
@@ -61,7 +64,7 @@ export default function RequestResetPassword({ block }: { block?: CopyBlock }) {
             </>
           }
           description={
-            "Napište e-mail, na který máte účet. Pošleme vám odkaz pro nastavení nového hesla."
+            texty["account.templates_4"]
           }
         />
 

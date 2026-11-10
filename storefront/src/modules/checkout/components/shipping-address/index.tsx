@@ -287,7 +287,7 @@ const ShippingAddress = ({
         <div className={styles.countryField}>
           <span className={styles.countryLabel}>Země doručení</span>
           <strong>{cart?.region?.countries?.find((country) => country.iso_2 === routeCountry)?.display_name || routeCountry.toUpperCase()}</strong>
-          <span>Podle verze obchodu, kterou máte zvolenou</span>
+          <span>{texty["checkout.shipping_address_1"]}</span>
         </div>
         <input
           type="hidden"

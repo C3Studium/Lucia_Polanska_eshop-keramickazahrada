@@ -77,6 +77,8 @@ export function MadeToOrderBadge({
 
 /** Věta u tlačítka „Přidat do košíku". */
 export function MadeToOrderAddNotice() {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   return (
     <p className={styles.notice} data-testid="made-to-order-add-notice">
       Tenhle kus vyrobíme na zakázku přímo pro vás, a proto ho nelze vrátit ve
@@ -163,8 +165,7 @@ export function MadeToOrderSteps({ maxDays }: Pick<TermsProps, "maxDays">) {
         <p className={styles.stepsTerms}>
           {zruseni}{" "}
           <LocalizedClientLink href={TERMS_ANCHOR} target="_blank" rel="noopener">
-            obchodních podmínkách, čl. Výroba na zakázku
-          </LocalizedClientLink>
+            {texty["products.made_to_order_notice_1"]}</LocalizedClientLink>
           .
         </p>
       ) : null}

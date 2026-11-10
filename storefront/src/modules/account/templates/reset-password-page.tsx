@@ -9,6 +9,7 @@ import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Eye, EyeSlash } from "@medusajs/icons"
 import AuthPortal from "../components/auth-portal"
+import { useTexty } from "@lib/context/texty"
 import {
   PasswordToggle,
   SupportButton,
@@ -22,6 +23,8 @@ import {
 } from "../components/auth-support"
 
 export default function ResetPasswordForm() {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const [loading, setLoading] = useState(false)
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -64,7 +67,7 @@ export default function ResetPasswordForm() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!token) {
-      toast.error("Odkaz není celý — otevřete ho prosím z e-mailu znovu.")
+      toast.error(texty["account.templates_7"])
       return
     }
     if (!password) {
@@ -75,7 +78,7 @@ export default function ResetPasswordForm() {
        odezvě, tam kvůli platnosti — nápis „Alespoň 8 znaků" nad polem musí
        něco znamenat na obou stranách. */
     if (password.length < 8) {
-      toast.error("Heslo musí mít aspoň 8 znaků.")
+      toast.error(texty["account.templates_8"])
       return
     }
     if (password !== confirmPassword) {
@@ -123,14 +126,14 @@ export default function ResetPasswordForm() {
     <AuthPortal mode="recovery">
       <SupportPanel>
         <SupportHeader
-          eyebrow="Nové přístupové údaje · 03"
+          eyebrow={texty["account.templates_9"]}
           title={
             <>
               Nové <em>heslo.</em>
             </>
           }
           description={
-            "Zvolte si nové heslo a vraťte se ke svým objednávkám i uloženým kouskům."
+            texty["account.templates_10"]
           }
         />
         <SupportForm onSubmit={handleSubmit}>

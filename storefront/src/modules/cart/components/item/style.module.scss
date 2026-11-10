@@ -400,7 +400,40 @@
 }
 
 .muted { color: rgb(var(--cream-06-rgb) / .62); }
-.mobileControls { display: none; }
+
+/*
+ * Ovládací řádek na telefonu — množství, cena, „Odebrat“.
+ *
+ * Tohle je TÁŽ trojice ovladačů, která na širokém okně stojí v ceníku vpravo,
+ * jenže ten si barvy přepisuje sám (`.cellActions` razí `--delete-button-*`,
+ * `.cellPrice :global(*)` překrývá cenu na krémovou). Tady nic z toho
+ * neplatilo, takže obě komponenty spadly na svoje výchozí barvy pro SVĚTLÝ
+ * podklad — `--blackText` u ceny, `rgb(var(--ink-05-rgb) / .62)` u tlačítka —
+ * a řádek košíku je tmavý. Nahlášeno z telefonu: „cena a odebrat tak tmavé,
+ * že není vidět; když dám mobil na šířku, vidím cenu i odebrat světlým
+ * písmem“ — na šířku se totiž vykreslí ten pravý ceník, ne tenhle řádek.
+ */
+.mobileControls {
+  display: none;
+  --delete-button-ink: rgb(var(--cream-06-rgb) / .72);
+  --delete-button-active-ink: var(--ink-05);
+  --delete-button-border: rgb(var(--cream-06-rgb) / .3);
+  --delete-button-fill: var(--cream-06);
+  --delete-button-focus: var(--sage-01);
+}
+
+/*
+ * Cena má vlastní obal, ne pravidlo na všechny potomky řádku: `--blackText`
+ * si píše `.root .priceContainer` uvnitř `line-item-price`, tedy (0,2,0),
+ * a přebít se dá jen `!important` — ten by ale zároveň umlčel barvu, kterou
+ * si „Odebrat“ animuje INLINE při najetí. Obal to drží na ceně.
+ *
+ * Jen barva, stejně jako v ceníku vpravo: velikosti si komponenta řídí sama
+ * a dvě čísla ve dvou souborech by se rozešla.
+ */
+.mobilePrice :global(*) {
+  color: var(--cream-06) !important;
+}
 
 /* Náhled v rozbalovacím košíku. Proporce zůstávají, jen v rem, aby je ramp nad 1921 zvedl
    — v px byl řádek náhledu 104 px vysoký i na 2552, kde je rem 21.27. Je to malý panel,
@@ -519,10 +552,31 @@
     width: 100%;
     margin-top: 18px;
     align-items: center;
+    /*
+     * Zabalit, ne zmáčknout.
+     *
+     * Trojice ovladač / cena / „Odebrat" chce 112 + ~40 + ~90 a mezery, tedy
+     * přes 260 px. Na úzkém telefonu jí řádek tolik nedá (naměřeno 185 px na
+     * 320px obrazovce) a flex jim bral šířku rovným dílem — ovladač spadl ze
+     * 112 na 41 px a jeho `overflow: hidden` ustřihl číslo i plus. Zvenčí to
+     * vypadalo, že tlačítko „+" v košíku prostě není; přesně tak to taky
+     * přišlo nahlášené (10. 11. 2026), a na šířku, kde se vejde, bylo vidět.
+     *
+     * Ovladač a „Odebrat" proto nezmenšovat; pruží jen cena, a když ani to
+     * nestačí, „Odebrat" se přesune na druhý řádek. Zalomený řádek je horší
+     * než jeden — useknuté tlačítko je horší než oboje.
+     */
+    flex-wrap: wrap;
     gap: 12px;
     font-size: calc(13px * var(--ui-scale));
   }
-  .mobileControls > *:nth-child(2) { margin-left: auto; }
+  .mobileControls > * { flex: 0 0 auto; }
+  .mobileControls > *:nth-child(2) {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-left: auto;
+    text-align: right;
+  }
   .title { font-size: 1.65rem; }
   .options { font-size: 13px; }
 }
@@ -580,6 +634,9 @@
   .mobileControls {
     margin-top: 8px;
     gap: 8px;
+    /* Buňka s názvem má vpravo jen 2 px, aby se do ní vešel dlouhý název.
+       Cena je ale zarovnaná doprava, takže by jinak seděla na hraně karty. */
+    padding-right: 10px;
   }
 }
 

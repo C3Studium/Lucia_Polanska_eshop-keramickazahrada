@@ -1,38 +1,123 @@
 "use client"
 
-import { motion } from "framer-motion"
+import { motion, useSpring } from "framer-motion"
 import { usePathname } from "next/navigation"
-import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import {
-  type CSSProperties,
-  type MouseEvent,
-  type PointerEvent,
-  Fragment,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
   useCallback,
   useEffect,
   useRef,
   useState,
 } from "react"
 
+import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import { useDeviceTier } from "@lib/hooks/use-device-tier"
 import styles from "./style.module.scss"
 
-type ScrollSection = {
-  element: HTMLElement
-  id: string
-  label: string
-  subdivisions: number
+/*
+ * Posuvník, který vypadá jako posuvník.
+ *
+ * Tady dřív stála svislá lišta z vlásků — jedna čárka na sekci, mezi nimi
+ * jemnější dílky a popisek na najetí. Vypadalo to dobře a nefungovalo to:
+ * nikdo v ní posuvník nepoznal. Zpětná vazba od první čtenářky nezněla „ta
+ * lišta se mi nelíbí", ale „na ntb mi chybí pravá lišta pro posun dolů" —
+ * tedy žádná tam není. Nativní posuvník je přitom schovaný (globals.scss),
+ * takže stránka vypadala, jako by se nedala rolovat jinak než šipkami.
+ *
+ * Proto tahle verze drží tvar, který lidi znají: dráha u pravé hrany a v ní
+ * úchop, jehož VÝŠKA říká, jak velký kus stránky je vidět, a POLOHA, kde se
+ * člověk nachází. Dá se chytit a táhnout, dá se do dráhy kliknout, jede na
+ * šipkách. Z původní lišty zůstalo to, co bylo navíc a stálo za to: popisek
+ * sekce — jen se z ozdoby stal náhled, kam klik skočí.
+ *
+ * Pohyb nese pružina (`useSpring`), ne přímý zápis: kolečko chodí v trhaných
+ * skocích po ~100 px a úchop by poskakoval s ním. Při tažení se pružina
+ * obchází (`jump`), protože tam má úchop sedět pod prstem na pixel přesně.
+ *
+ * Na dotyku lišta nebyla vůbec (`display: none`). Teď se chová tak, jak jsou
+ * lidé z telefonu zvyklí: ukáže se při posunu, po chvíli zmizí — a dá se
+ * chytit.
+ */
+
+/** Nejmenší úchop, který se dá trefit prstem. Pod tím už to není ovladač. */
+const NEJMENSI_UCHOP = 44
+
+/** Jak dlouho po posledním posunu zůstane lišta na dotyku vidět. */
+const SKRYT_PO_MS = 1100
+
+/** Krok šipek; PageUp/Down a Home/End mají vlastní. */
+const KROK_SIPKY = 120
+
+type Metrika = {
+  /** Výška dráhy v px. */
+  draha: number
+  /** Výška úchopu v px — podíl okna na celé stránce. */
+  uchop: number
+  /** Kolik px zbývá k odrolování. 0 = stránka se vejde do okna. */
+  rozsah: number
 }
 
-const clamp = (value: number) => Math.min(1, Math.max(0, value))
+type Sekce = {
+  /** Vzdálenost od začátku dokumentu v px. */
+  od: number
+  label: string
+}
+
+const PRAZDNA: Metrika = { draha: 0, uchop: 0, rozsah: 0 }
+
+/*
+ * Sekce slouží JEN popisku, takže se hledají až při prvním najetí na lištu
+ * a pak znovu při změně stránky. Původní verze je přeměřovala při každém
+ * snímku scrollu — na telefonu to byl největší kus práce, který nebyl vidět.
+ */
+const najdiSekce = (): Sekce[] => {
+  const vlastni = Array.from(
+    document.querySelectorAll<HTMLElement>("[data-scroll-section]")
+  )
+  const zdroj = vlastni.length
+    ? vlastni
+    : Array.from(
+        document.querySelectorAll<HTMLElement>(
+          "main > section, main > [role='region']"
+        )
+      )
+
+  return zdroj
+    .filter((prvek) => {
+      const styl = window.getComputedStyle(prvek)
+      return styl.display !== "none" && prvek.offsetHeight > 1
+    })
+    .map((prvek, poradi) => ({
+      od: prvek.getBoundingClientRect().top + window.scrollY,
+      label:
+        prvek.dataset.scrollLabel ||
+        prvek.getAttribute("aria-label") ||
+        "Sekce " + (poradi + 1),
+    }))
+    .sort((a, b) => a.od - b.od)
+}
+
+const popisekPro = (sekce: Sekce[], pozice: number): string => {
+  if (!sekce.length) return ""
+  let nalezena = sekce[0]
+  for (const kus of sekce) {
+    if (kus.od <= pozice + 1) nalezena = kus
+  }
+  return nalezena.label
+}
+
+const charAnim = {
+  hidden: { opacity: 0, x: "0.85em" },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1] },
+  },
+} as const
 
 const labelAnim = {
-  hidden: {
-    transition: {
-      staggerChildren: 0.012,
-      staggerDirection: 1,
-    },
-  },
+  hidden: { transition: { staggerChildren: 0.012, staggerDirection: 1 } },
   visible: {
     transition: {
       delayChildren: 0.035,
@@ -42,416 +127,299 @@ const labelAnim = {
   },
 } as const
 
-const charAnim = {
-  hidden: {
-    opacity: 0,
-    x: "0.85em",
-  },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: {
-      duration: 0.42,
-      ease: [0.22, 1, 0.36, 1],
-    },
-  },
-} as const
-
-const markerSpring = {
-  type: "spring",
-  stiffness: 165,
-  damping: 25,
-  mass: 0.72,
-} as const
-
-const getPageSections = (): ScrollSection[] => {
-  const explicitSections = Array.from(
-    document.querySelectorAll<HTMLElement>("[data-scroll-section]")
-  )
-  const candidates =
-    explicitSections.length > 0
-      ? explicitSections
-      : Array.from(
-          document.querySelectorAll<HTMLElement>(
-            "main > section, main > [role='region']"
-          )
-        )
-
-  if (!candidates.length) {
-    const main = document.querySelector<HTMLElement>("main")
-    if (main) {
-      candidates.push(main)
-    }
-  }
-
-  return candidates
-    .filter((element) => {
-      const styles = window.getComputedStyle(element)
-      return styles.display !== "none" && element.offsetHeight > 1
-    })
-    .map((element, index) => {
-      const id = element.id || `page-section-${index + 1}`
-      const label =
-        element.dataset.scrollLabel ||
-        element.getAttribute("aria-label") ||
-        `Sekce ${index + 1}`
-
-      if (!element.id) {
-        element.id = id
-      }
-
-      const viewportHeight = Math.max(window.innerHeight, 1)
-      const sectionViewports = element.offsetHeight / viewportHeight
-      const subdivisions = Math.min(
-        16,
-        Math.max(5, Math.round(sectionViewports * 4))
-      )
-
-      return { element, id, label, subdivisions }
-    })
-}
-
 export default function Scrollbar() {
   const pathname = usePathname()
-  const [sections, setSections] = useState<ScrollSection[]>([])
-  const [activeIndex, setActiveIndex] = useState(0)
-  const [sectionProgress, setSectionProgress] = useState(0)
-  const [hoveredMarker, setHoveredMarker] = useState<number | null>(null)
-  const frame = useRef<number | null>(null)
-  /*
-   * Na dotyku lišta neběží vůbec (5. 11. 2026).
-   *
-   * CSS ji tam schovává (`@include touch { display: none }`), JS ale dál při každém
-   * snímku scrollu měřil polohu všech sekcí (getBoundingClientRect = vynucený layout
-   * hned po zápisech framera), překresloval React a pružiny animovaly čárky, které
-   * nikdo nevidí. Na telefonu to byl největší kus práce, který nebyl vidět. Hook
-   * používá tutéž media query jako mixin `touch`, takže se JS a CSS nerozejdou.
-   */
   const { isTouch } = useDeviceTier()
 
-  const measure = useCallback(() => {
-    if (!sections.length) return
+  const drahaRef = useRef<HTMLDivElement | null>(null)
+  const metrikaRef = useRef<Metrika>(PRAZDNA)
+  const sekceRef = useRef<Sekce[] | null>(null)
+  const snimekRef = useRef<number | null>(null)
+  const tahaniRef = useRef<{ odsazeni: number } | null>(null)
+  const casovacRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-    const readingLine = window.scrollY + window.innerHeight * 0.42
-    let nextActive = 0
+  const [metrika, setMetrika] = useState<Metrika>(PRAZDNA)
+  const [aktivni, setAktivni] = useState(false)
+  const [taha, setTaha] = useState(false)
+  const [vidiSe, setVidiSe] = useState(true)
+  const [popisek, setPopisek] = useState("")
 
-    sections.forEach((section, index) => {
-      const top = section.element.getBoundingClientRect().top + window.scrollY
-      if (top <= readingLine) {
-        nextActive = index
-      }
+  /*
+   * Pružina drží POLOHU úchopu v px. Tuhost a tlumení jsou zvolené tak, aby
+   * jeden zub kolečka doběhl dřív, než přijde další (~100 ms) — jinak by se
+   * zpoždění sčítala a úchop by se za stránkou plazil.
+   */
+  const y = useSpring(0, { stiffness: 520, damping: 48, mass: 0.55 })
+
+  const zmer = useCallback(() => {
+    const korenovy = document.documentElement
+    const okno = window.innerHeight
+    const celek = Math.max(korenovy.scrollHeight, okno)
+    const rozsah = Math.max(0, celek - okno)
+    const draha = drahaRef.current?.clientHeight ?? 0
+    const uchop =
+      rozsah > 0 && draha > 0
+        ? Math.max(NEJMENSI_UCHOP, Math.min(draha, (okno / celek) * draha))
+        : 0
+
+    const dalsi: Metrika = { draha, uchop, rozsah }
+    const stara = metrikaRef.current
+    metrikaRef.current = dalsi
+
+    if (
+      Math.abs(stara.draha - draha) > 0.5 ||
+      Math.abs(stara.uchop - uchop) > 0.5 ||
+      Math.abs(stara.rozsah - rozsah) > 0.5
+    ) {
+      setMetrika(dalsi)
+    }
+
+    return dalsi
+  }, [])
+
+  /** Přepočítá polohu úchopu z aktuálního scrollu. */
+  const srovnej = useCallback(
+    (skokem = false) => {
+      const { draha, uchop, rozsah } = metrikaRef.current
+      if (rozsah <= 0 || draha <= 0) return
+
+      const dil = Math.min(1, Math.max(0, window.scrollY / rozsah))
+      const cil = dil * (draha - uchop)
+
+      /*
+       * Procento pro čtečku se píše rovnou do atributu, ne přes stav.
+       * Ve stavu by každý snímek rolování překreslil celou komponentu —
+       * i popisek, který je rozložený na jednotlivá písmena. Přesně tahle
+       * práce dělala z předchozí lišty na telefonu to nejdražší, co nebylo
+       * vidět; pohyb úchopu nese `transform`, a ten React nepotřebuje.
+       */
+      drahaRef.current?.setAttribute("aria-valuenow", String(Math.round(dil * 100)))
+
+      if (skokem) y.jump(cil)
+      else y.set(cil)
+    },
+    [y]
+  )
+
+  /*
+   * Měří se při příchodu na stránku, při změně velikosti okna i při každé
+   * změně výšky dokumentu: obrázky dotečou až po prvním vykreslení a do té
+   * doby je stránka o několik oken kratší, takže by úchop byl na začátku
+   * mnohem vyšší, než jak skončí.
+   */
+  useEffect(() => {
+    sekceRef.current = null
+    zmer()
+    srovnej(true)
+
+    const pozorovatel = new ResizeObserver(() => {
+      zmer()
+      srovnej()
     })
+    pozorovatel.observe(document.documentElement)
+    if (document.body) pozorovatel.observe(document.body)
 
-    const active = sections[nextActive]
-    const activeTop =
-      active.element.getBoundingClientRect().top + window.scrollY
-    const nextTop = sections[nextActive + 1]
-      ? sections[nextActive + 1].element.getBoundingClientRect().top +
-        window.scrollY
-      : activeTop + Math.max(active.element.offsetHeight, window.innerHeight)
-    const distance = Math.max(nextTop - activeTop, 1)
-    const progress = Math.min(
-      1,
-      Math.max(0, (readingLine - activeTop) / distance)
-    )
-
-    setActiveIndex((current) => (current === nextActive ? current : nextActive))
-    setSectionProgress(progress)
-  }, [sections])
+    return () => pozorovatel.disconnect()
+  }, [pathname, zmer, srovnej])
 
   useEffect(() => {
-    if (isTouch) {
-      setSections([])
-      return
-    }
-
-    let discoveryFrame = 0
-    let cancelled = false
-
-    const discover = () => {
-      const nextSections = getPageSections()
-      setSections(nextSections)
-    }
-
-    const scheduleDiscovery = () => {
-      window.cancelAnimationFrame(discoveryFrame)
-      discoveryFrame = window.requestAnimationFrame(discover)
-    }
-
-    scheduleDiscovery()
-    const observer = new MutationObserver(scheduleDiscovery)
-    const resizeObserver = new ResizeObserver(scheduleDiscovery)
-
-    observer.observe(document.body, { childList: true, subtree: true })
-    resizeObserver.observe(document.body)
-    document.fonts.ready.then(() => {
-      if (!cancelled) scheduleDiscovery()
-    })
-
-    return () => {
-      cancelled = true
-      window.cancelAnimationFrame(discoveryFrame)
-      observer.disconnect()
-      resizeObserver.disconnect()
-    }
-  }, [pathname, isTouch])
-
-  useEffect(() => {
-    // Bez sekcí (dotyk, nebo stránka bez nich) není co měřit — ani posluchač scrollu.
-    if (!sections.length) return
-
-    const requestMeasure = () => {
-      if (frame.current !== null) return
-      frame.current = window.requestAnimationFrame(() => {
-        measure()
-        frame.current = null
+    const prekresli = () => {
+      if (snimekRef.current !== null) return
+      snimekRef.current = window.requestAnimationFrame(() => {
+        snimekRef.current = null
+        /* Při tažení píše polohu ukazatel, ne scroll — jinak by si ty dva
+           zdroje úchop přetahovaly a ten by se třásl. */
+        if (!tahaniRef.current) srovnej()
       })
     }
 
-    measure()
-    window.addEventListener("scroll", requestMeasure, { passive: true })
-    window.addEventListener("resize", requestMeasure)
+    const priPosunu = () => {
+      prekresli()
+      if (!isTouch) return
+
+      setVidiSe(true)
+      if (casovacRef.current) clearTimeout(casovacRef.current)
+      casovacRef.current = setTimeout(() => setVidiSe(false), SKRYT_PO_MS)
+    }
+
+    const priZmene = () => {
+      zmer()
+      prekresli()
+    }
+
+    window.addEventListener("scroll", priPosunu, { passive: true })
+    window.addEventListener("resize", priZmene)
 
     return () => {
-      window.removeEventListener("scroll", requestMeasure)
-      window.removeEventListener("resize", requestMeasure)
-      if (frame.current !== null) {
-        window.cancelAnimationFrame(frame.current)
+      window.removeEventListener("scroll", priPosunu)
+      window.removeEventListener("resize", priZmene)
+      if (snimekRef.current !== null) {
+        window.cancelAnimationFrame(snimekRef.current)
       }
+      if (casovacRef.current) clearTimeout(casovacRef.current)
     }
-  }, [measure])
+  }, [isTouch, srovnej, zmer])
 
-  const scrollToSection = (
-    event: MouseEvent<HTMLAnchorElement>,
-    section: ScrollSection
-  ) => {
+  /* Na myši je lišta vidět pořád — o to tu celé jde. Přepnutí na dotyk
+     a zpátky (tablet s klávesnicí) ji nesmí nechat schovanou natrvalo. */
+  useEffect(() => {
+    if (!isTouch) setVidiSe(true)
+  }, [isTouch])
+
+  /** Scroll odpovídající poloze úchopu, v px od začátku dokumentu. */
+  const scrollZPolohy = useCallback((px: number) => {
+    const { draha, uchop, rozsah } = metrikaRef.current
+    const dostupne = Math.max(1, draha - uchop)
+    const dil = Math.min(1, Math.max(0, px / dostupne))
+    return dil * rozsah
+  }, [])
+
+  const polohaZUkazatele = useCallback((klientY: number, odsazeni: number) => {
+    const hrana = drahaRef.current?.getBoundingClientRect()
+    if (!hrana) return 0
+    const { uchop } = metrikaRef.current
+    const syrova = klientY - hrana.top - odsazeni
+    return Math.min(Math.max(0, syrova), Math.max(0, hrana.height - uchop))
+  }, [])
+
+  const ukazPopisek = useCallback((cilovyScroll: number) => {
+    if (sekceRef.current === null) sekceRef.current = najdiSekce()
+    setPopisek(popisekPro(sekceRef.current, cilovyScroll))
+  }, [])
+
+  const priStisku = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const { draha, uchop, rozsah } = metrikaRef.current
+    if (rozsah <= 0 || draha <= 0) return
+
     event.preventDefault()
-    scrollWithLenis(section.element)
-    window.history.replaceState(null, "", `#${section.id}`)
+    const hrana = drahaRef.current?.getBoundingClientRect()
+    if (!hrana) return
+
+    const naUchopu = (event.target as HTMLElement).closest("[data-uchop]")
+    /* Klik do prázdné dráhy chytá úchop za střed: stránka skočí přesně tam,
+       kam ukazatel míří, a tažení pak pokračuje bez dalšího poskočení. */
+    const odsazeni = naUchopu ? event.clientY - hrana.top - y.get() : uchop / 2
+
+    tahaniRef.current = { odsazeni }
+    setTaha(true)
+    event.currentTarget.setPointerCapture(event.pointerId)
+
+    const poloha = polohaZUkazatele(event.clientY, odsazeni)
+    y.jump(poloha)
+    const cil = scrollZPolohy(poloha)
+    ukazPopisek(cil)
+    scrollWithLenis(cil, { immediate: true, offset: 0 })
   }
 
-  const scrollToSubdivision = (sectionIndex: number, subdivision: number) => {
-    const section = sections[sectionIndex]
-    if (!section) return
+  const priTazeni = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const tah = tahaniRef.current
 
-    const sectionTop =
-      section.element.getBoundingClientRect().top + window.scrollY
-    const nextSection = sections[sectionIndex + 1]
-    const sectionEnd = nextSection
-      ? nextSection.element.getBoundingClientRect().top + window.scrollY
-      : sectionTop + Math.max(section.element.offsetHeight, window.innerHeight)
-    const sectionDistance = Math.max(sectionEnd - sectionTop, 1)
-    const destination =
-      sectionTop +
-      sectionDistance * ((subdivision + 1) / (section.subdivisions + 1))
-
-    scrollWithLenis(destination)
-  }
-
-  if (!sections.length) return null
-
-  const markerOffsets: number[] = []
-  let markerCount = 0
-
-  sections.forEach((section, index) => {
-    markerOffsets.push(markerCount)
-    markerCount += 1
-    if (index < sections.length - 1) {
-      markerCount += section.subdivisions
-    }
-  })
-
-  const markerScale = (
-    position: number,
-    restingScale: number,
-    maximumScale = 1
-  ) => {
-    if (hoveredMarker === null) return restingScale
-
-    const distance = Math.abs(hoveredMarker - position)
-    const localInfluence = clamp(1 - distance / 7)
-    const influence = 0.08 + localInfluence * 0.92
-
-    return restingScale + (maximumScale - restingScale) * influence
-  }
-
-  const hoveredSectionIndex =
-    hoveredMarker === null
-      ? null
-      : markerOffsets.reduce(
-          (closest, offset, index) =>
-            offset <= hoveredMarker ? index : closest,
-          0
-        )
-
-  const handleRailPointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    const directMarker = (event.target as HTMLElement).closest<HTMLElement>(
-      "[data-rail-marker]"
-    )
-
-    if (directMarker) {
-      setHoveredMarker(Number(directMarker.dataset.railMarker))
+    if (!tah) {
+      /* Jen náhled: popisek míří tam, kam by klik skočil. */
+      const poloha = polohaZUkazatele(
+        event.clientY,
+        metrikaRef.current.uchop / 2
+      )
+      ukazPopisek(scrollZPolohy(poloha))
       return
     }
 
-    const markers = Array.from(
-      event.currentTarget.querySelectorAll<HTMLElement>("[data-rail-marker]")
-    )
-    let closestPosition = 0
-    let closestDistance = Number.POSITIVE_INFINITY
-
-    markers.forEach((marker) => {
-      const bounds = marker.getBoundingClientRect()
-      const distance = Math.abs(
-        event.clientY - (bounds.top + bounds.height / 2)
-      )
-
-      if (distance < closestDistance) {
-        closestDistance = distance
-        closestPosition = Number(marker.dataset.railMarker)
-      }
-    })
-
-    setHoveredMarker(closestPosition)
+    const poloha = polohaZUkazatele(event.clientY, tah.odsazeni)
+    y.jump(poloha)
+    const cil = scrollZPolohy(poloha)
+    ukazPopisek(cil)
+    scrollWithLenis(cil, { immediate: true, offset: 0 })
   }
 
-  const handleRailClick = (event: MouseEvent<HTMLDivElement>) => {
-    if ((event.target as HTMLElement).closest("[data-rail-marker]")) return
-
-    const markers = Array.from(
-      event.currentTarget.querySelectorAll<HTMLElement>("[data-rail-marker]")
-    )
-    const nearestMarker = markers
-      .map((marker) => {
-        const bounds = marker.getBoundingClientRect()
-        return {
-          marker,
-          distance: Math.abs(event.clientY - (bounds.top + bounds.height / 2)),
-        }
-      })
-      .sort((a, b) => a.distance - b.distance)[0]?.marker
-
-    nearestMarker?.click()
+  const konecTazeni = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!tahaniRef.current) return
+    tahaniRef.current = null
+    setTaha(false)
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+    srovnej()
   }
+
+  const priKlavese = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const { rozsah } = metrikaRef.current
+    if (rozsah <= 0) return
+
+    const okno = window.innerHeight
+    const posun: Record<string, number> = {
+      ArrowDown: KROK_SIPKY,
+      ArrowUp: -KROK_SIPKY,
+      PageDown: okno * 0.9,
+      PageUp: -okno * 0.9,
+    }
+
+    let cil: number | null = null
+    if (event.key === "Home") cil = 0
+    else if (event.key === "End") cil = rozsah
+    else if (posun[event.key] !== undefined) cil = window.scrollY + posun[event.key]
+
+    if (cil === null) return
+    event.preventDefault()
+    scrollWithLenis(Math.min(Math.max(0, cil), rozsah), { offset: 0 })
+  }
+
+  /*
+   * Stránka, která se vejde do okna, posuvník nepotřebuje — prázdná dráha
+   * u hrany by jen mátla. Nevrací se ale `null`: dráha se musí vykreslit,
+   * aby se dala změřit. Schová ji `data-vidi`.
+   */
+  const kDispozici = metrika.rozsah > 0 && metrika.uchop > 0
+  const popisekVidet = Boolean(popisek) && (aktivni || taha)
 
   return (
-    <nav className={styles.sidebar} aria-label="Navigace v této stránce">
+    <div
+      className={styles.listva}
+      data-vidi={kDispozici && vidiSe ? "ano" : "ne"}
+      data-dotyk={isTouch ? "ano" : "ne"}
+      data-aktivni={aktivni || taha ? "ano" : undefined}
+    >
       <div
-        className={styles.rail}
-        onPointerMove={handleRailPointerMove}
-        onPointerLeave={() => setHoveredMarker(null)}
-        onClick={handleRailClick}
+        ref={drahaRef}
+        className={styles.draha}
+        role="scrollbar"
+        tabIndex={kDispozici ? 0 : -1}
+        aria-label="Posuvník stránky"
+        aria-orientation="vertical"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={0}
+        onPointerEnter={() => setAktivni(true)}
+        onPointerLeave={() => {
+          setAktivni(false)
+          if (!tahaniRef.current) setPopisek("")
+        }}
+        onPointerDown={priStisku}
+        onPointerMove={priTazeni}
+        onPointerUp={konecTazeni}
+        onPointerCancel={konecTazeni}
+        onKeyDown={priKlavese}
       >
-        {sections.map((section, index) => {
-          const position = markerOffsets[index]
-          const restingScale = index === activeIndex ? 1 : 0.56
-          const lineScale = markerScale(position, restingScale)
-          const lineProgress =
-            index < activeIndex
-              ? 1
-              : index === activeIndex
-              ? sectionProgress
-              : 0
-          const labelVisible =
-            hoveredMarker !== null &&
-            (index === activeIndex || index === hoveredSectionIndex)
-          const itemStyle = {
-            "--line-progress": lineProgress,
-          } as CSSProperties
-
-          return (
-            <Fragment key={section.id}>
-              <a
-                href={`#${section.id}`}
-                className={styles.item}
-                data-active={index === activeIndex || undefined}
-                aria-current={index === activeIndex ? "location" : undefined}
-                aria-label={section.label}
-                style={itemStyle}
-                data-rail-marker={position}
-                onClick={(event) => scrollToSection(event, section)}
-                onFocus={() => setHoveredMarker(position)}
-                onBlur={() => setHoveredMarker(null)}
-              >
-                <motion.span
-                  className={styles.label}
-                  variants={labelAnim}
-                  initial="hidden"
-                  animate={labelVisible ? "visible" : "hidden"}
-                  data-visible={labelVisible || undefined}
-                  aria-hidden="true"
-                >
-                  {Array.from(section.label).map(
-                    (character, characterIndex) => (
-                      <motion.i
-                        variants={charAnim}
-                        key={`${section.id}-${characterIndex}`}
-                      >
-                        {character === " " ? "\u00A0" : character}
-                      </motion.i>
-                    )
-                  )}
-                </motion.span>
-                <motion.span
-                  className={styles.lineTrack}
-                  initial={false}
-                  animate={{ scaleX: lineScale }}
-                  transition={markerSpring}
-                  aria-hidden="true"
-                >
-                  <i className={styles.lineBase} />
-                  <i className={styles.lineProgress} />
-                </motion.span>
-              </a>
-
-              {index < sections.length - 1 &&
-                Array.from(
-                  { length: section.subdivisions },
-                  (_, subdivision) => {
-                    const stepSize = 1 / section.subdivisions
-                    const stepStart = subdivision * stepSize
-                    const visualScale =
-                      0.58 + ((subdivision * 7 + index * 3) % 5) * 0.05
-                    const position = markerOffsets[index] + subdivision + 1
-                    const scale = markerScale(position, visualScale, 1.14)
-                    const progress =
-                      index < activeIndex
-                        ? 1
-                        : index === activeIndex
-                        ? clamp((sectionProgress - stepStart) / stepSize)
-                        : 0
-
-                    return (
-                      <motion.button
-                        type="button"
-                        className={styles.minorTrack}
-                        style={
-                          {
-                            "--line-progress": progress,
-                          } as CSSProperties
-                        }
-                        initial={false}
-                        animate={{ scaleX: scale }}
-                        transition={markerSpring}
-                        aria-label={`${section.label}, ${Math.round(
-                          ((subdivision + 1) / (section.subdivisions + 1)) * 100
-                        )} %`}
-                        data-rail-marker={position}
-                        key={`${section.id}-step-${subdivision}`}
-                        onClick={() => scrollToSubdivision(index, subdivision)}
-                        onFocus={() => setHoveredMarker(position)}
-                        onBlur={() => setHoveredMarker(null)}
-                      >
-                        <i className={styles.lineBase} />
-                        <i className={styles.lineProgress} />
-                      </motion.button>
-                    )
-                  }
-                )}
-            </Fragment>
-          )
-        })}
+        <motion.div
+          className={styles.uchop}
+          data-uchop=""
+          style={{ y, height: metrika.uchop }}
+        >
+          <motion.span
+            className={styles.popisek}
+            variants={labelAnim}
+            initial="hidden"
+            animate={popisekVidet ? "visible" : "hidden"}
+            data-videt={popisekVidet || undefined}
+            aria-hidden="true"
+          >
+            {Array.from(popisek).map((znak, poradi) => (
+              <motion.i variants={charAnim} key={znak + "-" + poradi}>
+                {znak === " " ? " " : znak}
+              </motion.i>
+            ))}
+          </motion.span>
+        </motion.div>
       </div>
-    </nav>
+    </div>
   )
 }

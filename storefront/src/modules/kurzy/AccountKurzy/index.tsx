@@ -15,6 +15,7 @@ import {
 } from "@modules/account/motion"
 
 import s from "./styles.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 /**
  * „Kurzy" in the customer dashboard — every reservation the account can see
@@ -67,6 +68,8 @@ export default function AccountKurzy({
 }: {
   reservations: MyCourseReservation[]
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   return (
     <AccountPageReveal className={s.root} data-testid="kurzy-page-wrapper">
       <AccountSectionReveal className={s.header}>
@@ -86,9 +89,7 @@ export default function AccountKurzy({
           </span>
         </div>
         <p className={s.description}>
-          Rezervovaná místa v ateliéru — termín, počet lidí a stav platby na
-          jednom místě.
-        </p>
+          {texty["kurzy.accountkurzy_1"]}</p>
       </AccountSectionReveal>
 
       <AccountSectionReveal className={s.body}>
@@ -97,9 +98,7 @@ export default function AccountKurzy({
             <div>
               <span>Zatím tu nic není</span>
               <p>
-                Vypsané termíny kurzů najdete na stránce Kurzy — rezervace
-                zabere minutu.
-              </p>
+                {texty["kurzy.accountkurzy_2"]}</p>
             </div>
             <PremiumActionLink
               href="/kurzy"

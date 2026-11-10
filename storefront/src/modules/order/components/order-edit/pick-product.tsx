@@ -16,6 +16,7 @@ import type { ProductPickMode } from "@modules/products/ProductPage/product/deta
 import PickBar, { type PickSwapInfo } from "./pick-bar"
 import { editPath, pickShopPath } from "./shared"
 import s from "./pick.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 /**
  * Stránka produktu v režimu výběru (mini obchod úpravy objednávky).
@@ -50,6 +51,8 @@ export default function OrderPickProduct({
   /** `allowed[product.id]` z katalogu úpravy (u výměny už zúžené serverem). */
   allowedVariantIds: string[]
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const router = useRouter()
 
   const pick = useMemo<ProductPickMode>(() => {
@@ -76,8 +79,8 @@ export default function OrderPickProduct({
           ? `Vyměníme ${swap.quantity} ks za stejnou cenu.`
           : `Vyměníme ${swap.quantity} ks. Rozdíl ceny uvidíte v souhrnu úpravy.`,
         blockedText: swap.samePriceOnly
-          ? "Tohle provedení za váš kus vyměnit nejde — po zabalení jen za stejnou cenu, nebo ho nemáme na počet kusů."
-          : "Tohle provedení za váš kus vyměnit nejde — vyberte prosím jiné.",
+          ? texty["order.order_edit_22"]
+          : texty["order.order_edit_23"],
         onPick: (variant) => {
           const result = setDraftLine(orderId, swap.itemId, {
             type: "swap",

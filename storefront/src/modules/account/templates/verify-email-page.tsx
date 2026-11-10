@@ -9,6 +9,7 @@ import {
   retrieveCustomer,
 } from "@lib/data/customer"
 import AuthPortal from "../components/auth-portal"
+import { useTexty } from "@lib/context/texty"
 import {
   SupportButton,
   SupportEmail,
@@ -22,6 +23,8 @@ import {
 type VerificationState = "verifying" | "success" | "error"
 
 export default function VerifyEmailPage() {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const [status, setStatus] = useState<VerificationState>("verifying")
   const [resending, setResending] = useState(false)
   const [resent, setResent] = useState(false)
@@ -32,7 +35,7 @@ export default function VerifyEmailPage() {
   const handleVerify = async () => {
     if (!token || !email) {
       setStatus("error")
-      toast.error("Odkaz není celý — zkopírujte ho prosím z e-mailu znovu.")
+      toast.error(texty["account.templates_18"])
       return
     }
 
@@ -98,9 +101,9 @@ export default function VerifyEmailPage() {
           }
           description={
             status === "verifying"
-              ? "Ověřujeme odkaz, chviličku to zabere."
+              ? texty["account.templates_19"]
               : status === "success"
-              ? "E-mail je potvrzený. Účet máte hotový."
+              ? texty["account.templates_20"]
               : "Odkaz se nepovedlo ověřit. Nejspíš vypršel, nebo už byl použitý."
           }
         />
@@ -111,7 +114,7 @@ export default function VerifyEmailPage() {
               ? "Ověřujeme"
               : status === "success"
               ? "Přístup potvrzen"
-              : "S odkazem něco není v pořádku"
+              : texty["account.templates_21"]
           }
           tone={
             status === "success"
@@ -124,9 +127,9 @@ export default function VerifyEmailPage() {
           {status === "verifying"
             ? "Kontrolujeme, jestli odkaz platí."
             : status === "success"
-            ? "Můžete se podívat na objednávky i na uložené kousky."
+            ? texty["account.templates_22"]
             : resent
-            ? "Nový e-mail je na cestě."
+            ? texty["account.templates_23"]
             : "Zkuste to ještě jednou, nebo si nechte poslat nový odkaz."}
         </SupportNotice>
         {status === "error" && token && email && (

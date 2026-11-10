@@ -7,6 +7,7 @@ import type { PublicGiftVoucher } from "@lib/data/gift-vouchers"
 import { czk } from "../format"
 import { formatVoucherCode } from "@lib/util/gift-voucher-code"
 import styles from "./styles.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 /**
  * Karta zaplaceného poukazu — to, co obdarovaný uvidí a co si vytiskne.
@@ -17,6 +18,8 @@ import styles from "./styles.module.scss"
  * papír bez webu kolem musí stačit.
  */
 export default function PoukazKarta({ voucher }: { voucher: PublicGiftVoucher }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const [copied, setCopied] = useState<"ok" | "fail" | null>(null)
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -98,10 +101,7 @@ export default function PoukazKarta({ voucher }: { voucher: PublicGiftVoucher })
         </dl>
 
         <footer className={styles.foot}>
-          V obchodě zadejte kód do pole Slevový kód nebo dárkový poukaz
-          v košíku, v dílně v Písku stačí poukaz ukázat. Platí na keramiku
-          i na zakázky, na kurzy zatím ne. Co neutratíte, zůstane na poukazu.
-          <span className={styles.signature}>Lucie Polanská</span>
+          {texty["poukaz.poukazkarta_1"]}<span className={styles.signature}>Lucie Polanská</span>
         </footer>
       </div>
     </article>

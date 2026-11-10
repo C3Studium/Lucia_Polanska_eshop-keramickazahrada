@@ -11,6 +11,7 @@ import { useContactDialog } from "@modules/layout/ContactDialog"
 import OrderDeliverySection from "./delivery-section"
 import { refundPath } from "./shared"
 import s from "./style.module.scss"
+import { useTexty } from "@lib/context/texty"
 
 /**
  * Stránka „Upravit objednávku" od 12. 10. 2026 (Matěj): zákazník si sám mění
@@ -36,6 +37,8 @@ export default function OrderChangeOptions({
   token: string
   context: OrderEditContext
 }) {
+  /* Věty z administrace (Právní věci a texty → Texty obchodu). */
+  const texty = useTexty()
   const router = useRouter()
   const headingId = useId()
   const { openOrderChange } = useContactDialog()
@@ -49,12 +52,12 @@ export default function OrderChangeOptions({
   const statusTone = deliveryOpen ? "open" : "closed"
   const statusText = !deliveryOpen
     ? context.reason ??
-      "Objednávka už se chystá na cestu — doručení tady změnit nejde. Napište nám a domluvíme se."
+      texty["order.order_edit_3"]
     : shipsByCarrier
       ? method === "balikovna"
-        ? "Výdejní místo můžete změnit, dokud zásilku nepřipravíme k odeslání."
-        : "Doručovací adresu můžete změnit, dokud zásilku nepřipravíme k odeslání."
-      : "Objednávku si vyzvednete osobně — doručení tu není co měnit."
+        ? texty["order.order_edit_4"]
+        : texty["order.order_edit_5"]
+      : texty["order.order_edit_6"]
 
   const askForChange = () =>
     openOrderChange({
@@ -86,10 +89,7 @@ export default function OrderChangeOptions({
               : "Rozpracovaná úprava"}
           </p>
           <p className={s.noticeText}>
-            K objednávce běží dřívější úprava, která čeká na doplacení rozdílu
-            — do té doby objednávka zůstává, jak byla. Když ji nechcete
-            dokončit, zrušte ji; o změnu se pak domluvíme spolu.
-          </p>
+            {texty["order.order_edit_1"]}</p>
           <button
             type="button"
             className={s.pill}
@@ -117,10 +117,7 @@ export default function OrderChangeOptions({
           </h2>
         </header>
         <p className={s.sectionLead}>
-          Jiný kus, jiné provedení, něco přidat nebo ubrat? Změny zboží
-          domlouváme osobně — napište, co potřebujete, a Lucie vám zavolá nebo
-          odepíše. Do té doby objednávka zůstává, jak je.
-        </p>
+          {texty["order.order_edit_2"]}</p>
         <div>
           <button type="button" className={s.primary} onClick={askForChange}>
             Potřebuji změnit objednávku
