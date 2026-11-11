@@ -4,7 +4,7 @@ import { Container, Heading, Skeleton, Text } from "@medusajs/ui";
 import {
   QueryClientProvider, useQuery,
 } from "@tanstack/react-query";
-import { useState } from "react";
+import { useUrlState } from "../../lib/url-state";
 import { SubTabs } from "../../components/work-tabs";
 import { ExpertToggle, RawData } from "../../lib/expert-mode";
 import { formatCzk, productionStageLabels } from "../../lib/workbench";
@@ -71,7 +71,10 @@ const tabs = [
 ];
 
 const Inner = () => {
-  const [active, setActive] = useState("souhrn");
+  /* Záložka v adrese, ne v paměti: odejít na Přehled a vrátit se znamenalo
+     spadnout zpátky na Souhrn (měřeno 11. 11. 2026). Zároveň jde graf poslat
+     odkazem — „koukni na Sklad" je pak rovnou ta stránka. */
+  const [active, setActive] = useUrlState<string>("zalozka", "souhrn");
   const all = active === "souhrn";
 
   const orders = useStats("orders", "/admin/workbench/orders/statistics", all || active === "objednavky");

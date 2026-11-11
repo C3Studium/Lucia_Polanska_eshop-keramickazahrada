@@ -1,5 +1,6 @@
 import { Button, Input, Popover, Text } from "@medusajs/ui";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useUrlPatch, useUrlState } from "../lib/url-state";
 
 /**
  * Sekundární filtr podle zařazení — kolekce a kategorie (2026-08-16).
@@ -27,6 +28,49 @@ export type CatalogFilter = {
 export const EMPTY_CATALOG_FILTER: CatalogFilter = {
   collection: null,
   category: null,
+};
+
+/**
+ * Vybraná kolekce a kategorie v adrese, ne v paměti komponenty.
+ *
+ * ## Proč
+ *
+ * Měřeno v ostré administraci 11. 11. 2026: vybrat kolekci, otevřít kus
+ * a vrátit se tlačítkem Zpět znamenalo vybírat znovu. Výběr žil
+ * v `useState`, a ten odchodem na detail zanikne. V adrese ho tlačítko Zpět
+ * vrátí samo a filtr se dá i poslat odkazem.
+ *
+ * Je to tentýž postup, jaký „Kolekce a kategorie" dostaly 9. 11., jen
+ * povýšený na společnou pomůcku: tenhle filtr mají tři stránky (Produkty+,
+ * Přehled → Produkty, Balení+) a tři kopie téhož by se rozešly.
+ *
+ * ## Proč jedním zápisem
+ *
+ * Klik na kolekci zahazuje kategorii, takže se mění dva klíče najednou.
+ * Dvě volání setteru by si přepsala adresu navzájem (vysvětleno v
+ * `lib/url-state`), proto jde obojí jedním `useUrlPatch`.
+ */
+export const useCatalogFilterUrl = (): [
+  CatalogFilter,
+  (filtr: CatalogFilter) => void,
+] => {
+  const [collection] = useUrlState("kolekce");
+  const [category] = useUrlState("kategorie");
+  const zapis = useUrlPatch();
+
+  const hodnota = useMemo<CatalogFilter>(
+    () => ({ collection, category }),
+    [collection, category]
+  );
+
+  const nastav = useCallback(
+    (filtr: CatalogFilter) => {
+      zapis({ kolekce: filtr.collection, kategorie: filtr.category });
+    },
+    [zapis]
+  );
+
+  return [hodnota, nastav];
 };
 
 /** Sentinel for "pieces with no collection at all". */

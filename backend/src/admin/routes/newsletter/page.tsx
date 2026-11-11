@@ -50,6 +50,8 @@ import { EmptyState } from "../../components/empty-state";
 import { SubTabs } from "../../components/work-tabs";
 import { formatAmount, formatDateTime } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
+import { useScrollMemory } from "../../lib/scroll-memory";
+import { useUrlState } from "../../lib/url-state";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
 
@@ -2527,7 +2529,10 @@ const tabs = [
 ];
 
 const NewsletterInner = () => {
-  const [active, setActive] = useState("napsat");
+  /* Návrat ze zprávy vrátí i tam, kde v seznamu byla. */
+  useScrollMemory("newsletter");
+  /* Záložka v adrese, ne v paměti (měřeno 11. 11. 2026). */
+  const [active, setActive] = useUrlState<string>("zalozka", "napsat");
 
   const subscribersQuery = useQuery<SubscribersResponse>({
     queryKey: ["newsletter-subscribers"],

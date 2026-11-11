@@ -18,6 +18,8 @@ import {
 } from "../../components/gift-voucher-shared";
 import { adminQueryClient } from "../../lib/query-client";
 import { sdk } from "../../lib/sdk";
+import { useScrollMemory } from "../../lib/scroll-memory";
+import { useUrlState } from "../../lib/url-state";
 import { ceskaChyba } from "../../lib/ceska-chyba";
 import { formatCzk } from "../../lib/workbench";
 import { SaveBar } from "../../components/save-bar";
@@ -185,10 +187,12 @@ const VoucherRow = ({
 };
 
 const PoukazyInner = () => {
-  // ?q=KÓD z hledání odkudkoli (Ctrl+K) předvyplní hledání.
-  const [search, setSearch] = useState(
-    () => new URLSearchParams(window.location.search).get("q") ?? ""
-  );
+  /* Návrat z poukazu vrátí i tam, kde v seznamu byla. */
+  useScrollMemory("poukazy");
+  /* ?q=KÓD z hledání odkudkoli (Ctrl+K) předvyplní hledání — a protože adresa
+     je zároveň stav, přežije i návrat zpátky na seznam (11. 11. 2026). Dřív
+     se z ní četlo jen jednou při prvním vykreslení. */
+  const [search, setSearch] = useUrlState<string>("q", "");
   const q = useDebounced(search.trim());
   const [filter, setFilter] = useState<Filter>("vse");
   const [createOpen, setCreateOpen] = useState(false);

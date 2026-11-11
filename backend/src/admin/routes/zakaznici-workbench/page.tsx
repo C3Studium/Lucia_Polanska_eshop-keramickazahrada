@@ -21,6 +21,8 @@ import { SubTabs } from "../../components/work-tabs";
 import { formatCzk } from "../../lib/workbench";
 import { formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
+import { useScrollMemory } from "../../lib/scroll-memory";
+import { useUrlState } from "../../lib/url-state";
 import {
   CustomerCard,
   isRegularCustomer,
@@ -220,20 +222,26 @@ const CustomerStats = () => {
 };
 
 const ZakazniciInner = () => {
+  /* Návrat z detailu zákazníka vrátí i tam, kde v seznamu byla. */
+  useScrollMemory("zakaznici");
   /* Horní přepínač: Uživatelé (mají účet — pod nimi žijí filtry a statistiky)
      vs. Neregistrovaní (jen hosté, na backendu sloučení podle jména+telefonu,
      i když nakoupili pod různými e-maily). */
-  const [group, setGroup] = useState<"uzivatele" | "neregistrovani">(
+  /* Skupina, záložka i hledání jdou do adresy, ne do paměti komponenty:
+     odchodem na detail zákazníka by se zahodily a návrat by začínal
+     u Uživatelů ve „Vše" s prázdným polem (měřeno 11. 11. 2026). */
+  const [group, setGroup] = useUrlState<"uzivatele" | "neregistrovani">(
+    "skupina",
     "uzivatele"
   );
-  const [active, setActive] = useState("vse");
+  const [active, setActive] = useUrlState<string>("zalozka", "vse");
   // Instant input, debounced query — one request per thought, not per keystroke.
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useUrlState<string>("hledat", "");
+  const [searchInput, setSearchInput] = useState(search);
   useEffect(() => {
     const timer = window.setTimeout(() => setSearch(searchInput.trim()), 350);
     return () => window.clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, setSearch]);
   const expert = useExpertMode();
   // Hranice „Stálý zákazník" = hranice, od které chodí kód (nastavení).
   const { data: loyaltySettings } = useLoyaltySettings();

@@ -42,6 +42,8 @@ import {
 import { sdk } from "../../lib/sdk";
 import { formatCzk } from "../../lib/workbench";
 import { ceskaChyba } from "../../lib/ceska-chyba";
+import { useScrollMemory } from "../../lib/scroll-memory";
+import { useUrlState } from "../../lib/url-state";
 
 /**
  * Reklamace a vrácení — jeden modul pro reklamace, vrácení zboží a odstoupení
@@ -74,35 +76,40 @@ const KIND_FILTERS: { value: "all" | ReturnKind; label: string }[] = [
 const PAGE_SIZE = 25;
 
 const ReklamaceInner = () => {
+  /* Návrat z detailu žádosti vrátí i tam, kde v seznamu byla. */
+  useScrollMemory("reklamace");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const [active, setActive] = useState<ReturnStatus>(() => {
-    const fromUrl = searchParams.get("status");
-    return isReturnStatus(fromUrl) ? fromUrl : "pending";
-  });
+  /* Záložka žije v adrese, ne v paměti. Dřív se z adresy jen JEDNOU opsala
+     při prvním vykreslení — klik na jinou záložku se do adresy nepromítl,
+     takže návrat z detailu žádosti začínal zase u „Nové" (měřeno 11. 11.
+     2026). Hodnota se pořád prověřuje: v adrese může stát cokoliv. */
+  const [statusZAdresy, setActive] = useUrlState<ReturnStatus>(
+    "status",
+    "pending"
+  );
+  const active: ReturnStatus = isReturnStatus(statusZAdresy)
+    ? statusZAdresy
+    : "pending";
   const [kind, setKind] = useState<"all" | ReturnKind>("all");
   // „Jen poškozené" = přepravou i poškozený kus (§13.7). Server zatím podle
   // příčiny nefiltruje, takže se filtruje načtená stránka; parametr se
   // neposílá, aby ho budoucí přesný filtr nevyložil jako „jen přepravou".
   const [damagedOnly, setDamagedOnly] = useState(false);
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
+  /* Hledání taky do adresy, ať se po návratu nemusí psát znovu. */
+  const [search, setSearch] = useUrlState<string>("hledat", "");
+  const [searchInput, setSearchInput] = useState(search);
+  /* Stránkování zůstává v paměti: žádostí jsou jednotky, po návratu se stejně
+     začíná od první stránky a do adresy by to jen přidalo šum. */
   const [offset, setOffset] = useState(0);
 
   // Hluboký odkaz: `?status=` přepne tab; `?id=` (starý tvar z widgetu /
   // Přehledu / e-mailů) přesměruje na stránku žádosti.
   useEffect(() => {
-    const status = searchParams.get("status");
     const id = searchParams.get("id");
-    if (id) {
-      navigate(reklamaceLink({ id }), { replace: true });
-      return;
-    }
-    if (isReturnStatus(status)) {
-      setActive(status);
-      setOffset(0);
-    }
+    if (id) navigate(reklamaceLink({ id }), { replace: true });
+    /* `?status=` se tu už nepřepisuje do stavu — adresa JE stav (viz výš). */
   }, [searchParams, navigate]);
 
   /* Vstup se mění hned; dotaz odejde 350 ms po poslední klávese. */

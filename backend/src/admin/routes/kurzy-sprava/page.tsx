@@ -53,6 +53,8 @@ import {
   CoursePricingDrawer,
 } from "../../components/course-bulk-dialogs";
 import { adminQueryClient } from "../../lib/query-client"
+import { useScrollMemory } from "../../lib/scroll-memory"
+import { useUrlState } from "../../lib/url-state"
 
 /**
  * Kurzy — terms and reservations in one place (docs/kurzy-system.md).
@@ -1153,6 +1155,10 @@ const TermCard = ({
  */
 type TermTab = "upcoming" | "past" | "zadosti" | "mista";
 
+/** V adrese může stát cokoliv, tak se to prověřuje. */
+const JE_ZALOZKA_TERMINU = (co: string | null): co is TermTab =>
+  co === "upcoming" || co === "past" || co === "zadosti" || co === "mista";
+
 type TermsView = "seznam" | "kalendar";
 
 const TERMS_VIEW_KEY = "kz-kurzy-terms-view";
@@ -1510,12 +1516,22 @@ const KurzyVObchode = () => {
 };
 
 const KurzySpravaInner = () => {
-  // Přehled › „Čeká na vás" otevírá rovnou žádosti (?zalozka=mista|zadosti).
-  const [searchParams] = useSearchParams();
-  const linkedTab = searchParams.get("zalozka");
-  const [tab, setTab] = useState<TermTab>(
-    linkedTab === "mista" || linkedTab === "zadosti" ? linkedTab : "upcoming"
-  );
+  /* Návrat z termínu vrátí i tam, kde v seznamu byla — ne nahoru
+     (měřeno 11. 11. 2026, viz lib/scroll-memory). */
+  useScrollMemory("kurzy");
+  /*
+   * Záložka v adrese, ne v paměti.
+   *
+   * Přehled › „Čeká na vás" sem odkazoval s `?zalozka=mista|zadosti` a stránka
+   * si ho opsala JEDNOU, při prvním vykreslení. Klik na jinou záložku se tedy
+   * do adresy nepromítl a návrat z termínu začínal zase u „Nadcházející".
+   * Teď je adresa jediný zdroj pravdy — odkaz z Přehledu funguje stejně jako
+   * dřív a tlačítko Zpět vrací záložku samo.
+   */
+  const [zalozkaZAdresy, setTab] = useUrlState<TermTab>("zalozka", "upcoming");
+  const tab: TermTab = JE_ZALOZKA_TERMINU(zalozkaZAdresy)
+    ? zalozkaZAdresy
+    : "upcoming";
 
   /* Žádosti o místo na plném termínu — jen počet do odznaku. */
   const { data: seatRequests } = useQuery<{ pending_count: number }>({
@@ -1548,8 +1564,10 @@ const KurzySpravaInner = () => {
   });
 
   /* Hledání v seznamu — název, místo, jméno / e-mail / telefon účastníka.
-     Všechno je už načtené, hledá se v prohlížeči. */
-  const [search, setSearch] = useState("");
+     Všechno je už načtené, hledá se v prohlížeči. V adrese, ať se po návratu
+     z termínu nemusí psát znovu; zapisuje se s `replace`, takže z psaní
+     nevzniká historie. */
+  const [search, setSearch] = useUrlState<string>("hledat", "");
   const hledani = search.trim();
 
   const { upcoming, past } = useMemo(() => {
