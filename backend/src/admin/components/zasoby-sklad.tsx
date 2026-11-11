@@ -18,7 +18,9 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useScrollMemory } from "../lib/scroll-memory";
+import { useUrlState } from "../lib/url-state";
 import { EmptyState, pieces } from "./empty-state";
 import { SubTabs, WorkTabs } from "./work-tabs";
 import { CopyId, ExpertToggle, useExpertMode } from "../lib/expert-mode";
@@ -465,14 +467,31 @@ const VysledekNaskladneni = ({
 };
 
 const ZasobyInner = () => {
+  /*
+   * Návrat z produktu vrátí i tam, kde v seznamu byla.
+   *
+   * Tahle stránka to potřebuje ze všech nejvíc: 95 kusů dochází a 120 je
+   * vyprodaných, seznam měří přes devět tisíc pixelů, a naskladňuje se kus
+   * po kuse. Změřeno 11. 11. 2026 v ostré administraci: posun 1500 px se
+   * návratem z produktu srovnal na nulu a dorolovat se muselo znovu.
+   */
+  useScrollMemory("zasoby");
   useUndoHotkey();
   const obnovit = useObnovitSklad();
   const prompt = usePrompt();
   const expert = useExpertMode();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const aktivni = zalozky.find((z) => z.key === searchParams.get("stav")) ?? zalozky[0];
-  const [hledat, setHledat] = useState("");
-  const [razeni, setRazeni] = useState<Razeni>("zajem");
+  /*
+     Záložka taky přes `useUrlState`, a je to oprava, ne kosmetika: dřív se
+     psala celým `setSearchParams({ stav })`, což přepsalo CELÝ dotaz adresy.
+     Dokud v něm nic jiného nebylo, nevadilo to — od chvíle, co tam stojí
+     i hledání a řazení, by je přepnutí záložky smazalo. `useUrlState` mění
+     jen svůj klíč a ostatní nechá být. */
+  const [stav, setStav] = useUrlState<string>("stav", zalozky[0].key);
+  const aktivni = zalozky.find((z) => z.key === stav) ?? zalozky[0];
+  /* Hledání a řazení do adresy, ať je návrat z produktu nezahodí; `stav`
+     (záložka) tam stál odjakživa, tyhle dvě k němu patří. */
+  const [hledat, setHledat] = useUrlState<string>("hledat", "");
+  const [razeni, setRazeni] = useUrlState<Razeni>("razeni", "zajem");
   /* Řádky / kompakt — mřížka tu není, skladová data nenesou fotky. Klíč zůstal po Sklad+. */
   const [view, changeView] = useViewMode("kz-view-sklad");
 
@@ -858,9 +877,7 @@ const ZasobyInner = () => {
 
       <SubTabs
         active={aktivni.key}
-        onSelect={(key) =>
-          setSearchParams(key === zalozky[0].key ? {} : { stav: key }, { replace: true })
-        }
+        onSelect={setStav}
         tabs={zalozky.map((z) => ({
           key: z.key,
           label: z.label,

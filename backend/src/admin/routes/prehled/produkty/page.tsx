@@ -31,6 +31,7 @@ import {
 import { adminQueryClient } from "../../../lib/query-client"
 import { ceskaChyba } from "../../../lib/ceska-chyba";
 import { useScrollMemory } from "../../../lib/scroll-memory"
+import { useUrlState } from "../../../lib/url-state"
 
 /**
  * Produkty — the catalogue, sorted the way she thinks about it.
@@ -180,7 +181,9 @@ const ProduktyInner = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeKey = searchParams.get("druh") ?? tabs[0].key;
   const active = tabs.find((tab) => tab.key === activeKey) ?? tabs[0];
-  const [search, setSearch] = useState(searchParams.get("q") ?? "");
+  /* `?q=` se dřív z adresy opsalo jen při prvním vykreslení, takže napsané
+     hledání návrat z produktu zahodil. Teď je adresa jediný zdroj pravdy. */
+  const [search, setSearch] = useUrlState<string>("q", "");
 
   const { data, isLoading, isError } = useQuery<ProductsResponse>({
     queryKey: ["catalog-products", active.key, search],

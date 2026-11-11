@@ -49,9 +49,8 @@ import {
 import { ViewSwitcher, gridClassName, useViewMode } from "../../lib/view-mode";
 import {
   CatalogFilterBar,
-  EMPTY_CATALOG_FILTER,
   applyCatalogFilter,
-  type CatalogFilter,
+  useCatalogFilterUrl,
 } from "../../components/catalog-filter";
 import { ProductionProfileEditor } from "../../components/production-profile-editor";
 import { formatCzk, productionStageLabels } from "../../lib/workbench";
@@ -62,6 +61,7 @@ import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
 import { useScrollMemory } from "../../lib/scroll-memory"
 import { ulozSeznam } from "../../lib/seznam-kontext"
+import { useUrlPatch, useUrlState } from "../../lib/url-state"
 
 /**
  * Produkty+ — the catalog workbench, one tab per kind of thing she sells
@@ -615,20 +615,26 @@ const ProductsInner = () => {
   /* Návrat z detailu vrátí i tam, kde ve výpisu byla — ne nahoru
      (8. 11. 2026, viz lib/scroll-memory). */
   useScrollMemory("produkty");
-  const [active, setActive] = useState<TabKey>("produkty");
+  /* Záložka a hledání patří do adresy, ne do paměti komponenty: odchodem na
+     detail by se zahodily a návrat by začínal od Produktů s prázdným polem
+     (změřeno v ostré administraci 11. 11. 2026, viz lib/url-state). */
+  const [active, setActive] = useUrlState<TabKey>("zalozka", "produkty");
   /* Input je okamžitý, DOTAZ letí až 350 ms po dopsání — katalogový endpoint
-     je nejtěžší v adminu a pálit ho na každé písmeno bolí hlavně na mobilu. */
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
+     je nejtěžší v adminu a pálit ho na každé písmeno bolí hlavně na mobilu.
+     V adrese stojí až ta uklidněná hodnota; psaní po písmenech nemá co dělat
+     v historii prohlížeče. */
+  const [search, setSearch] = useUrlState<string>("hledat", "");
+  const [searchInput, setSearchInput] = useState(search);
   useEffect(() => {
     const timer = window.setTimeout(() => setSearch(searchInput.trim()), 350);
     return () => window.clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, setSearch]);
   const [expanded, setExpanded] = useState<string | null>(null);
   /* Tři styly seznamu — sdílený přepínač, volba se pamatuje per stránka. */
   const [view, changeView] = useViewMode("kz-view-produkty");
-  /* Sekundární filtr podle zařazení — kolekce a kategorie z řádků záložky. */
-  const [catalog, setCatalog] = useState<CatalogFilter>(EMPTY_CATALOG_FILTER);
+  /* Sekundární filtr podle zařazení — kolekce a kategorie z řádků záložky.
+     Taky v adrese, ze stejného důvodu jako záložka výš. */
+  const [catalog, setCatalog] = useCatalogFilterUrl();
   /* Klik na miniaturu otevře fotky v plné velikosti (sdílený ProductLightbox). */
   const [lightbox, setLightbox] = useState<{ id: string; title: string } | null>(null);
   /* Klik na kartu v mřížce vede na detail produktu (fotky mají vlastní ikonu). */
@@ -653,29 +659,36 @@ const ProductsInner = () => {
 
   /* Deep link z Rozdělení: ?produkt=<id>&druh=<kind> přepne na správnou
      záložku a rovnou řádek rozbalí — rychlé akce bez hledání. Parametry se
-     hned smažou, aby další klikání po stránce nic nehijacklo. */
-  const [searchParams, setSearchParams] = useSearchParams();
+     hned smažou, aby další klikání po stránce nic nehijacklo.
+
+     Záložka i úklid jdou do adresy JEDNÍM zápisem. Od chvíle, co `zalozka`
+     žije v adrese, by dvě volání za sebou znamenala, že druhé počítá novou
+     adresu z té před prvním — a záložku by smazalo dřív, než se stihne
+     projevit (tatáž past je rozepsaná v lib/url-state). */
+  const [searchParams] = useSearchParams();
+  const zapisAdresu = useUrlPatch();
   const scrollTarget = useRef<string | null>(null);
   useEffect(() => {
     const targetId = searchParams.get("produkt");
     if (!targetId) return;
     const kind = searchParams.get("druh");
-    setActive(
+    const zalozka: TabKey =
       kind === "zakazka"
         ? "zakazky"
         : kind === "balicek"
           ? "balicky"
           : kind === "poskozene"
             ? "poskozene"
-            : "produkty"
-    );
+            : "produkty";
     setExpanded(targetId);
     scrollTarget.current = targetId;
-    const next = new URLSearchParams(searchParams);
-    next.delete("produkt");
-    next.delete("druh");
-    setSearchParams(next, { replace: true });
-  }, [searchParams, setSearchParams]);
+    zapisAdresu({
+      /* „produkty" je výchozí záložka, a ta se do adresy nepíše. */
+      zalozka: zalozka === "produkty" ? null : zalozka,
+      produkt: null,
+      druh: null,
+    });
+  }, [searchParams, zapisAdresu]);
   const expert = useExpertMode();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Set<string>>(new Set());

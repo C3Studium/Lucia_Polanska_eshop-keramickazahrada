@@ -27,6 +27,8 @@ import { SubTabs } from "../../components/work-tabs";
 import { formatCzk } from "../../lib/workbench";
 import { formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
+import { useScrollMemory } from "../../lib/scroll-memory";
+import { useUrlState } from "../../lib/url-state";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
 
@@ -412,7 +414,11 @@ const PriceListRow = ({ list }: { list: WorkbenchPriceList }) => {
 };
 
 const SlevyInner = () => {
-  const [active, setActive] = useState("akce");
+  /* Návrat z detailu slevy vrátí i tam, kde v seznamu byla. */
+  useScrollMemory("slevy");
+  /* Záložka v adrese, ne v paměti: odchodem by se zahodila a návrat by
+     začínal zase u „Akce a kódy" (měřeno 11. 11. 2026). */
+  const [active, setActive] = useUrlState<string>("zalozka", "akce");
 
   const { data, isLoading, isError } = useQuery<DiscountsResponse>({
     queryKey: ["workbench-discounts"],

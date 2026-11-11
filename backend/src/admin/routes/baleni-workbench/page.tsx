@@ -18,6 +18,8 @@ import { Link } from "react-router-dom";
 import { EmptyState } from "../../components/empty-state";
 import { formatCzk } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
+import { useScrollMemory } from "../../lib/scroll-memory";
+import { useUrlState } from "../../lib/url-state";
 import {
   ViewSwitcher,
   gridClassName,
@@ -26,9 +28,8 @@ import {
 } from "../../lib/view-mode";
 import {
   CatalogFilterBar,
-  EMPTY_CATALOG_FILTER,
   applyCatalogFilter,
-  type CatalogFilter,
+  useCatalogFilterUrl,
 } from "../../components/catalog-filter";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
@@ -273,12 +274,16 @@ const Row = ({
 };
 
 const BaleniInner = () => {
-  const [active, setActive] = useState<TabKey>("bezne");
-  const [search, setSearch] = useState("");
+  /* Návrat z kusu vrátí i tam, kde v seznamu byla. */
+  useScrollMemory("baleni");
+  /* Záložka a hledání v adrese, ne v paměti (měřeno 11. 11. 2026). */
+  const [active, setActive] = useUrlState<TabKey>("zalozka", "bezne");
+  const [search, setSearch] = useUrlState<string>("hledat", "");
   /* Tři styly seznamu — sdílený přepínač, volba se pamatuje per stránka. */
   const [view, changeView] = useViewMode("kz-view-baleni");
   /* Sekundární filtr podle zařazení — kolekce a kategorie z řádků záložky. */
-  const [catalog, setCatalog] = useState<CatalogFilter>(EMPTY_CATALOG_FILTER);
+  /* Kolekce a kategorie taky v adrese — společná pomůcka, viz catalog-filter. */
+  const [catalog, setCatalog] = useCatalogFilterUrl();
 
   /* Filtered server-side, for the reason spelled out in Produkty+: the route slices to
      `limit` after filtering, so asking for everything and narrowing here silently loses
