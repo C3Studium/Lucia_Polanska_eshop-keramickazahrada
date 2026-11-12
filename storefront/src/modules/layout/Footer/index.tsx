@@ -220,6 +220,7 @@ export default function Footer({
     }
 
     let frame = 0
+    let settle = 0
     let observedElement: HTMLElement | null = null
 
     const updateTheme = () => {
@@ -249,10 +250,25 @@ export default function Footer({
       frame = window.requestAnimationFrame(updateTheme)
     }
 
+    /*
+     * Změny sekce nad patičkou se počítají až po uklidnění (12. 11. 2026).
+     *
+     * Sekce nad patičkou mívá animovaný `style` (framer-motion jí ho při
+     * scrollu přepisuje každý snímek) a každá změna spouštěla `updateTheme`,
+     * které projde VŠECHNY prvky sekce a u každého čte rozměry a vypočtený
+     * styl. Naměřeno na úvodní stránce na telefonu (CPU 4×): 190 ms z 3,6 s
+     * scrollu, nejdražší položka vůbec. Barva sekce se přitom při scrollu
+     * nemění — mění se posun. Stačí ji přečíst, až se sekce zastaví.
+     */
+    const scheduleSettled = () => {
+      window.clearTimeout(settle)
+      settle = window.setTimeout(scheduleUpdate, 180)
+    }
+
     updateTheme()
 
-    const mutationObserver = new MutationObserver(scheduleUpdate)
-    const resizeObserver = new ResizeObserver(scheduleUpdate)
+    const mutationObserver = new MutationObserver(scheduleSettled)
+    const resizeObserver = new ResizeObserver(scheduleSettled)
 
     if (observedElement) {
       mutationObserver.observe(observedElement, {
@@ -272,6 +288,7 @@ export default function Footer({
 
     return () => {
       window.cancelAnimationFrame(frame)
+      window.clearTimeout(settle)
       window.removeEventListener("resize", scheduleUpdate)
       window.removeEventListener("load", scheduleUpdate)
       mutationObserver.disconnect()

@@ -198,15 +198,21 @@
    doba"), jenže vedle plného tmavého štítku to nečetlo jako dvojice, ale jako
    omyl. Psané jedním pravidlem, aby se ta shoda nedala rozbít úpravou jednoho
    z nich. */
+/* Bez rozmazání pozadí (12. 11. 2026): „Prodáno", „Na objednávku" i „Poslední kus" mají plnou barvu,
+   takže blur z pravidla `.badges span` pod nimi nikdy není vidět — jen ho prohlížeč
+   v každém snímku scrollu počítá. Na telefonu to bylo 17 z 37 rozmazávaných vrstev
+   obchodu. `!important` ze stejného důvodu jako barvy: `.badges span` je specifičtější. */
 .badgeSold,
 .badgeMade {
   background: var(--ink-12) !important;
   color: var(--cream-06) !important;
+  backdrop-filter: none !important;
 }
 
 .badgeLast {
   background: var(--clay-24) !important;
   color: var(--cream-10) !important;
+  backdrop-filter: none !important;
 }
 
 /* Doplněk štítku „Na zakázku" jen pro odečítače obrazovky („— nelze vrátit

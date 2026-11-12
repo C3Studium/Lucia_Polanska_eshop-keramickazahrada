@@ -25,6 +25,17 @@ const LINE_LEAD = 0.16
 const LINE_OVERLAP = 0.62 // fraction of a line's own length before the next one starts
 const enterEase = [0.22, 1, 0.36, 1] as Easing
 
+/*
+ * Pohyb se píše jako `transform`, ne jako `y` (12. 11. 2026).
+ *
+ * Framer předá animaci kompozitoru (Web Animations API) jen u `transform` a `opacity`;
+ * samostatné `y` počítá v JavaScriptu a každému písmenu v každém snímku přepisuje inline
+ * styl. Naměřeno na telefonu (CPU 4×) při scrollu do téhle sekce: přes 2 000 přepočtů
+ * stylu za 3,6 s, jednotlivé přes 30 ms — zaseknuté snímky přesně ve chvíli, kdy nadpis
+ * vjíždí. `translateY(26px)` je tentýž posun, jen ho kreslí GPU.
+ */
+
+
 export default function Intro ({
     block,
     active,
@@ -64,10 +75,10 @@ export default function Intro ({
     const contentDelay = line3Delay + title3.length * CHAR_STEP * LINE_OVERLAP + 0.1
 
     const railAnim = {
-        start: { opacity: 0, y: 8 },
+        start: { opacity: 0, transform: "translateY(8px)" },
         enter: {
             opacity: 1,
-            y: 0,
+            transform: "translateY(0px)",
             transition: { duration: 0.6, ease: enterEase },
         },
     }
@@ -221,11 +232,11 @@ const wordSplit = (text: string, isInView: boolean, baseDelay = 0) => {
     const PreloaderAnimText = {
         start: {
             opacity: 0,
-            y: 20,
+            transform: "translateY(20px)",
         },
         enter: (i: number) => ({
             opacity: 1,
-            y: 0,
+            transform: "translateY(0px)",
             transition: {
                 duration: 0.55,
                 delay: baseDelay + (i * WORD_STEP),
@@ -250,11 +261,11 @@ const textWithBreaks = (text: string, isInView: boolean, baseDelay = 0) => {
     const PreloaderAnimText = {
         start: {
             opacity: 0,
-            y: 20,
+            transform: "translateY(20px)",
         },
         enter: (i: number) => ({
             opacity: 1,
-            y: 0,
+            transform: "translateY(0px)",
             transition: {
                 duration: 0.55,
                 delay: baseDelay + (i * WORD_STEP),
@@ -293,11 +304,11 @@ const charSplit = (text: string, isInView: boolean, baseDelay = 0) => {
     const charAnim = {
         start: {
             opacity: 0,
-            y: 26,
+            transform: "translateY(26px)",
         },
         enter: (i: number) => ({
             opacity: 1,
-            y: 0,
+            transform: "translateY(0px)",
             transition: {
                 duration: 0.62,
                 delay: baseDelay + (i * CHAR_STEP),
