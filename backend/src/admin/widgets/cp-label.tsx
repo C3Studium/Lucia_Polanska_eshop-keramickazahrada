@@ -255,8 +255,14 @@ export const CpLabelPanel = ({ order }: { order: AdminOrder }) => {
                       ? "Objednávka je zrušená — štítek se k ní nevystavuje."
                       : hotovo
                         ? "Objednávka je označená jako odeslaná a štítek u ní nemáme — zásilka šla mimo systém a Česká pošta štítek znovu nevydá. Jestli část objednávky ještě leží, podat ji jde i teď."
-                        : (data?.reason ??
-                          "Zatím bez štítku. Podáním u České pošty vznikne štítek i číslo zásilky.")}
+                        : /* Ve fázi „K odeslání" je zásilka připravená — hláška backendu
+                             „Nejdřív ji připravte k odeslání" (vrací ji, dokud nemá plnění,
+                             a plnění vzniká až štítkem) tu majitelku posílala o krok zpět
+                             (živý test 13. 11. 2026, objednávka #70). */
+                          stage === "shipping"
+                          ? "Zatím bez štítku. Podáním u České pošty vznikne štítek i číslo zásilky."
+                          : (data?.reason ??
+                            "Zatím bez štítku. Podáním u České pošty vznikne štítek i číslo zásilky.")}
                   </Text>
                   {/* Zrušená objednávka se nepodává — tlačítko by lhalo. */}
                   {!zrusena && (
