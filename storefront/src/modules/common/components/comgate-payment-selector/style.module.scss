@@ -78,12 +78,27 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
 }
 
 /* :hover is not in this list — it moved to the fine-pointer block near the end of the
-   file, because on a touch screen it latches on whatever tile was last tapped. The two
-   triggers that stay are the ones a finger can still reach: the wipe has to keep playing
-   on a phone held sideways, and after a tap [data-active="true"] is what plays it. */
+   file, because on a touch screen it latches on whatever tile was last tapped.
+
+   [data-active="true"] znamená od 12. 11. 2026 JEDINOU věc: tahle platba se
+   zaplatí. Nosí ho proto už jen dlaždice vybrané platby (dobírka, platba při
+   vyzvednutí); rozbalená skupina má [data-open] a svůj tišší stav výš. */
 .group:focus-visible .groupFill,
 .group[data-active="true"] .groupFill {
   transform: scaleX(1);
+}
+
+/*
+ * Rozbalená skupina — tišší stav než vybraná platba.
+ *
+ * Do 12. 11. 2026 sdílely obě jeden atribut a jednu tmavou výplň, takže na
+ * obrazovce stály dvě stejně vypadající dlaždice, z nichž platila jen jedna.
+ * Rozbalení je mezikrok, ne volba: značí ho podbarvení, silnější okraj
+ * a znaménko „−" vpravo, které tu bylo odjakživa.
+ */
+.group[data-open="true"] {
+  background: rgb(var(--ink-05-rgb) / .07);
+  box-shadow: inset 2px 0 0 var(--ink-05);
 }
 
 .groupIndex {
@@ -176,6 +191,17 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
 .group:focus-visible,
 .group[data-active="true"] {
   color: var(--cream-06);
+}
+
+/* Slovo u vybrané platby. `em` kvůli významu, kurzívu nechceme. */
+.groupChosen {
+  margin-top: 0.125rem;
+  color: inherit;
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: clamp(0.6875rem, calc(0.9vw * var(--ui-scale)), 0.8125rem);
+  font-style: normal;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .group:focus-visible .groupIndex,
@@ -712,8 +738,9 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
    What is NOT in here is the wipe's other triggers. .groupFill, .method::before,
    .otherBank::before and .change::before keep :focus-visible - and .group its
    [data-active="true"] - outside every pointer query, so the horizontal scaleX still
-   runs on a phone held sideways: tapping a group tile sets data-active and the fill
-   sweeps left to right exactly as it does under a mouse. */
+   runs on a phone held sideways: ťuknutí na dlaždici VYBRANÉ platby nastaví
+   data-active a výplň přejede zleva doprava stejně jako pod myší. (Rozbalení
+   skupiny výplň nespouští — od 12. 11. 2026 má vlastní stav, viz [data-open].) */
 @include fine-pointer {
   .group:hover {
     color: var(--cream-06);

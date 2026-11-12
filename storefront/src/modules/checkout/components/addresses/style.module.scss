@@ -22,6 +22,9 @@ $col-gap: clamp(1rem, 1.6vw, 1.75rem);
 		flex-direction: row;
 		align-items: center;
 		justify-content: space-between;
+		/* Se zvětšeným písmem se nadpis a „Upravit" do jednoho řádku nevejdou.
+		   Zalomení je lepší než oříznuté tlačítko (12. 11. 2026). */
+		flex-wrap: wrap;
 		/* Byla to dvojice map (hb .5/1/1rem + vb 1rem), a protože poslední klíč xxs
 		   je min-width:400, platilo na desktopu 1rem. Jeden clamp, živé pásmo 800–1600. */
 		gap: clamp(.5rem, 1vw, 1rem);

@@ -821,12 +821,19 @@
  * volný rozměr, tak ať ji výřez využije.
  *
  * `rx` je stropované na 15rem, aby okno zůstalo předmětem na stránce, ne
- * stránkou samotnou: 30vw je na 1024 už 307px. `ry` jde z výšky (26vh), aby
- * okno rostlo s displejem — 266px na 768, 355 na 1024.
+ * stránkou samotnou: 30vw je na 1024 už 307px.
+ *
+ * Kruh, ne elipsa (12. 11. 2026). `ry` tu bývalo 26vh, tedy z druhé osy než
+ * `rx`: na 768x1024 z toho vyšel výřez 460x532 a na 820x1180 dokonce
+ * 480x613 — okno protažené na výšku, které Lucie popsala jako „ten ovál je
+ * zvláštní". Z telefonů ovál zmizel už 10. 11. ze stejného důvodu (viz
+ * `courses-cta-no-window` níž); na tabletu je na okno místa dost, takže se
+ * nemaže, jen se srovná. Oba poloměry teď jdou z jedné míry, takže výřez
+ * zůstane kulatý na každém displeji.
  */
 @include v(md) {
   @include below-px(1180px) {
-    @include courses-cta-phone(min(30vw, 15rem), 26vh, 30%);
+    @include courses-cta-phone(min(30vw, 15rem), min(30vw, 15rem), 30%);
   }
 }
 

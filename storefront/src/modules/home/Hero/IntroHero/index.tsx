@@ -408,9 +408,16 @@ export default function IntroHero({
                     looking for ceramics, not for a person. The first paragraph of the block's
                     text is the headline, so Lucia still edits it; the rest becomes the lede.
                     Proto je `editable` na celém `body` — obojí je jedno pole. */}
+                {/*
+                    aria-label: nadpis je rozdělený na řádky a každá je vlastní
+                    blok bez mezery mezi nimi, takže ho čtečka přečte slepený
+                    („Za každýmmým výrobkemje příběh"). Štítek vrací původní
+                    znění, mezery včetně.
+                */}
                 <motion.h1
                     className="Hero__Intro__Headline"
                     style={headlineStyle}
+                    aria-label={headlineText}
                     {...editable(block, "body")}
                 >
                     {headlineLines.map((line, index) => (

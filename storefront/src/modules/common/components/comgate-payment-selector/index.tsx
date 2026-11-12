@@ -438,7 +438,19 @@ export default function ComgatePaymentSelector({
                     key={id}
                     variants={itemVariants}
                     data-group={id}
-                    data-active={expanded}
+                    /*
+                     * `data-open`, ne `data-active`.
+                     *
+                     * Rozbalená skupina a vybraná platba tu měly jeden a týž
+                     * atribut, a tím i jeden a týž tmavý podklad. Lucie
+                     * 12. 11. 2026: „zvládla jsem označit dvě možnosti, není
+                     * jisté, co tedy platí." Měly pravdu obě dlaždice — jen
+                     * každá říkala něco jiného.
+                     *
+                     * Tmavá výplň teď znamená JEDINÉ: tohle se zaplatí.
+                     * Rozbalená skupina má svůj vlastní, tišší stav.
+                     */
+                    data-open={expanded}
                     aria-expanded={
                       isExpandable(id, groupMethods.length) ? expanded : undefined
                     }
@@ -469,14 +481,18 @@ export default function ComgatePaymentSelector({
                 )
               })}
 
-              {extraOptions.map((option, index) => (
+              {extraOptions.map((option, index) => {
+                const vybrano = selectedOptionId === option.id
+
+                return (
                 <motion.button
                   type="button"
                   className={styles.group}
                   key={option.id}
                   variants={itemVariants}
                   data-group="extra"
-                  data-active={selectedOptionId === option.id}
+                  data-active={vybrano}
+                  aria-pressed={vybrano}
                   onClick={() => onSelectExtra?.(option.id)}
                   disabled={disabled || isSubmitting}
                   data-testid={`payment-option-${option.id}`}
@@ -488,15 +504,18 @@ export default function ComgatePaymentSelector({
                   <span className={styles.groupCopy}>
                     <strong>{option.title}</strong>
                     <small>{option.detail}</small>
+                    {/* Barva sama neřekne, co znamená. Slovo ano. */}
+                    {vybrano && <em className={styles.groupChosen}>Vybráno</em>}
                   </span>
                   <span className={styles.logoStack} aria-hidden="true">
                     {option.logo ? <span>{option.logo}</span> : null}
                   </span>
                   <span className={styles.groupArrow} aria-hidden="true">
-                    ↗
+                    {vybrano ? "✓" : "↗"}
                   </span>
                 </motion.button>
-              ))}
+                )
+              })}
             </div>
 
             <AnimatePresence initial={false}>
