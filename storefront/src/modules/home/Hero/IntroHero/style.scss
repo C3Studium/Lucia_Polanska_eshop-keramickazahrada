@@ -412,19 +412,35 @@
     margin: 0;
     /*
      * The headline may not size the composition. As a flex item its fit-content width floors
-     * at its own min-content, and one glued 22-character word (see the note in index.tsx —
-     * the HTML→text conversion drops the separator between elements) put that min-content at
-     * ~1250px inside a lockup capped at 1024px, so the type ran across the whole photograph
-     * at every resolution. `overflow-wrap: anywhere` is the term that actually lowers
-     * min-content — `break-word` does not — and the two caps stop it climbing back out.
+     * at its own min-content, so the two caps below stop it climbing out of the lockup.
+     *
+     * Do 12. 11. 2026 tu stálo `overflow-wrap: anywhere`. Bylo to psané pro
+     * tehdejší rozpad nadpisu na JEDNOTLIVÉ ZNAKY: každý znak byl vlastní
+     * inline-block, mezi nimi nezbyla mezera k zalomení a min-content vyšel
+     * na celou řádku (~1250px). Ten rozpad už tu není — nahradila ho
+     * `MaskedLine`, která vykresluje prostý text (viz index.tsx a poznámka
+     * u schodiště níž, která totéž konstatuje o mrtvých selektorech).
+     *
+     * `anywhere` ale zůstalo, a protože dovoluje zlom mezi libovolnými dvěma
+     * znaky, lámalo slova vejpůl. Lucie to 12. 11. 2026 vyfotila: „Vítejte
+     * v Keramick / é Zahradě". `break-word` zalomí slovo jen tehdy, když se
+     * samo o sobě na řádek nevejde — což je přesně to, co tu chceme.
      */
     min-width: 0;
     max-width: 100%;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     flex-direction: column;
     color: inherit;
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(2.6rem, calc(11vw * var(--ui-scale)), 4.4rem);
+    /*
+     * Podlaha je v rem, tedy roste s uživatelsky zvětšeným písmem — obrazovka
+     * ale ne. Naměřeno 12. 11. 2026 na 360px: při zvětšení systémového písma
+     * vyšla podlaha 2.6rem na 49.9px a nadpis přerostl svůj sloupec.
+     * `min()` ji drží i na šířce okna. Na běžném telefonu (rem 12.8 kvůli
+     * --ui-scale) ani na stolním počítači to nemění nic: 11vw je tam vždycky
+     * větší než 2.6rem a podlaha zůstává, jaká byla.
+     */
+    font-size: clamp(min(2.6rem, 11vw), calc(11vw * var(--ui-scale)), 4.4rem);
     font-weight: 400;
     letter-spacing: -0.045em;
     line-height: 0.92;
@@ -464,12 +480,16 @@
    * under the last line's start; the pair is written twice on purpose only because the
    * signature is a sibling of the headline, not a line inside it.
    */
+  /* Odsazení schodů je taky v rem a taky roste s uživatelským písmem — jenže
+     o co se schod posune, o to užší řádek zbyde. Při zvětšeném písmu na
+     360px to byl třetí schod 76.8px z 310px sloupce. `min()` ho zastropuje
+     šířkou okna; při běžné velikosti písma se nemění nic. */
   .Hero__Intro__Headline .maskedLine:nth-child(2) {
-    margin-left: clamp(2rem, 5.5vw, 6rem);
+    margin-left: clamp(min(2rem, 12vw), 5.5vw, 6rem);
   }
 
   .Hero__Intro__Headline .maskedLine:nth-child(3) {
-    margin-left: clamp(4rem, 11vw, 12rem);
+    margin-left: clamp(min(4rem, 22vw), 11vw, 12rem);
   }
 
   /* Hangs off the end of the last headline line rather than under its start. */

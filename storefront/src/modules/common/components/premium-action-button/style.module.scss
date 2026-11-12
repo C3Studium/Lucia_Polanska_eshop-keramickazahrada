@@ -18,6 +18,22 @@
 
   display: inline-flex;
   width: auto;
+  /*
+   * Nikdy ven z rámu, ani když má návštěvník zvětšené písmo.
+   *
+   * Lucie, 12. 11. 2026: „V košíku se mi to nezobrazuje celé — jakoby kus
+   * zprava chyběl." Naměřeno na 320px široké obrazovce s písmem zvětšeným
+   * na 24 px: „Upravit" v hlavičce kroku Adresa sahalo na 406 px, tedy 86 px
+   * za pravou hranu, a ořízl ho až rám panelu.
+   *
+   * Příčina není v šířce tlačítka, ale v tom, že se o šířku okna vůbec
+   * neopíralo: `min-width` níž je v rem, takže roste s uživatelským písmem,
+   * zatímco obrazovka ne. `max-width` je strop, který tuhle dvojici smíří;
+   * `min-width: 0` k tomu dovolí tlačítku zmenšit se i uvnitř pružného řádku,
+   * kde by ho jinak držela jeho vlastní šířka obsahu.
+   */
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* Sibling of premium-action-link, which is already fully in rem. This one was
@@ -36,6 +52,7 @@
      a narrow cell, which is what the two 220px media query stops were for. */
   min-width: min(100%, 13.75rem);
   width: 100%;
+  max-width: 100%;
   /* The button competes for screen height, so the height hangs on vh:
      44 -> 52px, live 880-1040 tall. That alone is what fits it on 1280x720 and
      1366x768 — no lt rule needed. */
@@ -139,7 +156,9 @@
    byte-identical to today below 1921 and rides the ramp above it, which is the
    whole point. (The input still needs the same treatment — see report.) */
 .compact .button {
-  min-width: calc(8.25rem * var(--premium-button-scale, 1));
+  /* `min()` jako u plné velikosti výš — bez něj si drobná varianta vynutila
+     8.25rem i tam, kde tolik místa není (12. 11. 2026). */
+  min-width: min(100%, calc(8.25rem * var(--premium-button-scale, 1)));
   height: calc(2.5rem * var(--premium-button-scale, 1));
   gap: calc(clamp(.5625rem, .75vw, .75rem) * var(--premium-button-scale, 1));
   padding:

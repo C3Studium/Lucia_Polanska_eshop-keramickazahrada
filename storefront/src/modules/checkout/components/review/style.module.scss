@@ -47,6 +47,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  /* Viz addresses/style.module.scss — nadpis a „Upravit" se při zvětšeném
+     písmu do jednoho řádku nevejdou (12. 11. 2026). */
+  flex-wrap: wrap;
   margin-bottom: clamp(1rem, 2.22vh, 1.85rem);
 }
 

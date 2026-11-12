@@ -17,6 +17,9 @@ $summary-col-gap: clamp(1rem, 1.6vw, 1.75rem);
   background: transparent;
 
   .headerRow {
+    /* Viz addresses/style.module.scss — nadpis a „Upravit" se při zvětšeném
+       písmu do řádku nevejdou. */
+    flex-wrap: wrap;
     display: flex;
     flex-direction: row;
     align-items: center;

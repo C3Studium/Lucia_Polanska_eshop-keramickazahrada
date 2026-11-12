@@ -114,6 +114,43 @@ export default function Courses({ copy }: { copy?: CopyBlocks }) {
     mass: 0.5,
     restDelta: 0.0005,
   })
+  /*
+   * Předávka scény roztažená po dotykovém rolování.
+   *
+   * Lucie, 12. 11. 2026: „A v této části by to chtělo nějak zpomalit,
+   * neplynule to přeskakuje."
+   *
+   * Změřeno na 390x760 na dev: mezi 6549 px a 6883 px stránky spadla
+   * průhlednost obsahu kurzů z 1.00 na 0.06 a okno závěru vyjelo z 0.00 na
+   * 0.91 — celá výměna scény proběhla ve 334 px. Jedno švihnutí prstem na
+   * telefonu urazí 800 až 1500 px, takže se předávka nikdy nestihla uvidět:
+   * obrazovka se prostě změnila. Na počítači je kolečko o řád jemnější,
+   * a proto je to vidět jen na telefonu.
+   *
+   * Nemění se ŽÁDNÝ z časových bodů níž — ty drží celou choreografii
+   * pohromadě a každý zásah do nich je zásah do všech ostatních. Mění se
+   * jen to, kolik skutečného rolování připadne na jejich úsek: tahle
+   * funkce přepočítá postup tak, aby dlouhý nezajímavý střed proběhl
+   * rychleji a pásmo předávky dostalo víc než dvojnásobek dráhy. Je to po
+   * částech lineární a rostoucí, takže scrubování zpátky přehraje přesně
+   * totéž pozpátku.
+   *
+   * Na myši se nepřepočítává nic (podmínka vrací vstup beze změny).
+   */
+  const pinned = useTransform(revealProgress, (value: number) => {
+    if (!touchRef.current) return value
+    /*
+     * Vstup je podíl ujeté dráhy, výstup je postup choreografie.
+     *
+     * Prvních 35 % dráhy odbydou první polovinu postupu — to je ten dlouhý
+     * střed, kde fotka jen pomalu plave. Zbylých 57 % dráhy nese pásmo
+     * předávky (postup 0.5–0.8), které mělo dřív jen 30 %: scéna se tedy
+     * předává skoro dvakrát delším tahem než dřív.
+     */
+    if (value <= 0.35) return (value / 0.35) * 0.5
+    if (value <= 0.92) return 0.5 + ((value - 0.35) / 0.57) * 0.3
+    return 0.8 + ((value - 0.92) / 0.08) * 0.2
+  })
   const entry = useSpring(entryProgress, {
     stiffness: 82,
     damping: 28,
@@ -158,7 +195,7 @@ export default function Courses({ copy }: { copy?: CopyBlocks }) {
     ["inset(0% 0% 0% 0%)", "inset(100% 0% 0% 0%)"]
   )
   const shaderProgress = useTransform(
-    [entry, revealProgress],
+    [entry, pinned],
     ([entryValue, pinnedValue]: number[]) =>
       Math.min(
         1,
@@ -170,14 +207,14 @@ export default function Courses({ copy }: { copy?: CopyBlocks }) {
      the pin then keeps drifting, which is what gives the long middle of this
      stage something to do besides the shader. */
   const imageScale = useTransform(
-    [entry, revealProgress],
+    [entry, pinned],
     ([entryValue, pinnedValue]: number[]) =>
       1.055 -
       0.055 * clamp01(entryValue, 0.03, 0.5) +
       0.045 * clamp01(pinnedValue, 0, DRIFT_END)
   )
   const imageY = useTransform(
-    [entry, revealProgress],
+    [entry, pinned],
     ([entryValue, pinnedValue]: number[]) =>
       `${
         2 -
@@ -191,7 +228,7 @@ export default function Courses({ copy }: { copy?: CopyBlocks }) {
      showed through the CTA's masked window — the tail of "A to je na tom to
      nejlepší." sat inside the circle on top of the photo. */
   const contentOpacity = useTransform(
-    [entry, revealProgress],
+    [entry, pinned],
     ([entryValue, pinnedValue]: number[]) =>
       clamp01(entryValue, 0.2, 0.5) *
       (1 - clamp01(pinnedValue, CURTAIN_START + 0.02, CURTAIN_END - 0.06))
@@ -205,7 +242,7 @@ export default function Courses({ copy }: { copy?: CopyBlocks }) {
    * dráha zkracuje s ní: na 660 je to 13.5 a 15.8 px.
    */
   const contentY = useTransform(
-    [entry, revealProgress],
+    [entry, pinned],
     ([entryValue, pinnedValue]: number[]) =>
       `${
         2.04 -
@@ -219,32 +256,32 @@ export default function Courses({ copy }: { copy?: CopyBlocks }) {
     value > 0.02 ? "visible" : "hidden"
   )
   const footerCurtain = useTransform(
-    revealProgress,
+    pinned,
     [CURTAIN_START, CURTAIN_END],
     ["inset(100% 0% 0% 0%)", "inset(0% 0% 0% 0%)"]
   )
   const footerRailOpacity = useTransform(
-    revealProgress,
+    pinned,
     [RAIL_START, RAIL_END],
     [0, 1]
   )
-  const ctaOpacity = useTransform(revealProgress, [CTA_START, CTA_END], [0, 1])
+  const ctaOpacity = useTransform(pinned, [CTA_START, CTA_END], [0, 1])
   /* Týž důvod: 34 px je 3.15 % výšky na 1080. Obě strany mají stejný tvar
      výrazu, takže interpolace zůstane interpolací. */
   const ctaY = useTransform(
-    revealProgress,
+    pinned,
     [CTA_START, CTA_END],
     ["3.15vh", "0vh"]
   )
   const ctaWindowOpacity = useTransform(
-    revealProgress,
+    pinned,
     [WINDOW_START, WINDOW_START + 0.1],
     [0, 1]
   )
   /* Only a hair of scale: the photo showing through is a static CSS mask on the surface below and
      cannot scale with the ring, so a large range visibly separated the two. */
   const ctaWindowScale = useTransform(
-    revealProgress,
+    pinned,
     [WINDOW_START, WINDOW_END],
     [0.95, 1]
   )

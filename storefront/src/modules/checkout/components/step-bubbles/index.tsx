@@ -1,6 +1,8 @@
 "use client"
 
+import { useEffect, useRef } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import s from "./style.module.scss"
 
 /**
@@ -15,6 +17,25 @@ import s from "./style.module.scss"
  * vlastní stav — čtou totéž, podle čeho se kroky rozbalují. Hotové kroky jsou
  * prokliknutelné (je to táž cesta, jakou nabízí jejich tlačítko „Upravit“),
  * ty před vámi ne: do doručení se nedá skočit dřív, než je vyplněná adresa.
+ *
+ * ## Proč tenhle řádek taky roluje
+ *
+ * Mezi kroky se přechází zápisem do adresy s `scroll: false` — stránka tedy
+ * zůstane přesně tam, kde byla. Jenže kroky nejsou stejně vysoké: kdo
+ * odešle adresu ze spodku formuláře, octne se v doručení někde uprostřed,
+ * s nadpisem kroku pod plovoucí lištou. Lucie to 12. 11. 2026 napsala
+ * přesně: „když jsem šla vybírat možnosti doručení, otevřelo se mi to tady,
+ * bylo by lepší se objevit o pole výš, kde jsou možnosti doručení."
+ *
+ * Vrátit `scroll: true` by nestačilo a nebylo by to ani správně: Next skočí
+ * na úplný začátek dokumentu, tedy nad souhrn „Co objednáváte", a krok by
+ * byl pořád mimo obraz. Správný cíl je tenhle řádek — je to první věc
+ * kroku a nad ním už nic z pokladny není. Odsazení pod lištu drží
+ * `scroll-margin-top` ve stylech, protože o výšce lišty ví CSS, ne tahle
+ * komponenta.
+ *
+ * Roluje se jen při ZMĚNĚ kroku, ne při prvním vykreslení: příchod
+ * z e-mailu rovnou na `?step=payment` nemá čím hýbat.
  */
 const ZAKLADNI = [
   { key: "address", label: "Adresa" },
@@ -43,7 +64,18 @@ export default function CheckoutStepBubbles({
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
+  const korenRef = useRef<HTMLElement | null>(null)
   const current = searchParams.get("step") ?? "address"
+
+  const prvni = useRef(true)
+  useEffect(() => {
+    if (prvni.current) {
+      prvni.current = false
+      return
+    }
+    if (korenRef.current) scrollWithLenis(korenRef.current)
+  }, [current])
+
   const currentIndex = Math.max(
     0,
     STEPS.findIndex((step) => step.key === current)
@@ -51,7 +83,7 @@ export default function CheckoutStepBubbles({
   const active = STEPS[currentIndex]
 
   return (
-    <nav className={s.root} aria-label="Kroky pokladny">
+    <nav className={s.root} ref={korenRef} aria-label="Kroky pokladny">
       <ol className={s.list}>
         {STEPS.map((step, index) => {
           const done = index < currentIndex

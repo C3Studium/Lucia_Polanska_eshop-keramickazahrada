@@ -282,10 +282,6 @@
            bottom, ~747 to 1067 for the gap: on a short laptop all three sit on their floors, on
            a 1080 screen all three are at the value they had before. */
         padding: clamp(0.85rem, 1.85vh, 1.25rem) 1.35rem clamp(0.95rem, 2vh, 1.35rem);
-        /* „Smazat košík" visí vpravo dole v absolutní pozici → kotva + strip
-           pod hlavním tlačítkem, ať netvoří vlastní centrovaný řádek. */
-        position: relative;
-        padding-bottom: clamp(1.85rem, 3.4vh, 2.35rem);
         display: flex;
         flex-direction: column;
         gap: clamp(0.7rem, 1.5vh, 1rem);
@@ -312,12 +308,21 @@
           width: 100%;
         }
 
-        /* „Smazat košík" — jemná podtržená akce vpravo dole, mimo tok (absolute),
-           ať nezabírá vlastní řádek a nestrká do „Přejít do košíku". */
+        /*
+         * „Smazat košík" — jemná podtržená akce zarovnaná doprava.
+         *
+         * Stávala mimo tok (position: absolute) a místo pro ni dělalo
+         * padding-bottom panelu. Ty dvě míry se počítají každá jinak — jedna
+         * z výšky okna, druhá z velikosti písma — a na telefonu, kde je
+         * --ui-scale 0.8, mezi nimi zbyl necelý pixel. Lucie to 12. 11. 2026
+         * vyfotila: popisek ležel na tlačítku „Přejít do košíku".
+         *
+         * V toku s align-self je mezera vzniklá ze mřížky a žádná shoda čísel
+         * se hlídat nemusí. Vlastní centrovaný řádek, kvůli kterému šla ven,
+         * nehrozí: align-self ji drží vpravo.
+         */
         .clearCartBtn {
-          position: absolute;
-          right: 1.35rem;
-          bottom: clamp(0.35rem, 0.9vh, 0.6rem);
+          align-self: flex-end;
           padding: 0.2rem 0.3rem;
           background: none;
           border: 0;

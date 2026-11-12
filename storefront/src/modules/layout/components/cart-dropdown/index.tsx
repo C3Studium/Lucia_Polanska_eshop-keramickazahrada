@@ -121,6 +121,26 @@ const CartDropdown = ({
 
   const pathname = usePathname()
 
+  /*
+   * Odchod na jinou stránku panel zavře.
+   *
+   * Lucie, 12. 11. 2026: „dam zelene pole Prejit do kosiku, jen se promeni na
+   * cerne… musela jsem vypnout krizkem, teprve pak jsem objevila dalsi cerne
+   * pole Pokracovat na udaje." Přechod do košíku PROBĚHL — jenže panel zůstal
+   * otevřený přes stránku, na kterou se přešlo, takže to vypadalo, že tlačítko
+   * nic nedělá.
+   *
+   * Zavření visí na adrese, ne na kliku do jednoho odkazu: ven z panelu vede
+   * i název výrobku, jeho obrázek a „Do obchodu", a každý z nich by jinak
+   * potřeboval vlastní onClick. Jeden z nich by se zapomněl.
+   */
+  const prvniAdresa = useRef(pathname)
+  useEffect(() => {
+    if (prvniAdresa.current === pathname) return
+    prvniAdresa.current = pathname
+    close()
+  }, [pathname, close])
+
   // open cart dropdown when modifying the cart items, but only if we're not on the cart page
   useEffect(() => {
     if (itemRef.current !== totalItems && !pathname.includes("/cart")) {
@@ -360,7 +380,7 @@ const CartDropdown = ({
                       })}
                     </span>
                   </div>
-                  <LocalizedClientLink href="/cart" passHref>
+                  <LocalizedClientLink href="/cart" passHref onClick={close}>
                     {/* Texty tlačítek bez úpravy v místě — vnitřek si animují samy. */}
                     <ClickButton
                       text={text("panel.do-kosiku")}
@@ -428,6 +448,16 @@ type ClickButtonProps = {
 
 // Base animated button used across the site. Can act as a submit button in forms.
 function ClickButton({ onClickAction, ClickAction, disabled = false, text, type = "button", className, "data-testid": dataTestId }: ClickButtonProps) {
+    /*
+     * isActive je stav MYŠI, ne doteku.
+     *
+     * Posuvník uvnitř tlačítka se zvedne při najetí kurzorem a spustí zpátky
+     * při odjetí. Prst ale žádné „odjetí" neposílá: po ťuknutí přišel
+     * emulovaný mouseenter, tlačítko zčernalo a tak už zůstalo. Lucie to
+     * popsala přesně — „jen se promeni na cerne".
+     *
+     * Proto ukazovátko místo myši: přepíná to jen skutečný kurzor.
+     */
     const [ isActive , setIsActive ] = useState<boolean>(false);
     const { pending } = useFormStatus();
     const isSubmitting = type === "submit" ? pending : false;
@@ -442,8 +472,12 @@ function ClickButton({ onClickAction, ClickAction, disabled = false, text, type 
                 onClick={handleClick}
                 disabled={isDisabled}
                 aria-busy={isDisabled || undefined}
-                onMouseEnter={() => setIsActive(true)}
-                onMouseLeave={() => setIsActive(false)}
+                onPointerEnter={(event) => {
+                    if (event.pointerType === "mouse") setIsActive(true)
+                }}
+                onPointerLeave={(event) => {
+                    if (event.pointerType === "mouse") setIsActive(false)
+                }}
                 data-testid={dataTestId}
             >
                 <motion.div 
