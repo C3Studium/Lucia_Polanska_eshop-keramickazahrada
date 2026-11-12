@@ -37,6 +37,19 @@ const ELASTIC_MAX_SUBSTEPS = 5
 const ELASTIC_REST_EPSILON = 0.00025
 
 /*
+ * Dojíždění nastavené „za snímek" přepočtené na skutečný čas (12. 11. 2026).
+ *
+ * Všechny `follow` hodnoty jsou laděné jako podíl cesty za jeden snímek při
+ * 60 Hz. Na 144 Hz se tak kurzor, karty i záře honily 2,4× rychleji a na
+ * zaškobrtnutém snímku zase zpomalily. Při 60 Hz vychází přesně původní číslo.
+ */
+const perFrame = (rate: number, delta: number) =>
+  1 - Math.pow(1 - rate, delta * 60)
+
+/* Zbytek pohybu, pod kterým se obraz už nemění — pak smyčka nekreslí. */
+const IDLE_EPSILON = 0.0005
+
+/*
  * The brush.
  *
  * A ripple trail, ported from the RippleDistortion reference: as the pointer travels it stamps
@@ -817,6 +830,7 @@ export default function FAQImageShaderScene({
 
     const handlePointerMove = (event: globalThis.PointerEvent) => {
       if (event.pointerType === "touch") return
+      resumeLoop()
       const bounds = host.getBoundingClientRect()
       const isInside = event.clientX >= bounds.left && event.clientX <= bounds.right && event.clientY >= bounds.top && event.clientY <= bounds.bottom
 
@@ -920,22 +934,35 @@ export default function FAQImageShaderScene({
         )
         setSheetAspect(sheets[index], rect.width / rect.height)
       })
+      resumeLoop()
     }
 
-    const placeMeshes = () => {
+    /* Vrací největší zbývající posun, ať `animate` pozná, že karty dojely. */
+    const placeMeshes = (delta = 1 / 60) => {
+      let residual = 0
       meshes.forEach((mesh, index) => {
         const rect = rects[index]
         const depth = [9, -12, 7][index]
         const targetX = rect.left + rect.width / 2 - width / 2 + pointer.x * depth
         const targetY = height / 2 - rect.top - rect.height / 2 - pointer.y * depth
-        const positionEase = config.follow.positionEase
-        const rotationEase = config.follow.rotationEase
+        const positionEase = perFrame(config.follow.positionEase, delta)
+        const rotationEase = perFrame(config.follow.rotationEase, delta)
+        const targetRotationX = -pointer.y * [0.011, -0.014, 0.009][index]
+        const targetRotationY = pointer.x * [0.014, -0.017, 0.011][index]
+        residual = Math.max(
+          residual,
+          Math.abs(targetX - mesh.position.x) * 0.01,
+          Math.abs(targetY - mesh.position.y) * 0.01,
+          Math.abs(targetRotationX - mesh.rotation.x) * 100,
+          Math.abs(targetRotationY - mesh.rotation.y) * 100
+        )
         mesh.position.x += (targetX - mesh.position.x) * positionEase
         mesh.position.y += (targetY - mesh.position.y) * positionEase
         mesh.position.z = index === 1 ? 1.2 : index === 2 ? 0.6 : 0
-        mesh.rotation.x += ((-pointer.y * [0.011, -0.014, 0.009][index]) - mesh.rotation.x) * rotationEase
-        mesh.rotation.y += ((pointer.x * [0.014, -0.017, 0.011][index]) - mesh.rotation.y) * rotationEase
+        mesh.rotation.x += (targetRotationX - mesh.rotation.x) * rotationEase
+        mesh.rotation.y += (targetRotationY - mesh.rotation.y) * rotationEase
       })
+      return residual
     }
 
     const animate = (now: number) => {
@@ -954,13 +981,15 @@ export default function FAQImageShaderScene({
       const dx = nextX - previousPointer.x
       const dy = nextY - previousPointer.y
       const instantaneousSpeed = Math.min(Math.hypot(dx, dy) / Math.max(delta, 0.001) * 0.42, 1)
-      energy += (instantaneousSpeed - energy) * (
+      energy += (instantaneousSpeed - energy) * perFrame(
         instantaneousSpeed > energy
           ? config.follow.energyAttack
-          : config.follow.energyRelease
+          : config.follow.energyRelease,
+        delta
       )
       nextPointer.set(nextX, nextY)
-      pointer.lerp(nextPointer, config.follow.pointerEase)
+      const pointerResidual = pointer.distanceTo(nextPointer)
+      pointer.lerp(nextPointer, perFrame(config.follow.pointerEase, delta))
       previousPointer.set(nextX, nextY)
 
       /*
@@ -1008,7 +1037,8 @@ export default function FAQImageShaderScene({
         rippleDirty = liveWaves > 0
       }
 
-      placeMeshes()
+      const meshResidual = placeMeshes(delta)
+      let hoverResidual = 0
       meshes.forEach((mesh, index) => {
         const rect = rects[index]
         const localX = (pointer.x + 0.5) * width
@@ -1029,7 +1059,12 @@ export default function FAQImageShaderScene({
         const hoverTarget = isHovered ? 1 : 0
         mesh.material.uniforms.uHover.value += (
           hoverTarget - mesh.material.uniforms.uHover.value
-        ) * config.follow.hoverEase
+        ) * perFrame(config.follow.hoverEase, delta)
+        hoverResidual = Math.max(
+          hoverResidual,
+          hoverTarget,
+          mesh.material.uniforms.uHover.value
+        )
 
         /* The lattice is grabbed by the same pointer the shader already resolved for this card,
            re-expressed in its own lattice box. Once the cursor leaves and the springs have run
@@ -1047,6 +1082,27 @@ export default function FAQImageShaderScene({
       })
 
       renderer.render(scene, camera)
+
+      /*
+       * Když se nic nehýbe, smyčka spí (12. 11. 2026).
+       *
+       * Bez kurzoru na obrázku je každý další snímek totožný s předchozím — záře,
+       * žíravka i rohy se násobí `uHover`, který je nula, a jediné, co se mění, je
+       * zrno o síle pod jedním odstínem z 255. Přesto se celá scéna kreslila 60×
+       * (na 144 Hz monitoru 144×) za sekundu, u hera přes celé okno. Probudí ji
+       * pohyb myši nebo změna velikosti; plátno mezitím drží poslední snímek.
+       */
+      const busy =
+        hoverResidual > IDLE_EPSILON ||
+        liveWaves > 0 ||
+        rippleDirty ||
+        pointerResidual > IDLE_EPSILON ||
+        meshResidual > IDLE_EPSILON ||
+        sheets.some((sheet) => !sheet.settled)
+      if (!busy) {
+        frame = 0
+        return
+      }
       frame = requestAnimationFrame(animate)
     }
 
@@ -1147,7 +1203,8 @@ export default function FAQImageShaderScene({
         resize()
         placeMeshes()
         setReady(true)
-        frame = requestAnimationFrame(animate)
+        /* resize() výš už smyčku mohl probudit; druhá by kreslila každý snímek dvakrát. */
+        if (!frame) frame = requestAnimationFrame(animate)
       } catch (error) {
         setFailed(true)
         console.warn("The FAQ image shader could not start; using the static image fallback.", error)
@@ -1163,7 +1220,7 @@ export default function FAQImageShaderScene({
      * na kterou se nikdo nedívá. Okraj 200 px pustí smyčku o kousek dřív, než sekce
      * vjede do obrazu, takže se nikdy neukáže zastavená.
      */
-    const resumeLoop = () => {
+    function resumeLoop() {
       if (disposed || !renderer || frame || !inView || !meshes.length) return
       previousTime = performance.now()
       frame = requestAnimationFrame(animate)
@@ -1176,6 +1233,21 @@ export default function FAQImageShaderScene({
       { rootMargin: "200px 0px" }
     )
     visibility.observe(host)
+
+    /*
+     * Ztráta kontextu (12. 11. 2026): uspání notebooku, přepnutí grafiky,
+     * pád ovladače. Plátno pak zůstane prázdné a fotka pod ním je kvůli
+     * `is-ready` schovaná — hero by zčernal. Vrátíme statickou fotku.
+     */
+    const handleContextLost = () => {
+      if (disposed) return
+      cancelAnimationFrame(frame)
+      frame = 0
+      renderer = null
+      setReady(false)
+      setFailed(true)
+    }
+    canvas.addEventListener("webglcontextlost", handleContextLost)
 
     const observer = new ResizeObserver(resize)
     observer.observe(host)
@@ -1196,7 +1268,11 @@ export default function FAQImageShaderScene({
       waveGeometry.dispose()
       waveMaterial.dispose()
       rippleTarget.dispose()
+      canvas.removeEventListener("webglcontextlost", handleContextLost)
+      /* Uvolnit kontext hned, ne až s úklidem paměti — prohlížeč jich drží
+         jen omezeně a nejstarší (kapalinu na pozadí) by zahodil jako první. */
       renderer?.dispose()
+      renderer?.forceContextLoss()
     }
     /* `strength` is read inside, so the scene has to be rebuilt when a caller changes it.
        Callers pass a literal, so memoise it there if it ever needs to change per render. */

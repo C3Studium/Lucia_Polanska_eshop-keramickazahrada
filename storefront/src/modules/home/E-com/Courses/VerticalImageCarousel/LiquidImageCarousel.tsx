@@ -61,6 +61,18 @@ interface LiquidImageWebGL {
   dispose: () => void
 }
 
+/*
+ * Jak rychle kapalina dojíždí kurzor, za sekundu (12. 11. 2026).
+ *
+ * Síla kurzoru je rozdíl polohy mezi dvěma snímky. Myš ale hlásí polohu svým
+ * tempem (obvykle 125 Hz) a monitor kreslí svým (60, 120, 144 Hz), takže dřív
+ * některý snímek nedostal pohyb žádný a další dvojnásobný: síla pulzovala
+ * 0 → 2× → 0 a stopa se trhala na korálky. Poloha teď cíl dojíždí plynule
+ * a rozdíl je v každém snímku. 42 za sekundu je polovina cesty za snímek při
+ * 60 Hz, tedy zpoždění kolem 24 ms — pod hranicí, kdy by to bylo poznat.
+ */
+const MOUSE_FOLLOW_RATE = 42
+
 export default function LiquidImageCarousel({
   images,
   scrollProgress,
@@ -114,6 +126,17 @@ export default function LiquidImageCarousel({
             source.naturalHeight || source.height || 1
           )
           imageReady[index] = true
+          /*
+           * Nahrát hned, jak je volno (12. 11. 2026). Jinak se fotka 1920×1280
+           * posílá do GPU až v prvním snímku, kdy je sekce Kurzů vidět — tedy
+           * uprostřed scrollu, kde je zaškobrtnutí nejvíc vidět.
+           */
+          const upload = () => {
+            if (!texturesDisposed) Common.renderer?.initTexture(loadedTexture)
+          }
+          if (typeof window.requestIdleCallback === "function")
+            window.requestIdleCallback(upload, { timeout: 2000 })
+          else window.setTimeout(upload, 200)
         },
         undefined,
         () => {
@@ -186,12 +209,16 @@ export default function LiquidImageCarousel({
       mouseMoved = false
       coords = new THREE.Vector2()
       coords_old = new THREE.Vector2()
+      /* Kam kurzor míří; `coords` ho dojíždí v `update`. */
+      target = new THREE.Vector2()
       diff = new THREE.Vector2()
       timer: number | null = null
       container: HTMLElement | null = null
       docTarget: Document | null = null
       listenerTarget: Window | null = null
       isHoverInside = false
+      /* Máme už někdy zapsanou polohu? Viz `markSample`. */
+      hasSample = false
       hasUserControl = false
       isAutoActive = false
       autoIntensity = 2.0
@@ -276,7 +303,8 @@ export default function LiquidImageCarousel({
         if (rect.width === 0 || rect.height === 0) return
         const nx = (x - rect.left) / rect.width
         const ny = (y - rect.top) / rect.height
-        this.coords.set(nx * 2 - 1, -(ny * 2 - 1))
+        this.target.set(nx * 2 - 1, -(ny * 2 - 1))
+        this.markSample()
         this.mouseMoved = true
         this.timer = window.setTimeout(() => {
           this.mouseMoved = false
@@ -284,28 +312,66 @@ export default function LiquidImageCarousel({
       }
       setNormalized(nx: number, ny: number) {
         this.coords.set(nx, ny)
+        this.target.set(nx, ny)
+        this.markSample()
         this.mouseMoved = true
+      }
+      /*
+       * První poloha nesmí vyrobit rozdíl.
+       *
+       * `coords` i `coords_old` startují na (0,0) — jenže to není „nikde",
+       * to je střed plátna. První pohyb myší po načtení stránky tedy zapsal
+       * skutečnou polohu kurzoru a nejbližší snímek z ní spočítal rozdíl přes
+       * půl obrazovky. Ten jde rovnou do síly kurzoru (`Mouse.diff` ×
+       * `mouse_force`), takže shader dostal jednorázový úder — přesně ten
+       * trhanec po obnovení stránky a po návratu na úvodní stránku.
+       *
+       * Pojistka na to v `update` byla, ale mířila vedle: ptala se
+       * `coords_old` až POTÉ, co do něj zapsala aktuální polohu. Spustila se
+       * proto jedině tehdy, když kurzor stál přesně na středu plátna — kde
+       * naopak zahodila platný pohyb.
+       *
+       * Správné místo je tady: první zapsaná poloha se rovnou stane i tou
+       * předchozí, takže z ní žádný rozdíl vzniknout nemůže.
+       */
+      private markSample() {
+        if (this.hasSample) return
+        this.coords.copy(this.target)
+        this.coords_old.copy(this.coords)
+        this.diff.set(0, 0)
+        this.hasSample = true
       }
       onDocumentMouseMove(event: MouseEvent) {
         if (!this.updateHoverState(event.clientX, event.clientY)) return
-        const shouldTakeOver =
+
+        /*
+         * Čte se PŘED ohlášením interakce, a to je celá pointa.
+         *
+         * `onInteract` zastaví samopohyb a ten při zastavení shodí
+         * `isAutoActive`. Dokud stálo volání nad touhle podmínkou, byla
+         * podmínka vždycky nepravdivá a plynulé převzetí se nespustilo ani
+         * jednou — řízení se pokaždé přebíralo skokem na polohu kurzoru
+         * a rozdíl za jediný snímek se protlačil do síly kurzoru.
+         */
+        const prevzitPoSamopohybu =
           this.isAutoActive && !this.hasUserControl && !this.takeoverActive
 
-        if (shouldTakeOver) {
+        if (this.onInteract) this.onInteract()
+
+        if (prevzitPoSamopohybu) {
           if (!this.container) return
           const rect = this.container.getBoundingClientRect()
           const nx = (event.clientX - rect.left) / rect.width
           const ny = (event.clientY - rect.top) / rect.height
           this.takeoverFrom.copy(this.coords)
           this.takeoverTo.set(nx * 2 - 1, -(ny * 2 - 1))
+          this.target.copy(this.takeoverTo)
           this.takeoverStartTime = performance.now()
           this.takeoverActive = true
           this.hasUserControl = true
           this.isAutoActive = false
-          if (this.onInteract) this.onInteract()
           return
         }
-        if (this.onInteract) this.onInteract()
         this.setCoords(event.clientX, event.clientY)
         this.hasUserControl = true
       }
@@ -330,7 +396,7 @@ export default function LiquidImageCarousel({
       onDocumentLeave() {
         this.isHoverInside = false
       }
-      update() {
+      update(delta: number) {
         if (this.takeoverActive) {
           const t =
             (performance.now() - this.takeoverStartTime) /
@@ -344,11 +410,13 @@ export default function LiquidImageCarousel({
             const k = t * t * (3 - 2 * t)
             this.coords.copy(this.takeoverFrom).lerp(this.takeoverTo, k)
           }
+        } else {
+          this.coords.lerp(this.target, 1 - Math.exp(-delta * MOUSE_FOLLOW_RATE))
         }
         this.diff.subVectors(this.coords, this.coords_old)
         this.coords_old.copy(this.coords)
-        if (this.coords_old.x === 0 && this.coords_old.y === 0)
-          this.diff.set(0, 0)
+        /* Pojistka na první snímek bydlí v `markSample` — tady stávala verze,
+           která se ptala už přepsané hodnoty, viz komentář tam. */
         if (this.isAutoActive && !this.takeoverActive)
           this.diff.multiplyScalar(this.autoIntensity)
       }
@@ -1009,6 +1077,8 @@ export default function LiquidImageCarousel({
       }
       fboSize = new THREE.Vector2()
       cellScale = new THREE.Vector2()
+      /* Násobek `dt` pro tento snímek — viz WebGLManager.render. */
+      stepScale = 1
       boundarySpace = new THREE.Vector2()
       advection!: Advection
       externalForce!: ExternalForce
@@ -1039,7 +1109,14 @@ export default function LiquidImageCarousel({
       }
       getFloatType() {
         const isIOS = /(iPad|iPhone|iPod)/i.test(navigator.userAgent)
-        return isIOS ? THREE.HalfFloatType : THREE.FloatType
+        /*
+         * Plné floaty jen tam, kde je GPU umí lineárně vzorkovat. Bez
+         * OES_texture_float_linear se rychlostní pole čte po celých buňkách
+         * a kapalina je hranatá; poloviční přesnost se filtruje vždy.
+         */
+        const floatLinear =
+          Common.renderer?.extensions.has("OES_texture_float_linear") ?? false
+        return isIOS || !floatLinear ? THREE.HalfFloatType : THREE.FloatType
       }
       createAllFBO() {
         const type = this.getFloatType()
@@ -1127,7 +1204,7 @@ export default function LiquidImageCarousel({
         if (this.options.isBounce) this.boundarySpace.set(0, 0)
         else this.boundarySpace.copy(this.cellScale)
         this.advection.update({
-          dt: this.options.dt,
+          dt: this.options.dt * this.stepScale,
           isBounce: this.options.isBounce,
           BFECC: this.options.BFECC,
         })
@@ -1141,7 +1218,7 @@ export default function LiquidImageCarousel({
           vel = this.viscous.update({
             viscous: this.options.viscous,
             iterations: this.options.iterations_viscous,
-            dt: this.options.dt,
+            dt: this.options.dt * this.stepScale,
           })
         }
         this.divergence.update({ vel })
@@ -1228,7 +1305,6 @@ export default function LiquidImageCarousel({
       lastUserInteraction = performance.now()
       running = false
       private _loop = this.loop.bind(this)
-      private _resize = this.resize.bind(this)
       private _onVisibility?: () => void
       constructor(props: any) {
         this.props = props
@@ -1247,7 +1323,6 @@ export default function LiquidImageCarousel({
           rampDuration: props.autoRampDuration,
         })
         this.init()
-        window.addEventListener("resize", this._resize)
         this._onVisibility = () => {
           const hidden = document.hidden
           if (hidden) {
@@ -1268,9 +1343,22 @@ export default function LiquidImageCarousel({
         this.output.resize()
       }
       render() {
-        if (this.autoDriver) this.autoDriver.update()
-        Mouse.update()
         Common.update()
+        if (this.autoDriver) this.autoDriver.update()
+        Mouse.update(Common.delta)
+        /*
+         * Krok simulace podle skutečného času, ne podle snímku (12. 11. 2026).
+         *
+         * `dt` platil za snímek, takže na monitoru se 144 Hz tekla kapalina 2,4×
+         * rychleji než na 60 Hz a každý zaškobrtnutý snímek ji na chvilku
+         * zpomalil — to bylo to cukání. Advekce je semi-Lagrangeovská, takže
+         * proměnný krok snese; mez 2 drží jeden ztracený snímek, delší pauzu
+         * (návrat na kartu, odjetí z obrazovky) nedohání.
+         */
+        this.output.simulation.stepScale = Math.min(
+          Math.max(Common.delta * 60, 0.25),
+          2
+        )
         this.output.update()
       }
       loop() {
@@ -1293,7 +1381,6 @@ export default function LiquidImageCarousel({
       }
       dispose() {
         try {
-          window.removeEventListener("resize", this._resize)
           if (this._onVisibility)
             document.removeEventListener("visibilitychange", this._onVisibility)
           Mouse.dispose()

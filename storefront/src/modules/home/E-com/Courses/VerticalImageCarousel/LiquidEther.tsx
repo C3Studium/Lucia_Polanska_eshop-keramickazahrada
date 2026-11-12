@@ -57,6 +57,18 @@ interface LiquidEtherWebGL {
 
 const defaultColors = ["#5227FF", "#FF9FFC", "#B497CF"]
 
+/*
+ * Jak rychle kapalina dojíždí kurzor, za sekundu (12. 11. 2026).
+ *
+ * Síla kurzoru je rozdíl polohy mezi dvěma snímky. Myš ale hlásí polohu svým
+ * tempem (obvykle 125 Hz) a monitor kreslí svým (60, 120, 144 Hz), takže dřív
+ * některý snímek nedostal pohyb žádný a další dvojnásobný: síla pulzovala
+ * 0 → 2× → 0 a stopa se trhala na korálky. Poloha teď cíl dojíždí plynule
+ * a rozdíl je v každém snímku. 42 za sekundu je polovina cesty za snímek při
+ * 60 Hz, tedy zpoždění kolem 24 ms — pod hranicí, kdy by to bylo poznat.
+ */
+const MOUSE_FOLLOW_RATE = 42
+
 export default function LiquidEther({
   mouseForce = 10,
   cursorSize = 50,
@@ -182,6 +194,8 @@ export default function LiquidEther({
       mouseMoved = false
       coords = new THREE.Vector2()
       coords_old = new THREE.Vector2()
+      /* Kam kurzor míří; `coords` ho dojíždí v `update`. */
+      target = new THREE.Vector2()
       diff = new THREE.Vector2()
       timer: number | null = null
       container: HTMLElement | null = null
@@ -223,6 +237,10 @@ export default function LiquidEther({
         this.docTarget?.addEventListener("mouseleave", this._onDocumentLeave)
       }
       dispose() {
+        if (this.timer) {
+          window.clearTimeout(this.timer)
+          this.timer = null
+        }
         if (this.listenerTarget) {
           this.listenerTarget.removeEventListener(
             "mousemove",
@@ -270,7 +288,7 @@ export default function LiquidEther({
         if (rect.width === 0 || rect.height === 0) return
         const nx = (x - rect.left) / rect.width
         const ny = (y - rect.top) / rect.height
-        this.coords.set(nx * 2 - 1, -(ny * 2 - 1))
+        this.target.set(nx * 2 - 1, -(ny * 2 - 1))
         this.markSample()
         this.mouseMoved = true
         this.timer = window.setTimeout(() => {
@@ -279,6 +297,7 @@ export default function LiquidEther({
       }
       setNormalized(nx: number, ny: number) {
         this.coords.set(nx, ny)
+        this.target.set(nx, ny)
         this.markSample()
         this.mouseMoved = true
       }
@@ -302,6 +321,7 @@ export default function LiquidEther({
        */
       private markSample() {
         if (this.hasSample) return
+        this.coords.copy(this.target)
         this.coords_old.copy(this.coords)
         this.diff.set(0, 0)
         this.hasSample = true
@@ -330,6 +350,7 @@ export default function LiquidEther({
           const ny = (event.clientY - rect.top) / rect.height
           this.takeoverFrom.copy(this.coords)
           this.takeoverTo.set(nx * 2 - 1, -(ny * 2 - 1))
+          this.target.copy(this.takeoverTo)
           this.takeoverStartTime = performance.now()
           this.takeoverActive = true
           this.hasUserControl = true
@@ -360,7 +381,7 @@ export default function LiquidEther({
       onDocumentLeave() {
         this.isHoverInside = false
       }
-      update() {
+      update(delta: number) {
         if (this.takeoverActive) {
           const t =
             (performance.now() - this.takeoverStartTime) /
@@ -374,6 +395,8 @@ export default function LiquidEther({
             const k = t * t * (3 - 2 * t)
             this.coords.copy(this.takeoverFrom).lerp(this.takeoverTo, k)
           }
+        } else {
+          this.coords.lerp(this.target, 1 - Math.exp(-delta * MOUSE_FOLLOW_RATE))
         }
         this.diff.subVectors(this.coords, this.coords_old)
         this.coords_old.copy(this.coords)
@@ -950,6 +973,8 @@ export default function LiquidEther({
       }
       fboSize = new THREE.Vector2()
       cellScale = new THREE.Vector2()
+      /* Násobek `dt` pro tento snímek — viz WebGLManager.render. */
+      stepScale = 1
       boundarySpace = new THREE.Vector2()
       advection!: Advection
       externalForce!: ExternalForce
@@ -980,7 +1005,14 @@ export default function LiquidEther({
       }
       getFloatType() {
         const isIOS = /(iPad|iPhone|iPod)/i.test(navigator.userAgent)
-        return isIOS ? THREE.HalfFloatType : THREE.FloatType
+        /*
+         * Plné floaty jen tam, kde je GPU umí lineárně vzorkovat. Bez
+         * OES_texture_float_linear se rychlostní pole čte po celých buňkách
+         * a kapalina je hranatá; poloviční přesnost se filtruje vždy.
+         */
+        const floatLinear =
+          Common.renderer?.extensions.has("OES_texture_float_linear") ?? false
+        return isIOS || !floatLinear ? THREE.HalfFloatType : THREE.FloatType
       }
       createAllFBO() {
         const type = this.getFloatType()
@@ -1068,7 +1100,7 @@ export default function LiquidEther({
         if (this.options.isBounce) this.boundarySpace.set(0, 0)
         else this.boundarySpace.copy(this.cellScale)
         this.advection.update({
-          dt: this.options.dt,
+          dt: this.options.dt * this.stepScale,
           isBounce: this.options.isBounce,
           BFECC: this.options.BFECC,
         })
@@ -1082,7 +1114,7 @@ export default function LiquidEther({
           vel = this.viscous.update({
             viscous: this.options.viscous,
             iterations: this.options.iterations_viscous,
-            dt: this.options.dt,
+            dt: this.options.dt * this.stepScale,
           })
         }
         this.divergence.update({ vel })
@@ -1140,7 +1172,6 @@ export default function LiquidEther({
       lastUserInteraction = performance.now()
       running = false
       private _loop = this.loop.bind(this)
-      private _resize = this.resize.bind(this)
       private _onVisibility?: () => void
       constructor(props: any) {
         this.props = props
@@ -1159,7 +1190,6 @@ export default function LiquidEther({
           rampDuration: props.autoRampDuration,
         })
         this.init()
-        window.addEventListener("resize", this._resize)
         this._onVisibility = () => {
           const hidden = document.hidden
           if (hidden) {
@@ -1180,9 +1210,22 @@ export default function LiquidEther({
         this.output.resize()
       }
       render() {
-        if (this.autoDriver) this.autoDriver.update()
-        Mouse.update()
         Common.update()
+        if (this.autoDriver) this.autoDriver.update()
+        Mouse.update(Common.delta)
+        /*
+         * Krok simulace podle skutečného času, ne podle snímku (12. 11. 2026).
+         *
+         * `dt` platil za snímek, takže na monitoru se 144 Hz tekla kapalina 2,4×
+         * rychleji než na 60 Hz a každý zaškobrtnutý snímek ji na chvilku
+         * zpomalil — to bylo to cukání. Advekce je semi-Lagrangeovská, takže
+         * proměnný krok snese; mez 2 drží jeden ztracený snímek, delší pauzu
+         * (návrat na kartu, odjetí z obrazovky) nedohání.
+         */
+        this.output.simulation.stepScale = Math.min(
+          Math.max(Common.delta * 60, 0.25),
+          2
+        )
         this.output.update()
       }
       loop() {
@@ -1204,7 +1247,6 @@ export default function LiquidEther({
       }
       dispose() {
         try {
-          window.removeEventListener("resize", this._resize)
           if (this._onVisibility)
             document.removeEventListener("visibilitychange", this._onVisibility)
           Mouse.dispose()

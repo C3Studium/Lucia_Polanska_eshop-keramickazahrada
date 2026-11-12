@@ -96,7 +96,13 @@ export type ShaderSettings = {
    */
   latticeDensity: number
 
-  /** Canvas density. 2 matches a retina <img>; lower trades sharpness for fill rate. */
+  /**
+   * Canvas density. 2 matches a retina <img>; lower trades sharpness for fill rate.
+   *
+   * Stálo tu 20, tedy žádný strop (12. 11. 2026): hero přes celé okno se na
+   * notebooku s měřítkem 2,5 kreslil v 6× víc pixelech než na obyčejném
+   * monitoru, pro fotku, která má sama 1920 px.
+   */
   maxPixelRatio: number
 }
 
@@ -122,7 +128,7 @@ export const SHADER_PRESETS: Record<"default" | "about" | "hero", ShaderSettings
     light: { elasticShading: 0.02, glaze: 0.5 },
     follow: { pointerEase: 0.052, positionEase: 0.052, rotationEase: 0.045, hoverEase: 0.045, energyAttack: 0.16, energyRelease: 0.04 },
     latticeDensity: 26,
-    maxPixelRatio: 20,
+    maxPixelRatio: 2,
   },
   about: {
     elastic: { stiffness: 0.05, damping: 0.75, grabRadius: 0.05, pull: 0.5, wobble: 0.025 },
@@ -131,7 +137,7 @@ export const SHADER_PRESETS: Record<"default" | "about" | "hero", ShaderSettings
     light: { elasticShading: 0.02, glaze: 0.5 },
     follow: { pointerEase: 0.052, positionEase: 0.052, rotationEase: 0.045, hoverEase: 0.045, energyAttack: 0.16, energyRelease: 0.04 },
     latticeDensity: 26,
-    maxPixelRatio: 20,
+    maxPixelRatio: 2,
   },
   hero: {
     elastic: { stiffness: 0.05, damping: 0.75, grabRadius: 0.05, pull: 0.5, wobble: 0.025 },
@@ -140,7 +146,7 @@ export const SHADER_PRESETS: Record<"default" | "about" | "hero", ShaderSettings
     light: { elasticShading: 0.02, glaze: 0.5 },
     follow: { pointerEase: 0.052, positionEase: 0.052, rotationEase: 0.045, hoverEase: 0.045, energyAttack: 0.16, energyRelease: 0.04 },
     latticeDensity: 26,
-    maxPixelRatio: 20,
+    maxPixelRatio: 2,
   },
 }
 
