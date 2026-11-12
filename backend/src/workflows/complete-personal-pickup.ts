@@ -265,6 +265,14 @@ export const completePersonalPickupWorkflow = createWorkflow(
           order_id: input.order_id,
           stage: "shipped",
           changed_by: input.created_by ?? null,
+          /*
+           * Zápis skutečnosti (zboží předané u pultu), ne žádost o krok — tabulka
+           * přechodů pouští do `shipped` jen z `shipping`, ale tlačítko „Vyzvednuto"
+           * je k dispozici už u nové objednávky. Bez tohohle (živý test 13. 11. 2026,
+           * #73) se platba zachytila a pak workflow spadl na „received → shipped":
+           * peníze zapsané, výdej ne, fáze „Nové" a e-mail ani faktura neodešly.
+           */
+          reconcile: true,
         },
       })
     })

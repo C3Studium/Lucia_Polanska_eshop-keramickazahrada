@@ -32,12 +32,19 @@ export const MERCHANT_ORDER_ACTIVE_STAGES: MerchantOrderStage[] = [
 /**
  * Allowed stage transitions. Kept byte-for-byte identical to the pre-refactor table so
  * this extraction stays behaviour-neutral; loosening it is a separate, deliberate change.
+ *
+ * `received → shipping` povoleno vědomě (13. 11. 2026): osobní odběr nabízí u nové
+ * objednávky rovnou „Připraveno k vyzvednutí" (detail objednávky i fronta Denní
+ * práce), ale tabulka chtěla mezikrok „working", takže tlačítko vracelo 400
+ * „Objednávku nelze přesunout ze stavu received do stavu shipping" a novou
+ * objednávku k vyzvednutí nešlo připravit vůbec. Proskočit přes „working" v routě
+ * by zákazníkovi poslalo dva e-maily naráz.
  */
 export const MERCHANT_ORDER_STAGE_TRANSITIONS: Record<
   MerchantOrderStage,
   MerchantOrderStage[]
 > = {
-  received: ["working", "payment_problem", "cancelled"],
+  received: ["working", "shipping", "payment_problem", "cancelled"],
   working: ["shipping", "payment_problem", "cancelled"],
   shipping: ["shipped", "payment_problem", "cancelled"],
   shipped: [],
