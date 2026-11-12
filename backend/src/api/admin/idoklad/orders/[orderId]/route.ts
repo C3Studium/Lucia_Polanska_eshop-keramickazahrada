@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { MedusaError } from "@medusajs/framework/utils"
 import {
+  balanceInvoiceStateOf,
   invoiceStateOf,
   isDobirkaOrder,
   isFullyCaptured,
@@ -27,6 +28,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     configured: Boolean(idoklad),
     test_mode: idoklad?.testMode ?? false,
     invoice: invoiceStateOf(order),
+    /* Zakázka: druhá faktura (doplatek). Panel ji dřív neukazoval, takže
+       z adminu se dala stáhnout jen zálohová (živý test 13. 11. 2026, #74). */
+    balance_invoice: balanceInvoiceStateOf(order),
     dobirka: isDobirkaOrder(order),
     fully_captured: isFullyCaptured(order),
   })

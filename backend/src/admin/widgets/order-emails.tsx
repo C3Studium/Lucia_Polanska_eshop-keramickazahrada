@@ -40,6 +40,8 @@ const templateLabels: Record<string, string> = {
   "order-cancelled": "Objednávka zrušena",
   "commission-confirmed": "Zadání potvrzeno",
   "order-processing": "Výroba začala",
+  /* Chyběl — deník zakázky ukazoval surové „production-started" (13. 11. 2026). */
+  "production-started": "Zakázka ve výrobě",
   "commission-completed": "Zakázka hotová",
   "order-refunded": "Objednávka vrácena",
   "order-review": "Prosba o recenzi",
