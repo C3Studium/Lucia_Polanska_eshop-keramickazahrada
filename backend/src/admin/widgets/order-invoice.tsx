@@ -20,6 +20,8 @@ type InvoiceResponse = {
   configured: boolean;
   test_mode: boolean;
   invoice: InvoiceState;
+  /** Zakázka: faktura na doplatek (druhá vedle zálohové), null dokud není. */
+  balance_invoice?: InvoiceState | null;
   dobirka: boolean;
   fully_captured: boolean;
 };
@@ -95,6 +97,7 @@ export const OrderInvoicePanel = ({ order }: { order: AdminOrder }) => {
   }
 
   const { configured, test_mode: testMode, invoice, dobirka } = invoiceQuery.data;
+  const balanceInvoice = invoiceQuery.data.balance_invoice ?? null;
   /*
    * Objednávka, u které se nic nezachytí: celá uhrazená dárkovým poukazem,
    * nebo cena po domluvě objednaná za 0 Kč (platí se až přes zakázku).
@@ -182,6 +185,46 @@ export const OrderInvoicePanel = ({ order }: { order: AdminOrder }) => {
               </Button>
             )}
           </>
+        )}
+
+        {/* Zakázka: druhá faktura — na doplatek. Vystavuje se sama po jeho zaplacení. */}
+        {balanceInvoice && (
+          <div className="flex flex-col gap-y-3 border-t border-ui-border-base pt-3">
+            <div className="flex items-center justify-between gap-x-2">
+              <Text size="small" className="text-ui-fg-subtle">
+                Faktura na doplatek
+              </Text>
+              <Text size="small" weight="plus">
+                {balanceInvoice.invoice_number ?? balanceInvoice.invoice_id ?? "—"}
+              </Text>
+            </div>
+            {balanceInvoice.issued_at && (
+              <div className="flex items-center justify-between gap-x-2">
+                <Text size="small" className="text-ui-fg-subtle">
+                  Vystaveno
+                </Text>
+                <Text size="small">{formatDateTime(balanceInvoice.issued_at)}</Text>
+              </div>
+            )}
+            {balanceInvoice.pdf_url ? (
+              <Button variant="secondary" size="small" asChild>
+                <a href={balanceInvoice.pdf_url} target="_blank" rel="noreferrer">
+                  Stáhnout PDF doplatku
+                </a>
+              </Button>
+            ) : (
+              balanceInvoice.invoice_id && (
+                <Text size="small" className="text-ui-fg-subtle">
+                  PDF se nepodařilo uložit — najdete ho přímo v iDokladu.
+                </Text>
+              )
+            )}
+            {balanceInvoice.error && (
+              <Text size="small" className="text-ui-fg-error">
+                {balanceInvoice.error}
+              </Text>
+            )}
+          </div>
         )}
 
         {!hasInvoice && invoice.error && (

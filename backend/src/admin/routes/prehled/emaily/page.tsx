@@ -78,7 +78,7 @@ const templateLabels: Record<string, string> = {
   "order-edited": "Objednávka upravena",
   "commission-confirmed": "Zadání potvrzeno",
   "order-processing": "Výroba začala",
-  "production-started": "Zakázka ve výrobě (Z3)",
+  "production-started": "Zakázka ve výrobě",
   "commission-cancelled": "Zakázka zrušena",
   "commission-completed": "Zakázka hotová",
   "order-delayed": "Výroba se protáhne",

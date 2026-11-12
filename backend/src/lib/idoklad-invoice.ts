@@ -121,21 +121,31 @@ export const loadInvoiceOrder = async (
   }
 }
 
-export const invoiceStateOf = (order: any): IdokladInvoiceState => {
+export const invoiceStateOf = (
+  order: any,
+  /* Zakázka má druhou fakturu na doplatek pod vlastními klíči — viz balanceInvoiceStateOf. */
+  keys: typeof IDOKLAD_METADATA_KEYS | typeof IDOKLAD_BALANCE_METADATA_KEYS = IDOKLAD_METADATA_KEYS
+): IdokladInvoiceState => {
   const metadata = (order?.metadata ?? {}) as Record<string, unknown>
-  const numeric = Number(metadata[IDOKLAD_METADATA_KEYS.invoiceId])
+  const numeric = Number(metadata[keys.invoiceId])
   const text = (key: string): string | null => {
     const value = metadata[key]
     return typeof value === "string" && value.trim().length ? value : null
   }
   return {
     invoice_id: Number.isFinite(numeric) && numeric > 0 ? numeric : null,
-    invoice_number: text(IDOKLAD_METADATA_KEYS.invoiceNumber),
-    pdf_url: text(IDOKLAD_METADATA_KEYS.pdfUrl),
-    issued_at: text(IDOKLAD_METADATA_KEYS.issuedAt),
-    paid_at: text(IDOKLAD_METADATA_KEYS.paidAt),
-    error: text(IDOKLAD_METADATA_KEYS.error),
+    invoice_number: text(keys.invoiceNumber),
+    pdf_url: text(keys.pdfUrl),
+    issued_at: text(keys.issuedAt),
+    paid_at: text(keys.paidAt),
+    error: text(keys.error),
   }
+}
+
+/** Faktura na doplatek zakázky (`idoklad_balance_invoice_*`), nebo null, dokud není. */
+export const balanceInvoiceStateOf = (order: any): IdokladInvoiceState | null => {
+  const state = invoiceStateOf(order, IDOKLAD_BALANCE_METADATA_KEYS)
+  return state.invoice_id || state.invoice_number || state.error ? state : null
 }
 
 export const isDobirkaOrder = (order: any): boolean =>
