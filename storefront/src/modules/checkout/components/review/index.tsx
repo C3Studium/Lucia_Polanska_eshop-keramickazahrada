@@ -313,6 +313,12 @@ const Review = ({
                         now: chargeNow,
                         later: outstanding,
                         goodsNow: productionMode.production_only?.always_now ?? 0,
+                        /* Co v `goodsNow` je: s dopravou, jen zboží, nebo jen balné. */
+                        goodsLabel: productionMode.production_only?.has_plain_goods === false
+                          ? "Balné"
+                          : (productionMode.production_only?.postage_now ?? 1) > 0
+                            ? "Zboží a doprava"
+                            : "Ostatní zboží",
                         depositNow: Math.max(
                           0,
                           chargeNow - (productionMode.production_only?.always_now ?? 0)
