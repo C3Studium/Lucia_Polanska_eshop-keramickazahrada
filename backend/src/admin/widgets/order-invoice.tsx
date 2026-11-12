@@ -238,10 +238,18 @@ export const OrderInvoicePanel = ({ order }: { order: AdminOrder }) => {
             {!invoice.error && (
               <Text size="small" className="text-ui-fg-subtle">
                 {dobirka
-                  ? "Vystaví se automaticky při předání dopravci."
+                  ? /* Bez štítku ČP nevznikne plnění ani `shipment.created`, takže
+                       u dobírky odeslané mimo štítek ji vystaví až „Peníze přišly"
+                       (zachycení platby) — ověřeno živě 13. 11. 2026 na #72. */
+                    "Vystaví se automaticky při předání dopravci se štítkem, jinak ve chvíli, kdy potvrdíte, že peníze z dobírky přišly."
                   : bezPlatby
                     ? "Objednávka je nulová — peníze přes bránu neprojdou, takže se faktura sama nevystaví. Jestli ji zákazník má dostat, vystavte ji tlačítkem."
-                    : "Vystaví se automaticky po zaplacení objednávky."}
+                    : invoiceQuery.data?.fully_captured
+                      ? /* Zaplaceno, a faktura přesto není — automatika ji minula
+                           (např. platba zachycená v běhu, který pak spadl). „Vystaví se
+                           po zaplacení" by tu lhalo; tlačítko níž ji vystaví hned. */
+                        "Objednávka je zaplacená, ale faktura se nevystavila. Vystavte ji tlačítkem níže."
+                      : "Vystaví se automaticky po zaplacení objednávky."}
               </Text>
             )}
             <Button
