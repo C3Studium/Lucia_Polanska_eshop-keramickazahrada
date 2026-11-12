@@ -1,3 +1,11 @@
+"use client"
+
+/*
+ * Klientská komponenta (13. 11. 2026): bere znění z useTexty(), což je hook kontextu.
+ * Bez téhle direktivy ji serverová stránka potvrzení (order/[id]/confirmed) i návrat
+ * ze zrušené platby (payment/[sessionId]/canceled) volaly na serveru a obě od 9. 11.
+ * padaly na „Application error": zákazník po zaplacení viděl chybu místo potvrzení.
+ */
 import { useTexty } from "@lib/context/texty"
 import type { ShopTexty } from "@lib/constants/texty"
 
