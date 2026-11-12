@@ -78,7 +78,15 @@ export type ProductionPaymentMode = {
    * celkovou úhradu. Starší backend ho neposílá → panel spadne na částky
    * za celý košík jako dřív.
    */
-  production_only?: (ProductionPaymentBounds & { always_now: number }) | null
+  production_only?:
+    | (ProductionPaymentBounds & {
+        always_now: number
+        /** Poštovné v `always_now` (0 = poštovné až v doplatku). */
+        postage_now?: number
+        /** Je v košíku i běžné zboží (ne jen zakázka a balné)? */
+        has_plain_goods?: boolean
+      })
+    | null
   /** Rozpis po zakázkových řádcích — volitelný, viz `ProductionPaymentLine`. */
   production_lines?: ProductionPaymentLine[] | null
 }

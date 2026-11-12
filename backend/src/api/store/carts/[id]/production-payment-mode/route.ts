@@ -78,6 +78,14 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
       "items.total",
       // Nezlevněný řádek — záloha se počítá z něj, sleva padá na doplatek.
       "items.subtotal",
+      /*
+       * Bez metadat `isServiceLine` nepozná řádek balného (značka je v metadatech)
+       * a vezme ho jako běžné zboží — pak `shippingTiming` dá poštovné do platby
+       * HNED. Workflow platby metadata čte (prepare-made-to-order-payment), takže
+       * pokladna slibovala „Zaplatíte teď 1 275 / po dokončení 3 225" a brána
+       * strhla 1 125 a doplatek byl 3 375 (živý test 13. 11. 2026, objednávka 0074).
+       */
+      "items.metadata",
     ],
     filters: { id: cartId },
   })
@@ -250,6 +258,10 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
           maximum: roundMoney(ceilingSum + postage.deferred),
           amount: roundMoney((customNow ?? depositNow) - alwaysNow),
           always_now: alwaysNow,
+          /* Z čeho se `always_now` skládá — pokladna podle toho píše, co se platí
+             celé („Zboží a doprava" / „Ostatní zboží" / „Balné"), ne vždy „doprava". */
+          postage_now: postage.now,
+          has_plain_goods: hasPlainGoods,
         }
       : null,
   }

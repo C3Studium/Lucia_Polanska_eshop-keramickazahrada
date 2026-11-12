@@ -38,6 +38,8 @@ export default function OrderRecap({
     now: number
     later: number
     goodsNow?: number
+    /** Popisek `goodsNow` — „Zboží a doprava" jen když v něm doprava opravdu je. */
+    goodsLabel?: string
     depositNow?: number
   } | null
 }) {
@@ -190,7 +192,7 @@ export default function OrderRecap({
                 <>
                   <div className={styles.paySub}>
                     <dt>
-                      Zboží a doprava <span>celou cenu</span>
+                      {deposit.goodsLabel ?? "Zboží a doprava"} <span>celou cenu</span>
                     </dt>
                     <dd>{money(deposit.goodsNow)}</dd>
                   </div>
