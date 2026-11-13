@@ -33,7 +33,7 @@ Most z tohoto PC do Safari na iPhonu přes USB (Google `ios-webkit-debug-proxy`)
 http://localhost:4600 ukazuje stav stránky, scroll, výšku spodní lišty Safari, fps, zaseknutí
 po sekcích, chyby konzole a událost „crash“. Agent dostane totéž jako příkazy.
 
-Zatím není na npm, spouští se ze zdroje (Node 22+):
+Zatím není na npm, spouští se ze zdroje (Node 22+). Aktuální verze je 0.1.60 na větvi `feature/devices`, před testem stačí `git pull`:
 
 ```sh
 D=C:/Users/ADMIN/Documents/GitHub/valecms-devices/bin/valecms.mjs
@@ -58,11 +58,16 @@ Až bude v projektu nainstalovaná verze valecms s `devices`, totéž dělá `np
 
 ### Příkazy (když most běží)
 
-`status` · `tabs` · `use N|text` · `open URL` · `reload` · `shot [soubor.png]` ·
-`eval "js"` (funguje `await`; vracet řetězec, např. `JSON.stringify({...})` — holý objektový
-literál Safari neprojde) · `tap X Y` · `scroll DY` | `scroll --to=Y` · `type "text"` ·
-`log [--after=N] [--types=slow,bar,error,crash] [--clear]` · `layers [N]` (paměť GPU vrstev
-s důvody od WebKitu) · `preview off|on` · `help`
+Návod pro agenty vypíše `node $D devices guide`, celý seznam `help`. Všechny příkazy umí `--json` a při nesplněné mezi vrací kód 1.
+
+- **Připravenost:** `doctor` zkontroluje most, telefon, stránku, rozsvícení a dostupnost webu z telefonu. U každého chybějícího kroku řekne, co udělat. Zhasnutý telefon dává šedé snímky a falešných „23 fps“.
+- **Jedna stránka:** `open /cesta` (čeká na novou stránku) → `shot [--sel=…]` → `audit` (přetečení do strany, malé cíle a písmo, zoom v polích, velké obrázky) → `perf 3000 --scroll --min-fps=55` → `log --types=error,console.error,crash,network`. Místo vlastního `eval` je `inspect --sel=…` (rozměr, jestli je prvek vidět, čím je překrytý, styly).
+- **Celý web:** `walk --query=nopl=1 --min-fps=55 --max-gpu=300 --json` porovná s minulou prohlídkou (`worse[]`, `changed[]` se snímkem rozdílu, `report.html`).
+- **Velikosti:** `sizes /cesta --json` ukáže iPhone SE, 15/16 a Pro Max na výšku i na šířku a nahlásí přetečení.
+- **Test prstem:** `session start`, pak majitel projede stránku prstem, pak `session stop --json` (záseky po sekcích, lišta Safari, chyby, síť).
+- **V čase:** `watch --min=5 --every=15 --json` (fps, paměť GPU, počet prvků a pláten).
+- **Ovládání:** `tap X Y` | `tap --sel=…` · `swipe --sel=… --dx=-220` (i pro WebGL) · `scroll DY` | `scroll --to=Y` · `type "text"` · `layers [N]` · `preview off|on` · `status` · `tabs` · `use N|text` · `reload`.
+- **`eval`:** víceřádkový kód jen přes heredoc nebo `--file=probe.js`, protože Windows víceřádkový argument usekne. Poslední řádek je výsledek, i holý objekt `({…})`. Znak `^` spolkne spouštěč node, v selektoru psát `[a*=b]`.
 
 ### Pravidla
 
@@ -72,4 +77,4 @@ s důvody od WebKitu) · `preview off|on` · `help`
 - **iOS 26:** spodní lišta Safari se animuje asi 30 snímků a v každém z nich vyvolá `resize`. `documentElement.clientHeight` zůstává stejné, `window.innerHeight` se mění. Rozložení ani časování scrollu se proto nikdy nesmí odvozovat z `innerHeight` ani z `dvh`.
 - **Měřit jen na produkčním buildu.** Když testuje majitel rukou, most zastavit.
 - **Na dotyku neběží žádný shader** (`data-fx="reduced"`, důvod `touch`). Kapalinu, hero shader ani karusel Kurzů na iPhonu neuvidíš, jen jejich statické fotky.
-- **Git Bash přepisuje cesty začínající `/`.** Argument `/cz` se změní na `C:/Program Files/Git/cz`, proto příkazy s cestou pouštět s `MSYS_NO_PATHCONV=1`.
+- **Git Bash přepisuje cesty začínající `/`.** Argument `/cz` se změní na `C:/Program Files/Git/cz`, Adresy stránek si nástroj od 0.1.60 vrací sám, u ostatních argumentů pouštět s `MSYS_NO_PATHCONV=1`.
