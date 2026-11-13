@@ -226,7 +226,7 @@ export const TEXTY_DEFAULTS = {
   "order.withdrawal_1":
     "Rozmysleli jste si to? Od smlouvy můžete odstoupit bez udání důvodu už teď — i před doručením. Lhůta 14 dnů poběží od převzetí zboží.",
   "order.withdrawal_2":
-    "Od smlouvy můžete odstoupit bez udání důvodu do $",
+    "Od smlouvy můžete odstoupit bez udání důvodu do",
   "order.templates_6":
     "05 · odstoupení, reklamace a vrácení",
   "order.templates_7":
@@ -260,7 +260,7 @@ export const TEXTY_DEFAULTS = {
   "kurzy.rezervacemodal_10":
     "Před rezervací prosím potvrďte souhlas s obchodními podmínkami.",
   "kurzy.rezervacemodal_11":
-    "Čím víc vás přijde, tím méně platí každý. Cena se spočítá podle počtu osob v dalším kroku.",
+    "Platí se za každou osobu. Celkovou cenu spočítáme v dalším kroku.",
   "kurzy.rezervacemodal_12":
     "Vyberte termín v seznamu nebo v kalendáři",
   "kurzy.rezervacemodal_13":
@@ -280,7 +280,7 @@ export const TEXTY_DEFAULTS = {
   "account.templates_2":
     "Zadejte prosím platnou e-mailovou adresu.",
   "account.templates_3":
-    "Pokud u nás účet s tímhle e-mailem máte, poslali jsme na něj odkaz pro nastavení nového hesla.",
+    "Poslali jsme vám odkaz pro nastavení nového hesla. Když nedorazí do pár minut, podívejte se i do spamu.",
   "account.templates_4":
     "Napište e-mail, na který máte účet. Pošleme vám odkaz pro nastavení nového hesla.",
   "account.templates_7":

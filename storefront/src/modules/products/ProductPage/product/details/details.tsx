@@ -386,12 +386,19 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                 <span>Písek</span>
               </div>
 
-              <h1>{displayTitle}</h1>
-              <p className="product__signature">
-                {bundle
-                  ? "Vybráno dohromady."
-                  : "Vyrobeno rukama, jen jednou."}
-              </p>
+              {/* Jen název a zkrácený popis (13. 11. 2026, Matěj): podtitul
+                  „Vyrobeno rukama, jen jednou." pryč. */}
+              {/* Délka názvu řídí velikost písma (viz .product__title ve style.scss). */}
+              {/* Obal kvůli měření šířky (container query) — rodiče jsou na
+                  tabletu a telefonu `display: contents` a šířku nemají. */}
+              <div className="product__titleBox">
+                <h1
+                  className="product__title"
+                  style={{ ["--title-len" as string]: Math.max(12, String(displayTitle ?? "").length) }}
+                >
+                  {displayTitle}
+                </h1>
+              </div>
               <p className="product__lead">
                 {descriptionPreview}
                 {hasLongDescription && (
@@ -720,6 +727,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
             countryCode={countryCode}
             bundle={bundle}
             texts={texts}
+            selectedVariant={selectedVariant}
           />
         </div>
       </div>

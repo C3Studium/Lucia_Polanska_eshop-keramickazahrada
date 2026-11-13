@@ -78,7 +78,7 @@ export default function ClaimRefundsList({
                 >
                   Opravný daňový doklad (dobropis)
                   {creditNote.number ? ` č. ${creditNote.number}` : ""}{" "}
-                  <i aria-hidden="true">↗</i>
+                  <i aria-hidden="true">↗︎</i>
                 </a>
               ) : creditNote?.number ? (
                 <p className={styles.refundNote}>

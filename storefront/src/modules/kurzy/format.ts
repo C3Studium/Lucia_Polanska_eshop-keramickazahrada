@@ -52,7 +52,8 @@ export const peopleLabel = (count: number): string =>
   count === 1 ? "1 osobu" : count < 5 ? `${count} osoby` : `${count} osob`
 
 export const TIER_LABEL: Record<CourseQuote["tier"], string> = {
-  single: "cena za jednoho",
+  single: "cena za osobu",
+  /* Staré rezervace z doby množstevních slev (do 13. 11. 2026). */
   pair: "cena za dva",
   group: "skupinová cena",
 }
@@ -60,43 +61,33 @@ export const TIER_LABEL: Record<CourseQuote["tier"], string> = {
 /**
  * Cenový žebříček termínu — „kolik to stojí", než si někdo vybere den.
  *
- * Ceny byly na kartě termínu, tedy až za kliknutím na den v kalendáři.
- * Kdo se ptá „kolik to stojí", se to tak dozvěděl až napotřetí. Tenhle
- * žebříček se říká na kroku 1 nad kalendářem a znovu na kroku 2 u počtu
- * osob, kde odpovídá na druhou otázku: vyplatí se přibrat někoho dalšího?
+ * Od 13. 11. 2026 jen dvě ceny (Matěj: „skupinová cena není, jen jeden
+ * člověk nebo dítě do 15 let"): dospělý a dítě. Ceny za dva a za skupinu
+ * se nevypisují, i kdyby je termín v databázi ještě měl — backend je
+ * stejně nepočítá (`modules/course/pricing.ts`).
  */
 export type PriceTier = {
-  key: CourseQuote["tier"]
-  /** „Jeden člověk", „Dva lidé", „Od 3 lidí" — co je potřeba splnit. */
+  key: "single" | "child"
+  /** „Dospělý", „Dítě do 15 let". */
   label: string
   perPerson: number
 }
 
 type TermPricing = {
   price_single: number
-  price_two: number | null
-  group_min: number | null
-  price_group_per_person: number | null
+  price_child?: number | null
+  child_max_age?: number | null
 }
 
 export const priceTiers = (term: TermPricing): PriceTier[] => {
   const tiers: PriceTier[] = [
-    { key: "single", label: "Jeden člověk", perPerson: term.price_single },
+    { key: "single", label: "Dospělý", perPerson: term.price_single },
   ]
-  /* Slabší hladina se nevypisuje: „za dva 500" vedle „za jednoho 500" není
-     nabídka, je to šum. Totéž u skupiny. */
-  if (term.price_two != null && term.price_two < term.price_single) {
-    tiers.push({ key: "pair", label: "Dva lidé", perPerson: term.price_two })
-  }
-  if (
-    term.group_min != null &&
-    term.price_group_per_person != null &&
-    term.price_group_per_person < (tiers[tiers.length - 1]?.perPerson ?? Infinity)
-  ) {
+  if (term.price_child != null && term.price_child > 0) {
     tiers.push({
-      key: "group",
-      label: `Od ${term.group_min} lidí`,
-      perPerson: term.price_group_per_person,
+      key: "child",
+      label: `Dítě do ${term.child_max_age ?? 15} let`,
+      perPerson: term.price_child,
     })
   }
   return tiers

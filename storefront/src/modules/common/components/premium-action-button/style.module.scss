@@ -179,3 +179,48 @@
 
 /* Dotyk při odesílání: místo přejezdu do tmavé jen ztlumení (viz isFilled v index.tsx). */
 .busy { opacity: .6; transition: opacity .15s linear; }
+
+/*
+ * Obchod, košík, pokladna (`PlainShop`, 13. 11. 2026): bez přejezdu výplně.
+ * Tvar zůstává jako na celém webu (pilulka) — rovné hrany Matěj odmítl:
+ * „tlačítka mají respektovat náš design, jen bez animací". Najetí a zvolený
+ * stav přebarví tlačítko naráz; popisek dědí barvu.
+ */
+.plainButton {
+  transition: background-color 120ms linear, color 120ms linear;
+}
+.plainButton .label { color: inherit; }
+/* Popisek se smí zalomit: „Mám slevový kód nebo poukaz" v souhrnu košíku
+   jinak končil useknutý. Výška roste s textem, podlaha zůstává. */
+.plainButton { height: auto; min-height: clamp(2.75rem, 5vh, 3.25rem); padding-block: .5rem; }
+.plainButton .labelStack { white-space: normal; text-align: left; line-height: 1.2; }
+.compact .plainButton { min-height: calc(2.5rem * var(--premium-button-scale, 1)); padding-block: .35rem; }
+.plainButton .arrow { transform: none; }
+.plainButton:hover:not(:disabled),
+.plainButton:focus-visible,
+.plainActive {
+  color: var(--premium-button-active-ink, var(--cream-06));
+  background: var(--premium-button-fill, var(--ink-05));
+}
+
+/* Telefon: tlačítka jen výška obsahu + 2,5 px nahoře a dole, bez okrajů
+   (13. 11. 2026, Matěj: „tlačítka jsou na telefonu moc velká"). */
+@media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  .plainButton {
+    min-height: 0 !important;
+    height: auto !important;
+    margin-block: 0 !important;
+    padding-block: 2.5px !important;
+  }
+}
+
+/* Totéž pro tlačítka mimo e-shop (účet, formuláře) — na telefonu všude
+   výška obsahu + 2,5 px (13. 11. 2026). Kroužek se šipkou určuje výšku. */
+@media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  .button {
+    min-height: 0 !important;
+    height: auto !important;
+    margin-block: 0 !important;
+    padding-block: 2.5px !important;
+  }
+}

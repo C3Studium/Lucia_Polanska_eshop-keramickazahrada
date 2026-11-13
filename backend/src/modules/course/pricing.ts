@@ -6,7 +6,14 @@
  * (inside the row lock), and the admin manual entry. The storefront only ever
  * *displays* what the server computed — it never does this math itself.
  *
- * The tier rules, as the owner described them:
+ * Od 13. 11. 2026 platí jen dvě ceny: dospělý (`price_single`) a dítě do
+ * `child_max_age` let (`price_child`), obě za osobu. Množstevní slevy (za
+ * dva, za skupinu) jsou zrušené — `volumePricingOn` vrací vždy NE, takže
+ * `quoteFor` dává pokaždé `single`. Sloupce `price_two`, `group_min`,
+ * `price_group_per_person` a `volume_pricing_enabled` zůstávají v databázi
+ * kvůli starým rezervacím (jejich uložený `pricing_tier`), jen se nepoužijí.
+ *
+ * Původní pásma, jak je majitelka popsala (dnes vypnutá):
  *
  * - 1 person → `single`, pays `price_single`.
  * - 2 people together → `pair`, pays `price_two` **per person** — when the
@@ -69,19 +76,16 @@ export const toAmount = (value: unknown): number => {
 const round2 = (value: number): number => Math.round(value * 100) / 100
 
 /**
- * Je množstevní sleva zapnutá?
+ * Je množstevní sleva zapnutá? Vždy NE.
  *
- * Chybějící hodnota znamená ANO: termíny založené před 8. 11. 2026 sloupec
- * nemají a jejich ceny za dva a za skupinu se nesmí přestat nabízet jen
- * proto, že přibyl vypínač.
+ * „Skupinová cena není, jen jeden člověk nebo dítě do 15 let." (Matěj,
+ * 13. 11. 2026.) Přepínač termínu (`volume_pricing_enabled`) se proto
+ * ignoruje — i termín, který ho má zapnutý a ceny za dva a za skupinu
+ * vyplněné, se počítá za osobu. Kdyby se sleva někdy vracela, tady je to
+ * jediné místo: store API, výpočet ceny i změna počtu osob jdou přes tuhle
+ * funkci.
  */
-export const volumePricingOn = (rules: CoursePricingRules): boolean => {
-  const hodnota = rules.volume_pricing_enabled
-  if (hodnota === null || hodnota === undefined) return true
-  if (typeof hodnota === "boolean") return hodnota
-  const text = String(hodnota).trim().toLowerCase()
-  return !(text === "false" || text === "0" || text === "")
-}
+export const volumePricingOn = (_rules: CoursePricingRules): boolean => false
 
 /** Dětská cena je vyplněná a kladná. */
 export const hasChildPricing = (rules: CoursePricingRules): boolean =>

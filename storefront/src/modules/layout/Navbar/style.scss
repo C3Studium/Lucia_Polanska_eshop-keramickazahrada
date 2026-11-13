@@ -1172,3 +1172,12 @@
     }
   }
 }
+
+/* Seznam zemí se dá dorolovat (13. 11. 2026): viditelný tenký posuvník
+   a posuv nepřetéká na stránku. Kolečko pouští `data-lenis-prevent`. */
+.countryOptions {
+  overscroll-behavior: contain;
+  scrollbar-width: thin !important;
+  -webkit-overflow-scrolling: touch;
+}
+

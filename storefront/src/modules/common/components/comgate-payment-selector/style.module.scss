@@ -783,3 +783,76 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
     transform: scaleX(1);
   }
 }
+
+/*
+ * Volba platby bez animace výplně (13. 11. 2026, Matěj): tmavý pruh, který
+ * přejížděl přes dlaždici, je pryč. Stav ukazuje jen barva s krátkým přechodem:
+ * zvolená dlaždice / banka je tmavá, rozbalená skupina má jemný podklad.
+ */
+.groupFill { display: none !important; }
+
+.group,
+.method {
+  transition: background-color 140ms linear, color 140ms linear, border-color 140ms linear;
+}
+
+.group[data-open="true"] {
+  background-color: rgb(var(--ink-05-rgb) / .05);
+}
+
+.group[data-active="true"],
+.method[data-active="true"] {
+  color: var(--cream-06) !important;
+  background-color: var(--ink-05) !important;
+}
+.group[data-active="true"] *,
+.method[data-active="true"] * {
+  color: inherit !important;
+}
+
+.group:hover:not([data-active="true"]):not(:disabled),
+.method:hover:not([data-active="true"]):not(:disabled) {
+  background-color: rgb(var(--ink-05-rgb) / .08);
+}
+
+.confirmRow {
+  display: grid;
+  gap: .75rem;
+  margin-top: 1rem;
+}
+
+.confirmChosen {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / .7);
+  font: 400 .875rem/1.3 "Sansation-Regular", sans-serif;
+
+  strong { color: var(--ink-05); font-weight: 600; }
+}
+
+.method::before { display: none !important; }
+
+/*
+ * Dlaždice platby na dva řádky (13. 11. 2026, Matěj: „názvy jsou useknuté").
+ * Nahoře číslo vlevo a loga se šipkou vpravo, pod tím název a popis přes CELOU
+ * šířku dlaždice. Dřív se text tísnil ve sloupci mezi číslem a logy a „Platba
+ * přes banku" se lámala po slovech. Platí pro všechny šířky i počty dlaždic.
+ */
+.group {
+  grid-template-columns: auto minmax(0, 1fr) auto auto !important;
+  grid-template-areas:
+    "index . logos arrow"
+    "copy copy copy copy" !important;
+  grid-template-rows: auto auto !important;
+  align-items: center !important;
+  align-content: start !important;
+  row-gap: .5rem !important;
+}
+.group .groupIndex { grid-area: index; align-self: center; }
+.group .logoStack { grid-area: logos; justify-self: end; }
+.group .groupArrow { grid-area: arrow; justify-self: end; }
+.group .groupCopy {
+  grid-area: copy;
+  min-width: 0;
+  text-align: left;
+}
+.group .groupCopy strong { white-space: normal; overflow-wrap: normal; word-break: normal; }

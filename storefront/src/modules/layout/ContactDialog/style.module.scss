@@ -1374,3 +1374,52 @@
     }
   }
 }
+
+/*
+ * Kontakt těsněji (13. 11. 2026, Matěj): nadpis na jeden řádek („Napište mi.
+ * Ozvu se osobně."), menší mezery kolem, nižší horní lišta a menší křížek.
+ * Poslední v souboru, ať přebije pásma výš.
+ */
+.panelHeader {
+  min-height: 3.25rem;
+  padding-block: clamp(.375rem, .8vh, .5rem);
+}
+
+.close {
+  width: 2.25rem;
+  height: 2.25rem;
+  min-height: 0 !important;
+  padding: .25rem;
+}
+.close i {
+  width: 1.5rem;
+  min-width: 1.5rem;
+  height: 1.5rem;
+}
+
+.formPanel {
+  padding: clamp(1.25rem, 3vh, 2.25rem) clamp(1.5rem, 3.5vw, 3rem);
+}
+
+.title h2 {
+  max-width: none;
+  margin-top: clamp(.375rem, .9vh, .75rem);
+  font-size: calc(var(--contact-title-zoom, 1) * clamp(1.75rem, calc(2.4vw * var(--ui-scale)), 2.75rem));
+  line-height: 1.05;
+}
+.title h2 em {
+  display: inline;
+  margin-left: .25em;
+}
+
+.form {
+  margin-top: clamp(1rem, 2.4vh, 1.75rem);
+}
+
+.topics {
+  margin-bottom: clamp(.625rem, 1.6vh, 1rem);
+}
+
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .title h2 { font-size: 1.5rem; }
+}

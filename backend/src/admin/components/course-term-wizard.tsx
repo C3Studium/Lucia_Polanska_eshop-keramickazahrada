@@ -22,6 +22,9 @@ import { formatCzk } from "../lib/workbench";
 import { ceskaChyba, ceskyText } from "../lib/ceska-chyba";
 import { CourseDayPicker } from "./course-day-picker";
 
+/** Množstevní sleva (za dva, za skupinu) je od 13. 11. 2026 zrušená — viz modules/course/pricing.ts. */
+const MNOZSTEVNI_SLEVA_V_ADMINU = false;
+
 /**
  * „Nový termín" in two steps: when, then how much.
  *
@@ -226,7 +229,7 @@ export const CourseTermWizard = ({
   const groupPrice = parseAmount(draft.price_group_per_person);
   const stepTwoProblems: string[] = [];
   if (priceSingle == null || priceSingle < 0)
-    stepTwoProblems.push("Chybí cena za jednoho.");
+    stepTwoProblems.push("Chybí cena za dospělého.");
   if ((groupMin == null) !== (groupPrice == null))
     stepTwoProblems.push(
       "Skupinová cena potřebuje obojí: od kolika lidí platí i kolik zaplatí osoba."
@@ -476,7 +479,7 @@ export const CourseTermWizard = ({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-y-2">
                   <Label htmlFor="wizard-price-single">
-                    Cena za jednoho (Kč)
+                    Cena za dospělého (Kč)
                   </Label>
                   <Input
                     id="wizard-price-single"
@@ -487,7 +490,7 @@ export const CourseTermWizard = ({
                     }
                   />
                   <Text size="xsmall" className="text-ui-fg-muted">
-                    Kolik zaplatí ten, kdo přijde sám.
+                    Platí se za každou osobu, děti mají cenu vedle.
                   </Text>
                 </div>
                 {/*
@@ -523,6 +526,10 @@ export const CourseTermWizard = ({
                     Nevyplněné = do 15 let.
                   </Text>
                 </div>
+                {/* Množstevní sleva je od 13. 11. 2026 zrušená (viz
+                    modules/course/pricing.ts) — pole jsou schovaná, aby
+                    nesváděla k vyplnění něčeho, co se nepoužije. */}
+                {MNOZSTEVNI_SLEVA_V_ADMINU ? (<>
                 {/*
                   Vypínač množstevní slevy. U veřejných kurzů ji majitelka
                   nechce vůbec — a mazat kvůli tomu obě ceny by znamenalo
@@ -584,14 +591,15 @@ export const CourseTermWizard = ({
                     }
                   />
                 </div>
+                </>) : null}
               </div>
 
               {priceSingle != null ? (
                 <div className="bg-ui-bg-subtle flex flex-col gap-y-1 rounded-lg p-3">
                   <Text size="small" className="text-ui-fg-subtle">
-                    {`Jeden sám zaplatí ${formatCzk(priceSingle)}.`}
+                    {`Dospělý zaplatí ${formatCzk(priceSingle)}.`}
                   </Text>
-                  {parseAmount(draft.price_two) != null ? (
+                  {MNOZSTEVNI_SLEVA_V_ADMINU && parseAmount(draft.price_two) != null ? (
                     <Text size="small" className="text-ui-fg-subtle">
                       {`Dva spolu zaplatí 2 × ${formatCzk(
                         parseAmount(draft.price_two)!
@@ -600,7 +608,7 @@ export const CourseTermWizard = ({
                       )} dohromady.`}
                     </Text>
                   ) : null}
-                  {groupMin != null && groupMin >= 2 && groupPrice != null ? (
+                  {MNOZSTEVNI_SLEVA_V_ADMINU && groupMin != null && groupMin >= 2 && groupPrice != null ? (
                     <Text size="small" className="text-ui-fg-subtle">
                       {`Skupina ${groupMin} lidí zaplatí ${groupMin} × ${formatCzk(
                         groupPrice

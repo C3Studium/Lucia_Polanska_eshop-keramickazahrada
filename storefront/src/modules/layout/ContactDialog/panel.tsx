@@ -743,7 +743,7 @@ export default function ContactDialogPanel({
                   (`.faqLink span`), takže text nejde obalit, a celý odkaz by
                   editor uložil i se šipkou. Upravuje se ve formuláři bloku. */}
               <LocalizedClientLink href="/dotazy" className={styles.faqLink}>
-                {text("faq")} <span aria-hidden="true">↗</span>
+                {text("faq")} <span aria-hidden="true">↗︎</span>
               </LocalizedClientLink>
             </motion.div>
           </motion.aside>

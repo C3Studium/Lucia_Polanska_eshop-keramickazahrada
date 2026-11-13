@@ -130,7 +130,7 @@ const AccountNavigationLink = ({
         variants={variants2}
         transition={{ duration: 0.38, ease: accountEase }}
       >
-        ↗
+        ↗︎
       </motion.span>
     </LocalizedClientLink>
   )

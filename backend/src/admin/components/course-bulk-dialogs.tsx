@@ -21,6 +21,9 @@ import {
   type ScopeTerm,
 } from "./course-scope-picker";
 
+/** Množstevní sleva (za dva, za skupinu) je od 13. 11. 2026 zrušená — viz modules/course/pricing.ts. */
+const MNOZSTEVNI_SLEVA_V_ADMINU = false;
+
 /**
  * The two edits that were buried in the term drawer, each with its own door.
  *
@@ -100,8 +103,9 @@ const pricingExampleLines = (draft: PricingDraft): string[] => {
   const lines: string[] = [];
   const single = parseAmount(draft.price_single);
   if (single != null) {
-    lines.push(`Jeden sám zaplatí ${formatCzk(single)}.`);
+    lines.push(`Dospělý zaplatí ${formatCzk(single)}.`);
   }
+  if (!MNOZSTEVNI_SLEVA_V_ADMINU) return lines;
   const two = parseAmount(draft.price_two);
   if (two != null) {
     lines.push(
@@ -237,15 +241,15 @@ export const CoursePricingDrawer = ({
         <Drawer.Header>
           <Drawer.Title>Ceny</Drawer.Title>
           <Drawer.Description>
-            Každá cena je za jednoho člověka. Cena za dva a skupinová cena jsou
-            nepovinné — bez nich platí každý cenu za jednoho.
+            Každá cena je za jednoho člověka: dospělý, nebo dítě. Slevy za
+            dva ani za skupinu nejsou.
           </Drawer.Description>
         </Drawer.Header>
         <Drawer.Body className="flex-1 overflow-y-auto px-6 py-6">
           <div className="flex flex-col gap-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-y-2">
-                <Label htmlFor="price-single">Cena za jednoho (Kč)</Label>
+                <Label htmlFor="price-single">Cena za dospělého (Kč)</Label>
                 <Input
                   id="price-single"
                   inputMode="decimal"
@@ -255,7 +259,7 @@ export const CoursePricingDrawer = ({
                   }
                 />
                 <Text size="xsmall" className="text-ui-fg-muted">
-                  Kolik zaplatí ten, kdo přijde sám.
+                  Platí se za každou osobu, děti mají cenu vedle.
                 </Text>
               </div>
               {/* Dětská cena hned vedle dospělé — tak to majitelka říká
@@ -283,6 +287,7 @@ export const CoursePricingDrawer = ({
                   onChange={(event) => set({ child_max_age: event.target.value })}
                 />
               </div>
+              {MNOZSTEVNI_SLEVA_V_ADMINU ? (<>
               {/* Vypínač množstevní slevy: u veřejných kurzů ji majitelka
                   nechce. Ceny níž zůstanou uložené, jen se nenabídnou. */}
               <div className="col-span-full flex items-center justify-between gap-x-4 rounded-lg border p-3">
@@ -337,6 +342,7 @@ export const CoursePricingDrawer = ({
                   }
                 />
               </div>
+              </>) : null}
             </div>
 
             {examples.length ? (

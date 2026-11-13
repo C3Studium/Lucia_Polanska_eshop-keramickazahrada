@@ -522,3 +522,9 @@ html[data-app="studio"] {
 [data-cms-field] {
   pointer-events: auto;
 }
+
+/* Edge kreslí do pole s heslem vlastní oko vedle našeho — na webu jen naše (13. 11. 2026). */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}

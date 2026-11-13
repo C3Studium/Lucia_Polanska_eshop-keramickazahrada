@@ -595,19 +595,7 @@ export default function Intro({
           </div>
         </motion.section>
 
-        <footer
-          className={`kurzyTimeline__rail kurzyTimeline__rail--${
-            activeScene + 1
-          }`}
-        >
-          <span {...editable(block, "accent.4")}>{progressFirst}</span>
-          {/* Totéž slovo jako v hlavičce scény — jedno pole, dvě místa. */}
-          <span {...editable(about, "accent.0")}>{aboutMetaLeft}</span>
-          <i>
-            {/* Lišta je ve statickém toku skrytá stejně jako záře — bez vazby na scroll. */}
-            <motion.b style={staticFlow ? undefined : { scaleX: progressScale }} />
-          </i>
-        </footer>
+        
       </motion.div>
     </section>
   )

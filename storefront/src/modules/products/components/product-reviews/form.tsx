@@ -190,7 +190,7 @@ export default function ProductReviewsForm({
           <div className={styles.authActions}>
             <Link href="/account" className={styles.primaryAction}>
               Přihlásit se
-              <span aria-hidden="true">↗</span>
+              <span aria-hidden="true">↗︎</span>
             </Link>
             <Link href="/account" className={styles.secondaryAction}>
               Vytvořit účet

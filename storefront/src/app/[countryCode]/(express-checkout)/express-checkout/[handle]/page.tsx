@@ -12,6 +12,7 @@ import { getBundleProduct, listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { getPageCopy } from "@lib/data/site-copy"
 import { Router } from "@modules/express-checkout/Router"
+import PlainShop from "@modules/common/components/plain-shop"
 import { isGiftVoucherProduct } from "@lib/util/gift-voucher-code"
 import { notFound, redirect } from "next/navigation"
 
@@ -77,6 +78,7 @@ export default async function ExpressCheckoutPage({ params }: Params) {
   ])
 
   return (
+    <PlainShop>
     <Router
       product={product}
       bundle={bundle}
@@ -95,5 +97,6 @@ export default async function ExpressCheckoutPage({ params }: Params) {
       prefillAddress={prefillAddress}
       block={copy["kosik.rychly-nakup"]}
     />
+    </PlainShop>
   )
 }

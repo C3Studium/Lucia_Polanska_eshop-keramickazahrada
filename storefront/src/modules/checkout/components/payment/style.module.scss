@@ -271,3 +271,21 @@ $summary-col-gap: clamp(1rem, 1.6vw, 1.75rem);
     }
   }
 }
+
+/*
+ * Číslo kroku v nadpisu (13. 11. 2026, Matěj: „03 ať je v názvu, ne zvlášť —
+ * žere místo obsahu"). Levá lišta 3.625rem (58 px) pro číslo je pryč, obsah
+ * kroku má celou šířku panelu na všech zařízeních.
+ */
+.root { padding-left: 0 !important; }
+.root::before { content: none !important; display: none !important; }
+.root .heading::before {
+  content: "03";
+  display: inline-block;
+  align-self: center;
+  margin-right: .6em;
+  font: 600 clamp(.75rem, calc(1.02vw * var(--ui-scale)), .875rem)/1 "Sansation-Regular", sans-serif;
+  letter-spacing: .18em;
+  vertical-align: middle;
+  opacity: .48;
+}

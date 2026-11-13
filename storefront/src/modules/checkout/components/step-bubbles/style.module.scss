@@ -67,15 +67,17 @@
   /* Dotykový práh se týká jen toho, na co se dá klepnout — hotové kroky
      jsou tlačítka a globální podlaha 44px je zvětší sama. Kresba zůstává
      stejná u všech čtyř, aby řádek nepodskakoval. */
-  width: 1.75rem;
-  height: 1.75rem;
+  /* Větší kolečka a číslice (13. 11. 2026): pro starší zákazníky musí být
+     na první pohled vidět, kolikátý krok to je. */
+  width: 2.25rem;
+  height: 2.25rem;
   padding: 0;
   place-items: center;
   border: 1px solid rgb(var(--ink-05-rgb) / .28);
   border-radius: 50%;
   background: transparent;
   color: rgb(var(--ink-05-rgb) / .55);
-  font: 600 0.75rem/1 "Sansation-Regular", sans-serif;
+  font: 600 0.9375rem/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0;
 }
 
@@ -111,9 +113,9 @@
   align-items: baseline;
   gap: 0.4375rem;
   margin: 0;
-  color: rgb(var(--ink-05-rgb) / .62);
-  font-size: 0.8125rem;
-  letter-spacing: 0.1em;
+  color: rgb(var(--ink-05-rgb) / .72);
+  font-size: 0.9375rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
 
@@ -121,4 +123,23 @@
     color: rgb(var(--ink-05-rgb) / .42);
     font-variant-numeric: tabular-nums;
   }
+}
+
+/* Hlavička kroku ve formuláři: číslo a název, pod nimi věta (13. 11. 2026). */
+.current {
+  display: grid;
+  justify-items: end;
+  gap: .3rem;
+  min-width: 0;
+  text-align: right;
+}
+
+.desc {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / .62);
+  font: 300 .875rem/1.35 "Sansation-Light", sans-serif;
+}
+
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .current { justify-items: start; text-align: left; }
 }

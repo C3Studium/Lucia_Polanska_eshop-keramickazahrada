@@ -153,7 +153,7 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
                 href={`/order/${order.id}/edit`}
               >
                 <span>{edit.pending ? "Dokončit úpravu" : "Upravit objednávku"}</span>
-                <i aria-hidden="true">↗</i>
+                <i aria-hidden="true">↗︎</i>
               </LocalizedClientLink>
             </div>
           )}

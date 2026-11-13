@@ -27,6 +27,7 @@ import Thumbnail from "@modules/products/components/thumbnail"
 import { useState } from "react"
 import { convertToLocale } from "@lib/util/money"
 import s from "./style.module.scss"
+import { shortTitle } from "@lib/util/short-title"
 
 type ItemProps = {
   item: HttpTypes.StoreCartLineItem
@@ -156,15 +157,19 @@ const Item = ({
             images={item.variant?.product?.images}
             size="square"
           />
-          {type === "full" && <span className={s.imageIndex} aria-hidden="true">01</span>}
         </LocalizedClientLink>
       </div>
 
       <div className={s.cellTitle}>
         <p className={s.kicker}>{madeToOrder ? "Na zakázku" : "Z ateliéru"}</p>
         <LocalizedClientLink href={`/products/${item.product_handle}`}>
-          <h3 className={s.title} data-testid="product-title">
-            {item.product_title}
+          {/* Zkrácený název (13. 11. 2026) — plný je v `title` a na detailu. */}
+          <h3
+            className={s.title}
+            data-testid="product-title"
+            title={item.product_title ?? undefined}
+          >
+            {shortTitle(item.product_title)}
           </h3>
         </LocalizedClientLink>
         <div className={s.options}>

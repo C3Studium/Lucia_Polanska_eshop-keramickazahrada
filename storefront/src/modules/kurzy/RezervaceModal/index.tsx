@@ -888,7 +888,7 @@ function RezervaceModalPanel({
                 href={`/kurzy/rezervace/${confirmed.reservationId}?token=${confirmed.token}`}
                 className="kurzyModal__summaryLink"
               >
-                Zobrazit stav rezervace ↗
+                Zobrazit stav rezervace ↗︎
               </LocalizedClientLink>
             ) : null}
             <button
@@ -1208,7 +1208,7 @@ function RezervaceModalPanel({
                                   >
                                     {/* Bez anotace v místě — tlačítko nese i šipku. */}
                                     {wlSubmitting ? "Odesílám…" : text("zadost.tlacitko")}
-                                    <i aria-hidden="true">↗</i>
+                                    <i aria-hidden="true">↗︎</i>
                                   </button>
                                 </form>
                               )}
@@ -1426,10 +1426,7 @@ function RezervaceModalPanel({
                       {/* Týž žebříček jako na kroku 1, teď ale se zvýrazněnou
                           hladinou — u stepperu je vidět, co udělá další
                           člověk s cenou za osobu. */}
-                      <PriceLadder
-                        tiers={priceTiers(selected)}
-                        active={quote?.tier}
-                      />
+                      <PriceLadder tiers={priceTiers(selected)} />
 
                       <div className="kurzyModal__price" aria-live="polite">
                         <span>Cena celkem</span>
@@ -1622,7 +1619,7 @@ function RezervaceModalPanel({
                           data-testid="course-submit-button"
                         >
                           {submitting ? "Odesílám…" : COURSE_BUTTON_LABEL}
-                          <i aria-hidden="true">↗</i>
+                          <i aria-hidden="true">↗︎</i>
                         </button>
                       </div>
                       <p className="kurzyModal__payNote" aria-live="polite">
@@ -1719,10 +1716,10 @@ function TermCard({
           : ""}
       </span>
       <span className="kurzyModal__termPrices">
-        {czk(term.price_single)} za jednoho
-        {term.price_two != null ? ` · ${czk(term.price_two)}/os. za dva` : ""}
-        {term.group_min != null && term.price_group_per_person != null
-          ? ` · od ${term.group_min} lidí ${czk(term.price_group_per_person)}/os.`
+        {/* Jen dospělý a dítě (13. 11. 2026). */}
+        {czk(term.price_single)} za dospělého
+        {term.price_child != null
+          ? ` · dítě do ${term.child_max_age ?? 15} let ${czk(term.price_child)}`
           : ""}
       </span>
       <span

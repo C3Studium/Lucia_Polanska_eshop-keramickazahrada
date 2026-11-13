@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import s from "./style.module.scss"
+import { POPIS_KROKU } from "../step-list"
 
 /**
  * Kde v pokladně jste — čtyři bublinky, jen na svislém telefonu.
@@ -73,7 +74,13 @@ export default function CheckoutStepBubbles({
       prvni.current = false
       return
     }
-    if (korenRef.current) scrollWithLenis(korenRef.current)
+    /* Jen když je hlavička kroku nad obrazovkou, a bez přejezdu (13. 11. 2026,
+       Matěj: „scroll v pokladně zase cuká"). Dřív se na každý krok plynule
+       rolovalo k bublinkám, i když byly vidět. */
+    const koren = korenRef.current
+    if (koren && koren.getBoundingClientRect().top < 0) {
+      scrollWithLenis(koren, { immediate: true })
+    }
   }, [current])
 
   const currentIndex = Math.max(
@@ -124,12 +131,19 @@ export default function CheckoutStepBubbles({
 
       {/* Číslo samo neřekne, kde jste — jméno kroku ano. Jedno, ne čtyři:
           čtyři popisky vedle sebe se na 430px nevejdou čitelně. */}
-      <p className={s.label}>
-        <span>
-          {currentIndex + 1}/{STEPS.length}
-        </span>
-        {active.label}
-      </p>
+      {/* Číslo, název i věta kroku přímo ve formuláři (13. 11. 2026) — levý
+          sloupec s „Ještě pár kroků" a seznamem kroků je pryč. */}
+      <div className={s.current}>
+        <p className={s.label}>
+          <span>
+            {String(currentIndex + 1).padStart(2, "0")}/{String(STEPS.length).padStart(2, "0")}
+          </span>
+          {active.label}
+        </p>
+        {POPIS_KROKU[active.key] && (
+          <p className={s.desc}>{POPIS_KROKU[active.key]}</p>
+        )}
+      </div>
     </nav>
   )
 }

@@ -1,5 +1,11 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
+/*
+ * Pokladna od 13. 11. 2026 — rozvržení podle poptávky zakázky (InquiryForm):
+ * vlevo úvod, očíslované kroky s popisem a souhrn objednávky, vpravo jeden
+ * světlý panel s formulářem kroku. Žádné nájezdy, duchové rámy ani kruhy —
+ * stránka pro starší zákazníky má být na první pohled srozumitelná.
+ */
 .root {
   --checkout-ink: var(--ink-05);
   --checkout-cream: var(--cream-06);
@@ -8,65 +14,38 @@
   --checkout-line: rgb(var(--cream-06-rgb) / .2);
   position: relative;
   display: grid;
-  /* 20.625rem is the summary column's physical floor — kept, but in rem, so the
-     ramp above 1921 lifts it with everything else. */
-  grid-template-columns: minmax(0, 1.55fr) minmax(20.625rem, .7fr);
+  /* Stejný poměr jako u poptávky: úvod užší, formulář širší. Podlaha
+     sloupce souhrnu 20.625rem drží, aby se součty nelámaly. */
+  grid-template-columns: minmax(20.625rem, .85fr) minmax(0, 1.15fr);
   align-items: start;
-  /* The old single `gap` spent one vw number on both axes. The row gap is the
-     distance between the masthead and the ledger — vertical budget, so vh. */
-  column-gap: clamp(3.375rem, 6vw, 6.75rem);
+  column-gap: clamp(2.5rem, 5vw, 5.5rem);
   row-gap: clamp(2rem, 5vh, 4.5rem);
-  /* Dvě opravy v jednom řádku, obě mají kořen v globals.scss.
-     1) Strop 1880px byl v px, takže se nad 1921 zastavil, zatímco všechno uvnitř
-        něj ramp zvedl o třetinu. 117.5rem je přesně 1880px při základním rootu
-        (do 1920 se tedy nemění ani pixel) a nad 1921 roste s ostatními stropy.
-     2) `94vw` měřilo OBRAZOVKU, ne rám. Nad 1921 je stránka podle globals.scss
-        zarámovaná na `min(100vw, 100svh * 1.6)` — na 2552x1351 je to 2162px — a
-        checkout layout má overflow: clip, takže co je širší, tiše se ustřihne.
-        `--fvw` je jedno procento RÁMU: pod 1921 je to přesně 1vw (no-op), nad ním
-        drží kontejner týž poměr k rámu, jaký měl k obrazovce na 1920 (okap 3 %).
-        Naměřeno na 2552x1351: 1880px → 2032px uvnitř rámu 2162px.
-     Týž zápis jako `.container` v cart/templates/index.module.scss. */
+  /* Šířka měří rám (`--fvw`), ne obrazovku — viz cart/templates/index.module.scss. */
   width: min(calc(94 * var(--fvw)), 117.5rem);
   min-height: 100svh;
   margin: 0 auto;
-  /* Floors sit deliberately below the old 96px/110px: at 768px tall, 10vh was
-     76.8px — under the floor — so the vh term was dead on every laptop below
-     960px and the small screen paid the largest share of its height. 8vh is
-     alive from 700px tall, 12vh from 533px. This is what tightens 1280×720 and
-     1366×768 on its own; there is no rule in `lt`. */
   padding-block: clamp(3.5rem, 8vh, 7.75rem) clamp(4rem, 12vh, 11.25rem);
   padding-inline: clamp(1.75rem, 2.8vw, 3.625rem);
   color: var(--checkout-cream);
 }
 
-.masthead {
-  grid-column: 1 / -1;
-  display: grid;
-  /* Two tracks, not three. The header has exactly two children — the title block
-     and .mastheadAside — and the aside was pinned to column 3, so the middle
-     track never held anything. The 2.3fr : 1fr split reproduces the widths the
-     three-track version actually painted. Kind of layout, so it stays a rule. */
-  grid-template-columns: minmax(17.5rem, 2.3fr) minmax(17.5rem, 1fr);
-  align-items: end;
-  gap: clamp(2.75rem, 4vw, 5.375rem);
-  min-height: clamp(9rem, 22vh, 15rem);
-  padding: clamp(.75rem, 2vh, 1.6rem) 0 clamp(1.4rem, 4vh, 2.8rem);
-  border-bottom: 1px solid var(--checkout-line);
-  animation: checkoutReveal .8s cubic-bezier(.22, 1, .36, 1) both;
+.intro {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 
   h1 {
-    margin: clamp(2rem, 6vh, 4.25rem) 0 0;
-    font: 400 clamp(2.75rem, calc(4vw * var(--ui-scale)), 4.75rem)/.88 "Sentient-Regular", serif;
-    letter-spacing: -.05em;
+    margin: clamp(1.25rem, 3vh, 2rem) 0 0;
+    font: 400 clamp(2.25rem, calc(3vw * var(--ui-scale)), 3.5rem)/.92 "Sentient-Regular", serif;
+    letter-spacing: -.04em;
   }
 
   h1 em {
     display: block;
-    margin-left: clamp(1.375rem, 2.4vw, 2.875rem);
+    margin-left: clamp(1rem, 1.6vw, 1.75rem);
     color: var(--checkout-olive);
     font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
-    font-size: .62em;
+    font-size: .68em;
     font-weight: 300;
     line-height: 1.04;
   }
@@ -77,35 +56,24 @@
   padding-bottom: clamp(.5rem, .78vw, .75rem);
   border-bottom: 1px solid var(--checkout-line);
   color: rgb(var(--cream-06-rgb) / .5);
-  /* .75rem is the reading floor and never goes below; the ceiling is what lets
-     the ramp carry the eyebrow past 2K instead of leaving it hairline-thin. */
   font: 400 clamp(.75rem, calc(1vw * var(--ui-scale)), 0.875rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .mastheadCopy {
-  margin: 0;
-  max-width: 34ch;
-  color: rgb(var(--cream-06-rgb) / .62);
-  font: 300 clamp(.875rem, calc(1.1vw * var(--ui-scale)), 1.0625rem)/1.5 "Sansation-Light", sans-serif;
-}
-
-.mastheadAside {
-  grid-column: 2;
-  display: flex;
-  align-items: flex-start;
-  flex-direction: column;
-  /* Column flex — this gap stacks, so it is height, so it is vh.
-     Floor at 1.125rem so 2.8vh is still alive at 720px tall (live 714–1143). */
-  gap: clamp(1.125rem, 2.8vh, 2rem);
+  margin: clamp(.875rem, 2vh, 1.25rem) 0 0;
+  max-width: 38ch;
+  color: rgb(var(--cream-06-rgb) / .68);
+  font: 300 clamp(.9375rem, calc(1.1vw * var(--ui-scale)), 1.0625rem)/1.5 "Sansation-Light", sans-serif;
 }
 
 .backLink {
   display: inline-flex;
+  align-self: flex-start;
   align-items: center;
   gap: clamp(.5rem, .78vw, .75rem);
-  /* Symmetric padding: the escape hatch back to the cart was a 19px strip. */
+  margin-top: clamp(1rem, 2.2vh, 1.5rem);
   padding: clamp(.5rem, .78vw, .75rem) 0;
   border-bottom: 1px solid rgb(var(--cream-06-rgb) / .4);
   color: rgb(var(--cream-06-rgb) / .82);
@@ -115,51 +83,21 @@
   transition: color 220ms ease, border-color 220ms ease;
 }
 
-.backLink span {
-  transition: transform 420ms cubic-bezier(.22,1,.36,1);
+.backLink:hover { color: var(--checkout-cream); border-color: var(--checkout-cream); }
+
+/* Souhrn pod kroky — titulek bloku, ne druhý nadpis stránky. */
+.order {
+  min-width: 0;
+  margin-top: clamp(1.75rem, 4vh, 3rem);
 }
 
-.backLink:hover { color: var(--checkout-cream); border-color: var(--checkout-cream); }
-.backLink:hover span { transform: translateX(-.25rem); }
-
 .ledger {
-  /* One number for the offset ghost frame; ::before derives all four sides. */
-  --ledger-ghost: clamp(.625rem, 1.1vw, 1.1875rem);
   position: relative;
   z-index: 1;
   min-width: 0;
-  padding: clamp(2.25rem, 4vw, 3.875rem);
+  padding: clamp(1.75rem, 3.4vw, 3rem);
   color: var(--checkout-ink);
   background: var(--checkout-cream);
-  box-shadow: 1.75rem 2.125rem 5rem -3.375rem rgb(var(--black-01-rgb) / .95);
-  animation: ledgerReveal .9s .08s cubic-bezier(.22,1,.36,1) both;
-}
-
-.ledger::before {
-  position: absolute;
-  z-index: -1;
-  inset:
-    var(--ledger-ghost)
-    calc(var(--ledger-ghost) * -1)
-    calc(var(--ledger-ghost) * -1)
-    var(--ledger-ghost);
-  content: "";
-  border: 1px solid rgb(var(--sage-01-rgb) / .38);
-  background: rgb(var(--sage-01-rgb) / .07);
-  pointer-events: none;
-}
-
-.ledger::after {
-  position: absolute;
-  /* Lifted by roughly 1.6× its own line, so the clearance above the card holds
-     when the ramp grows the label past 17px. */
-  top: clamp(-2.125rem, -1.07vw, -1.1875rem);
-  left: 0;
-  content: "01—04 · ÚDAJE OBJEDNÁVKY";
-  color: rgb(var(--cream-06-rgb) / .38);
-  font: 400 clamp(.75rem, calc(1vw * var(--ui-scale)), 0.875rem)/1 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
 }
 
 .ledger :global(input:not([type="checkbox"]):not([type="radio"])),
@@ -175,58 +113,10 @@
   border-bottom-color: var(--checkout-green);
 }
 
-.order {
-  /* One number owns the halo. Offsets and ring thickness are derived from it,
-     never copied: they are the original 180px disc's own ratios — 80/180,
-     50/180, 34/180, 35/180 — so the disc keeps its relation to the content at
-     every width instead of freezing at one. Inside the live band the right
-     offset is 9.5vw × .278 = 2.64vw, just under the page's own 2.8vw inline
-     padding, so the outer edge tracks the gutter and never crosses it. */
-  --order-halo: clamp(6.5rem, 9.5vw, 14rem);
-  position: relative;
-  min-width: 0;
-  /* Mřížka zarovnává na `start`, takže sloupec byl vysoký přesně jako souhrn —
-     a lepkavý souhrn v rodiči své vlastní výšky nemá kam jet (scrolloval pryč).
-     Natažený na výšku řádku dostane dráhu podél celého formuláře. Stejná
-     oprava jako `.right` v cart/templates/index.module.scss. */
-  align-self: stretch;
-  animation: orderReveal .9s .18s cubic-bezier(.22,1,.36,1) both;
-}
-
-.order::before {
-  position: absolute;
-  z-index: -1;
-  top: calc(var(--order-halo) * -.444);
-  right: calc(var(--order-halo) * -.278);
-  width: var(--order-halo);
-  aspect-ratio: 1;
-  content: "";
-  border: 1px solid rgb(var(--cream-06-rgb) / .1);
-  border-radius: 50%;
-  box-shadow:
-    inset 0 0 0 calc(var(--order-halo) * .189) var(--ink-05),
-    inset 0 0 0 calc(var(--order-halo) * .195) rgb(var(--cream-06-rgb) / .08);
-  pointer-events: none;
-}
-
-/* Reveal travel in vh, calibrated at 1080: 24px = 2.2vh, 28px = 2.6vh. */
-@keyframes checkoutReveal {
-  from { opacity: 0; transform: translateY(2.2vh); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes ledgerReveal {
-  from { opacity: 0; clip-path: inset(0 0 16% 0); transform: translateY(2.2vh); }
-  /* inset() se čtyřmi členy na obou stranách — `inset(0)` proti `inset(0 0 16% 0)`
-     je jiný tvar výrazu a interpolace tvarů se na tom umí zaseknout. */
-  to { opacity: 1; clip-path: inset(0 0 0 0); transform: translateY(0); }
-}
-
-@keyframes orderReveal {
-  from { opacity: 0; transform: translateY(2.6vh); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
+/*
+ * Jeden sloupec: úvod (bez seznamu kroků — ten nese bublinky), souhrn jako
+ * rozbalovací blok a pod ním formulář. Pořadí drží DOM, žádné `order`.
+ */
 @include below-px(1020px) {
   .root {
     display: flex;
@@ -234,83 +124,40 @@
     padding-inline: 0;
     flex-direction: column;
   }
-  .masthead, .ledger, .order { width: 100%; }
-  .ledger { order: 2; }
-  .order { order: 3; margin-top: 24px; }
-}
-
-/*
- * ─── Svisle: souhrn nad pokladnu ────────────────────────────────────────────
- *
- * Na ležato zůstává souhrn pod formulářem — tam je to rekapitulace na konci
- * cesty. Na svislé obrazovce je z něj ale komponenta na rozbalení
- * (`checkout/components/order-summary-disclosure`) a ta patří nahoru:
- *
- * - Rozbaluje se směrem dolů. Kdyby stála pod formulářem, otevřel by se obsah
- *   pod ohybem a člověk by k němu musel doscrollovat; a po zavření by
- *   formulář uskočil zpátky pod prstem.
- * - Zavřená zabere tři řádky, takže „co kupuju a kolik to dělá" je vidět
- *   dřív, než se začne vyplňovat — což je pořadí, ve kterém to člověk chce.
- *
- * Táž hranice jako `below-px(1020px)` výš, schválně: nad ní drží stránka
- * dvousloupcové rozvržení, souhrn sedí ve vlastním sloupci vedle formuláře
- * a `order` by tam nic neznamenalo.
- */
-@media (orientation: portrait) and (max-width: 1020px) {
-  .order {
-    order: 1;
-    /* Odstup teď patří pod souhrn, ne nad něj — nad ním je už mezera od
-       hlavičky, kterou drží `gap` mřížky. */
-    margin-top: 0;
-  }
+  .intro, .ledger { width: 100%; }
+  .order { margin-top: clamp(1.25rem, 3vh, 2rem); }
 }
 
 @include below-px(700px) {
-  .root { width: calc(100% - 32px); padding: 78px 0 90px; gap: 42px; }
-  .masthead {
-    display: flex;
-    min-height: 220px;
-    padding: 18px 0 28px;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .masthead h1 { margin-top: 32px; font-size: clamp(48px, 15vw, 66px); }
-  .mastheadAside { margin-top: auto; gap: 22px; }
+  .root { width: calc(100% - 32px); padding: 78px 0 90px; gap: 32px; }
+  .intro h1 { margin-top: 20px; font-size: clamp(2.25rem, 11vw, 3rem); }
   .ledger { padding: 30px 20px; }
 }
 
-/*
- * ─── Úvod pokladny na svislém telefonu ──────────────────────────────────────
- *
- * Hlavička brala 220px minimální výšky a nadpis „Ještě pár kroků." přes dva
- * řádky při 15vw — dohromady zhruba 370px, než začal první krok. Na stránce,
- * kde jde o vyplnění formuláře, je to skoro půl obrazovky uvítání.
- *
- * Věta „Ještě pár kroků a můžeme to z ateliéru poslat k vám." říká totéž, co
- * nadpis nad ní, jen delšími slovy — a kolikátý krok zrovna běží, teď ukazují
- * bublinky nad formulářem. Odkaz zpět do košíku zůstává, ten je funkční.
- */
+/* Svislý telefon: úvod jen nadpis a odkaz zpět, věta je navíc. */
 @media (orientation: portrait) and (max-width: 599.98px) {
-  .masthead {
-    min-height: 0;
-    padding: 10px 0 18px;
-  }
-
-  .masthead h1 {
+  .intro h1 {
     margin-top: 14px;
-    font-size: clamp(2.25rem, calc(11vw * var(--ui-scale)), 3rem);
+    font-size: clamp(2rem, calc(10vw * var(--ui-scale)), 2.75rem);
   }
+  .mastheadCopy { display: none; }
+  .backLink { margin-top: 12px; }
+  .ledger { padding: 20px 14px; }
+}
 
-  .mastheadCopy {
-    display: none;
+/* Pokladna blíž ke středu (13. 11. 2026): užší celek, oba sloupce u sebe.
+   Na 1728 bylo vpravo i vlevo přes 100 px prázdna a formulář utíkal ke kraji. */
+@include from-px(1021px) {
+  .root {
+    grid-template-columns: minmax(20rem, .9fr) minmax(0, 1.1fr);
+    column-gap: clamp(2rem, 3.5vw, 4rem);
+    width: min(calc(90 * var(--fvw)), 84rem);
   }
+}
 
-  .mastheadAside {
-    margin-top: 16px;
-    gap: 0;
-  }
-
-  .ledger {
-    padding: 20px 14px;
-  }
+/* Pokladna níž od lišty (13. 11. 2026, Matěj: „víc na střed, 7,5vh nahoře"). */
+@include from-px(1021px) {
+  /* Odsazení UVNITŘ tmavé plochy (padding), ne margin — margin odsunul celý
+     tmavý podklad a pod lištou zůstal bílý pruh. */
+  .root { padding-top: calc(clamp(3.5rem, 8vh, 7.75rem) + 7.5vh); }
 }

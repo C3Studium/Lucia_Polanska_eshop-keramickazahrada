@@ -78,6 +78,9 @@ const getFulfillmentType = (
   option: HttpTypes.StoreCartShippingOption
 ): string | undefined => (option as any).service_zone?.fulfillment_set?.type
 
+/** Pokladna nic nevybírá za zákazníka (13. 11. 2026). */
+const AUTOMATICKY_VYBER_VYPNUT = true
+
 const Shipping: React.FC<ShippingProps> = ({
   cart,
   availableShippingMethods,
@@ -85,6 +88,8 @@ const Shipping: React.FC<ShippingProps> = ({
   packetaShippingMethodId,
   restriction = null,
 }) => {
+  /* Zakázka v košíku: další krok je Zadání, ne Platba — tlačítko to má říct. */
+  const maZakazku = ((cart?.items ?? []) as any[]).some(isMadeToOrderLine)
   /* Jen úvodní věta kroku z CMS (`pokladna.kroky`, poskytuje stránka
      pokladny); mimo pokladnu (bez provideru) věta z kódu. */
   const steps = useCopyBlock("pokladna.kroky")
@@ -465,6 +470,9 @@ const Shipping: React.FC<ShippingProps> = ({
      pop a modal nobody asked for — and never one the restriction blocks. */
   const autoPicked = useRef(false)
   useEffect(() => {
+    /* Vypnuto (13. 11. 2026, Matěj): pokladna nic nevybírá za zákazníka —
+       dopravu musí zvolit a potvrdit sám, i když je jen jedna. */
+    if (AUTOMATICKY_VYBER_VYPNUT) return
     if (!isOpen || shippingMethodId || isLoading || autoPicked.current) return
     const hasCalculated = deliveryOptions.some(
       (option) => option.price_type === "calculated"
@@ -611,7 +619,8 @@ const Shipping: React.FC<ShippingProps> = ({
                   aria-label="Způsob dopravy"
                   onChange={(v) => {
                     if (!v) return
-                    const advance = advanceOnPick.current
+                    /* Bez skoku dál po kliknutí (13. 11. 2026) — volbu potvrdí tlačítko. */
+                    const advance = AUTOMATICKY_VYBER_VYPNUT ? false : advanceOnPick.current
                     advanceOnPick.current = false
                     void handleSetShippingMethod(v, { advance })
                   }}
@@ -854,7 +863,7 @@ const Shipping: React.FC<ShippingProps> = ({
               data-testid="delivery-option-error-message"
             />
             <PremiumActionButton
-              text="Pokračovat k platbě"
+              text={maZakazku ? "Pokračovat k zadání" : "Pokračovat k platbě"}
               onClickAction={handleSubmit}
               className={styles.divider}
               disabled={

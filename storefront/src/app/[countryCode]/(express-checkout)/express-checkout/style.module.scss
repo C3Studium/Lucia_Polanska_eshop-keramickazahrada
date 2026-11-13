@@ -309,7 +309,7 @@
 
   span {
     /* Same story as the mark: 22px flat became 19.2 -> 24px, live 1324-1655. */
-    font: 400 clamp(1.2rem, max(calc(1.45vw * var(--ui-scale)), calc(1.6vh * var(--ui-scale))), 1.5rem)/1 "Times New Roman", serif;
+    font: 400 clamp(1.2rem, max(calc(1.45vw * var(--ui-scale)), calc(1.6vh * var(--ui-scale))), 1.5rem)/1 "Sentient-Regular", Georgia, serif;
     letter-spacing: -.035em;
   }
 
@@ -380,4 +380,23 @@
   border-radius: .75rem;
   background: rgb(var(--cream-10-rgb) / .5);
   box-shadow: none;
+}
+
+/*
+ * Rychlý nákup rozvržený jako pokladna (13. 11. 2026, Matěj): na širokém
+ * okně dva sloupce — vlevo úvod a kroky pod sebou, vpravo panel kroku.
+ * Dřív úzká karta 40rem uprostřed s krokovou lištou nahoře. Telefon a svislý
+ * tablet zůstávají v jednom sloupci.
+ */
+@media (orientation: landscape) and (min-width: 1021px) and (min-height: 501px) {
+  .frame {
+    width: min(100%, calc(90 * var(--fvw, 1vw)), 84rem);
+  }
+  .flow {
+    display: grid !important;
+    grid-template-columns: minmax(18rem, .85fr) minmax(0, 1.15fr);
+    grid-template-rows: auto auto 1fr;
+    column-gap: clamp(2rem, 3.5vw, 4rem);
+    align-items: start;
+  }
 }

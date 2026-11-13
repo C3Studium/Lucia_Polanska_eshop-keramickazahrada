@@ -4,7 +4,12 @@ import { usePathname } from "next/navigation"
 import { useEffect, useRef } from "react"
 
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
-import { prisliJsmeZpet, sledujNavigaciZpet } from "@lib/helpers/navigace-zpet"
+import {
+  jeObnoveniStranky,
+  prisliJsmeZpet,
+  sledujNavigaciZpet,
+  zaznamenejNavigaciVAplikaci,
+} from "@lib/helpers/navigace-zpet"
 
 /*
  * Každá stránka začíná nahoře.
@@ -61,6 +66,13 @@ export default function ScrollResetOnRoute() {
     // Změnil se jen dotaz v adrese (kroky pokladny, filtry) — to není nová
     // stránka a odrolovat by znamenalo vzít člověka od rozdělaného formuláře.
     if (drive === pathname) return
+
+    if (drive !== null) zaznamenejNavigaciVAplikaci()
+
+    /* Obnovená stránka zůstává, kde byla (13. 11. 2026) — obchod si polohu
+       vrací sám (`Shop/index.tsx`), jinde ji vrací prohlížeč. Odrolování
+       nahoru ji dřív při každém F5 zahodilo. */
+    if (drive === null && jeObnoveniStranky()) return
 
     // Kotva má přednost: odkaz na `#recenze` má skočit na recenze.
     if (window.location.hash) return

@@ -140,3 +140,36 @@ $consent-pad: 10px;
     padding-left: calc(24px + 1rem);
   }
 }
+
+/* Souhlas menší a úhlednější (13. 11. 2026, Matěj): o stupeň menší písmo,
+   menší zaškrtávátko, které sedí na první řádek textu. */
+.consentBoxWrap {
+  align-items: flex-start;
+  gap: .75rem;
+  padding-block: .5rem;
+  font-size: clamp(.8125rem, calc(.95vw * var(--ui-scale)), .9375rem);
+  line-height: 1.45;
+}
+.consentBox {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin-top: .1em;
+}
+.consentBox::before {
+  width: 5px;
+  height: 9px;
+}
+
+/* Text souhlasu stejně velký jako věta o osobních údajích pod ním
+   (13. 11. 2026, Matěj) — dřív o stupeň větší než všechno okolo. */
+.consent { gap: .75rem; }
+.consentLabel {
+  padding-block: .375rem;
+  font: 400 clamp(.875rem, calc(1.17vw * var(--ui-scale)), 1.15rem)/1.5 "Sansation-Regular", sans-serif;
+}
+.consentBoxWrap {
+  padding-block: .375rem;
+  font: 400 clamp(.875rem, calc(1.17vw * var(--ui-scale)), 1.15rem)/1.5 "Sansation-Regular", sans-serif;
+}
+.privacy { padding-left: calc(18px + .75rem); }

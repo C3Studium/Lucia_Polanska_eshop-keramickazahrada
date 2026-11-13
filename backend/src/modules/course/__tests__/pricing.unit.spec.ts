@@ -26,58 +26,24 @@ const fullRules = {
   price_group_per_person: 1100,
 }
 
-describe("pricingTierFor", () => {
-  it("prices one person as single", () => {
-    expect(pricingTierFor(1, fullRules)).toBe("single")
+describe("pricingTierFor — bez množstevních slev (13. 11. 2026)", () => {
+  /* Skupinová cena ani cena za dva není: každý počet osob je „single",
+     i když má termín ceny za dva a za skupinu pořád vyplněné. */
+  it("prices every party size as single", () => {
+    for (const people of [1, 2, 3, 4, 9]) {
+      expect(pricingTierFor(people, fullRules)).toBe("single")
+    }
   })
 
-  it("prices two people with a pair price as pair", () => {
-    expect(pricingTierFor(2, fullRules)).toBe("pair")
-  })
-
-  it("prices two people without a pair price as single", () => {
-    expect(pricingTierFor(2, { ...fullRules, price_two: null })).toBe("single")
-  })
-
-  it("stays single below the group threshold", () => {
-    expect(pricingTierFor(3, fullRules)).toBe("single")
-  })
-
-  it("switches to group exactly at the threshold", () => {
-    expect(pricingTierFor(4, fullRules)).toBe("group")
-    expect(pricingTierFor(9, fullRules)).toBe("group")
-  })
-
-  it("never uses group pricing when the term has none", () => {
+  it("ignores a term that still has the old switch on", () => {
     expect(
-      pricingTierFor(8, { price_single: 1500, price_two: 1300 })
+      pricingTierFor(4, { ...fullRules, volume_pricing_enabled: true })
     ).toBe("single")
-  })
-
-  it("prefers the pair price when a group rate technically starts at 2", () => {
-    const rules = {
-      price_single: 1500,
-      price_two: 1300,
-      group_min: 2,
-      price_group_per_person: 1000,
-    }
-    expect(pricingTierFor(2, rules)).toBe("pair")
-    expect(pricingTierFor(3, rules)).toBe("group")
-  })
-
-  it("uses the group rate for 2 when there is no pair price", () => {
-    const rules = {
-      price_single: 1500,
-      price_two: null,
-      group_min: 2,
-      price_group_per_person: 1000,
-    }
-    expect(pricingTierFor(2, rules)).toBe("group")
   })
 })
 
 describe("quoteFor", () => {
-  it("computes single totals as price × people", () => {
+  it("computes totals as price × people", () => {
     expect(quoteFor(1, fullRules)).toEqual({
       tier: "single",
       per_person: 1500,
@@ -85,46 +51,8 @@ describe("quoteFor", () => {
       children: 0,
       total: 1500,
     })
-    expect(quoteFor(3, fullRules)).toEqual({
-      tier: "single",
-      per_person: 1500,
-      child_per_person: 1500,
-      children: 0,
-      total: 4500,
-    })
-  })
-
-  it("computes the pair total as pair price per person × 2", () => {
-    expect(quoteFor(2, fullRules)).toEqual({
-      tier: "pair",
-      per_person: 1300,
-      child_per_person: 1300,
-      children: 0,
-      total: 2600,
-    })
-  })
-
-  it("computes group totals per person from the threshold up", () => {
-    expect(quoteFor(4, fullRules)).toEqual({
-      tier: "group",
-      per_person: 1100,
-      child_per_person: 1100,
-      children: 0,
-      total: 4400,
-    })
-    expect(quoteFor(7, fullRules)).toEqual({
-      tier: "group",
-      per_person: 1100,
-      child_per_person: 1100,
-      children: 0,
-      total: 7700,
-    })
-  })
-
-  it("crossing the threshold by one person can lower the total", () => {
-    // 3 people pay 3 × 1500 = 4500; the fourth makes it 4 × 1100 = 4400.
-    expect(quoteFor(3, fullRules).total).toBe(4500)
-    expect(quoteFor(4, fullRules).total).toBe(4400)
+    expect(quoteFor(2, fullRules).total).toBe(3000)
+    expect(quoteFor(4, fullRules).total).toBe(6000)
   })
 
   it("accepts numeric strings from the database", () => {
@@ -134,8 +62,8 @@ describe("quoteFor", () => {
       group_min: "4",
       price_group_per_person: "1100.00",
     }
-    expect(quoteFor(2, dbRules).total).toBe(2600)
-    expect(quoteFor(5, dbRules).total).toBe(5500)
+    expect(quoteFor(2, dbRules).total).toBe(3000)
+    expect(quoteFor(5, dbRules).total).toBe(7500)
   })
 
   it("rounds to haléře", () => {
@@ -150,25 +78,13 @@ describe("quoteFor", () => {
 })
 
 describe("pricing rule guards", () => {
-  it("treats a zero or missing pair price as no pair pricing", () => {
-    expect(hasPairPricing({ price_single: 100, price_two: 0 })).toBe(false)
-    expect(hasPairPricing({ price_single: 100 })).toBe(false)
-    expect(hasPairPricing({ price_single: 100, price_two: 90 })).toBe(true)
-  })
-
-  it("requires both a sane threshold and a positive rate for group pricing", () => {
-    expect(
-      hasGroupPricing({ price_single: 100, group_min: 4 })
-    ).toBe(false)
-    expect(
-      hasGroupPricing({ price_single: 100, price_group_per_person: 80 })
-    ).toBe(false)
-    expect(
-      hasGroupPricing({ price_single: 100, group_min: 1, price_group_per_person: 80 })
-    ).toBe(false)
+  it("never offers pair or group pricing", () => {
+    expect(hasPairPricing({ price_single: 100, price_two: 90 })).toBe(false)
     expect(
       hasGroupPricing({ price_single: 100, group_min: 4, price_group_per_person: 80 })
-    ).toBe(true)
+    ).toBe(false)
+    expect(volumePricingOn({ price_single: 100, volume_pricing_enabled: true })).toBe(false)
+    expect(volumePricingOn({ price_single: 100 })).toBe(false)
   })
 })
 
@@ -209,70 +125,32 @@ describe("toAmount", () => {
   })
 })
 
-describe("vypínač množstevní slevy a dětská cena (8. 11. 2026)", () => {
+describe("dospělý a dítě (8. a 13. 11. 2026)", () => {
+  /* Termín se staršími cenami za dva a za skupinu — ty se už nepoužijí. */
   const termin = {
     price_single: 500,
     price_two: 450,
     group_min: 3,
     price_group_per_person: 350,
+    price_child: 430,
   }
-
-  it("bez vypínače platí ceny jako dřív", () => {
-    /* Termíny založené před tímhle sloupcem ho nemají — a nesmí kvůli tomu
-       zlevnit ani zdražit. */
-    expect(quoteFor(1, termin).total).toBe(500)
-    expect(quoteFor(2, termin).total).toBe(900)
-    expect(quoteFor(3, termin).total).toBe(1050)
-  })
-
-  it("vypnutá sleva znamená jednu cenu za osobu", () => {
-    const verejny = { ...termin, volume_pricing_enabled: false }
-    expect(quoteFor(1, verejny).total).toBe(500)
-    expect(quoteFor(2, verejny).total).toBe(1000)
-    expect(quoteFor(5, verejny).total).toBe(2500)
-    /* Ceny za dva a za skupinu zůstaly uložené, jen se nenabízejí. */
-    expect(hasPairPricing(verejny)).toBe(false)
-    expect(hasGroupPricing(verejny)).toBe(false)
-    expect(verejny.price_two).toBe(450)
-  })
-
-  it("vypínač přijme i text z databáze", () => {
-    expect(volumePricingOn({ price_single: 500, volume_pricing_enabled: "false" })).toBe(false)
-    expect(volumePricingOn({ price_single: 500, volume_pricing_enabled: "true" })).toBe(true)
-    expect(volumePricingOn({ price_single: 500 })).toBe(true)
-  })
 
   it("dítě platí svou cenu, dospělý svou", () => {
     /* Přání majitelky: dospělák 500, dítě 430 za lekci. */
-    const verejny = {
-      price_single: 500,
-      volume_pricing_enabled: false,
-      price_child: 430,
-    }
-    expect(quoteFor({ people: 1, children: 1 }, verejny).total).toBe(430)
-    expect(quoteFor({ people: 2, children: 1 }, verejny).total).toBe(930)
-    expect(quoteFor({ people: 3, children: 2 }, verejny).total).toBe(1360)
+    expect(quoteFor({ people: 1, children: 1 }, termin).total).toBe(430)
+    expect(quoteFor({ people: 2, children: 1 }, termin).total).toBe(930)
+    expect(quoteFor({ people: 3, children: 2 }, termin).total).toBe(1360)
+    expect(quoteFor({ people: 3, children: 1 }, termin).tier).toBe("single")
   })
 
   it("bez dětské ceny platí dítě jako dospělý", () => {
-    expect(quoteFor({ people: 2, children: 1 }, termin).total).toBe(900)
+    const bezDetske = { price_single: 500 }
+    expect(quoteFor({ people: 2, children: 1 }, bezDetske).total).toBe(1000)
   })
 
   it("dětí nemůže být víc než lidí ani záporně", () => {
-    const verejny = { price_single: 500, volume_pricing_enabled: false, price_child: 430 }
-    expect(quoteFor({ people: 2, children: 5 }, verejny).total).toBe(860)
-    expect(quoteFor({ people: 2, children: -3 }, verejny).total).toBe(1000)
-  })
-
-  it("pásmo se počítá z celé party, sleva za dítě se přičte zvlášť", () => {
-    /* Tři lidé = skupinová cena 350; jedno z nich dítě za 430 by bylo DRAŽ,
-       ale to je rozhodnutí majitelky — dvě slevy se nesčítají a dětská je
-       vlastní cena, ne procento. Test to drží, aby se to nezměnilo omylem. */
-    const quote = quoteFor({ people: 3, children: 1 }, { ...termin, price_child: 430 })
-    expect(quote.tier).toBe("group")
-    expect(quote.per_person).toBe(350)
-    expect(quote.child_per_person).toBe(430)
-    expect(quote.total).toBe(1130)
+    expect(quoteFor({ people: 2, children: 5 }, termin).total).toBe(860)
+    expect(quoteFor({ people: 2, children: -3 }, termin).total).toBe(1000)
   })
 
   it("věk dítěte má výchozí 15 let", () => {

@@ -47,6 +47,9 @@ import { useTexty } from "@lib/context/texty"
 
 import styles from "./style.module.scss"
 
+/** Pokladna nic nevybírá za zákazníka (13. 11. 2026). */
+const AUTOMATICKY_VYBER_VYPNUT = true
+
 const Payment = ({
   cart,
   availablePaymentMethods,
@@ -198,6 +201,12 @@ const Payment = ({
      A session in flight always wins over the memory. */
   const [restored, setRestored] = useState(false)
   useEffect(() => {
+    /* Vypnuto (13. 11. 2026, Matěj): minulá platba se už nepředvybírá —
+       zákazník platbu zvolí a potvrdí sám. Rozběhnutá relace (current) zůstává. */
+    if (AUTOMATICKY_VYBER_VYPNUT) {
+      setRestored(true)
+      return
+    }
     setSelectedPaymentMethod((current: string) => {
       if (current) return current
       const stored = readLastPaymentMethod()
@@ -214,6 +223,7 @@ const Payment = ({
   /* No ComGate and exactly one other way to pay → no decision to make;
      preselect it. The tile stays visible and the customer still confirms. */
   useEffect(() => {
+    if (AUTOMATICKY_VYBER_VYPNUT) return
     if (!restored || hasComgate || selectedPaymentMethod) return
     if (nonComgatePaymentMethods.length === 1) {
       setSelectedPaymentMethod(nonComgatePaymentMethods[0].id)
@@ -454,7 +464,12 @@ const Payment = ({
                     busyLabel="Připravujeme shrnutí…"
                     onConfirm={() => continueToReview(selectedPaymentMethod)}
                     extraOptions={extraPaymentOptions}
-                    onSelectExtra={(id) => void setPaymentMethod(id)}
+                    onSelectExtra={(id) =>
+                      /* Druhý klik na zvolenou dlaždici volbu zruší (13. 11. 2026). */
+                      id === selectedPaymentMethod
+                        ? setSelectedPaymentMethod("")
+                        : void setPaymentMethod(id)
+                    }
                     disabled={isLoading}
                     isSubmitting={isLoading}
                   />

@@ -412,10 +412,14 @@
      */
     max-height: min(92dvh, calc(100dvh - 16px - var(--drawer-lift)));
     transform: translateY(calc(100% + 16px + var(--drawer-lift)));
-    transition: transform .55s cubic-bezier(.76,0,.24,1);
+    /* Zavřený šuplík i neviditelný (13. 11. 2026): odsunutý pod hranu dál
+       držel 30 MB vrstvu GPU na iPhonu (vlastní posuv). `visibility` ji
+       pustí; zpoždění nechá doběhnout odjezd. */
+    visibility: hidden;
+    transition: transform .55s cubic-bezier(.76,0,.24,1), visibility 0s linear .55s;
   }
 
-  .open { transform: translateY(0); }
+  .open { transform: translateY(0); visibility: visible; transition-delay: 0s, 0s; }
   .close { display: block; }
 }
 
@@ -479,4 +483,21 @@
     height: calc(95dvh - var(--drawer-lift));
     max-height: calc(95dvh - var(--drawer-lift));
   }
+}
+
+/*
+ * Svislý telefon: písmo filtrů o čtvrtinu větší (13. 11. 2026, přání
+ * majitele po testu na iPhonu — položky kategorií byly na 13 px nečitelné
+ * pro starší zákazníky). Násobky původních hodnot, ne nová čísla.
+ */
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .heading span { font-size: .9375rem; }
+  .heading h2 { font-size: 1.9rem; }
+  .group small { font-size: .9375rem; }
+  .group h3 { font-size: 1rem; }
+  .categoryList button { font-size: 1.0625rem; padding: .3rem 0; }
+  .subListInner button { font-size: 1rem; padding: .25rem 0; }
+  .toggle { font-size: 1rem; padding: .55rem 0; }
+  .priceInputs { font-size: .9375rem; }
+  .priceInputs input { font-size: 1rem; }
 }

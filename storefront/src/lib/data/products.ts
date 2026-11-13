@@ -2,6 +2,7 @@
 
 import { sdk } from "@lib/config"
 import { getProductPrice } from "@lib/util/get-product-price"
+import { filterCatalogue } from "@lib/util/catalogue-filter"
 import { HttpTypes } from "@medusajs/types"
 import { listCategories } from "./categories"
 import { listCollections } from "./collections"
@@ -21,6 +22,9 @@ import { getAuthHeaders, getCacheOptions } from "./cookies"
  * tohle je jen strop, po kterém se obchod vzpamatuje i bez něj.
  */
 const KATALOG_REVALIDATE = 300
+
+/** Celý katalog pro filtry obchodu — viz `listStoreCatalogue`. */
+const KATALOG_FILTR_REVALIDATE = 60
 import { getRegion, retrieveRegion } from "./regions"
 import { StoreProductReview } from "../../types/global"
 import { toCzechErrorMessage } from "@lib/util/error-messages"
@@ -50,6 +54,7 @@ export const listProducts = async ({
   countryCode,
   regionId,
   cacheMode = "force-cache",
+  revalidate = KATALOG_REVALIDATE,
 }: {
   pageParam?: number
   queryParams?: StoreProductListQuery
@@ -62,6 +67,8 @@ export const listProducts = async ({
    * něco nerevaliduje tag. Proto listStoreCatalogue posílá "no-store".
    */
   cacheMode?: "force-cache" | "no-store"
+  /** Lhůta keše v sekundách (jen u "force-cache"). */
+  revalidate?: number
 }): Promise<{
   response: { products: (HttpTypes.StoreProduct & {
     bundle?: Omit<BundleProduct, "items">
@@ -101,7 +108,7 @@ export const listProducts = async ({
   const next =
     cacheMode === "no-store"
       ? {}
-      : { ...(await getCacheOptions("products")), revalidate: KATALOG_REVALIDATE }
+      : { ...(await getCacheOptions("products")), revalidate }
 
   return sdk.client
     .fetch<{ products: (HttpTypes.StoreProduct & { bundle?: Omit<BundleProduct, "items"> })[]; count: number }>(
@@ -427,6 +434,32 @@ export const listStoreCatalogue = async ({
     queryParams.order = "-created_at"
   }
 
+  /*
+   * Bez hledání se filtruje nad celým katalogem v paměti (13. 11. 2026).
+   * Katalog se stáhne jednou a drží se minutu — klik na filtr pak nečeká na
+   * backend (dřív 1,2–2,6 s). Minuta je strop pro „Prodáno" v mřížce; detail
+   * výrobku a košík čtou sklad živě. Hledání jde dál přes Medusu (`q`).
+   */
+  if (!searchTerm) {
+    const celyKatalog = await fetchAllPages(
+      { limit: 100, fields: queryParams.fields },
+      { cacheMode: "force-cache", revalidate: KATALOG_FILTR_REVALIDATE }
+    )
+    return filterCatalogue(celyKatalog, filters, {
+      priceOf: (product) => {
+        const { cheapestPrice } = getProductPrice({ product })
+        const price = cheapestPrice?.calculated_price_number
+        return typeof price === "number"
+          ? { price, sale: cheapestPrice?.price_type === "sale" }
+          : null
+      },
+      collectionCategoryIds,
+      onlyIds,
+      offset: normalizedOffset,
+      limit: normalizedLimit,
+    })
+  }
+
   if (!needsLocalAssembly) {
     const {
       response: { products, count },
@@ -441,13 +474,18 @@ export const listStoreCatalogue = async ({
     return { products, count }
   }
 
-  const fetchAllPages = async (pageQuery: StoreProductListQuery) => {
+  async function fetchAllPages(
+    pageQuery: StoreProductListQuery,
+    cache: { cacheMode: "force-cache" | "no-store"; revalidate?: number } = {
+      cacheMode: "no-store",
+    }
+  ) {
     const firstPage = await listProducts({
       pageParam: 1,
       queryParams: pageQuery,
       countryCode,
       regionId,
-      cacheMode: "no-store",
+      ...cache,
     })
     const gathered = [...firstPage.response.products]
     const pageCount = Math.ceil(firstPage.response.count / pageQuery.limit!)
@@ -460,7 +498,7 @@ export const listStoreCatalogue = async ({
         queryParams: pageQuery,
         countryCode,
         regionId,
-        cacheMode: "no-store",
+        ...cache,
       })
 
       gathered.push(...products)

@@ -114,12 +114,10 @@ export default function Rezervace({
                     : ""}
                 </span>
                 <span className="kurzyRezervace__termPrices">
-                  {czk(term.price_single)} za jednoho
-                  {term.price_two != null
-                    ? ` · ${czk(term.price_two)}/os. za dva`
-                    : ""}
-                  {term.group_min != null && term.price_group_per_person != null
-                    ? ` · od ${term.group_min} lidí ${czk(term.price_group_per_person)}/os.`
+                  {/* Jen dospělý a dítě (13. 11. 2026). */}
+                  {czk(term.price_single)} za dospělého
+                  {term.price_child != null
+                    ? ` · dítě do ${term.child_max_age ?? 15} let ${czk(term.price_child)}`
                     : ""}
                 </span>
                 {/* Karta je jen ke čtení (ne tlačítko), takže se obsazený
@@ -136,6 +134,8 @@ export default function Rezervace({
             ))}
           </ul>
 
+          {/* Karta „Vybrat termín" vedle termínů je zakomentovaná (13. 11. 2026) —
+              tady ji Matěj nechce. Okno rezervace dál otevírá tlačítko výš na stránce.
           <div className="kurzyRezervace__teaserAction">
             <button
               type="button"
@@ -143,16 +143,17 @@ export default function Rezervace({
               onClick={onReserveAction}
               {...editable(block, "accent.1")}
             >
-              {ctaText} <i aria-hidden="true">↗</i>
+              {ctaText} <i aria-hidden="true">↗︎</i>
             </button>
             {/* Varianta s počtem termínů se skládá z čísla, které zná jen Medusa —
-                ta zůstává v kódu; editovatelná je věta bez počtu. */}
+                ta zůstává v kódu; editovatelná je věta bez počtu. *\/}
             <p {...editable(block, "accent.2")}>
               {terms.length > TEASER_COUNT
                 ? `Všech ${terms.length} termínů s kalendářem, volnými místy a rezervací zabere minutu.`
                 : teaserNote}
             </p>
           </div>
+          */}
         </div>
       )}
     </section>

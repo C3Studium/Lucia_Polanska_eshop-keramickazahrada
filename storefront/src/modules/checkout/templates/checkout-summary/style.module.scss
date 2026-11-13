@@ -22,48 +22,16 @@
   // dvě výšky okna — pole pro text se schovávalo pod spodní hranu a přechod
   // na Přehled trhnul stránkou. Teď si výšku okna rozdělí a roluje se v tom
   // panelu, nad kterým je kurzor.
+  //
+  // 13. 11. 2026: strop výšky a posuv uvnitř panelů zrušený. Kroky jsou od
+  // 8. 11. po jednom, souhrn je kratší než okno a vnitřní posuvník u pravého
+  // okraje mátl (vypadal jako rozbitá linka). Co je delší, roluje se stránkou.
+  // Od 13. 11. 2026 stojí souhrn v levém sloupci pod kroky, ne ve vlastním
+  // lepkavém sloupci — lepkavost by tu neměla kam jet.
   @include from-px(1021px) {
-    position: sticky;
-    top: var(--summary-sticky-top);
     display: flex;
-    max-height: calc(100svh - var(--summary-sticky-top) - 1rem);
     flex-direction: column;
     gap: clamp(1rem, 2vh, 1.5rem);
-  }
-}
-
-/*
- * Posuv je na PANELECH, ne na sloupci. Oba se chovají stejně, proto jedno
- * pravidlo — a posuvník musí být VIDĚT, ne jen fungovat: nic jiného
- * nenapoví, že se v panelu dá rolovat. Tenký a krémový, ať nekřičí.
- */
-@include from-px(1021px) {
-  .pane,
-  .commissionBriefs {
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-    scrollbar-color: rgb(var(--cream-06-rgb) / .35) transparent;
-
-    &::-webkit-scrollbar {
-      width: .375rem;
-    }
-    &::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    &::-webkit-scrollbar-thumb {
-      border-radius: 999px;
-      background: rgb(var(--cream-06-rgb) / .35);
-    }
-    &::-webkit-scrollbar-thumb:hover {
-      background: rgb(var(--cream-06-rgb) / .55);
-    }
-  }
-
-  /* Odstup mezi panely dělá `gap` sloupce — vlastní margin by se přičetl. */
-  .commissionBriefs {
-    margin-top: 0;
   }
 }
 
@@ -101,15 +69,16 @@
 
 .heading {
   width: 100%;
-  margin: clamp(2.625rem, 6vh, 4.125rem) 0 clamp(1.25rem, 2.4vh, 2rem);
+  margin: clamp(1.25rem, 2.6vh, 2rem) 0 clamp(.875rem, 1.8vh, 1.25rem);
   font-family: "Sentient-Regular",serif;
 
   // Jen kraje z px do rem — 3vw zůstává, pod 1921 je hodnota identická s původní.
   // Nad 1921 roste strop 3.375rem s rampem na 71.8px při 2552, takže nadpis souhrnu
   // už nepřetlačí h1 stránky (76px); až h1 dostane rem strop, hierarchie sedne.
-  font-size: clamp(2.375rem, calc(3vw * var(--ui-scale)), 3.375rem);
+  /* Titulek bloku, ne nadpis stránky (13. 11. 2026): nad ním je h1 pokladny. */
+  font-size: clamp(1.625rem, calc(2vw * var(--ui-scale)), 2.125rem);
   font-weight: 400;
-  line-height: .94;
+  line-height: 1;
   letter-spacing: -.04em;
 }
 
@@ -145,7 +114,6 @@
     padding: clamp(1.25rem, 1.8vw, 1.75rem);
     color: var(--ink-05);
     background: var(--cream-06);
-    box-shadow: 1.25rem 1.5rem 3.5rem -2.5rem rgb(var(--black-01-rgb) / .85);
   }
 }
 
@@ -218,3 +186,19 @@
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 3px;
 }
+
+/* Poznámka „Na zlevněné kusy se slevové kódy nevztahují." je psaná pro krémový
+   panel košíku — tady na tmavém sloupci by byla neviditelná (13. 11. 2026). */
+.root :global([data-testid="discount-sale-note"]),
+.root :global([data-testid="discount-voucher-note"]) {
+  color: rgb(var(--cream-06-rgb) / .62) !important;
+}
+
+/* Kódy pod položkami (13. 11. 2026): blok je součástí seznamu — těsná mezera
+   nahoře, přes celou šířku, ať řádky kódů lícují s cenami položek. */
+.discount {
+  flex-direction: column;
+  margin-top: clamp(.625rem, 1.4vh, 1rem);
+  margin-bottom: clamp(.625rem, 1.4vh, 1rem);
+}
+.discount > * { width: 100%; }

@@ -385,7 +385,7 @@ function Toggle({ active, label, onClick }: { active: boolean; label: string; on
 const initial = { opacity: 0 }
 const animate = { opacity: 1 }
 
-/* FAQ-style rozbalení subkategorií: výška 0 ↔ auto, stejná křivka jako
+/* FAQ-style rozbalení subkategorií: výška 0 ↔︎ auto, stejná křivka jako
    zbytek obchodu. */
 const subClosed = { height: 0, opacity: 0 }
 const subOpen = { height: "auto", opacity: 1 }

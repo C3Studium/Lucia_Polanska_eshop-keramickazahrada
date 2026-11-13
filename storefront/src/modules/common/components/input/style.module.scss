@@ -206,3 +206,34 @@
   letter-spacing: 0.02em;
   opacity: 0.82;
 }
+
+/*
+ * Oko hesla (13. 11. 2026, Matěj: „ikony zdvojené a nejsou na středu s textem").
+ * Zdvojení: Edge kreslí do pole vlastní oko (`::-ms-reveal`) vedle našeho.
+ * Střed: tlačítko stálo na pevném `top: .75rem`, text pole je ale posunutý
+ * dolů horním odsazením — teď tlačítko zabírá právě pás textu (stejné odsazení
+ * jako pole) a ikonu v něm středí.
+ */
+.inputWrapper input::-ms-reveal,
+.inputWrapper input::-ms-clear {
+  display: none;
+}
+
+.passwordBtn {
+  top: 0;
+  bottom: 0;
+  min-height: 0;
+  padding-block: 1rem .25rem;
+}
+
+.contact .passwordBtn {
+  top: 0;
+  bottom: 0;
+  min-height: 0;
+  padding-block: clamp(.9rem, 2.38vh, 1.35rem) clamp(.28rem, .74vh, .42rem);
+}
+
+.passwordBtn svg {
+  display: block;
+  flex: 0 0 auto;
+}

@@ -12,14 +12,8 @@
   padding: 0 0 clamp(1rem, 2vh, 1.75rem);
   border-bottom: 1px solid rgb(var(--cream-06-rgb) / .22);
   flex-direction: column;
-
-  @include v(md) {
-    align-items: flex-end;
-  }
-
-  @include h(xs) {
-    align-items: flex-end;
-  }
+  /* Nadpis i popisek vlevo na všech šířkách (13. 11. 2026) — zarovnání
+     doprava nutilo oko přeskakovat přes celou stránku. */
 }
 
 .title {
@@ -47,14 +41,12 @@
 }
 
 .sectionMeta span {
-  display: grid;
+  display: inline-grid;
   /* Kolečko s pořadovým číslem: obě osy stejným clampem, takže zůstane kruh a nemusí se
      spoléhat na procenta z druhé osy. Živé pásmo 1280–1680. */
   width: clamp(1.6rem, 2vw, 2.1rem);
   height: clamp(1.6rem, 2vw, 2.1rem);
   place-items: center;
-  border: 1px solid rgb(var(--cream-06-rgb) / .3);
-  border-radius: 50%;
   color: var(--sage-01);
   letter-spacing: 0;
 }
@@ -96,3 +88,27 @@
   }
 }
 
+
+/* Telefon na výšku (13. 11. 2026): hlavička košíku zabírala celou první
+   obrazovku — „Košík" 68 px, úvod 220 px, přihlášení. Zboží musí být
+   vidět hned. */
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .title { font-size: 1.4rem; }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .title { font-size: 1.3rem; }
+}
+
+/* Menší nadpis výpisu a bez vlastní linky — horní linku nese první řádek
+   výrobku, jinak tu byly dvě čáry nad sebou (13. 11. 2026). */
+.title { font-size: clamp(1.35rem, calc(1.7vw * var(--ui-scale)), 1.9rem); }
+.headerRow { border-bottom: 0; padding-bottom: clamp(.5rem, 1.2vh, .9rem); }
+.tableBody { padding-top: 0; }
+
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .title { font-size: 1.4rem; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .title { font-size: 1.3rem; }
+}

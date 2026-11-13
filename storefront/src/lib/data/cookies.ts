@@ -1,5 +1,6 @@
 import "server-only"
 import { cookies as nextCookies } from "next/headers"
+import { cookieSecure } from "@lib/util/cookie-secure"
 
 export const getAuthHeaders = async (): Promise<
   { authorization: string } | {}
@@ -55,7 +56,7 @@ export const setAuthToken = async (token: string) => {
     maxAge: 60 * 60 * 24 * 7,
     httpOnly: true,
     sameSite: "strict",
-    secure: process.env.NODE_ENV === "production",
+    secure: cookieSecure(process.env.NODE_ENV, process.env.NEXT_PUBLIC_BASE_URL),
   })
 }
 
@@ -77,7 +78,7 @@ export const setCartId = async (cartId: string) => {
     maxAge: 60 * 60 * 24 * 7,
     httpOnly: true,
     sameSite: "strict",
-    secure: process.env.NODE_ENV === "production",
+    secure: cookieSecure(process.env.NODE_ENV, process.env.NEXT_PUBLIC_BASE_URL),
   })
 }
 
@@ -101,7 +102,7 @@ export const setExpressCartId = async (cartId: string) => {
     maxAge: 60 * 60 * 24,
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: cookieSecure(process.env.NODE_ENV, process.env.NEXT_PUBLIC_BASE_URL),
   })
 }
 

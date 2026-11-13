@@ -4,7 +4,7 @@ import { HttpTypes } from "@medusajs/types"
 import { BundleProduct } from "@lib/data/products"
 import { motion } from "framer-motion"
 import Image from "next/image"
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { easeMicro } from "@lib/motion-tokens"
 import { useEditRerender } from "@lib/hooks/use-edit-rerender"
@@ -19,6 +19,8 @@ type ProductTemplateProps = {
   bundle?: BundleProduct
   /** Blok `global.produkt` — věta pod galerií (`galerie.*`). */
   texts?: CopyBlock
+  /** Zvolená varianta — má-li vlastní fotku, galerie na ni přeskočí. */
+  selectedVariant?: HttpTypes.StoreProductVariant
 }
 
 /* Every one of these was an inline literal re-allocated on each render of the gallery — and
@@ -53,7 +55,7 @@ const captions = [
   ["Připraveno pro vás", "Každý kus je originál"],
 ]
 
-const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle, texts }) => {
+const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle, texts, selectedVariant }) => {
   /* Věta pod galerií se po zapnutí editace sama nepřekreslí. Viz hook. */
   useEditRerender()
 
@@ -153,8 +155,45 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle, texts }) => 
     const track = trackRef.current
     if (!track || track.clientWidth === 0) return
 
-    track.scrollTo({ left: index * track.clientWidth, behavior: "smooth" })
+    /* Bez plynulého přejezdu — obchod je bez animací (PlainShop). */
+    track.scrollTo({ left: index * track.clientWidth, behavior: "auto" })
+    setActiveSlide(index)
   }
+
+  const step = (delta: number) => {
+    if (galleryCount < 2) return
+    goToSlide((activeSlide + delta + galleryCount) % galleryCount)
+  }
+
+  /*
+   * Fotka varianty (13. 11. 2026): má-li zvolená varianta vlastní obrázek
+   * (náhled, `images` nebo `metadata.image`) a ten je mezi fotkami výrobku,
+   * galerie na něj přeskočí.
+   */
+  const variantImageUrl = useMemo(() => {
+    const v = selectedVariant as
+      | (HttpTypes.StoreProductVariant & {
+          thumbnail?: string | null
+          images?: { url?: string | null }[] | null
+        })
+      | undefined
+    if (!v) return null
+    const meta = (v.metadata ?? {}) as Record<string, unknown>
+    return (
+      v.images?.[0]?.url ||
+      v.thumbnail ||
+      (typeof meta.image === "string" ? meta.image : null) ||
+      null
+    )
+  }, [selectedVariant])
+
+  useEffect(() => {
+    if (!variantImageUrl) return
+    const index = galleryImages.findIndex((image) => image.url === variantImageUrl)
+    if (index >= 0) goToSlide(index + (bundleImages.length ? 1 : 0))
+    // Jen při změně varianty, ne při každém překreslení.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [variantImageUrl])
 
   /* Prázdný stav až za hooky výše — pořadí hooků musí být v každém renderu stejné. */
   if (!galleryImages.length && !bundleImages.length) {
@@ -168,6 +207,27 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle, texts }) => 
         <span>{String(galleryCount).padStart(2, "0")} pohledů</span>
       </div>
 
+      {/*
+        * Klasická galerie obchodu (13. 11. 2026, Matěj: „lidi nechtějí rolovat
+        * pro další fotky"): jedna velká fotka, šipky, tah prstem i klávesy
+        * ←/→, pod ní náhledy všech fotek. Dřív ležely fotky pod sebou.
+        */}
+      <div
+        className="product__viewer"
+        role="region"
+        aria-roledescription="galerie"
+        aria-label="Fotky výrobku"
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowRight") {
+            event.preventDefault()
+            step(1)
+          } else if (event.key === "ArrowLeft") {
+            event.preventDefault()
+            step(-1)
+          }
+        }}
+      >
       <div
         className="product__mediaTrack"
         ref={trackRef}
@@ -260,22 +320,90 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle, texts }) => 
           Tlačítko je záměrně větší než ta čárka — dotykový cíl má 44px
           (globální podlaha), kreslí se jen ta linka uvnitř. */}
       {galleryCount > 1 && (
-        <div
-          className="product__mediaDots"
-          role="tablist"
-          aria-label="Fotky výrobku"
-        >
-          {Array.from({ length: galleryCount }, (_, index) => (
+        <>
+          <button
+            type="button"
+            className="product__viewerArrow product__viewerArrow--prev"
+            aria-label="Předchozí fotka"
+            onClick={() => step(-1)}
+          >
+            <span aria-hidden="true">←</span>
+          </button>
+          <button
+            type="button"
+            className="product__viewerArrow product__viewerArrow--next"
+            aria-label="Další fotka"
+            onClick={() => step(1)}
+          >
+            <span aria-hidden="true">→</span>
+          </button>
+          <span className="product__viewerCount" aria-live="polite">
+            {activeSlide + 1} / {galleryCount}
+          </span>
+        </>
+      )}
+      </div>
+
+      {galleryCount > 1 && (
+        <div className="product__thumbs" aria-label="Náhledy fotek">
+          {bundleImages.length > 0 && (
             <button
-              key={index}
               type="button"
-              role="tab"
-              aria-selected={index === activeSlide}
-              aria-label={`Fotka ${index + 1} z ${galleryCount}`}
-              className={index === activeSlide ? "is-active" : undefined}
-              onClick={() => goToSlide(index)}
-            />
-          ))}
+              className="product__thumb"
+              aria-label={`Fotka 1 z ${galleryCount}: celá sada`}
+              aria-current={activeSlide === 0 ? "true" : undefined}
+              onClick={() => goToSlide(0)}
+            >
+              <Image src={bundleImages[0].url} alt="" fill sizes="96px" />
+            </button>
+          )}
+          {galleryImages.map((image, index) => {
+            const slide = index + (bundleImages.length ? 1 : 0)
+            return (
+              <button
+                key={image.key}
+                type="button"
+                className="product__thumb"
+                aria-label={`Fotka ${slide + 1} z ${galleryCount}`}
+                aria-current={activeSlide === slide ? "true" : undefined}
+                onClick={() => goToSlide(slide)}
+              >
+                <Image src={image.url} alt="" fill sizes="96px" />
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/*
+        * Další fotky pod sebou (13. 11. 2026, Matěj: „neměl jsi odebrat obrázky,
+        * které se objeví, když se roluje dolů"). Galerie nahoře je pro rychlé
+        * přepínání, pás pod ní je dál k prohlížení rolováním — na telefonu ho
+        * CSS skrývá, tam se listuje tahem jako dřív.
+        */}
+      {galleryImages.length > 1 && (
+        <div className="product__stack" aria-label="Další fotky výrobku">
+          {galleryImages.slice(1).map((image, index) => {
+            const caption = captions[image.viewIndex % captions.length]
+            return (
+              <figure key={`stack-${image.key}`} className="product__mediaFrame product__stackFrame">
+                <div className="product__mediaImage">
+                  <Image
+                    src={image.url}
+                    alt={`${image.productTitle} – ${caption[0].toLowerCase()}`}
+                    fill
+                    sizes="(max-width: 900px) 100vw, 52vw"
+                    quality={100}
+                    className="product__mediaAsset"
+                  />
+                </div>
+                <figcaption>
+                  <span>{String(index + 2).padStart(2, "0")} · {image.productTitle}</span>
+                  <span>{String(image.viewIndex + 1).padStart(2, "0")} · {caption[1]}</span>
+                </figcaption>
+              </figure>
+            )
+          })}
         </div>
       )}
 

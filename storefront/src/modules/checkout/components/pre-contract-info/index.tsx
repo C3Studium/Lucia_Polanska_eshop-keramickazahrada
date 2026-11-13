@@ -335,7 +335,7 @@ export default function PreContractInfo({
       data-testid="pre-contract-info"
     >
       <h3 id="pre-contract-title" className={styles.title}>
-        Než objednávku odešlete
+        Než objednávku dokončíte
       </h3>
       <dl className={styles.rows}>
         {delivery && (

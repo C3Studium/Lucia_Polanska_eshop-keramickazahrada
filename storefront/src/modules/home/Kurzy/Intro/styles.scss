@@ -1181,3 +1181,10 @@
     }
   }
 }
+
+/* Fotky tří voleb aspoň 16 : 9 (13. 11. 2026, Matěj) — strop 16vh z nich dělal
+   pruh 3 : 1. Výška teď jde ze šířky karty. */
+.kurzyAudience__figure {
+  max-height: none;
+  aspect-ratio: 16 / 9;
+}

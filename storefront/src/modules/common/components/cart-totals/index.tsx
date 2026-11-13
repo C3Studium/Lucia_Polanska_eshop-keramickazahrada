@@ -121,12 +121,14 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
     shipping_subtotal,
     shipping_total,
   } = totals
-  const subtotalAmount = item_subtotal ?? item_total ?? 0
-  // Rozpad mezisoučtu „Výrobky / Balné" (Matěj 12. 10.). Doběrečné je taky
-  // položka košíku (je v mezisoučtu), ale výrobek to není — vlastní řádek.
+  // Rozpad mezisoučtu „Výrobky / Balné" (Matěj 12. 10.).
   const packaging = packagingSubtotal(totals.items)
+  /* Doběrečné je způsob platby, ne zboží (13. 11. 2026): technicky je to
+     řádek košíku, ale z mezisoučtu se vyjme a ukáže se jako vlastní řádek
+     „Platba na dobírku" pod Dopravou. Celkem se nemění. */
   const dobirkaFee = dobirkaFeeSubtotal(totals.items)
-  const showBreakdown = packaging !== null || dobirkaFee !== null
+  const subtotalAmount = (item_subtotal ?? item_total ?? 0) - (dobirkaFee ?? 0)
+  const showBreakdown = packaging !== null
   /* Bez zvolené dopravy je `shipping_total` 0 — to není „zdarma", to je
      „ještě nevíme". `shipping_methods` neposílá každý volající; kdo ho
      nemá, chová se jako dřív. */
@@ -149,7 +151,7 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
           <span
             className={styles.subtotal}
             data-testid="cart-subtotal"
-            data-value={item_subtotal ?? item_total ?? 0}
+            data-value={subtotalAmount}
           >
             {convertToLocale({
               amount: subtotalAmount,
@@ -166,7 +168,7 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
               <span>Výrobky</span>
               <span data-testid="cart-products-subtotal">
                 {convertToLocale({
-                  amount: subtotalAmount - (packaging ?? 0) - (dobirkaFee ?? 0),
+                  amount: subtotalAmount - (packaging ?? 0),
                   currency_code,
                 })}
               </span>
@@ -176,14 +178,6 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
                 <span>Balné</span>
                 <span data-testid="cart-packaging">
                   {convertToLocale({ amount: packaging, currency_code })}
-                </span>
-              </div>
-            )}
-            {dobirkaFee !== null && (
-              <div className={styles.subRow}>
-                <span>Doběrečné</span>
-                <span data-testid="cart-dobirka-fee">
-                  {convertToLocale({ amount: dobirkaFee, currency_code })}
                 </span>
               </div>
             )}
@@ -233,6 +227,14 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
             )}
           </span>
         </div>
+        )}
+        {dobirkaFee !== null && (
+          <div className={styles.taxRow}>
+            <span className={styles.label}>Platba na dobírku</span>
+            <span data-testid="cart-dobirka-fee" className={styles.labelValue}>
+              {convertToLocale({ amount: dobirkaFee, currency_code })}
+            </span>
+          </div>
         )}
         {!shippingChosen && shippingFrom?.pickupFree && (shippingFrom.amount ?? 0) > 0 && (
           <div className={styles.breakdown}>

@@ -443,7 +443,7 @@ function ClaimCard({
               target="_blank"
               rel="noopener noreferrer"
             >
-              Protokol (PDF) <i aria-hidden="true">↗</i>
+              Protokol (PDF) <i aria-hidden="true">↗︎</i>
             </a>
           )}
         </footer>

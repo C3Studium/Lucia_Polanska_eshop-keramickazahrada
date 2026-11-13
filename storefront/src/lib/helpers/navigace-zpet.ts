@@ -42,6 +42,33 @@ export const sledujNavigaciZpet = (): (() => void) => {
   return () => window.removeEventListener("popstate", zapis)
 }
 
+/*
+ * Obnovení stránky (F5, tah dolů na telefonu, Safari, které stránku zahodilo
+ * a načítá ji znovu).
+ *
+ * `performance` ví jen o načtení CELÉHO dokumentu — po přechodu uvnitř
+ * aplikace pořád hlásí „reload", když se tak dokument kdysi načetl. Proto
+ * platí jen do první navigace v aplikaci; tu nahlásí `ScrollResetOnRoute`.
+ */
+let bylaNavigaceVAplikaci = false
+
+export const zaznamenejNavigaciVAplikaci = () => {
+  bylaNavigaceVAplikaci = true
+}
+
+/** Je tahle stránka právě obnovená (a ne otevřená odkazem v aplikaci)? */
+export const jeObnoveniStranky = (): boolean => {
+  if (typeof window === "undefined" || bylaNavigaceVAplikaci) return false
+  try {
+    const zaznam = window.performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined
+    return zaznam?.type === "reload"
+  } catch {
+    return false
+  }
+}
+
 /** Přišli jsme sem tlačítkem Zpět (nebo Vpřed)? */
 export const prisliJsmeZpet = (): boolean => {
   if (typeof window === "undefined") return false

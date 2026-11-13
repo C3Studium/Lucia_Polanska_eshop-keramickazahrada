@@ -32,7 +32,7 @@ export default function ProtocolDownload({ pdfHref }: { pdfHref: string | null }
           onClick={() => window.print()}
         >
           Vytisknout formulář
-          <span aria-hidden="true">↗</span>
+          <span aria-hidden="true">↗︎</span>
         </button>
       )}
     </div>

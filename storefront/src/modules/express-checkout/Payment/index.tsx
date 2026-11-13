@@ -175,7 +175,7 @@ export const Payment = ({
       )}`
     : null
   const confirmNote = !accepted
-    ? "Než objednávku odešlete, potvrďte prosím souhlas s obchodními podmínkami."
+    ? "Než objednávku dokončíte, potvrďte prosím souhlas s obchodními podmínkami."
     : !consentReady
       ? ackItems.length > 1
         ? "Potvrďte prosím poučení u každého výrobku na zakázku — že ho nelze vrátit ve 14denní lhůtě a že záloha se po zahájení výroby nevrací."

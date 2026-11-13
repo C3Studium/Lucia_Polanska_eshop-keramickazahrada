@@ -181,7 +181,7 @@ export default function RegionsSelect({
           transition={transition2}
           aria-hidden="true"
         >
-          ↗
+          ↗︎
         </motion.span>
       </motion.button>
 
@@ -189,6 +189,9 @@ export default function RegionsSelect({
         {isOpen && (
           <motion.div
             className="countryOptions"
+            /* Vlastní posuv seznamu zemí — bez tohohle kolečko spolkl Lenis
+               a seznam nešel dorolovat (13. 11. 2026). */
+            data-lenis-prevent
             role="listbox"
             aria-label="Vyberte zemi obchodu"
             variants={listVariants}
@@ -253,14 +256,14 @@ const variants = {
 const transition = { duration: 0.46, ease }
 const styleObj = { width: "22px" as const, height: "22px" as const }
 /*
- * Šipka u výběru země. Znak je „↗", tedy 45° vpravo nahoru — každé otočení
+ * Šipka u výběru země. Znak je „↗︎", tedy 45° vpravo nahoru — každé otočení
  * se počítá od TOHO, ne od vodorovné.
  *
  * Zavřeno 225°: šipka míří rovně doleva, tedy na vlajku vedle sebe — ukazuje
  * na to, co se právě vybralo.
  * Otevřeno 135°: rovně dolů, do seznamu, který se pod tlačítkem rozbalí.
  *
- * Dřív tu stálo 180 / 90, z čehož vycházelo ↙ v klidu a ↘ po otevření — dva
+ * Dřív tu stálo 180 / 90, z čehož vycházelo ↙︎ v klidu a ↘︎ po otevření — dva
  * diagonální směry, z nichž ani jeden neukazoval na nic konkrétního.
  */
 const variants2 = {

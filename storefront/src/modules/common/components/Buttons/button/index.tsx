@@ -105,7 +105,10 @@ export default function Button({title, href, img = "/assets/links/home_img.png",
     
     const buttonAnim = {
         rest: {
-            y: '100%',
+            /* O 5 px níž než celá výška (13. 11. 2026): v klidu z pilulky
+               vykukovala pod popiskem tenká linka. Cíl (0) zůstává, výplň jen
+               ujede o 5 px víc. Obě hodnoty jako calc(), ať je framer umí prolnout. */
+            y: 'calc(100% + 5px)',
             opacity: 1,
             transition: {
                 delay: 0.1,
@@ -114,7 +117,7 @@ export default function Button({title, href, img = "/assets/links/home_img.png",
             }
         },
         active: {
-            y: '0%',
+            y: 'calc(0% + 0px)',
             opacity: 1,
             transition: {
                 delay: 0.15,

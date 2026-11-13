@@ -62,11 +62,14 @@ const CheckoutSummary = async ({
           tam: pořadí a třídy zůstávají tady, kde jsou i jejich styly.
         */}
         <OrderSummaryDisclosure cart={cart}>
-          <Divider className={styles.divider} />
-          <CartTotals totals={cart} shippingFrom={shippingFrom} />
+          {/* Slevový kód, uplatněné kódy a poukazy patří k položkám (13. 11. 2026,
+              Matěj): hned pod „Co objednáváte", nad mezisoučet, ne osamoceně
+              pod celkovou částkou. */}
           <div className={styles.discount}>
             <DiscountCode cart={cart} />
           </div>
+          <Divider className={styles.divider} />
+          <CartTotals totals={cart} shippingFrom={shippingFrom} />
         </OrderSummaryDisclosure>
       </div>
 

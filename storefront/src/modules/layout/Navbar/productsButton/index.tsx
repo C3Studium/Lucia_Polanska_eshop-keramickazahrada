@@ -151,8 +151,9 @@ const cardContentVariants = {
 }
 const flexGrowLead = { flexGrow: 4 }
 const flexGrowRest = { flexGrow: 1 }
-const thumbDown = { y: "105%" }
-const thumbUp = { y: "0%" }
+/* Klid o 5 px níž (13. 11. 2026) — viz Buttons/button; cíl beze změny. */
+const thumbDown = { y: "calc(105% + 5px)" }
+const thumbUp = { y: "calc(0% + 0px)" }
 const arrowTilted = { rotate: -45 }
 const arrowFlat = { rotate: 0 }
 

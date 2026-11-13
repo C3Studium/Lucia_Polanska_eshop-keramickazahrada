@@ -107,3 +107,12 @@
   display: none;
 }
 
+
+/* Název výrobku v objednávce nejvýš na dva řádky (13. 11. 2026). */
+.name {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}

@@ -31,7 +31,7 @@ const backdropVariants: Variants = {
 }
 
 // Vstupní posuny ve vh, ne v px — na 720px vysokém laptopu je nadzdvižení
-// úměrně menší. Obě strany mají stejný tvar výrazu ("3.5vh" ↔ "0vh"),
+// úměrně menší. Obě strany mají stejný tvar výrazu ("3.5vh" ↔︎ "0vh"),
 // jinak framer přestane interpolovat.
 const panelVariants: Variants = {
   closed: {

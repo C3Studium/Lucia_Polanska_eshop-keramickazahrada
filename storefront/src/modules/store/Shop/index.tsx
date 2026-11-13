@@ -2,7 +2,7 @@
 
 import { editable } from "@c3studium/valecms/edit"
 import { listStoreCatalogue } from "@lib/data/products"
-import { prisliJsmeZpet } from "@lib/helpers/navigace-zpet"
+import { jeObnoveniStranky, prisliJsmeZpet } from "@lib/helpers/navigace-zpet"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import { useEditRerender } from "@lib/hooks/use-edit-rerender"
 import type { CopyBlock } from "@lib/util/site-copy"
@@ -34,6 +34,8 @@ type EComProps = {
   totalCount?: number
   initialFilters?: Partial<ShopFilters>
   initialFilterLabel?: string
+  /** id kolekce → handle, kvůli zrcadlení `?collection=` do adresy. */
+  collectionHandles?: Record<string, string>
   /** Režim výběru do úpravy objednávky — viz `ShopPickMode`. */
   pick?: ShopPickMode
   /**
@@ -135,6 +137,7 @@ export default function ECom({
   totalCount,
   initialFilters,
   initialFilterLabel,
+  collectionHandles = {},
   pick,
   block,
   texts,
@@ -203,6 +206,11 @@ export default function ECom({
    * v `useState` výš; efekt tedy hned po připojení nemá co dělat.
    */
   const podpisServeru = useRef(podpisVypisu(initialProducts, totalCount))
+  /* Aktuální výpis pro porovnání v dotazu filtrů — efekt na něm nesmí záviset. */
+  const productsRef = useRef(products)
+  productsRef.current = products
+  const resultCountRef = useRef(resultCount)
+  resultCountRef.current = resultCount
 
   useEffect(() => {
     /*
@@ -276,7 +284,9 @@ export default function ECom({
      * doprostřed výpisu, ze kterého předtím odešel (nahlášeno z telefonu
      * 10. 11. 2026). Z menu se do obchodu vchází znovu, ne zpátky.
      */
-    if (!prisliJsmeZpet()) {
+    /* … a pro obnovení stránky (13. 11. 2026): F5 i Safari, které stránku
+       na telefonu zahodilo a načítá znovu, mají vrátit filtry i polohu. */
+    if (!prisliJsmeZpet() && !jeObnoveniStranky()) {
       clearShopSnapshot()
       return
     }
@@ -350,10 +360,11 @@ export default function ECom({
     // Ani ho nezapisuje — návrat z výběru vede na stránku úpravy, ne sem.
     if (!root || pick) return
 
-    const handleClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null
-      if (!target?.closest?.("a[href*='/products/']")) return
-
+    /* Po kliku na výrobek už se nepřepisuje: při odchodu stránka ještě
+       stihne rolovat (nová stránka začíná nahoře) a snímek by dostal nulu. */
+    let odchazim = false
+    const uloz = () => {
+      if (odchazim || restoreInFlight.current) return
       saveShopSnapshot({
         filters,
         loaded: products.length,
@@ -361,8 +372,33 @@ export default function ECom({
       })
     }
 
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null
+      if (!target?.closest?.("a[href*='/products/']")) return
+      uloz()
+      odchazim = true
+    }
+
+    /* Průběžně (po snímcích) a při odchodu ze stránky — obnovení stránky
+       nedá vědět předem, takže snímek musí být hotový pořád. */
+    let ceka = false
+    const priScrollu = () => {
+      if (ceka) return
+      ceka = true
+      window.requestAnimationFrame(() => {
+        ceka = false
+        uloz()
+      })
+    }
+
     root.addEventListener("click", handleClick, true)
-    return () => root.removeEventListener("click", handleClick, true)
+    window.addEventListener("scroll", priScrollu, { passive: true })
+    window.addEventListener("pagehide", uloz)
+    return () => {
+      root.removeEventListener("click", handleClick, true)
+      window.removeEventListener("scroll", priScrollu)
+      window.removeEventListener("pagehide", uloz)
+    }
   }, [filters, products.length, pick])
 
   /*
@@ -379,7 +415,15 @@ export default function ECom({
   const updateFilters = useCallback(
     (patch: Partial<ShopFilters>) => {
       cancelRestore()
-      setFilters((current) => ({ ...current, ...patch }))
+      /* Klik, který filtr nemění (znovu „Všechno"), nemá nic spustit —
+         ani dotaz, ani posun stránky. */
+      setFilters((current) => {
+        const next = { ...current, ...patch }
+        const stejne = (Object.keys(next) as (keyof ShopFilters)[]).every(
+          (key) => next[key] === current[key]
+        )
+        return stejne ? current : next
+      })
     },
     [cancelRestore]
   )
@@ -388,6 +432,39 @@ export default function ECom({
     cancelRestore()
     setFilters(emptyFilters)
   }, [cancelRestore])
+
+  /*
+   * Filtry do adresy (13. 11. 2026). Drželi jsme je jen ve stavu, takže
+   * obnovení stránky na telefonu (Safari ji zahazuje často) je smazalo
+   * a člověk začínal od „Všechno". Tiše přes `replaceState`, bez navigace
+   * a bez záznamu v historii — stránka obchodu (page.tsx) si je při načtení
+   * přečte a předá jako `initialFilters`. V režimu výběru (mini obchod
+   * v úpravě objednávky) se adresa nemění.
+   */
+  useEffect(() => {
+    if (pick) return
+    const params = new URLSearchParams(window.location.search)
+    const set = (key: string, value: string | null) => {
+      if (value) params.set(key, value)
+      else params.delete(key)
+    }
+    const category = (categories as Array<{ id: string; handle?: string | null }>).find(
+      (item) => item.id === filters.categoryId
+    )
+    set("category", category?.handle ?? null)
+    set("collection", filters.collectionId ? collectionHandles[filters.collectionId] ?? null : null)
+    set("search", filters.search.trim() || null)
+    set("kind", filters.kind || null)
+    set("sort", filters.sort !== "featured" ? filters.sort : null)
+    set("price", filters.priceRange || null)
+    set("new", filters.isNew ? "1" : null)
+    set("sale", filters.onSale ? "1" : null)
+    const query = params.toString()
+    const next = window.location.pathname + (query ? "?" + query : "") + window.location.hash
+    if (next !== window.location.pathname + window.location.search + window.location.hash) {
+      window.history.replaceState(window.history.state, "", next)
+    }
+  }, [filters, categories, collectionHandles, pick])
   const openFilters = useCallback(() => {
     filterTrigger.current =
       document.activeElement instanceof HTMLElement
@@ -397,7 +474,11 @@ export default function ECom({
   }, [])
   const closeFilters = useCallback(() => {
     setFiltersOpen(false)
-    window.requestAnimationFrame(() => filterTrigger.current?.focus())
+    /* Bez posunu: tlačítko Filtry bývá mimo obrazovku a obyčejné `focus()`
+       k němu stránku odrolovalo — na telefonu skok z 800 na 63 px (13. 11. 2026). */
+    window.requestAnimationFrame(() =>
+      filterTrigger.current?.focus({ preventScroll: true })
+    )
   }, [])
 
   useEffect(() => {
@@ -448,9 +529,29 @@ export default function ECom({
         })
         if (requestId !== requestSequence.current) return
 
+        /* Stejný výpis jako teď → nic se nemění, ani poloha (13. 11. 2026). */
+        const beze_zmeny =
+          podpisVypisu(payload.products, payload.count) ===
+          podpisVypisu(
+            productsRef.current.slice(0, payload.products.length),
+            resultCountRef.current
+          )
+        if (beze_zmeny) return
+
         setProducts(payload.products)
         setResultCount(payload.count)
         setAllLoaded(payload.products.length >= payload.count)
+        /* Nový výpis od začátku (13. 11. 2026): po změně kategorie se stránka
+           zkrátila (kategorie s dvěma kusy) a scroll zůstal, kde byl — tedy
+           u dna, pod výsledky, s patičkou přes půl obrazovky. Kdo je pod
+           začátkem katalogu, vrátí se na něj; Lenis si napřed přeměří hranici. */
+        const katalog = catalogueRef.current
+        if (katalog && katalog.getBoundingClientRect().top < 0) {
+          window.requestAnimationFrame(() => {
+            window.lenis?.resize()
+            scrollWithLenis(katalog, { immediate: true })
+          })
+        }
       } catch (error) {
         if (requestId !== requestSequence.current) return
         console.error("Store catalogue query failed", error)

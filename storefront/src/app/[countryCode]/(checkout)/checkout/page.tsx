@@ -57,42 +57,34 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
   const copy = await getPageCopy("pokladna")
   const intro = copy["pokladna.uvod"]
   const introDoc = intro?.id ?? null
-  const introLead = intro?.title?.trim() || "Ještě"
   const backLabel = itemText(intro, "zpet", "Zpět do košíku")
 
   return (
     <div className={styles.root}>
-      <header className={styles.masthead}>
-        <div>
-          {/* Počet výrobků je údaj, ne text — „Pokladna · 02 výrobky" zůstává v kódu. */}
-          <p className={styles.mastheadMeta}>Pokladna · {String(itemCount).padStart(2, "0")} {itemCount === 1 ? "výrobek" : itemCount < 5 ? "výrobky" : "výrobků"}</p>
-          {/* Začátek nadpisu ve spanu jen v náhledu Studia; jinak DOM jako dřív. */}
-          <h1>
-            {introDoc ? (
-              <CmsText doc={introDoc} field="title">{introLead}</CmsText>
-            ) : (
-              introLead
-            )}
-            <br />
-            <CmsText as="em" doc={introDoc} field="headline">
-              {intro?.headline?.trim() || "pár kroků."}
-            </CmsText>
-          </h1>
-        </div>
-        <div className={styles.mastheadAside}>
-          <CmsText as="p" className={styles.mastheadCopy} doc={introDoc} field="body">
-            {intro?.bodyText?.trim() || "Ještě pár kroků a můžeme to z ateliéru poslat k vám."}
-          </CmsText>
-          <LocalizedClientLink href="/cart" className={styles.backLink}>
-            <span>←</span>{" "}
-            {introDoc ? (
-              <CmsText doc={introDoc} field={itemFieldPath(intro, "zpet")}>{backLabel}</CmsText>
-            ) : (
-              backLabel
-            )}
-          </LocalizedClientLink>
-        </div>
-      </header>
+      {/* Levý sloupec jako u poptávky zakázky (13. 11. 2026): kde jsem, co
+          mě čeká a co objednávám. Vpravo jen formulář kroku. */}
+      <div className={styles.intro}>
+        {/* Počet výrobků je údaj, ne text — „Pokladna · 02 výrobky" zůstává v kódu. */}
+        <p className={styles.mastheadMeta}>Pokladna · {String(itemCount).padStart(2, "0")} {itemCount === 1 ? "výrobek" : itemCount < 5 ? "výrobky" : "výrobků"}</p>
+        {/* „Ještě pár kroků" a seznam kroků pryč (13. 11. 2026, Matěj): číslo,
+            název a věta kroku jsou teď v hlavičce formuláře (step-bubbles).
+            Vlevo zůstává jen kde jsem, cesta zpět a co objednávám. */}
+        <LocalizedClientLink href="/cart" className={styles.backLink}>
+          <span>←</span>{" "}
+          {introDoc ? (
+            <CmsText doc={introDoc} field={itemFieldPath(intro, "zpet")}>{backLabel}</CmsText>
+          ) : (
+            backLabel
+          )}
+        </LocalizedClientLink>
+        <aside className={styles.order}>
+          <CheckoutSummary
+            cart={cart}
+            productionMode={productionMode}
+            copy={copy["pokladna.souhrn"]}
+          />
+        </aside>
+      </div>
       {/* Kroky jsou hluboko (formulář → krok → adresa), proto blok kontextem, ne propem. */}
       <CopyProvider blocks={{ "pokladna.kroky": copy["pokladna.kroky"] }}>
         <section className={styles.ledger}>
@@ -106,13 +98,6 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
           </PaymentWrapper>
         </section>
       </CopyProvider>
-      <aside className={styles.order}>
-        <CheckoutSummary
-          cart={cart}
-          productionMode={productionMode}
-          copy={copy["pokladna.souhrn"]}
-        />
-      </aside>
     </div>
   )
 }

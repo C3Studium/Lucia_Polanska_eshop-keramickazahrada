@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import TouchSimpleMotion from "@modules/common/components/touch-simple-motion"
+import PlainShop from "@modules/common/components/plain-shop"
 import { notFound } from "next/navigation"
 import {
   // BundleProduct, // Re-enable with the static preview block below.
@@ -68,9 +68,28 @@ export async function generateStaticParams() {
   }
 }
 
+/**
+ * Handle z adresy, jak ho zná Medusa.
+ *
+ * Next 15 dává parametr cesty ještě ZAKÓDOVANÝ: pro „zvonkové-tlačítko-jeřabina"
+ * přijde `zvonkov%C3%A9-tla%C4%8D…` a Medusa takový handle nezná → „Stránka
+ * nenalezena", přestože obchod výrobek ukazuje (13. 11. 2026). Rozbalit
+ * a sjednotit na NFC — tak jsou handly uložené; macOS/iOS umí poslat
+ * rozložené „é" (NFD). Osamělé „%" se rozbalit nedá, pak zůstane, jak je.
+ */
+function productHandle(raw: string) {
+  let handle = raw
+  try {
+    handle = decodeURIComponent(raw)
+  } catch {
+    // není co rozbalit
+  }
+  return handle.normalize("NFC")
+}
+
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
-  const { handle } = params
+  const handle = productHandle(params.handle)
   const region = await getRegion(params.countryCode)
 
   if (!region) {
@@ -139,7 +158,7 @@ export default async function ProductPage(props: Props) {
   const pricedProduct = await listProducts({
     countryCode,
     queryParams: { 
-      handle: params.handle, 
+      handle: productHandle(params.handle),
       /* `+variants.allow_backorder`: bez něj přijde `undefined` a z vyprodaného
          kusu, který se dá dorobit, se stane „Prodáno" — viz `lib/data/products.ts`. */
       fields:
@@ -233,7 +252,7 @@ export default async function ProductPage(props: Props) {
   const productCopy = (await getPageCopy("global"))["global.produkt"]
 
   return (
-    <TouchSimpleMotion>
+    <PlainShop>
     <main>
       {/* Karta výrobku začíná vždy nahoře — i po kroku vpřed v historii. */}
       <Product
@@ -255,6 +274,6 @@ export default async function ProductPage(props: Props) {
       <ProductReviews productId={pricedProduct.id} initialReviews={reviewsData.reviews} initialRating={reviewsData.average_rating} initialCount={reviewsData.count} texts={productCopy} />
       <SoldProducts products={relatedProducts} block={productCopy} />
     </main>
-    </TouchSimpleMotion>
+    </PlainShop>
   )
 }

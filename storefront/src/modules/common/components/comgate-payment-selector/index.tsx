@@ -320,10 +320,11 @@ export default function ComgatePaymentSelector({
     [options]
   )
 
+  /* Volba zůstává otevřená (13. 11. 2026, Matěj): klik vybere, druhý klik na
+     tutéž zrušení, jiná dlaždice změní — a teprve tlačítko pod mřížkou potvrdí. */
   const choose = async (method: SelectorMethod) => {
     if (disabled || isSubmitting) return
-    setIsChanging(false)
-    await onSelect(method.optionId)
+    await onSelect(selectedMethod?.optionId === method.optionId ? "" : method.optionId)
   }
 
   const open = (group: MethodGroup, groupMethods: SelectorMethod[]) => {
@@ -367,7 +368,7 @@ export default function ComgatePaymentSelector({
   return (
     <div className={`${styles.selector} ${className}`}>
       <AnimatePresence mode="wait" initial={false}>
-        {selectedMethod && !isChanging ? (
+        {SBALIT_PO_VYBERU && selectedMethod && !isChanging ? (
           <motion.div
             className={styles.selectedState}
             key="selected"
@@ -402,7 +403,7 @@ export default function ComgatePaymentSelector({
                 disabled={disabled || isSubmitting}
               >
                 Změnit
-                <span aria-hidden="true">↗</span>
+                <span aria-hidden="true">↗︎</span>
               </button>
             </div>
             <PremiumActionButton
@@ -451,6 +452,12 @@ export default function ComgatePaymentSelector({
                      * Rozbalená skupina má svůj vlastní, tišší stav.
                      */
                     data-open={expanded}
+                    data-active={selectedMethod?.selectorGroup === id}
+                    aria-pressed={
+                      isExpandable(id, groupMethods.length)
+                        ? undefined
+                        : selectedMethod?.selectorGroup === id
+                    }
                     aria-expanded={
                       isExpandable(id, groupMethods.length) ? expanded : undefined
                     }
@@ -475,7 +482,7 @@ export default function ComgatePaymentSelector({
                         ? expanded
                           ? "−"
                           : "+"
-                        : "↗"}
+                        : "↗︎"}
                     </span>
                   </motion.button>
                 )
@@ -511,7 +518,7 @@ export default function ComgatePaymentSelector({
                     {option.logo ? <span>{option.logo}</span> : null}
                   </span>
                   <span className={styles.groupArrow} aria-hidden="true">
-                    {vybrano ? "✓" : "↗"}
+                    {vybrano ? "✓" : "↗︎"}
                   </span>
                 </motion.button>
                 )
@@ -577,6 +584,8 @@ export default function ComgatePaymentSelector({
                           key={method.id}
                           className={styles.method}
                           variants={itemVariants}
+                          data-active={selectedMethod?.optionId === method.optionId}
+                          aria-pressed={selectedMethod?.optionId === method.optionId}
                           onClick={() => void choose(method)}
                           disabled={disabled || isSubmitting}
                         >
@@ -584,7 +593,7 @@ export default function ComgatePaymentSelector({
                             <MethodLogo method={method} />
                           </span>
                           <span>{method.name_short || method.name}</span>
-                          <span aria-hidden="true">↗</span>
+                          <span aria-hidden="true">↗︎</span>
                         </motion.button>
                       ))}
                     </motion.div>
@@ -609,19 +618,42 @@ export default function ComgatePaymentSelector({
                           <strong>Ostatní banky</strong>
                           <small>Banku si vyberete v zabezpečené bráně</small>
                         </span>
-                        <span aria-hidden="true">↗</span>
+                        <span aria-hidden="true">↗︎</span>
                       </button>
                     )}
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Potvrzení volby — pod otevřenou mřížkou, ne místo ní. */}
+            {selectedMethod && (
+              <div className={styles.confirmRow}>
+                <p className={styles.confirmChosen}>
+                  Vybráno: <strong>{selectedMethod.name_short || selectedMethod.name}</strong>
+                </p>
+                <PremiumActionButton
+                  text={isSubmitting ? busyLabel : confirmLabel}
+                  onClickAction={onConfirm}
+                  disabled={disabled || isSubmitting || confirmDisabled}
+                  active={isSubmitting}
+                  className={styles.confirm}
+                  data-testid="confirm-comgate-payment-button"
+                />
+                {confirmHint ? (
+                  <div className={styles.confirmHint}>{confirmHint}</div>
+                ) : null}
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   )
 }
+
+/** Sbalit volbu na „Vybrali jste" — vypnuto, volba zůstává otevřená (13. 11. 2026). */
+const SBALIT_PO_VYBERU = false
 
 
 /* Hoisted from JSX: these motion objects are static, so allocating them per

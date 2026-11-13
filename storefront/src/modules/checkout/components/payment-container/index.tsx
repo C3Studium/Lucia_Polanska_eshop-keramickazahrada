@@ -197,7 +197,7 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
                 transition={transition4}
                 aria-hidden="true"
               >
-                ↗
+                ↗︎
               </motion.span>
             </div>
           </div>

@@ -390,3 +390,15 @@
         }
     }
 }
+
+/* „Takhle to vzniká. / Zbytek je na vás." na dva řádky (13. 11. 2026, Matěj)
+   na šířku od nejmenšího laptopu nahoru — strop 9ch lámal druhou půlku. */
+@media (orientation: landscape) and (min-width: 1000px) {
+  .vyrobaCta h2#vyroba-cta-title {
+    font-size: clamp(2.5rem, calc(4.1vw * var(--ui-scale)), 5.5rem);
+  }
+  .vyrobaCta h2#vyroba-cta-title .vyrobaCta__line {
+    max-width: none;
+    white-space: nowrap;
+  }
+}

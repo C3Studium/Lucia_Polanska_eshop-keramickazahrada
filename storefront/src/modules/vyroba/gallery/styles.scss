@@ -683,3 +683,17 @@
     font-size: clamp(1rem, calc(1.5vw * var(--ui-scale)), 1.2rem);
   }
 }
+
+/* „Stejný postup, / pokaždé jiný výsledek." na dva řádky (13. 11. 2026, Matěj)
+   na šířku od nejmenšího laptopu nahoru: bez stropu 13ch, druhá půlka na
+   vlastním řádku a o kus menší písmo, ať se vejde. */
+@media (orientation: landscape) and (min-width: 1000px) {
+  .Gallery__outro h2 {
+    max-width: none !important;
+    font-size: clamp(2.5rem, calc(3.9vw * var(--ui-scale)), 5.25rem) !important;
+  }
+  .Gallery__outro h2 em {
+    display: block;
+    white-space: nowrap;
+  }
+}

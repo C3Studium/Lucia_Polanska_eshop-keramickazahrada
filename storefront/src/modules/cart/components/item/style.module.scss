@@ -44,46 +44,11 @@
   border-top: 1px solid rgb(var(--cream-06-rgb) / .22);
   border-bottom: 1px solid rgb(var(--cream-06-rgb) / .11);
   color: var(--cream-06);
-  background:
-    radial-gradient(circle at 72% 18%, rgb(var(--sage-01-rgb) / .06), transparent 18rem),
-    linear-gradient(105deg, rgb(var(--cream-06-rgb) / .042), transparent 58%);
-  animation: itemReveal .75s cubic-bezier(.22, 1, .36, 1) both;
 }
 
-.row::before {
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  content: "";
-  pointer-events: none;
-  background:
-    linear-gradient(90deg, rgb(var(--cream-06-rgb) / .018), rgb(var(--cream-06-rgb) / .12)),
-    rgb(var(--sage-01-rgb) / .025);
-  transform: translateX(101%);
-  transition: transform .58s cubic-bezier(.76, 0, .24, 1);
-  will-change: transform;
-}
-
-.row::after {
-  position: absolute;
-  z-index: 2;
-  right: .9375rem;
-  bottom: .875rem;
-  width: .3125rem;
-  height: .3125rem;
-  content: "";
-  border-radius: 50%;
-  background: var(--sage-01);
-  box-shadow: 0 0 0 .3125rem rgb(var(--sage-01-rgb) / .1);
-  opacity: 0;
-  transform: scale(.5);
-  transition: opacity 300ms ease, transform 500ms cubic-bezier(.22,1,.36,1);
-}
-
-.row:hover::before,
-.row:focus-within::before { transform: translateX(0); }
-
-.row:hover::after { opacity: 1; transform: scale(1); }
+/* Řádek bez přejezdu, tečky a nájezdu (13. 11. 2026, `PlainShop`): při
+   kliknutí na −/+ dřív přes celý řádek přejel světlý pruh (focus-within)
+   a vypadalo to jako chyba. Zůstává jen linka nahoře a dole. */
 
 .cellThumb,
 .cellTitle,
@@ -112,26 +77,13 @@
   min-height: 100%;
   overflow: hidden;
   background: var(--cream-02);
-  box-shadow: 1.125rem 1.375rem 3.4375rem -2.25rem rgb(var(--black-01-rgb) / .95);
 
   > div { width: 100%; height: 100%; }
-  img {
-    object-fit: cover;
-    transition: transform 900ms cubic-bezier(.22, 1, .36, 1);
-  }
+  img { object-fit: cover; }
 }
-
-.thumbLink::after {
-  position: absolute;
-  inset: 54% 0 0;
-  content: "";
-  pointer-events: none;
-  background: linear-gradient(transparent, rgb(var(--ink-01-rgb) / .3));
-}
-
-.row:hover .thumbLink img { transform: scale(1.04); }
 
 .imageIndex {
+  display: none;
   position: absolute;
   z-index: 2;
   right: .75rem;
@@ -242,9 +194,11 @@
   max-width: 100%;
   align-items: center;
   margin-top: clamp(.5rem, 1.1vh, .75rem);
-  padding: .3em .75em;
+  padding: .3em .6em;
   border: 1px solid rgb(var(--cream-06-rgb) / .3);
-  border-radius: 999px;
+  /* Rovné rohy (13. 11. 2026): s 999px se štítek v úzkém souhrnu na tabletu
+     zalomil na pět řádků a z pilulky byla kulatá bublina. */
+  border-radius: 0;
   color: rgb(var(--cream-06-rgb) / .82);
   font: 400 clamp(.75rem, calc(.9vw * var(--ui-scale)), .85rem)/1.3 "Sansation-Regular", sans-serif;
   letter-spacing: .02em;
@@ -483,7 +437,8 @@
     padding: .625rem .75rem .625rem 0;
     border-left: 0;
   }
-  .title { max-width: 14ch; margin-bottom: .25rem; font-size: 1.1rem; }
+  /* Jeden řádek se zkráceným názvem (13. 11. 2026) — dřív 14ch a dva řádky. */
+  .title { max-width: 100%; margin-bottom: .25rem; overflow: hidden; font-size: 1.05rem; text-overflow: ellipsis; white-space: nowrap; }
   .options { font-size: .8125rem; }
   .cellPrice {
     grid-column: 3;
@@ -506,17 +461,6 @@
   }
   .cellPrice :global(*) { font-size: .8125rem; }
   .previewTotal { color: var(--cream-06); }
-}
-
-.row:nth-child(2) { animation-delay: 60ms; }
-.row:nth-child(3) { animation-delay: 120ms; }
-.row:nth-child(4) { animation-delay: 180ms; }
-
-/* Dráha nájezdu je svislá, takže se měří výškou okna, ne pixely: 1.6vh je 12.3 px na 768,
-   17.3 na 1080 a 21.6 na 1351 — stejný podíl obrazovky, jaký mělo 18px na 1125. */
-@keyframes itemReveal {
-  from { opacity: 0; transform: translateY(1.6vh); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 @include below-px(920px) {
@@ -695,5 +639,156 @@
     .removeCompact button > span:last-child {
       display: none;
     }
+  }
+}
+
+/*
+ * Bauhaus řádek (13. 11. 2026, Matěj: „menší, název max 3 slova, ceny
+ * přehledněji"). Od 681 px jedna linka v pěti sloupcích s pevnou osou:
+ * fotka · název · množství · cena za kus · celkem. Ceny zarovnané vpravo pod
+ * sebou napříč řádky, štítky sloupců drobným písmem nad hodnotou. Řádek je
+ * vysoký jen tolik, kolik má obsah — dřív tři patra buněk po 6 vh.
+ * Telefon na výšku a úzké šířky mají vlastní skladbu výš (`.mobileControls`).
+ */
+@include from-px(681px) {
+  .row:not(.previewRow) {
+    /* Pevné šířky sloupců, ať osy sedí přes všechny řádky — `auto` měřil
+       každý řádek zvlášť a ceny „uskakovaly". */
+    grid-template-columns:
+      clamp(4.5rem, 6vw, 6rem)
+      minmax(0, 1fr)
+      13.5rem
+      6.5rem
+      7rem;
+    grid-template-rows: auto;
+    align-items: center;
+    column-gap: clamp(1rem, 2vw, 2.25rem);
+    min-height: 0;
+    padding: clamp(1rem, 2vh, 1.5rem) 0;
+    border-bottom: 0;
+  }
+
+  .row:not(.previewRow) .cellThumb {
+    grid-column: 1;
+    grid-row: 1;
+    aspect-ratio: 1;
+    padding: 0;
+  }
+
+  .row:not(.previewRow) .cellTitle {
+    grid-column: 2;
+    grid-row: 1;
+    gap: .35rem;
+    padding: 0;
+    border: 0;
+  }
+
+  .row:not(.previewRow) .cellActions,
+  .row:not(.previewRow) .cellUnit,
+  .row:not(.previewRow) .cellPrice {
+    grid-row: 1;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .45rem;
+    padding: 0;
+    border: 0;
+    text-align: right;
+  }
+
+  .row:not(.previewRow) .cellActions {
+    grid-column: 3;
+    justify-items: start;
+    text-align: left;
+  }
+  .row:not(.previewRow) .cellUnit { grid-column: 4; }
+  .row:not(.previewRow) .cellPrice { grid-column: 5; }
+
+  .row:not(.previewRow) .title {
+    max-width: none;
+    margin: 0;
+    overflow: hidden;
+    font-size: clamp(1.05rem, calc(1.25vw * var(--ui-scale)), 1.4rem);
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .row:not(.previewRow) .priceWrap {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .45rem;
+  }
+
+  .row:not(.previewRow) .options { font-size: .8125rem; }
+  .row:not(.previewRow) .dimensions { display: none; }
+}
+
+/* Linky výpisu (13. 11. 2026): každý řádek má linku nahoře, poslední i dole.
+   S jedním kusem tedy linka nad i pod ním, s více kusy jedna mezi každými dvěma. */
+.row:not(.previewRow) {
+  border-top: 1px solid rgb(var(--cream-06-rgb) / .22);
+  border-bottom: 0;
+}
+.row:not(.previewRow):last-of-type {
+  border-bottom: 1px solid rgb(var(--cream-06-rgb) / .22);
+}
+
+/*
+ * Množství na jedné lince s odebráním (13. 11. 2026, Matěj): „Odebrat" jen
+ * jako ikona koše hned vedle ovladače, ovladač o stupeň menší. Popisek zůstává
+ * pro čtečky (skrytý vizuálně, ne `display: none`).
+ */
+@include from-px(681px) {
+  .row:not(.previewRow) {
+    grid-template-columns:
+      clamp(4.5rem, 6vw, 6rem)
+      minmax(0, 1fr)
+      10rem
+      6.5rem
+      7rem;
+  }
+
+  .row:not(.previewRow) .cellActions {
+    --qty-stepper-height: 2.125rem;
+    --qty-stepper-side: 1.875rem;
+    --qty-stepper-mid: 1.75rem;
+    --qty-stepper-glyph: .9375rem;
+  }
+
+  .row:not(.previewRow) .actionsLine {
+    flex-wrap: nowrap;
+    gap: .5rem;
+  }
+
+  .removeCompact {
+    flex: 0 0 auto;
+  }
+  .removeCompact :global(button) {
+    width: 2.125rem;
+    min-width: 2.125rem;
+    height: 2.125rem;
+    min-height: 0 !important;
+    padding: 0 !important;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .removeCompact [class*="label"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* Telefon: tlačítka jen výška obsahu + 2,5 px nahoře a dole, bez okrajů
+   (13. 11. 2026, Matěj: „tlačítka jsou na telefonu moc velká"). */
+@media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  .mobileControls {
+    --qty-stepper-height: 2rem;
+    --qty-stepper-side: 2rem;
+    --qty-stepper-mid: 1.875rem;
+    gap: .5rem;
   }
 }

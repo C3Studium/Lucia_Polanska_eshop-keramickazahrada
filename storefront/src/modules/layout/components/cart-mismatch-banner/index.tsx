@@ -108,7 +108,7 @@ function CartMismatchBanner({
             }
             aria-hidden="true"
           >
-            ↗
+            ↗︎
           </motion.i>
         </motion.button>
       </div>

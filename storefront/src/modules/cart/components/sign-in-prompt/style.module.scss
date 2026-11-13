@@ -165,3 +165,25 @@
         }
     }
 }
+
+/* Telefon na výšku — menší, ať zboží v košíku začíná na první obrazovce. */
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .root { padding: .75rem 0; gap: .75rem; }
+  .root .content .title { font-size: 1.15rem; }
+  .root .content .desc { font-size: .875rem; }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .root { padding: .5rem 0; }
+  .root .content .title { font-size: 1.1rem; }
+  .root .content .desc { font-size: .8125rem; }
+}
+
+/* Menší přihlášení — jen věta a tlačítko, ne další nadpis stránky (13. 11. 2026). */
+.root { padding: clamp(.6rem, 1.4vh, 1rem) 0; }
+.root .content .title { font-size: clamp(1.1rem, calc(1.3vw * var(--ui-scale)), 1.4rem); }
+.root .content .desc { font-size: clamp(.8125rem, calc(.95vw * var(--ui-scale)), .9375rem); }
+
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .root .content .title { font-size: 1.15rem; }
+}
