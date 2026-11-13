@@ -31,7 +31,6 @@
     radial-gradient(ellipse at 12% 48%, rgb(var(--cream-06-rgb) / .18), transparent 48rem),
     radial-gradient(ellipse at 76% 78%, rgb(var(--sage-01-rgb) / .28), transparent 54rem);
   opacity: .12;
-  animation: cartAmbient 32s cubic-bezier(.45, 0, .55, 1) infinite alternate;
 }
 
 .container {
@@ -55,15 +54,16 @@
 
 .intro {
   display: grid;
-  grid-template-columns: minmax(17.5rem, 1.05fr) minmax(22.5rem, 1.2fr) minmax(17.5rem, 1.05fr);
-  gap: clamp(2.75rem, 4vw, 5.375rem);
+  /* Od 13. 11. 2026 dva sloupce: nadpis vlevo, věta vpravo — bez značky
+     uprostřed. Úvod má jen říct, kde jsem a kolik toho mám. */
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+  gap: clamp(1.5rem, 3vw, 4rem);
   align-items: end;
   /* Výška úvodního pásu je to, co rozhoduje, jestli je první produkt nad ohybem. 210px
      natvrdo zabralo na 1220x660 třetinu obrazovky; 22vh dá 145px tam a 224px na 1351. */
   min-height: clamp(9rem, 22vh, 14rem);
   padding: clamp(.9rem, 2.2vh, 1.6rem) clamp(1.125rem, 1.8vw, 2.25rem) clamp(1.75rem, 4.2vh, 3rem);
   border-bottom: 1px solid var(--cart-line);
-  animation: cartReveal .8s cubic-bezier(.22, 1, .36, 1) both;
 
   h1 {
     grid-column: 1;
@@ -90,59 +90,12 @@
 }
 
 .introCopy {
-  grid-column: 3;
+  grid-column: 2;
   margin: 0;
   max-width: 34ch;
   color: rgb(var(--cream-06-rgb) / .62);
   font: 300 clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.1rem)/1.5 "Sansation-Light", sans-serif;
 }
-
-.objectMark {
-  grid-column: 2;
-  grid-row: 2;
-  position: relative;
-  align-self: center;
-  justify-self: center;
-  /* Značka je uvnitř úvodního pásu, takže soupeří o VÝŠKU, ne o šířku — a protože má
-     aspect-ratio: 1, clampuje se jen jedna osa (procenta by se počítala z té druhé).
-     Živé pásmo 615–1292 px výšky: 86px na 660, 117px na 900, 168px na 1351. */
-  width: clamp(5rem, 13vh, 10.5rem);
-  aspect-ratio: 1;
-  color: rgb(var(--cream-06-rgb) / .22);
-  animation: objectDrift 12s ease-in-out infinite alternate;
-}
-
-.objectMark span,
-.objectMark i,
-.objectMark b {
-  position: absolute;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-}
-
-.objectMark span { inset: 0; }
-.objectMark i { inset: 20%; transform: rotate(14deg); }
-.objectMark b {
-  inset: 43%;
-  border: 0;
-  background: var(--sage-01);
-  /* Prstenec kolem tečky drží podíl z .objectMark, který je sám 13vh — 8/117 na 900px
-     výšky je 6.8 % z 13vh, tedy .9vh. V px by na 2K zůstal osmi pixely na 168px značce. */
-  box-shadow: 0 0 0 clamp(.375rem, .9vh, .625rem) rgb(var(--sage-01-rgb) / .08);
-}
-
-.objectMark::before,
-.objectMark::after {
-  position: absolute;
-  top: 50%;
-  left: -30%;
-  width: 160%;
-  height: 1px;
-  content: "";
-  background: linear-gradient(90deg, transparent, currentColor, transparent);
-}
-
-.objectMark::after { transform: rotate(90deg); }
 
 .grid {
   display: grid;
@@ -194,35 +147,7 @@
   border: 1px solid rgb(var(--ink-05-rgb) / .2);
   background: var(--cart-cream);
   color: var(--cart-ink);
-  box-shadow: 1.5rem 1.875rem 4.375rem -3rem rgb(var(--black-01-rgb) / .95);
-  transition: transform 700ms cubic-bezier(.22,1,.36,1);
 }
-
-.summaryBox::before {
-  position: absolute;
-  z-index: -1;
-  inset: .8125rem -.8125rem -.8125rem .8125rem;
-  content: "";
-  border: 1px solid rgb(var(--sage-01-rgb) / .42);
-  background: rgb(var(--sage-01-rgb) / .08);
-  transition: transform 700ms cubic-bezier(.22,1,.36,1);
-}
-
-.summaryBox::after {
-  position: absolute;
-  top: -1.1875rem;
-  right: .6875rem;
-  content: "02 · SOUHRN";
-  color: rgb(var(--cream-06-rgb) / .38);
-  font: 400 clamp(.78rem, calc(.95vw * var(--ui-scale)), 1rem)/1 "Sansation-Regular", sans-serif;
-  letter-spacing: .15em;
-}
-
-/* Posun na hoveru je vázaný na vlastní geometrii boxu (::before má inset .8125rem),
-   ne na okno — proto rem, ne vw/vh. V px by rámeček nad 1921 vyjel o týchž 4 px z boxu,
-   který mezitím vyrostl 1.33×, a zákryt s odsazením rámečku by se rozešel. */
-.summaryBox:hover { transform: translateY(-.1875rem); }
-.summaryBox:hover::before { transform: translate(.25rem, .25rem); }
 
 .secureNote {
   /* Svislá mezera visela na šířce okna: na 1220x660 z ní bylo 48.8px. Na vh je to 22px. */
@@ -241,30 +166,8 @@
   color: var(--cart-cream);
 }
 
-@keyframes cartAmbient {
-  from { opacity: .08; transform: scale(.99) translate3d(-.5%, 0, 0); }
-  to { opacity: .17; transform: scale(1.015) translate3d(.7%, -.3%, 0); }
-}
-
-/* Dráhy ve vh, ne v px — svislý posun se má krátit se stejnou osou, o kterou celý pás
-   soupeří. 24px na 900px vysokém okně je 2.67vh, zaokrouhleno dolů na 2.4vh, aby na 1351
-   nevyskočil úvod o 36px. */
-@keyframes cartReveal {
-  from { opacity: 0; transform: translateY(2.4vh); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Odvozeno z velikosti značky, ne opsáno: .objectMark je 13vh, na 900px výšky tedy 117px,
-   a dnešní drift -4/+5px z toho dělá -3.4 % / +4.3 %. Táž procenta z 13vh jsou -.44vh
-   a +.56vh, takže amplituda drží poměr ke značce na každé výšce okna. */
-@keyframes objectDrift {
-  from { transform: rotate(-4deg) translateY(-.44vh); }
-  to { transform: rotate(7deg) translateY(.56vh); }
-}
-
 @include below-px(1100px) {
   .intro { grid-template-columns: 1fr 1fr; }
-  .objectMark { display: none; }
   .introCopy { grid-column: 2; }
   .grid { grid-template-columns: 1fr; }
   .right { width: min(100%, 660px); margin-left: auto; }
@@ -295,8 +198,6 @@
     /* Stejná míra jako u pruhu samotného — viz komentář v checkout-bar. */
     padding-bottom: calc(var(--nav-bottom-clearance, 68px) + 5.5rem);
   }
-
-
 
   /* Užší okraje panelu: uvnitř teď stojí nadpis a slevový kód vedle sebe
      a rozbalenému poli pro kód se hodí každý pixel šířky. */

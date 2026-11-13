@@ -1,5 +1,5 @@
 import { retrieveCart } from "@lib/data/cart"
-import TouchSimpleMotion from "@modules/common/components/touch-simple-motion"
+import PlainShop from "@modules/common/components/plain-shop"
 import { retrieveCustomer } from "@lib/data/customer"
 import { getPageCopy } from "@lib/data/site-copy"
 import CartTemplate from "@modules/cart/templates"
@@ -24,8 +24,8 @@ export default async function Cart() {
   const copy = await getPageCopy("kosik")
 
   return (
-    <TouchSimpleMotion>
+    <PlainShop>
       <CartTemplate cart={cart} customer={customer} copy={copy} />
-    </TouchSimpleMotion>
+    </PlainShop>
   )
 }

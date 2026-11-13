@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import TouchSimpleMotion from "@modules/common/components/touch-simple-motion"
+import PlainShop from "@modules/common/components/plain-shop"
 import { notFound } from "next/navigation"
 import {
   // BundleProduct, // Re-enable with the static preview block below.
@@ -233,7 +233,7 @@ export default async function ProductPage(props: Props) {
   const productCopy = (await getPageCopy("global"))["global.produkt"]
 
   return (
-    <TouchSimpleMotion>
+    <PlainShop>
     <main>
       {/* Karta výrobku začíná vždy nahoře — i po kroku vpřed v historii. */}
       <Product
@@ -255,6 +255,6 @@ export default async function ProductPage(props: Props) {
       <ProductReviews productId={pricedProduct.id} initialReviews={reviewsData.reviews} initialRating={reviewsData.average_rating} initialCount={reviewsData.count} texts={productCopy} />
       <SoldProducts products={relatedProducts} block={productCopy} />
     </main>
-    </TouchSimpleMotion>
+    </PlainShop>
   )
 }

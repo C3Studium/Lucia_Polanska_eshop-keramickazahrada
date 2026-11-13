@@ -480,3 +480,20 @@
     max-height: calc(95dvh - var(--drawer-lift));
   }
 }
+
+/*
+ * Svislý telefon: písmo filtrů o čtvrtinu větší (13. 11. 2026, přání
+ * majitele po testu na iPhonu — položky kategorií byly na 13 px nečitelné
+ * pro starší zákazníky). Násobky původních hodnot, ne nová čísla.
+ */
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .heading span { font-size: .9375rem; }
+  .heading h2 { font-size: 1.9rem; }
+  .group small { font-size: .9375rem; }
+  .group h3 { font-size: 1rem; }
+  .categoryList button { font-size: 1.0625rem; padding: .3rem 0; }
+  .subListInner button { font-size: 1rem; padding: .25rem 0; }
+  .toggle { font-size: 1rem; padding: .55rem 0; }
+  .priceInputs { font-size: .9375rem; }
+  .priceInputs input { font-size: 1rem; }
+}

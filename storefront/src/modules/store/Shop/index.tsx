@@ -34,6 +34,8 @@ type EComProps = {
   totalCount?: number
   initialFilters?: Partial<ShopFilters>
   initialFilterLabel?: string
+  /** id kolekce → handle, kvůli zrcadlení `?collection=` do adresy. */
+  collectionHandles?: Record<string, string>
   /** Režim výběru do úpravy objednávky — viz `ShopPickMode`. */
   pick?: ShopPickMode
   /**
@@ -135,6 +137,7 @@ export default function ECom({
   totalCount,
   initialFilters,
   initialFilterLabel,
+  collectionHandles = {},
   pick,
   block,
   texts,
@@ -388,6 +391,39 @@ export default function ECom({
     cancelRestore()
     setFilters(emptyFilters)
   }, [cancelRestore])
+
+  /*
+   * Filtry do adresy (13. 11. 2026). Drželi jsme je jen ve stavu, takže
+   * obnovení stránky na telefonu (Safari ji zahazuje často) je smazalo
+   * a člověk začínal od „Všechno". Tiše přes `replaceState`, bez navigace
+   * a bez záznamu v historii — stránka obchodu (page.tsx) si je při načtení
+   * přečte a předá jako `initialFilters`. V režimu výběru (mini obchod
+   * v úpravě objednávky) se adresa nemění.
+   */
+  useEffect(() => {
+    if (pick) return
+    const params = new URLSearchParams(window.location.search)
+    const set = (key: string, value: string | null) => {
+      if (value) params.set(key, value)
+      else params.delete(key)
+    }
+    const category = (categories as Array<{ id: string; handle?: string | null }>).find(
+      (item) => item.id === filters.categoryId
+    )
+    set("category", category?.handle ?? null)
+    set("collection", filters.collectionId ? collectionHandles[filters.collectionId] ?? null : null)
+    set("search", filters.search.trim() || null)
+    set("kind", filters.kind || null)
+    set("sort", filters.sort !== "featured" ? filters.sort : null)
+    set("price", filters.priceRange || null)
+    set("new", filters.isNew ? "1" : null)
+    set("sale", filters.onSale ? "1" : null)
+    const query = params.toString()
+    const next = window.location.pathname + (query ? "?" + query : "") + window.location.hash
+    if (next !== window.location.pathname + window.location.search + window.location.hash) {
+      window.history.replaceState(window.history.state, "", next)
+    }
+  }, [filters, categories, collectionHandles, pick])
   const openFilters = useCallback(() => {
     filterTrigger.current =
       document.activeElement instanceof HTMLElement
@@ -451,6 +487,17 @@ export default function ECom({
         setProducts(payload.products)
         setResultCount(payload.count)
         setAllLoaded(payload.products.length >= payload.count)
+        /* Nový výpis od začátku (13. 11. 2026): po změně kategorie se stránka
+           zkrátila (kategorie s dvěma kusy) a scroll zůstal, kde byl — tedy
+           u dna, pod výsledky, s patičkou přes půl obrazovky. Kdo je pod
+           začátkem katalogu, vrátí se na něj; Lenis si napřed přeměří hranici. */
+        const katalog = catalogueRef.current
+        if (katalog && katalog.getBoundingClientRect().top < 0) {
+          window.requestAnimationFrame(() => {
+            window.lenis?.resize()
+            scrollWithLenis(katalog, { immediate: true })
+          })
+        }
       } catch (error) {
         if (requestId !== requestSequence.current) return
         console.error("Store catalogue query failed", error)

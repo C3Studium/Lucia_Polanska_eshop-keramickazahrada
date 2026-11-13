@@ -1,5 +1,5 @@
 import { retrieveCart } from "@lib/data/cart"
-import TouchSimpleMotion from "@modules/common/components/touch-simple-motion"
+import PlainShop from "@modules/common/components/plain-shop"
 import { getCustomerWishlistItems, retrieveCustomer } from "@lib/data/customer"
 import { listRegions } from "@lib/data/regions"
 import { StoreRegion } from "@medusajs/types"
@@ -64,7 +64,7 @@ export default async function CheckoutLayout({
         <main className={styles.checkoutContainer} data-testid="checkout-container">
           {/* Anotace pro Studio u stránky s `loading.tsx` — viz komponentu. */}
           <EditModeRemount>
-            <TouchSimpleMotion>{children}</TouchSimpleMotion>
+            <PlainShop>{children}</PlainShop>
           </EditModeRemount>
         </main>
         <div className={styles.footer}>

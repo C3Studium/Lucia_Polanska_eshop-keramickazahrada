@@ -4,6 +4,8 @@ import { getProductionPaymentMode } from "@lib/data/made-to-order"
 import PaymentWrapper from "@modules/checkout/components/payment-wrapper"
 import CheckoutForm from "@modules/checkout/templates/checkout-form"
 import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
+import CheckoutStepList from "@modules/checkout/components/step-list"
+import { isMadeToOrderLine } from "@lib/util/commission"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CmsText from "@modules/common/components/cms-text"
 import { CopyProvider } from "@modules/common/components/cms-text/copy-context"
@@ -47,6 +49,8 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
   const productionMode = await getProductionPaymentMode(cart.id)
   // Kusy zboží — balné a doběrečné do počtu nepatří.
   const itemCount = productLines(cart.items).reduce((total, item) => total + item.quantity, 0)
+  /* Zakázka přidává krok „Zadání" — seznam kroků vlevo to musí vědět. */
+  const maZakazku = ((cart.items ?? []) as any[]).some(isMadeToOrderLine)
 
   /*
    * Úvodní věty pokladny z CMS (stránka `pokladna`). Jen hlavička, nadpis
@@ -62,37 +66,43 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
 
   return (
     <div className={styles.root}>
-      <header className={styles.masthead}>
-        <div>
-          {/* Počet výrobků je údaj, ne text — „Pokladna · 02 výrobky" zůstává v kódu. */}
-          <p className={styles.mastheadMeta}>Pokladna · {String(itemCount).padStart(2, "0")} {itemCount === 1 ? "výrobek" : itemCount < 5 ? "výrobky" : "výrobků"}</p>
-          {/* Začátek nadpisu ve spanu jen v náhledu Studia; jinak DOM jako dřív. */}
-          <h1>
-            {introDoc ? (
-              <CmsText doc={introDoc} field="title">{introLead}</CmsText>
-            ) : (
-              introLead
-            )}
-            <br />
-            <CmsText as="em" doc={introDoc} field="headline">
-              {intro?.headline?.trim() || "pár kroků."}
-            </CmsText>
-          </h1>
-        </div>
-        <div className={styles.mastheadAside}>
-          <CmsText as="p" className={styles.mastheadCopy} doc={introDoc} field="body">
-            {intro?.bodyText?.trim() || "Ještě pár kroků a můžeme to z ateliéru poslat k vám."}
+      {/* Levý sloupec jako u poptávky zakázky (13. 11. 2026): kde jsem, co
+          mě čeká a co objednávám. Vpravo jen formulář kroku. */}
+      <div className={styles.intro}>
+        {/* Počet výrobků je údaj, ne text — „Pokladna · 02 výrobky" zůstává v kódu. */}
+        <p className={styles.mastheadMeta}>Pokladna · {String(itemCount).padStart(2, "0")} {itemCount === 1 ? "výrobek" : itemCount < 5 ? "výrobky" : "výrobků"}</p>
+        {/* Začátek nadpisu ve spanu jen v náhledu Studia; jinak DOM jako dřív. */}
+        <h1>
+          {introDoc ? (
+            <CmsText doc={introDoc} field="title">{introLead}</CmsText>
+          ) : (
+            introLead
+          )}
+          <br />
+          <CmsText as="em" doc={introDoc} field="headline">
+            {intro?.headline?.trim() || "pár kroků."}
           </CmsText>
-          <LocalizedClientLink href="/cart" className={styles.backLink}>
-            <span>←</span>{" "}
-            {introDoc ? (
-              <CmsText doc={introDoc} field={itemFieldPath(intro, "zpet")}>{backLabel}</CmsText>
-            ) : (
-              backLabel
-            )}
-          </LocalizedClientLink>
-        </div>
-      </header>
+        </h1>
+        <CmsText as="p" className={styles.mastheadCopy} doc={introDoc} field="body">
+          {intro?.bodyText?.trim() || "Ještě pár kroků a můžeme to z ateliéru poslat k vám."}
+        </CmsText>
+        <CheckoutStepList hasBrief={maZakazku} />
+        <LocalizedClientLink href="/cart" className={styles.backLink}>
+          <span>←</span>{" "}
+          {introDoc ? (
+            <CmsText doc={introDoc} field={itemFieldPath(intro, "zpet")}>{backLabel}</CmsText>
+          ) : (
+            backLabel
+          )}
+        </LocalizedClientLink>
+        <aside className={styles.order}>
+          <CheckoutSummary
+            cart={cart}
+            productionMode={productionMode}
+            copy={copy["pokladna.souhrn"]}
+          />
+        </aside>
+      </div>
       {/* Kroky jsou hluboko (formulář → krok → adresa), proto blok kontextem, ne propem. */}
       <CopyProvider blocks={{ "pokladna.kroky": copy["pokladna.kroky"] }}>
         <section className={styles.ledger}>
@@ -106,13 +116,6 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
           </PaymentWrapper>
         </section>
       </CopyProvider>
-      <aside className={styles.order}>
-        <CheckoutSummary
-          cart={cart}
-          productionMode={productionMode}
-          copy={copy["pokladna.souhrn"]}
-        />
-      </aside>
     </div>
   )
 }

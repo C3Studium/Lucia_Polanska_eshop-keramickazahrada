@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { useState } from "react"
 import { useCoarsePointer } from "@lib/hooks/use-coarse-pointer"
+import { usePlainShop } from "@modules/common/components/plain-shop"
 import { useFormStatus } from "react-dom"
 import {
   PREMIUM_BUTTON_ACTIVE,
@@ -51,6 +52,38 @@ const PremiumActionButton = ({
    * zůstává, protože nese význam; „pracuji" ukáže jen ztlumení (`.busy`).
    */
   const coarse = useCoarsePointer()
+
+  /*
+   * V obchodě, košíku a pokladně (13. 11. 2026, `PlainShop`) žádný přejezd:
+   * obyčejné tlačítko s rovnými hranami, najetí ho přebarví naráz přes CSS.
+   * Zvolený stav (`active`) je plný, odesílání jen ztlumí.
+   */
+  const plain = usePlainShop()
+  if (plain) {
+    return (
+      <div
+        className={`${styles.root} ${styles.plain} ${compact ? styles.compact : ""} ${isVisuallyActive ? styles.active : ""} ${isVisuallyActive && !active ? styles.busy : ""} ${className ?? ""}`}
+      >
+        <button
+          type={type}
+          className={`${styles.button} ${styles.plainButton} ${active ? styles.plainActive : ""}`}
+          onClick={onClickAction ?? ClickAction}
+          disabled={isDisabled}
+          aria-pressed={active || undefined}
+          aria-busy={isDisabled || undefined}
+          data-testid={dataTestId}
+        >
+          <span className={styles.labelStack}>
+            <span className={styles.label}>{text}</span>
+          </span>
+          <span className={styles.arrow} aria-hidden="true">
+            ↗
+          </span>
+        </button>
+      </div>
+    )
+  }
+
   const isFilled =
     (coarse ? Boolean(active) : isVisuallyActive) ||
     (!isDisabled && (isHovered || isFocusVisible))

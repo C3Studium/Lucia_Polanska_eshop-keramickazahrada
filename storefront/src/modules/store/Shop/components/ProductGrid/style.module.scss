@@ -48,7 +48,8 @@
 
   // 16–24px, živé 1231–1846. Dřív to byla dvojice `border-radius: 17px`
   // v základu a `20px` ve `v(md)` i `h(xs)` — chybějící clamp, napsaný 2×.
-  --card-radius: clamp(1rem, 1.3vw, 1.5rem);
+  // 13. 11. 2026: rovné rohy — obchod je v PlainShop, karty jsou prosté plochy.
+  --card-radius: 0;
 }
 
 .results { position: relative; }

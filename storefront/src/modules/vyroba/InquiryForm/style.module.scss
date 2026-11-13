@@ -69,7 +69,8 @@
 .title {
   margin: 0;
   font-family: "Sentient-Regular", serif;
-  font-size: clamp(2.5rem, calc(3.9vw * var(--ui-scale)), 5rem);
+  /* O stupeň menší (13. 11. 2026, přání majitelky): vzor pro pokladnu. */
+  font-size: clamp(2.125rem, calc(3vw * var(--ui-scale)), 3.5rem);
   font-weight: 400;
   letter-spacing: -0.05em;
   line-height: 0.95;
@@ -111,7 +112,7 @@
   h3 {
     margin: 0;
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(1.125rem, calc(1.3vw * var(--ui-scale)), 1.375rem);
+    font-size: clamp(1.0625rem, calc(1.2vw * var(--ui-scale)), 1.25rem);
     font-weight: 400;
     letter-spacing: -0.02em;
     line-height: 1.2;
@@ -175,7 +176,7 @@
 
   position: relative;
   min-width: 0;
-  padding: clamp(1.75rem, 4.4vh, 3.75rem) clamp(1.25rem, 3.6vw, 4rem);
+  padding: clamp(1.5rem, 3.2vh, 2.5rem) clamp(1.25rem, 2.6vw, 2.75rem);
   border: 1px solid rgb(var(--white-rgb) / .46);
   border-radius: 1.125rem;
   background:
@@ -204,7 +205,7 @@
 .cardTitle {
   margin: calc(-1 * clamp(0.75rem, 2vh, 1.5rem)) 0 0;
   font-family: "Sentient-Regular", serif;
-  font-size: clamp(1.75rem, calc(2.3vw * var(--ui-scale)), 2.5rem);
+  font-size: clamp(1.5rem, calc(1.9vw * var(--ui-scale)), 2rem);
   font-weight: 400;
   letter-spacing: -0.035em;
   line-height: 1.05;

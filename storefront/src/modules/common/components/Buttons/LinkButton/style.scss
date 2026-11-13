@@ -40,8 +40,11 @@
            a h-query() ke každému dotazu přilepuje `and (orientation: landscape)`,
            takže sem nikdy nedosáhne. 90px = 5.625rem, 44px = 2.75rem, na milimetr
            totéž co dosud. Tvar téhle položky patří druhému kolu (telefony). */
+        /* 13. 11. 2026: pevných 90 px šířky usekávalo delší popisky —
+           „Prozkoumat produkty" v prázdném košíku na telefonu končilo
+           v půlce slova. Šířka podle obsahu, 90 px je jen dno. */
         @include vb((
-            s: (width: 5.625rem, height: 2.75rem),
+            s: (width: fit-content, min-width: 5.625rem, height: 2.75rem),
         ));
 
         .slider{

@@ -247,3 +247,15 @@
     display: none;
   }
 }
+
+/* Košík v `PlainShop` (13. 11. 2026): rovné hrany, bez stínu, přebarvení naráz. */
+:global([data-shop-plain]) .LinkButton { border-radius: 0; box-shadow: none; }
+.plainButton {
+  border-radius: 0 !important;
+  transition: background-color 120ms linear, color 120ms linear !important;
+}
+.plainButton:hover,
+.LinkButton:focus-visible .plainButton {
+  color: var(--cream-06);
+  background-color: var(--ink-05);
+}

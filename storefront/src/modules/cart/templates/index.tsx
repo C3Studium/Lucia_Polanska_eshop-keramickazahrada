@@ -88,11 +88,6 @@ const CartTemplate = async ({
               {/* Obočí bez počtu kusů ve vlastním spanu — počet je údaj, ne text. */}
               <p className={s.eyebrow}><CmsText doc={introId} field={itemFieldPath(intro, "oboci")}>{introEyebrow}</CmsText> · {itemCount} {itemCount === 1 ? "kus" : itemCount < 5 ? "kusy" : "kusů"}</p>
               <CmsText as="h1" doc={introId} field="title">{introTitle}</CmsText>
-              <div className={s.objectMark} aria-hidden="true">
-                <span />
-                <i />
-                <b />
-              </div>
               <CmsText as="p" className={s.introCopy} doc={introId} field="body">{introCopy}</CmsText>
             </header>
             <div className={s.grid}>

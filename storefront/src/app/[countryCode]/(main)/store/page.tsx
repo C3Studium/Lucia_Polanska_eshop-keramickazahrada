@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import TouchSimpleMotion from "@modules/common/components/touch-simple-motion"
+import PlainShop from "@modules/common/components/plain-shop"
 
 import ECom from "@modules/store/Shop"
 import type { ShopFilters } from "@modules/store/Shop/types"
@@ -11,6 +11,11 @@ import { getPageCopy, getPageSeo } from "@lib/data/site-copy"
 type StorePageProps = {
   params: Promise<{ countryCode: string }>
   searchParams: Promise<{
+    kind?: string
+    sort?: string
+    price?: string
+    new?: string
+    sale?: string
     category?: string
     collection?: string
     search?: string
@@ -83,11 +88,22 @@ export default async function StorePage({
     ? await getCollectionByHandle(query.collection).catch(() => undefined)
     : undefined
 
+  /* Zbytek filtrů z adresy (13. 11. 2026): obchod je do ní zrcadlí
+     (`history.replaceState` v Shop/index.tsx), takže obnovení stránky
+     ani sdílený odkaz o nastavení nepřijdou. Neznámá hodnota = výchozí. */
+  const kind = (["clearance", "bundle", "madeToOrder"] as const).find((k) => k === query.kind) ?? ""
+  const sort = (["featured", "newest", "price-asc", "price-desc"] as const).find((k) => k === query.sort) ?? "featured"
+  const priceRange = ["0-500", "500-1000", "1000-2500", "2500+"].find((k) => k === query.price) ?? ""
   const initialFilters: ShopFilters = {
     ...defaultFilters,
     categoryId: category?.id ?? "",
     collectionId: collection?.id ?? "",
     search: query.search?.trim() ?? "",
+    kind,
+    sort,
+    priceRange,
+    isNew: query.new === "1",
+    onSale: query.sale === "1",
   }
 
   const [{ products, count }, copy] = await Promise.all([
@@ -101,7 +117,7 @@ export default async function StorePage({
   ])
 
   return (
-    <TouchSimpleMotion>
+    <PlainShop>
     <ECom
       block={copy["obchod.vyber"]}
       texts={copy["obchod.katalog"]}
@@ -110,10 +126,13 @@ export default async function StorePage({
       products={products}
       categories={categories}
       navCollections={navCollections}
+      collectionHandles={Object.fromEntries(
+        allCollections.map((item: any) => [item.id, item.handle as string])
+      )}
       totalCount={count}
       initialFilters={initialFilters}
       initialFilterLabel={category?.name ?? collection?.title}
     />
-    </TouchSimpleMotion>
+    </PlainShop>
   )
 }

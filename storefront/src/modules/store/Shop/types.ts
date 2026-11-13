@@ -23,6 +23,8 @@ export type ShopFilters = {
 }
 
 export type ShopCategory = Pick<HttpTypes.StoreProductCategory, "id" | "name"> & {
+  /** Do adresy (`?category=`) — stránka obchodu kategorii hledá podle něj. */
+  handle?: string | null
   products?: HttpTypes.StoreProduct[] | null
 }
 

@@ -28,6 +28,7 @@ import s from "./summary.module.scss"
 import { useTexty } from "@lib/context/texty"
 
 import { motion } from 'framer-motion';
+import { usePlainShop } from "@modules/common/components/plain-shop"
 
 type SummaryProps = {
   cart: HttpTypes.StoreCart & {
@@ -153,6 +154,17 @@ type LinkButtonProps = {
 // This is base button for every button animation inside the website.
 
 function LinkButton({ text, href, className, buttonClassName, dataTestId } : LinkButtonProps) {
+  /* Košík je v `PlainShop`: tlačítko bez přejezdu výplně, najetí přes CSS. */
+  const plain = usePlainShop()
+  if (plain) {
+    return (
+      <LocalizedClientLink href={href} className={className ?? s.LinkButton}>
+        <span className={`${buttonClassName ?? s.button} ${s.plainButton}`} data-testid={dataTestId}>
+          <span className={s.label}>{text}</span>
+        </span>
+      </LocalizedClientLink>
+    )
+  }
   return (
     <LocalizedClientLink href={href} className={className ?? s.LinkButton}>
       <motion.button

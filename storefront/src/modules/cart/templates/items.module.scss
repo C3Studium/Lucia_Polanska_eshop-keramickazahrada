@@ -12,14 +12,8 @@
   padding: 0 0 clamp(1rem, 2vh, 1.75rem);
   border-bottom: 1px solid rgb(var(--cream-06-rgb) / .22);
   flex-direction: column;
-
-  @include v(md) {
-    align-items: flex-end;
-  }
-
-  @include h(xs) {
-    align-items: flex-end;
-  }
+  /* Nadpis i popisek vlevo na všech šířkách (13. 11. 2026) — zarovnání
+     doprava nutilo oko přeskakovat přes celou stránku. */
 }
 
 .title {
@@ -47,14 +41,12 @@
 }
 
 .sectionMeta span {
-  display: grid;
+  display: inline-grid;
   /* Kolečko s pořadovým číslem: obě osy stejným clampem, takže zůstane kruh a nemusí se
      spoléhat na procenta z druhé osy. Živé pásmo 1280–1680. */
   width: clamp(1.6rem, 2vw, 2.1rem);
   height: clamp(1.6rem, 2vw, 2.1rem);
   place-items: center;
-  border: 1px solid rgb(var(--cream-06-rgb) / .3);
-  border-radius: 50%;
   color: var(--sage-01);
   letter-spacing: 0;
 }

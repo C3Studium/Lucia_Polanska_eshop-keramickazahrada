@@ -1,0 +1,66 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+/* Seznam kroků vlevo — tvar z InquiryForm (`.steps`), barvy tmavého sloupce. */
+.root {
+  display: grid;
+  margin: clamp(1.25rem, 2.6vh, 2rem) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid rgb(var(--cream-06-rgb) / .2);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  gap: .75rem;
+  padding: clamp(.7rem, 1.5vh, 1rem) 0;
+  border-bottom: 1px solid rgb(var(--cream-06-rgb) / .2);
+  color: rgb(var(--cream-06-rgb) / .5);
+}
+
+.item[data-state="done"] { color: rgb(var(--cream-06-rgb) / .78); }
+.item[data-state="current"] { color: var(--cream-06); }
+
+.index {
+  padding-top: .2rem;
+  font-size: .75rem;
+  letter-spacing: .12em;
+  font-variant-numeric: tabular-nums;
+}
+
+.item[data-state="current"] .index { color: var(--sage-01); }
+
+.body { min-width: 0; }
+
+.title {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: 400 clamp(1.0625rem, calc(1.2vw * var(--ui-scale)), 1.25rem)/1.2 "Sentient-Regular", serif;
+  letter-spacing: -.02em;
+  text-align: left;
+}
+
+.titleButton {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgb(var(--cream-06-rgb) / .4);
+
+  &:hover { color: var(--cream-06); }
+  &:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: 3px; }
+}
+
+.desc {
+  margin: .2rem 0 0;
+  font-size: .9375rem;
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+/* Pod dvousloupcové rozvržení nesou pořadí bublinky nad formulářem. */
+@include below-px(1021px) {
+  .root { display: none; }
+}
