@@ -75,6 +75,17 @@
   &__header {
     position: absolute;
     top: clamp(4.5rem, 8vh, 6.625rem);
+
+    /* Na dotyku pod skutečný spodek menu (13. 11. 2026). Rem nese `--ui-scale`
+       (0,8 na telefonu), takže 4.5rem je 58 px — a navbar na dotyku má 56 px
+       + odsazení: lišta „Proces · sedm kapitol" ležela pod horními tlačítky
+       (375×667). Stejná oprava jako lišta Kurzů. */
+    @include touch {
+      top: max(
+        clamp(4.5rem, 8vh, 6.625rem),
+        calc(var(--nav-top-inset) + 56px + 12px)
+      );
+    }
     left: 4.5%;
     right: 4.5%;
     z-index: 20;

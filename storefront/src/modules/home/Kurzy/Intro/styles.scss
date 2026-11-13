@@ -57,6 +57,12 @@
     right: 4.5%;
     bottom: 3.6%;
     left: 4.5%;
+
+    /* Na dotyku nad spodní lištou (13. 11. 2026): na tabletu na výšku (768×1024)
+       stálo „01 · Kurzy" přímo pod ní. Bez lišty se proměnná odebere → 3.6 %. */
+    @include touch {
+      bottom: max(3.6%, calc(var(--nav-bottom-clearance, 0px) + 12px));
+    }
     z-index: 30;
     display: grid;
     grid-template-columns: repeat(2, 1fr);

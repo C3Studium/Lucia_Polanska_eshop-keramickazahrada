@@ -766,7 +766,9 @@
     .Courses__cta {
       top: auto;
       right: 1.25rem;
-      bottom: max(5vh, 3.25rem);
+      /* Nad spodní lištou (13. 11. 2026): na tabletu na výšku sahalo
+         „Prohlédnout výrobky" do lišty. Bez lišty proměnná chybí → 0. */
+      bottom: max(5vh, 3.25rem, calc(var(--nav-bottom-clearance, 0px) + 1.25rem));
       left: 1.25rem;
       width: auto;
       transform: none;
