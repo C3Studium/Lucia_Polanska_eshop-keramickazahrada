@@ -36,11 +36,13 @@ const OrderSummary = ({ order }: OrderSummaryProps) => {
           {/* Před slevou, ne po ní. `item_total` je součet položek už PO
               odečtení akcí, takže se sleva o řádek níž započítala podruhé
               a sloupec nevycházel. */}
-          <span>{getAmount(order.item_subtotal)}</span>
+          <span>{getAmount(order.item_subtotal - (dobirkaFee ?? 0))}</span>
         </div>
         {/* Rozpad mezisoučtu: výrobky, balné a doběrečné, odsazeně.
             Doběrečné do „Výrobky" nepatří — vlastní řádek. */}
-        {(packaging !== null || dobirkaFee !== null) && (
+        /* Doběrečné je platba, ne zboží (13. 11. 2026) — z mezisoučtu se
+            vyjme a stojí jako „Platba na dobírku" pod Dopravou. */
+        {packaging !== null && (
           <>
             <div className={styles.row} style={{ paddingLeft: ".9rem", opacity: 0.78, fontSize: ".9em" }}>
               <span>Výrobky</span>
@@ -50,12 +52,6 @@ const OrderSummary = ({ order }: OrderSummaryProps) => {
               <div className={styles.row} style={{ paddingLeft: ".9rem", opacity: 0.78, fontSize: ".9em" }}>
                 <span>Balné</span>
                 <span>{getAmount(packaging)}</span>
-              </div>
-            )}
-            {dobirkaFee !== null && (
-              <div className={styles.row} style={{ paddingLeft: ".9rem", opacity: 0.78, fontSize: ".9em" }}>
-                <span>Doběrečné</span>
-                <span>{getAmount(dobirkaFee)}</span>
               </div>
             )}
           </>
@@ -79,6 +75,12 @@ const OrderSummary = ({ order }: OrderSummaryProps) => {
             <span>Doprava</span>
             <span>{getAmount(order.shipping_total)}</span>
           </div>
+          {dobirkaFee !== null && (
+            <div className={styles.row}>
+              <span>Platba na dobírku</span>
+              <span>{getAmount(dobirkaFee)}</span>
+            </div>
+          )}
           {/* Jen pro plátce DPH — viz `lib/util/dph.ts`. */}
           {PLATCE_DPH && (
             <div className={styles.row}>

@@ -257,3 +257,14 @@
     padding-bottom: calc(var(--nav-bottom-clearance, 68px) + 10px + 2.5vh + 4.5rem) !important;
   }
 }
+
+/* Telefon: tlačítka jen výška obsahu + 2,5 px nahoře a dole, bez okrajů
+   (13. 11. 2026, Matěj: „tlačítka jsou na telefonu moc velká"). */
+@media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  .root .cta,
+  .root .ctaBlocked {
+    min-height: 0 !important;
+    padding-block: 2.5px !important;
+    margin-block: 0 !important;
+  }
+}

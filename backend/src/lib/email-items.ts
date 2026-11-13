@@ -17,7 +17,7 @@ import { localizedLineTitle, pick, type EmailLocale } from "./email-locale"
  */
 const SERVICE_TITLES: Record<string, Record<EmailLocale, string>> = {
   [PACKAGING_TITLE]: { cs: "Balné", sk: "Balné", pl: "Opakowanie", de: "Verpackung", en: "Packaging fee" },
-  "Doběrečné": { cs: "Doběrečné", sk: "Poplatok za dobierku", pl: "Opłata za pobranie", de: "Nachnahmegebühr", en: "Cash on delivery fee" },
+  "Doběrečné": { cs: "Příplatek za dobírku", sk: "Poplatok za dobierku", pl: "Opłata za pobranie", de: "Nachnahmegebühr", en: "Cash on delivery fee" },
   "Poštovné": { cs: "Poštovné", sk: "Poštovné", pl: "Wysyłka", de: "Versand", en: "Postage" },
   "Doprava": { cs: "Doprava", sk: "Doprava", pl: "Wysyłka", de: "Versand", en: "Shipping" },
   "Záloha": { cs: "Záloha", sk: "Záloha", pl: "Zaliczka", de: "Anzahlung", en: "Deposit" },

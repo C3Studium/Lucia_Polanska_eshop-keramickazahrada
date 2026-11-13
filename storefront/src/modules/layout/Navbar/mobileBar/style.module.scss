@@ -215,7 +215,7 @@
  * The country control is the one thing here that has to keep its own global classes — the
  * component sets them, and its dropdown is styled as a descendant of `.navbar`. So it is the one
  * that needs undoing rather than defining: in the top bar it is a filled pill with an asymmetric
- * `padding: 0 7px 0 5px` and a ↗ beside the flag. Both are right in a row of labelled controls
+ * `padding: 0 7px 0 5px` and a ↗︎ beside the flag. Both are right in a row of labelled controls
  * and wrong as the only ornament in a row of bare icons.
  */
 .regionSlot :global(.regions__select),

@@ -1,6 +1,7 @@
 "use client"
 
 import { setShippingMethod } from "@lib/data/cart"
+import { countryNameCs } from "@lib/util/country-name-cs"
 import PhoneInput from "@modules/common/components/phone-input"
 import {
   setExpressAddress,
@@ -193,10 +194,14 @@ export const Shipping = ({
     [address, shippingMethodId, isPacketa, packetaPoint, allCommissionsComplete]
   )
 
-  const countryLabel =
+  /* Česky („Česko"), ne anglický `display_name` z Medusy („Czech Republic")
+     — klasická pokladna to tak má, express zaostával (13. 11. 2026). */
+  const countryLabel = countryNameCs(
+    countryCode,
     region.countries?.find(
       (country) => country.iso_2?.toLowerCase() === countryCode.toLowerCase()
-    )?.display_name || countryCode.toUpperCase()
+    )?.display_name
+  )
 
   const updateField = (field: keyof AddressState, value: string) => {
     setAddress((previous) => ({ ...previous, [field]: value }))
@@ -453,7 +458,11 @@ export const Shipping = ({
                   <small>
                     {method.id === packetaShippingMethodId
                       ? packetaPoint || "Výdejní místo si vyberete vzápětí"
-                      : "Doručení na uvedenou adresu"}
+                      : /osobní odběr/i.test(method.name)
+                        ? "Vyzvednete si osobně v ateliéru"
+                        : /balíkovn/i.test(method.name)
+                          ? "Výdejní místo si vyberete vzápětí"
+                          : "Doručení na uvedenou adresu"}
                   </small>
                 </span>
                 <span className={styles.methodPrice}>
@@ -474,7 +483,7 @@ export const Shipping = ({
             className={styles.packetaEdit}
             onClick={openPacketa}
           >
-            {packetaPoint ? "Změnit výdejní místo" : "Vybrat výdejní místo"} ↗
+            {packetaPoint ? "Změnit výdejní místo" : "Vybrat výdejní místo"} ↗︎
           </button>
         )}
       </div>

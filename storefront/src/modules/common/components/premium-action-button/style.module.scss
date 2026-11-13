@@ -181,13 +181,12 @@
 .busy { opacity: .6; transition: opacity .15s linear; }
 
 /*
- * Obchod, košík, pokladna (`PlainShop`, 13. 11. 2026): bez přejezdu výplně,
- * bez stínu a bez zaoblení. Najetí a zvolený stav přebarví tlačítko naráz;
- * popisek dědí barvu, protože horní světlá kopie tu není.
+ * Obchod, košík, pokladna (`PlainShop`, 13. 11. 2026): bez přejezdu výplně.
+ * Tvar zůstává jako na celém webu (pilulka) — rovné hrany Matěj odmítl:
+ * „tlačítka mají respektovat náš design, jen bez animací". Najetí a zvolený
+ * stav přebarví tlačítko naráz; popisek dědí barvu.
  */
 .plainButton {
-  border-radius: 0;
-  box-shadow: none;
   transition: background-color 120ms linear, color 120ms linear;
 }
 .plainButton .label { color: inherit; }
@@ -202,4 +201,26 @@
 .plainActive {
   color: var(--premium-button-active-ink, var(--cream-06));
   background: var(--premium-button-fill, var(--ink-05));
+}
+
+/* Telefon: tlačítka jen výška obsahu + 2,5 px nahoře a dole, bez okrajů
+   (13. 11. 2026, Matěj: „tlačítka jsou na telefonu moc velká"). */
+@media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  .plainButton {
+    min-height: 0 !important;
+    height: auto !important;
+    margin-block: 0 !important;
+    padding-block: 2.5px !important;
+  }
+}
+
+/* Totéž pro tlačítka mimo e-shop (účet, formuláře) — na telefonu všude
+   výška obsahu + 2,5 px (13. 11. 2026). Kroužek se šipkou určuje výšku. */
+@media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  .button {
+    min-height: 0 !important;
+    height: auto !important;
+    margin-block: 0 !important;
+    padding-block: 2.5px !important;
+  }
 }

@@ -158,7 +158,7 @@ export default function ReviewsTemplate({
                           height={320}
                         />
                       </div>
-                      <i aria-hidden="true">↗</i>
+                      <i aria-hidden="true">↗︎</i>
                     </LocalizedClientLink>
                   </AccountInteractiveSurface>
                 </motion.li>

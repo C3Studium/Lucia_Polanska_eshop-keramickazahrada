@@ -93,7 +93,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   gap: .18em;
   flex-wrap: wrap;
   align-items: baseline;
-  font: 400 clamp(1.55rem, calc(3.6vw * var(--ui-scale)), 2.6rem)/.92 "Times New Roman", serif;
+  font: 400 clamp(1.55rem, calc(3.6vw * var(--ui-scale)), 2.6rem)/.92 "Sentient-Regular", Georgia, serif;
   letter-spacing: -.055em;
 }
 
@@ -373,7 +373,7 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
 .productIdentity h2,
 .bundleItem h3 {
   margin: .4375rem 0 0;
-  font: 400 clamp(1.5rem, calc(2.6vw * var(--ui-scale)), 2.75rem)/.92 "Times New Roman", serif;
+  font: 400 clamp(1.5rem, calc(2.6vw * var(--ui-scale)), 2.75rem)/.92 "Sentient-Regular", Georgia, serif;
   letter-spacing: -.035em;
 }
 
@@ -1075,4 +1075,48 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
 
 .trust span + span {
   border-left: 1px solid rgb(var(--ink-05-rgb) / .15);
+}
+
+/* Rozvržení jako pokladna — viz express-checkout/style.module.scss (layout). */
+@media (orientation: landscape) and (min-width: 1021px) and (min-height: 501px) {
+  .intro { grid-column: 1; grid-row: 1; }
+  .progress {
+    grid-column: 1;
+    grid-row: 2;
+    grid-template-columns: minmax(0, 1fr) !important;
+    border-top: 1px solid rgb(var(--ink-05-rgb) / .14);
+  }
+  .progressStep {
+    justify-content: flex-start;
+    padding-block: .875rem !important;
+    border-bottom: 1px solid rgb(var(--ink-05-rgb) / .14);
+    text-align: left;
+  }
+  .trust { grid-column: 1; grid-row: 3; align-self: end; }
+  .stage {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+    border-radius: 1rem;
+    background: var(--cream-08, rgb(var(--cream-06-rgb) / .6));
+  }
+}
+
+/* Volba provedení (13. 11. 2026): výplň vrstvou s z-index −1 zmizela za nový
+   krémový panel kroku — tlačítko teď drží vlastní vrstvení (isolation).
+   Místo přejezdu zleva jen krátká změna barvy, jako u voleb platby. */
+.optionGroups button,
+.bundleTabs button {
+  isolation: isolate;
+  transition: color 160ms linear;
+}
+.optionGroups button span,
+.bundleTabs button span {
+  transition: opacity 160ms linear !important;
+  transform: none !important;
+  opacity: 0;
+}
+.optionGroups button[data-active="true"] span,
+.bundleTabs button[data-active="true"] span {
+  opacity: 1;
 }

@@ -54,6 +54,8 @@ Až bude v projektu nainstalovaná verze valecms s `devices`, totéž dělá `np
    ```
 4. **Most na pozadí:** spustit `node $D devices --no-open --yes`. Pak `node $D devices status` musí ukázat iPhone a stránku.
 5. **Otevřít web na telefonu:** `node $D devices open http://192.168.1.31:4700/cz`
+   - **Košík a pokladna přes `http://…:4700` nejdou.** Cookies košíku mají `secure` (`src/lib/data/cookies.ts`, `NODE_ENV=production`) a Safari je přes http zahodí — po každém načtení je košík prázdný. Košík, pokladnu a express testovat na `https://dev.keramickazahrada.cz`; lokální build jen na stránky bez košíku.
+   - **Když testuje majitel rukou, žádný agent nesmí hýbat Edge ani telefonem.** Nejdřív zastavit vlastní prohlídky (`walk`, `sizes`, skripty), pak čekat na pokyn.
 6. **Úklid:** zastavit most i server. `.next-ios` smazat a vrátit `storefront/tsconfig.json`, do kterého build zapíše novou složku, a scss soubory, kterým přepíše konce řádků.
 
 ### Příkazy (když most běží)

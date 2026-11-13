@@ -23,7 +23,7 @@ import { isCarrierShippingMethod } from "@lib/util/carrier"
 import CarrierDamageNotice from "@modules/order/components/carrier-damage"
 import { orderTermsRef } from "@lib/legal/order-terms"
 import ClaimsSummary from "@modules/order/components/claim-status/summary"
-import { withdrawalHref } from "@modules/order/components/withdrawal/entry"
+import { withdrawalHref } from "@modules/order/components/withdrawal/href"
 import { withdrawBlockText, type OrderClaims } from "@lib/util/claims"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import PremiumActionLink from "@modules/common/components/premium-action-link"
@@ -591,11 +591,13 @@ export default async function OrderCompletedTemplate({
                 <div className={s.totalRows}>
                   <div>
                     <span>Mezisoučet</span>
-                    <strong>{money(order.item_total)}</strong>
+                    <strong>{money(order.item_total - (dobirkaFee ?? 0))}</strong>
                   </div>
                   {/* Rozpad mezisoučtu: výrobky, balné a doběrečné, odsazeně.
                       Doběrečné do „Výrobky" nepatří — vlastní řádek. */}
-                  {(packaging !== null || dobirkaFee !== null) && (
+                  /* Doběrečné je platba, ne zboží (13. 11. 2026) — z mezisoučtu se
+            vyjme a stojí jako „Platba na dobírku" pod Dopravou. */
+                  {packaging !== null && (
                     <>
                     <div style={{ paddingLeft: ".9rem", opacity: .78, fontSize: ".9em" }}>
                       <span>Výrobky</span>
@@ -605,12 +607,6 @@ export default async function OrderCompletedTemplate({
                       <div style={{ paddingLeft: ".9rem", opacity: .78, fontSize: ".9em" }}>
                         <span>Balné</span>
                         <strong style={{ fontWeight: 300 }}>{money(packaging)}</strong>
-                      </div>
-                    )}
-                    {dobirkaFee !== null && (
-                      <div style={{ paddingLeft: ".9rem", opacity: .78, fontSize: ".9em" }}>
-                        <span>Doběrečné</span>
-                        <strong style={{ fontWeight: 300 }}>{money(dobirkaFee)}</strong>
                       </div>
                     )}
                     </>
@@ -631,6 +627,12 @@ export default async function OrderCompletedTemplate({
                     <span>Doprava</span>
                     <strong>{money(order.shipping_total)}</strong>
                   </div>
+                  {dobirkaFee !== null && (
+                    <div>
+                      <span>Platba na dobírku</span>
+                      <strong>{money(dobirkaFee)}</strong>
+                    </div>
+                  )}
                   {/* Jen pro plátce DPH — viz `lib/util/dph.ts`. */}
                   {PLATCE_DPH && (
                     <div>

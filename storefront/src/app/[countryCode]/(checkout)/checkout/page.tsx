@@ -4,8 +4,6 @@ import { getProductionPaymentMode } from "@lib/data/made-to-order"
 import PaymentWrapper from "@modules/checkout/components/payment-wrapper"
 import CheckoutForm from "@modules/checkout/templates/checkout-form"
 import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
-import CheckoutStepList from "@modules/checkout/components/step-list"
-import { isMadeToOrderLine } from "@lib/util/commission"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CmsText from "@modules/common/components/cms-text"
 import { CopyProvider } from "@modules/common/components/cms-text/copy-context"
@@ -49,8 +47,6 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
   const productionMode = await getProductionPaymentMode(cart.id)
   // Kusy zboží — balné a doběrečné do počtu nepatří.
   const itemCount = productLines(cart.items).reduce((total, item) => total + item.quantity, 0)
-  /* Zakázka přidává krok „Zadání" — seznam kroků vlevo to musí vědět. */
-  const maZakazku = ((cart.items ?? []) as any[]).some(isMadeToOrderLine)
 
   /*
    * Úvodní věty pokladny z CMS (stránka `pokladna`). Jen hlavička, nadpis
@@ -61,7 +57,6 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
   const copy = await getPageCopy("pokladna")
   const intro = copy["pokladna.uvod"]
   const introDoc = intro?.id ?? null
-  const introLead = intro?.title?.trim() || "Ještě"
   const backLabel = itemText(intro, "zpet", "Zpět do košíku")
 
   return (
@@ -71,22 +66,9 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
       <div className={styles.intro}>
         {/* Počet výrobků je údaj, ne text — „Pokladna · 02 výrobky" zůstává v kódu. */}
         <p className={styles.mastheadMeta}>Pokladna · {String(itemCount).padStart(2, "0")} {itemCount === 1 ? "výrobek" : itemCount < 5 ? "výrobky" : "výrobků"}</p>
-        {/* Začátek nadpisu ve spanu jen v náhledu Studia; jinak DOM jako dřív. */}
-        <h1>
-          {introDoc ? (
-            <CmsText doc={introDoc} field="title">{introLead}</CmsText>
-          ) : (
-            introLead
-          )}
-          <br />
-          <CmsText as="em" doc={introDoc} field="headline">
-            {intro?.headline?.trim() || "pár kroků."}
-          </CmsText>
-        </h1>
-        <CmsText as="p" className={styles.mastheadCopy} doc={introDoc} field="body">
-          {intro?.bodyText?.trim() || "Ještě pár kroků a můžeme to z ateliéru poslat k vám."}
-        </CmsText>
-        <CheckoutStepList hasBrief={maZakazku} />
+        {/* „Ještě pár kroků" a seznam kroků pryč (13. 11. 2026, Matěj): číslo,
+            název a věta kroku jsou teď v hlavičce formuláře (step-bubbles).
+            Vlevo zůstává jen kde jsem, cesta zpět a co objednávám. */}
         <LocalizedClientLink href="/cart" className={styles.backLink}>
           <span>←</span>{" "}
           {introDoc ? (

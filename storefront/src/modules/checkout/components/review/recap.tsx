@@ -1,10 +1,12 @@
 "use client"
 
 import { convertToLocale } from "@lib/util/money"
+import { shortTitle } from "@lib/util/short-title"
 import { PLATCE_DPH } from "@lib/util/dph"
 import styles from "./style.module.scss"
 import { pickupPointLabel } from "@lib/util/pickup-point"
-import { isPackagingLine } from "@lib/util/packaging"
+import { dobirkaFeeSubtotal, isPackagingLine } from "@lib/util/packaging"
+import { isDobirkaFeeLine } from "@lib/util/dobirka"
 import { discountRowLabel } from "@lib/util/gift-voucher-code"
 import { packagingFor } from "@modules/common/components/packaging-line"
 import Thumbnail from "@modules/products/components/thumbnail"
@@ -60,7 +62,9 @@ export default function OrderRecap({
         <ul className={styles.itemList}>
           {/* Ceník vpravo (Matěj 12. 10.): „1× cena výrobku", pod tím
               „Balné 1× cena", čára a součet obojího. */}
+          {/* Doběrečné je platba, ne zboží — stojí dole v Ceně (13. 11. 2026). */}
           {((cart?.items ?? []) as any[])
+            .filter((item: any) => !isDobirkaFeeLine(item))
             .filter((item: any) => !isPackagingLine(item) || !(cart?.items ?? []).some((other: any) => !isPackagingLine(other) && packagingFor(cart?.items as any[], other) === item))
             .map((item: any) => {
               const pack = packagingFor(cart?.items as any[], item) as any
@@ -70,8 +74,11 @@ export default function OrderRecap({
               return (
                 <li key={item.id}>
                   <span className={styles.itemMain}>
-                    <span className={styles.itemTitle}>
-                      {item.product_title ?? item.title}
+                    <span
+                      className={styles.itemTitle}
+                      title={item.product_title ?? item.title}
+                    >
+                      {shortTitle(item.product_title ?? item.title)}
                       {item.variant_title ? ` · ${item.variant_title}` : ""}
                     </span>
                     {/* Miniatura pod názvem — ať je v přehledu vidět, co přesně jde do košíku. */}
@@ -149,7 +156,7 @@ export default function OrderRecap({
                   o řádek níž započítala podruhé — naměřeno na košíku s 28%
                   akcí: 2 419 − 941 = 2 419. `item_subtotal` je týž součet před
                   akcemi, tedy ta částka, od které se sleva odečítá. */}
-              <dd>{money(cart?.item_subtotal)}</dd>
+              <dd>{money((cart?.item_subtotal ?? 0) - (dobirkaFeeSubtotal(cart?.items) ?? 0))}</dd>
             </div>
             {Boolean(cart?.item_discount_total) && (
               <div>
@@ -165,6 +172,12 @@ export default function OrderRecap({
               <dt>Doprava</dt>
               <dd>{money(cart?.shipping_total)}</dd>
             </div>
+            {dobirkaFeeSubtotal(cart?.items) !== null && (
+              <div>
+                <dt>Platba na dobírku</dt>
+                <dd>{money(dobirkaFeeSubtotal(cart?.items))}</dd>
+              </div>
+            )}
             <div className={styles.totalRow}>
               <dt>Celkem</dt>
               <dd>{money(cart?.total)}</dd>

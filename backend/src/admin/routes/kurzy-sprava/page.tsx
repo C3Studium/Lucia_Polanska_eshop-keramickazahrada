@@ -878,14 +878,11 @@ const OccupancyBar = ({ term }: { term: AdminTerm }) => {
 };
 
 const priceSummary = (term: AdminTerm): string => {
+  /* Jen dospělý a dítě — množstevní sleva je od 13. 11. 2026 zrušená. */
   const parts = [`${formatCzk(term.price_single)}/os.`];
-  if (term.price_two != null) {
-    parts.push(`za dva ${formatCzk(term.price_two)}/os.`);
-  }
-  if (term.group_min != null && term.price_group_per_person != null) {
-    parts.push(
-      `od ${term.group_min} lidí ${formatCzk(term.price_group_per_person)}/os.`
-    );
+  const child = (term as { price_child?: number | null }).price_child;
+  if (child != null && child > 0) {
+    parts.push(`dítě ${formatCzk(child)}`);
   }
   return parts.join(" · ");
 };

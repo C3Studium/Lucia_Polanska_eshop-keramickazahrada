@@ -531,7 +531,7 @@ export default function RezervaceDetail({
             <div className="kurzyDetail__selfServiceRow">
               <button type="button" className="kurzyDetail__retry" onClick={retry} disabled={retrying || discarding}>
                 {retrying ? "Připravuji platbu…" : `Doplatit ${czk(reservation.pending_change.amount)}`}
-                <i aria-hidden="true">↗</i>
+                <i aria-hidden="true">↗︎</i>
               </button>
               <button type="button" className="kurzyDetail__ghost" onClick={discardChange} disabled={retrying || discarding}>
                 {discarding ? "Ruším…" : "Zrušit změnu"}
@@ -578,7 +578,7 @@ export default function RezervaceDetail({
           <div className="kurzyDetail__actions">
             <button type="button" className="kurzyDetail__retry" onClick={retry} disabled={retrying}>
               {retrying ? "Připravuji platbu…" : `Doplatit ${czk(reservation.amount_due ?? 0)}`}
-              <i aria-hidden="true">↗</i>
+              <i aria-hidden="true">↗︎</i>
             </button>
             {retryError ? (
               <p className="kurzyDetail__error" role="alert">
@@ -597,7 +597,7 @@ export default function RezervaceDetail({
               disabled={retrying}
             >
               {retrying ? "Připravuji platbu…" : "Zkusit zaplatit znovu"}
-              <i aria-hidden="true">↗</i>
+              <i aria-hidden="true">↗︎</i>
             </button>
             {retryError ? (
               <p className="kurzyDetail__error" role="alert">
@@ -659,7 +659,7 @@ export default function RezervaceDetail({
                 onClick={() => confirmChoice("online")}
               >
                 {choiceBusy === "online" ? "Připravuji platbu…" : `Zaplatit kartou ${czk(reservation.total_price)}`}
-                <i aria-hidden="true">↗</i>
+                <i aria-hidden="true">↗︎</i>
               </button>
               <button
                 type="button"
@@ -795,7 +795,7 @@ export default function RezervaceDetail({
                           : preview?.action === "refund"
                             ? `Potvrdit a vrátit ${czk(preview.amount)}`
                             : "Potvrdit změnu"}
-                      {preview?.action === "supplement" ? <i aria-hidden="true">↗</i> : null}
+                      {preview?.action === "supplement" ? <i aria-hidden="true">↗︎</i> : null}
                     </button>
                     <button
                       type="button"
@@ -904,7 +904,7 @@ export default function RezervaceDetail({
               target="_blank"
               rel="noreferrer"
             >
-              Stáhnout fakturu (PDF) ↗
+              Stáhnout fakturu (PDF) ↗︎
             </a>
           </p>
         ) : null}

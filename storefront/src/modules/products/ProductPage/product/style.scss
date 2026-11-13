@@ -1397,11 +1397,16 @@
    */
   .product__eyebrow { order: 1; }
   .product__identity h1 { order: 2; }
+  .product__titleBox { order: 2; }
   .product__lead { order: 3; }
   .product__rating { order: 4; }
   .product__galleryIntro { order: 5; }
   .product__mediaTrack { order: 6; }
   .product__mediaDots { order: 7; }
+  /* Galerie s náhledy (13. 11. 2026): prohlížeč a náhledy na místo pásu. */
+  .product__viewer { order: 6; }
+  .product__thumbs { order: 7; }
+  .product__stack { order: 7; }
   .product__purchase { order: 8; }
   .product__detailsSlot { order: 9; }
   .product__galleryOutro { order: 10; }
@@ -2005,4 +2010,176 @@
       font-size: 0.9375rem;
     }
   }
+}
+
+/*
+ * Název výrobku nejvýš na dva řádky (13. 11. 2026, Matěj: „tři, čtyři i víc
+ * řádků vypadá divně"). Nejdelší skutečný název je „Keramická plastika Slunce -
+ * Sluneční žena Červenec - NA ZAKÁZKU" (62 znaků) — velikost je spočítaná na
+ * něj a šířku sloupce; `line-clamp` je jen pojistka na budoucí delší názvy.
+ * Poslední v souboru a se třídou navíc, ať přebije všechna pásma výš.
+ *
+ * Velikost podle šířky SLOUPCE (`cqi`), ne okna: sloupec názvu má na
+ * laptopech jen 314–416 px a velikost podle vw tam dávala tři řádky.
+ * 4.7cqi ≈ šířka / 21 — tolik se 62 znaků vejde na dva řádky i se zalomením
+ * (sloupec bývá širší než samotný nadpis o vnitřní odsazení).
+ */
+.product__titleBox { container-type: inline-size; width: 100%; min-width: 0; }
+
+.product__titleBox h1.product__title {
+  display: -webkit-box;
+  max-width: none;
+  overflow: hidden;
+  /* Velikost podle délky názvu (13. 11. 2026, Matěj: „nadpis je malinký"):
+     krátký název velký, nejdelší (62 znaků) pořád na dva řádky. Dva řádky
+     šířky sloupce / (počet znaků × 0,72 em — průměrná šířka znaku i s rezervou
+     na zalomení slov). */
+  font-size: clamp(1.25rem, calc(200cqi / (var(--title-len, 30) * 0.72)), 2.5rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  /* Podtitul pod názvem je pryč — mezeru k perexu drží nadpis sám. */
+  margin-bottom: clamp(1rem, 2.4vh, 1.75rem);
+}
+
+/*
+ * Galerie jako v obchodě (13. 11. 2026): jedna fotka, šipky, náhledy pod ní.
+ * Na všech velikostech stejně — dřív na širokém okně fotky pod sebou
+ * a listování jen na telefonu. Poslední v souboru, ať přebije pásma výš.
+ */
+.product__viewer {
+  position: relative;
+  outline-offset: 4px;
+}
+
+.product__viewer .product__mediaTrack {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.product__viewer .product__mediaTrack::-webkit-scrollbar { display: none; }
+
+.product__viewer .product__mediaFrame,
+.product__viewer .product__mediaFrame:nth-of-type(even) {
+  flex: 0 0 100%;
+  height: min(70vh, 46rem);
+  scroll-snap-align: start;
+}
+
+.product__mediaDots { display: none !important; }
+
+.product__viewerArrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  min-height: 0 !important;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgb(var(--ink-05-rgb) / .12);
+  border-radius: 50%;
+  color: var(--ink-05);
+  background: rgb(var(--cream-06-rgb) / .9);
+  font: 400 1.125rem/1 "Sansation-Regular", sans-serif;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+.product__viewerArrow span { display: block; line-height: 1; transform: translateY(-.04em); }
+.product__viewerArrow:hover,
+.product__viewerArrow:focus-visible { color: var(--cream-06); background: var(--ink-05); }
+.product__viewerArrow--prev { left: .75rem; }
+.product__viewerArrow--next { right: .75rem; }
+
+.product__viewerCount {
+  position: absolute;
+  top: .75rem;
+  right: .75rem;
+  z-index: 2;
+  padding: .25rem .6rem;
+  border-radius: 999px;
+  color: var(--cream-06);
+  background: rgb(var(--ink-05-rgb) / .6);
+  font: 400 .75rem/1.2 "Sansation-Regular", sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.product__thumbs {
+  display: flex;
+  gap: .5rem;
+  overflow-x: auto;
+  padding-bottom: .25rem;
+  scrollbar-width: thin;
+}
+
+.product__thumb {
+  position: relative;
+  flex: 0 0 auto;
+  width: clamp(3.75rem, 6vw, 5.5rem);
+  aspect-ratio: 1;
+  min-height: 0 !important;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgb(var(--cream-06-rgb) / .18);
+  background: var(--cream-08);
+  cursor: pointer;
+  opacity: .62;
+}
+.product__thumb img { object-fit: cover; }
+.product__thumb:hover,
+.product__thumb[aria-current="true"] { border-color: var(--cream-06); opacity: 1; }
+
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .product__viewer .product__mediaFrame,
+  .product__viewer .product__mediaFrame:nth-of-type(even) { height: auto; aspect-ratio: 4 / 5; }
+  .product__thumb { width: 3.5rem; }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .product__viewer .product__mediaFrame,
+  .product__viewer .product__mediaFrame:nth-of-type(even) { height: 70vh; }
+}
+
+/* Náhledy s vlastním tenkým posuvníkem (13. 11. 2026) — systémový šedý pruh
+   s šipkami ke stránce nepatřil. */
+.product__thumbs {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--cream-06-rgb) / .45) transparent;
+  padding-bottom: .5rem;
+}
+.product__thumbs::-webkit-scrollbar { height: 4px; }
+.product__thumbs::-webkit-scrollbar-track { background: transparent; }
+.product__thumbs::-webkit-scrollbar-thumb { border-radius: 999px; background: rgb(var(--cream-06-rgb) / .45); }
+.product__thumbs::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+/* Šipky galerie s plynulým přechodem (13. 11. 2026, Matěj: „animace šipky
+   není plynulá"): barva i lehké posunutí s měkkým dojezdem. */
+.product__viewerArrow {
+  transition:
+    background-color 320ms cubic-bezier(.22, 1, .36, 1),
+    color 320ms cubic-bezier(.22, 1, .36, 1),
+    border-color 320ms cubic-bezier(.22, 1, .36, 1),
+    transform 420ms cubic-bezier(.22, 1, .36, 1);
+}
+.product__viewerArrow--prev:hover { transform: translate(-2px, -50%); }
+.product__viewerArrow--next:hover { transform: translate(2px, -50%); }
+.product__viewerArrow:active { transform: translateY(-50%) scale(.94); }
+
+/* Další fotky pod galerií — jen tam, kde dřív ležely pod sebou. */
+.product__stack {
+  display: grid;
+  gap: clamp(1.25rem, 3vh, 2.25rem);
+  margin-top: clamp(1.5rem, 3.5vh, 2.5rem);
+}
+.product__stack .product__mediaFrame { height: min(64vh, 43.75rem); }
+.product__stack .product__mediaFrame:nth-of-type(even) { height: min(56vh, 38.75rem); }
+@media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  .product__stack { display: none; }
 }

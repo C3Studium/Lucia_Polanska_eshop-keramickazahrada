@@ -437,7 +437,8 @@
     padding: .625rem .75rem .625rem 0;
     border-left: 0;
   }
-  .title { max-width: 14ch; margin-bottom: .25rem; font-size: 1.1rem; }
+  /* Jeden řádek se zkráceným názvem (13. 11. 2026) — dřív 14ch a dva řádky. */
+  .title { max-width: 100%; margin-bottom: .25rem; overflow: hidden; font-size: 1.05rem; text-overflow: ellipsis; white-space: nowrap; }
   .options { font-size: .8125rem; }
   .cellPrice {
     grid-column: 3;
@@ -638,5 +639,156 @@
     .removeCompact button > span:last-child {
       display: none;
     }
+  }
+}
+
+/*
+ * Bauhaus řádek (13. 11. 2026, Matěj: „menší, název max 3 slova, ceny
+ * přehledněji"). Od 681 px jedna linka v pěti sloupcích s pevnou osou:
+ * fotka · název · množství · cena za kus · celkem. Ceny zarovnané vpravo pod
+ * sebou napříč řádky, štítky sloupců drobným písmem nad hodnotou. Řádek je
+ * vysoký jen tolik, kolik má obsah — dřív tři patra buněk po 6 vh.
+ * Telefon na výšku a úzké šířky mají vlastní skladbu výš (`.mobileControls`).
+ */
+@include from-px(681px) {
+  .row:not(.previewRow) {
+    /* Pevné šířky sloupců, ať osy sedí přes všechny řádky — `auto` měřil
+       každý řádek zvlášť a ceny „uskakovaly". */
+    grid-template-columns:
+      clamp(4.5rem, 6vw, 6rem)
+      minmax(0, 1fr)
+      13.5rem
+      6.5rem
+      7rem;
+    grid-template-rows: auto;
+    align-items: center;
+    column-gap: clamp(1rem, 2vw, 2.25rem);
+    min-height: 0;
+    padding: clamp(1rem, 2vh, 1.5rem) 0;
+    border-bottom: 0;
+  }
+
+  .row:not(.previewRow) .cellThumb {
+    grid-column: 1;
+    grid-row: 1;
+    aspect-ratio: 1;
+    padding: 0;
+  }
+
+  .row:not(.previewRow) .cellTitle {
+    grid-column: 2;
+    grid-row: 1;
+    gap: .35rem;
+    padding: 0;
+    border: 0;
+  }
+
+  .row:not(.previewRow) .cellActions,
+  .row:not(.previewRow) .cellUnit,
+  .row:not(.previewRow) .cellPrice {
+    grid-row: 1;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .45rem;
+    padding: 0;
+    border: 0;
+    text-align: right;
+  }
+
+  .row:not(.previewRow) .cellActions {
+    grid-column: 3;
+    justify-items: start;
+    text-align: left;
+  }
+  .row:not(.previewRow) .cellUnit { grid-column: 4; }
+  .row:not(.previewRow) .cellPrice { grid-column: 5; }
+
+  .row:not(.previewRow) .title {
+    max-width: none;
+    margin: 0;
+    overflow: hidden;
+    font-size: clamp(1.05rem, calc(1.25vw * var(--ui-scale)), 1.4rem);
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .row:not(.previewRow) .priceWrap {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .45rem;
+  }
+
+  .row:not(.previewRow) .options { font-size: .8125rem; }
+  .row:not(.previewRow) .dimensions { display: none; }
+}
+
+/* Linky výpisu (13. 11. 2026): každý řádek má linku nahoře, poslední i dole.
+   S jedním kusem tedy linka nad i pod ním, s více kusy jedna mezi každými dvěma. */
+.row:not(.previewRow) {
+  border-top: 1px solid rgb(var(--cream-06-rgb) / .22);
+  border-bottom: 0;
+}
+.row:not(.previewRow):last-of-type {
+  border-bottom: 1px solid rgb(var(--cream-06-rgb) / .22);
+}
+
+/*
+ * Množství na jedné lince s odebráním (13. 11. 2026, Matěj): „Odebrat" jen
+ * jako ikona koše hned vedle ovladače, ovladač o stupeň menší. Popisek zůstává
+ * pro čtečky (skrytý vizuálně, ne `display: none`).
+ */
+@include from-px(681px) {
+  .row:not(.previewRow) {
+    grid-template-columns:
+      clamp(4.5rem, 6vw, 6rem)
+      minmax(0, 1fr)
+      10rem
+      6.5rem
+      7rem;
+  }
+
+  .row:not(.previewRow) .cellActions {
+    --qty-stepper-height: 2.125rem;
+    --qty-stepper-side: 1.875rem;
+    --qty-stepper-mid: 1.75rem;
+    --qty-stepper-glyph: .9375rem;
+  }
+
+  .row:not(.previewRow) .actionsLine {
+    flex-wrap: nowrap;
+    gap: .5rem;
+  }
+
+  .removeCompact {
+    flex: 0 0 auto;
+  }
+  .removeCompact :global(button) {
+    width: 2.125rem;
+    min-width: 2.125rem;
+    height: 2.125rem;
+    min-height: 0 !important;
+    padding: 0 !important;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .removeCompact [class*="label"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* Telefon: tlačítka jen výška obsahu + 2,5 px nahoře a dole, bez okrajů
+   (13. 11. 2026, Matěj: „tlačítka jsou na telefonu moc velká"). */
+@media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  .mobileControls {
+    --qty-stepper-height: 2rem;
+    --qty-stepper-side: 2rem;
+    --qty-stepper-mid: 1.875rem;
+    gap: .5rem;
   }
 }

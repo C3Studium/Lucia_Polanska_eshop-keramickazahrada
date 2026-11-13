@@ -315,3 +315,31 @@ $touch-floor: 2.75rem;
     }
   }
 }
+
+/* Uplatněné kódy a poukazy jako řádky souhrnu (13. 11. 2026, Matěj): malý
+   štítek místo velkého nadpisu, řádek kód · sleva · koš na jedné lince,
+   ať zapadnou mezi „Co objednáváte" a mezisoučet. */
+.promotionsWrap { margin-top: .5rem; }
+.heading {
+  margin: 0 0 .375rem !important;
+  font: 400 .75rem/1.2 "Sansation-Regular", sans-serif !important;
+  letter-spacing: .1em !important;
+  text-transform: uppercase;
+  opacity: .7;
+}
+.promoRow {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between;
+  gap: .5rem;
+  min-height: 0 !important;
+  padding: .25rem 0 !important;
+}
+.promoText {
+  font-size: .875rem !important;
+}
+.promoRow button {
+  min-height: 0 !important;
+  width: 1.75rem;
+  height: 1.75rem;
+}

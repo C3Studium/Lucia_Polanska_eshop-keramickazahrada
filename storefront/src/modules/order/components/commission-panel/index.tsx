@@ -213,7 +213,7 @@ export default function CommissionPanel({
           rel="noopener"
           data-testid="commission-confirmation-pdf"
         >
-          Potvrzení zakázky (PDF) <i aria-hidden="true">↗</i>
+          Potvrzení zakázky (PDF) <i aria-hidden="true">↗︎</i>
         </a>
       )}
 

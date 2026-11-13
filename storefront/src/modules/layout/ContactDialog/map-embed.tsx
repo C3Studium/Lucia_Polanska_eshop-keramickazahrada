@@ -79,7 +79,7 @@ export default function MapEmbed({ address, title }: MapEmbedProps) {
         >
           Otevřít v Mapách Google
           <span className={styles.srOnly}> (v novém okně)</span>
-          <span aria-hidden="true"> ↗</span>
+          <span aria-hidden="true"> ↗︎</span>
         </a>
         <p className={styles.mapNote}>
           Google si při zobrazení mapy může uložit vlastní cookies.

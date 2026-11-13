@@ -21,7 +21,7 @@ import { countryNameCs } from "@lib/util/country-name-cs"
  * (8.5px na laptopu 768, 15px na desktopu 1351). Posun položek uvnitř si drží
  * poměr, který návrh měl — 8/12 — místo druhého ručně vybraného čísla.
  *
- * Obě strany interpolace nesou stejný tvar výrazu ("1.11vh" ↔ "0vh"); kdyby
+ * Obě strany interpolace nesou stejný tvar výrazu ("1.11vh" ↔︎ "0vh"); kdyby
  * cíl zůstal číslem 0, framer by míchal px s vh a animace by skočila.
  */
 const PROMPT_RISE_VH = 1.11

@@ -684,3 +684,228 @@
     transform: translateY(-2px);
   }
 }
+
+/* Souhlas: zaškrtávátko a věta na jedné ose (13. 11. 2026, Matěj: „text na střed"). */
+.check {
+  align-items: center;
+
+  input { margin: 0; }
+  label { line-height: 1.3; }
+}
+
+/* ─── Stepper poptávky (13. 11. 2026) ──────────────────────────────────────
+   Vlastní třída `.stepper` — `.steps` už patří seznamu „Jak to probíhá"
+   vedle formuláře. Tři stejně široké sloupce, kroužek s číslem uprostřed,
+   linka mezi kroužky, název pod nimi. Bez animací. */
+.stepper {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 0 0 clamp(.75rem, 1.6vh, 1rem);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .14);
+  list-style: none;
+}
+
+.stepperItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .4rem;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  text-align: center;
+}
+
+/* Linka ke kroku vlevo — od středu předchozího kroužku k tomuto. */
+.stepperItem + .stepperItem::before {
+  content: "";
+  position: absolute;
+  top: 1rem;
+  right: calc(50% + 1.25rem);
+  left: calc(-50% + 1.25rem);
+  height: 1px;
+  background: rgb(var(--ink-05-rgb) / .22);
+}
+.stepperItem[data-state="done"] + .stepperItem::before,
+.stepperItem[data-state="current"]::before {
+  background: var(--inq-ink);
+}
+
+.stepperDot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  min-height: 0 !important;
+  padding: 0;
+  place-items: center;
+  border: 1px solid rgb(var(--ink-05-rgb) / .3);
+  border-radius: 50%;
+  color: rgb(var(--ink-05-rgb) / .55);
+  background: transparent;
+  font: 400 .875rem/1 "Sansation-Regular", sans-serif;
+  font-variant-numeric: tabular-nums;
+  transition: background-color 140ms linear, color 140ms linear, border-color 140ms linear;
+}
+
+button.stepperDot { cursor: pointer; }
+
+.stepperItem[data-state="current"] .stepperDot {
+  border-color: var(--inq-ink);
+  color: var(--cream-06);
+  background: var(--inq-ink);
+}
+
+.stepperItem[data-state="done"] .stepperDot {
+  border-color: var(--inq-ink);
+  color: var(--inq-ink);
+}
+button.stepperDot:hover:not(:disabled) {
+  color: var(--cream-06);
+  background: var(--inq-ink);
+}
+
+.stepperLabel {
+  max-width: 100%;
+  color: rgb(var(--ink-05-rgb) / .55);
+  font: 400 .75rem/1.25 "Sansation-Regular", sans-serif;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.stepperItem[data-state="current"] .stepperLabel { color: var(--inq-ink); font-weight: 600; }
+.stepperItem[data-state="done"] .stepperLabel { color: var(--inq-ink); }
+
+.group[hidden],
+.consent[hidden] { display: none !important; }
+
+.footer { align-items: center; }
+
+.back {
+  min-height: 2.75rem;
+  padding: 0 .25rem;
+  border: 0;
+  color: var(--inq-ink);
+  background: none;
+  font: 400 .9375rem/1 "Sansation-Regular", sans-serif;
+  cursor: pointer;
+}
+.back:hover { text-decoration: underline; text-underline-offset: .2em; }
+
+/* Název kroku nese stepper — nadpis skupiny pod ním by ho jen opakoval.
+   Zůstává pro čtečky (legend pojmenovává skupinu polí). */
+.group > legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Souhlas (13. 11. 2026): popisek padal na 10 px z obecného pravidla pro
+   popisky polí (velká písmena) a o 6 px výš než zaškrtávátko. Teď velikost
+   věty pod ním, normální písmena a střed na střed se zaškrtávátkem. */
+.check {
+  align-items: center !important;
+  gap: .625rem !important;
+}
+.check input {
+  width: 1.125rem !important;
+  height: 1.125rem !important;
+  margin: 0 !important;
+}
+.check label {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: clamp(.8125rem, calc(.95vw * var(--ui-scale)), .9375rem) !important;
+  line-height: 1.35 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  /* Posun nahoru (plovoucí popisek polí) sem nepatří — rozbíjel střed. */
+  transform: none !important;
+}
+.check label i { font-size: inherit !important; }
+.consent > p { padding-left: calc(1.125rem + .625rem); }
+
+/* ─── Přehled poptávky (krok 3) ─── */
+.review {
+  display: grid;
+  margin: 0;
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .14);
+}
+.reviewRow {
+  display: grid;
+  grid-template-columns: minmax(8rem, 11rem) minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: .75rem;
+  padding: .5rem 0;
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .14);
+
+  dt {
+    color: var(--inq-minimum);
+    font: 400 .75rem/1.3 "Sansation-Regular", sans-serif;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  dd {
+    margin: 0;
+    color: var(--inq-ink);
+    font-size: .9375rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+  }
+  button {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    color: var(--inq-ink);
+    background: none;
+    font: 400 .8125rem/1 "Sansation-Regular", sans-serif;
+    text-decoration: underline;
+    text-underline-offset: .2em;
+    cursor: pointer;
+  }
+}
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .reviewRow { grid-template-columns: minmax(0, 1fr) auto; }
+  .reviewRow dd { grid-column: 1 / -1; grid-row: 2; }
+}
+.review[hidden] { display: none !important; }
+
+/* Přidání fotek jako malá pilulka (13. 11. 2026) — místo velké čárkované
+   plochy. Přetažení souborů na ni funguje dál. */
+.dropzone {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: .5rem !important;
+  width: auto !important;
+  align-self: flex-start !important;
+  justify-self: start !important;
+  max-width: 100%;
+  min-height: 2.5rem !important;
+  height: auto !important;
+  padding: .375rem 1rem .375rem .5rem !important;
+  border: 1px solid rgb(var(--ink-05-rgb) / .3) !important;
+  border-style: solid !important;
+  border-radius: 999px !important;
+  transition: background-color 140ms linear, border-color 140ms linear;
+}
+.dropzone:hover:not(:disabled),
+.dropzone[data-dragging] {
+  border-color: var(--inq-ink) !important;
+  background-color: rgb(var(--ink-05-rgb) / .06) !important;
+}
+.dropIcon {
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+}
+.dropText { font-size: .875rem !important; margin: 0 !important; }
+.dropHint { font-size: .75rem !important; margin: 0 !important; opacity: .7; }

@@ -186,3 +186,19 @@
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 3px;
 }
+
+/* Poznámka „Na zlevněné kusy se slevové kódy nevztahují." je psaná pro krémový
+   panel košíku — tady na tmavém sloupci by byla neviditelná (13. 11. 2026). */
+.root :global([data-testid="discount-sale-note"]),
+.root :global([data-testid="discount-voucher-note"]) {
+  color: rgb(var(--cream-06-rgb) / .62) !important;
+}
+
+/* Kódy pod položkami (13. 11. 2026): blok je součástí seznamu — těsná mezera
+   nahoře, přes celou šířku, ať řádky kódů lícují s cenami položek. */
+.discount {
+  flex-direction: column;
+  margin-top: clamp(.625rem, 1.4vh, 1rem);
+  margin-bottom: clamp(.625rem, 1.4vh, 1rem);
+}
+.discount > * { width: 100%; }

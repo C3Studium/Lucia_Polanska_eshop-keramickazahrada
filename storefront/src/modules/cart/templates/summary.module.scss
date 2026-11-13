@@ -249,13 +249,45 @@
 }
 
 /* Košík v `PlainShop` (13. 11. 2026): rovné hrany, bez stínu, přebarvení naráz. */
-:global([data-shop-plain]) .LinkButton { border-radius: 0; box-shadow: none; }
 .plainButton {
-  border-radius: 0 !important;
   transition: background-color 120ms linear, color 120ms linear !important;
 }
 .plainButton:hover,
 .LinkButton:focus-visible .plainButton {
   color: var(--cream-06);
   background-color: var(--ink-05);
+}
+
+/* Hlavní tlačítko souhrnu plné, jako ostatní hlavní tlačítka webu (13. 11. 2026). */
+.button.plainButton {
+  color: var(--cream-06);
+  background-color: var(--ink-05);
+}
+.button.plainButton:hover,
+.LinkButton:focus-visible .button.plainButton {
+  color: var(--ink-05);
+  background-color: var(--sage-01);
+}
+
+/* Telefon: tlačítka jen výška obsahu + 2,5 px nahoře a dole, bez okrajů
+   (13. 11. 2026, Matěj: „tlačítka jsou na telefonu moc velká"). */
+@media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  .LinkButton,
+  .button,
+  .plainButton {
+    min-height: 0 !important;
+    height: auto !important;
+    margin-block: 0 !important;
+    padding-block: 2.5px !important;
+  }
+}
+
+/* Tlačítko k pokladně i pod souhrnem na telefonu (13. 11. 2026, Matěj):
+   lepkavý pruh zůstává, ale kdo dojede na konec souhrnu, má ho mít i tam. */
+@media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  .LinkButton,
+  .blocked {
+    display: flex !important;
+    width: 100% !important;
+  }
 }

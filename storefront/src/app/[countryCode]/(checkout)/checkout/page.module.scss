@@ -144,3 +144,20 @@
   .backLink { margin-top: 12px; }
   .ledger { padding: 20px 14px; }
 }
+
+/* Pokladna blíž ke středu (13. 11. 2026): užší celek, oba sloupce u sebe.
+   Na 1728 bylo vpravo i vlevo přes 100 px prázdna a formulář utíkal ke kraji. */
+@include from-px(1021px) {
+  .root {
+    grid-template-columns: minmax(20rem, .9fr) minmax(0, 1.1fr);
+    column-gap: clamp(2rem, 3.5vw, 4rem);
+    width: min(calc(90 * var(--fvw)), 84rem);
+  }
+}
+
+/* Pokladna níž od lišty (13. 11. 2026, Matěj: „víc na střed, 7,5vh nahoře"). */
+@include from-px(1021px) {
+  /* Odsazení UVNITŘ tmavé plochy (padding), ne margin — margin odsunul celý
+     tmavý podklad a pod lištou zůstal bílý pruh. */
+  .root { padding-top: calc(clamp(3.5rem, 8vh, 7.75rem) + 7.5vh); }
+}

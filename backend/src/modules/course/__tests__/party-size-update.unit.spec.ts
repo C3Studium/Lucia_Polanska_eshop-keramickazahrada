@@ -94,7 +94,7 @@ const run = (
   )
 
 describe("updateReservationPartySize", () => {
-  it("recomputes tier and total from the locked term row (pair pricing)", async () => {
+  it("recomputes tier and total from the locked term row (per person, no pair price)", async () => {
     const service = makeService()
     const manager = makeFakeManager({
       reservation: baseReservation(),
@@ -108,15 +108,15 @@ describe("updateReservationPartySize", () => {
       expect.objectContaining({
         id: "res_1",
         party_size: 2,
-        pricing_tier: "pair",
-        total_price: 1400,
+        pricing_tier: "single",
+        total_price: 1600,
       }),
       expect.anything()
     )
     expect(reservation.party_size).toBe(2)
   })
 
-  it("uses the group rate once the threshold is met", async () => {
+  it("ignores the old group rate — group pricing was removed 13. 11. 2026", async () => {
     const service = makeService()
     const manager = makeFakeManager({
       reservation: baseReservation(),
@@ -129,8 +129,8 @@ describe("updateReservationPartySize", () => {
     expect(service.updateCourseReservations).toHaveBeenCalledWith(
       expect.objectContaining({
         party_size: 4,
-        pricing_tier: "group",
-        total_price: 2400,
+        pricing_tier: "single",
+        total_price: 3200,
       }),
       expect.anything()
     )

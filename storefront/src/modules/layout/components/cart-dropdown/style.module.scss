@@ -744,3 +744,58 @@
   font-size: 0.8125rem;
   line-height: 1.3;
 }
+
+/*
+ * Menší a uklizenější položky v rozbalovacím košíku (13. 11. 2026, Matěj):
+ * menší náhled, těsnější řádek, menší název a cena, nižší ovladač množství
+ * a „Odebrat". Poslední v souboru s !important, protože pravidla výš jsou
+ * hluboko zanořená.
+ */
+.cartItem {
+  --cart-thumb: 3.75rem !important;
+  --qty-stepper-height: 2rem;
+  --qty-stepper-side: 1.875rem;
+  --qty-stepper-mid: 1.75rem;
+  --qty-stepper-glyph: .9375rem;
+  gap: .75rem !important;
+  padding: .625rem 0 !important;
+}
+
+.cartItem .itemTitle {
+  font-size: .875rem !important;
+  line-height: 1.25 !important;
+}
+
+.cartItem .itemPrice,
+.cartItem .itemPrice * {
+  font-size: .875rem !important;
+}
+
+.cartItem .removeBtn {
+  margin-top: 0 !important;
+  font-size: .75rem !important;
+}
+
+.cartItem :global([data-testid="product-delete-button"]),
+.cartItem .removeBtn button {
+  min-height: 2rem !important;
+  height: 2rem !important;
+  padding-block: 0 !important;
+}
+
+/* Telefon: tlačítka jen výška obsahu + 2,5 px nahoře a dole, bez okrajů
+   (13. 11. 2026, Matěj: „tlačítka jsou na telefonu moc velká"). */
+@media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  .goToCartBtn,
+  .goToCartBtn > *,
+  .emptyStoreButton,
+  .emptyStoreButton > * {
+    min-height: 0 !important;
+    height: auto !important;
+    margin-block: 0 !important;
+    padding-block: 2.5px !important;
+  }
+  .cartItem {
+    --qty-stepper-height: 1.875rem;
+  }
+}

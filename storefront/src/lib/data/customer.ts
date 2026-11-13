@@ -423,29 +423,37 @@ export async function requestPasswordReset(email: string) {
     return "Zadejte prosím platnou e-mailovou adresu."
   }
 
-  try {
-    const hlavicky = await headers()
-
-    if (vejdeSeDoStropu(`obnova-hesla:${ipZHlavicek(hlavicky)}`)) {
-      await sdk.auth.resetPassword("customer", "emailpass", {
-        identifier: adresa,
-      })
-    } else {
-      console.warn("[obnova hesla] strop podle IP vyčerpán — žádost neodeslána")
-    }
-  } catch (error: any) {
-    /* Ven se to nedostane. Backendový 429 z tamního omezovače sem chodí
-       úplně stejnou cestou jako výpadek — a v obou případech má člověk
-       vidět tutéž větu. */
-    console.error(
-      "[obnova hesla] žádost selhala:",
-      error?.message ?? error?.toString()
-    )
+  /*
+   * Poctivá odpověď (13. 11. 2026, Matěj): neznámá adresa se dozví, že účet
+   * nemá — dřív dostala „poslali jsme e-mail" a čekala na nic. Backend
+   * (`/store/password-reset`) to rozliší a hosta, který nakupoval bez účtu,
+   * rovnou převede na účet. Prozrazení „má/nemá účet" hlídá strop podle IP
+   * tady a podle adresy na backendu.
+   */
+  const hlavicky = await headers()
+  if (!vejdeSeDoStropu(`obnova-hesla:${ipZHlavicek(hlavicky)}`)) {
+    await pockejDo(dokdy)
+    return "Příliš mnoho pokusů. Zkuste to prosím za chvíli."
   }
 
-  await pockejDo(dokdy)
-
-  return null
+  try {
+    const odpoved = await sdk.client.fetch<{ status: "sent" | "no-account" }>(
+      "/store/password-reset",
+      { method: "POST", body: { identifier: adresa }, cache: "no-store" }
+    )
+    await pockejDo(dokdy)
+    if (odpoved?.status === "no-account") {
+      return "Účet s tímhle e-mailem u nás nemáme. Vytvořte si ho — stačí e-mail a heslo."
+    }
+    return null
+  } catch (error: any) {
+    console.error("[obnova hesla] žádost selhala:", error?.message ?? error?.toString())
+    await pockejDo(dokdy)
+    if (error?.status === 429 || /429|Příliš mnoho/.test(String(error?.message))) {
+      return "Příliš mnoho pokusů. Zkuste to prosím za chvíli."
+    }
+    return "Odkaz se teď nepodařilo odeslat. Zkuste to prosím za chvíli."
+  }
 }
 
 /**

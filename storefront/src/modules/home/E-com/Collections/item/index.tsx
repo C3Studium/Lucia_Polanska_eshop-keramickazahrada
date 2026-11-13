@@ -112,7 +112,7 @@ const Card = ({
         <h3>{collection.title}</h3>
         {collection.description && <p>{collection.description}</p>}
         <span className="Item__action" {...editable(block, "accent.3")}>
-          {action} <i aria-hidden="true">↗</i>
+          {action} <i aria-hidden="true">↗︎</i>
         </span>
       </div>
     </LocalizedClientLink>

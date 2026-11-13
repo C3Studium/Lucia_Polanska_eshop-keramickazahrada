@@ -29,7 +29,7 @@ const stateCopy: Record<
     description:
       "Někdo vás požádal, abyste si tuhle objednávku převzali. Než něco potvrdíte, přečtěte si, co to znamená.",
     status: "Čeká na vás",
-    mark: "↗",
+    mark: "↗︎",
   },
   accepted: {
     eyebrow: "Hotovo",
@@ -179,11 +179,11 @@ export default function OrderTransferTemplate({
             <div className={s.resultActions}>
               {state === "accepted" && (
                 <LocalizedClientLink href="/account/orders">
-                  Moje objednávky <span aria-hidden="true">↗</span>
+                  Moje objednávky <span aria-hidden="true">↗︎</span>
                 </LocalizedClientLink>
               )}
               <LocalizedClientLink href="/store">
-                Zpět do obchodu <span aria-hidden="true">↗</span>
+                Zpět do obchodu <span aria-hidden="true">↗︎</span>
               </LocalizedClientLink>
             </div>
           </section>

@@ -37,6 +37,7 @@ import {
   productAvailability,
 } from "@lib/util/availability"
 import { easeReveal } from "@lib/motion-tokens"
+import { usePlainShop } from "@modules/common/components/plain-shop"
 
 type ProductCardProps = {
   product: HttpTypes.StoreProduct
@@ -329,6 +330,10 @@ function ProductCard({
   }, [])
 
   const interactionState = isInteracting ? "hover" : "initial"
+  /* V obchodě (PlainShop) karta stojí od začátku: framer při reducedMotion
+     přeskočí jen transformace, průhlednost z `initial` by dál dojížděla
+     (změřeno na iPhonu 13. 11. 2026: opacity 0,003 při vjezdu do obrazu). */
+  const plain = usePlainShop()
 
   return (
     <motion.article
@@ -339,8 +344,8 @@ function ProductCard({
       onMouseLeave={stopInteracting}
       onFocusCapture={startInteracting}
       onBlurCapture={handleBlurCapture}
-      initial={cardInitial}
-      whileInView={cardInView}
+      initial={plain ? false : cardInitial}
+      whileInView={plain ? undefined : cardInView}
       viewport={cardViewport}
       transition={cardTransition}
       exit={cardExit}

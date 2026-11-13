@@ -110,7 +110,7 @@ export default function OrderStateShell({
               {primary && (
                 <LocalizedClientLink className={s.primary} href={primary.href}>
                   <span>{primary.label}</span>
-                  <i aria-hidden="true">↗</i>
+                  <i aria-hidden="true">↗︎</i>
                 </LocalizedClientLink>
               )}
               {secondary && (

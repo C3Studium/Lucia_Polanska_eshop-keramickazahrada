@@ -84,13 +84,13 @@ export default function Kurzy({
         onReserveAction={openModal}
         coursesEnabled={coursesEnabled}
       />
-      <Rezervace
+      {/* <Rezervace
         terms={terms}
         onReserveAction={openModal}
         block={copy["kurzy.rezervace"]}
         okno={copy["kurzy.rezervace-okno"]}
         coursesEnabled={coursesEnabled}
-      />
+      /> */}
       {/* Nadpis okna je týž blok jako nadpis sekce s termíny; ostatní texty
           okna mají vlastní blok `kurzy.rezervace-okno`.
 

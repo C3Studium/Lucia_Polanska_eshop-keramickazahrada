@@ -86,7 +86,7 @@ export default function ClaimsSummary({
           className={styles.summaryLink}
           href={`/order/${orderId}/claims?token=${token}`}
         >
-          Podrobnosti <i aria-hidden="true">↗</i>
+          Podrobnosti <i aria-hidden="true">↗︎</i>
         </LocalizedClientLink>
       </div>
       <ul className={styles.summaryList}>

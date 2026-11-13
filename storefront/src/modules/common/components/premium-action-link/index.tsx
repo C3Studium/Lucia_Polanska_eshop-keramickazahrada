@@ -97,7 +97,7 @@ export default function PremiumActionLink({
           initial="rest"
           animate={visualState}
         >
-          ↗
+          ↗︎
         </motion.i>
       </motion.span>
     </LocalizedClientLink>

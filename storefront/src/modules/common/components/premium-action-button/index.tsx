@@ -77,7 +77,7 @@ const PremiumActionButton = ({
             <span className={styles.label}>{text}</span>
           </span>
           <span className={styles.arrow} aria-hidden="true">
-            ↗
+            ↗︎
           </span>
         </button>
       </div>
@@ -161,7 +161,7 @@ const PremiumActionButton = ({
           variants={premiumButtonArrowVariants}
           aria-hidden="true"
         >
-          ↗
+          ↗︎
         </motion.span>
       </motion.button>
     </div>

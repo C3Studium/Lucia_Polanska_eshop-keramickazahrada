@@ -69,7 +69,9 @@ const CartQuantityStepper = ({
         disabled={disabled || value <= min}
         aria-label={decreaseLabel}
       >
-        −
+        {/* Kreslené čárou, ne znakem: „−" v Sansation sedělo pod středem
+            a na telefonu bylo vidět níž než číslo (13. 11. 2026). */}
+        <span className={styles.glyph} aria-hidden="true" />
       </button>
       {editable ? (
         <input
@@ -107,7 +109,7 @@ const CartQuantityStepper = ({
            čtenářka (10. 11. 2026) hlásila, že plus „nevidí“. */
         title={value >= max && !disabled ? "Víc kusů tohohle výrobku objednat nejde" : undefined}
       >
-        +
+        <span className={`${styles.glyph} ${styles.glyphPlus}`} aria-hidden="true" />
       </button>
     </div>
   )

@@ -5,7 +5,6 @@ import { useEditRerender } from "@lib/hooks/use-edit-rerender"
 import { button } from "@lib/util/site-copy"
 import type { CopyBlocks } from "@lib/util/site-copy"
 import WebButton from "@modules/common/components/Buttons/webButton"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { motion, useScroll, useSpring, useTransform } from "framer-motion"
 import { useRef } from "react"
 import { useDeviceTier } from "@lib/hooks/use-device-tier"
@@ -39,19 +38,9 @@ const clamp01 = (value: number, from: number, to: number) =>
  * CTA gets its own stretch to arrive in rather than being crammed against the release.
  */
 const DRIFT_END = 0.62
-const CURTAIN_START = 0.5
-const CURTAIN_END = 0.72
-const WINDOW_START = 0.56
-const WINDOW_END = 0.78
-const CTA_START = 0.6
-const CTA_END = 0.8
-const RAIL_START = 0.66
-const RAIL_END = 0.8
-
 export default function Courses({ copy }: { copy?: CopyBlocks }) {
   // Obě tlačítka vedou dovnitř webu, takže se z CMS bere jen název.
   const ctaKurzy = button(copy, "index.kurzy")
-  const ctaVyrobky = button(copy, "index.vyrobky")
 
   /* Sekce se hýbe jen hodnotami ze scrollu, a ty překreslení nespouštějí — bez tohohle
      by `editable()` zůstalo prázdné a texty by v editoru nešly chytit. Viz hook. */
@@ -72,22 +61,6 @@ export default function Courses({ copy }: { copy?: CopyBlocks }) {
    * Je to samostatná scéna s vlastní lištou a vlastním číslem — redaktor upravuje jednu,
    * aniž by musel hledat mezi texty té druhé.
    */
-  const outro = copy?.["index.ecom-outro"]
-  const outroRailLeft = outro?.accent?.[0]?.trim() || "Pokračování"
-  const outroRailRight = outro?.accent?.[1]?.trim() || "Ručně, v píseckém ateliéru"
-  const outroKicker = outro?.accent?.[2]?.trim() || "Z ateliéru k vám domů"
-  const outroStamp = outro?.accent?.[3]?.trim() || "Ateliér · Písek"
-  /* Číslo sekce je struktura (řada 01–05 napříč stránkou) a `accent` má strop
-     šesti položek — „05" proto zůstává v kódu. */
-  const outroIndex = "05"
-  const outroIndexLabel = outro?.accent?.[4]?.trim() || "Pokračujte do e-shopu"
-  const outroAsk = outro?.accent?.[5]?.trim() || "Nebo se zeptat Lucie"
-  const outroLead = outro?.title?.trim() || "Každý výrobek"
-  const outroAccent = outro?.headline?.trim() || "hledá svoje místo."
-  const outroLede =
-    outro?.bodyText?.trim() ||
-    "Ručně tvořená keramika pro zahradu i domov. Všechno vzniká pomalu a jen v malém počtu."
-
   const sectionRef = useRef<HTMLElement>(null)
   const { isPhone, isTouch } = useDeviceTier()
   /*
@@ -229,9 +202,7 @@ export default function Courses({ copy }: { copy?: CopyBlocks }) {
      nejlepší." sat inside the circle on top of the photo. */
   const contentOpacity = useTransform(
     [entry, pinned],
-    ([entryValue, pinnedValue]: number[]) =>
-      clamp01(entryValue, 0.2, 0.5) *
-      (1 - clamp01(pinnedValue, CURTAIN_START + 0.02, CURTAIN_END - 0.06))
+    ([entryValue]: number[]) => clamp01(entryValue, 0.2, 0.5)
   )
   /*
    * Ve vh, ne v px. Byly to konstanty 22 a 26 px, tedy dráha, která je na
@@ -255,37 +226,6 @@ export default function Courses({ copy }: { copy?: CopyBlocks }) {
   const contentVisibility = useTransform(contentOpacity, (value) =>
     value > 0.02 ? "visible" : "hidden"
   )
-  const footerCurtain = useTransform(
-    pinned,
-    [CURTAIN_START, CURTAIN_END],
-    ["inset(100% 0% 0% 0%)", "inset(0% 0% 0% 0%)"]
-  )
-  const footerRailOpacity = useTransform(
-    pinned,
-    [RAIL_START, RAIL_END],
-    [0, 1]
-  )
-  const ctaOpacity = useTransform(pinned, [CTA_START, CTA_END], [0, 1])
-  /* Týž důvod: 34 px je 3.15 % výšky na 1080. Obě strany mají stejný tvar
-     výrazu, takže interpolace zůstane interpolací. */
-  const ctaY = useTransform(
-    pinned,
-    [CTA_START, CTA_END],
-    ["3.15vh", "0vh"]
-  )
-  const ctaWindowOpacity = useTransform(
-    pinned,
-    [WINDOW_START, WINDOW_START + 0.1],
-    [0, 1]
-  )
-  /* Only a hair of scale: the photo showing through is a static CSS mask on the surface below and
-     cannot scale with the ring, so a large range visibly separated the two. */
-  const ctaWindowScale = useTransform(
-    pinned,
-    [WINDOW_START, WINDOW_END],
-    [0.95, 1]
-  )
-
   return (
     <section
       ref={sectionRef}
@@ -354,71 +294,6 @@ export default function Courses({ copy }: { copy?: CopyBlocks }) {
               />
             </span>
           </div>
-        </motion.div>
-        <motion.div
-          className="Courses__footerCurtain"
-          style={{ clipPath: footerCurtain }}
-        >
-          <div className="Courses__ctaSurface" aria-hidden="true" />
-          <motion.div
-            className="Courses__ctaWindow"
-            style={{ opacity: ctaWindowOpacity, scale: ctaWindowScale }}
-            aria-hidden="true"
-          >
-            <span {...editable(outro, "accent.3")}>{outroStamp}</span>
-          </motion.div>
-          <motion.div
-            className="Courses__footerRail"
-            style={{ opacity: footerRailOpacity }}
-          >
-            <span {...editable(outro, "accent.0")}>{outroRailLeft}</span>
-            <span className="line" />
-            <span {...editable(outro, "accent.1")}>{outroRailRight}</span>
-          </motion.div>
-          <div className="Courses__cta">
-            <motion.div
-              className="Courses__ctaInner"
-              style={{ opacity: ctaOpacity, y: ctaY }}
-            >
-              <span
-                className="Courses__ctaKicker"
-                {...editable(outro, "accent.2")}
-              >
-                {outroKicker}
-              </span>
-              {/* Obě půlky vlastní pole — `editable` píše celé pole naráz. */}
-              <h2>
-                <span {...editable(outro, "title")}>{outroLead}</span>
-                <em {...editable(outro, "headline")}>{outroAccent}</em>
-              </h2>
-              <div className="Courses__ctaFooter">
-                <p {...editable(outro, "body")}>{outroLede}</p>
-                <div className="Courses__ctaActions">
-                  <span {...editable(ctaVyrobky, "label")}>
-                    <WebButton
-                      Kind="Link"
-                      title={ctaVyrobky?.label?.trim() || "Prohlédnout výrobky"}
-                      href="/store"
-                      alt="Prohlédnout keramiku"
-                    />
-                  </span>
-                  <LocalizedClientLink
-                    href="/dotazy"
-                    {...editable(outro, "accent.5")}
-                  >
-                    {outroAsk} <span aria-hidden="true">↗</span>
-                  </LocalizedClientLink>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-          <motion.div
-            className="Courses__ctaIndex"
-            style={{ opacity: footerRailOpacity }}
-          >
-            <span>{outroIndex}</span>
-            <span {...editable(outro, "accent.4")}>{outroIndexLabel}</span>
-          </motion.div>
         </motion.div>
       </motion.div>
     </section>

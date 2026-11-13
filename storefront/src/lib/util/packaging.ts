@@ -81,6 +81,9 @@ export const withPackagingUnderProducts = <T extends LineLike>(items: T[]): T[] 
   const result: T[] = []
   for (const item of items) {
     if (isPackagingLine(item)) continue
+    /* Doběrečné je způsob platby, ne položka (13. 11. 2026): v seznamech
+       zboží se neukazuje vůbec, jen jako řádek ceny — viz `dobirkaFeeSubtotal`. */
+    if (isDobirkaFeeItem(item)) continue
     result.push(item)
     for (const line of packaging) {
       if (!used.has(line) && item.variant_id && packagingVariantOf(line) === item.variant_id) {

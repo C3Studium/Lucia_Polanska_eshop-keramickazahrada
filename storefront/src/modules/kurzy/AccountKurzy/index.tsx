@@ -141,7 +141,7 @@ export default function AccountKurzy({
                     <div className={s.cardMeta}>
                       <span className={s.cardState}>{state.label}</span>
                       <strong>{czk(reservation.total_price)}</strong>
-                      <i aria-hidden="true">↗</i>
+                      <i aria-hidden="true">↗︎</i>
                     </div>
                   </LocalizedClientLink>
                 </motion.li>

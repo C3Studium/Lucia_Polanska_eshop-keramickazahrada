@@ -1,3 +1,5 @@
+"use client"
+
 import {
   claimItemsTotal,
   claimLineItems,
@@ -7,7 +9,7 @@ import { convertToLocale } from "@lib/util/money"
 import Thumbnail from "@modules/products/components/thumbnail"
 
 import styles from "./style.module.scss"
-import { getTexty } from "@lib/data/texty"
+import { useTexty } from "@lib/context/texty"
 
 /**
  * Položky žádosti (§11.1) — náhled, název · varianta, počet, částka — a pod
@@ -15,13 +17,15 @@ import { getTexty } from "@lib/data/texty"
  * vráceny peníze, vedle součtu i „Vráceno", ať zákazník vidí, zda dostal celou
  * cenu vybraných kusů nebo jen část (sleva z ceny, částečná refundace).
  *
- * Bez direktivy `"use client"` schválně: čtou ho klientská časová osa i
- * serverový souhrn na potvrzení. Nic interaktivního tu není.
+ * Klientská komponenta (13. 11. 2026): dřív `async` se `getTexty()`, a protože
+ * ji čte klientská časová osa reklamací, stránka se zasekla stejně jako
+ * detail objednávky. Věty teď z `useTexty()`; serverový souhrn ji vykreslí
+ * jako běžnou klientskou komponentu.
  *
  * Staré žádosti `line_items` nemají → nevykreslí se nic a karta vypadá jako
  * dřív (text `reason` nese, co se vracelo).
  */
-export default async function ClaimLineItems({
+export default function ClaimLineItems({
   claim,
   currencyCode,
   compact = false,
@@ -33,7 +37,7 @@ export default async function ClaimLineItems({
   compact?: boolean
 }) {
   /* Věty z administrace (Právní věci a texty → Texty obchodu). */
-  const texty = await getTexty()
+  const texty = useTexty()
   const items = claimLineItems(claim)
   if (!items.length) return null
 

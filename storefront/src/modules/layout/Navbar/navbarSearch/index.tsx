@@ -289,7 +289,7 @@ function ProductQuarryBase({ hit }: { hit: NavbarProductHit }) {
               transition={arrowTransition}
               aria-hidden="true"
             >
-              ↗
+              ↗︎
             </motion.i>
           </span>
         </div>

@@ -313,3 +313,14 @@
     }
   }
 }
+
+/*
+ * Účet ve stejné míře jako košík a pokladna (13. 11. 2026, Matěj): velké
+ * nadpisy („Dobrý den, …", „Detail objednávky", čísla v přehledu) o třetinu
+ * menší na všech šířkách. Jeden knob pro všechny displejové velikosti účtu,
+ * drobná sazba (`--account-zoom`) se nemění.
+ */
+.section,
+.container {
+  --account-display-zoom: .62 !important;
+}

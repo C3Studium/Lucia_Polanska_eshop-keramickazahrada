@@ -129,6 +129,29 @@ type Props = {
   product?: { handle: string; title: string } | null
 }
 
+
+/**
+ * Poptávka po krocích (13. 11. 2026): 1 kontakt a zadání, 2 rozměry, motiv,
+ * termín a fotky, 3 přehled a souhlas → odeslat. Pole zůstávají v DOM (jen skrytá),
+ * takže hodnoty i vybrané fotky přežijí přechod mezi kroky.
+ */
+const KROKY = ["Kontakt a zadání", "Rozměry, motiv a fotky", "Přehled"] as const
+
+/* Pořadí podle Matěje (13. 11. 2026): nejdřív kontakt, pak zadání se vším
+   kolem (rozměry, motiv, termín, fotky), nakonec přehled se souhlasem. */
+const KROK_POLE: Partial<Record<CommissionInquiryField, number>> = {
+  name: 0,
+  email: 0,
+  phone: 0,
+  /* „Co si představujete" patří ke kontaktu — druhý krok tak nese jen
+     podrobnosti a fotky a kroky jsou vyvážené (Matěj, 13. 11. 2026). */
+  description: 0,
+  dimensions: 1,
+  motif: 1,
+  deadline: 1,
+  consent: 2,
+}
+
 export default function InquiryForm({
   termsVersion,
   termsHref,
@@ -155,6 +178,8 @@ export default function InquiryForm({
   const countryCode = typeof params?.countryCode === "string" ? params.countryCode : undefined
   /* Pole, na které po neúspěšném odeslání skočí fokus (efekt níž). */
   const [focusField, setFocusField] = useState<CommissionInquiryField | null>(null)
+  /* Krok poptávky (13. 11. 2026, Matěj: „udělej z formuláře stepper") — viz KROKY. */
+  const [krok, setKrok] = useState(0)
   const fileInput = useRef<HTMLInputElement>(null)
   const statusRef = useRef<HTMLParagraphElement>(null)
   const successRef = useRef<HTMLDivElement>(null)
@@ -281,6 +306,7 @@ export default function InquiryForm({
   }
 
   const reset = () => {
+    setKrok(0)
     setValues(EMPTY)
     setErrors({})
     setDrafts([])
@@ -292,11 +318,19 @@ export default function InquiryForm({
     event.preventDefault()
     if (busy || preparing) return
 
+    /* Enter v poli na kroku 1 nebo 2 posouvá dál, neodesílá. */
+    if (krok < KROKY.length - 1) {
+      dalsiKrok()
+      return
+    }
+
     const found = validateCommissionInquiry(values)
     const firstInvalid = Object.keys(found)[0] as CommissionInquiryField | undefined
     setErrors(found)
     if (firstInvalid) {
       setSubmit({ kind: "failed", message: "Zkontrolujte prosím označená pole." })
+      /* Chyba může být v dřívějším kroku — nejdřív na něj, pak fokus. */
+      setKrok(KROK_POLE[firstInvalid] ?? krok)
       setFocusField(firstInvalid)
       return
     }
@@ -358,6 +392,22 @@ export default function InquiryForm({
         </div>
       </div>
     )
+  }
+
+  /** Další krok — jen když jsou v pořádku pole tohohle a dřívějších kroků. */
+  function dalsiKrok() {
+    const found = validateCommissionInquiry(values)
+    const tady = (Object.keys(found) as CommissionInquiryField[]).filter(
+      (pole) => (KROK_POLE[pole] ?? KROKY.length) <= krok
+    )
+    if (tady.length) {
+      setErrors(Object.fromEntries(tady.map((pole) => [pole, found[pole]])))
+      setKrok(KROK_POLE[tady[0]] ?? krok)
+      setFocusField(tady[0])
+      return
+    }
+    setErrors({})
+    setKrok((k) => Math.min(k + 1, KROKY.length - 1))
   }
 
   const errorId = (field: CommissionInquiryField) => `${fieldId(field)}-error`
@@ -425,7 +475,76 @@ export default function InquiryForm({
           Co mám vyrobit?
         </h3>
 
-        <fieldset className={styles.group}>
+        {/* Stepper poptávky: kroužky s číslem spojené linkou, název pod nimi.
+            Hotový krok má ✓ a jde na něj kliknout zpět. */}
+        <ol className={styles.stepper} aria-label="Kroky poptávky">
+          {KROKY.map((nazev, index) => {
+            const stav = index < krok ? "done" : index === krok ? "current" : "todo"
+            const cislo = String(index + 1)
+            return (
+              <li
+                key={nazev}
+                className={styles.stepperItem}
+                data-state={stav}
+                aria-current={stav === "current" ? "step" : undefined}
+              >
+                {stav === "done" ? (
+                  <button
+                    type="button"
+                    className={styles.stepperDot}
+                    onClick={() => setKrok(index)}
+                    disabled={busy}
+                    aria-label={`Zpět na krok ${cislo}: ${nazev}`}
+                  >
+                    ✓
+                  </button>
+                ) : (
+                  <span className={styles.stepperDot} aria-hidden="true">
+                    {cislo}
+                  </span>
+                )}
+                <span className={styles.stepperLabel}>{nazev}</span>
+              </li>
+            )
+          })}
+        </ol>
+
+        <fieldset className={styles.group} hidden={krok !== 0}>
+          <legend>Kontakt</legend>
+          <div className={styles.grid}>
+            {textField("name", "Jméno", {
+              required: true,
+              placeholder: "Vaše jméno",
+              autoComplete: "name",
+              maxLength: INQUIRY_LIMITS.name,
+            })}
+            {textField("email", "E-mail", {
+              required: true,
+              type: "email",
+              placeholder: "vas@email.cz",
+              autoComplete: "email",
+              maxLength: INQUIRY_LIMITS.email,
+            })}
+            <div className={styles.field} data-invalid={errors.phone ? "" : undefined}>
+              {label("phone", "Telefon", "(nepovinné)")}
+              <PhoneInput
+                id={fieldId("phone")}
+                name="phone"
+                className={styles.phoneRow}
+                inputClassName={styles.input}
+                placeholder="603 123 456"
+                value={values.phone}
+                onChange={(event) => update("phone", event.target.value)}
+                disabled={busy}
+                aria-invalid={errors.phone ? true : undefined}
+                aria-describedby={describedBy("phone")}
+              />
+              {fieldError("phone")}
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset className={styles.group} hidden={krok !== 0}>
           <legend>Zadání</legend>
 
           <div
@@ -449,6 +568,10 @@ export default function InquiryForm({
             />
             {fieldError("description")}
           </div>
+        </fieldset>
+
+        <fieldset className={styles.group} hidden={krok !== 1}>
+          <legend>Rozměry, motiv a fotky</legend>
 
           <div className={styles.grid}>
             {textField("dimensions", "Rozměry", {
@@ -550,40 +673,6 @@ export default function InquiryForm({
           </div>
         </fieldset>
 
-        <fieldset className={styles.group}>
-          <legend>Kontakt</legend>
-          <div className={styles.grid}>
-            {textField("name", "Jméno", {
-              required: true,
-              placeholder: "Vaše jméno",
-              autoComplete: "name",
-              maxLength: INQUIRY_LIMITS.name,
-            })}
-            {textField("email", "E-mail", {
-              required: true,
-              type: "email",
-              placeholder: "vas@email.cz",
-              autoComplete: "email",
-              maxLength: INQUIRY_LIMITS.email,
-            })}
-            <div className={styles.field} data-invalid={errors.phone ? "" : undefined}>
-              {label("phone", "Telefon", "(nepovinné)")}
-              <PhoneInput
-                id={fieldId("phone")}
-                name="phone"
-                className={styles.phoneRow}
-                inputClassName={styles.input}
-                placeholder="603 123 456"
-                value={values.phone}
-                onChange={(event) => update("phone", event.target.value)}
-                disabled={busy}
-                aria-invalid={errors.phone ? true : undefined}
-                aria-describedby={describedBy("phone")}
-              />
-              {fieldError("phone")}
-            </div>
-          </div>
-        </fieldset>
 
         <div className={styles.honeypot} aria-hidden="true">
           <label htmlFor={fieldId("website")}>Nevyplňujte</label>
@@ -596,7 +685,37 @@ export default function InquiryForm({
           />
         </div>
 
-        <div className={styles.consent} data-invalid={errors.consent ? "" : undefined}>
+        {/* Přehled před odesláním — co zákazník vyplnil, s cestou zpět ke kroku. */}
+        <dl className={styles.review} hidden={krok !== 2} aria-label="Přehled poptávky">
+          {(
+            [
+              [0, "Jméno", values.name],
+              [0, "E-mail", values.email],
+              [0, "Telefon", values.phone],
+              [0, "Co si představujete", values.description],
+              [1, "Rozměry", values.dimensions],
+              [1, "Motiv, text nebo číslo", values.motif],
+              [1, "Termín", values.deadline],
+              [1, "Fotografie", drafts.length ? `${drafts.length} přiložen${drafts.length === 1 ? "á" : drafts.length < 5 ? "é" : "o"}` : ""],
+            ] as const
+          )
+            .filter(([, , hodnota]) => String(hodnota).trim())
+            .map(([cil, nazev, hodnota]) => (
+              <div key={nazev} className={styles.reviewRow}>
+                <dt>{nazev}</dt>
+                <dd>{hodnota}</dd>
+                <button type="button" onClick={() => setKrok(cil)} disabled={busy}>
+                  Upravit
+                </button>
+              </div>
+            ))}
+        </dl>
+
+        <div
+          className={styles.consent}
+          data-invalid={errors.consent ? "" : undefined}
+          hidden={krok !== 2}
+        >
           <div className={styles.check}>
             <input
               id={fieldId("consent")}
@@ -645,15 +764,43 @@ export default function InquiryForm({
         )}
 
         <div className={styles.footer}>
-          <p>Poptávka je nezávazná — nic tím neobjednáváte ani neplatíte.</p>
-          <WebButton
-            Kind="Button"
-            type="submit"
-            title={busy ? "Odesílám…" : preparing ? "Připravuji fotky…" : "Odeslat poptávku"}
-            disabled={busy || preparing}
-            className={styles.submit}
-            testId="inquiry-submit"
-          />
+          {krok > 0 ? (
+            <button
+              type="button"
+              className={styles.back}
+              onClick={() => setKrok((k) => Math.max(0, k - 1))}
+              disabled={busy}
+            >
+              ← Zpět
+            </button>
+          ) : (
+            <p>Poptávka je nezávazná — nic tím neobjednáváte ani neplatíte.</p>
+          )}
+          {/* Různé klíče: bez nich React přepnul TENTÝŽ <button> z „Pokračovat"
+              na type="submit" ještě během kliku a prohlížeč ten klik dokončil
+              jako odeslání — poptávka se odesílala na kroku 2 (13. 11. 2026). */}
+          {krok < KROKY.length - 1 ? (
+            <WebButton
+              key="dalsi"
+              Kind="Button"
+              type="button"
+              title={`Pokračovat: ${KROKY[krok + 1]}`}
+              onClickAction={dalsiKrok}
+              disabled={busy || preparing}
+              className={styles.submit}
+              testId="inquiry-next"
+            />
+          ) : (
+            <WebButton
+              key="odeslat"
+              Kind="Button"
+              type="submit"
+              title={busy ? "Odesílám…" : preparing ? "Připravuji fotky…" : "Odeslat poptávku"}
+              disabled={busy || preparing}
+              className={styles.submit}
+              testId="inquiry-submit"
+            />
+          )}
         </div>
       </form>
     </div>

@@ -336,7 +336,7 @@ function ProductRail({ products }: ProductRailProps) {
                 {String(index + 1).padStart(2, "0")}
               </span>
               <span className="soldProducts__imageAction" aria-hidden="true">
-                Otevřít <i>↗</i>
+                Otevřít <i>↗︎</i>
               </span>
             </div>
             <div className="soldProducts__cardMeta">
@@ -345,7 +345,7 @@ function ProductRail({ products }: ProductRailProps) {
                 <h3>{product.title}</h3>
               </div>
               <span className="soldProducts__arrow" aria-hidden="true">
-                ↗
+                ↗︎
               </span>
             </div>
           </LocalizedClientLink>

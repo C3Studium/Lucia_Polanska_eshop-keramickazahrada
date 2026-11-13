@@ -47,7 +47,7 @@ import styles from "./style.module.scss"
 const COMMISSION_GATE_HINT =
   "Tohle je výroba na míru — než objednávku zaplatíte, napište prosím nebo nahrajte fotku, co si představujete (uloží se samo). Bez toho nevíme, co máme vyrobit."
 const CONSENT_GATE_HINT =
-  "Než objednávku odešlete, potvrďte prosím souhlas s obchodními podmínkami."
+  "Než objednávku dokončíte, potvrďte prosím souhlas s obchodními podmínkami."
 const MADE_TO_ORDER_GATE_HINT =
   "Potvrďte prosím ještě, že berete na vědomí, že výrobek podle vašeho zadání nelze vrátit ve 14denní lhůtě a že záloha se po zahájení výroby nevrací."
 /* Z-A: u víc zakázek má každá vlastní zaškrtnutí — hláška říká, že chybí některé. */

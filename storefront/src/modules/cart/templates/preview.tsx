@@ -19,7 +19,7 @@ const ItemsPreviewTemplate = ({ cart }: ItemsTemplateProps) => {
   const hasOverflow = items && items.length > 4
 
   return (
-  <div className={hasOverflow ? s.scroll : s.root}>
+  <div className={hasOverflow ? s.scroll : s.root} data-lenis-prevent>
       <div data-testid="items-table">
           {items
             ? withPackagingUnderProducts(

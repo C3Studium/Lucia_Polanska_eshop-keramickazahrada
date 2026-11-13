@@ -85,7 +85,7 @@ export function SupportLink({ href, label, children }: SupportLinkProps) {
     <LocalizedClientLink href={href} className={styles.route}>
       <span>{label}</span>
       <strong>{children}</strong>
-      <i aria-hidden="true">↗</i>
+      <i aria-hidden="true">↗︎</i>
     </LocalizedClientLink>
   )
 }

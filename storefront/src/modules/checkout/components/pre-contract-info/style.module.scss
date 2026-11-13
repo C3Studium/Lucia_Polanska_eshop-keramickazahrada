@@ -148,3 +148,11 @@
 .nowrap {
   white-space: nowrap;
 }
+
+/* „Než objednávku dokončíte" stručněji (13. 11. 2026): menší písmo a těsnější
+   řádky, obsah se nemění — jsou to předsmluvní informace (§ 1811/1820 OZ). */
+.rows dt,
+.rows dd { font-size: clamp(.8125rem, calc(.95vw * var(--ui-scale)), .9375rem); line-height: 1.35; }
+.rows dd small { font-size: clamp(.75rem, calc(.9vw * var(--ui-scale)), .875rem); }
+.rows > div { padding-block: clamp(.4rem, 1vh, .65rem); }
+.docs { font-size: clamp(.8125rem, calc(.95vw * var(--ui-scale)), .9375rem); }

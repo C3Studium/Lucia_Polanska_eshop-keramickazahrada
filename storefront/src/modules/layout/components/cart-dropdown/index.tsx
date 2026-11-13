@@ -26,6 +26,7 @@ import { useFormStatus } from 'react-dom';
 import CartDropdownQuantity from "./quantity"
 import { itemText } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
+import { shortTitle } from "@lib/util/short-title"
 import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
 
 /**
@@ -276,7 +277,7 @@ const CartDropdown = ({
                             <div className={styles.itemInfo}>
                               <div className={styles.itemHeader}>
                                 <div className={styles.itemTitle}>
-                                  <h3>{item.title}</h3>
+                                  <h3 title={item.title ?? undefined}>{shortTitle(item.title)}</h3>
                                 </div>
                                 <div className={styles.itemPrice}>
                                   <LineItemPrice
@@ -314,7 +315,7 @@ const CartDropdown = ({
                                     href={`/products/${item.product_handle}`}
                                     data-testid="product-link"
                                   >
-                                    {item.title}
+                                    {shortTitle(item.title)}
                                   </LocalizedClientLink>
                                 </h3>
                                 <LineItemOptions

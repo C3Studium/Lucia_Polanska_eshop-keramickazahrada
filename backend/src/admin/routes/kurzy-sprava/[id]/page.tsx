@@ -114,6 +114,8 @@ type Term = {
   price_two: number | null;
   group_min: number | null;
   price_group_per_person: number | null;
+  price_child?: number | null;
+  child_max_age?: number | null;
   status: "draft" | "published" | "cancelled";
   note: string | null;
   reservations: Reservation[];
@@ -1005,7 +1007,9 @@ const TermDetail = () => {
           </div>
 
           <div className="flex flex-col gap-3">
-            <Pole label="Za jednoho">
+            {/* Jen dospělý a dítě — ceny za dva a za skupinu jsou od
+                13. 11. 2026 zrušené (modules/course/pricing.ts). */}
+            <Pole label="Dospělý (za osobu)">
               <InlineNumber
                 value={term.price_single}
                 unit="Kč"
@@ -1014,36 +1018,20 @@ const TermDetail = () => {
                 onSave={(next) => patch.mutateAsync({ price_single: next })}
               />
             </Pole>
-            <Pole label="Za dva (za osobu)">
+            <Pole label="Dítě (za osobu)">
               <InlineNumber
-                value={term.price_two}
+                value={term.price_child ?? null}
                 unit="Kč"
                 inputClassName="w-28"
-                onSave={(next) =>
-                  patch.mutateAsync({ price_two: next })
-                }
+                onSave={(next) => patch.mutateAsync({ price_child: next })}
               />
             </Pole>
-            <Pole label="Skupina od">
+            <Pole label="Dítě do">
               <InlineNumber
-                value={term.group_min}
-                unit="lidí"
+                value={term.child_max_age ?? null}
+                unit="let"
                 inputClassName="w-24"
-                onSave={(next) =>
-                  patch.mutateAsync({ group_min: next })
-                }
-              />
-            </Pole>
-            <Pole label="Skupina (za osobu)">
-              <InlineNumber
-                value={term.price_group_per_person}
-                unit="Kč"
-                inputClassName="w-28"
-                onSave={(next) =>
-                  patch.mutateAsync({
-                    price_group_per_person: next,
-                  })
-                }
+                onSave={(next) => patch.mutateAsync({ child_max_age: next })}
               />
             </Pole>
             <Pole label="Poznámka">

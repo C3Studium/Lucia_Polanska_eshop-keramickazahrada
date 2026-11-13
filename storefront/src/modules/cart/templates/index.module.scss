@@ -105,7 +105,10 @@
      Prostřední člen měří rám, ne obrazovku (`--fvw`, viz .container výš): pod 1921 je to
      přesně 22vw, nad ním 22 % z rámu — jinak by souhrn na 2552 zabral 27 % kontejneru
      místo dnešních 22.9 %, a na 3440×1440 (týž rám, jiná obrazovka) zase jiných. */
-  grid-template-columns: minmax(0, 1fr) clamp(23.125rem, calc(22 * var(--fvw)), 27.5rem);
+  /* Souhrn na třetinu (13. 11. 2026, Matěj: „pravý pruh je moc úzký").
+     Bauhaus mřížka 2 : 1 místo 22 % — podlaha 22rem drží pole na kód
+     a tlačítko vedle sebe. */
+  grid-template-columns: minmax(0, 2fr) minmax(22rem, 1fr);
   align-items: start;
   gap: clamp(3rem, 5vw, 6rem);
   padding: clamp(3.5rem, 9vh, 6.5rem) clamp(1.125rem, 1.8vw, 2.25rem) 0;
@@ -251,10 +254,57 @@
         --cart-title-zoom: 0.8;
         --cart-summary-zoom: 0.9;
 
-        grid-template-columns:
-          minmax(0, 1fr)
-          clamp(19rem, calc(18 * var(--fvw)), 22.5rem);
+        grid-template-columns: minmax(0, 2fr) minmax(22rem, 1fr);
       }
     }
   }
+}
+
+/* Telefon na výšku (13. 11. 2026): hlavička košíku zabírala celou první
+   obrazovku — „Košík" 68 px, úvod 220 px, přihlášení. Zboží musí být
+   vidět hned. */
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .root { padding-top: 72px; }
+  .intro { min-height: 0; padding: 4px 0 18px; }
+  .intro h1 { margin-top: 6px; font-size: 2rem; }
+  .introCopy { margin-top: 10px; font-size: .875rem; }
+  .grid { gap: 36px; padding-top: 20px; }
+  .left { gap: 20px; }
+}
+
+/* Telefon naležato (13. 11. 2026): stejný důvod jako na výšku — hlavička
+   a přihlášení zabraly celou výšku 390 px, zboží nebylo vidět vůbec. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .root { padding-top: 64px; }
+  .intro { min-height: 0; padding: 4px 0 12px; }
+  .intro h1 { font-size: 1.75rem; }
+  .introCopy { font-size: .8125rem; }
+  .grid { gap: 28px; padding-top: 16px; }
+  .left { gap: 16px; }
+}
+
+/* Zjednodušená hlavička (13. 11. 2026, Matěj: „Košík, Máte u nás účet a Co máte
+   v košíku můžou být mnohem menší"). Nadpis na úrovni nadpisů sekcí, žádná
+   prázdná výška nad ním. */
+.intro {
+  min-height: 0;
+  padding-top: clamp(.5rem, 1.2vh, .9rem);
+  padding-bottom: clamp(.9rem, 2vh, 1.4rem);
+}
+.intro h1 {
+  margin-top: clamp(.75rem, 2vh, 1.25rem);
+  font-size: clamp(1.9rem, calc(2.3vw * var(--ui-scale)), 2.6rem);
+}
+.grid { padding-top: clamp(1.5rem, 4vh, 2.75rem); }
+.left { gap: clamp(1rem, 2.4vh, 1.75rem); }
+
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .intro h1 { font-size: 2rem; }
+  .grid { padding-top: 20px; }
+  .left { gap: 20px; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .intro h1 { font-size: 1.75rem; }
+  .grid { padding-top: 16px; }
+  .left { gap: 16px; }
 }

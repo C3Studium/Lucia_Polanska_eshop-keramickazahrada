@@ -130,7 +130,7 @@ const AdminBar = () => {
 
       <a className={styles.action} href={action.href}>
         {action.label}
-        <span aria-hidden="true"> ↗</span>
+        <span aria-hidden="true"> ↗︎</span>
       </a>
 
       <button

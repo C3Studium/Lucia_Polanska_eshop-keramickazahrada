@@ -151,11 +151,11 @@
   font-weight: 400;
   line-height: var(--card-title-leading);
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   /* Three line boxes are reserved whether the title fills them or not. Without it the cards in
      one row had titles of 2 to 4 lines, so the rule, the description and the price sat at a
      different height on every card and the row fell apart. */
-  min-height: calc(var(--card-title-leading) * 3em);
+  min-height: calc(var(--card-title-leading) * 2em);
 }
 .index {
   --index-size: clamp(1.5rem, 1.95vw, 2.1rem);

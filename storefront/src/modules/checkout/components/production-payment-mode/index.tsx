@@ -221,6 +221,13 @@ export default function ProductionPaymentModeChoice({
             ? `zbývá ${money(outstanding)} — doplatíte, až bude hotovo`
             : texty["checkout.production_payment_mode_1"]}
         </span>
+        {/* Částky výš jsou jen za zakázku; balné a běžné zboží jdou k úhradě
+            hned. Bez téhle věty souhrn říkal 1 125 a panel 1 075 (13. 11. 2026). */}
+        {alwaysNow > 0 && (
+          <span className={styles.nowTotal}>
+            S balným a ostatním zbožím teď zaplatíte {money(draft)}.
+          </span>
+        )}
       </output>
 
       <input

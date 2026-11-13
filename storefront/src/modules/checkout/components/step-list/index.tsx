@@ -34,6 +34,11 @@ const SE_ZAKAZKOU: Krok[] = [
   ZAKLADNI[3],
 ]
 
+/** Věta pod názvem kroku — čte ji i hlavička formuláře (`step-bubbles`). */
+export const POPIS_KROKU: Record<string, string> = Object.fromEntries(
+  [...ZAKLADNI, ...SE_ZAKAZKOU].map((krok) => [krok.key, krok.text])
+)
+
 export default function CheckoutStepList({ hasBrief = false }: { hasBrief?: boolean }) {
   const STEPS = hasBrief ? SE_ZAKAZKOU : ZAKLADNI
   const router = useRouter()

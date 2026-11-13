@@ -8,7 +8,9 @@
   width: 100%;
   /* 2 viewports of pin, down from 2.5. At 350vh the middle of the stage was a viewport and a half
      of held frame; the beats in index.tsx are spread across what is left. */
-  height: 300vh;
+  /* Od 13. 11. 2026 bez závěsu s pozvánkou do e-shopu (vlastní sekce
+     ShopInvite) — jeviště drží jen scénu Kurzů, dva výšky okna stačí. */
+  height: 200vh;
   background: var(--black-03);
 
   /*
@@ -249,264 +251,6 @@
     }
   }
 
-  .Courses__footerCurtain {
-    position: absolute;
-    inset: 0;
-    z-index: 7;
-    padding: var(--courses-rail-top) calc(5 * var(--fvw));
-    color: var(--blackText);
-    pointer-events: none;
-    will-change: clip-path;
-    isolation: isolate;
-
-    /*
-     * ─── Jedna geometrie kruhového okna ──────────────────────────────────────
-     *
-     * Okno je díra vymaskovaná v `.Courses__ctaSurface`; `.Courses__ctaWindow`
-     * je jen její obrys s popiskem. Byly to dvě nezávislé sady čísel pro jednu
-     * díru — `ellipse 14vw 29vh at 76% 52%` proti `top: 23%; left: 62%;
-     * width: 28vw; height: 58vh` — které pod 1921 vycházely nastejno jen proto,
-     * že rám je tam přesně 100vw. Nad 1921 je rám zastropovaný (2162 px na
-     * 2552x1351), ale `vw` dál měřilo okno 2552, takže obrys stál o 54.7 px
-     * vpravo od díry, kterou má rámovat. Telefonní mixin `courses-cta-phone()`
-     * to už dělá takhle; landscape to teď dělá taky.
-     *
-     * Vodorovné poloměry v `--fvw` (1 % rámu; pod 1921 přesně 1vw, takže se tam
-     * nezmění ani pixel), svislé v procentech závěsu, který je vysoký 100svh —
-     * `29%` je tedy totéž co dosavadních `29vh`, jen měřených ze stejné krabice
-     * jako střed.
-     */
-    --cta-window-cx: 76%;
-    --cta-window-cy: 52%;
-    --cta-window-rx: calc(14 * var(--fvw));
-    --cta-window-ry: 29%;
-    --cta-window-left: calc(var(--cta-window-cx) - var(--cta-window-rx));
-
-    /*
-     * A z téhož původu i CTA panel vlevo. Dřív měl vlastní `width: min(62rem,
-     * 54vw)`, tedy třetí sadu čísel, která o okně nevěděla: nad 1921 rampa
-     * zvedla 62rem 1.33×, ale `62 %` okna se nezvedlo, a na 2552x1351 panel
-     * končil na x=1469, zatímco okno začínalo na 1340 — „hledá svoje místo."
-     * i tlačítko se kreslily přes kruh. Vůle nikde jinde nebyla o moc lepší:
-     * 64 px na 1920, 16 na 1512, 14 na 1366. Teď je to jeden odečet, takže
-     * mezera je 3 % rámu na každé šířce a do qhd se nemusí psát nic.
-     */
-    --cta-left: calc(7 * var(--fvw));
-    --cta-gutter: clamp(1.5rem, 3 * var(--fvw), 4rem);
-
-    .Courses__ctaSurface {
-      position: absolute;
-      inset: 0;
-      z-index: -1;
-      background: radial-gradient(
-          circle at 22% 18%,
-          rgb(var(--cream-06-rgb) / .32),
-          transparent 30%
-        ),
-        radial-gradient(
-          circle at 74% 58%,
-          rgb(var(--olive-15-rgb) / .2),
-          transparent 28%
-        ),
-        var(--bgPrimary);
-      -webkit-mask-image: radial-gradient(
-        ellipse var(--cta-window-rx) var(--cta-window-ry) at var(--cta-window-cx)
-          var(--cta-window-cy),
-        transparent 0%,
-        transparent 97%,
-        var(--black-01) 100%
-      );
-      mask-image: radial-gradient(
-        ellipse var(--cta-window-rx) var(--cta-window-ry) at var(--cta-window-cx)
-          var(--cta-window-cy),
-        transparent 0%,
-        transparent 97%,
-        var(--black-01) 100%
-      );
-    }
-
-    .Courses__footerRail {
-      display: grid;
-      grid-template-columns: max-content 1fr max-content;
-      align-items: center;
-      gap: 1rem;
-      color: rgb(var(--black-03-rgb) / .56);
-      font-family: "Sansation-Regular";
-      font-size: var(--courses-rail-type);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-
-      .line {
-        height: 1px;
-        background: rgb(var(--black-03-rgb) / .24);
-      }
-    }
-
-    /* Obrys díry: střed a poloměry masky, nic vlastního. */
-    .Courses__ctaWindow {
-      position: absolute;
-      top: calc(var(--cta-window-cy) - var(--cta-window-ry));
-      left: var(--cta-window-left);
-      z-index: 1;
-      display: flex;
-      width: calc(var(--cta-window-rx) * 2);
-      height: calc(var(--cta-window-ry) * 2);
-      align-items: flex-end;
-      justify-content: center;
-      padding-bottom: 1.4rem;
-      border: 1px solid rgb(var(--cream-06-rgb) / .34);
-      border-radius: 50%;
-      color: rgb(var(--cream-06-rgb) / .78);
-      font-family: "Sansation-Regular";
-      font-size: var(--courses-rail-type);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      box-shadow: 0 1.5rem 4rem rgb(var(--black-03-rgb) / .16),
-        inset 0 0 0 0.35rem rgb(var(--cream-06-rgb) / .04);
-      transform-origin: center center;
-    }
-
-    .Courses__cta {
-      position: absolute;
-      top: 50%;
-      left: var(--cta-left);
-      z-index: 2;
-      /* Od levého okraje panelu k levému okraji okna, minus mezera. Jediné
-         místo, kde se šířka panelu bere — okno si ji drží samo. */
-      width: calc(
-        var(--cta-window-left) - var(--cta-left) - var(--cta-gutter)
-      );
-      transform: translateY(-50%);
-
-      .Courses__ctaInner {
-        will-change: transform, opacity;
-      }
-
-      .Courses__ctaKicker {
-        display: block;
-        margin-bottom: clamp(1rem, 2vh, 1.75rem);
-        color: rgb(var(--black-03-rgb) / .58);
-        font-family: "Sansation-Regular";
-        font-size: var(--courses-rail-type);
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-
-      h2 {
-        display: flex;
-        margin: 0;
-        flex-direction: column;
-        color: var(--black-03);
-        font-family: "Sentient-Regular";
-        /*
-         * Vodorovný člen v `--fvw`, ne ve `vw`: kurzíva má `white-space: nowrap`
-         * a měří přesně 7.28 em, takže její místo se počítá z rámu, ve kterém
-         * stojí. Plain 5.8vw dávalo na 2552x1351 148 px, což je 6.85 % rámu
-         * místo 5.8 % — o ten rozdíl přesahovala řádka do kruhu. `min(…, 10.5vh)`
-         * pak sráží velikost na krátké obrazovce (1220x660: 69.3 místo 70.8).
-         */
-        font-size: clamp(3.4rem, min(calc(5.8 * calc(var(--fvw) * var(--ui-scale))), calc(10.5vh * var(--ui-scale))), 7rem);
-        font-weight: 400;
-        line-height: 0.82;
-        letter-spacing: -0.055em;
-
-        em {
-          margin-left: clamp(2.5rem, 6 * var(--fvw), 7rem);
-          color: var(--olive-15);
-          font-family: "Sentient-LightItalic";
-          font-weight: 300;
-          white-space: nowrap;
-        }
-      }
-
-      .Courses__ctaFooter {
-        display: grid;
-        grid-template-columns: minmax(14rem, 1fr) auto;
-        align-items: end;
-        gap: clamp(1.5rem, 3 * var(--fvw), 4rem);
-        margin-top: clamp(2rem, 4vh, 3rem);
-        padding-top: 1.1rem;
-        border-top: 1px solid rgb(var(--black-03-rgb) / .24);
-
-        > p {
-          /* 22rem, ne 27: v levém sloupci má zůstat zřetelný odstup od tlačítka a odkazu
-             vpravo. Na 27rem se text na užších oknech natáhl skoro až k nim a splýval
-             s nimi do jednoho pásu. */
-          max-width: 22rem;
-          margin: 0;
-          color: rgb(var(--black-03-rgb) / .68);
-          font-family: "Sansation-Light";
-          font-size: clamp(0.98rem, calc(1vw * var(--ui-scale)), 1.14rem);
-          line-height: 1.42;
-        }
-      }
-
-      .Courses__ctaActions {
-        display: flex;
-        min-width: max-content;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.85rem;
-
-        > a,
-        button {
-          pointer-events: auto;
-        }
-
-        > a:last-child {
-          position: relative;
-          color: rgb(var(--black-03-rgb) / .7);
-          font-family: "Sansation-Regular";
-          font-size: clamp(0.8125rem, calc(0.82vw * var(--ui-scale)), 0.94rem);
-          text-decoration: none;
-
-          &::after {
-            content: "";
-            position: absolute;
-            right: 0;
-            bottom: -0.25rem;
-            left: 0;
-            height: 1px;
-            background: currentColor;
-            transform: scaleX(0.22);
-            transform-origin: left center;
-            transition: transform 0.45s cubic-bezier(0.76, 0, 0.24, 1);
-          }
-
-          &:hover::after,
-          &:focus-visible::after {
-            transform: scaleX(1);
-          }
-        }
-      }
-    }
-
-    .Courses__ctaIndex {
-      position: absolute;
-      right: calc(5 * var(--fvw));
-      /* 2rem stálo na podlaze na 768 i 660 (4vh je 30.7 a 26.4); 1.5rem ji pouští
-         dolů, aby index dál sledoval výšku okna jako zbytek závěsu. */
-      bottom: clamp(1.5rem, 4vh, 3rem);
-      z-index: 2;
-      display: flex;
-      align-items: center;
-      gap: 0.9rem;
-      color: rgb(var(--black-03-rgb) / .55);
-      font-family: "Sansation-Regular";
-      font-size: var(--courses-rail-type);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-
-      span:first-child {
-        display: grid;
-        width: 2rem;
-        height: 2rem;
-        place-items: center;
-        border: 1px solid rgb(var(--black-03-rgb) / .24);
-        border-radius: 50%;
-      }
-    }
-  }
 }
 
 @include below-px(900px) {
@@ -546,79 +290,6 @@
       }
     }
 
-    .Courses__footerCurtain {
-      padding-right: 1.25rem;
-      padding-left: 1.25rem;
-
-      .Courses__ctaSurface {
-        -webkit-mask-image: radial-gradient(
-          ellipse 36vw 17vh at 50% 25%,
-          transparent 0%,
-          transparent 97%,
-          var(--black-01) 100%
-        );
-        mask-image: radial-gradient(
-          ellipse 36vw 17vh at 50% 25%,
-          transparent 0%,
-          transparent 97%,
-          var(--black-01) 100%
-        );
-      }
-
-      .Courses__footerRail {
-        grid-template-columns: max-content 1fr;
-
-        span:last-child {
-          display: none;
-        }
-      }
-
-      .Courses__ctaWindow {
-        top: 8%;
-        left: 14%;
-        width: 72vw;
-        height: 34vh;
-        padding-bottom: 1rem;
-      }
-
-      .Courses__cta {
-        top: auto;
-        right: 1.25rem;
-        bottom: 5.5rem;
-        left: 1.25rem;
-        width: auto;
-        transform: none;
-
-        .Courses__ctaKicker {
-          margin-bottom: 0.8rem;
-        }
-
-        h2 {
-          font-size: clamp(3.5rem, calc(14vw * var(--ui-scale)), 6rem);
-
-          em {
-            margin-left: 0;
-            white-space: normal;
-          }
-        }
-
-        .Courses__ctaFooter {
-          display: flex;
-          align-items: flex-start;
-          flex-direction: column;
-          gap: 1.4rem;
-          margin-top: 1.5rem;
-
-          > p {
-            font-size: 0.96rem;
-          }
-        }
-      }
-
-      .Courses__ctaIndex {
-        display: none;
-      }
-    }
   }
 }
 
@@ -633,20 +304,6 @@
   .courses__section {
     height: 220vh;
 
-    .Courses__footerCurtain {
-      .Courses__ctaWindow {
-        top: 14%;
-        left: 8%;
-        width: 84vw;
-        height: 30vh;
-      }
-
-      .Courses__cta {
-        top: auto;
-        left: 1.25rem;
-        width: auto;
-      }
-    }
   }
 }
 
@@ -659,25 +316,6 @@
   .courses__section {
     height: 170vh;
 
-    .Courses__footerCurtain {
-      .Courses__ctaWindow {
-        top: 10%;
-        left: 6%;
-        width: 60vw;
-        height: 46vh;
-      }
-
-      .Courses__cta {
-        bottom: 2.5rem;
-      }
-
-      /* The kicker and the trailing paragraph are the first things to go when there is no room;
-         the heading and the action are what the section is for. */
-      .Courses__ctaKicker,
-      .Courses__ctaFooter > p {
-        display: none;
-      }
-    }
   }
 }
 
@@ -730,73 +368,6 @@
  *
  * The mask and the ring are both built from these, so the hole and its border cannot drift apart.
  */
-@mixin courses-cta-phone($rx, $ry, $cy) {
-  .courses__section .Courses__footerCurtain {
-    padding-inline: 1.25rem;
-
-    .Courses__ctaSurface {
-      -webkit-mask-image: radial-gradient(
-        ellipse #{$rx} #{$ry} at 50% #{$cy},
-        transparent 0%,
-        transparent 97%,
-        var(--black-01) 100%
-      );
-      mask-image: radial-gradient(
-        ellipse #{$rx} #{$ry} at 50% #{$cy},
-        transparent 0%,
-        transparent 97%,
-        var(--black-01) 100%
-      );
-    }
-
-    .Courses__ctaWindow {
-      top: calc(#{$cy} - #{$ry});
-      left: calc(50% - #{$rx});
-      width: calc(#{$rx} * 2);
-      height: calc(#{$ry} * 2);
-      padding-bottom: 1rem;
-    }
-
-    /*
-     * Anchored to the floor instead of hung from the middle. The base sets `top: 50%` with a
-     * `translateY(-50%)`; the 760px rule below already set `top: auto` but left the transform in
-     * place, so the block was being shifted up by half its own height from a static position —
-     * which is the gap between the ring and the heading.
-     */
-    .Courses__cta {
-      top: auto;
-      right: 1.25rem;
-      /* Nad spodní lištou (13. 11. 2026): na tabletu na výšku sahalo
-         „Prohlédnout výrobky" do lišty. Bez lišty proměnná chybí → 0. */
-      bottom: max(5vh, 3.25rem, calc(var(--nav-bottom-clearance, 0px) + 1.25rem));
-      left: 1.25rem;
-      width: auto;
-      transform: none;
-
-      h2 {
-        font-size: clamp(2.4rem, calc(11vw * var(--ui-scale)), 3.4rem);
-        line-height: 0.92;
-
-        em {
-          margin-left: 0;
-          /* 11vw of „hledá svoje místo." does not fit one line at 320px, and `nowrap` there sent
-             the whole panel into horizontal scroll. */
-          white-space: normal;
-        }
-      }
-
-      .Courses__ctaFooter {
-        grid-template-columns: minmax(0, 1fr);
-        margin-top: 1.25rem;
-      }
-    }
-
-    /* „05 · Pokračujte do e-shopu" would sit under the bottom bar, on top of the CTA it repeats. */
-    .Courses__ctaIndex {
-      display: none;
-    }
-  }
-}
 
 /*
  * Portrait phones, small through large. The width is capped so the ellipse stays an object on the
@@ -808,9 +379,6 @@
  * Centred at 30%: high enough to clear the copy anchored to the floor, low enough that the top of
  * the ellipse clears the navbar on the shortest screen.
  */
-@include below-px(600px) {
-  @include courses-cta-phone(min(38vw, 9rem), 26vh, 30%);
-}
 
 /* phs alone spans the landscape-phone range; phl would only repeat it from 800px up. */
 /*
@@ -821,9 +389,6 @@
  * Sideways, height is the scarce axis rather than the spare one, so this stays a circle — an
  * upright ellipse in a 430px-tall stage would be cut off at both ends.
  */
-@include phs-h {
-  @include courses-cta-phone(4.4rem, 4.4rem, 34%);
-}
 
 /*
  * Svislé tablety: výřez nastojato.
@@ -845,10 +410,7 @@
  * zůstane kulatý na každém displeji.
  */
 @include v(md) {
-  @include below-px(1180px) {
-    @include courses-cta-phone(min(30vw, 15rem), min(30vw, 15rem), 30%);
   }
-}
 
 /*
  * Telefony a tablety (10. 11. 2026).
@@ -890,23 +452,6 @@
  * závěsu celá plná a výřez s popiskem se nekreslí; tablety ho mají dál.
  */
 @mixin courses-cta-no-window {
-  .courses__section .Courses__footerCurtain {
-    .Courses__ctaSurface {
-      -webkit-mask-image: none;
-      mask-image: none;
-    }
-
-    .Courses__ctaWindow {
-      display: none;
-    }
-
-    /* Bez oválu by nad textem zbyla prázdná půlka panelu — text jde doprostřed. */
-    .Courses__cta {
-      top: 50%;
-      bottom: auto;
-      transform: translateY(-50%);
-    }
-  }
 }
 
 @include below-px(760px) {
@@ -937,7 +482,4 @@
     }
   }
 
-  .courses__section .Courses__footerCurtain .Courses__cta h2 {
-    font-size: clamp(1.9rem, 10vh, 2.8rem);
-  }
 }

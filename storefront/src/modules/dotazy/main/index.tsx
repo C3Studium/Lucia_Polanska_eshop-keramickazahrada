@@ -83,7 +83,10 @@ export default function DotazyMain ({
     const faqScale = useTransform(progress, faqTimeline, [1, 1, 0.86, 0.62, 0.62])
     const faqRotate = useTransform(progress, faqTimeline, [0, 0, -1.2, 0, 0])
     const faqTracking = useTransform(progress, faqTimeline, ["-0.075em", "-0.075em", "-0.065em", "-0.045em", "-0.045em"])
-    const faqOpacity = useTransform(progress, [0, 0.84, 1], [1, 1, 0.68])
+    /* Slovo FAQ dojíždělo (scale .62, krytí .68) přímo na seznam otázek — na
+       nejmenších displejích přes první řádky (13. 11. 2026). Na všech zařízeních
+       teď během cesty dolů zmizí, než na seznam dojede. */
+    const faqOpacity = useTransform(progress, [0, 0.4, 0.72], [1, 1, 0])
     const faqParallaxY = useTransform(scrollYProgress, [0, 1], [0, 150])
     const faqCursorX = useTransform(cursorX, (value) => value * -10)
     const faqCursorY = useTransform(cursorY, (value) => value * -7)

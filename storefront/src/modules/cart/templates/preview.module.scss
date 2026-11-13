@@ -31,3 +31,15 @@
      overflow-y: auto; overflow-x: hidden; max-height: clamp(16rem, 46vh, 30rem);
    a do preview.tsx data-lenis-prevent, nebo přiznat, že se náhled scrollovat nemá,
    a nechat .scroll jako pouhý alias. Dnes je to alias — a poprvé i vysázený. */
+
+/* „Co objednáváte" se v pokladně roluje samo (13. 11. 2026, Matěj) — dlouhý
+   košík jinak odsunul součty a slevový kód pod ohyb. Rozhodnutí z poznámky
+   výš: vlastní posuv + `data-lenis-prevent` v preview.tsx. */
+.root,
+.scroll {
+  max-height: clamp(11rem, 32vh, 22rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}

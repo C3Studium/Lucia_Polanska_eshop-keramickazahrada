@@ -674,7 +674,7 @@ function Newsletter({ block }: { block?: CopyBlock }) {
         {/* Obal, ne tlačítko: `PremiumActionButton` si vykresluje vlastní vnitřek a
             datové atributy by skončily na prvku, který se při animaci přepisuje.
             `editableLink` (jen text), ne `editable`: vnitřek tlačítka nese název
-            dvakrát kvůli animaci a šipku navíc („OdebíratOdebírat↗") a úprava
+            dvakrát kvůli animaci a šipku navíc („OdebíratOdebírat↗︎") a úprava
             v místě by do `accent.2` uložila právě tohle. Popup s polem pro název
             píše jen hodnotu. Změřeno 15. 10. 2026. */}
         <span {...editableLink(block, { text: "accent.2" })}>

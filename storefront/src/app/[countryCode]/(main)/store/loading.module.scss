@@ -1,36 +1,101 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
-.root { min-height:100svh; padding:clamp(10px,.8vw,16px); background:var(--cream-07); }
-.hero,
-.catalogue span,
-.catalogue i,
-.products div {
-  overflow:hidden;
-  background:linear-gradient(100deg,var(--cream-02) 24%,var(--cream-06) 42%,var(--cream-02) 60%);
-  background-size:220% 100%;
-  animation:storeLoading 1.7s ease-in-out infinite;
-}
-.hero {
-  position:relative;
-  min-height:80svh;
-  overflow:hidden;
-  border-radius:32px;
-  background-color:var(--ink-10);
 
-  span { position:absolute; bottom:22%; left:5%; width:min(58%,720px); height:clamp(62px,8vw,124px); border-radius:8px; }
-  i { position:absolute; bottom:13%; left:5%; width:min(32%,440px); height:18px; border-radius:5px; }
-  i:last-child { bottom:7%; width:180px; height:42px; border-radius:999px; }
+/* Rozměry opsané ze Shop/style.module.scss a ProductGrid — viz loading.tsx. */
+.root {
+  min-height: 100svh;
+  padding: clamp(.625rem, .8vw, 1rem);
+  background: var(--cream-07);
 }
-.catalogue { padding:clamp(70px,9vw,130px) clamp(10px,2vw,32px); }
-.catalogue header { display:flex; align-items:end; justify-content:space-between; margin-bottom:56px; }
-.catalogue header span { display:block; width:min(48%,620px); height:clamp(54px,6vw,92px); border-radius:8px; }
-.catalogue header i { display:block; width:220px; height:16px; border-radius:5px; }
-.products { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
-.products div { aspect-ratio:4/4.75; border-radius:20px; }
-@keyframes storeLoading { to { background-position:-120% 0; } }
-@include below-px(1100px) { .products { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-@include below-px(620px) {
-  .hero { min-height:84svh; border-radius:0 0 22px 22px; }
-  .hero span { width:86%; }
-  .catalogue header i { display:none; }
-  .products { grid-template-columns:1fr; }
+
+.catalogue {
+  --rail: clamp(15rem, 22vw, 24rem);
+  width: min(116rem, 100%);
+  margin: 0 auto;
+  padding: clamp(5.5rem, 12vh, 8rem) clamp(.75rem, 1.6vw, 2rem) 4rem;
 }
+
+.root i {
+  display: block;
+  border-radius: .375rem;
+  background: linear-gradient(100deg, rgb(var(--ink-05-rgb) / .07) 25%, rgb(var(--ink-05-rgb) / .13) 45%, rgb(var(--ink-05-rgb) / .07) 65%);
+  background-size: 220% 100%;
+  animation: storeLoading 1.6s ease-in-out infinite;
+}
+
+.intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  align-items: end;
+  gap: clamp(1.25rem, 2vw, 2.25rem);
+  margin-bottom: clamp(2rem, 5vh, 3.5rem);
+}
+.eyebrow { width: 9rem; height: .75rem; margin-bottom: 1.25rem; }
+.title { width: min(34rem, 90%); height: clamp(2.5rem, 4.5vw, 4rem); margin-bottom: .5rem; }
+.titleAccent { width: min(26rem, 70%); height: clamp(2.5rem, 4.5vw, 4rem); }
+.introText { display: grid; gap: .5rem; }
+.introText i { height: .875rem; }
+.introText i:last-child { width: 60%; }
+
+.layout {
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(1.75rem, 3.4vw, 4.5rem);
+}
+
+.rail {
+  display: grid;
+  gap: .9rem;
+  padding: 1.5rem 1.25rem;
+  border-radius: clamp(1.1rem, 1.6vw, 1.5rem);
+  background: var(--ink-05);
+}
+.rail i {
+  background: linear-gradient(100deg, rgb(var(--cream-06-rgb) / .08) 25%, rgb(var(--cream-06-rgb) / .16) 45%, rgb(var(--cream-06-rgb) / .08) 65%);
+  background-size: 220% 100%;
+}
+.railTitle { width: 70%; height: 1.75rem; margin-bottom: 1rem; }
+.railRow { height: .875rem; }
+.railRow:nth-child(odd) { width: 80%; }
+
+.results { min-width: 0; }
+
+.toolbar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .12);
+}
+.count { width: 7rem; height: 2rem; }
+.search { height: 2.75rem; border-radius: 999px !important; }
+.sort { width: 12rem; height: 2.75rem; border-radius: 999px !important; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, clamp(16rem, 19vw, 20rem)), 1fr));
+  gap: clamp(1.25rem, 2vw, 2rem);
+}
+.card { display: grid; gap: .6rem; }
+.image { aspect-ratio: 4 / 4.4; border-radius: 0 !important; margin-bottom: .4rem; }
+.kicker { width: 40%; height: .7rem; }
+.cardTitle { width: 85%; height: 1.25rem; }
+.desc { width: 100%; height: .8rem; }
+.price { width: 30%; height: 1.1rem; margin-top: .4rem; }
+
+@keyframes storeLoading { to { background-position: -120% 0; } }
+
+/* Kde skutečný obchod schovává panel filtrů do šuplíku. */
+@media (orientation: portrait) and (max-width: 1179.98px), (max-width: 1020px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .rail { display: none; }
+  .toolbar { grid-template-columns: auto minmax(0, 1fr); }
+  .sort { grid-column: 1 / -1; width: 100%; }
+}
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .intro { grid-template-columns: minmax(0, 1fr); }
+  .catalogue { padding-top: 5rem; }
+}
+@media (prefers-reduced-motion: reduce) { .root i { animation: none; } }

@@ -162,7 +162,7 @@ const RestockForm = ({ variant, product, texts }: RestockFormProps) => {
               }
               aria-hidden="true"
             >
-              ↗
+              ↗︎
             </motion.i>
           </motion.button>
         </div>

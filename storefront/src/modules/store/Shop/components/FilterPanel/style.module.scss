@@ -412,10 +412,14 @@
      */
     max-height: min(92dvh, calc(100dvh - 16px - var(--drawer-lift)));
     transform: translateY(calc(100% + 16px + var(--drawer-lift)));
-    transition: transform .55s cubic-bezier(.76,0,.24,1);
+    /* Zavřený šuplík i neviditelný (13. 11. 2026): odsunutý pod hranu dál
+       držel 30 MB vrstvu GPU na iPhonu (vlastní posuv). `visibility` ji
+       pustí; zpoždění nechá doběhnout odjezd. */
+    visibility: hidden;
+    transition: transform .55s cubic-bezier(.76,0,.24,1), visibility 0s linear .55s;
   }
 
-  .open { transform: translateY(0); }
+  .open { transform: translateY(0); visibility: visible; transition-delay: 0s, 0s; }
   .close { display: block; }
 }
 

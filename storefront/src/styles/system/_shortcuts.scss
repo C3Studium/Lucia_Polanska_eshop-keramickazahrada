@@ -178,10 +178,13 @@
         display: grid;
         place-items: center;
         border-radius: 50%;
-        content: "↗";
+        /* Šipka → otočená o −45°, ne znak ↗: iOS kreslil ↗ v obsahu CSS jako
+           modrý emoji čtverec i s textovým selektorem (13. 11. 2026). → (U+2192)
+           emoji podobu nemá. Kotouč je kulatý, otočení ho nemění. */
+        content: "→";
         font-family: "Sansation-Light", sans-serif;
         font-size: 0.9rem;
-        transform: translateY(-50%);
+        transform: translateY(-50%) rotate(-45deg);
         transition: transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
     }
 
@@ -213,7 +216,7 @@
         transform: translateY(-2px);
 
         &::after {
-            transform: translate(-3px, -50%) rotate(45deg);
+            transform: translate(-3px, -50%) rotate(0deg);
         }
     }
 

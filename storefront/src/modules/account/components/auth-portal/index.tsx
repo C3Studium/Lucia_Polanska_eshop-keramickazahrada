@@ -178,7 +178,7 @@ export default function AuthPortal({ mode, children, block }: AuthPortalProps) {
           <div className={s.formSlot}>{children}</div>
           <div className={s.ledgerFoot}>
             <p {...edit("note")}>{content.note}</p>
-            <LocalizedClientLink href="/dotazy">Potřebujete pomoc? ↗</LocalizedClientLink>
+            <LocalizedClientLink href="/dotazy">Potřebujete pomoc? ↗︎</LocalizedClientLink>
           </div>
         </motion.aside>
 

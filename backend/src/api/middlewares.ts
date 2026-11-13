@@ -51,6 +51,7 @@ import { requireZeroAmountForSystemProvider } from "../lib/zero-payment-guard";
 import { requireShippableCart } from "../lib/require-shippable-cart";
 import { requireStockableCart } from "../lib/require-stockable-cart";
 import { throttleResetPassword } from "../lib/reset-password-throttle";
+import { zalozPrihlaseniProHostaMiddleware } from "../lib/guest-password-reset";
 import { PostOsireleUctySchema } from "./admin/osirele-ucty/route";
 import { PostAdminDocumentSchema } from "./admin/dokumenty/route";
 import {
@@ -373,6 +374,14 @@ export default defineMiddlewares({
     // je z něj nástroj na zaplavení cizí schránky. Podrobnosti v souboru.
     {
       matcher: "/auth/customer/emailpass/reset-password",
+      methods: ["POST"],
+      /* Host (nákup bez účtu) dostane přihlášení, aby mu obnova poslala odkaz
+         — viz lib/guest-password-reset.ts. Až za stropem žádostí. */
+      middlewares: [throttleResetPassword(), zalozPrihlaseniProHostaMiddleware()],
+    },
+    // Obnova hesla s poctivou odpovědí (viz api/store/password-reset) — týž strop.
+    {
+      matcher: "/store/password-reset",
       methods: ["POST"],
       middlewares: [throttleResetPassword()],
     },
