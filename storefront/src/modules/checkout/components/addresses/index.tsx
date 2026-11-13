@@ -35,7 +35,10 @@ const Addresses = ({
   const router = useRouter()
   const pathname = usePathname()
 
-  const isOpen = searchParams.get("step") === "address"
+  /* Bez `?step=` je otevřená adresa — stejně jako to čtou stepper a bubliny kroků.
+     Dřív tu bylo jen `=== "address"`, takže /checkout bez parametru ukázal prázdnou
+     adresu („,  CZ") jako hotovou, se zaškrtnutím a bez tlačítka dál (13. 11. 2026). */
+  const isOpen = (searchParams.get("step") ?? "address") === "address"
 
   const { state: sameAsBilling, toggle: toggleSameAsBilling } = useToggleState(
     cart?.shipping_address && cart?.billing_address

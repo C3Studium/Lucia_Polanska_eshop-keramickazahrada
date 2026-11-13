@@ -38,8 +38,19 @@
    * nejnižší, která projde. Škálovat začne od výšky 889 px, kde 9vh podlahu
    * přeroste. Kdyby měl Navbar `--nav-height` a `--nav-top-inset` na `:root`,
    * dala by se místo téhle konstanty napsat jeho skutečná spodní hrana.
+   *
+   * Už je má (globals.scss), a konstanta přestala stačit (13. 11. 2026). Rem
+   * nese `--ui-scale`, takže 5rem není 80 px, ale 68 na notebooku a 64 na
+   * tabletu — a navbar nad 1921 roste s `--fvw` rychleji než 7rem. Změřeno při
+   * plném driftu: lišta 13–16 px POD pilulkou na tabletech na šířku, 15 px na
+   * 1920×1080 a 25 px na 2560×1440. Teď stojí nejníž na spodku navbaru + dráze
+   * driftu + 12 px; původní clamp zůstává jako podlaha, takže kde bylo místo,
+   * nic se nehne. Na dotyku má navbar vlastní výšku 56 px — viz `@include touch` níž.
    */
-  --courses-rail-top: clamp(5rem, 9vh, 7rem);
+  --courses-rail-top: max(
+    clamp(5rem, 9vh, 7rem),
+    calc(var(--nav-top-inset) + var(--nav-height) + 2.4vh + 12px)
+  );
 
   .courses__wrapper {
     position: sticky;
@@ -848,6 +859,11 @@
 @include touch {
   .courses__section {
     height: 600vh;
+    /* Navbar na dotyku: 56 px (Navbar/style.scss), ne :root --nav-height. */
+    --courses-rail-top: max(
+      clamp(5rem, 9vh, 7rem),
+      calc(var(--nav-top-inset) + 56px + 2.4vh + 12px)
+    );
   }
 }
 
