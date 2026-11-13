@@ -251,6 +251,20 @@ export default function FAQImageShader({
   /* Stejná identita jako dřív `settings` + `variant` v závislostech efektu: scéna se staví znovu jen, když se změní. */
   const config = useMemo(() => resolveSettings(variant, settings), [variant, settings])
 
+  /*
+   * Fotky ustálené podle OBSAHU, ne podle identity pole (13. 11. 2026).
+   *
+   * O mně i Dotazy předávají `shaderImages(block, …)` přímo v JSX, tedy nové pole
+   * při každém vykreslení rodiče. Scéna na `imageSet` závisí, takže každé
+   * překreslení (i během scrollu) celou WebGL scénu zbouralo a postavilo znovu
+   * i s novým načtením textur. Měřeno živě na O mně: přestavba uprostřed scrollu.
+   */
+  const imageKey = imageSet
+    .map((image) => `${image.src}|${image.fallbackSrc ?? ""}|${image.aspect}`)
+    .join("§")
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stableImages = useMemo(() => imageSet, [imageKey])
+
   return (
     <div
       className={`${classNames.root} ${ready ? "is-ready" : ""} ${failed ? "is-error" : ""}`}
@@ -268,7 +282,7 @@ export default function FAQImageShader({
           pointerY={pointerY}
           variant={variant}
           config={config}
-          imageSet={imageSet}
+          imageSet={stableImages}
           layout={layout}
           setReady={setReady}
           setFailed={setFailed}

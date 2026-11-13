@@ -688,6 +688,8 @@ export default function FAQImageShaderScene({
   setFailed,
 }: FAQImageShaderSceneProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  /* Vznikl na plátně kontext? Bez něj by úklid getContext() kontext založil, jen aby ho zahodil. */
+  const hadContextRef = useRef(false)
 
   useEffect(() => {
 
@@ -1109,6 +1111,7 @@ export default function FAQImageShaderScene({
     const start = async () => {
       try {
         renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "high-performance" })
+        hadContextRef.current = true
         /*
          * Stays `SRGBColorSpace`. It is not the half of the pair that needed changing, and it is
          * not free to change: the renderer only accepts `SRGBColorSpace` or
@@ -1269,14 +1272,30 @@ export default function FAQImageShaderScene({
       waveMaterial.dispose()
       rippleTarget.dispose()
       canvas.removeEventListener("webglcontextlost", handleContextLost)
-      /* Uvolnit kontext hned, ne až s úklidem paměti — prohlížeč jich drží
-         jen omezeně a nejstarší (kapalinu na pozadí) by zahodil jako první. */
+      /* Jen dispose — kontext se tu NEzahazuje. Efekt se spouští znovu i při
+         změně závislostí na TOMTÉŽ plátně, a plátno má jediný kontext: po
+         forceContextLoss() by nový renderer dostal mrtvý (živě na O mně
+         13. 11. 2026). Kontext se uvolní až při odchodu — efekt níž. */
       renderer?.dispose()
-      renderer?.forceContextLoss()
     }
     /* `strength` is read inside, so the scene has to be rebuilt when a caller changes it.
        Callers pass a literal, so memoise it there if it ever needs to change per render. */
   }, [imageSet, layout, pointerX, pointerY, variant, config, setReady, setFailed])
+
+  /*
+   * Kontext plátna se zahodí jen při skutečném odchodu (unmount), ne při přestavbě
+   * scény — prohlížeč jich drží omezeně a nejstarší (kapalinu na pozadí) by
+   * zahodil jako první. `lose_context` na kontextu plátna, který po dispose
+   * rendereru zůstává ten samý.
+   */
+  useEffect(() => {
+    const canvas = canvasRef.current
+    return () => {
+      if (!hadContextRef.current) return
+      const gl = (canvas?.getContext("webgl2") ?? canvas?.getContext("webgl")) as WebGLRenderingContext | null
+      gl?.getExtension("WEBGL_lose_context")?.loseContext()
+    }
+  }, [])
 
   return <canvas ref={canvasRef} />
 }
