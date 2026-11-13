@@ -176,3 +176,6 @@
    font-size: 13px here restated the base value exactly, so it is gone. */
 .compact .arrow { width: calc(1.5rem * var(--premium-button-scale, 1)); }
 
+
+/* Dotyk při odesílání: místo přejezdu do tmavé jen ztlumení (viz isFilled v index.tsx). */
+.busy { opacity: .6; transition: opacity .15s linear; }

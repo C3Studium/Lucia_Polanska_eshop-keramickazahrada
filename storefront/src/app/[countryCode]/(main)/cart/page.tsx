@@ -1,4 +1,5 @@
 import { retrieveCart } from "@lib/data/cart"
+import TouchSimpleMotion from "@modules/common/components/touch-simple-motion"
 import { retrieveCustomer } from "@lib/data/customer"
 import { getPageCopy } from "@lib/data/site-copy"
 import CartTemplate from "@modules/cart/templates"
@@ -22,5 +23,9 @@ export default async function Cart() {
   // Výpadek CMS = texty z kódu.
   const copy = await getPageCopy("kosik")
 
-  return <CartTemplate cart={cart} customer={customer} copy={copy} />
+  return (
+    <TouchSimpleMotion>
+      <CartTemplate cart={cart} customer={customer} copy={copy} />
+    </TouchSimpleMotion>
+  )
 }

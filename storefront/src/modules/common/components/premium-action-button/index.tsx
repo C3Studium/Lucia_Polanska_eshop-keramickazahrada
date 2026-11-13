@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { useState } from "react"
+import { useCoarsePointer } from "@lib/hooks/use-coarse-pointer"
 import { useFormStatus } from "react-dom"
 import {
   PREMIUM_BUTTON_ACTIVE,
@@ -43,15 +44,22 @@ const PremiumActionButton = ({
   const [isHovered, setIsHovered] = useState(false)
   const [isFocusVisible, setIsFocusVisible] = useState(false)
 
+  /*
+   * Na dotyku se tlačítko při odesílání nezaplní tmavou (13. 11. 2026). Každé
+   * „Pokračovat…" v pokladně jinak po ťuknutí přejelo ze světlé do černé —
+   * přesně to přebarvování, které na telefonu nemá být. Zvolený stav (`active`)
+   * zůstává, protože nese význam; „pracuji" ukáže jen ztlumení (`.busy`).
+   */
+  const coarse = useCoarsePointer()
   const isFilled =
-    isVisuallyActive ||
+    (coarse ? Boolean(active) : isVisuallyActive) ||
     (!isDisabled && (isHovered || isFocusVisible))
   const motionState = isFilled
     ? PREMIUM_BUTTON_ACTIVE
     : PREMIUM_BUTTON_REST
 
   return (
-    <div className={`${styles.root} ${compact ? styles.compact : ""} ${isVisuallyActive ? styles.active : ""} ${className ?? ""}`}>
+    <div className={`${styles.root} ${compact ? styles.compact : ""} ${isVisuallyActive ? styles.active : ""} ${coarse && isVisuallyActive && !active ? styles.busy : ""} ${className ?? ""}`}>
       <motion.button
         type={type}
         className={styles.button}
