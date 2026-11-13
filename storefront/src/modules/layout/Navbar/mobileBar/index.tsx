@@ -90,9 +90,11 @@ export default function MobileBar({
         return
       }
 
-      const odsazeni = parseFloat(
-        getComputedStyle(el).getPropertyValue("--nav-bottom-inset")
-      )
+      /* Vyřešené `bottom` lišty v px, ne surová proměnná: `--nav-bottom-inset` je
+         `calc(12px * var(--bar-scale))` a parseFloat("calc(…)") je NaN, takže
+         odsazení vypadávalo a zveřejněná vůle byla o ~12 px menší, než lišta
+         opravdu zabírá (změřeno 13. 11. 2026: 59 px místo 71 na tabletu). */
+      const odsazeni = parseFloat(getComputedStyle(el).bottom)
       const next = `${Math.round(vyska + (Number.isFinite(odsazeni) ? odsazeni : 0))}px`
       if (next === publishedRef.current) return
       publishedRef.current = next
