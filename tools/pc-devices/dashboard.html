@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>devices · PC</title>
+<style>
+  :root {
+    --bg: #111214; --panel: #1a1c1f; --line: #2a2d31; --text: #e8e9eb; --dim: #8b9096;
+    --ok: #8fd16a; --warn: #f0c35a; --bad: #ff6b6b; --accent: #7cc4ff;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 2; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--bad); flex: none; }
+  .dot.on { background: var(--ok); }
+  .device { font-weight: 600; }
+  .muted { color: var(--dim); }
+  input[type=text] { flex: 1 1 320px; min-width: 0; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font: inherit; }
+  button { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; font: inherit; cursor: pointer; }
+  button:hover { border-color: var(--dim); }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  main { display: grid; grid-template-columns: minmax(320px, 560px) 1fr; gap: 16px; padding: 16px; align-items: start; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .monitor { position: sticky; top: 72px; }
+  .screen { position: relative; border: 6px solid #000; border-radius: 10px; overflow: hidden; background: #000; box-shadow: 0 0 0 1px var(--line); }
+  .screen img { display: block; width: 100%; height: auto; cursor: crosshair; user-select: none; -webkit-user-drag: none; }
+  .screen .ripple { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; border: 2px solid var(--accent); pointer-events: none; animation: ripple .5s ease-out forwards; }
+  @keyframes ripple { from { opacity: 1; transform: scale(.4); } to { opacity: 0; transform: scale(1.6); } }
+  @media (prefers-reduced-motion: reduce) { .screen .ripple { animation: none; } }
+  .empty { aspect-ratio: 16 / 10; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--dim); }
+  .under { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; font-size: 12px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .card .k { font-size: 12px; color: var(--dim); }
+  .card .v { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .card .s { font-size: 12px; color: var(--dim); }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); margin: 20px 0 8px; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  td, th { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: left; font-variant-numeric: tabular-nums; }
+  th { color: var(--dim); font-weight: 500; font-size: 12px; }
+  .filters { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; font-size: 13px; }
+  .log { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; max-height: 420px; overflow: auto; font: 12px/1.5 ui-monospace, Consolas, monospace; }
+  .log div { padding: 4px 10px; border-bottom: 1px solid var(--line); white-space: pre-wrap; word-break: break-word; }
+  .t-crash { color: #fff; background: #7a1f1f; font-weight: 700; }
+  .t-webgl { color: var(--bad); font-weight: 700; }
+  .t-slow, .t-long { color: var(--warn); } .t-error, .t-console\.error { color: var(--bad); } .t-console\.warn { color: var(--warn); } .t-load { color: var(--ok); }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
+  .hint { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: 12px/1.6 ui-monospace, Consolas, monospace; color: var(--dim); white-space: pre-wrap; overflow-x: auto; }
+  .err { color: var(--bad); margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <span class="dot" id="dot"></span>
+  <span class="device" id="device">Prohlížeč…</span>
+  <span class="muted" id="tabTitle"></span>
+  <input type="text" id="url" placeholder="URL v prohlížeči" spellcheck="false">
+  <button id="open">Otevřít</button>
+  <button id="reload">Obnovit</button>
+  <button id="shot">Uložit snímek</button>
+  <button id="clear">Vymazat záznam</button>
+</header>
+<main>
+  <section class="monitor">
+    <div class="screen" id="screen"><div class="empty" id="empty">Živý náhled je vypnutý. Okno prohlížeče máš na obrazovce — náhled se hodí, jen když je zakryté. Každý snímek stojí čas GPU, při měření plynulosti ho nech vypnutý.</div><img id="live" alt="" hidden></div>
+    <div class="under"><span class="muted" id="preview">náhled vypnutý</span><span class="muted">klik = kliknutí myší · kolečko = scroll</span></div>
+    <div class="under"><button id="liveToggle">Zapnout živý náhled</button><span class="muted" style="max-width:60%;text-align:right">snímky náhledu berou GPU — při měření ho vypni</span></div>
+    <div class="err" id="error"></div>
+  </section>
+  <section>
+    <div class="cards">
+      <div class="card"><div class="k">Plynulost stránky</div><div class="v" id="fps">—</div><div class="s" id="fpsNote">snímků za sekundu</div></div>
+      <div class="card"><div class="k">Monitor</div><div class="v" id="hz">—</div><div class="s">Hz, podle snímků stránky</div></div>
+      <div class="card"><div class="k">Scroll</div><div class="v" id="scroll">—</div><div class="s" id="scrollNote"></div></div>
+      <div class="card"><div class="k">Sekce uprostřed</div><div class="v" id="section" style="font-size:16px">—</div><div class="s" id="viewport"></div></div>
+      <div class="card"><div class="k">Zásekové snímky</div><div class="v" id="slowCount">0</div><div class="s">při scrollu a pohybu myši</div></div>
+      <div class="card"><div class="k">Dlouhé úlohy</div><div class="v" id="longCount">0</div><div class="s">hlavní vlákno ≥ 100 ms</div></div>
+      <div class="card"><div class="k">Shadery</div><div class="v" id="fx" style="font-size:16px">—</div><div class="s" id="fxNote"></div></div>
+    </div>
+
+    <h2>Záseky podle sekcí</h2>
+    <table><thead><tr><th>Sekce</th><th>Počet</th><th>Nejhorší</th><th>Průměr</th></tr></thead><tbody id="bySection"><tr><td colspan="4" class="muted">zatím nic — scrolluj nebo hýbej myší v okně prohlížeče</td></tr></tbody></table>
+
+    <h2>Události</h2>
+    <div class="filters" id="filters"></div>
+    <div class="log" id="log"></div>
+
+    <h2>Pro agenty</h2>
+    <div class="hint">node tools/pc-devices/cli.mjs status     stav, monitor, shadery, scroll
+… shot [soubor]                       snímek (PNG)
+… eval "kód"                          JS ve stránce (await, objekt jako v konzoli)
+… open URL · reload · tap X Y · scroll DY · type "text" · key Enter
+… move X1 Y1 X2 Y2 · move --circle    myš v reálném čase (shadery, kapalina)
+… trace scroll · profile move         co stojí hlavní vlákno a kdo to vyvolal
+… cpu 4 · viewport 390 844 3 · gpu · layers
+… log [--after=N] [--types=slow,long,webgl,error] · stop</div>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id)
+const TYPES = ['crash', 'webgl', 'slow', 'long', 'error', 'console.error', 'console.warn', 'resize', 'load']
+const shown = new Set(TYPES)
+let events = []
+let now = null
+let connected = false
+
+for (const t of TYPES) {
+  const label = document.createElement('label')
+  label.innerHTML = `<input type="checkbox" checked> ${t}`
+  label.querySelector('input').onchange = (e) => { e.target.checked ? shown.add(t) : shown.delete(t); renderLog() }
+  $('filters').append(label)
+}
+
+const api = (path, body) => fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then((r) => r.json())
+
+$('open').onclick = () => api('/api/open', { url: $('url').value.trim() })
+$('url').onkeydown = (e) => { if (e.key === 'Enter') $('open').click() }
+$('reload').onclick = () => api('/api/reload', {})
+$('shot').onclick = async () => { const r = await api('/api/shot', {}); $('error').textContent = r.path ? `uloženo: ${r.path}` : r.error || '' }
+$('clear').onclick = async () => { await api('/api/log/clear', {}); events = []; render() }
+
+// Živý náhled — výchozí vypnutý; přepínač ho zapne i na mostu (sdílený stav).
+let frames = 0
+let windowStart = performance.now()
+let liveOn = false
+const paintToggle = () => { $('liveToggle').textContent = liveOn ? 'Vypnout živý náhled' : 'Zapnout živý náhled'; if (!liveOn) $('preview').textContent = 'náhled vypnutý' }
+$('liveToggle').onclick = async () => { liveOn = !liveOn; await api('/api/preview', { on: liveOn }); if (!liveOn) { $('live').hidden = true; $('empty').hidden = false }; paintToggle() }
+paintToggle()
+async function live() {
+  if (!connected || !liveOn) return setTimeout(live, 500)
+  try {
+    const res = await fetch('/api/frame?' + Date.now())
+    if (!res.ok) throw new Error((await res.json()).error)
+    const url = URL.createObjectURL(await res.blob())
+    const img = $('live')
+    await new Promise((resolve) => { img.onload = resolve; img.src = url })
+    URL.revokeObjectURL(img.dataset.prev || '')
+    img.dataset.prev = url
+    img.hidden = false
+    $('empty').hidden = true
+    frames++
+    const t = performance.now()
+    if (t - windowStart > 2000) { $('preview').textContent = `náhled ${(frames * 1000 / (t - windowStart)).toFixed(1)} fps`; frames = 0; windowStart = t }
+    setTimeout(live, 60)
+  } catch (e) {
+    $('error').textContent = e.message
+    setTimeout(live, 1000)
+  }
+}
+live()
+
+// Kliknutí a kolečko přes náhled (CSS px stránky).
+const toPage = (e) => {
+  const r = $('live').getBoundingClientRect()
+  const w = now?.width || 1600
+  const h = now?.inner || 900
+  return { x: Math.round(((e.clientX - r.left) / r.width) * w), y: Math.round(((e.clientY - r.top) / r.height) * h), px: e.clientX - r.left, py: e.clientY - r.top }
+}
+$('live').addEventListener('click', async (e) => {
+  const p = toPage(e)
+  const ring = document.createElement('span')
+  ring.className = 'ripple'
+  ring.style.left = p.px + 'px'
+  ring.style.top = p.py + 'px'
+  $('screen').append(ring)
+  setTimeout(() => ring.remove(), 600)
+  const r = await api('/api/tap', { x: p.x, y: p.y })
+  $('error').textContent = r.error || (r.hit ? `kliknuto: ${r.hit}` : '')
+})
+let pending = 0
+let wheelTimer = 0
+$('screen').addEventListener('wheel', (e) => {
+  if ($('live').hidden) return
+  e.preventDefault()
+  pending += e.deltaY
+  if (!wheelTimer) wheelTimer = setTimeout(async () => { const dy = Math.round(pending); pending = 0; wheelTimer = 0; await api('/api/scroll', { dy }) }, 60)
+}, { passive: false })
+
+const es = new EventSource('/api/stream')
+es.onmessage = (m) => {
+  const d = JSON.parse(m.data)
+  if (d.cleared) events = []
+  if (d.status) applyStatus(d.status)
+  if (d.now) now = d.now
+  if (d.events) for (const e of d.events) if (!events.length || e.seq > events[events.length - 1].seq) events.push(e)
+  if (events.length > 3000) events.splice(0, events.length - 3000)
+  render()
+}
+function applyStatus(s) {
+  connected = s.connected
+  if (s.preview !== liveOn) { liveOn = !!s.preview; if (!liveOn) { $('live').hidden = true; $('empty').hidden = false }; paintToggle() }
+  $('dot').classList.toggle('on', s.connected)
+  $('device').textContent = s.device ? s.device.name : 'Prohlížeč nepřipojený'
+  if (s.tab && document.activeElement !== $('url')) $('url').value = s.tab.url
+  $('tabTitle').textContent = s.tab ? s.tab.title : ''
+  $('error').textContent = s.error || ''
+  if (s.now) now = s.now
+}
+
+function render() {
+  if (now) {
+    const fps = now.fps
+    const target = now.hz || 60
+    $('fps').textContent = fps || '—'
+    $('fps').className = 'v ' + (fps >= target * 0.92 ? 'ok' : fps >= target * 0.66 ? 'warn' : 'bad')
+    $('fpsNote').textContent = now.scrolling ? 'scrolluje se' : 'v klidu'
+    $('hz').textContent = now.hz || '—'
+    $('scroll').textContent = now.y
+    $('scrollNote').textContent = now.max ? `z ${now.max} (${Math.round((now.y / now.max) * 100)} %)` : ''
+    $('section').textContent = now.section || '—'
+    $('viewport').textContent = `${now.width}×${now.inner} @${now.dpr}x`
+    $('fx').textContent = now.fx || '—'
+    $('fxNote').textContent = now.canvases ? `${now.canvases}× plátno WebGL` : 'žádné plátno'
+  }
+  const slow = events.filter((e) => e.type === 'slow' && !e.capture)
+  const byCapture = events.filter((e) => e.type === 'slow' && e.capture).length
+  $('slowCount').textContent = slow.length + (byCapture ? ` (+${byCapture} náhled)` : '')
+  $('longCount').textContent = events.filter((e) => e.type === 'long').length
+  const by = {}
+  for (const e of slow) { const k = e.section || '?'; const b = (by[k] ||= { n: 0, worst: 0, sum: 0 }); b.n++; b.sum += e.ms; b.worst = Math.max(b.worst, e.ms) }
+  const rows = Object.entries(by).sort((a, b) => b[1].n - a[1].n)
+  $('bySection').innerHTML = rows.length ? rows.map(([k, b]) => `<tr><td>${esc(k)}</td><td>${b.n}</td><td>${b.worst} ms</td><td>${Math.round(b.sum / b.n)} ms</td></tr>`).join('') : '<tr><td colspan="4" class="muted">zatím nic — scrolluj nebo hýbej myší v okně prohlížeče</td></tr>'
+  renderLog()
+}
+function renderLog() {
+  const list = events.filter((e) => shown.has(e.type)).slice(-400).reverse()
+  $('log').innerHTML = list.map((e) => `<div class="t-${e.type}">#${e.seq} ${(e.t / 1000).toFixed(1)} s · y ${e.y} · ${e.type} ${esc(describe(e))}</div>`).join('')
+}
+function describe(e) {
+  if (e.type === 'slow') return `${e.ms} ms (${e.frames} snímků) · ${e.during} · ${e.section || '?'}${e.capture ? ' · při snímku náhledu' : ''}`
+  if (e.type === 'long') return `${e.ms} ms · ${e.section || '?'}`
+  if (e.type === 'webgl') return `ZTRÁTA WebGL KONTEXTU · ${e.canvas}`
+  if (e.type === 'load') return e.url
+  if (e.type === 'crash') return `ZÁLOŽKA SPADLA · ${e.url} · ${e.section || '?'}`
+  if (e.type === 'resize') return e.size
+  return (e.text || '') + (e.at ? ` @${e.at}` : '')
+}
+function esc(s) { return String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]) }
+</script>
+</body>
+</html>
