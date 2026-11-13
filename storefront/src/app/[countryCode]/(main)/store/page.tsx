@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import TouchSimpleMotion from "@modules/common/components/touch-simple-motion"
 
 import ECom from "@modules/store/Shop"
 import type { ShopFilters } from "@modules/store/Shop/types"
@@ -100,6 +101,7 @@ export default async function StorePage({
   ])
 
   return (
+    <TouchSimpleMotion>
     <ECom
       block={copy["obchod.vyber"]}
       texts={copy["obchod.katalog"]}
@@ -112,5 +114,6 @@ export default async function StorePage({
       initialFilters={initialFilters}
       initialFilterLabel={category?.name ?? collection?.title}
     />
+    </TouchSimpleMotion>
   )
 }
