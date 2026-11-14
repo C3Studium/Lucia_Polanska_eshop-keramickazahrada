@@ -29,6 +29,7 @@ import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
 import { Container, Text, clx } from "@medusajs/ui"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import ErrorMessage from "@modules/checkout/components/error-message"
+import PomocTelefonem from "@modules/checkout/components/pomoc-telefonem"
 import PaymentContainer from "@modules/checkout/components/payment-container"
 import ComgatePaymentSelector, {
   type ExtraPaymentOption,
@@ -534,6 +535,7 @@ const Payment = ({
               />
             </div>
           )}
+          <PomocTelefonem />
         </div>
 
         <div className={isOpen ? styles.closed : styles.open}>

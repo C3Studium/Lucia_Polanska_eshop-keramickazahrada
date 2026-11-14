@@ -3,6 +3,12 @@ import React, { useEffect, useId, useImperativeHandle, useState } from "react"
 import Eye from "@modules/common/icons/eye"
 import EyeOff from "@modules/common/icons/eye-off"
 import styles from "./style.module.scss"
+import { zpravaProPole } from "@lib/util/field-error"
+import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
+
+/* Čas posledního posunu k chybě — při odeslání hlásí prohlížeč všechna
+   neplatná pole naráz a posunout se má jen k prvnímu z nich. */
+let posledniPosun = 0
 
 type InputProps = Omit<
   Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">,
@@ -66,6 +72,35 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     useImperativeHandle(ref, () => inputRef.current!)
 
+    /*
+     * Chyba u pole (14. 11. 2026). Místo prchavé bubliny prohlížeče: červený
+     * rámeček a věta pod polem, dokud se nezačne psát. První chybné pole
+     * odeslání se odroluje do středu obrazovky a dostane kurzor.
+     */
+    const [chyba, setChyba] = useState<string | null>(null)
+    const errorId = `${inputId}-chyba`
+    const priNeplatnem = (event: React.FormEvent<HTMLInputElement>) => {
+      event.preventDefault()
+      const pole = event.currentTarget
+      setChyba(
+        zpravaProPole(pole.validity, type, {
+          minLength: pole.minLength > 0 ? pole.minLength : undefined,
+          vlastni: pole.validationMessage,
+        })
+      )
+      const ted = Date.now()
+      if (ted - posledniPosun > 400) {
+        posledniPosun = ted
+        scrollWithLenis(pole, { offset: -Math.round(window.innerHeight * 0.3) })
+        pole.focus({ preventScroll: true })
+      }
+      props.onInvalid?.(event)
+    }
+    const priPsani = (event: React.FormEvent<HTMLInputElement>) => {
+      if (chyba) setChyba(null)
+      props.onInput?.(event)
+    }
+
     /* Vlastní `onDoubleClick` z props se nepřepisuje, jen se zavolá za tím
        naším — komponenta je sdílená a nemá právo brát volajícímu chování. */
     const oznacitVse = (event: React.MouseEvent<HTMLInputElement>) => {
@@ -79,7 +114,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <div
         className={`${styles.root} ${
           variant === "contact" ? styles.contact : ""
-        } ${className ?? ""}`}
+        } ${chyba ? styles.invalid : ""} ${className ?? ""}`}
       >
         {topLabel && (
           <Label className={styles.topLabel}>{topLabel}</Label>
@@ -95,6 +130,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             ref={inputRef}
             onDoubleClick={oznacitVse}
+            onInvalid={priNeplatnem}
+            onInput={priPsani}
+            aria-invalid={chyba ? true : props["aria-invalid"]}
+            aria-describedby={
+              chyba
+                ? [props["aria-describedby"], errorId].filter(Boolean).join(" ")
+                : props["aria-describedby"]
+            }
           />
           <label htmlFor={inputId} className="">
             {label}
@@ -112,6 +155,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             </button>
           )}
         </div>
+        {chyba && (
+          <p id={errorId} className={styles.errorText} role="alert">
+            {chyba}
+          </p>
+        )}
       </div>
     )
   }

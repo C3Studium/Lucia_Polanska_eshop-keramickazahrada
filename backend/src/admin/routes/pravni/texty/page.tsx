@@ -107,7 +107,9 @@ const TextField = ({
 
   return (
     <div id={id} className="flex scroll-mt-24 flex-col gap-y-2 py-5">
-      <div className="flex flex-wrap items-center gap-2">
+      {/* max-w-3xl jako pole pod tím: přepínač stojí u svého pole, ne
+          o 900 px vedle na širokém monitoru (14. 11. 2026). */}
+      <div className="flex max-w-3xl flex-wrap items-center gap-2">
         <Text size="small" weight="plus" as="span" id={`${id}-popisek`}>
           {meta.label}
         </Text>
@@ -231,8 +233,11 @@ const Inner = () => {
   const platne = data?.texty;
   const savedText = (key: ShopTextKey) =>
     platne?.[key] ?? SHOP_TEXT_DEFAULTS[key];
+  /* „Vlastní znění" jen když se uložený text od výchozího opravdu liší —
+     uložená kopie výchozího (produkce 9. 11.) není vlastní znění. */
   const maVlastni = (key: ShopTextKey) =>
-    Object.prototype.hasOwnProperty.call(data?.ulozene ?? {}, key);
+    Object.prototype.hasOwnProperty.call(data?.ulozene ?? {}, key) &&
+    String(data?.ulozene?.[key] ?? "").trim() !== SHOP_TEXT_DEFAULTS[key].trim();
 
   /* Vybraná záložka — v adrese, aby přežila odchod na obchod a zpět
      (viz lib/url-state). */

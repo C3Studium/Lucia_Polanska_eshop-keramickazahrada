@@ -14,7 +14,7 @@
 
 .backdrop {
   position: fixed;
-  z-index: 500; /* above the banner (400), which stays underneath until a choice is stored */
+  z-index: 960; /* above the banner (950), which stays underneath until a choice is stored */
   inset: 0;
   display: flex;
   align-items: center;

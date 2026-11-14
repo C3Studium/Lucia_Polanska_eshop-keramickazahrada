@@ -51,7 +51,7 @@ import { requireZeroAmountForSystemProvider } from "../lib/zero-payment-guard";
 import { requireShippableCart } from "../lib/require-shippable-cart";
 import { requireStockableCart } from "../lib/require-stockable-cart";
 import { throttleResetPassword } from "../lib/reset-password-throttle";
-import { zalozPrihlaseniProHostaMiddleware } from "../lib/guest-password-reset";
+import { overitEmailPoObnoveMiddleware } from "../lib/reset-overi-email";
 import { PostOsireleUctySchema } from "./admin/osirele-ucty/route";
 import { PostAdminDocumentSchema } from "./admin/dokumenty/route";
 import {
@@ -375,9 +375,16 @@ export default defineMiddlewares({
     {
       matcher: "/auth/customer/emailpass/reset-password",
       methods: ["POST"],
-      /* Host (nákup bez účtu) dostane přihlášení, aby mu obnova poslala odkaz
-         — viz lib/guest-password-reset.ts. Až za stropem žádostí. */
-      middlewares: [throttleResetPassword(), zalozPrihlaseniProHostaMiddleware()],
+      /* Obnova hesla jen pro účty (14. 11. 2026) — host si účet založí
+         a objednávky se připojí po potvrzení e-mailu. */
+      middlewares: [throttleResetPassword()],
+    },
+    // Nové heslo z odkazu v e-mailu = e-mail je ověřený (lib/reset-overi-email,
+    // 14. 11. 2026) — jinak účet po obnově hesla chtěl ještě jeden e-mail.
+    {
+      matcher: "/auth/customer/emailpass/update",
+      methods: ["POST"],
+      middlewares: [overitEmailPoObnoveMiddleware()],
     },
     // Obnova hesla s poctivou odpovědí (viz api/store/password-reset) — týž strop.
     {

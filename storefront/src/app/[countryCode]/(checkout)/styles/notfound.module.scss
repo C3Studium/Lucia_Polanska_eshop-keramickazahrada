@@ -30,7 +30,7 @@
 	.message {
 		max-width: 30rem;
 		margin: 0 0 10px;
-		font-size: 1rem;
+		font-size: max(var(--text-min, 0px), calc(1rem * var(--read, 1)));
 		color: rgb(var(--black-03-rgb) / .62);
 	}
 

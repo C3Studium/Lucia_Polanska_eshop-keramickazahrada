@@ -36,14 +36,14 @@
   gap: 7px;
   margin: 0;
   color: rgb(var(--cream-06-rgb) / .5);
-  font: calc(12px * var(--ui-scale))/1.2 "Sansation-Regular", sans-serif;
+  font: max(var(--text-min, 0px), calc(calc(12px * var(--ui-scale)) * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .contactInfo {
   color: rgb(var(--cream-06-rgb) / .74);
-  font: calc(15px * var(--ui-scale))/1.45 "Sansation-Light", sans-serif;
+  font: max(var(--text-min, 0px), calc(calc(15px * var(--ui-scale)) * var(--read, 1))) / 1.45 "Sansation-Light", sans-serif;
   letter-spacing: 0;
   text-transform: none;
 }
@@ -51,7 +51,7 @@
 .link {
   display: inline-block;
   color: var(--cream-06);
-  font-size: calc(15px * var(--ui-scale));
+  font-size: max(var(--text-min, 0px), calc(calc(15px * var(--ui-scale)) * var(--read, 1)));
   text-decoration: underline;
   text-underline-offset: 6px;
 }

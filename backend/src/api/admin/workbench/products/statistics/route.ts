@@ -6,6 +6,7 @@ import { getInventoryAlerts } from "../../../../../lib/inventory-alerts"
 import {
   LINE_QUANTITY_FIELDS,
   lineQuantityOf,
+  lineRevenueOf,
 } from "../../../../../lib/order-quantity"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
@@ -83,6 +84,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           // query.graph nechodí (lib/order-quantity).
           ...LINE_QUANTITY_FIELDS,
           "items.total",
+          // `total` z query.graph nechodí — tržba z ceny × množství
+          // (lineRevenueOf); bez toho „45× … 0 Kč" (14. 11. 2026).
+          "items.unit_price",
           "items.metadata",
         ],
         filters: { created_at: { $gte: yearAgo.toISOString() } } as never,
@@ -146,7 +150,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           revenue: 0,
         }
         entry.qty += lineQuantityOf(item)
-        entry.revenue = round(entry.revenue + toNumber(item.total))
+        entry.revenue = round(entry.revenue + lineRevenueOf(item))
         map.set(item.product_id, entry)
       }
     }
@@ -205,7 +209,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       if (!bundleId) continue
       const entry = bundleSales.get(bundleId) ?? { qty: 0, revenue: 0 }
       entry.qty += lineQuantityOf(item)
-      entry.revenue = round(entry.revenue + toNumber(item.total))
+      entry.revenue = round(entry.revenue + lineRevenueOf(item))
       bundleSales.set(bundleId, entry)
     }
   }

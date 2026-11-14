@@ -1,7 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { generateResetPasswordTokenWorkflow } from "@medusajs/core-flows"
-import { zalozPrihlaseniProHosta } from "../../../lib/guest-password-reset"
+import { stavAdresy } from "../../../lib/guest-password-reset"
 
 /**
  * Žádost o obnovu hesla s poctivou odpovědí (13. 11. 2026).
@@ -17,8 +17,9 @@ import { zalozPrihlaseniProHosta } from "../../../lib/guest-password-reset"
  * storefrontu navíc za stropem podle IP.
  *
  * - účet s heslem → odkaz se pošle (`sent`)
- * - host, který nakupoval bez účtu → dostane přihlášení a odkaz (`sent`),
- *   viz `lib/guest-password-reset.ts`
+ * - host, který nakupoval bez účtu → `guest`: ať si založí účet se stejným
+ *   e-mailem, objednávky se připojí po potvrzení e-mailu (14. 11. 2026,
+ *   lib/pripojit-objednavky-hosta.ts); žádný e-mail
  * - nikdo → `no-account`, žádný e-mail
  */
 const TVAR_EMAILU = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
@@ -26,21 +27,21 @@ const TVAR_EMAILU = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const identifier = (req.body as { identifier?: unknown } | undefined)?.identifier
   const email = typeof identifier === "string" ? identifier.trim().toLowerCase() : ""
-
   if (!email || email.length > 254 || !TVAR_EMAILU.test(email)) {
     res.status(400).json({ message: "Zadejte prosím platnou e-mailovou adresu." })
     return
   }
 
-  const logger = req.scope.resolve(ContainerRegistrationKeys.LOGGER)
-
-  const vysledek = await zalozPrihlaseniProHosta(email, {
+  const stav = await stavAdresy(email, {
     auth: req.scope.resolve(Modules.AUTH) as never,
     customers: req.scope.resolve(Modules.CUSTOMER) as never,
   })
-
-  if (vysledek === "neni-zakaznik") {
+  if (stav === "nikdo") {
     res.json({ status: "no-account" })
+    return
+  }
+  if (stav === "host") {
+    res.json({ status: "guest" })
     return
   }
 
@@ -54,9 +55,5 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       jwtOptions: http.jwtOptions,
     },
   })
-
-  if (vysledek === "zalozeno") {
-    logger.info("[obnova hesla] host dostal přihlášení — posílá se odkaz na nastavení hesla")
-  }
   res.json({ status: "sent" })
 }

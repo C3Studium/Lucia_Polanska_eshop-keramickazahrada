@@ -23,7 +23,7 @@
 .legend {
   padding: 0 0 0.4rem;
   color: rgb(var(--ink-05-rgb) / 0.62);
-  font: 400 clamp(0.72rem, calc(0.9vw * var(--ui-scale)), 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(0.72rem, calc(0.9vw * var(--ui-scale)), 0.82rem) * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -105,11 +105,11 @@
   }
 
   .kindLabel {
-    font-size: clamp(0.9rem, calc(1.05vw * var(--ui-scale)), 1rem);
+    font-size: max(var(--text-min, 0px), calc(clamp(0.9rem, calc(1.05vw * var(--ui-scale)), 1rem) * var(--read, 1)));
   }
 
   .kindHelp {
-    font-size: clamp(0.76rem, calc(0.9vw * var(--ui-scale)), 0.84rem);
+    font-size: max(var(--text-min, 0px), calc(clamp(0.76rem, calc(0.9vw * var(--ui-scale)), 0.84rem) * var(--read, 1)));
   }
 }
 
@@ -143,7 +143,7 @@
 .itemsHelp {
   margin: -0.25rem 0 0;
   color: rgb(var(--ink-05-rgb) / 0.62);
-  font: 300 0.88rem / 1.45 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.88rem * var(--read, 1))) / 1.45 "Sansation-Light", sans-serif;
 }
 
 .itemList {
@@ -214,13 +214,13 @@
 }
 
 .itemTitle {
-  font: 400 clamp(0.92rem, calc(1.1vw * var(--ui-scale)), 1rem) / 1.3 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(0.92rem, calc(1.1vw * var(--ui-scale)), 1rem) * var(--read, 1))) / 1.3 "Sansation-Regular", sans-serif;
   overflow-wrap: anywhere;
 }
 
 .itemMeta {
   color: rgb(var(--ink-05-rgb) / 0.6);
-  font: 300 0.8rem / 1.4 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.8rem * var(--read, 1))) / 1.4 "Sansation-Light", sans-serif;
 }
 
 /* − [n] + z N — tlačítka 44px (dotykový cíl), číslo jde i napsat. */
@@ -240,7 +240,7 @@
     background: rgb(var(--cream-06-rgb) / 0.75);
     color: var(--ink-05);
     cursor: pointer;
-    font: 400 1.15rem / 1 "Sansation-Regular", sans-serif;
+    font: 400 max(var(--text-min, 0px), calc(1.15rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
     transition: border-color 0.2s ease, opacity 0.2s ease;
 
     &:disabled {
@@ -257,7 +257,7 @@
     border-radius: 0.625rem;
     background: rgb(var(--cream-06-rgb) / 0.75);
     color: var(--ink-05);
-    font: 400 1rem / 1 "Sansation-Regular", sans-serif;
+    font: 400 max(var(--text-min, 0px), calc(1rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
     text-align: center;
     -moz-appearance: textfield;
     appearance: textfield;
@@ -285,7 +285,7 @@
 .stepperOf {
   margin-left: 0.15rem;
   color: rgb(var(--ink-05-rgb) / 0.55);
-  font: 300 0.8rem / 1 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.8rem * var(--read, 1))) / 1 "Sansation-Light", sans-serif;
   white-space: nowrap;
 }
 
@@ -311,7 +311,7 @@
 .componentsLegend {
   padding: 0 0 0.3rem;
   color: rgb(var(--ink-05-rgb) / 0.62);
-  font: 400 0.72rem / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(0.72rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 
@@ -383,7 +383,7 @@
 }
 
 .componentTitle {
-  font: 400 clamp(0.86rem, calc(1vw * var(--ui-scale)), 0.94rem) / 1.3 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(0.86rem, calc(1vw * var(--ui-scale)), 0.94rem) * var(--read, 1))) / 1.3 "Sansation-Regular", sans-serif;
   overflow-wrap: anywhere;
 }
 
@@ -392,13 +392,13 @@
   button {
     width: 36px;
     height: 36px;
-    font-size: 1.05rem;
+    font-size: max(var(--text-min, 0px), calc(1.05rem * var(--read, 1)));
   }
 
   input {
     width: 2.6rem;
     height: 36px;
-    font-size: 0.95rem;
+    font-size: max(var(--text-min, 0px), calc(0.95rem * var(--read, 1)));
   }
 }
 
@@ -474,7 +474,7 @@
   border-radius: 0.75rem;
   background: rgb(var(--clay-06-rgb) / 0.07);
   color: var(--ink-05);
-  font: 300 0.92rem / 1.5 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.92rem * var(--read, 1))) / 1.5 "Sansation-Light", sans-serif;
 
   p { margin: 0; }
 
@@ -492,7 +492,7 @@
 }
 
 .carrierNoticeTitle {
-  font: 400 clamp(0.95rem, calc(1.2vw * var(--ui-scale)), 1.05rem) / 1.3 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(0.95rem, calc(1.2vw * var(--ui-scale)), 1.05rem) * var(--read, 1))) / 1.3 "Sansation-Regular", sans-serif;
   color: var(--clay-06);
 }
 
@@ -501,14 +501,14 @@
 .hint {
   margin: 0;
   color: var(--clay-06);
-  font: 300 0.88rem / 1.45 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.88rem * var(--read, 1))) / 1.45 "Sansation-Light", sans-serif;
 }
 
 /* Úvod nad stavem už otevřené žádosti (místo formuláře). */
 .openLead {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / 0.75);
-  font: 300 1rem / 1.5 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(1rem * var(--read, 1))) / 1.5 "Sansation-Light", sans-serif;
 }
 
 .kindText {
@@ -518,17 +518,17 @@
 }
 
 .kindLabel {
-  font: 400 clamp(0.95rem, calc(1.2vw * var(--ui-scale)), 1.1rem) / 1.3 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(0.95rem, calc(1.2vw * var(--ui-scale)), 1.1rem) * var(--read, 1))) / 1.3 "Sansation-Regular", sans-serif;
 }
 
 .kindHelp {
   color: rgb(var(--ink-05-rgb) / 0.6);
-  font: 300 clamp(0.8rem, calc(1vw * var(--ui-scale)), 0.9rem) / 1.4 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(clamp(0.8rem, calc(1vw * var(--ui-scale)), 0.9rem) * var(--read, 1))) / 1.4 "Sansation-Light", sans-serif;
 }
 
 .label {
   color: rgb(var(--ink-05-rgb) / 0.62);
-  font: 400 clamp(0.72rem, calc(0.9vw * var(--ui-scale)), 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(0.72rem, calc(0.9vw * var(--ui-scale)), 0.82rem) * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -545,7 +545,7 @@
   border-radius: 0.625rem;
   background: rgb(var(--cream-06-rgb) / 0.55);
   color: var(--ink-05);
-  font: 300 1rem / 1.5 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(1rem * var(--read, 1))) / 1.5 "Sansation-Light", sans-serif;
   resize: vertical;
 }
 
@@ -570,7 +570,7 @@
 
 .photosLabel {
   color: rgb(var(--ink-05-rgb) / 0.62);
-  font: 400 clamp(0.72rem, calc(0.9vw * var(--ui-scale)), 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(0.72rem, calc(0.9vw * var(--ui-scale)), 0.82rem) * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -617,7 +617,7 @@
   background: rgb(var(--ink-05-rgb) / 0.72);
   color: var(--cream-06);
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: max(var(--text-min, 0px), calc(0.95rem * var(--read, 1)));
   line-height: 1;
 }
 
@@ -634,13 +634,13 @@
   background: rgb(var(--cream-06-rgb) / 0.5);
   color: rgb(var(--ink-05-rgb) / 0.7);
   cursor: pointer;
-  font: 300 0.7rem / 1.2 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.7rem * var(--read, 1))) / 1.2 "Sansation-Light", sans-serif;
   text-align: center;
   transition: border-color 0.2s ease;
 }
 
 .photoAdd span {
-  font-size: 1.3rem;
+  font-size: max(var(--text-min, 0px), calc(1.3rem * var(--read, 1)));
   line-height: 1;
 }
 
@@ -656,7 +656,7 @@
 .error {
   margin: 0;
   color: var(--clay-06);
-  font: 400 0.95rem / 1.5 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(0.95rem * var(--read, 1))) / 1.5 "Sansation-Regular", sans-serif;
 }
 
 .actions {
@@ -674,7 +674,7 @@
   background: var(--ink-05);
   color: var(--cream-06);
   cursor: pointer;
-  font: 400 1rem / 1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(1rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
 }
 
@@ -691,7 +691,7 @@
 .legal {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / 0.6);
-  font: 300 0.88rem / 1.5 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.88rem * var(--read, 1))) / 1.5 "Sansation-Light", sans-serif;
 }
 
 .legal a {
@@ -703,7 +703,7 @@
   max-width: 34rem;
   margin: 0 auto;
   color: var(--ink-05);
-  font: 400 clamp(1rem, calc(1.3vw * var(--ui-scale)), 1.2rem) / 1.5 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(1rem, calc(1.3vw * var(--ui-scale)), 1.2rem) * var(--read, 1))) / 1.5 "Sansation-Regular", sans-serif;
 }
 
 .sent a {

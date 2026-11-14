@@ -31,7 +31,7 @@ $touch-floor: 2.75rem;
   flex-direction: column;
 
   .content {
-    font-size: calc(var(--cart-summary-zoom, 1) * 1rem);
+    font-size: max(var(--text-min, 0px), calc(calc(var(--cart-summary-zoom, 1) * 1rem) * var(--read, 1)));
     line-height: 1.5rem;
 
     /*
@@ -118,7 +118,7 @@ $touch-floor: 2.75rem;
           color: var(--ink-05);
           font-family: inherit;
           /* 1rem je práh, pod kterým Safari při zaostření přiblíží stránku. */
-          font-size: calc(var(--cart-summary-zoom, 1) * 1rem);
+          font-size: max(var(--text-min, 0px), calc(calc(var(--cart-summary-zoom, 1) * 1rem) * var(--read, 1)));
           line-height: 1.2;
           transition: border-color .25s ease, background-color .25s ease;
           width: 100%;
@@ -197,7 +197,7 @@ $touch-floor: 2.75rem;
     .poznamka {
       margin: 0;
       color: rgb(var(--ink-05-rgb) / .62);
-      font-size: calc(var(--cart-summary-zoom, 1) * 0.875rem);
+      font-size: max(var(--text-min, 0px), calc(calc(var(--cart-summary-zoom, 1) * 0.875rem) * var(--read, 1)));
       line-height: 1.45;
     }
 
@@ -230,7 +230,7 @@ $touch-floor: 2.75rem;
             gap: 0.25rem;
             width: 80%;
             padding-right: 0.25rem;
-            font-size: calc(var(--cart-summary-zoom, 1) * 0.9375rem);
+            font-size: max(var(--text-min, 0px), calc(calc(var(--cart-summary-zoom, 1) * 0.9375rem) * var(--read, 1)));
           }
 
           /* „Dárkový poukaz 7HQ4 M2XP" — zalomí se před kódem, kód sám ne. */
@@ -322,7 +322,7 @@ $touch-floor: 2.75rem;
 .promotionsWrap { margin-top: .5rem; }
 .heading {
   margin: 0 0 .375rem !important;
-  font: 400 .75rem/1.2 "Sansation-Regular", sans-serif !important;
+  font: 400 max(var(--text-min, 0px), calc(.75rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif !important;
   letter-spacing: .1em !important;
   text-transform: uppercase;
   opacity: .7;
@@ -336,7 +336,7 @@ $touch-floor: 2.75rem;
   padding: .25rem 0 !important;
 }
 .promoText {
-  font-size: .875rem !important;
+  font-size: max(var(--text-min, 0px), calc(.875rem * var(--read, 1))) !important;
 }
 .promoRow button {
   min-height: 0 !important;

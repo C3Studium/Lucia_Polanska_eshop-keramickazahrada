@@ -34,7 +34,7 @@ $summary-col-gap: clamp(1rem, 1.6vw, 1.75rem);
     /* Jediná velikost pro všechny kroky pokladny — táž příčka jako addresses,
        shipping a review. Podlaha 32px do 1143 px, strop 50.4px od 1800 px,
        živé pásmo 1143–1800. Nad 1921 strop zvedá ramp (3.15rem). */
-    font-size: clamp(2rem, calc(2.8vw * var(--ui-scale)), 3.15rem);
+    font-size: clamp(1.625rem, calc(2vw * var(--ui-scale)), 2.25rem);
     font-weight: 400;
     font-family: "Sentient-Regular", serif;
     line-height: .98;
@@ -91,7 +91,7 @@ $summary-col-gap: clamp(1rem, 1.6vw, 1.75rem);
     span {
       /* „Jak chcete zaplatit?" was 10.4px at .56 — the question itself. */
       color: rgb(var(--ink-05-rgb) / .68);
-      font: 600 .8125rem/1 "Sansation-Regular", sans-serif;
+      font: 600 max(var(--text-min, 0px), calc(.8125rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
@@ -100,7 +100,7 @@ $summary-col-gap: clamp(1rem, 1.6vw, 1.75rem);
       max-width: clamp(16rem, 24vw, 22rem); /* 330px → rem, živé 1067–1467 px */
       margin: 0;
       color: rgb(var(--ink-05-rgb) / .68);
-      font: 300 .875rem/1.35 "Sansation-Light", sans-serif;
+      font: 300 max(var(--text-min, 0px), calc(.875rem * var(--read, 1))) / 1.35 "Sansation-Light", sans-serif;
       text-align: right;
     }
   }
@@ -112,7 +112,7 @@ $summary-col-gap: clamp(1rem, 1.6vw, 1.75rem);
   .paymentStatus {
     margin: 1rem 0 0;
     color: rgb(var(--ink-05-rgb) / .66);
-    font: 400 .88rem/1.45 "Sansation-Regular", sans-serif;
+    font: 400 max(var(--text-min, 0px), calc(.88rem * var(--read, 1))) / 1.45 "Sansation-Regular", sans-serif;
   }
 
   .colThird {
@@ -123,7 +123,7 @@ $summary-col-gap: clamp(1rem, 1.6vw, 1.75rem);
   .sectionTitle {
     margin: 0 0 .85rem;
     color: rgb(var(--ink-05-rgb) / .68);
-    font: 600 .8125rem/1 "Sansation-Regular", sans-serif;
+    font: 600 max(var(--text-min, 0px), calc(.8125rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
@@ -131,7 +131,7 @@ $summary-col-gap: clamp(1rem, 1.6vw, 1.75rem);
   .sectionText {
     margin: 0;
     color: var(--ink-05);
-    font: 400 1rem/1.4 "Sansation-Regular", sans-serif;
+    font: 400 max(var(--text-min, 0px), calc(1rem * var(--read, 1))) / 1.4 "Sansation-Regular", sans-serif;
   }
 
   .summaryRow {
@@ -161,7 +161,7 @@ $summary-col-gap: clamp(1rem, 1.6vw, 1.75rem);
     display: flex;
     align-items: center;
     gap: 0.5rem; /* 8px */
-    font-size: 1rem;
+    font-size: max(var(--text-min, 0px), calc(1rem * var(--read, 1)));
     line-height: 1.5rem;
     /* --fg-subtle v _colors.scss neexistuje (0 definic) a neměl ani fallback, takže
        deklarace propadala a řádek dědil barvu od .root. Tlumený tón se v tomhle
@@ -205,7 +205,7 @@ $summary-col-gap: clamp(1rem, 1.6vw, 1.75rem);
   left: 0;
   /* Táž značka jako 01, 02 a 04. Podlaha .75rem je čitelnostní dno projektu —
      .68rem = 10.88px bylo pod ním. Živé pásmo 1176…1373. */
-  font: 600 clamp(.75rem, calc(1.02vw * var(--ui-scale)), .875rem)/1 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(clamp(.75rem, calc(1.02vw * var(--ui-scale)), .875rem) * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: .18em;
   opacity: .48;
 }
@@ -260,12 +260,12 @@ $summary-col-gap: clamp(1rem, 1.6vw, 1.75rem);
     padding-bottom: 1.5rem;
 
     &::before {
-      font-size: 0.6875rem;
+      font-size: max(var(--text-min, 0px), calc(0.6875rem * var(--read, 1)));
       letter-spacing: 0.14em;
     }
 
     .heading {
-      font-size: 1.375rem;
+      font-size: max(var(--text-min, 0px), calc(1.375rem * var(--read, 1)));
       line-height: 1.15;
       letter-spacing: -0.015em;
     }
@@ -284,7 +284,7 @@ $summary-col-gap: clamp(1rem, 1.6vw, 1.75rem);
   display: inline-block;
   align-self: center;
   margin-right: .6em;
-  font: 600 clamp(.75rem, calc(1.02vw * var(--ui-scale)), .875rem)/1 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(clamp(.75rem, calc(1.02vw * var(--ui-scale)), .875rem) * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: .18em;
   vertical-align: middle;
   opacity: .48;

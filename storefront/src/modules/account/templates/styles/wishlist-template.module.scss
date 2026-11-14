@@ -27,7 +27,7 @@
 .accountWishlistImage > span {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .5);
-  font: max(10px, calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.624vw * var(--ui-scale)), .85rem))) / 1.2 "Sansation-Regular", sans-serif;
+  font: max(var(--text-min, 10px), calc(calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.624vw * var(--ui-scale)), .85rem)) * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -87,7 +87,7 @@
   max-width: 38rem;
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .62);
-  font: calc(var(--account-zoom, 1) * clamp(.95rem, calc(0.8vw * var(--ui-scale)), 1.15rem)) / 1.55 "Sansation-Light", sans-serif;
+  font: max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(.95rem, calc(0.8vw * var(--ui-scale)), 1.15rem)) * var(--read, 1))) / 1.55 "Sansation-Light", sans-serif;
 }
 
 .accountWishlistBody {
@@ -116,7 +116,7 @@
 
 .accountPreviewNotice span {
   color: var(--olive-11);
-  font: max(10px, calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.624vw * var(--ui-scale)), .85rem))) / 1.2 "Sansation-Bold", sans-serif;
+  font: max(var(--text-min, 10px), calc(calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.624vw * var(--ui-scale)), .85rem)) * var(--read, 1))) / 1.2 "Sansation-Bold", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -124,7 +124,7 @@
 .accountPreviewNotice p {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .65);
-  font-size: calc(var(--account-zoom, 1) * clamp(.84rem, calc(0.728vw * var(--ui-scale)), 1rem));
+  font-size: max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(.84rem, calc(0.728vw * var(--ui-scale)), 1rem)) * var(--read, 1)));
 }
 
 .accountWishlistGrid {
@@ -217,7 +217,7 @@
   border: 1px solid rgb(var(--ink-05-rgb) / .22);
   border-radius: 999px;
   background: rgb(var(--cream-07-rgb) / .88);
-  font: max(10px, calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.624vw * var(--ui-scale)), .85rem))) / 1 "Sansation-Regular", sans-serif;
+  font: max(var(--text-min, 10px), calc(calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.624vw * var(--ui-scale)), .85rem)) * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   font-style: normal;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -294,7 +294,7 @@
   margin: 0;
   overflow: hidden;
   color: rgb(var(--ink-05-rgb) / .55);
-  font-size: calc(var(--account-zoom, 1) * clamp(.88rem, calc(0.76vw * var(--ui-scale)), 1.05rem));
+  font-size: max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(.88rem, calc(0.76vw * var(--ui-scale)), 1.05rem)) * var(--read, 1)));
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -382,11 +382,11 @@
     }
 
     .accountWishlistInfo h2 {
-      font-size: calc(var(--account-zoom, 1) * clamp(1.275rem, calc(1.38vw * var(--ui-scale)), 2.025rem));
+      font-size: max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(1.275rem, calc(1.38vw * var(--ui-scale)), 2.025rem)) * var(--read, 1)));
     }
 
     .accountWishlistInfo p {
-      font-size: max(10px, calc(var(--account-zoom, 1) * clamp(0.72rem, calc(0.624vw * var(--ui-scale)), 0.85rem)));
+      font-size: max(var(--text-min, 10px), calc(calc(var(--account-zoom, 1) * clamp(0.72rem, calc(0.624vw * var(--ui-scale)), 0.85rem)) * var(--read, 1)));
     }
 
     .accountWishlistCardAction {

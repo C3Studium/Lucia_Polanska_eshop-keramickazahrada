@@ -1,0 +1,13 @@
+.root {
+  margin: 1rem 0 0;
+  color: rgb(var(--ink-05-rgb) / .78);
+  font: 400 max(var(--text-min, 0px), calc(.9375rem * var(--read, 1))) / 1.45 "Sansation-Regular", sans-serif;
+}
+
+.cislo {
+  color: var(--ink-05);
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

@@ -52,7 +52,7 @@ export const OrdersTemplate = ({
               {itemText(copy, "nadpis", "objednávky.", "note")}
             </CmsText>
           </h1>
-          <span>{String(orders.length).padStart(2, "0")} objednávek</span>
+          <span>{orders.length} {orders.length === 1 ? "objednávka" : orders.length >= 2 && orders.length <= 4 ? "objednávky" : "objednávek"}</span>
         </div>
         <CmsText as="p" className={s.desc} doc={doc} field={itemFieldPath(copy, "text")}>
           {itemText(

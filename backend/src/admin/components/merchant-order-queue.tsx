@@ -20,6 +20,7 @@ import { otevritStitek, type StitekZasilky } from "../lib/stitky";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
 import { ceskaChyba, ceskyText } from "../lib/ceska-chyba";
+import { useOdlozenaAkce } from "../lib/odlozena-akce";
 import { RowLink } from "./row-link";
 import {
   NEXT_STEP_LABELS,
@@ -55,6 +56,8 @@ export type MerchantOrder = {
   /** Kolik už reálně došlo (captured). U zakázky = záloha, dokud se nedoplatí. */
   paid_total: number | null;
   item_count: number;
+  /** Až tři náhledy výrobků (projection.ts). */
+  thumbnails?: string[];
   shipping_method: string | null;
 
   payment_status: string | null;
@@ -302,6 +305,9 @@ export const OrderRow = ({
   stage: MerchantOrderStage;
 }) => {
   const queryClient = useQueryClient();
+  /* Stav jde jen dopředu a zákazník hned dostane e-mail — 5 s na „Vrátit". */
+  const { odlozit, ceka } = useOdlozenaAkce();
+  const cislo = `#${order.display_id ?? ""}`;
   const transition = useMutation({
     mutationFn: (target: MerchantOrderStage) =>
       sdk.client.fetch(`/admin/merchant-orders/${order.order_id}`, {
@@ -525,9 +531,26 @@ export const OrderRow = ({
           {order.customer_name || order.email || "Zákazník bez jména"}
         </Text>
         <Text size="small" className="text-ui-fg-subtle mt-1">
-          {order.item_count} položek ·{" "}
+          {order.item_count}{" "}
+          {order.item_count === 1 ? "položka" : order.item_count >= 2 && order.item_count <= 4 ? "položky" : "položek"}{" "}
+          ·{" "}
           {order.shipping_method || "Doprava není zvolena"}
         </Text>
+        {/* Náhledy kusů (14. 11. 2026): objednávka se pozná podle toho, co
+            v ní je, dřív než podle čísla. */}
+        {(order.thumbnails?.length ?? 0) > 0 && (
+          <div className="mt-2 flex items-center gap-1.5" aria-hidden="true">
+            {order.thumbnails!.map((src) => (
+              <img
+                key={src}
+                src={src}
+                alt=""
+                loading="lazy"
+                className="h-10 w-10 rounded-md border border-ui-border-base object-cover"
+              />
+            ))}
+          </div>
+        )}
         {order.is_made_to_order && (
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <Badge color="purple">Zakázková výroba</Badge>
@@ -658,7 +681,9 @@ export const OrderRow = ({
           instant client-side transition rather than a full page reload. Tlačítko
           zůstává i jako cesta pro klávesnici — překryv `RowLink` je mimo tabulátor.
         */}
-        <Button variant="secondary" size="small" asChild>
+        {/* Tiše (14. 11. 2026): celý řádek už objednávku otevírá; černé
+            tlačítko patří jen dalšímu kroku. */}
+        <Button variant="transparent" size="small" asChild>
           <Link to={`/orders/${order.order_id}`}>Otevřít objednávku</Link>
         </Button>
 
@@ -701,10 +726,11 @@ export const OrderRow = ({
         {order.is_personal_pickup &&
           ["received", "working"].includes(order.stage) && (
             <Button
-              variant="secondary"
+              variant="primary"
               size="small"
               isLoading={pickupReady.isPending}
-              onClick={() => pickupReady.mutate()}
+              disabled={ceka}
+              onClick={() => odlozit(`Připraveno k vyzvednutí — ${cislo}`, () => pickupReady.mutate())}
             >
               Připraveno k vyzvednutí
             </Button>
@@ -722,7 +748,8 @@ export const OrderRow = ({
               variant="secondary"
               size="small"
               isLoading={pickupPaid.isPending}
-              onClick={() => pickupPaid.mutate()}
+              disabled={ceka}
+              onClick={() => odlozit(`Objednávka zaplacena — ${cislo}`, () => pickupPaid.mutate())}
             >
               Objednávka zaplacena
             </Button>
@@ -737,10 +764,15 @@ export const OrderRow = ({
         {order.is_personal_pickup &&
           !["shipped", "cancelled"].includes(order.stage) && (
             <Button
-              variant="primary"
+              /* Dokud se připravuje, je dalším krokem „Připraveno k vyzvednutí"
+                 (černé); „Vyzvednuto" zůstává po ruce, ale ve druhém plánu —
+                 dřív bylo černé hned u nové objednávky a řádek si protiřečil
+                 s „Další krok: Začít připravovat" (14. 11. 2026). */
+              variant={["received", "working"].includes(order.stage) ? "secondary" : "primary"}
               size="small"
               isLoading={pickup.isPending}
-              onClick={() => pickup.mutate()}
+              disabled={ceka}
+              onClick={() => odlozit(`${order.pickup_payment_due ? "Vyzvednuto a zaplaceno" : "Vyzvednuto"} — ${cislo}`, () => pickup.mutate())}
             >
               {order.pickup_payment_due ? "Vyzvednuto a zaplaceno" : "Vyzvednuto"}
             </Button>
@@ -774,7 +806,8 @@ export const OrderRow = ({
             variant="primary"
             size="small"
             isLoading={dobirkaPaid.isPending}
-            onClick={() => dobirkaPaid.mutate()}
+            disabled={ceka}
+            onClick={() => odlozit(`Peníze z dobírky přišly — ${cislo}`, () => dobirkaPaid.mutate())}
           >
             Peníze přišly (dobírka)
           </Button>
@@ -788,7 +821,8 @@ export const OrderRow = ({
               variant="primary"
               size="small"
               isLoading={transition.isPending}
-              onClick={() => transition.mutate(targetStage)}
+              disabled={ceka}
+              onClick={() => odlozit(`${nextStageLabel[order.stage]} — ${cislo}`, () => transition.mutate(targetStage))}
             >
               {nextStageLabel[order.stage]}
             </Button>

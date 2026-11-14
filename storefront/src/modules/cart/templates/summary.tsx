@@ -83,7 +83,7 @@ const Summary = ({ cart, shippingFrom, copy }: SummaryProps) => {
               teď stojí slevový kód a jeho rozbalené pole potřebuje šířku. */}
           <h2 className={s.title}>
             <span className={s.titleWide} {...editableItem(copy, "souhrn.nadpis")}>
-              {itemText(copy, "souhrn.nadpis", "Kolik to dělá")}
+              {itemText(copy, "souhrn.nadpis", "Souhrn objednávky")}
             </span>
             <span className={s.titleNarrow} {...editableItem(copy, "souhrn.nadpis-kratky")}>
               {itemText(copy, "souhrn.nadpis-kratky", "Souhrn")}

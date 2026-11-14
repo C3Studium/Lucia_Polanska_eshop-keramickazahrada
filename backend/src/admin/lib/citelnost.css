@@ -1,0 +1,55 @@
+/*
+ * Čitelnost administrace (14. 11. 2026).
+ *
+ * Administraci používá majitelka nad padesát, mezi pecí a balením. Změřeno na
+ * MacBooku 16": text 12–13 px, řádky menu 28 px, modré odkazy u řádků
+ * („Rozbalit · Deník · Detail") kontrast 3,7 : 1 — pod hranicí 4,5 : 1.
+ *
+ * Medusa skládá skoro všechno v rem (písmo i odsazení), takže jeden řádek
+ * zvětší celou administraci stejným dílem — vlastní stránky i ty Medusiny
+ * (detail objednávky). Nic se nepřesouvá, jen je to o kus větší:
+ * 13 → 14 px, 12 → 13 px, menu 28 → 30 px.
+ *
+ * Barvy jen tmavší o stupeň (Tailwind blue-600 / zinc-600), ve světlém
+ * režimu; tmavý režim má vlastní a nechává se.
+ */
+html {
+  font-size: 107.5%;
+}
+
+html:not(.dark) {
+  /* blue-500 → blue-600: odkazy 3,7 : 1 → 5,2 : 1 */
+  --fg-interactive: rgba(37, 99, 235, 1);
+  --fg-interactive-hover: rgba(29, 78, 216, 1);
+  /* zinc-500 → zinc-600: šedé popisky (data, „3 položky") 4,8 : 1 → 7,6 : 1 */
+  --fg-muted: rgba(82, 82, 91, 1);
+}
+
+/* Postranní menu z 220 na 240 px: s větším písmem se název obchodu
+   („Keramická Zahrada") a „Reklamace a vrácení" usekávaly třemi tečkami. */
+div.h-screen.w-\[220px\] {
+  width: 240px;
+}
+
+/* Karty „Metadata" a „JSON" na detailech (objednávka, výrobek, zákazník):
+   data pro vývojáře. Bez expertního režimu je majitelka nevidí; značky
+   nastavují lib/admin-cestina.ts a lib/expert-mode.tsx. */
+html:not([data-kz-expert="1"]) [data-kz-tech="1"] {
+  display: none;
+}
+
+/* Expertní režim vždy na stejném místě: horní lišta vpravo, vlevo od ikon
+   Medusy (lib/expert-mode.tsx). Když stránka vloží přepínač víckrát, vidět
+   je jen první. */
+#kz-expert-slot {
+  position: fixed;
+  top: 0;
+  right: 104px;
+  z-index: 40;
+  display: flex;
+  height: 56px;
+  align-items: center;
+}
+#kz-expert-slot > *:not(:first-child) {
+  display: none;
+}

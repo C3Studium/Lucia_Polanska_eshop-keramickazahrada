@@ -44,7 +44,9 @@
   --notice-inset-y: 10vh;
 
   position: fixed;
-  z-index: 400;
+  /* Nad plovoucí lištou košíku (900), pod spodní lištou obchodu (995):
+     dokud není souhlas, lišta košíku jí prosvítala skrz (14. 11. 2026). */
+  z-index: 950;
   bottom: var(--notice-inset-y);
   left: calc(var(--page-inset, 0px) + var(--notice-inset-x));
   display: flex;
@@ -245,5 +247,44 @@
 @media print {
   .root {
     display: none !important;
+  }
+}
+
+/*
+ * Na notebooku a monitoru tenký pruh u spodní hrany (14. 11. 2026). Karta
+ * vlevo dole 10vh nad hranou seděla v košíku i v pokladně přesně přes „Celkem"
+ * a tlačítko k pokladně. Pruh přes celou šířku zabere jeden řádek u hrany
+ * a nepřekryje nic, kvůli čemu člověk přišel. Telefony zůstávají, jak byly
+ * (karta nad plovoucí lištou obchodu).
+ */
+@media (min-width: 900px) and (orientation: landscape) {
+  .root {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-width: none;
+    max-height: none;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: clamp(1rem, 2vw, 2.5rem);
+    padding-block: clamp(.625rem, 1.2vh, .875rem);
+    padding-inline: calc(var(--page-inset, 0px) + clamp(1.25rem, 3vw, 3rem));
+    border: 0;
+    border-top: 1px solid rgb(var(--ink-05-rgb) / .2);
+    border-radius: 0;
+    box-shadow: 0 -16px 36px -28px rgb(var(--ink-02-rgb) / .6);
+  }
+
+  .text {
+    max-width: 75ch;
+  }
+
+  .actions {
+    flex-wrap: nowrap;
+  }
+
+  .button {
+    min-height: clamp(2.5rem, 4.5vh, 3rem);
   }
 }

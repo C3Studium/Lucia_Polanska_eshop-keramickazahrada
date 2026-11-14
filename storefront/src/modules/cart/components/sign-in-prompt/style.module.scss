@@ -35,7 +35,7 @@
          1.2rem the author wrote for desktop never rendered once, and the
          sentence ran at 1.1rem from 400px all the way to 2552px.
          15.2 -> 19.2px, live 1169-1477. */
-      font-size: clamp(.95rem, calc(1.3vw * var(--ui-scale)), 1.2rem);
+      font-size: max(var(--text-min, 0px), calc(clamp(.95rem, calc(1.3vw * var(--ui-scale)), 1.2rem) * var(--read, 1)));
       /* Unitless, so it tracks the clamp instead of standing at a flat 20px
          while the type grows past it. */
       line-height: 1.35;
@@ -48,7 +48,7 @@
          won, so it is the one that stays. Phone work is the second pass — this
          holds today's portrait value exactly rather than dropping it to the
          clamp floor unreviewed. */
-      @include v(xs) { font-size: 1.2rem; }
+      @include v(xs) { font-size: max(var(--text-min, 0px), calc(1.2rem * var(--read, 1))); }
     }
   }
 
@@ -169,21 +169,21 @@
 /* Telefon na výšku — menší, ať zboží v košíku začíná na první obrazovce. */
 @media (orientation: portrait) and (max-width: 599.98px) {
   .root { padding: .75rem 0; gap: .75rem; }
-  .root .content .title { font-size: 1.15rem; }
-  .root .content .desc { font-size: .875rem; }
+  .root .content .title { font-size: max(var(--text-min, 0px), calc(1.15rem * var(--read, 1))); }
+  .root .content .desc { font-size: max(var(--text-min, 0px), calc(.875rem * var(--read, 1))); }
 }
 
 @media (orientation: landscape) and (max-height: 500px) {
   .root { padding: .5rem 0; }
-  .root .content .title { font-size: 1.1rem; }
-  .root .content .desc { font-size: .8125rem; }
+  .root .content .title { font-size: max(var(--text-min, 0px), calc(1.1rem * var(--read, 1))); }
+  .root .content .desc { font-size: max(var(--text-min, 0px), calc(.8125rem * var(--read, 1))); }
 }
 
 /* Menší přihlášení — jen věta a tlačítko, ne další nadpis stránky (13. 11. 2026). */
 .root { padding: clamp(.6rem, 1.4vh, 1rem) 0; }
-.root .content .title { font-size: clamp(1.1rem, calc(1.3vw * var(--ui-scale)), 1.4rem); }
-.root .content .desc { font-size: clamp(.8125rem, calc(.95vw * var(--ui-scale)), .9375rem); }
+.root .content .title { font-size: max(var(--text-min, 0px), calc(clamp(1.1rem, calc(1.3vw * var(--ui-scale)), 1.4rem) * var(--read, 1))); }
+.root .content .desc { font-size: max(var(--text-min, 0px), calc(clamp(.8125rem, calc(.95vw * var(--ui-scale)), .9375rem) * var(--read, 1))); }
 
 @media (orientation: portrait) and (max-width: 599.98px) {
-  .root .content .title { font-size: 1.15rem; }
+  .root .content .title { font-size: max(var(--text-min, 0px), calc(1.15rem * var(--read, 1))); }
 }

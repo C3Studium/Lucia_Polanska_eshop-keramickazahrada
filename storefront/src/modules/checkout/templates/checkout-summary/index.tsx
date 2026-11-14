@@ -70,17 +70,11 @@ const CheckoutSummary = async ({
           </div>
           <Divider className={styles.divider} />
           <CartTotals totals={cart} shippingFrom={shippingFrom} />
+          {/* Záloha zakázky hned pod „Celkem" (14. 11. 2026, Matěj: blok
+              visel osamoceně pod souhrnem). Jsou to poslední dva řádky ceny —
+              kolik teď a kolik později —, ne samostatná karta. */}
+          <ProductionPaymentRecap mode={productionMode} />
         </OrderSummaryDisclosure>
-      </div>
-
-      {/*
-        Zjednodušená připomínka zálohy („zaplatíte teď / zbývá doplatit") nad
-        briefem — plný widget se slajderem je v kroku Platba, tady je jen
-        přehled zvolené částky. Jen na širokém rozvržení, stejně jako brief:
-        na telefonu ji supluje widget v toku Platby.
-      */}
-      <div className={styles.paymentRecap}>
-        <ProductionPaymentRecap mode={productionMode} />
       </div>
       </div>
 

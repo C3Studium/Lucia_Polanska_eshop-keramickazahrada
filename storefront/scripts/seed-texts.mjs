@@ -909,7 +909,7 @@ const TEXT_BLOCKS = [
                 item("polozky.nadpis", "Co máte v košíku"),
                 item("polozky.oboci", "Z ateliéru"),
                 item("souhrn.oboci", "Objednávka"),
-                item("souhrn.nadpis", "Kolik to dělá"),
+                item("souhrn.nadpis", "Souhrn objednávky"),
                 item("souhrn.nadpis-kratky", "Souhrn"),
                 item("souhrn.tlacitko", "Pokračovat k pokladně"),
             ],

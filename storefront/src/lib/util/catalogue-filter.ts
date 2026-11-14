@@ -36,6 +36,12 @@ export type CatalogueContext<T extends CatalogueItem> = {
   collectionCategoryIds?: string[]
   /** Jen tyto výrobky (mini obchod úpravy objednávky). */
   onlyIds?: Set<string> | null
+  /**
+   * Pořadí podle poličky pro „Doporučené" (14. 11. 2026): 0 = skladem,
+   * 1 = prázdná polička, ale jde objednat (dorobí se), 2 = nejde koupit.
+   * Obchod se jinak otvíral samými „Prodáno".
+   */
+  shelfRankOf?: (item: T) => 0 | 1 | 2
   now?: number
   offset?: number
   limit?: number
@@ -111,6 +117,10 @@ export const filterCatalogue = <T extends CatalogueItem>(
     })
   } else if (filters.sort === "newest") {
     vysledek.sort((a, b) => casVytvoreni(b) - casVytvoreni(a))
+  } else if (ctx.shelfRankOf) {
+    /* Stabilní řazení: uvnitř stejné poličky zůstává pořadí katalogu. */
+    const rank = ctx.shelfRankOf
+    vysledek.sort((a, b) => rank(a) - rank(b))
   }
 
   const offset = Math.max(ctx.offset ?? 0, 0)

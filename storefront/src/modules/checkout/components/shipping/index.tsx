@@ -687,6 +687,25 @@ const Shipping: React.FC<ShippingProps> = ({
                                 {address}
                               </span>
                             )}
+                            {/* Osobní odběr: kdy a jak (Texty obchodu) a mapa
+                                (14. 11. 2026). Odkaz na mapu otevře nové okno
+                                a volbu dopravy nemění. */}
+                            {isPickup && texty["pokladna.odber_info"] && (
+                              <span className={styles.methodText}>
+                                {texty["pokladna.odber_info"]}
+                              </span>
+                            )}
+                            {isPickup && address && (
+                              <a
+                                className={styles.mapLink}
+                                href={`https://mapy.cz/zakladni?q=${encodeURIComponent(address)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                Zobrazit na mapě ↗
+                              </a>
+                            )}
                             {blockedByRestriction && restriction && (
                               <span className={styles.methodText}>
                                 {restrictionRowHint[restriction]}

@@ -38,7 +38,7 @@
   position: fixed;
   inset: 0;
   /* Same layer as the contact dialog — one overlay family, nothing above it. */
-  z-index: 500;
+  z-index: 960; /* nad lištou cookies (950) — 14. 11. 2026 */
   display: grid;
   place-items: center;
   /* Shora až pod navbar — viz --kurzy-modal-top. Netýká se to jen úzkých
@@ -172,7 +172,7 @@
 
   &__eyebrow {
     color: rgb(var(--ink-05-rgb) / .66);
-    font-size: 0.75rem;
+    font-size: max(var(--text-min, 0px), calc(0.75rem * var(--read, 1)));
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
@@ -190,13 +190,13 @@
     border-radius: 999px;
     background: transparent;
     color: var(--kurzy-charcoal);
-    font-size: 0.9rem;
+    font-size: max(var(--text-min, 0px), calc(0.9rem * var(--read, 1)));
     cursor: pointer;
     transition: border-color 0.25s ease, background 0.25s ease;
 
     i {
       font-style: normal;
-      font-size: 1.1rem;
+      font-size: max(var(--text-min, 0px), calc(1.1rem * var(--read, 1)));
       line-height: 1;
     }
 
@@ -272,7 +272,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
-    font-size: 0.8125rem;
+    font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
     letter-spacing: 0.1em;
     text-transform: uppercase;
   }
@@ -285,7 +285,7 @@
   &__progressSummary {
     overflow: hidden;
     color: rgb(var(--ink-05-rgb) / .7);
-    font-size: 0.8125rem;
+    font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
     font-weight: 300;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -327,7 +327,7 @@
     border: 0;
     background: transparent;
     color: rgb(var(--ink-05-rgb) / .7);
-    font-size: 0.875rem;
+    font-size: max(var(--text-min, 0px), calc(0.875rem * var(--read, 1)));
     cursor: pointer;
 
     &:hover {
@@ -343,7 +343,7 @@
   &__hint {
     margin: 0;
     color: rgb(var(--ink-05-rgb) / .7);
-    font-size: 0.95rem;
+    font-size: max(var(--text-min, 0px), calc(0.95rem * var(--read, 1)));
     font-weight: 300;
   }
 
@@ -360,14 +360,14 @@
     border-radius: 0.625rem;
     background: rgb(var(--white-rgb) / .45);
     color: rgb(var(--ink-05-rgb) / .75);
-    font-size: 0.875rem;
+    font-size: max(var(--text-min, 0px), calc(0.875rem * var(--read, 1)));
     line-height: 1.4;
 
     strong {
       min-width: 0;
       color: var(--kurzy-charcoal);
       font-family: "Sentient-Regular", serif;
-      font-size: 1.05rem;
+      font-size: max(var(--text-min, 0px), calc(1.05rem * var(--read, 1)));
       font-weight: 400;
       letter-spacing: -0.01em;
       overflow-wrap: anywhere;
@@ -376,7 +376,7 @@
 
   &__courseSeats {
     color: var(--kurzy-olive-text);
-    font-size: 0.8125rem;
+    font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
     letter-spacing: 0.02em;
   }
 
@@ -384,7 +384,7 @@
     flex-basis: 100%;
     margin: 0.5rem 0 0;
     color: var(--kurzy-ember-text);
-    font-size: 0.8125rem;
+    font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
     line-height: 1.45;
   }
 
@@ -393,7 +393,7 @@
     padding-bottom: 0.75rem;
     border-bottom: 1px solid rgb(var(--ink-05-rgb) / .16);
     color: rgb(var(--ink-05-rgb) / .75);
-    font-size: 0.9rem;
+    font-size: max(var(--text-min, 0px), calc(0.9rem * var(--read, 1)));
     line-height: 1.5;
   }
 
@@ -417,7 +417,7 @@
       border-radius: 999px;
       background: transparent;
       color: rgb(var(--ink-05-rgb) / .7);
-      font-size: 0.875rem;
+      font-size: max(var(--text-min, 0px), calc(0.875rem * var(--read, 1)));
       cursor: pointer;
       transition: background 0.25s ease, color 0.25s ease;
 
@@ -498,7 +498,7 @@
 
     strong {
       font-family: "Sentient-Regular", serif;
-      font-size: clamp(1.2rem, calc(1.5vw * var(--ui-scale)), 1.55rem);
+      font-size: max(var(--text-min, 0px), calc(clamp(1.2rem, calc(1.5vw * var(--ui-scale)), 1.55rem) * var(--read, 1)));
       font-weight: 400;
       line-height: 1.05;
       letter-spacing: -0.03em;
@@ -507,20 +507,20 @@
 
   &__termDate {
     color: var(--kurzy-ember-text);
-    font-size: 0.8125rem;
+    font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
     letter-spacing: 0.1em;
     text-transform: uppercase;
   }
 
   &__termMeta {
     color: rgb(var(--ink-05-rgb) / .7);
-    font-size: 0.9rem;
+    font-size: max(var(--text-min, 0px), calc(0.9rem * var(--read, 1)));
     font-weight: 300;
   }
 
   &__termPrices {
     color: rgb(var(--ink-05-rgb) / .72);
-    font-size: 0.9rem;
+    font-size: max(var(--text-min, 0px), calc(0.9rem * var(--read, 1)));
   }
 
   /*
@@ -574,13 +574,13 @@
 
     li > span {
       color: rgb(var(--ink-05-rgb) / .7);
-      font-size: 0.8125rem;
+      font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
       letter-spacing: .06em;
       text-transform: uppercase;
     }
 
     li > strong {
-      font-size: 1.125rem;
+      font-size: max(var(--text-min, 0px), calc(1.125rem * var(--read, 1)));
       font-weight: 400;
     }
 
@@ -590,7 +590,7 @@
 
     li > em {
       color: rgb(var(--ink-05-rgb) / .6);
-      font-size: 0.8125rem;
+      font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
       font-style: normal;
     }
   }
@@ -598,13 +598,13 @@
   &__ladderNote {
     margin: 0;
     color: rgb(var(--ink-05-rgb) / .7);
-    font-size: 0.875rem;
+    font-size: max(var(--text-min, 0px), calc(0.875rem * var(--read, 1)));
     font-weight: 300;
   }
 
   &__termSeats {
     color: var(--kurzy-olive-text);
-    font-size: 0.8125rem;
+    font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
     letter-spacing: 0.08em;
     text-transform: uppercase;
 
@@ -633,7 +633,7 @@
 
       > span {
         color: rgb(var(--ink-05-rgb) / .7);
-        font-size: var(--type-caption, 0.8125rem);
+        font-size: max(var(--text-min, 0px), calc(var(--type-caption, 0.8125rem) * var(--read, 1)));
         letter-spacing: 0.1em;
         text-transform: uppercase;
       }
@@ -651,7 +651,7 @@
       background: var(--white);
       color: var(--kurzy-charcoal);
       /* 16px: the body floor, and below it iOS zooms the page on focus. */
-      font-size: var(--type-body, 1rem);
+      font-size: max(var(--text-min, 0px), calc(var(--type-body, 1rem) * var(--read, 1)));
       transition: border-color 0.25s ease;
 
       &:focus-visible {
@@ -666,7 +666,7 @@
 
   &__fieldError {
     color: var(--clay-10);
-    font-size: 0.8125rem;
+    font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
     font-style: normal;
   }
 
@@ -676,13 +676,17 @@
     border: 1px solid rgb(var(--ink-05-rgb) / .26);
     background: var(--white);
 
+    /* Znaménka − a + v písmu webu vycházela drobná (14. 11. 2026). */
     button {
-      width: 2.875rem;
+      width: 3.25rem;
       min-height: 2.75rem;
       border: 0;
       background: transparent;
       color: var(--kurzy-charcoal);
-      font-size: 1.2rem;
+      font-family: system-ui, sans-serif;
+      font-size: calc(1.6rem * var(--read, 1));
+      font-weight: 500;
+      line-height: 1;
       cursor: pointer;
       transition: background 0.25s ease;
 
@@ -706,7 +710,7 @@
       display: grid;
       place-items: center;
       font-family: "Sentient-Regular", serif;
-      font-size: 1.15rem;
+      font-size: max(var(--text-min, 0px), calc(1.15rem * var(--read, 1)));
     }
   }
 
@@ -729,7 +733,7 @@
 
     > span {
       color: rgb(var(--ink-05-rgb) / .7);
-      font-size: var(--type-caption, 0.8125rem);
+      font-size: max(var(--text-min, 0px), calc(var(--type-caption, 0.8125rem) * var(--read, 1)));
       letter-spacing: 0.1em;
       text-transform: uppercase;
     }
@@ -743,7 +747,7 @@
 
     em {
       color: var(--kurzy-olive-text);
-      font-size: 0.875rem;
+      font-size: max(var(--text-min, 0px), calc(0.875rem * var(--read, 1)));
       font-style: normal;
     }
   }
@@ -765,7 +769,7 @@
     legend {
       margin-bottom: 0.625rem;
       color: rgb(var(--ink-05-rgb) / .7);
-      font-size: var(--type-caption, 0.8125rem);
+      font-size: max(var(--text-min, 0px), calc(var(--type-caption, 0.8125rem) * var(--read, 1)));
       letter-spacing: 0.1em;
       text-transform: uppercase;
     }
@@ -797,7 +801,7 @@
 
       strong {
         display: block;
-        font-size: 0.95rem;
+        font-size: max(var(--text-min, 0px), calc(0.95rem * var(--read, 1)));
         font-weight: 500;
       }
 
@@ -805,7 +809,7 @@
         display: block;
         margin-top: 0.125rem;
         color: rgb(var(--ink-05-rgb) / .7);
-        font-size: 0.8125rem;
+        font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
         font-weight: 300;
       }
     }
@@ -817,14 +821,14 @@
     border: 1px solid rgb(var(--clay-10-rgb) / .4);
     background: rgb(var(--clay-10-rgb) / .07);
     color: var(--clay-10);
-    font-size: 0.9rem;
+    font-size: max(var(--text-min, 0px), calc(0.9rem * var(--read, 1)));
   }
 
   &__consent {
     margin: 0;
     /* 0.7 is the audited AA floor for secondary text on the cream ground. */
     color: rgb(var(--ink-05-rgb) / .7);
-    font-size: 0.8125rem;
+    font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
     font-weight: 300;
     line-height: 1.45;
   }
@@ -842,7 +846,7 @@
     legend {
       margin-bottom: 0.625rem;
       color: rgb(var(--ink-05-rgb) / .7);
-      font-size: var(--type-caption, 0.8125rem);
+      font-size: max(var(--text-min, 0px), calc(var(--type-caption, 0.8125rem) * var(--read, 1)));
       letter-spacing: 0.1em;
       text-transform: uppercase;
     }
@@ -860,7 +864,7 @@
     border-left: 2px solid var(--kurzy-charcoal);
     background: rgb(var(--white-rgb) / .6);
     color: rgb(var(--ink-05-rgb) / .85);
-    font-size: 0.875rem;
+    font-size: max(var(--text-min, 0px), calc(0.875rem * var(--read, 1)));
     line-height: 1.5;
 
     strong {
@@ -873,7 +877,7 @@
     align-items: flex-start;
     gap: 0.75rem;
     color: var(--ink-05);
-    font-size: 0.875rem;
+    font-size: max(var(--text-min, 0px), calc(0.875rem * var(--read, 1)));
     line-height: 1.5;
     cursor: pointer;
 
@@ -890,7 +894,7 @@
     small {
       display: block;
       color: rgb(var(--ink-05-rgb) / .7);
-      font-size: 0.8125rem;
+      font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
       font-weight: 300;
     }
   }
@@ -899,7 +903,7 @@
   &__payNote {
     margin: 0;
     color: rgb(var(--ink-05-rgb) / .75);
-    font-size: 0.875rem;
+    font-size: max(var(--text-min, 0px), calc(0.875rem * var(--read, 1)));
     line-height: 1.5;
     text-align: right;
   }
@@ -961,7 +965,7 @@
     strong {
       overflow: hidden;
       font-family: "Sentient-Regular", serif;
-      font-size: clamp(1rem, calc(1.15vw * var(--ui-scale)), 1.2rem);
+      font-size: max(var(--text-min, 0px), calc(clamp(1rem, calc(1.15vw * var(--ui-scale)), 1.2rem) * var(--read, 1)));
       font-weight: 400;
       line-height: 1.15;
       letter-spacing: -0.02em;
@@ -972,14 +976,14 @@
 
   &__chosenBarEyebrow {
     color: var(--kurzy-olive-text);
-    font-size: 0.6875rem;
+    font-size: max(var(--text-min, 0px), calc(0.6875rem * var(--read, 1)));
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 
   &__chosenBarMeta {
     color: var(--kurzy-ember-text);
-    font-size: 0.8125rem;
+    font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
     line-height: 1.35;
   }
 
@@ -995,7 +999,7 @@
     border-radius: 999px;
     background: var(--kurzy-charcoal);
     color: var(--kurzy-cream);
-    font-size: 0.95rem;
+    font-size: max(var(--text-min, 0px), calc(0.95rem * var(--read, 1)));
     letter-spacing: 0.02em;
     cursor: pointer;
     transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
@@ -1049,7 +1053,7 @@
       margin: 0;
       max-width: 36rem;
       color: rgb(var(--ink-05-rgb) / .8);
-      font-size: 1rem;
+      font-size: max(var(--text-min, 0px), calc(1rem * var(--read, 1)));
       line-height: 1.55;
     }
   }
@@ -1063,7 +1067,7 @@
 
     span {
       color: rgb(var(--ink-05-rgb) / .7);
-      font-size: var(--type-caption, 0.8125rem);
+      font-size: max(var(--text-min, 0px), calc(var(--type-caption, 0.8125rem) * var(--read, 1)));
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
@@ -1077,7 +1081,7 @@
       background: var(--white);
       color: inherit;
       font: inherit;
-      font-size: var(--type-body, 1rem);
+      font-size: max(var(--text-min, 0px), calc(var(--type-body, 1rem) * var(--read, 1)));
       resize: vertical;
       transition: border-color 0.25s ease;
 
@@ -1091,7 +1095,7 @@
   &__waitlistIntro {
     margin: 0;
     color: rgb(var(--ink-05-rgb) / .7);
-    font-size: 0.95rem;
+    font-size: max(var(--text-min, 0px), calc(0.95rem * var(--read, 1)));
     font-weight: 300;
     line-height: 1.5;
   }
@@ -1100,7 +1104,7 @@
     strong {
       display: block;
       font-family: "Sentient-Regular", serif;
-      font-size: clamp(1.3rem, calc(1.6vw * var(--ui-scale)), 1.7rem);
+      font-size: max(var(--text-min, 0px), calc(clamp(1.3rem, calc(1.6vw * var(--ui-scale)), 1.7rem) * var(--read, 1)));
       font-weight: 400;
       line-height: 1.1;
       letter-spacing: -0.03em;
@@ -1109,7 +1113,7 @@
     p {
       margin: 0.75rem 0 0;
       color: rgb(var(--ink-05-rgb) / .7);
-      font-size: 0.95rem;
+      font-size: max(var(--text-min, 0px), calc(0.95rem * var(--read, 1)));
       font-weight: 300;
       line-height: 1.5;
     }
@@ -1155,7 +1159,7 @@
 
       dt {
         color: rgb(var(--ink-05-rgb) / .7);
-        font-size: var(--type-caption, 0.8125rem);
+        font-size: max(var(--text-min, 0px), calc(var(--type-caption, 0.8125rem) * var(--read, 1)));
         letter-spacing: 0.1em;
         text-transform: uppercase;
         align-self: center;
@@ -1164,14 +1168,14 @@
       dd {
         margin: 0;
         text-align: right;
-        font-size: 0.95rem;
+        font-size: max(var(--text-min, 0px), calc(0.95rem * var(--read, 1)));
       }
     }
 
     > p {
       margin: 0.875rem 0 0;
       color: rgb(var(--ink-05-rgb) / .7);
-      font-size: 0.95rem;
+      font-size: max(var(--text-min, 0px), calc(0.95rem * var(--read, 1)));
       font-weight: 300;
       line-height: 1.55;
     }
@@ -1184,7 +1188,7 @@
 
   &__summaryEyebrow {
     color: var(--kurzy-olive-text);
-    font-size: 0.75rem;
+    font-size: max(var(--text-min, 0px), calc(0.75rem * var(--read, 1)));
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
@@ -1193,7 +1197,7 @@
     align-self: flex-start;
     margin-top: 0.875rem;
     color: var(--kurzy-ember-text);
-    font-size: 0.9rem;
+    font-size: max(var(--text-min, 0px), calc(0.9rem * var(--read, 1)));
     text-decoration: underline;
     text-underline-offset: 3px;
 
@@ -1221,7 +1225,7 @@
 
     strong {
       font-family: "Sentient-Regular", serif;
-      font-size: clamp(1.15rem, calc(1.4vw * var(--ui-scale)), 1.4rem);
+      font-size: max(var(--text-min, 0px), calc(clamp(1.15rem, calc(1.4vw * var(--ui-scale)), 1.4rem) * var(--read, 1)));
       font-weight: 400;
       letter-spacing: -0.02em;
       text-transform: capitalize;
@@ -1238,7 +1242,7 @@
     border-radius: 50%;
     background: rgb(var(--cream-10-rgb) / .6);
     color: var(--kurzy-charcoal);
-    font-size: 1.25rem;
+    font-size: max(var(--text-min, 0px), calc(1.25rem * var(--read, 1)));
     line-height: 1;
     cursor: pointer;
     transition: border-color 0.25s ease, background 0.25s ease;
@@ -1267,7 +1271,7 @@
 
     span {
       color: rgb(var(--ink-05-rgb) / .7);
-      font-size: 0.75rem;
+      font-size: max(var(--text-min, 0px), calc(0.75rem * var(--read, 1)));
       letter-spacing: 0.08em;
       text-align: center;
       text-transform: uppercase;
@@ -1302,13 +1306,16 @@
     border: 1px solid transparent;
     background: transparent;
     color: rgb(var(--ink-05-rgb) / .45);
-    font-size: 0.95rem;
+    font-size: max(var(--text-min, 0px), calc(0.95rem * var(--read, 1)));
     cursor: default;
 
+    /* Den s kurzem musí být vidět na první pohled, ne jen tečkou
+       (14. 11. 2026) — plná výplň, tučné číslo. */
     &.has-terms {
-      border-color: rgb(var(--ink-05-rgb) / .24);
-      background: rgb(var(--cream-10-rgb) / .6);
+      border-color: rgb(var(--ink-05-rgb) / .45);
+      background: color-mix(in srgb, var(--kurzy-ember) 16%, transparent);
       color: var(--kurzy-charcoal);
+      font-weight: 600;
       cursor: pointer;
       transition: border-color 0.25s ease, background 0.25s ease;
 
@@ -1357,7 +1364,7 @@
       top: -0.1875rem;
       left: 0.6875rem;
       color: var(--kurzy-ember-text);
-      font-size: 0.65rem;
+      font-size: max(var(--text-min, 0px), calc(0.65rem * var(--read, 1)));
       line-height: 1;
     }
   }
@@ -1368,7 +1375,7 @@
     gap: 0.5rem;
     margin: 0;
     color: rgb(var(--ink-05-rgb) / .7);
-    font-size: 0.8125rem;
+    font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
     font-weight: 300;
 
     i {

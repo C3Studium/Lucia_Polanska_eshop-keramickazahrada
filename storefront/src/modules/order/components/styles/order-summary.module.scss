@@ -17,7 +17,7 @@
   display: grid;
   gap: 12px;
   color: rgb(var(--cream-06-rgb) / .7);
-  font: calc(16px * var(--ui-scale))/1.45 "Sansation-Light", sans-serif;
+  font: max(var(--text-min, 0px), calc(calc(16px * var(--ui-scale)) * var(--read, 1))) / 1.45 "Sansation-Light", sans-serif;
 }
 
 .row {
@@ -47,5 +47,5 @@
 .separator + .row {
   color: var(--cream-06);
   font-family: "Sansation-Regular", sans-serif;
-  font-size: calc(19px * var(--ui-scale));
+  font-size: max(var(--text-min, 0px), calc(calc(19px * var(--ui-scale)) * var(--read, 1)));
 }

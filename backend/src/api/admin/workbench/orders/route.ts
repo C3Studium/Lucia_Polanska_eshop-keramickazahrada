@@ -59,6 +59,12 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     "customer.id",
     "customer.first_name",
     "customer.last_name",
+    // Host (bez účtu) má jméno jen v adrese — seznam pak ukazoval holý e-mail
+    // (14. 11. 2026). Fakturační první: u Balíkovny je doručovací výdejna.
+    "billing_address.first_name",
+    "billing_address.last_name",
+    "shipping_address.first_name",
+    "shipping_address.last_name",
     // `total` potřebuje celé řádky, metody dopravy A `version` objednávky.
     // Naměřeno 3. 11. 2026 proti sandboxu: s jen `items.id`/`shipping_methods.name`
     // vycházel `total` 0 (seznam ukazoval „Celkem 0 Kč"), bez `version` Medusa
@@ -258,9 +264,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         email: order.email,
         customer_id: order.customer?.id ?? null,
         customer_name:
-          [order.customer?.first_name, order.customer?.last_name]
-            .filter(Boolean)
-            .join(" ") || null,
+          [order.customer, order.billing_address, order.shipping_address]
+            .map((who: any) =>
+              [who?.first_name, who?.last_name].filter(Boolean).join(" ").trim()
+            )
+            .find(Boolean) || null,
         currency_code: order.currency_code,
         total: round(toNumber(order.total)),
         captured,

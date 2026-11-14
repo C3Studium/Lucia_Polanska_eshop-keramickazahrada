@@ -82,12 +82,18 @@
      ostatni (43 vs 56 px) a o 1.6 px vyssi na kazdem dalsim viewportu. */
   --select-height: clamp(2.6rem, 6.5vh, 3.4rem);
 
+  /* Rámeček jako u textových polí (14. 11. 2026) — viz input/style.module.scss. */
   .wrapper {
     min-height: var(--select-height);
-    border: 0;
-    border-bottom: 1px solid rgb(var(--ink-06-rgb) / .28);
-    border-radius: 0;
-    background: transparent !important;
+    padding-inline: .875rem;
+    border: 1px solid rgb(var(--ink-06-rgb) / .42);
+    border-radius: .625rem;
+    background: rgb(255 255 255 / .45) !important;
+  }
+
+  .wrapper:focus-within {
+    border-color: var(--olive-07);
+    box-shadow: 0 0 0 2px rgb(var(--olive-07-rgb) / .35);
   }
 
   .select {

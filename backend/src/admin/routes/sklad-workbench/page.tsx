@@ -1,6 +1,8 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { CubeSolid } from "@medusajs/icons";
-import { Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { ZasobyStranka } from "../../components/zasoby-sklad";
 
 /**
  * Sklad+ je od 3. 11. 2026 součást Přehled › Zásoby (`components/zasoby-sklad.tsx`):
@@ -8,10 +10,30 @@ import { Navigate } from "react-router-dom";
  * Jeho pořadí je tam řazení „Nejdřív o co je zájem" (výchozí), hranice
  * upozornění u řádku a statistiky jako záložka.
  *
- * Tahle adresa jen přesměruje — se Sklad+ otvíral na Vyprodáno, tak i teď.
- * `config` níž je beze změny (položka v menu); rozhodnutí o ní je na Matějovi.
+ * 14. 11. 2026: tahle adresa už nepřesměrovává, ale stránku Zásob ukazuje sama.
+ * Přesměrování na /prehled/zasoby rozsvěcovalo v menu „Přehled", i když
+ * člověk klikl na „Sklad" — nevěděl, kde je. Otevírá se pořád na Vyprodáno.
  */
-const SkladWorkbenchPage = () => <Navigate to="/prehled/zasoby?stav=vyprodano" replace />;
+const SkladWorkbenchPage = () => {
+  const [params, setParams] = useSearchParams();
+
+  /* Jen při otevření: výchozí záložku Zásob (ta nemá `stav` v adrese) si
+     člověk pak vybrat smí — nesmí ho to vracet na Vyprodáno. */
+  useEffect(() => {
+    if (!params.get("stav")) {
+      setParams(
+        (p) => {
+          p.set("stav", "vyprodano");
+          return p;
+        },
+        { replace: true }
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return <ZasobyStranka />;
+};
 
 export const config = defineRouteConfig({
   label: "Sklad",

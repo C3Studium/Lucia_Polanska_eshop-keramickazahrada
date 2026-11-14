@@ -18,7 +18,7 @@
 .accountMeta span {
   margin: 0 0 .75rem;
   color: rgb(var(--cream-06-rgb) / .5);
-  font: max(10px, calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.8vw * var(--ui-scale)), 0.875rem))) / 1.2 "Sansation-Regular", sans-serif;
+  font: max(var(--text-min, 10px), calc(calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.8vw * var(--ui-scale)), 0.875rem)) * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -35,7 +35,7 @@
   margin-left: clamp(1.25rem, 3vw, 3.4rem);
   color: var(--sage-02);
   font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
-  font-size: 0.72em;
+  font-size: max(var(--text-min, 0px), 0.72em);
   font-weight: 300;
 }
 
@@ -116,12 +116,12 @@
 }
 
 .linkIndex {
-  font-size: max(10px, calc(var(--account-zoom, 1) * clamp(.78rem, calc(0.76vw * var(--ui-scale)), .88rem)));
+  font-size: max(var(--text-min, 10px), calc(calc(var(--account-zoom, 1) * clamp(.78rem, calc(0.76vw * var(--ui-scale)), .88rem)) * var(--read, 1)));
   letter-spacing: 0.1em;
 }
 
 .linkTitle {
-  font-size: max(10px, calc(var(--account-zoom, 1) * clamp(.8rem, calc(0.784vw * var(--ui-scale)), .94rem)));
+  font-size: max(var(--text-min, 10px), calc(calc(var(--account-zoom, 1) * clamp(.8rem, calc(0.784vw * var(--ui-scale)), .94rem)) * var(--read, 1)));
 }
 
 .linkLine {
@@ -148,7 +148,7 @@
   margin: 0;
   overflow: hidden;
   color: rgb(var(--cream-06-rgb) / .7);
-  font-size: max(10px, calc(var(--account-zoom, 1) * clamp(.78rem, calc(0.76vw * var(--ui-scale)), .88rem)));
+  font-size: max(var(--text-min, 10px), calc(calc(var(--account-zoom, 1) * clamp(.78rem, calc(0.76vw * var(--ui-scale)), .88rem)) * var(--read, 1)));
   text-overflow: ellipsis;
   white-space: nowrap;
 }

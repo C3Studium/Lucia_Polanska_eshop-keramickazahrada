@@ -96,7 +96,7 @@
      (.75rem) — pod ni se s tímhle kontrastem jít nemá. Prostředek je .96vw, ne .62vw:
      .75rem je nad rampem .625vw, takže .62vw byl mrtvý člen a popisek stál na podlaze
      od 1200 až po ramp. Živé pásmo 1250–1417. */
-  font: 400 clamp(.75rem, calc(.96vw * var(--ui-scale)), .85rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(.75rem, calc(.96vw * var(--ui-scale)), .85rem) * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -144,7 +144,7 @@
   /* Podlaha .75rem = dnešních 12px; níž ne, kontrast .62 je počítaný na 12px.
      Prostředek .96vw (ne .62vw, který je pod podlahou .75 × .8333 = .625vw, a tedy
      nikdy nesvítí): živé pásmo 1250–1417, pak strop .85rem, který nad 1921 nese ramp. */
-  font: 400 clamp(.75rem, calc(.96vw * var(--ui-scale)), .85rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(.75rem, calc(.96vw * var(--ui-scale)), .85rem) * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -159,7 +159,7 @@
      stránky. Na 1920 z 57.6 px na 36.9. */
   /* Násobitel, aby se dal titulek stáhnout bez opisování clampu — nastavuje ho
      stránka košíku pro notebooky, viz `cart/templates/index.module.scss`. */
-  font: 400 calc(var(--cart-title-zoom, 1) * clamp(1.4rem, calc(1.92vw * var(--ui-scale)), 2.3rem))/.96 "Sentient-Regular", serif;
+  font: 400 max(var(--text-min, 0px), calc(calc(var(--cart-title-zoom, 1) * clamp(1.4rem, calc(1.92vw * var(--ui-scale)), 2.3rem)) * var(--read, 1))) / .96 "Sentient-Regular", serif;
   letter-spacing: -.04em;
   transition: color 240ms ease;
 }
@@ -168,7 +168,7 @@
 
 .options {
   color: rgb(var(--cream-06-rgb) / .68);
-  font: 300 .9375rem/1.45 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(.9375rem * var(--read, 1))) / 1.45 "Sansation-Light", sans-serif;
 }
 
 .options :global(*) { color: inherit !important; }
@@ -200,7 +200,7 @@
      zalomil na pět řádků a z pilulky byla kulatá bublina. */
   border-radius: 0;
   color: rgb(var(--cream-06-rgb) / .82);
-  font: 400 clamp(.75rem, calc(.9vw * var(--ui-scale)), .85rem)/1.3 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(.75rem, calc(.9vw * var(--ui-scale)), .85rem) * var(--read, 1))) / 1.3 "Sansation-Regular", sans-serif;
   letter-spacing: .02em;
   text-decoration: none;
 
@@ -218,7 +218,7 @@
   gap: clamp(.25rem, .8vh, .375rem) clamp(.75rem, 1.4vw, 1.125rem);
   margin-top: clamp(.625rem, 1.5vh, 1rem);
   color: rgb(var(--cream-06-rgb) / .62);
-  font: 300 .8125rem/1.4 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(.8125rem * var(--read, 1))) / 1.4 "Sansation-Light", sans-serif;
 }
 
 .cellActions,
@@ -326,7 +326,7 @@
 .cellUnit .controlLabel,
 .cellPrice .controlLabel {
   margin: 0;
-  font-size: clamp(.75rem, calc(.96vw * var(--ui-scale)), .85rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(.75rem, calc(.96vw * var(--ui-scale)), .85rem) * var(--read, 1)));
   white-space: nowrap;
 
   /* „CENA ZA KUS: 65,-" stojí na jedné lince, takže popisek potřebuje
@@ -350,7 +350,7 @@
   display: flex;
   gap: .3125rem;
   color: rgb(var(--cream-06-rgb) / .62);
-  font-size: .8125rem;
+  font-size: max(var(--text-min, 0px), calc(.8125rem * var(--read, 1)));
 }
 
 .muted { color: rgb(var(--cream-06-rgb) / .62); }
@@ -438,8 +438,8 @@
     border-left: 0;
   }
   /* Jeden řádek se zkráceným názvem (13. 11. 2026) — dřív 14ch a dva řádky. */
-  .title { max-width: 100%; margin-bottom: .25rem; overflow: hidden; font-size: 1.05rem; text-overflow: ellipsis; white-space: nowrap; }
-  .options { font-size: .8125rem; }
+  .title { max-width: 100%; margin-bottom: .25rem; overflow: hidden; font-size: max(var(--text-min, 0px), calc(1.05rem * var(--read, 1))); text-overflow: ellipsis; white-space: nowrap; }
+  .options { font-size: max(var(--text-min, 0px), calc(.8125rem * var(--read, 1))); }
   .cellPrice {
     grid-column: 3;
     grid-row: 1;
@@ -459,7 +459,7 @@
        Svisle, tedy na vh: 6px na nízkém notebooku, 10 na vysokém monitoru. */
     gap: clamp(.2rem, .5vh, .375rem);
   }
-  .cellPrice :global(*) { font-size: .8125rem; }
+  .cellPrice :global(*) { font-size: max(var(--text-min, 0px), calc(.8125rem * var(--read, 1))); }
   .previewTotal { color: var(--cream-06); }
 }
 
@@ -512,7 +512,7 @@
      */
     flex-wrap: wrap;
     gap: 12px;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: max(var(--text-min, 0px), calc(calc(13px * var(--ui-scale)) * var(--read, 1)));
   }
   .mobileControls > * { flex: 0 0 auto; }
   .mobileControls > *:nth-child(2) {
@@ -522,7 +522,7 @@
     text-align: right;
   }
   .title { font-size: 1.65rem; }
-  .options { font-size: 13px; }
+  .options { font-size: max(var(--text-min, 0px), calc(13px * var(--read, 1))); }
 }
 
 /*
@@ -559,7 +559,7 @@
   }
 
   .title {
-    font-size: 1.0625rem;
+    font-size: max(var(--text-min, 0px), calc(1.0625rem * var(--read, 1)));
     line-height: 1.25;
     /* Dva řádky a dost — názvy jako „Keramické zahradní pítko s koupajícím se
        ptáčkem 35cm" by jinak samy nafoukly řádek zpátky. */
@@ -571,7 +571,7 @@
 
   .options {
     margin-top: 2px;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: max(var(--text-min, 0px), calc(calc(12px * var(--ui-scale)) * var(--read, 1)));
     line-height: 1.25;
   }
 
@@ -620,7 +620,7 @@
     }
 
     .title {
-      font-size: clamp(1.25rem, calc(2.6vw * var(--ui-scale)), 1.6rem);
+      font-size: max(var(--text-min, 0px), calc(clamp(1.25rem, calc(2.6vw * var(--ui-scale)), 1.6rem) * var(--read, 1)));
     }
 
     .cellUnit,
@@ -707,7 +707,7 @@
     max-width: none;
     margin: 0;
     overflow: hidden;
-    font-size: clamp(1.05rem, calc(1.25vw * var(--ui-scale)), 1.4rem);
+    font-size: max(var(--text-min, 0px), calc(clamp(1.05rem, calc(1.25vw * var(--ui-scale)), 1.4rem) * var(--read, 1)));
     line-height: 1.2;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -719,7 +719,7 @@
     gap: .45rem;
   }
 
-  .row:not(.previewRow) .options { font-size: .8125rem; }
+  .row:not(.previewRow) .options { font-size: max(var(--text-min, 0px), calc(.8125rem * var(--read, 1))); }
   .row:not(.previewRow) .dimensions { display: none; }
 }
 
@@ -743,16 +743,19 @@
     grid-template-columns:
       clamp(4.5rem, 6vw, 6rem)
       minmax(0, 1fr)
-      10rem
+      calc(11.5rem * var(--read, 1))
       6.5rem
       7rem;
   }
 
+  /* −/+ a koš byly 26–29 px — nejmenší ovládání v celém nákupu (měřeno 14. 11.
+     na MacBooku 16"). Lidem nad padesát se do nich špatně trefuje; teď ~40 px
+     a s čtecí zónou rostou spolu s písmem. */
   .row:not(.previewRow) .cellActions {
-    --qty-stepper-height: 2.125rem;
-    --qty-stepper-side: 1.875rem;
-    --qty-stepper-mid: 1.75rem;
-    --qty-stepper-glyph: .9375rem;
+    --qty-stepper-height: calc(2.5rem * var(--read, 1));
+    --qty-stepper-side: calc(2.25rem * var(--read, 1));
+    --qty-stepper-mid: calc(2rem * var(--read, 1));
+    --qty-stepper-glyph: calc(1rem * var(--read, 1));
   }
 
   .row:not(.previewRow) .actionsLine {
@@ -764,9 +767,9 @@
     flex: 0 0 auto;
   }
   .removeCompact :global(button) {
-    width: 2.125rem;
-    min-width: 2.125rem;
-    height: 2.125rem;
+    width: calc(2.5rem * var(--read, 1));
+    min-width: calc(2.5rem * var(--read, 1));
+    height: calc(2.5rem * var(--read, 1));
     min-height: 0 !important;
     padding: 0 !important;
     justify-content: center;
@@ -785,10 +788,31 @@
 /* Telefon: tlačítka jen výška obsahu + 2,5 px nahoře a dole, bez okrajů
    (13. 11. 2026, Matěj: „tlačítka jsou na telefonu moc velká"). */
 @media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  /* Tlačítka zůstávají kompaktní (viz výš), ale −/+ a koš jsou ovládání, do
+     kterého se trefuje prstem: 2.75rem = 35 px při měřítku 0.8 (bylo 26 px). */
   .mobileControls {
-    --qty-stepper-height: 2rem;
-    --qty-stepper-side: 2rem;
-    --qty-stepper-mid: 1.875rem;
-    gap: .5rem;
+    --qty-stepper-height: 2.75rem;
+    --qty-stepper-side: 2.75rem;
+    --qty-stepper-mid: 2.25rem;
+    gap: .625rem;
   }
+  /* „Odebrat" stejně vysoké jako ovladač vedle — jedna linka, jeden cíl. */
+  /* !important proti kompaktnímu tlačítku (`delete-button`: min-height 0
+     !important); tady vyhrává vyšší specifičnost. */
+  .mobileControls :global(button) {
+    min-height: 2.75rem !important;
+  }
+}
+
+/* Plný název výrobku, nejvýš dva řádky (14. 11. 2026) — přebíjí dřívější nowrap + trojtečku. */
+.row .title,
+.row:not(.previewRow) .title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
 }

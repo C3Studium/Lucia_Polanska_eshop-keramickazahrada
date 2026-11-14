@@ -4,6 +4,7 @@ import PhoneInput from "@modules/common/components/phone-input"
 import React, { useState } from "react"
 import s from "./style.module.scss"
 import { countryNameCs } from "@lib/util/country-name-cs"
+import { usePscMesto } from "@lib/hooks/use-psc-mesto"
 
 const BillingAddress = ({ cart, countryCode }: { cart: HttpTypes.StoreCart | null, countryCode: string }) => {
   const routeCountry = countryCode.toLowerCase()
@@ -29,6 +30,16 @@ const BillingAddress = ({ cart, countryCode }: { cart: HttpTypes.StoreCart | nul
       [e.target.name]: e.target.value,
     })
   }
+
+  /* PSČ doplní město (14. 11. 2026) — viz shipping-address. */
+  const obcePodlePsc = usePscMesto(
+    formData["billing_address.postal_code"],
+    routeCountry,
+    (mesto) =>
+      setFormData((pred: any) =>
+        pred["billing_address.city"] ? pred : { ...pred, "billing_address.city": mesto }
+      )
+  )
 
   return (
     <div className={s.root}>
@@ -96,7 +107,15 @@ const BillingAddress = ({ cart, countryCode }: { cart: HttpTypes.StoreCart | nul
           onChange={handleChange}
           className={s.input}
           variant="contact"
+          list={obcePodlePsc.length > 1 ? "obce-podle-psc-fakturacni" : undefined}
         />
+        {obcePodlePsc.length > 1 && (
+          <datalist id="obce-podle-psc-fakturacni">
+            {obcePodlePsc.map((obec) => (
+              <option key={obec} value={obec} />
+            ))}
+          </datalist>
+        )}
         <div className={s.countryField}>
           <span>Země fakturace</span>
           <strong>{countryNameCs(routeCountry, cart?.region?.countries?.find((country) => country.iso_2 === routeCountry)?.display_name)}</strong>

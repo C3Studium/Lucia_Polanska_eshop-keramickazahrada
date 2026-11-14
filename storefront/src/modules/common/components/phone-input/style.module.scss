@@ -43,7 +43,7 @@
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 0.9375rem;
+  font-size: max(var(--text-min, 0px), calc(0.9375rem * var(--read, 1)));
   line-height: 1.2;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
@@ -74,4 +74,37 @@
 /* Číslo v podtrženém vstupu sedí na téže ose jako předvolba. */
 .number input {
   vertical-align: middle;
+}
+
+/*
+ * Předvolba jako rámeček stejné výšky jako pole čísla vedle (14. 11. 2026).
+ * Pole jsou teď v rámečku (input/style.module.scss); malá „+420" pod nimi
+ * vypadala jako cizí prvek. Výška je tatáž rovnice jako `--input-height`
+ * rámečkového pole, zarovnání nahoru — pod polem může být řádek s chybou.
+ */
+.rowTall {
+  align-items: flex-start;
+}
+
+.dial {
+  padding: 0 .75rem;
+  border: 1px solid rgb(var(--ink-06-rgb) / .42);
+  border-radius: .625rem;
+  background: rgb(255 255 255 / .45);
+}
+
+.dialTall {
+  align-self: flex-start;
+  height: calc(clamp(2.6rem, 6.5vh, 3.4rem) + .625rem);
+  min-height: 0;
+}
+
+/* Holý <input> (rezervace kurzu, kontakt, rychlý nákup): předvolba je vysoká
+   přesně jako pole vedle ní, ať je jeho výška jakákoli. */
+.row:not(.rowTall) {
+  align-items: stretch;
+
+  .dial {
+    align-self: stretch;
+  }
 }

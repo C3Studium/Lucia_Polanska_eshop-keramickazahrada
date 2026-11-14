@@ -1,25 +1,25 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
 /*
-  Zjednodušená připomínka zálohy v pravém souhrnu. Krémová karta jako brief
-  vedle ní — tmavý text na světlém podkladu, protože sloupec souhrnu je tmavý
-  a částky mají být čitelné jako u briefu. Viditelnost (jen široké rozvržení)
-  řídí obal `.paymentRecap` v `checkout-summary` — stejně jako u briefu.
+  Záloha zakázky jako poslední řádky souhrnu, hned pod „Celkem" (14. 11. 2026).
+  Dřív krémová karta pod souhrnem — visela osamoceně a četla se jako reklama,
+  ne jako část ceny. Teď barvy a rytmus řádků souhrnu (tmavý sloupec, krémový
+  text), oddělené jen tenkou čarou.
 */
 .root {
   display: flex;
   flex-direction: column;
-  gap: clamp(.625rem, 1.2vh, 1rem);
-  padding: clamp(1.1rem, 1.6vw, 1.6rem);
-  color: var(--ink-05);
-  background: var(--cream-06);
-  box-shadow: 1.25rem 1.5rem 3.5rem -2.5rem rgb(var(--black-01-rgb) / .85);
+  gap: clamp(.5rem, 1vh, .75rem);
+  margin-top: clamp(.875rem, 1.6vh, 1.25rem);
+  padding-top: clamp(.875rem, 1.6vh, 1.25rem);
+  border-top: 1px dashed rgb(var(--cream-06-rgb) / .28);
+  color: var(--cream-06);
 }
 
 .eyebrow {
   margin: 0;
-  color: var(--olive-19);
-  font-size: clamp(.7rem, calc(.95vw * var(--ui-scale)), .8rem);
+  color: rgb(var(--cream-06-rgb) / .62);
+  font-size: max(var(--text-min, 0px), calc(clamp(.7rem, calc(.95vw * var(--ui-scale)), .8rem) * var(--read, 1)));
   font-weight: 400;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -28,7 +28,7 @@
 .rows {
   display: flex;
   flex-direction: column;
-  gap: .5rem;
+  gap: .375rem;
 }
 
 .row {
@@ -39,22 +39,27 @@
 }
 
 .label {
-  color: rgb(var(--ink-05-rgb) / .7);
-  font: 400 clamp(.85rem, calc(.95vw * var(--ui-scale)), 1rem)/1.4 "Sansation-Light", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .82);
+  font: 400 max(var(--text-min, 0px), calc(clamp(.85rem, calc(.95vw * var(--ui-scale)), 1rem) * var(--read, 1))) / 1.4 "Sansation-Regular", sans-serif;
 }
 
+/* Zaplatíte teď je to, co člověk za chvíli uvidí v platební bráně — nese
+   nejvíc váhy z celého bloku, ale menší než „Celkem" nad ním. */
 .now {
-  font: 400 clamp(1.5rem, calc(2vw * var(--ui-scale)), 2rem)/1 "Sentient-Regular", serif;
-  letter-spacing: -.02em;
+  color: var(--cream-06);
+  font: 400 max(var(--text-min, 0px), calc(clamp(1.125rem, calc(1.4vw * var(--ui-scale)), 1.375rem) * var(--read, 1))) / 1 "Sentient-Regular", serif;
+  letter-spacing: -.01em;
+  font-variant-numeric: tabular-nums;
 }
 
 .later {
-  color: var(--ink-05);
-  font: 400 clamp(.95rem, calc(1.1vw * var(--ui-scale)), 1.15rem)/1 "Sansation-Light", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .82);
+  font: 400 max(var(--text-min, 0px), calc(clamp(.95rem, calc(1.1vw * var(--ui-scale)), 1.15rem) * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
+  font-variant-numeric: tabular-nums;
 }
 
 .note {
   margin: 0;
-  color: rgb(var(--ink-05-rgb) / .6);
-  font: 400 clamp(.75rem, calc(.9vw * var(--ui-scale)), .85rem)/1.5 "Sansation-Light", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .66);
+  font: 400 max(var(--text-min, 0px), calc(clamp(.75rem, calc(.9vw * var(--ui-scale)), .85rem) * var(--read, 1))) / 1.5 "Sansation-Regular", sans-serif;
 }

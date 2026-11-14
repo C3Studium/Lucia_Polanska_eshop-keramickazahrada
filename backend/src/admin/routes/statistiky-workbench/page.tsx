@@ -8,6 +8,7 @@ import { useUrlState } from "../../lib/url-state";
 import { SubTabs } from "../../components/work-tabs";
 import { ExpertToggle, RawData } from "../../lib/expert-mode";
 import { formatCzk, productionStageLabels } from "../../lib/workbench";
+import { vetaMesice } from "../../lib/veta-mesice";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
@@ -100,6 +101,15 @@ const Inner = () => {
       </header>
 
       <SubTabs tabs={tabs} active={active} onSelect={setActive} />
+
+      {/* Jedna věta nahoře (14. 11. 2026) — kdo nemá čas na grafy, má odpověď. */}
+      {active === "souhrn" && orders.data?.months && (
+        <div className="px-6 pt-5">
+          <Text size="large" weight="plus" className="text-ui-fg-base">
+            {vetaMesice(orders.data.months, formatCzk)}
+          </Text>
+        </div>
+      )}
 
       {/* ══ SOUHRN ══ */}
       {active === "souhrn" && (

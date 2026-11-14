@@ -11,6 +11,7 @@ import { useEditRerender } from "@lib/hooks/use-edit-rerender"
 import { itemValue } from "@lib/util/site-copy"
 import type { CopyBlock } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
+import Lightbox from "./lightbox"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -139,6 +140,8 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle, texts, selec
    */
   const trackRef = useRef<HTMLDivElement>(null)
   const [activeSlide, setActiveSlide] = useState(0)
+  /* Která fotka je otevřená přes celou obrazovku (index do galleryImages). */
+  const [zvetseno, setZvetseno] = useState<number | null>(null)
 
   const handleTrackScroll = () => {
     const track = trackRef.current
@@ -284,6 +287,12 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle, texts, selec
             viewport={frameViewportInset}
             transition={frameTransition}
           >
+            <button
+              type="button"
+              className="product__zoom"
+              onClick={() => setZvetseno(index)}
+              aria-label={`Zvětšit fotku ${index + 1}: ${image.productTitle}`}
+            >
             <motion.div
               className="product__mediaImage"
               initial={mediaInitial}
@@ -301,6 +310,10 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle, texts, selec
                 priority={index === 0}
               />
             </motion.div>
+              <span className="product__zoomHint" aria-hidden="true">
+                Kliknutím zvětšíte
+              </span>
+            </button>
             <figcaption>
               <span>
                 {String(displayIndex).padStart(2, "0")} · {image.productTitle}
@@ -387,6 +400,12 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle, texts, selec
             const caption = captions[image.viewIndex % captions.length]
             return (
               <figure key={`stack-${image.key}`} className="product__mediaFrame product__stackFrame">
+                <button
+                  type="button"
+                  className="product__zoom"
+                  onClick={() => setZvetseno(index + 1)}
+                  aria-label={`Zvětšit fotku ${index + 2}: ${image.productTitle}`}
+                >
                 <div className="product__mediaImage">
                   <Image
                     src={image.url}
@@ -397,6 +416,10 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle, texts, selec
                     className="product__mediaAsset"
                   />
                 </div>
+                  <span className="product__zoomHint" aria-hidden="true">
+                    Kliknutím zvětšíte
+                  </span>
+                </button>
                 <figcaption>
                   <span>{String(index + 2).padStart(2, "0")} · {image.productTitle}</span>
                   <span>{String(image.viewIndex + 1).padStart(2, "0")} · {caption[1]}</span>
@@ -406,6 +429,17 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle, texts, selec
           })}
         </div>
       )}
+
+      <Lightbox
+        fotky={galleryImages.map((image) => ({ url: image.url, alt: image.productTitle }))}
+        index={zvetseno}
+        onZavrit={() => setZvetseno(null)}
+        onPosun={(krok) =>
+          setZvetseno((ted) =>
+            ted === null ? ted : (ted + krok + galleryImages.length) % galleryImages.length
+          )
+        }
+      />
 
       <div className="product__galleryOutro">
         <span {...editableItem(texts, "galerie.veta")}>{outroLead}</span>

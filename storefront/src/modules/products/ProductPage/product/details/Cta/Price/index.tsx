@@ -15,6 +15,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import styles from "./style.module.scss"
 import { usePriceReference } from "./use-price-reference"
 import { useTexty } from "@lib/context/texty"
+import { packagingPriceCzkOf } from "@lib/util/packaging"
 
 /**
  * Cena na stránce výrobku.
@@ -46,17 +47,9 @@ const formatAmount = (amount: number, currencyCode: string) =>
     .replace(/czk/i, "")
     .trim()
 
-/**
- * Cena balení výrobku v Kč — totéž čtení jako `packagingPriceCzkOf`
- * v backendu (`lib/packaging.ts`), podle kterého server balné účtuje:
- * nevyplněná nebo nesmyslná = 0.
- */
-const packagingPriceCzk = (product: HttpTypes.StoreProduct): number => {
-  const raw = (product.metadata as Record<string, unknown> | null | undefined)?.packaging_price
-  if (raw === null || raw === undefined || raw === "") return 0
-  const parsed = typeof raw === "number" ? raw : Number(raw)
-  return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed * 100) / 100 : 0
-}
+/** Cena balení výrobku v Kč — viz `packagingPriceCzkOf`. */
+const packagingPriceCzk = (product: HttpTypes.StoreProduct): number =>
+  packagingPriceCzkOf(product as { metadata?: Record<string, unknown> | null })
 
 export default function ProductPrice({
   product,

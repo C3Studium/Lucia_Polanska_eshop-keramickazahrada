@@ -96,7 +96,7 @@
   gap: 1rem;
   padding-block: .85rem;
   border-block: 1px solid var(--line);
-  font: 600 .64rem/1.2 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(.64rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   animation: revealUp .72s cubic-bezier(.22, 1, .36, 1) both;
@@ -127,7 +127,7 @@
 .support > div > p {
   margin: 0 0 1.2rem;
   color: rgb(var(--ink-05-rgb) / .52);
-  font: 600 .64rem/1.2 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(.64rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -162,7 +162,7 @@
 .heroAside p {
   margin: 0 0 2.4rem;
   color: rgb(var(--ink-05-rgb) / .66);
-  font: 300 1.08rem/1.6 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(1.08rem * var(--read, 1))) / 1.6 "Sansation-Light", sans-serif;
 }
 
 .heroAside strong {
@@ -174,7 +174,7 @@
 /* Znění OP k objednávce — drobný řádek mezi potvrzením a referencí. */
 .heroAside .heroTerms {
   margin-top: -1.6rem;
-  font-size: .94rem;
+  font-size: max(var(--text-min, 0px), calc(.94rem * var(--read, 1)));
 }
 
 .heroAside .heroTerms a {
@@ -186,7 +186,7 @@
 
 .heroAside > span {
   color: rgb(var(--ink-05-rgb) / .46);
-  font: 600 .62rem/1 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(.62rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -232,21 +232,21 @@
 
 .statusRail article > span {
   color: rgb(var(--ink-05-rgb) / .42);
-  font: 600 .62rem/1 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(.62rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: .14em;
 }
 
 .statusRail strong {
   display: block;
   margin-bottom: .6rem;
-  font: 400 1.12rem/1.15 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(1.12rem * var(--read, 1))) / 1.15 "Sansation-Regular", sans-serif;
 }
 
 .statusRail p {
   max-width: 17rem;
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .58);
-  font: 300 .96rem/1.55 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(.96rem * var(--read, 1))) / 1.55 "Sansation-Light", sans-serif;
 }
 
 .statusRail .activeStep::after {
@@ -293,7 +293,7 @@
   display: block;
   margin-bottom: .7rem;
   color: rgb(var(--ink-05-rgb) / .46);
-  font: 600 .68rem/1.1 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(.68rem * var(--read, 1))) / 1.1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -302,7 +302,7 @@
   display: block;
   overflow: hidden;
   color: var(--ink);
-  font: 400 1.04rem/1.45 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(1.04rem * var(--read, 1))) / 1.45 "Sansation-Regular", sans-serif;
   text-overflow: ellipsis;
 }
 
@@ -320,7 +320,7 @@
 .selfServiceLead {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .62);
-  font: 400 clamp(.9rem, calc(1vw * var(--ui-scale)), 1.05rem)/1.4 "Sansation-Light", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(.9rem, calc(1vw * var(--ui-scale)), 1.05rem) * var(--read, 1))) / 1.4 "Sansation-Light", sans-serif;
 }
 
 .selfServiceActions {
@@ -338,7 +338,7 @@
   border-radius: 999px;
   background: var(--olive);
   color: var(--cream-06);
-  font: 400 clamp(.85rem, calc(.95vw * var(--ui-scale)), 1rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(.85rem, calc(.95vw * var(--ui-scale)), 1rem) * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: .01em;
   text-decoration: none;
   transition: background .2s ease, color .2s ease, border-color .2s ease;
@@ -367,7 +367,7 @@
   flex: 1 1 100%;
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .68);
-  font: 300 clamp(.85rem, calc(.95vw * var(--ui-scale)), .98rem)/1.5 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(clamp(.85rem, calc(.95vw * var(--ui-scale)), .98rem) * var(--read, 1))) / 1.5 "Sansation-Light", sans-serif;
 
   strong {
     color: var(--ink);
@@ -439,7 +439,7 @@
 .sectionHead > span {
   padding-bottom: .4rem;
   color: rgb(var(--ink-05-rgb) / .46);
-  font: 600 .64rem/1 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(.64rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -461,7 +461,7 @@
   align-self: start;
   padding-top: 1.6rem;
   color: rgb(var(--ink-05-rgb) / .38);
-  font: 600 .58rem/1 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(.58rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: .14em;
 }
 
@@ -488,7 +488,7 @@
 .itemCopy > p {
   margin: 0 0 .7rem;
   color: rgb(var(--ink-05-rgb) / .43);
-  font: 600 .58rem/1 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(.58rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -497,13 +497,13 @@
   margin: 0 0 .55rem;
   /* 0.8x puvodniho (1.6 / 2.3vw / 2.45): v seznamu objednavky je nazev
      popisek radku, ne nadpis. */
-  font: 400 calc(var(--account-zoom, 1) * clamp(1.28rem, calc(1.48vw * var(--ui-scale)), 1.95rem))/1.05 "Sentient-Regular", Georgia, serif;
+  font: 400 max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(1.28rem, calc(1.48vw * var(--ui-scale)), 1.95rem)) * var(--read, 1))) / 1.05 "Sentient-Regular", Georgia, serif;
   letter-spacing: -.035em;
 }
 
 .variant {
   color: rgb(var(--ink-05-rgb) / .58);
-  font: 300 .96rem/1.5 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(.96rem * var(--read, 1))) / 1.5 "Sansation-Light", sans-serif;
 }
 .variant :global(*) { color: inherit !important; }
 
@@ -516,7 +516,7 @@
 
 .itemQuantity strong,
 .itemTotal strong {
-  font: 400 1.02rem/1.4 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(1.02rem * var(--read, 1))) / 1.4 "Sansation-Regular", sans-serif;
 }
 
 /* Lepkavost přešla na `.rail` (celý pravý sloupec: souhrn + brief). Doklad
@@ -549,14 +549,14 @@
   padding-bottom: .9rem;
   border-bottom: 1px solid rgb(var(--cream-06-rgb) / .2);
   color: rgb(var(--cream-06-rgb) / .46);
-  font: 600 .58rem/1.2 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(.58rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .receiptEyebrow {
   color: rgb(var(--cream-06-rgb) / .42);
-  font: 600 .58rem/1 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(.58rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -586,7 +586,7 @@
 .totalRows > div {
   padding: .38rem 0;
   color: rgb(var(--cream-06-rgb) / .65);
-  font: 300 .98rem/1.45 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(.98rem * var(--read, 1))) / 1.45 "Sansation-Light", sans-serif;
 }
 
 .totalRows strong { color: var(--paper); font-weight: 400; }
@@ -594,14 +594,14 @@
 .grandTotal {
   padding: 1.4rem 0;
   border-bottom: 1px solid rgb(var(--cream-06-rgb) / .18);
-  font: 400 1.03rem/1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(1.03rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
 }
 
 .receiptStatus { padding-top: 1.4rem; }
 .receiptStatus span { margin: 0; color: rgb(var(--cream-06-rgb) / .42); }
 .receiptStatus strong {
   color: var(--sage-01);
-  font: 400 .78rem/1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(.78rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
 }
 
 /* Zakázka: záloha teď + co zbývá. „Zaplaceno teď" zvýrazněné, „Zbývá doplatit"
@@ -621,11 +621,11 @@
 }
 .depositSplit span {
   color: rgb(var(--cream-06-rgb) / .65);
-  font: 300 .98rem/1.4 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(.98rem * var(--read, 1))) / 1.4 "Sansation-Light", sans-serif;
 }
 .depositSplit strong {
   color: var(--paper);
-  font: 400 1.03rem/1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(1.03rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
 }
 .depositSplit > div:last-child span,
 .depositSplit > div:last-child strong {
@@ -643,7 +643,7 @@
   color: var(--ink);
   text-align: center;
   text-decoration: none;
-  font: 400 1rem/1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(1rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.01em;
   transition: background 0.2s ease;
 }
@@ -684,7 +684,7 @@
 .detailHeading > span {
   padding-top: .35rem;
   color: rgb(var(--ink-05-rgb) / .4);
-  font: 600 .62rem/1 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(.62rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: .16em;
 }
 
@@ -715,13 +715,13 @@
 .paymentGrid strong {
   display: block;
   overflow-wrap: anywhere;
-  font: 400 1.1rem/1.45 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(1.1rem * var(--read, 1))) / 1.45 "Sansation-Regular", sans-serif;
 }
 
 .detailGrid p {
   margin: .5rem 0 0;
   color: rgb(var(--ink-05-rgb) / .62);
-  font: 300 1.02rem/1.62 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(1.02rem * var(--read, 1))) / 1.62 "Sansation-Light", sans-serif;
 }
 
 .paymentGrid {
@@ -749,7 +749,7 @@
 .support > p {
   margin: 0;
   color: rgb(var(--cream-06-rgb) / .65);
-  font: 300 1.06rem/1.62 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(1.06rem * var(--read, 1))) / 1.62 "Sansation-Light", sans-serif;
 }
 
 .support > p a {
@@ -766,7 +766,7 @@
 
 .textAction {
   color: rgb(var(--cream-06-rgb) / .66);
-  font: 400 .9rem/1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(.9rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   text-decoration: underline;
   text-underline-offset: .28em;
   transition: color .25s ease;
@@ -862,7 +862,7 @@
   .itemIndex { display: none; }
   .thumbnail { width: 4.2rem; }
   .itemCopy { grid-column: 2 / -1; padding: .8rem 0 .8rem 1rem; }
-  .itemCopy h3 { font-size: clamp(1.15rem, 4.4vw, 1.35rem); }
+  .itemCopy h3 { font-size: max(var(--text-min, 0px), calc(clamp(1.15rem, 4.4vw, 1.35rem) * var(--read, 1))); }
   .itemQuantity,
   .itemTotal {
     padding: .9rem 0 .9rem 1rem;

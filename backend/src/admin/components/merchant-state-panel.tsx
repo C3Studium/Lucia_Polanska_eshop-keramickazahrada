@@ -9,6 +9,7 @@ import {
 } from "./merchant-order-queue";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba } from "../lib/ceska-chyba";
+import { useOdlozenaAkce } from "../lib/odlozena-akce";
 import { nextStepLabel, stageLabel } from "../lib/stage-words";
 
 type MerchantOrderDetailResponse = {
@@ -50,6 +51,8 @@ export const MerchantStatePanel = ({ order }: { order: AdminOrder }) => {
         ceskaChyba(error, "Stav se nepodařilo změnit")
       ),
   });
+  /* Stejně jako na řádcích Přehledu: 5 s na „Vrátit", než odejde e-mail. */
+  const { odlozit, ceka } = useOdlozenaAkce();
 
   if (stateQuery.isLoading) {
     return (
@@ -95,7 +98,13 @@ export const MerchantStatePanel = ({ order }: { order: AdminOrder }) => {
             variant="primary"
             size="small"
             isLoading={transition.isPending}
-            onClick={() => transition.mutate(target)}
+            disabled={ceka}
+            onClick={() =>
+              odlozit(
+                `${nextStepLabel(merchantOrder.stage, merchantOrder.is_personal_pickup)} — #${order.display_id ?? ""}`,
+                () => transition.mutate(target)
+              )
+            }
           >
             {nextStepLabel(merchantOrder.stage, merchantOrder.is_personal_pickup)}
           </Button>

@@ -12,6 +12,7 @@ import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
 import styles from "./style.module.scss"
 import { useTexty } from "@lib/context/texty"
 import { countryNameCs } from "@lib/util/country-name-cs"
+import { usePscMesto } from "@lib/hooks/use-psc-mesto"
 
 /*
  * Nájezdová geometrie v jednotce toho, proti čemu se pohybuje.
@@ -184,6 +185,19 @@ const ShippingAddress = ({
     })
   }
 
+  /* PSČ doplní město (14. 11. 2026): jedna obec → rovnou, víc → nabídka
+     u pole Město. Prázdné město jen doplní, napsané nikdy nepřepíše. */
+  const obcePodlePsc = usePscMesto(
+    formData["shipping_address.postal_code"],
+    formData["shipping_address.country_code"],
+    (mesto) =>
+      setFormData((pred: Record<string, any>) =>
+        pred["shipping_address.city"]
+          ? pred
+          : { ...pred, "shipping_address.city": mesto }
+      )
+  )
+
   return (
     <div className={styles.root}>
       {customer && (addressesInRegion?.length || 0) > 0 && (
@@ -284,7 +298,15 @@ const ShippingAddress = ({
           data-testid="shipping-city-input"
           className={styles.input}
           variant="contact"
+          list={obcePodlePsc.length > 1 ? "obce-podle-psc-dodaci" : undefined}
         />
+        {obcePodlePsc.length > 1 && (
+          <datalist id="obce-podle-psc-dodaci">
+            {obcePodlePsc.map((obec) => (
+              <option key={obec} value={obec} />
+            ))}
+          </datalist>
+        )}
         <div className={styles.countryField}>
           <span className={styles.countryLabel}>Země doručení</span>
           <strong>{countryNameCs(routeCountry, cart?.region?.countries?.find((country) => country.iso_2 === routeCountry)?.display_name)}</strong>

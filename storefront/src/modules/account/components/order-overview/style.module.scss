@@ -55,7 +55,7 @@
 .desc {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .62);
-  font: calc(var(--account-zoom, 1) * clamp(0.875rem, calc(0.76vw * var(--ui-scale)), 1.0625rem)) / 1.55 "Sansation-Light", sans-serif;
+  font: max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(0.875rem, calc(0.76vw * var(--ui-scale)), 1.0625rem)) * var(--read, 1))) / 1.55 "Sansation-Light", sans-serif;
 }
 
 .emptyAction {

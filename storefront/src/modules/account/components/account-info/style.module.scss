@@ -42,7 +42,7 @@
        tentyz label. Podlaha .75rem je 12px, kterou kontroluje rig; nad 1921 ji
        ramp zvedne sam na ~16px. */
     font-family: "Sansation-Regular", sans-serif;
-    font-size: max(10px, calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.496vw * var(--ui-scale)), .9rem)));
+    font-size: max(var(--text-min, 10px), calc(calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.496vw * var(--ui-scale)), .9rem)) * var(--read, 1)));
     line-height: 1.2;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -57,8 +57,7 @@
     display: block;
     overflow-wrap: anywhere;
     color: var(--ink-05);
-    font: 400 calc(var(--account-zoom, 1) * clamp(1.12rem, calc(1vw * var(--ui-scale)), 1.36rem)) / 1.4 "Sansation-Light",
-      sans-serif;
+    font: 400 max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(1.12rem, calc(1vw * var(--ui-scale)), 1.36rem)) * var(--read, 1))) / 1.4 "Sansation-Light", sans-serif;
   }
 
   .editAction {
@@ -87,7 +86,7 @@
     /* 2px zustava v px - fyzicky akcentovy prouzek, ne mira layoutu. */
     border-left: 2px solid var(--olive-19);
     background: rgb(var(--olive-19-rgb) / .09);
-    font-size: calc(var(--account-zoom, 1) * clamp(.85rem, calc(0.624vw * var(--ui-scale)), 1rem));
+    font-size: max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(.85rem, calc(0.624vw * var(--ui-scale)), 1rem)) * var(--read, 1)));
   }
 
   .errorPanel p {

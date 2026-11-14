@@ -105,7 +105,7 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
   align-self: start;
   padding-top: 0.125rem;
   color: rgb(var(--ink-05-rgb) / .66);
-  font-size: clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem) * var(--read, 1)));
   letter-spacing: 0.12em;
   transition: color 0.28s ease 0.16s;
 }
@@ -118,7 +118,7 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
 }
 
 .groupCopy strong {
-  font-size: clamp(1rem, calc(1.333vw * var(--ui-scale)), 1.167rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(1rem, calc(1.333vw * var(--ui-scale)), 1.167rem) * var(--read, 1)));
   font-weight: 400;
   line-height: 1.15;
 }
@@ -126,7 +126,7 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
 .groupCopy small {
   color: rgb(var(--ink-05-rgb) / .68);
   font-family: "Sansation-Light", sans-serif;
-  font-size: clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem) * var(--read, 1)));
   line-height: 1.32;
   transition: color 0.28s ease 0.16s;
 }
@@ -175,7 +175,7 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
 .logoStack span span,
 .selectedLogo > span,
 .methodLogo > span {
-  font-size: clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem) * var(--read, 1)));
 }
 
 .groupArrow {
@@ -185,7 +185,7 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
   place-items: center;
   border: 1px solid currentColor;
   border-radius: 50%;
-  font-size: clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem) * var(--read, 1)));
 }
 
 .group:focus-visible,
@@ -198,7 +198,7 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
   margin-top: 0.125rem;
   color: inherit;
   font-family: "Sansation-Regular", sans-serif;
-  font-size: clamp(0.6875rem, calc(0.9vw * var(--ui-scale)), 0.8125rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(0.6875rem, calc(0.9vw * var(--ui-scale)), 0.8125rem) * var(--read, 1)));
   font-style: normal;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -225,7 +225,7 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
 .pickerHeader span,
 .search > span {
   color: rgb(var(--ink-05-rgb) / .68);
-  font-size: 0.75rem;
+  font-size: max(var(--text-min, 0px), calc(0.75rem * var(--read, 1)));
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -233,7 +233,7 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
 
 .pickerHeader small {
   color: rgb(var(--ink-05-rgb) / .66);
-  font-size: clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem) * var(--read, 1)));
 }
 
 .search {
@@ -255,7 +255,7 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
   color: var(--ink-05);
   background: transparent;
   font-family: "Sansation-Regular", sans-serif;
-  font-size: clamp(1rem, calc(1.333vw * var(--ui-scale)), 1.167rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(1rem, calc(1.333vw * var(--ui-scale)), 1.167rem) * var(--read, 1)));
   font-weight: 400;
   line-height: 1;
 }
@@ -328,7 +328,7 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
   color: var(--ink-05);
   background: transparent;
   font-family: "Sansation-Regular", sans-serif;
-  font-size: clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem) * var(--read, 1)));
   font-weight: 400;
   line-height: 1.25;
   text-align: left;
@@ -417,14 +417,14 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
 }
 
 .otherBank strong {
-  font-size: clamp(0.8125rem, calc(1.083vw * var(--ui-scale)), 0.948rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(0.8125rem, calc(1.083vw * var(--ui-scale)), 0.948rem) * var(--read, 1)));
   font-weight: 400;
 }
 
 .otherBank small {
   color: rgb(var(--ink-05-rgb) / .68);
   font-family: "Sansation-Light", sans-serif;
-  font-size: clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem) * var(--read, 1)));
   font-weight: 400;
   line-height: 1.3;
 }
@@ -433,7 +433,7 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
   margin: clamp(0.5rem, 1.15vh, 0.75rem) 0 0;
   color: rgb(var(--ink-05-rgb) / .68);
   font-family: "Sansation-Regular", sans-serif;
-  font-size: clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem) * var(--read, 1)));
   font-weight: 400;
   line-height: 1.4;
 }
@@ -468,7 +468,7 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
 /* Věta pod potvrzovacím tlačítkem — kolik a jak se platí, nebo proč je zamčené. */
 .confirmHint {
   color: rgb(var(--ink-05-rgb) / .72);
-  font: 400 clamp(.85rem, calc(1.05vw * var(--ui-scale)), .95rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(.85rem, calc(1.05vw * var(--ui-scale)), .95rem) * var(--read, 1))) / 1.5 "Sansation-Regular", sans-serif;
 }
 
 .confirmHint p {
@@ -531,7 +531,7 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
 
 .selectedCopy small {
   color: rgb(var(--ink-05-rgb) / .66);
-  font-size: 0.75rem;
+  font-size: max(var(--text-min, 0px), calc(0.75rem * var(--read, 1)));
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -539,7 +539,7 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
 
 .selectedCopy strong {
   overflow: hidden;
-  font-size: clamp(1rem, calc(1.333vw * var(--ui-scale)), 1.167rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(1rem, calc(1.333vw * var(--ui-scale)), 1.167rem) * var(--read, 1)));
   font-weight: 400;
   line-height: 1.1;
   text-overflow: ellipsis;
@@ -550,7 +550,7 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
   overflow: hidden;
   color: rgb(var(--ink-05-rgb) / .68);
   font-family: "Sansation-Light", sans-serif;
-  font-size: clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem) * var(--read, 1)));
   line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -568,7 +568,7 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
   color: var(--ink-05);
   background: transparent;
   font-family: "Sansation-Regular", sans-serif;
-  font-size: clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem) * var(--read, 1)));
   font-weight: 400;
   line-height: 1;
   cursor: pointer;
@@ -824,7 +824,7 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
 .confirmChosen {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .7);
-  font: 400 .875rem/1.3 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(.875rem * var(--read, 1))) / 1.3 "Sansation-Regular", sans-serif;
 
   strong { color: var(--ink-05); font-weight: 600; }
 }

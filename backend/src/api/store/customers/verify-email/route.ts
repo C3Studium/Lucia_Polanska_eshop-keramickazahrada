@@ -2,6 +2,7 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { Modules } from "@medusajs/framework/utils"
 import { sendCustomerEmail } from "../../../../lib/customer-email"
 import { customerLocaleOf } from "../../../../lib/customer-locale"
+import { pripojitObjednavkyHosta } from "../../../../lib/pripojit-objednavky-hosta"
 
 /**
  * Confirms an e-mail verification token.
@@ -78,6 +79,22 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
 
+  // E-mail je prokázaný → dřívější nákupy bez účtu se stejnou adresou patří
+  // k tomuhle účtu a prázdný profil se doplní z poslední objednávky
+  // (lib/pripojit-objednavky-hosta.ts, 14. 11. 2026). Nesmí shodit ověření.
+  let pripojeno = 0
+  try {
+    ;({ pripojeno } = await pripojitObjednavkyHosta(customer.id, customer.email, {
+      customers: customerModuleService as never,
+      orders: req.scope.resolve(Modules.ORDER) as never,
+    }))
+    if (pripojeno) {
+      console.info(`[VERIFY EMAIL] K účtu připojeno ${pripojeno} dřívějších objednávek.`)
+    }
+  } catch (err) {
+    console.error("[VERIFY EMAIL] Objednávky hosta se nepodařilo připojit:", err)
+  }
+
   // The welcome mail belongs to the moment the address is proven, not to
   // account creation — creation already sends the verification mail, and two
   // mails in one minute read like a system with a stutter. Keyed per customer,
@@ -105,7 +122,16 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
 
   res.status(200).json({
     ok: true,
-    message: "E-mail je ověřený.",
+    message: pripojeno
+      ? `E-mail je ověřený. K účtu jsme připojili ${
+          pripojeno === 1
+            ? "vaši dřívější objednávku"
+            : pripojeno <= 4
+              ? `${pripojeno} dřívější objednávky`
+              : `${pripojeno} dřívějších objednávek`
+        }.`
+      : "E-mail je ověřený.",
+    pripojeno,
     customer: updatedCustomer,
   })
 }

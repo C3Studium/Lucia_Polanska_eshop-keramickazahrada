@@ -67,7 +67,7 @@
 .index,
 .account span {
   color: rgb(var(--black-03-rgb) / .56);
-  font: max(10px, calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.8vw * var(--ui-scale)), 0.875rem)))/1.2 "Sansation-Regular", sans-serif;
+  font: max(var(--text-min, 10px), calc(calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.8vw * var(--ui-scale)), 0.875rem)) * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -128,7 +128,7 @@
   max-width: 31.25rem;
   margin: 0;
   color: rgb(var(--black-03-rgb) / .74);
-  font-size: calc(var(--account-zoom, 1) * clamp(1rem, calc(1vw * var(--ui-scale)), 1.125rem));
+  font-size: max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(1rem, calc(1vw * var(--ui-scale)), 1.125rem)) * var(--read, 1)));
   line-height: 1.55;
 }
 
@@ -143,14 +143,14 @@
 
 .account strong {
   overflow-wrap: anywhere;
-  font: 400 calc(var(--account-zoom, 1) * clamp(1rem, calc(1.12vw * var(--ui-scale)), 1.19rem)) / 1.35 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(1rem, calc(1.12vw * var(--ui-scale)), 1.19rem)) * var(--read, 1))) / 1.35 "Sansation-Regular", sans-serif;
 }
 
 .error {
   margin: 1.125rem 0 0;
   overflow: hidden;
   color: var(--clay-06);
-  font-size: .9375rem;
+  font-size: max(var(--text-min, 0px), calc(.9375rem * var(--read, 1)));
   line-height: 1.45;
 }
 
@@ -181,7 +181,7 @@
 .note {
   margin: 1rem 0 0;
   color: rgb(var(--black-03-rgb) / .54);
-  font-size: .8125rem;
+  font-size: max(var(--text-min, 0px), calc(.8125rem * var(--read, 1)));
   line-height: 1.45;
 }
 
@@ -208,7 +208,7 @@
   }
 
   .description {
-    font-size: calc(16px * var(--ui-scale));
+    font-size: max(var(--text-min, 0px), calc(calc(16px * var(--ui-scale)) * var(--read, 1)));
   }
 
   .actions {

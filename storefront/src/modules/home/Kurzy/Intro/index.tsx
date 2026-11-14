@@ -78,7 +78,8 @@ const audienceBlocks = [
     eyebrow: "Jednotlivci · Dvojice · Malé skupiny",
     title: "Pro zájemce",
     accent: "o kurz.",
-    text: "Vypsané termíny s cenami a volnými místy najdete níže — místo si rezervujete rovnou.",
+    /* Seznam termínů pod kartami je od 13. 11. pryč — tlačítko otevírá okno s kalendářem (14. 11. 2026). */
+    text: "Tlačítkem otevřete kalendář s termíny, cenami a volnými místy — místo si rezervujete rovnou.",
     action: "reserve" as const,
     cta: "Vybrat termín",
   },

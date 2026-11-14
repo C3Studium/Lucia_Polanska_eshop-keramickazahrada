@@ -83,7 +83,7 @@ $star: clamp(0.94rem, 1.12vw, 1.05rem);
   color: rgb(var(--ink-05-rgb) / .62);
   // 1vw byl živý až od 1500 do 1800, takže na celém pásmu notebooků stál na podlaze
   // 15px vedle h1, které rostlo dál. 1.15vw je živý 1308–1572.
-  font: calc(var(--account-zoom, 1) * clamp(0.94rem, calc(0.92vw * var(--ui-scale)), 1.13rem)) / 1.55 "Sansation-Light", sans-serif;
+  font: max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(0.94rem, calc(0.92vw * var(--ui-scale)), 1.13rem)) * var(--read, 1))) / 1.55 "Sansation-Light", sans-serif;
 }
 
 .accountReviewsBody {
@@ -118,7 +118,7 @@ $star: clamp(0.94rem, 1.12vw, 1.05rem);
 .accountPreviewNotice p {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .65);
-  font-size: calc(var(--account-zoom, 1) * clamp(0.875rem, calc(0.934vw * var(--ui-scale)), 1.021rem));
+  font-size: max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(0.875rem, calc(0.934vw * var(--ui-scale)), 1.021rem)) * var(--read, 1)));
 }
 
 .accountReviewsList {
@@ -238,7 +238,7 @@ $star: clamp(0.94rem, 1.12vw, 1.05rem);
   margin: 0;
   overflow: hidden;
   color: rgb(var(--ink-05-rgb) / .62);
-  font: calc(var(--account-zoom, 1) * clamp(0.875rem, calc(0.88vw * var(--ui-scale)), 1rem)) / 1.55 "Sansation-Light", sans-serif;
+  font: max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(0.875rem, calc(0.88vw * var(--ui-scale)), 1rem)) * var(--read, 1))) / 1.55 "Sansation-Light", sans-serif;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
@@ -254,7 +254,7 @@ $star: clamp(0.94rem, 1.12vw, 1.05rem);
 
 .accountReviewFooter time {
   color: rgb(var(--ink-05-rgb) / .52);
-  font-size: calc(var(--account-zoom, 1) * clamp(0.81rem, calc(0.784vw * var(--ui-scale)), 0.9rem));
+  font-size: max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(0.81rem, calc(0.784vw * var(--ui-scale)), 0.9rem)) * var(--read, 1)));
 }
 
 .accountReviewStars {
@@ -322,7 +322,7 @@ $star: clamp(0.94rem, 1.12vw, 1.05rem);
   place-items: center;
   border: 1px solid var(--ink-05);
   border-radius: 50%;
-  font-size: calc(var(--account-zoom, 1) * clamp(0.95rem, calc(1vw * var(--ui-scale)), 1.15rem));
+  font-size: max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(0.95rem, calc(1vw * var(--ui-scale)), 1.15rem)) * var(--read, 1)));
   font-style: normal;
 }
 
@@ -358,7 +358,7 @@ $star: clamp(0.94rem, 1.12vw, 1.05rem);
 }
 
 .accountReviewsAction {
-  font-size: 0.9rem;
+  font-size: max(var(--text-min, 0px), calc(0.9rem * var(--read, 1)));
   --premium-link-ink: var(--ink-05);
   --premium-link-active-ink: var(--cream-06);
   --premium-link-border: var(--ink-05);

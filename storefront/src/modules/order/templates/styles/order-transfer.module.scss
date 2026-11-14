@@ -46,7 +46,7 @@
   gap: 1rem;
   padding-block: .85rem;
   border-block: 1px solid var(--line);
-  font: 600 .64rem/1.2 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(.64rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   animation: transferReveal .72s cubic-bezier(.22, 1, .36, 1) both;
@@ -77,7 +77,7 @@
 .result > div > p {
   margin: 0 0 1.25rem;
   color: rgb(var(--ink-05-rgb) / .52);
-  font: 600 .64rem/1.2 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(.64rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -104,7 +104,7 @@
   max-width: 34rem;
   margin: clamp(2rem, 5vh, 3.5rem) 0 0;
   color: rgb(var(--ink-05-rgb) / .64);
-  font: 300 1.08rem/1.65 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(1.08rem * var(--read, 1))) / 1.65 "Sansation-Light", sans-serif;
 }
 
 .mark {
@@ -139,7 +139,7 @@
   border-radius: 50%;
   color: var(--paper);
   background: var(--olive);
-  font: 400 calc(var(--account-zoom, 1) * clamp(1rem, calc(1.44vw * var(--ui-scale)), 1.5rem))/1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(1rem, calc(1.44vw * var(--ui-scale)), 1.5rem)) * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   box-shadow: 0 0 0 12px color-mix(in srgb, var(--olive) 12%, transparent);
 }
 
@@ -175,7 +175,7 @@
   display: block;
   margin-bottom: .75rem;
   color: rgb(var(--ink-05-rgb) / .44);
-  font: 600 .68rem/1.1 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(.68rem * var(--read, 1))) / 1.1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -183,7 +183,7 @@
 .facts strong {
   display: block;
   overflow: hidden;
-  font: 400 1.04rem/1.45 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(1.04rem * var(--read, 1))) / 1.45 "Sansation-Regular", sans-serif;
   text-overflow: ellipsis;
 }
 
@@ -214,7 +214,7 @@
   max-width: 25rem;
   margin-top: 2rem;
   color: rgb(var(--ink-05-rgb) / .58);
-  font: 300 1rem/1.62 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(1rem * var(--read, 1))) / 1.62 "Sansation-Light", sans-serif;
 }
 
 .changeList {
@@ -248,21 +248,21 @@
 
 .changeList article > span {
   color: rgb(var(--ink-05-rgb) / .4);
-  font: 600 .6rem/1 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(.6rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: .15em;
 }
 
 .changeList strong {
   display: block;
   margin-bottom: .75rem;
-  font: 400 1.14rem/1.2 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(1.14rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
 }
 
 .changeList p {
   max-width: 27rem;
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .58);
-  font: 300 1rem/1.62 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(1rem * var(--read, 1))) / 1.62 "Sansation-Light", sans-serif;
 }
 
 .actionPanel {
@@ -287,7 +287,7 @@
   grid-column: 2;
   margin: 0;
   color: rgb(var(--cream-06-rgb) / .45);
-  font: 300 .9rem/1.6 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(.9rem * var(--read, 1))) / 1.6 "Sansation-Light", sans-serif;
 }
 
 .result {
@@ -309,7 +309,7 @@
   align-self: end;
   margin: 0;
   color: rgb(var(--cream-06-rgb) / .64);
-  font: 300 1rem/1.6 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(1rem * var(--read, 1))) / 1.6 "Sansation-Light", sans-serif;
 }
 
 .errorDetail {
@@ -317,7 +317,7 @@
   padding-top: 1rem;
   border-top: 1px solid rgb(var(--cream-06-rgb) / .18);
   color: rgb(var(--cream-06-rgb) / .48) !important;
-  font-size: 0.8125rem !important;
+  font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1))) !important;
 }
 
 .resultActions {
@@ -338,7 +338,7 @@
   border: 1px solid rgb(var(--cream-06-rgb) / .6);
   border-radius: 999px;
   color: var(--paper);
-  font: 400 .82rem/1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(.82rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   transition: color .18s ease .3s, background-color .72s cubic-bezier(.76, 0, .24, 1);
 }
 

@@ -198,19 +198,70 @@ export default function ProductionPaymentModeChoice({
       <header className={styles.header}>
         <p className={styles.eyebrow}>Zakázková výroba</p>
         <h3 className={styles.heading} id={`${sliderId}-label`}>
-          Kolik chcete zaplatit hned?
+          Kolik chcete zaplatit teď?
         </h3>
         <p className={styles.lede}>
-          Nejméně {money(zaZakazku(bounds.minimum))} — z toho nakoupím materiál a pustím se
-          do práce. Víc je jen na vás.
+          Zakázku můžete zaplatit zálohou, nebo rovnou celou.
         </p>
       </header>
 
       {saveError && (
         <p className={styles.exactHint} role="alert" style={saveErrorStyle}>
-          Částku se nepodařilo uložit — zkuste posunout znovu.
+          Částku se nepodařilo uložit — zkuste to prosím znovu.
         </p>
       )}
+
+      {/*
+        Dvě velké volby (14. 11. 2026, Matěj: „zjednodušit platbu zakázky").
+        Dřív posuvník, tři předvolby a pole pro částku — čtyři způsoby, jak
+        nastavit jedno číslo. Teď záloha, nebo všechno, a u každé věta, co to
+        znamená. Libovolná částka zůstává pod „Chci zaplatit jinou částku".
+      */}
+      <div className={styles.choices} role="radiogroup" aria-labelledby={`${sliderId}-label`}>
+        <button
+          type="button"
+          role="radio"
+          aria-checked={atFloor}
+          className={atFloor ? styles.choiceActive : styles.choice}
+          onClick={() => jump(bounds.minimum)}
+          disabled={isPending}
+          data-testid="production-preset-deposit"
+        >
+          <span className={styles.choiceTitle}>
+            Zaplatit zálohu <strong>{money(zaZakazku(bounds.minimum))}</strong>
+          </span>
+          <span className={styles.choiceNote}>
+            Zbytek {money(Math.max(0, state.full_amount - bounds.minimum))} doplatíte, až
+            bude zakázka hotová.
+          </span>
+        </button>
+        {state.can_pay_full && span > 0 && (
+          <button
+            type="button"
+            role="radio"
+            aria-checked={atCeiling}
+            className={atCeiling ? styles.choiceActive : styles.choice}
+            onClick={() => jump(bounds.maximum)}
+            disabled={isPending}
+            data-testid="production-preset-full"
+          >
+            <span className={styles.choiceTitle}>
+              Zaplatit celou částku <strong>{money(zaZakazku(bounds.maximum))}</strong>
+            </span>
+            <span className={styles.choiceNote}>Pak už nic nedoplácíte.</span>
+          </button>
+        )}
+      </div>
+
+      {alwaysNow > 0 && (
+        <p className={styles.nowTotal}>
+          S balným a ostatním zbožím teď zaplatíte {money(draft)}.
+        </p>
+      )}
+
+      {span > 0 && (
+      <details className={styles.other} open={!atFloor && !atCeiling}>
+        <summary>Chci zaplatit jinou částku</summary>
 
       <output className={styles.amount} htmlFor={sliderId}>
         <strong data-testid="production-payment-amount">
@@ -223,11 +274,6 @@ export default function ProductionPaymentModeChoice({
         </span>
         {/* Částky výš jsou jen za zakázku; balné a běžné zboží jdou k úhradě
             hned. Bez téhle věty souhrn říkal 1 125 a panel 1 075 (13. 11. 2026). */}
-        {alwaysNow > 0 && (
-          <span className={styles.nowTotal}>
-            S balným a ostatním zbožím teď zaplatíte {money(draft)}.
-          </span>
-        )}
       </output>
 
       <input
@@ -255,45 +301,8 @@ export default function ProductionPaymentModeChoice({
         <span>{money(zaZakazku(bounds.maximum))}</span>
       </div>
 
-      {/* Předvolby + ruční částka na JEDNÉ řadě (dřív tři bloky pod sebou).
-          Rozsah ukazuje škála nad tím, takže popisek i nápověda jsou pryč. */}
+      {/* Ruční částka (předvolby záloha/vše jsou nahoře jako velké volby). */}
       <div className={styles.controls}>
-        <div className={styles.presets}>
-          <button
-            type="button"
-            className={atFloor ? styles.presetActive : styles.preset}
-            onClick={() => jump(bounds.minimum)}
-            disabled={isPending}
-            data-testid="production-preset-deposit"
-          >
-            Jen zálohu
-          </button>
-          {span > 0 && (
-            <button
-              type="button"
-              className={styles.preset}
-              onClick={() =>
-                jump(Math.round((bounds.minimum + bounds.maximum) / 2))
-              }
-              disabled={isPending}
-              data-testid="production-preset-half"
-            >
-              Půlku
-            </button>
-          )}
-          {state.can_pay_full && (
-            <button
-              type="button"
-              className={atCeiling ? styles.presetActive : styles.preset}
-              onClick={() => jump(bounds.maximum)}
-              disabled={isPending}
-              data-testid="production-preset-full"
-            >
-              Celou částku
-            </button>
-          )}
-        </div>
-
         <div className={styles.exactField}>
           <span className={styles.exactPrefix} aria-hidden="true">
             nebo
@@ -323,6 +332,8 @@ export default function ProductionPaymentModeChoice({
           </span>
         </div>
       </div>
+      </details>
+      )}
     </section>
   )
 }

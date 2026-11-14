@@ -54,14 +54,14 @@
 
     small {
       color: rgb(var(--ink-05-rgb) / .58);
-      font-size: max(10px, 0.6875rem);
+      font-size: max(var(--text-min, 10px), calc(0.6875rem * var(--read, 1)));
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
 
     strong {
       font-family: "Sentient-Regular", serif;
-      font-size: 1.375rem;
+      font-size: max(var(--text-min, 0px), calc(1.375rem * var(--read, 1)));
       font-weight: 400;
       font-variant-numeric: tabular-nums;
       line-height: 1;
@@ -77,7 +77,7 @@
     border-radius: 999px;
     background: var(--ink-05);
     color: var(--cream-07);
-    font-size: 0.9375rem;
+    font-size: max(var(--text-min, 0px), calc(0.9375rem * var(--read, 1)));
     letter-spacing: 0.01em;
     text-decoration: none;
     white-space: nowrap;
@@ -98,7 +98,7 @@
     border: 1px dashed var(--clay-41);
     border-radius: 999px;
     color: var(--clay-41);
-    font-size: 0.9375rem;
+    font-size: max(var(--text-min, 0px), calc(0.9375rem * var(--read, 1)));
     letter-spacing: 0.01em;
     text-decoration: none;
     white-space: nowrap;
@@ -172,7 +172,7 @@
     border-bottom: 1px solid rgb(var(--ink-05-rgb) / .18);
     color: rgb(var(--ink-05-rgb) / .62);
     /* 1rem, ne 0.875: řádky souhrnu jsou to hlavní, co se v pruhu čte. */
-    font-size: 1rem;
+    font-size: max(var(--text-min, 0px), calc(1rem * var(--read, 1)));
     line-height: 1.35;
   }
 
@@ -213,7 +213,7 @@
     display: block;
     margin-bottom: 0.15rem;
     color: rgb(var(--ink-05-rgb) / .45);
-    font-size: 0.6875rem;
+    font-size: max(var(--text-min, 0px), calc(0.6875rem * var(--read, 1)));
     letter-spacing: 0.14em;
     text-transform: uppercase;
   }

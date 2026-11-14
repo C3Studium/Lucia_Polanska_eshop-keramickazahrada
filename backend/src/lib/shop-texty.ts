@@ -113,6 +113,7 @@ export const SHOP_TEXT_KEYS = [
   "pokladna.doprava_balikovna_vyber",
   "pokladna.doprava_vydejni_vyber",
   "pokladna.doprava_zmena",
+  "pokladna.odber_info",
   "pokladna.platba_balikovna_karta",
   "zakazka.brief_uvod",
   "zakazka.brief_kosik",
@@ -957,6 +958,14 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     group: "Doručení",
     multiline: false,
     maxLength: 200,
+  },
+  "pokladna.odber_info": {
+    label: "Osobní odběr — kdy a jak",
+    help:
+      "Věta pod volbou „Osobní odběr v ateliéru\". Sem patří otevírací doba nebo jak se domluvit (14. 11. 2026). Vedle ní je odkaz na mapu s adresou ateliéru.",
+    group: "Doručení",
+    multiline: true,
+    maxLength: 300,
   },
   "pokladna.platba_balikovna_karta": {
     label: "Na Balíkovnu jen kartou",
@@ -2170,6 +2179,8 @@ export const SHOP_TEXT_DEFAULTS: Readonly<ShopTextValues> = Object.freeze({
     "Vyberte prosím výdejní místo v mapě.",
   "pokladna.doprava_zmena":
     "Dopravu můžete změnit, dokud objednávku nepotvrdíte.",
+  "pokladna.odber_info":
+    "Až bude objednávka připravená, pošleme vám e-mail a domluvíme se, kdy si pro ni přijdete.",
   "pokladna.platba_balikovna_karta":
     "Na výdejní místo Balíkovny posíláme jen s platbou předem kartou — zásilku si pak jen vyzvednete. Dobírku nabízíme při doručení na adresu.",
   "zakazka.brief_uvod":

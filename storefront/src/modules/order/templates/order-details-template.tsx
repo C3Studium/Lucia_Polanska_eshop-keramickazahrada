@@ -129,6 +129,22 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
             <h2>Co jste objednali</h2>
             <Items order={order} />
           </section>
+
+          {/* Zakázky (audit § 0, Z-A): pro každou zakázku panel (stav podle
+              e-mailu o zahájení výroby, smluvní záloha, PDF potvrzení, „Zrušit
+              zakázku" Z4/Z5), její doplatek a konverzace s ateliérem; u víc
+              zakázek souhrn nahoře. Jen u zakázky.
+              14. 11. 2026: přesunuto z tmavého bočního sloupce sem — panely
+              jsou kreslené pro světlý podklad a v tmavém sloupci byl jejich
+              text skoro nečitelný (tmavý na tmavém). */}
+          <CommissionList
+            orderId={order.id}
+            balance={commissionBalance}
+            cancellation={commissionCancellation}
+            token={selfServiceToken}
+            notes={commissionNotes}
+            notesById={commissionNotesById}
+          />
         </div>
 
         <aside className={s.accountOrderDetailsAside}>
@@ -157,18 +173,6 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
               </LocalizedClientLink>
             </div>
           )}
-          {/* Zakázky (audit § 0, Z-A): pro každou zakázku panel (stav podle
-              e-mailu o zahájení výroby, smluvní záloha, PDF potvrzení, „Zrušit
-              zakázku" Z4/Z5), její doplatek a konverzace s ateliérem; u víc
-              zakázek souhrn nahoře. Jen u zakázky. */}
-          <CommissionList
-            orderId={order.id}
-            balance={commissionBalance}
-            cancellation={commissionCancellation}
-            token={selfServiceToken}
-            notes={commissionNotes}
-            notesById={commissionNotesById}
-          />
         </aside>
       </AccountSectionReveal>
 
@@ -192,13 +196,29 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
                 token={selfServiceToken}
                 claims={claims}
               />
-              <RefundRequest
-                orderId={order.id}
-                token={selfServiceToken}
-                claims={claims}
-                currencyCode={order.currency_code}
-                withdrawalElsewhere
-              />
+              {/* Formulář reklamace je dlouhý a u objednávky, kde je všechno
+                  v pořádku, jen straší (14. 11. 2026). Bez běžící žádosti je
+                  sbalený pod jedno tlačítko; běžící žádost se ukazuje hned. */}
+              {claims.requests.length > 0 ? (
+                <RefundRequest
+                  orderId={order.id}
+                  token={selfServiceToken}
+                  claims={claims}
+                  currencyCode={order.currency_code}
+                  withdrawalElsewhere
+                />
+              ) : (
+                <details className={s.accountOrderClaimsToggle}>
+                  <summary>Nahlásit problém s objednávkou (reklamace, vrácení zboží)</summary>
+                  <RefundRequest
+                    orderId={order.id}
+                    token={selfServiceToken}
+                    claims={claims}
+                    currencyCode={order.currency_code}
+                    withdrawalElsewhere
+                  />
+                </details>
+              )}
               {claims.requests.length > 0 && (
                 <LocalizedClientLink
                   className={s.accountOrderClaimsLink}

@@ -437,13 +437,18 @@ export async function requestPasswordReset(email: string) {
   }
 
   try {
-    const odpoved = await sdk.client.fetch<{ status: "sent" | "no-account" }>(
+    const odpoved = await sdk.client.fetch<{ status: "sent" | "no-account" | "guest" }>(
       "/store/password-reset",
       { method: "POST", body: { identifier: adresa }, cache: "no-store" }
     )
     await pockejDo(dokdy)
     if (odpoved?.status === "no-account") {
       return "Účet s tímhle e-mailem u nás nemáme. Vytvořte si ho — stačí e-mail a heslo."
+    }
+    /* Nakupoval bez účtu (14. 11. 2026): heslo zatím nemá, takže není co
+       obnovit. Účet si založí a objednávky se připojí po potvrzení e-mailu. */
+    if (odpoved?.status === "guest") {
+      return "U nás jste zatím nakupovali bez účtu, takže heslo nemáte. Vytvořte si účet se stejným e-mailem — po potvrzení e-mailu v něm uvidíte i své dřívější objednávky."
     }
     return null
   } catch (error: any) {
@@ -763,6 +768,9 @@ export async function verifyCustomerEmail(token: string, email: string) {
       try {
         const cacheTag = await getCacheTag("customers")
         revalidateTag(cacheTag)
+        /* Ověření může k účtu připojit dřívější objednávky (14. 11. 2026). */
+        const ordersTag = await getCacheTag("orders")
+        if (ordersTag) revalidateTag(ordersTag)
       } catch (e) {
         // non-fatal: log and continue
         // eslint-disable-next-line no-console

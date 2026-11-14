@@ -14,3 +14,12 @@ test("doběrečné není položka — v seznamu položek není", () => {
 test("doběrečné zůstává v součtu jako platba", () => {
   assert.equal(dobirkaFeeSubtotal([dobirka, vyrobek, balne] as any[]), 39)
 })
+
+test("cena balného výrobku: prázdná nebo nesmyslná = 0", async () => {
+  const { packagingPriceCzkOf } = await import("../packaging")
+  assert.equal(packagingPriceCzkOf({ metadata: { packaging_price: 40 } }), 40)
+  assert.equal(packagingPriceCzkOf({ metadata: { packaging_price: "12.5" } }), 12.5)
+  assert.equal(packagingPriceCzkOf({ metadata: { packaging_price: "" } }), 0)
+  assert.equal(packagingPriceCzkOf({ metadata: { packaging_price: -3 } }), 0)
+  assert.equal(packagingPriceCzkOf({ metadata: null }), 0)
+})

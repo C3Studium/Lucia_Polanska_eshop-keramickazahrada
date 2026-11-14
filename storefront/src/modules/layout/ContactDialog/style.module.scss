@@ -21,7 +21,7 @@
   position: fixed;
   /* Pod navbarem (1000) — schválně: menu zůstává vidět i nad modálem.
      Zavírací ✕ se navbaru vyhýbá polohou (top 8.5 % na svislém telefonu). */
-  z-index: 500;
+  z-index: 960; /* nad lištou cookies (950) — 14. 11. 2026 */
   inset: 0;
   display: grid;
   padding: clamp(0.625rem, 1.8vh, 2rem) clamp(0.875rem, 2.5vw, 2.625rem);
@@ -103,7 +103,7 @@
   align-items: center;
   gap: clamp(1.25rem, 3vw, 3.25rem);
   color: var(--contact-secondary);
-  font-size: 0.75rem;
+  font-size: max(var(--text-min, 0px), calc(0.75rem * var(--read, 1)));
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -137,7 +137,7 @@
   background: rgb(var(--cream-10-rgb) / .44);
   box-shadow: 0 4px 12px -8px rgb(var(--ink-04-rgb) / .48);
   color: var(--contact-ink);
-  font-size: 0.8125rem;
+  font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
   cursor: pointer;
   transition:
     background-color 0.28s ease,
@@ -297,7 +297,7 @@
 
 .eyebrow {
   color: var(--contact-secondary);
-  font-size: 0.75rem;
+  font-size: max(var(--text-min, 0px), calc(0.75rem * var(--read, 1)));
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -331,7 +331,7 @@
 .topics legend {
   margin-bottom: clamp(0.5rem, 1.1vh, 0.75rem);
   color: var(--contact-secondary);
-  font-size: 0.8125rem;
+  font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
@@ -355,7 +355,7 @@
   border-radius: 999px;
   background: transparent;
   color: var(--contact-secondary);
-  font-size: 0.875rem;
+  font-size: max(var(--text-min, 0px), calc(0.875rem * var(--read, 1)));
   cursor: pointer;
   transition: color 0.28s ease;
 }
@@ -408,7 +408,7 @@
 
 .field > label {
   color: var(--contact-secondary);
-  font-size: 0.8125rem;
+  font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
@@ -416,7 +416,7 @@
 .field > label i {
   margin-left: 0.3125rem;
   color: var(--contact-minimum);
-  font-size: 0.8125rem;
+  font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
   font-style: normal;
   letter-spacing: 0.04em;
   text-transform: none;
@@ -437,7 +437,7 @@
   color: var(--contact-ink);
   cursor: text;
   font-family: inherit;
-  font-size: clamp(1.0625rem, calc(1.3vw * var(--ui-scale)), 1.1875rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(1.0625rem, calc(1.3vw * var(--ui-scale)), 1.1875rem) * var(--read, 1)));
   font-weight: 300;
   line-height: 1.35;
 }
@@ -520,7 +520,7 @@
   margin: 0;
   padding: 0;
   color: var(--contact-minimum);
-  font-size: 0.8125rem;
+  font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
   line-height: 1.45;
 }
 
@@ -547,7 +547,7 @@
   margin: clamp(0.75rem, 1.9vh, 1.25rem) 0 0;
   padding: clamp(0.5rem, 1.3vh, 0.875rem) clamp(0.875rem, 1.3vw, 1.125rem);
   border-radius: 0.75rem;
-  font-size: 0.9375rem;
+  font-size: max(var(--text-min, 0px), calc(0.9375rem * var(--read, 1)));
   line-height: 1.5;
 }
 
@@ -582,7 +582,7 @@
   max-width: 46ch;
   margin: 0;
   color: var(--contact-secondary);
-  font-size: 1rem;
+  font-size: max(var(--text-min, 0px), calc(1rem * var(--read, 1)));
   line-height: 1.55;
 }
 
@@ -667,7 +667,7 @@
 .mapAddress {
   max-width: 28ch;
   margin: 0;
-  font-size: clamp(0.875rem, calc(1.1vw * var(--ui-scale)), 1rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(0.875rem, calc(1.1vw * var(--ui-scale)), 1rem) * var(--read, 1)));
   line-height: 1.35;
 }
 
@@ -680,7 +680,7 @@
   background: var(--cream-07);
   color: var(--ink-05);
   cursor: pointer;
-  font: 400 clamp(0.9375rem, calc(1.1vw * var(--ui-scale)), 1.0625rem)/1.25 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(0.9375rem, calc(1.1vw * var(--ui-scale)), 1.0625rem) * var(--read, 1))) / 1.25 "Sansation-Regular", sans-serif;
   transition:
     background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
     color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
@@ -702,12 +702,12 @@
 
 .mapButtonNote {
   color: var(--olive-04);
-  font-size: 0.875em;
+  font-size: max(var(--text-min, 0px), 0.875em);
 }
 
 .mapLink {
   color: var(--cream-07);
-  font-size: 0.875rem;
+  font-size: max(var(--text-min, 0px), calc(0.875rem * var(--read, 1)));
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
@@ -721,7 +721,7 @@
 .mapNote {
   max-width: 34ch;
   margin: 0;
-  font-size: 0.75rem;
+  font-size: max(var(--text-min, 0px), calc(0.75rem * var(--read, 1)));
   line-height: 1.4;
   opacity: 0.82;
 }
@@ -775,7 +775,7 @@
 
 .details > div > span {
   color: var(--contact-secondary);
-  font-size: 0.75rem;
+  font-size: max(var(--text-min, 0px), calc(0.75rem * var(--read, 1)));
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
@@ -785,7 +785,7 @@
   margin: 0;
   padding: 0;
   color: var(--contact-ink);
-  font-size: clamp(0.875rem, calc(1.167vw * var(--ui-scale)), 1.021rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(0.875rem, calc(1.167vw * var(--ui-scale)), 1.021rem) * var(--read, 1)));
   font-weight: 300;
   line-height: 1.35;
   text-decoration: none;
@@ -801,7 +801,7 @@
   padding-top: clamp(0.5rem, 1.3vh, 0.875rem);
   border-top: 1px solid rgb(var(--ink-06-rgb) / .2);
   color: var(--olive-03);
-  font-size: 0.875rem;
+  font-size: max(var(--text-min, 0px), calc(0.875rem * var(--read, 1)));
 }
 
 .faqLink span {
@@ -955,7 +955,7 @@
   }
 
   .eyebrow {
-    font-size: 0.6875rem;
+    font-size: max(var(--text-min, 0px), calc(0.6875rem * var(--read, 1)));
   }
 
   .form {
@@ -964,7 +964,7 @@
 
   .topics legend {
     margin-bottom: 0.5rem;
-    font-size: 0.75rem;
+    font-size: max(var(--text-min, 0px), calc(0.75rem * var(--read, 1)));
   }
 
   /*
@@ -991,7 +991,7 @@
   .topics button {
     min-width: 0;
     padding: 0 0.25rem;
-    font-size: clamp(0.625rem, calc(2.9vw * var(--ui-scale)), 0.75rem);
+    font-size: max(var(--text-min, 0px), calc(clamp(0.625rem, calc(2.9vw * var(--ui-scale)), 0.75rem) * var(--read, 1)));
     text-align: center;
     white-space: nowrap;
 
@@ -1176,7 +1176,7 @@
     .topics button {
       height: 2.2rem;
       padding: 0 1rem;
-      font-size: 0.7rem;
+      font-size: max(var(--text-min, 0px), calc(0.7rem * var(--read, 1)));
     }
 
     /*
@@ -1216,7 +1216,7 @@
      * přiblíží, což v modálu znamená, že uživateli uskočí celý dialog.
      */
     .input {
-      font-size: 1rem;
+      font-size: max(var(--text-min, 0px), calc(1rem * var(--read, 1)));
     }
   }
 }
@@ -1319,7 +1319,7 @@
 
 .scrollCueInner span {
   color: var(--contact-secondary);
-  font: 400 clamp(0.7rem, calc(0.76vw * var(--ui-scale)), 0.8rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(0.7rem, calc(0.76vw * var(--ui-scale)), 0.8rem) * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
