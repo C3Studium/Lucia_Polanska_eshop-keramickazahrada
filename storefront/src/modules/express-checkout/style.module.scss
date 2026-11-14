@@ -1077,31 +1077,6 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   border-left: 1px solid rgb(var(--ink-05-rgb) / .15);
 }
 
-/* Rozvržení jako pokladna — viz express-checkout/style.module.scss (layout). */
-@media (orientation: landscape) and (min-width: 1021px) and (min-height: 501px) {
-  .intro { grid-column: 1; grid-row: 1; }
-  .progress {
-    grid-column: 1;
-    grid-row: 2;
-    grid-template-columns: minmax(0, 1fr) !important;
-    border-top: 1px solid rgb(var(--ink-05-rgb) / .14);
-  }
-  .progressStep {
-    justify-content: flex-start;
-    padding-block: .875rem !important;
-    border-bottom: 1px solid rgb(var(--ink-05-rgb) / .14);
-    text-align: left;
-  }
-  .trust { grid-column: 1; grid-row: 3; align-self: end; }
-  .stage {
-    grid-column: 2;
-    grid-row: 1 / span 3;
-    padding: clamp(1.5rem, 3vw, 2.5rem);
-    border-radius: 1rem;
-    background: var(--cream-08, rgb(var(--cream-06-rgb) / .6));
-  }
-}
-
 /* Volba provedení (13. 11. 2026): výplň vrstvou s z-index −1 zmizela za nový
    krémový panel kroku — tlačítko teď drží vlastní vrstvení (isolation).
    Místo přejezdu zleva jen krátká změna barvy, jako u voleb platby. */
