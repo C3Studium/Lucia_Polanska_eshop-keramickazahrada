@@ -38,10 +38,9 @@ const OrderSummary = ({ order }: OrderSummaryProps) => {
               a sloupec nevycházel. */}
           <span>{getAmount(order.item_subtotal - (dobirkaFee ?? 0))}</span>
         </div>
-        {/* Rozpad mezisoučtu: výrobky, balné a doběrečné, odsazeně.
-            Doběrečné do „Výrobky" nepatří — vlastní řádek. */}
-        /* Doběrečné je platba, ne zboží (13. 11. 2026) — z mezisoučtu se
-            vyjme a stojí jako „Platba na dobírku" pod Dopravou. */
+        {/* Rozpad mezisoučtu: výrobky a balné, odsazeně. Doběrečné je platba,
+            ne zboží (13. 11. 2026) — z mezisoučtu se vyjme a stojí jako
+            „Platba na dobírku" pod Dopravou. */}
         {packaging !== null && (
           <>
             <div className={styles.row} style={{ paddingLeft: ".9rem", opacity: 0.78, fontSize: ".9em" }}>

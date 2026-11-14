@@ -593,10 +593,9 @@ export default async function OrderCompletedTemplate({
                     <span>Mezisoučet</span>
                     <strong>{money(order.item_total - (dobirkaFee ?? 0))}</strong>
                   </div>
-                  {/* Rozpad mezisoučtu: výrobky, balné a doběrečné, odsazeně.
-                      Doběrečné do „Výrobky" nepatří — vlastní řádek. */}
-                  /* Doběrečné je platba, ne zboží (13. 11. 2026) — z mezisoučtu se
-            vyjme a stojí jako „Platba na dobírku" pod Dopravou. */
+                  {/* Rozpad mezisoučtu: výrobky a balné, odsazeně. Doběrečné je
+                      platba, ne zboží (13. 11. 2026) — z mezisoučtu se vyjme
+                      a stojí jako „Platba na dobírku" pod Dopravou. */}
                   {packaging !== null && (
                     <>
                     <div style={{ paddingLeft: ".9rem", opacity: .78, fontSize: ".9em" }}>
