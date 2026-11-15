@@ -45,19 +45,24 @@ export default async function CheckoutForm({
 
   const regionID = cart.region?.id ?? ""
 
-  const shippingMethods = await listCartShippingMethods(cart.id)
-  const paymentMethods = await listCartPaymentMethods(regionID)
+  // Všechno najednou místo jednoho po druhém (15. 11. 2026): metody ComGate
+  // se načítají rovnou, i když se pak nepoužijí — je to nejpomalejší dotaz.
+  const [shippingMethods, paymentMethods, allComgateMethods] = await Promise.all([
+    listCartShippingMethods(cart.id),
+    listCartPaymentMethods(regionID),
+    listComgatePaymentMethods({
+      currencyCode: cart.currency_code,
+      countryCode: cart.shipping_address?.country_code || countryCode,
+      total: cart.total,
+    }),
+  ])
 
   if (!shippingMethods || !paymentMethods) {
     return null
   }
 
   const comgateMethods = paymentMethods.some((method) => isComgate(method.id))
-    ? await listComgatePaymentMethods({
-        currencyCode: cart.currency_code,
-        countryCode: cart.shipping_address?.country_code || countryCode,
-        total: cart.total,
-      })
+    ? allComgateMethods
     : []
 
   /*

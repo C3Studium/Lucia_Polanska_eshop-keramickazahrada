@@ -46,8 +46,9 @@ export const listComgatePaymentMethods = async ({
   total?: number
 }): Promise<ComgatePaymentMethod[]> => {
   const userAgent = (await nextHeaders()).get("user-agent")
+  // Bez přihlašovací hlavičky: seznam metod nezávisí na zákazníkovi a takhle
+  // ho mezipaměť sdílí všichni se stejným prohlížečem a částkou.
   const headers = {
-    ...(await getAuthHeaders()),
     ...(userAgent ? { "x-shopper-user-agent": userAgent } : {}),
   }
   const price =
@@ -65,7 +66,10 @@ export const listComgatePaymentMethods = async ({
         ...(price ? { price } : {}),
       },
       headers,
-      cache: "no-store",
+      // Dřív `no-store` = dotaz na ComGate při každém kroku pokladny
+      // (15. 11. 2026). 5 minut stačí: metody se mění zřídka a klíč mezipaměti
+      // nese měnu, zemi, částku i prohlížeč (Apple Pay jen na Applu).
+      next: { revalidate: 300 },
     })
     .then(({ methods }) => (Array.isArray(methods) ? methods : []))
     .catch(() => [])

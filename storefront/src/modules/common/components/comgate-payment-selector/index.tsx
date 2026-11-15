@@ -10,7 +10,7 @@ import ApplePay from "@modules/common/icons/apple-pay"
 import GooglePay from "@modules/common/icons/google-pay"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import { AnimatePresence, motion, type Variants } from "framer-motion"
-import { useMemo, useState, type ReactNode } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import styles from "./style.module.scss"
 
 type MethodGroup = "card" | "wallet" | "bank"
@@ -248,7 +248,7 @@ const MethodLogo = ({ method }: { method: SelectorMethod }) => {
   const logo = getComgateMethodLogo(method)
 
   return logo ? (
-    <img src={logo} alt="" loading="lazy" />
+    <img src={logo} alt="" decoding="async" />
   ) : (
     <span aria-hidden="true">
       {(method.name_short || method.name || "P").slice(0, 1)}
@@ -311,6 +311,19 @@ export default function ComgatePaymentSelector({
   )
   const [bankSearch, setBankSearch] = useState("")
 
+  /* Loga bank se stáhnou hned s krokem Platba (15. 11. 2026), ne až po
+     rozbalení seznamu — otevření je pak okamžité, bez probliknutí prázdných
+     koleček. Prohlížeč je drží v mezipaměti, takže se stahují jednou. */
+  useEffect(() => {
+    for (const method of options) {
+      const src = getComgateMethodLogo(method)
+      if (!src) continue
+      const image = new Image()
+      image.decoding = "async"
+      image.src = src
+    }
+  }, [options])
+
   const grouped = useMemo(
     () =>
       groupOrder.map((id) => ({
@@ -331,6 +344,10 @@ export default function ComgatePaymentSelector({
     if (disabled || isSubmitting) return
 
     if (!isExpandable(group, groupMethods.length)) {
+      // Dlaždice bez seznamu (karta, peněženka) zavře otevřený seznam bank
+      // (15. 11. 2026) — jinak visel pod jinou zvolenou platbou.
+      setOpenGroup(null)
+      setBankSearch("")
       void choose(groupMethods[0])
       return
     }
@@ -500,7 +517,11 @@ export default function ComgatePaymentSelector({
                   data-group="extra"
                   data-active={vybrano}
                   aria-pressed={vybrano}
-                  onClick={() => onSelectExtra?.(option.id)}
+                  onClick={() => {
+                    setOpenGroup(null)
+                    setBankSearch("")
+                    void onSelectExtra?.(option.id)
+                  }}
                   disabled={disabled || isSubmitting}
                   data-testid={`payment-option-${option.id}`}
                 >
