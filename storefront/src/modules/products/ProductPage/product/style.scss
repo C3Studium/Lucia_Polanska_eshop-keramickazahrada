@@ -2339,3 +2339,15 @@
     bottom: calc(max(.75rem, env(safe-area-inset-bottom, 0px)) + 1.1rem);
   }
 }
+
+/* Levý sloupec: bezpečnost a značky místo Detailů (15. 11. 2026). Značky
+   tu nejsou pod nákupem, tak bez horní mezery navíc. */
+.product__infoSlot {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2vh, 1.5rem);
+}
+
+.product__infoSlot .product__serviceNotes {
+  margin-top: 0;
+}

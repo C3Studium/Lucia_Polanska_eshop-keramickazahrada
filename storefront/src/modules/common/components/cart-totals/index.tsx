@@ -188,7 +188,15 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
             {/* Poukaz je slevová akce, takže sedí v témž součtu — řádek se
                 jen jmenuje podle toho, co v něm je. */}
             <span className={styles.label}>
-              {discountRowLabel(totals.promotions) ?? " sleva"}
+              {/* „Sleva (SLEVA10)" — kód je vidět přímo v součtech, i když
+                  pole na kód je až pod nimi (15. 11. 2026). */}
+              {discountRowLabel(totals.promotions) ??
+                (() => {
+                  const kody = (totals.promotions ?? [])
+                    .filter((p: any) => p && !p.is_automatic && p.code)
+                    .map((p: any) => String(p.code))
+                  return kody.length ? `Sleva (${kody.join(", ")})` : "Sleva"
+                })()}
             </span>
             <span
               className={styles.discount}

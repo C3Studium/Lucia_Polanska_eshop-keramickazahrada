@@ -17,6 +17,7 @@ import { getLegalFacts } from "@lib/data/legal-facts"
 import { LegalFactsProvider } from "@lib/legal/facts-context"
 import "styles/globals.scss"
 import StudioClient from "@c3studium/valecms/manage/appClient.jsx";
+import ContentFreshness from "@lib/components/content-freshness"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -70,6 +71,8 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
               pokladny nepřipojuje znovu. Před obsahem stránky, aby k ní
               klávesnice došla jako k první. Nad /studio se nevykreslí. */}
           <CookieNotice />
+          {/* Změny z administrace a Studia bez Ctrl+Shift+R (15. 11. 2026). */}
+          <ContentFreshness />
           <StateProvider>
             <LegalFactsProvider facts={legalFacts}>
               {/* Rám stránky a plynulé scrollování — obojí vynechané nad

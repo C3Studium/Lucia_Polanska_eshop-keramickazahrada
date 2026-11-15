@@ -26,7 +26,7 @@ const getSafeAuthRedirect = (formData: FormData): string | null => {
 
   if (
     typeof redirectTo === "string" &&
-    /^\/[a-z]{2}\/cart(?:[/?#].*)?$/i.test(redirectTo)
+    /^\/[a-z]{2}\/(?:cart|checkout)(?:[/?#].*)?$/i.test(redirectTo)
   ) {
     return redirectTo
   }

@@ -256,3 +256,65 @@
 .details__content__list__item__inner .shipment__item + .shipment__item {
   padding-top: clamp(0.5625rem, 2vh, 1.125rem);
 }
+
+/*
+ * Pás detailů nad recenzemi (15. 11. 2026) — na všech šířkách přes celou
+ * stránku, tmavý jako karta výrobku. Text drží čitelnou šířku řádku.
+ */
+.productDetailsBand {
+  width: 100%;
+  padding: clamp(2.5rem, 7vh, 5rem) max(1rem, calc(4 * var(--fvw)));
+  color: var(--cream-06);
+  background: var(--ink-05);
+  border-top: 1px solid rgb(var(--cream-06-rgb) / .14);
+}
+
+.productDetailsBand .detailsProduct {
+  max-width: 62rem;
+  margin-inline: auto;
+}
+
+.productDetailsBand .details__content__list__item__inner p,
+.productDetailsBand .details__content__list__item__inner h4 {
+  font-size: max(var(--text-min, 0px), calc(0.9375rem * var(--read, 1)));
+  line-height: 1.6;
+}
+
+/* Fotky k popisu — mřížka náhledů, klik je zvětší. */
+.details__content__list__item__inner .info__images {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+  gap: .75rem;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.info__image {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid rgb(var(--cream-06-rgb) / .16);
+  border-radius: 4px;
+  background: rgb(var(--cream-06-rgb) / .06);
+  cursor: zoom-in;
+}
+
+.info__image img {
+  object-fit: cover;
+  transition: transform .35s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .info__image:hover img {
+    transform: scale(1.04);
+  }
+}
+
+.info__image:focus-visible {
+  outline: 2px solid var(--focus-ring, var(--cream-06));
+  outline-offset: 2px;
+}

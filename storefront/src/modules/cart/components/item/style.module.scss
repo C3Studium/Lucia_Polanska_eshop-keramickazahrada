@@ -424,16 +424,17 @@
     grid-column: 1;
     grid-row: 1;
     padding: .5rem .875rem .5rem 0;
-    /* Základ má `align-items: stretch`, což bylo v pevné stopě neškodné.
-       Jakmile řádek roste podle ceníku vedle, roztáhla by se s ním i fotka —
-       a míra zlevnění není důvod, proč má být obrázek vyšší. */
-    align-items: flex-start;
+    /* Fotka na středu řádku vedle názvu (15. 11. 2026) — dřív seděla nahoře
+       a název uprostřed, řádek působil nakřivo. Výšku dál nenatahuje. */
+    align-self: center;
+    align-items: center;
   }
   .thumbLink { min-height: 0; box-shadow: none; }
   .kicker, .dimensions { display: none; }
   .cellTitle {
     grid-column: 2;
     grid-row: 1;
+    align-self: center;
     padding: .625rem .75rem .625rem 0;
     border-left: 0;
   }
@@ -461,6 +462,18 @@
   }
   .cellPrice :global(*) { font-size: max(var(--text-min, 0px), calc(.8125rem * var(--read, 1))); }
   .previewTotal { color: var(--cream-06); }
+
+  /* Ceník vpravo jako malá účtenka (15. 11. 2026): každý řádek popisek
+     vlevo, částka vpravo, stejnou barvou; součet pod linkou tučněji. */
+  .previewQtyRow {
+    width: 100%;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .previewTotal,
+  .priceWrap > :last-child {
+    font-weight: 600;
+  }
 }
 
 @include below-px(920px) {

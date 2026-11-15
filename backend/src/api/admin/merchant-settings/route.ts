@@ -3,6 +3,7 @@ import {
   getMerchantSettings,
   setMerchantSettings,
 } from "../../../lib/merchant-settings"
+import { refreshStorefront } from "../../../lib/storefront-refresh"
 
 /**
  * Read access to the shop-global merchant settings (WorkflowPlan.md A3).
@@ -31,6 +32,13 @@ export const POST = async (
   // one closed allowlist in `lib/merchant-settings.ts`. A second schema would be
   // a second place to keep in sync, and A3 exists to prevent exactly that.
   const settings = await setMerchantSettings(req.scope, req.body ?? {})
+
+  /* Právní údaje jsou v patičce, pokladně i podmínkách — obchod si je
+     obnoví hned, ne až po minutě (15. 11. 2026). */
+  const body = (req.body ?? {}) as Record<string, unknown>
+  if ("legal_facts" in body || "shop_texts" in body || "shop_texts_off" in body) {
+    await refreshStorefront(req.scope, { tags: ["legal-facts", "shop-texty"], everything: true })
+  }
 
   res.status(200).json({ settings })
 }

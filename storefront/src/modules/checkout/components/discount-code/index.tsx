@@ -169,7 +169,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({
 
         {/* Znění z administrace (Texty obchodu); vypnutá věta zmizí sama
             a s ní i celý rámeček, když nezbude žádná. */}
-        {(isOpen || maRucniKod || maPoukaz || maZlevnene) && (
+        {(isOpen || maRucniKod || maPoukaz) && (
           <div className={styles.poznamky}>
             {(isOpen || maRucniKod || maPoukaz) && texty["slevy.jeden_kod"] && (
               <Text
@@ -187,7 +187,9 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({
                 {texty["slevy.poukaz"]}
               </Text>
             )}
-            {maZlevnene && texty["slevy.zlevnene"] && (
+            {/* Jen když člověk kód zadává nebo ho má — jinak to byl řádek navíc
+                nad mezisoučtem (15. 11. 2026). */}
+            {maZlevnene && (isOpen || maRucniKod) && texty["slevy.zlevnene"] && (
               <Text
                 className={styles.poznamka}
                 data-testid="discount-sale-note"

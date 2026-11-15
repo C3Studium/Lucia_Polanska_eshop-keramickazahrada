@@ -62,18 +62,18 @@ const CheckoutSummary = async ({
           tam: pořadí a třídy zůstávají tady, kde jsou i jejich styly.
         */}
         <OrderSummaryDisclosure cart={cart}>
-          {/* Slevový kód, uplatněné kódy a poukazy patří k položkám (13. 11. 2026,
-              Matěj): hned pod „Co objednáváte", nad mezisoučet, ne osamoceně
-              pod celkovou částkou. */}
+          {/* Pořadí podle toho, co zákazník hledá (15. 11. 2026, Matěj):
+              položky → peníze (mezisoučet, sleva, doprava, celkem, záloha) →
+              slevový kód. Kód nad mezisoučtem odsouval to důležité dolů;
+              uplatněná sleva je stejně vidět v součtech jako řádek „Sleva". */}
+          <Divider className={styles.divider} />
+          <CartTotals totals={cart} shippingFrom={shippingFrom} />
+          {/* Záloha zakázky hned pod „Celkem" (14. 11. 2026) — poslední dva
+              řádky ceny, kolik teď a kolik později. */}
+          <ProductionPaymentRecap mode={productionMode} />
           <div className={styles.discount}>
             <DiscountCode cart={cart} />
           </div>
-          <Divider className={styles.divider} />
-          <CartTotals totals={cart} shippingFrom={shippingFrom} />
-          {/* Záloha zakázky hned pod „Celkem" (14. 11. 2026, Matěj: blok
-              visel osamoceně pod souhrnem). Jsou to poslední dva řádky ceny —
-              kolik teď a kolik později —, ne samostatná karta. */}
-          <ProductionPaymentRecap mode={productionMode} />
         </OrderSummaryDisclosure>
       </div>
       </div>

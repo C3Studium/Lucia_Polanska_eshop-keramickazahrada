@@ -25,6 +25,7 @@ import { getShopStatus } from "@lib/data/shop-status"
 import { vacationSentence } from "@lib/util/vacation"
 import { isBalikovnaOption } from "@lib/util/balikovna"
 import styles from "./style.module.scss"
+import CheckoutStatus from "@modules/checkout/components/checkout-status"
 
 export default async function CheckoutForm({
   cart,
@@ -152,6 +153,7 @@ export default async function CheckoutForm({
           Od 8. 11. 2026 nese pořadí sama, protože kroky už pod sebou
           nestojí: vidět je vždycky jen ten, který je na řadě. */}
       <CheckoutStepBubbles hasBrief={maZakazku} />
+      <CheckoutStatus customerEmail={customer?.email ?? null} vacationNotice={vacationNotice} />
       <CheckoutSteps
         address={
       <Addresses

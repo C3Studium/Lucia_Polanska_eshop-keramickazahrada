@@ -288,7 +288,7 @@ const Inner = () => {
           )
         )
       );
-      toast.success("Uloženo — obchod to ukáže do minuty.");
+      toast.success("Uloženo — obchod to ukazuje hned.");
     },
     onError: (error) => toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
   });

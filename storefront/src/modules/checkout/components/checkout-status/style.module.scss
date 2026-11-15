@@ -1,0 +1,38 @@
+/* Stavový řádek pod kroky pokladny (15. 11. 2026). Tichý — informace, ne výzva. */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  margin: clamp(.75rem, 1.6vh, 1.125rem) 0 clamp(1rem, 2vh, 1.5rem);
+}
+
+.line {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / .72);
+  font-size: max(var(--text-min, 0px), calc(.875rem * var(--read, 1)));
+  line-height: 1.5;
+
+  strong {
+    color: var(--ink-05);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+}
+
+.link {
+  color: var(--ink-05);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: .2em;
+}
+
+.vacation {
+  margin: 0;
+  padding: .625rem .875rem;
+  border-left: 3px solid var(--clay-27, var(--ink-05));
+  border-radius: var(--field-radius, 2.5px);
+  background: rgb(var(--white-rgb) / .45);
+  color: var(--ink-05);
+  font-size: max(var(--text-min, 0px), calc(.875rem * var(--read, 1)));
+  line-height: 1.5;
+}

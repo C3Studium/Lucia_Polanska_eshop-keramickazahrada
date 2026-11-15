@@ -1,3 +1,4 @@
+import ProductDetailsBand from "@modules/products/ProductPage/details"
 import { Metadata } from "next"
 import PlainShop from "@modules/common/components/plain-shop"
 import { notFound } from "next/navigation"
@@ -270,6 +271,12 @@ export default async function ProductPage(props: Props) {
         initialCount={reviewsData.count}
         texts={productCopy}
       />
+      {/* Detaily (popisek, rozměry, doprava) přes celou šířku nad recenzemi —
+          na všech šířkách (15. 11. 2026, Matěj). Dlouhý popis se v úzkém
+          levém sloupci četl špatně. */}
+      <section className="productDetailsBand" aria-label="Detaily výrobku">
+        <ProductDetailsBand product={pricedProduct} texts={productCopy} />
+      </section>
       {/* <ProductChapter /> */}
       <ProductReviews productId={pricedProduct.id} initialReviews={reviewsData.reviews} initialRating={reviewsData.average_rating} initialCount={reviewsData.count} texts={productCopy} />
       <SoldProducts products={relatedProducts} block={productCopy} />

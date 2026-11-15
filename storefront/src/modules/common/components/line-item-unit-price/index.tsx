@@ -43,7 +43,7 @@ const LineItemUnitPrice = ({
   }
 
   return (
-    <div className={styles.root}>
+    <div className={clx(styles.root, style === "tight" && styles.tight)}>
       {hasReducedPrice && (
         <>
           <p>

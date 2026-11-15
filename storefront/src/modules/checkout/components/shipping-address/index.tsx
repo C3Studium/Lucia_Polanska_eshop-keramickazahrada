@@ -208,24 +208,9 @@ const ShippingAddress = ({
           animate="visible"
           aria-labelledby="saved-addresses-heading"
         >
-          <motion.div
-            className={styles.addressPromptIntro}
-            variants={savedAddressPromptItemVariants}
-          >
-            <span>Uložená místa · {String(addressesInRegion?.length).padStart(2, "0")}</span>
-            <div>
-              <h3 id="saved-addresses-heading">
-                Vítejte zpět{customer.first_name ? `, ${customer.first_name}` : ""}.
-              </h3>
-              <p {...editableItem(steps, "adresa.ulozene")}>
-                {itemText(
-                  steps,
-                  "adresa.ulozene",
-                  texty["pokladna.adresa_vyber"]
-                )}
-              </p>
-            </div>
-          </motion.div>
+          {/* Jen výběr uložených adres (15. 11. 2026, Matěj) — pozdrav
+              „Vítejte zpět, …" a věta k němu zabíraly půl šířky a výběr
+              vedle se kvůli nim zkracoval („Kam vám to má…"). */}
           <motion.div
             className={styles.addressPromptSelect}
             variants={savedAddressPromptItemVariants}
