@@ -94,7 +94,7 @@
 		.desc {
 			text-align: center;
 			font-family: "Sansation-Light";
-			font-size: 1.1rem; // text-2xl
+			font-size: max(var(--text-min, 0px), calc(1.1rem * var(--read, 1))); // text-2xl
 			line-height: 1.5rem;
 			font-weight: 300; // font-bold
 			margin: 0;
@@ -312,7 +312,7 @@
 .eyebrow {
   margin: 0 0 .9rem;
   color: rgb(var(--black-03-rgb) / .5);
-  font-size: 0.75rem;
+  font-size: max(var(--text-min, 0px), calc(0.75rem * var(--read, 1)));
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -327,7 +327,7 @@
     margin-left: 12%;
     color: var(--olive-15);
     font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
-    font-size: .76em;
+    font-size: max(var(--text-min, 0px), .76em);
     font-weight: 300;
   }
 }
@@ -335,7 +335,7 @@
 .desc {
   max-width: 27rem;
   color: rgb(var(--black-03-rgb) / .64);
-  font-size: 1rem;
+  font-size: max(var(--text-min, 0px), calc(1rem * var(--read, 1)));
   line-height: 1.5;
   text-align: left;
 }

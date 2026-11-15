@@ -35,7 +35,7 @@
   color: rgb(var(--cream-06-rgb) / .46);
   /* Podlaha .75rem = 12px. S .72rem měřilo pořadové číslo sekce na 1220 jen 11.52px,
      tedy pod hranicí, kterou rig hlásí jako vadu. Živé pásmo 1200–1520. */
-  font: 400 clamp(.75rem, calc(1vw * var(--ui-scale)), .95rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(.75rem, calc(1vw * var(--ui-scale)), .95rem) * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -93,22 +93,22 @@
    obrazovku — „Košík" 68 px, úvod 220 px, přihlášení. Zboží musí být
    vidět hned. */
 @media (orientation: portrait) and (max-width: 599.98px) {
-  .title { font-size: 1.4rem; }
+  .title { font-size: max(var(--text-min, 0px), calc(1.4rem * var(--read, 1))); }
 }
 
 @media (orientation: landscape) and (max-height: 500px) {
-  .title { font-size: 1.3rem; }
+  .title { font-size: max(var(--text-min, 0px), calc(1.3rem * var(--read, 1))); }
 }
 
 /* Menší nadpis výpisu a bez vlastní linky — horní linku nese první řádek
    výrobku, jinak tu byly dvě čáry nad sebou (13. 11. 2026). */
-.title { font-size: clamp(1.35rem, calc(1.7vw * var(--ui-scale)), 1.9rem); }
+.title { font-size: max(var(--text-min, 0px), calc(clamp(1.35rem, calc(1.7vw * var(--ui-scale)), 1.9rem) * var(--read, 1))); }
 .headerRow { border-bottom: 0; padding-bottom: clamp(.5rem, 1.2vh, .9rem); }
 .tableBody { padding-top: 0; }
 
 @media (orientation: portrait) and (max-width: 599.98px) {
-  .title { font-size: 1.4rem; }
+  .title { font-size: max(var(--text-min, 0px), calc(1.4rem * var(--read, 1))); }
 }
 @media (orientation: landscape) and (max-height: 500px) {
-  .title { font-size: 1.3rem; }
+  .title { font-size: max(var(--text-min, 0px), calc(1.3rem * var(--read, 1))); }
 }

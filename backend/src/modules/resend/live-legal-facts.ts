@@ -46,3 +46,28 @@ export const loadEmailLegalFacts = async (): Promise<LiveLegalFacts | null> => {
     if (timer) clearTimeout(timer)
   }
 }
+
+/**
+ * Vlastní znění e-mailů z administrace → Emaily (15. 11. 2026) pro jednu
+ * šablonu. Stejně líně a se stejnou pojistkou jako právní údaje výš:
+ * `null` = nic uloženého nebo nastavení teď nejde přečíst → znění z kódu.
+ */
+export const loadEmailTexts = async (
+  template: string
+): Promise<Record<string, string> | null> => {
+  let timer: NodeJS.Timeout | undefined
+  try {
+    const { container } = require("@medusajs/framework") as typeof import("@medusajs/framework")
+    const { getMerchantSettings } = require("../../lib/merchant-settings") as typeof import("../../lib/merchant-settings")
+    const timeout = new Promise<null>((resolve) => {
+      timer = setTimeout(() => resolve(null), LEGAL_FACTS_TIMEOUT_MS)
+    })
+    const settings = await Promise.race([getMerchantSettings(container), timeout])
+    const values = settings?.email_texts?.[template]
+    return values && Object.keys(values).length ? values : null
+  } catch {
+    return null
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
+}

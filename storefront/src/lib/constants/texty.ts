@@ -135,6 +135,8 @@ export const TEXTY_DEFAULTS = {
     "Vyberte prosím výdejní místo v mapě.",
   "pokladna.doprava_zmena":
     "Dopravu můžete změnit, dokud objednávku nepotvrdíte.",
+  "pokladna.odber_info":
+    "Až bude objednávka připravená, pošleme vám e-mail a domluvíme se, kdy si pro ni přijdete.",
   "pokladna.platba_balikovna_karta":
     "Na výdejní místo Balíkovny posíláme jen s platbou předem kartou — zásilku si pak jen vyzvednete. Dobírku nabízíme při doručení na adresu.",
   "zakazka.brief_uvod":

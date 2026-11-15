@@ -70,3 +70,18 @@ export const lineQuantityOf = (item: LineQuantitySource): number => {
   }
   return 0
 }
+
+/**
+ * Tržba řádku (14. 11. 2026). `total` je počítané pole a z `query.graph`
+ * nechodí, stejně jako výslovné `quantity` — statistiky pak ukazovaly
+ * „45× … 0 Kč". Když `total` chybí, bere se `unit_price` × množství (bez
+ * slevy, ale pravdivý řád čísla); když je, má přednost, protože slevu
+ * obsahuje. Do `fields` patří `items.unit_price` a `LINE_QUANTITY_FIELDS`.
+ */
+export const lineRevenueOf = (
+  item: (LineQuantitySource & { total?: unknown; unit_price?: unknown }) | null | undefined
+): number => {
+  const total = toNumber(item?.total)
+  if (total > 0) return total
+  return toNumber(item?.unit_price) * lineQuantityOf(item)
+}

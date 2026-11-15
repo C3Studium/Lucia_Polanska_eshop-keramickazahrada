@@ -2183,3 +2183,159 @@
 @media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
   .product__stack { display: none; }
 }
+
+/*
+ * Zvětšení fotky (14. 11. 2026, přání klientky). Celá fotka je tlačítko přes
+ * rámeček — rozvržení se nemění. Na myši se při najetí ukáže „Kliknutím
+ * zvětšíte", na dotyku (bez najetí) stále malý štítek „Zvětšit".
+ */
+.product__zoom {
+  position: absolute;
+  inset: 0;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  background: none;
+  cursor: zoom-in;
+}
+
+/* Najetí myší fotku jemně přiblíží — vidět, že se na ni dá kliknout
+   (15. 11. 2026). Jen s myší; dotyk má štítek „Zvětšit". */
+@media (hover: hover) and (pointer: fine) {
+  .product__zoom img {
+    transition: transform .35s ease;
+  }
+
+  .product__zoom:hover img {
+    transform: scale(1.04);
+  }
+}
+
+.product__zoom:focus-visible {
+  outline: 3px solid var(--focus-ring, var(--ink-05));
+  outline-offset: -3px;
+}
+
+.product__zoomHint {
+  position: absolute;
+  top: .75rem;
+  left: .75rem; /* vpravo nahoře je počítadlo fotek */
+  z-index: 2;
+  padding: .375rem .875rem;
+  border-radius: 999px;
+  background: rgb(var(--ink-05-rgb) / .78);
+  color: var(--cream-06);
+  font: 400 max(13px, .875rem) / 1.2 "Sansation-Regular", sans-serif;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s ease;
+}
+
+.product__zoom:hover .product__zoomHint,
+.product__zoom:focus-visible .product__zoomHint {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .product__zoomHint {
+    font-size: 0;
+    opacity: .9;
+  }
+  .product__zoomHint::before {
+    content: "⤢ Zvětšit";
+    font-size: 13px;
+  }
+}
+
+/* Okno s celou fotkou. */
+.product__lightbox {
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--ink-05); /* plná — prosvítající stránka rušila */
+  color: var(--cream-06);
+  overscroll-behavior: contain;
+}
+
+.product__lightbox::backdrop {
+  background: rgb(0 0 0 / .6);
+}
+
+.product__lightboxImage {
+  position: absolute;
+  inset: 4.5rem 5.5rem 3.5rem;
+}
+
+.product__lightboxImage img {
+  object-fit: contain;
+}
+
+.product__lightboxClose {
+  position: absolute;
+  top: max(1rem, env(safe-area-inset-top, 0px));
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  z-index: 2;
+  min-height: 44px;
+  padding: 0 1.125rem;
+  border: 1px solid rgb(var(--cream-06-rgb) / .5);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--cream-06);
+  font: 400 15px / 1 "Sansation-Regular", sans-serif;
+  cursor: pointer;
+}
+
+.product__lightboxArrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  width: 3.25rem;
+  height: 3.25rem;
+  place-items: center;
+  border: 1px solid rgb(var(--cream-06-rgb) / .45);
+  border-radius: 50%;
+  background: rgb(var(--cream-06-rgb) / .1);
+  color: var(--cream-06);
+  font-size: 1.5rem;
+  cursor: pointer;
+  translate: 0 -50%;
+}
+
+.product__lightboxArrow--prev { left: max(1rem, env(safe-area-inset-left, 0px)); }
+.product__lightboxArrow--next { right: max(1rem, env(safe-area-inset-right, 0px)); }
+
+.product__lightboxClose:focus-visible,
+.product__lightboxArrow:focus-visible {
+  outline: 3px solid var(--cream-06);
+  outline-offset: 2px;
+}
+
+.product__lightboxCount {
+  position: absolute;
+  bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  font: 400 15px / 1 "Sansation-Regular", sans-serif;
+  translate: -50% 0;
+}
+
+/* Telefon: fotka přes celou šířku, šipky dole vedle počítadla. */
+@media (max-width: 699.98px) {
+  .product__lightboxImage {
+    inset: 4rem 0 5rem;
+  }
+  .product__lightboxArrow {
+    top: auto;
+    bottom: max(.75rem, env(safe-area-inset-bottom, 0px));
+    translate: none;
+  }
+  .product__lightboxCount {
+    bottom: calc(max(.75rem, env(safe-area-inset-bottom, 0px)) + 1.1rem);
+  }
+}

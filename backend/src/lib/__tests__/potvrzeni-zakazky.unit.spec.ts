@@ -31,7 +31,7 @@ const manifest: LegalManifest = {
   schema: 1,
   seller: {
     name: "Lucie Polanská",
-    address: "Putim 229, 397 01 Písek",
+    address: "Putim 229, 397 01 Putim",
     ico: "03441482",
     email: "info@keramickazahrada.cz",
     phone: "+420 775 211 578",
@@ -52,7 +52,7 @@ const manifest: LegalManifest = {
 
 const facts = {
   "seller.name": "Lucie Polanská",
-  "seller.address": "Putim 229, 397 01 Písek",
+  "seller.address": "Putim 229, 397 01 Putim",
   "seller.ico": "03441482",
   /* Zápis do rejstříku (§ 435 OZ) — bez něj PDF hlásí varování. */
   "seller.register": "Městský úřad Písek",

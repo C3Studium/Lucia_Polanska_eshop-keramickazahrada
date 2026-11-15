@@ -343,11 +343,11 @@ test("předsmluvní řádek per položka skládá jen to, co backend dal", () =>
 test("součet za víc zakázek: záloha teď, doplatky po dokončení", () => {
   assert.equal(
     commissionTotalsSentence({ now: 1200, later: 3600 }, money),
-    "Celkem záloha 1200 Kč teď, doplatky 3600 Kč po dokončení."
+    "Teď zaplatíte 1200 Kč, po dokončení zakázek 3600 Kč."
   )
   assert.equal(
     commissionTotalsSentence({ now: 4800, later: 0 }, money),
-    "Celkem 4800 Kč teď, bez doplatků."
+    "Teď zaplatíte 4800 Kč, nic nedoplácíte."
   )
 })
 

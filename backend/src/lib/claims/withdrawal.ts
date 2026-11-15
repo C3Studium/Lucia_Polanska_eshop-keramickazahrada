@@ -557,9 +557,15 @@ export const refundMethodTextFor = (
 }
 
 /** Adresa pro vrácení zboží: Lucie Polanská (prodávající), ne značka obchodu. */
-export const WITHDRAWAL_RETURN_ADDRESS = "Lucie Polanská, Putim 229, 397 01 Písek"
+export const WITHDRAWAL_RETURN_ADDRESS = "Lucie Polanská, Putim 229, 397 01 Putim"
 
-const LEGACY_RETURN_ADDRESS = "Keramická zahrada Putim 229 397 01 Písek"
+/* Dřívější výchozí adresy v nastavení obchodu — kdo je nikdy nezměnil, dostane
+   aktuální (15. 11. 2026: pošta je Putim, ne Písek). */
+const LEGACY_RETURN_ADDRESSES = new Set([
+  "Keramická zahrada Putim 229 397 01 Písek",
+  "Keramická zahrada Putim 229 397 01 Putim",
+  "Lucie Polanská Putim 229 397 01 Písek",
+])
 
 /**
  * Adresa z nastavení obchodu, když ji majitelka změnila; výchozí „Keramická
@@ -571,7 +577,7 @@ export const withdrawalReturnAddress = (settingsAddress?: string | null): string
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
-  if (!lines.length || lines.join(" ") === LEGACY_RETURN_ADDRESS) {
+  if (!lines.length || LEGACY_RETURN_ADDRESSES.has(lines.join(" "))) {
     return WITHDRAWAL_RETURN_ADDRESS
   }
   return lines.join(", ")

@@ -1,7 +1,8 @@
 "use client"
 
 import { Divider, Text } from "@medusajs/ui"
-import { useEffect, useState, useActionState } from "react"
+import { useEffect, useRef, useState, useActionState } from "react"
+import { usePscMesto } from "@lib/hooks/use-psc-mesto"
 
 import useToggleState from "@lib/hooks/use-toggle-state"
 import CountrySelect from "@modules/checkout/components/country-select"
@@ -22,6 +23,14 @@ const AddAddress = ({
 }) => {
   const [successState, setSuccessState] = useState(false)
   const { state, open, close: closeModal } = useToggleState(false)
+
+  /* PSČ doplní město (14. 11. 2026) — pole tu nejsou řízená, proto přes ref;
+     vyplněné město se nepřepisuje. */
+  const [psc, setPsc] = useState("")
+  const mestoRef = useRef<HTMLInputElement>(null)
+  const obcePodlePsc = usePscMesto(psc, null, (mesto) => {
+    if (mestoRef.current && !mestoRef.current.value) mestoRef.current.value = mesto
+  })
 
   const [formState, formAction] = useActionState(addCustomerAddress, {
     isDefaultShipping: addresses.length === 0,
@@ -123,6 +132,7 @@ const AddAddress = ({
                   autoComplete="postal-code"
                   inputMode="numeric"
                   data-testid="postal-code-input"
+                  onChange={(event) => setPsc(event.target.value)}
                 />
                 <Input
                   variant="contact"
@@ -131,7 +141,16 @@ const AddAddress = ({
                   required
                   autoComplete="locality"
                   data-testid="city-input"
+                  ref={mestoRef}
+                  list={obcePodlePsc.length > 1 ? "obce-podle-psc-ucet" : undefined}
                 />
+                {obcePodlePsc.length > 1 && (
+                  <datalist id="obce-podle-psc-ucet">
+                    {obcePodlePsc.map((obec) => (
+                      <option key={obec} value={obec} />
+                    ))}
+                  </datalist>
+                )}
               </div>
               <Input
                 variant="contact"

@@ -9,6 +9,21 @@
 
 export const PACKAGING_TITLE = "Balné"
 
+/**
+ * Cena balení výrobku v Kč — totéž čtení jako `packagingPriceCzkOf`
+ * v backendu (`lib/packaging.ts`), podle kterého server balné účtuje:
+ * nevyplněná nebo nesmyslná = 0. Čte ji cena u výrobku i věta o balení,
+ * aby si stránka neprotiřečila („neúčtujeme" vedle „uvidíte v košíku").
+ */
+export const packagingPriceCzkOf = (product: {
+  metadata?: Record<string, unknown> | null
+}): number => {
+  const raw = product.metadata?.packaging_price
+  if (raw === null || raw === undefined || raw === "") return 0
+  const parsed = typeof raw === "number" ? raw : Number(raw)
+  return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed * 100) / 100 : 0
+}
+
 type LineLike = {
   metadata?: Record<string, unknown> | null
   variant_id?: string | null

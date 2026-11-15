@@ -1,5 +1,6 @@
 import { Switch, Text } from "@medusajs/ui";
 import { useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * Expertní režim — the OrcaSlicer toggle (Matěj, 2026-08-06).
@@ -31,8 +32,18 @@ const read = (): boolean => {
 
 let current = read();
 
+/* Značka na <html> pro CSS: karty Metadata/JSON v Medusiných detailech se
+   bez expertního režimu schovávají (lib/citelnost.css, 14. 11. 2026). */
+const oznac = (on: boolean) => {
+  if (typeof document !== "undefined") {
+    document.documentElement.dataset.kzExpert = on ? "1" : "0";
+  }
+};
+oznac(current);
+
 export const setExpertMode = (on: boolean) => {
   current = on;
+  oznac(on);
   try {
     localStorage.setItem(STORAGE_KEY, on ? "1" : "0");
   } catch {
@@ -50,10 +61,29 @@ export const useExpertMode = (): boolean =>
     () => current
   );
 
+/*
+ * Jedno místo pro přepínač (14. 11. 2026): horní lišta vpravo, vedle zvonku.
+ * Dřív si ho každá stránka kreslila jinam (vpravo nahoře, u hledání, dole
+ * v boku detailu) a nebyl k nalezení. Stránky ho dál „vkládají" jako dřív;
+ * všechny kopie ale jdou do jednoho pevného slotu a vidět je jen první.
+ */
+const SLOT_ID = "kz-expert-slot";
+const slot = (): HTMLElement | null => {
+  if (typeof document === "undefined") return null;
+  let el = document.getElementById(SLOT_ID);
+  if (!el) {
+    el = document.createElement("div");
+    el.id = SLOT_ID;
+    document.body.appendChild(el);
+  }
+  return el;
+};
+
 /** The header control every workbench mounts. */
 export const ExpertToggle = () => {
   const expert = useExpertMode();
-  return (
+  const cil = slot();
+  const prepinac = (
     <label className="flex items-center gap-2">
       <Switch checked={expert} onCheckedChange={setExpertMode} />
       <Text size="xsmall" className="text-ui-fg-subtle">
@@ -61,6 +91,7 @@ export const ExpertToggle = () => {
       </Text>
     </label>
   );
+  return cil ? createPortal(prepinac, cil) : prepinac;
 };
 
 /** A copyable identifier — the reason you want an ID is to paste it somewhere. */

@@ -11,6 +11,7 @@ import {
 import { PanelError } from "../components/panel-error";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba, ceskyText } from "../lib/ceska-chyba";
+import { useOdlozenaAkce } from "../lib/odlozena-akce";
 import { nextStepLabel, stageLabel } from "../lib/stage-words";
 import {
   agreedPriceConfirmBlock,
@@ -245,6 +246,11 @@ export const MerchantOrderStatePanel = ({ order }: { order: AdminOrder }) => {
       toast.error(ceskaChyba(error, "Výzvu se nepodařilo odeslat")),
   });
 
+  /* Každý krok tady posílá e-mail nebo zapisuje peníze — 5 s na „Vrátit"
+     (14. 11. 2026, viz lib/odlozena-akce). */
+  const { odlozit, ceka } = useOdlozenaAkce();
+  const cislo = `#${order.display_id ?? ""}`;
+
   if (stateQuery.isLoading) {
     return (
       <Container>
@@ -341,8 +347,8 @@ export const MerchantOrderStatePanel = ({ order }: { order: AdminOrder }) => {
               variant="primary"
               size="small"
               isLoading={step.isPending}
-              disabled={Boolean(blocked)}
-              onClick={() => step.mutate(next.action)}
+              disabled={Boolean(blocked) || ceka}
+              onClick={() => odlozit(`${next.label} — ${cislo}`, () => step.mutate(next.action))}
             >
               {next.label}
             </Button>
@@ -394,7 +400,8 @@ export const MerchantOrderStatePanel = ({ order }: { order: AdminOrder }) => {
             variant="primary"
             size="small"
             isLoading={paymentRequest.isPending}
-            onClick={() => paymentRequest.mutate()}
+            disabled={ceka}
+            onClick={() => odlozit(`Poslat výzvu k zaplacení — ${cislo}`, () => paymentRequest.mutate())}
           >
             Poslat výzvu k zaplacení
           </Button>
@@ -405,7 +412,8 @@ export const MerchantOrderStatePanel = ({ order }: { order: AdminOrder }) => {
             variant="primary"
             size="small"
             isLoading={dobirkaPaid.isPending}
-            onClick={() => dobirkaPaid.mutate()}
+            disabled={ceka}
+            onClick={() => odlozit(`Peníze z dobírky přišly — ${cislo}`, () => dobirkaPaid.mutate())}
           >
             Peníze přišly (dobírka)
           </Button>
@@ -423,7 +431,8 @@ export const MerchantOrderStatePanel = ({ order }: { order: AdminOrder }) => {
                 variant="primary"
                 size="small"
                 isLoading={transition.isPending}
-                onClick={() => transition.mutate("shipping")}
+                disabled={ceka}
+                onClick={() => odlozit(`Připraveno k vyzvednutí — ${cislo}`, () => transition.mutate("shipping"))}
               >
                 Připraveno k vyzvednutí
               </Button>
@@ -435,7 +444,8 @@ export const MerchantOrderStatePanel = ({ order }: { order: AdminOrder }) => {
                   variant="secondary"
                   size="small"
                   isLoading={pickupPaid.isPending}
-                  onClick={() => pickupPaid.mutate()}
+                  disabled={ceka}
+                  onClick={() => odlozit(`Objednávka zaplacena — ${cislo}`, () => pickupPaid.mutate())}
                 >
                   Objednávka zaplacena
                 </Button>
@@ -448,7 +458,8 @@ export const MerchantOrderStatePanel = ({ order }: { order: AdminOrder }) => {
                 }
                 size="small"
                 isLoading={transition.isPending}
-                onClick={() => transition.mutate("pickup_collected")}
+                disabled={ceka}
+                onClick={() => odlozit(`Vyzvednuto — ${cislo}`, () => transition.mutate("pickup_collected"))}
               >
                 {merchantOrder.pickup_payment_due
                   ? "Vyzvednuto a zaplaceno"
@@ -464,7 +475,8 @@ export const MerchantOrderStatePanel = ({ order }: { order: AdminOrder }) => {
               variant="primary"
               size="small"
               isLoading={transition.isPending}
-              onClick={() => transition.mutate(target)}
+              disabled={ceka}
+              onClick={() => odlozit(`${nextStageLabel[merchantOrder.stage]} — ${cislo}`, () => transition.mutate(target))}
             >
               {nextStageLabel[merchantOrder.stage]}
             </Button>

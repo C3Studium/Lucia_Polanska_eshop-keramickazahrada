@@ -36,7 +36,7 @@ export const merchantIdentityFrom = (facts: LegalFacts): MerchantIdentity => {
   const phone = fact("seller.phone", facts) ?? "+420 775 211 578"
   return {
     name: fact("seller.name", facts) ?? "Lucie Polanská",
-    address: fact("seller.address", facts) ?? (process.env.SIDLO_ADRESA || "Putim 229, 397 01 Písek"),
+    address: fact("seller.address", facts) ?? (process.env.SIDLO_ADRESA || "Putim 229, 397 01 Putim"),
     registrationNumber:
       fact("seller.ico", facts) ?? (process.env.IDENTIFIKACNI_CISLO || "03441482"),
     email: fact("seller.email", facts) ?? "info@keramickazahrada.cz",

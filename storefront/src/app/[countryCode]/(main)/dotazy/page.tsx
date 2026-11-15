@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { getFaqCategories, getFaqQuestions, getPageContentFull, getPageSeo } from "@lib/data/site-copy"
+import { getFaq, getPageContentFull, getPageSeo } from "@lib/data/site-copy"
 import DotazyMain from "@modules/dotazy/main"
 
 
@@ -20,13 +20,12 @@ export default async function FAQPage(props: { params: Promise<{ countryCode: st
    * Studiu vlastní sekce „Dotazy". Kategorie je slovo na otázce; čipy filtru
    * z nich stránka skládá sama. Bloky vedle nesou texty kolem seznamu.
    *
-   * Pod nimi je vždy pevná sekce právních otázek z `@lib/legal/faq`
-   * (zakázky, kurzy, poukazy, rozbitá zásilka) — ta z CMS nejde.
+   * Od 15. 11. 2026 je všechno ve Studiu v sekci FAQ (kategorie = dokument,
+   * otázky uvnitř), včetně dřívější pevné právní sekce.
    */
-  const [copy, questions, categories] = await Promise.all([
+  const [copy, { questions, categories }] = await Promise.all([
     getPageContentFull("dotazy"),
-    getFaqQuestions(),
-    getFaqCategories(),
+    getFaq(),
   ])
 
   return (

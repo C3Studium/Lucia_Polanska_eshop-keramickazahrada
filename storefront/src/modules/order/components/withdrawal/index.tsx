@@ -54,7 +54,7 @@ type Seller = { name: string; address: string; email: string }
 
 const sellerOf = (facts: LegalFacts): Seller => ({
   name: fact("seller.name", facts) ?? "Lucie Polanská",
-  address: fact("seller.address", facts) ?? "Putim 229, 397 01 Písek",
+  address: fact("seller.address", facts) ?? "Putim 229, 397 01 Putim",
   email: fact("seller.email", facts) ?? "info@keramickazahrada.cz",
 })
 

@@ -118,7 +118,7 @@ $consent-pad: 10px;
   /* Zarovnané pod text souhlasu: 24px čtvereček + 1.5rem mezera. */
   padding-left: calc(24px + 1.5rem);
   color: var(--consent-label);
-  font: 400 clamp(.875rem, calc(1.17vw * var(--ui-scale)), 1.15rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(.875rem, calc(1.17vw * var(--ui-scale)), 1.15rem) * var(--read, 1))) / 1.5 "Sansation-Regular", sans-serif;
 }
 
 .express {
@@ -128,7 +128,7 @@ $consent-pad: 10px;
 .privacyCompact {
   margin: 0 0 clamp(.5rem, 1.1vh, .75rem);
   color: rgb(var(--ink-05-rgb) / .7);
-  font: 400 clamp(.85rem, calc(1.05vw * var(--ui-scale)), .95rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(.85rem, calc(1.05vw * var(--ui-scale)), .95rem) * var(--read, 1))) / 1.5 "Sansation-Regular", sans-serif;
 }
 
 @media (orientation: portrait) and (max-width: 599.98px) {
@@ -147,7 +147,7 @@ $consent-pad: 10px;
   align-items: flex-start;
   gap: .75rem;
   padding-block: .5rem;
-  font-size: clamp(.8125rem, calc(.95vw * var(--ui-scale)), .9375rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(.8125rem, calc(.95vw * var(--ui-scale)), .9375rem) * var(--read, 1)));
   line-height: 1.45;
 }
 .consentBox {
@@ -166,10 +166,10 @@ $consent-pad: 10px;
 .consent { gap: .75rem; }
 .consentLabel {
   padding-block: .375rem;
-  font: 400 clamp(.875rem, calc(1.17vw * var(--ui-scale)), 1.15rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(.875rem, calc(1.17vw * var(--ui-scale)), 1.15rem) * var(--read, 1))) / 1.5 "Sansation-Regular", sans-serif;
 }
 .consentBoxWrap {
   padding-block: .375rem;
-  font: 400 clamp(.875rem, calc(1.17vw * var(--ui-scale)), 1.15rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(.875rem, calc(1.17vw * var(--ui-scale)), 1.15rem) * var(--read, 1))) / 1.5 "Sansation-Regular", sans-serif;
 }
 .privacy { padding-left: calc(18px + .75rem); }

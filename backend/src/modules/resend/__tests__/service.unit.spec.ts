@@ -192,7 +192,7 @@ describe("e-mail attachments (data.__attachments)", () => {
       const send = jest.fn().mockResolvedValue({ data: { id: "email_4" }, error: null })
       const service = makeService(send, async () => ({
         "seller.name": "Lucie Polanská",
-        "seller.address": "Nová 1, 397 01 Písek",
+        "seller.address": "Nová 1, 397 01 Putim",
         "seller.ico": "03441482",
         "seller.email": "dilna@keramickazahrada.cz",
         "seller.phone": null,
@@ -201,7 +201,7 @@ describe("e-mail attachments (data.__attachments)", () => {
       await service.send(notification({ order }))
 
       const html = renderToStaticMarkup(send.mock.calls[0][0].react)
-      expect(html).toContain("Prodávající: Lucie Polanská · Nová 1, 397 01 Písek · IČO 03441482")
+      expect(html).toContain("Prodávající: Lucie Polanská · Nová 1, 397 01 Putim · IČO 03441482")
       expect(html).toContain("mailto:dilna@keramickazahrada.cz")
       // Telefon výslovně nevyplněný → v patičce není (ani záložní).
       expect(html).not.toContain("775 211 578")

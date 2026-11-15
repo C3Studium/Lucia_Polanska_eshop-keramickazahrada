@@ -1,7 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import {
-  ArrowUpRightOnBox,
-  ChevronDown,
   Photo,
   TagSolid,
 } from "@medusajs/icons";
@@ -1444,28 +1442,18 @@ const ProductsInner = () => {
 
           {/* 6) Akce řádku — poslední sloupec mřížky; vzácné věci pod „…". */}
           <div className={`flex items-center gap-3 sm:pl-[92px] min-[1200px]:justify-end min-[1200px]:pl-0`}>
+              {/* Klidnější řádek (14. 11. 2026): slovo místo šipky, „Otevřít
+                  v obchodě" pod „…". Přepínače Dobírka/Křehké a balné zůstávají
+                  v řádku (Matěj 12. 10.). */}
               <button
                 type="button"
-                title={expanded === product.id ? "Sbalit" : "Rozbalit"}
-                className="text-ui-fg-subtle hover:text-ui-fg-base"
+                aria-expanded={expanded === product.id}
+                className="text-ui-fg-interactive txt-small hover:underline"
                 onClick={() => setExpanded(expanded === product.id ? null : product.id)}
               >
-                <ChevronDown
-                  className={`transition-transform ${expanded === product.id ? "rotate-180" : ""}`}
-                />
+                {expanded === product.id ? "Sbalit" : "Rozbalit"}
               </button>
               <PublishToggle product={product} />
-              {product.store_url && (
-                <a
-                  href={product.store_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  title="Otevřít v obchodě"
-                  className="text-ui-fg-subtle hover:text-ui-fg-base"
-                >
-                  <ArrowUpRightOnBox />
-                </a>
-              )}
               <Link
                 to={`/produkt/${product.id}`}
                 className="text-ui-fg-interactive txt-small hover:underline"
@@ -1490,6 +1478,7 @@ const ProductsInner = () => {
                   showMakeCommission={active === "produkty"}
                   showArchive
                   showDelete
+                  storeUrl={product.store_url}
                   trigger={
                     <button
                       type="button"

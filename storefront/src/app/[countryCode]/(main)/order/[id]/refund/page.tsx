@@ -1,4 +1,5 @@
 import { getOrderClaims } from "@lib/data/claims"
+import { getOrderAccessToken } from "@lib/data/orders"
 import { getGuestRefundContext } from "@lib/data/guest-refund"
 import { retrieveCustomer } from "@lib/data/customer"
 import { getContactEmails } from "@lib/data/site-copy"
@@ -37,7 +38,10 @@ export default async function OrderRefundPage(props: Props) {
     props.params,
     props.searchParams,
   ])
-  const token = searchParams.token
+  /* Přihlášený vlastník nepotřebuje odkaz z e-mailu (14. 11. 2026) — dřív
+     dostal „Odkaz nejde otevřít". Stejně jako odstoupeni/page.tsx. */
+  const token =
+    searchParams.token || (await getOrderAccessToken(params.id).catch(() => null)) || undefined
   if (token && searchParams.kind === "odstoupeni") {
     redirect(
       `/${params.countryCode}/order/${params.id}/odstoupeni?token=${encodeURIComponent(token)}`

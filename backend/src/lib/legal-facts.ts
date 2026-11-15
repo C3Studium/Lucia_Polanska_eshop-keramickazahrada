@@ -67,7 +67,7 @@ export type StoredLegalFacts = Partial<Record<LegalFactKey, string>>
  */
 export const LEGAL_FACT_DEFAULTS: Readonly<LegalFactValues> = Object.freeze({
   "seller.name": "Lucie Polanská",
-  "seller.address": "Putim 229, 397 01 Písek",
+  "seller.address": "Putim 229, 397 01 Putim",
   "seller.ico": "03441482",
   /*
    * Úřad, který vede živnostenský rejstřík (§ 435 OZ — údaj o zápisu patří
@@ -170,7 +170,7 @@ export const LEGAL_FACT_META: Record<LegalFactKey, LegalFactMeta> = {
     label: "Adresa sídla",
     help:
       "Adresa, kterou máte v živnostenském rejstříku, jedním řádkem. Je v obchodních podmínkách („…se sídlem …“), jako adresa pro dopisy a vracení zboží, jako adresa osobního vyzvednutí v ateliéru (i v e-mailu „připraveno k vyzvednutí“), v pokladně a v patičce e-mailů.",
-    example: "Putim 229, 397 01 Písek",
+    example: "Putim 229, 397 01 Putim",
     group: "Prodávající",
     multiline: false,
     maxLength: 200,

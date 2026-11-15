@@ -47,7 +47,7 @@ interface CommissionCancelledEmailProps {
  * a překlad říká přesně totéž; článek obchodních podmínek se jmenuje
  * česky, jiné znění podmínky nemají.
  */
-const COPY: Localized<{
+export const COPY: Localized<{
   preview: (orderNumber: string) => string
   eyebrow: string
   title: string

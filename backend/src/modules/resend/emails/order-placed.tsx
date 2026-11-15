@@ -110,7 +110,7 @@ type OrderPlacedCopy = {
   }
 }
 
-const COPY: Localized<OrderPlacedCopy> = {
+export const COPY: Localized<OrderPlacedCopy> = {
   cs: {
     preview: "Objednávku mám, děkuji. Teď je to na mně.",
     eyebrow: "Objednávka",
@@ -1550,7 +1550,7 @@ export default () => (
     legal={{
       seller: {
         name: "Lucie Polanská",
-        address: "Putim 229, 397 01 Písek",
+        address: "Putim 229, 397 01 Putim",
         ico: "03441482",
         email: "info@keramickazahrada.cz",
         phone: "+420 775 211 578",

@@ -22,6 +22,7 @@ describe("merchant settings allowlist", () => {
       "default_parcel_weight_kg",
       "dev_notification_email",
       "dobirka_fee_czk",
+      "email_texts",
       "legal_facts",
       "legal_facts_updated_at",
       "low_stock_default_threshold",

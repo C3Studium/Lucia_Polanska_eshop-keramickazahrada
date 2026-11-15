@@ -58,6 +58,16 @@ test("řazení podle ceny a nejnovější", () => {
   assert.equal(ids(filterCatalogue(vse, { ...prazdne, sort: "price-desc" }, ctx)), "dbca")
   assert.equal(filterCatalogue(vse, { ...prazdne, sort: "newest" }, ctx).products[0].id, "b")
 })
+test("doporučené: na poličce první, pak na objednávku, neprodejné nakonec", () => {
+  // a = prodáno a nejde koupit, b = na objednávku (prázdná polička), c, d = skladem
+  const police: Record<string, 0 | 1 | 2> = { a: 2, b: 1, c: 0, d: 0 }
+  const r = filterCatalogue(vse, prazdne, { ...ctx, shelfRankOf: (x) => police[x.id] })
+  assert.equal(ids(r), "cdba")
+  // stránkování až po seřazení
+  assert.equal(ids(filterCatalogue(vse, prazdne, { ...ctx, shelfRankOf: (x) => police[x.id], limit: 2 })), "cd")
+  // jiné řazení se nemění
+  assert.equal(ids(filterCatalogue(vse, { ...prazdne, sort: "price-asc" }, { ...ctx, shelfRankOf: (x) => police[x.id] })), "acbd")
+})
 test("stránkování a jen povolené", () => {
   const r = filterCatalogue(vse, prazdne, { ...ctx, offset: 1, limit: 2 })
   assert.equal(ids(r), "bc")

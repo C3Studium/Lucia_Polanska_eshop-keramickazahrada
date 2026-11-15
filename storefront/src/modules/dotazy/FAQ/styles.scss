@@ -301,6 +301,33 @@
     }
 }
 
+/* Odpověď ve více odstavcích (prázdný řádek ve Studiu) — mezi nimi menší mezera
+   než pod celou odpovědí; odkazy a údaje z adminu (15. 11. 2026). */
+.faqAnswerCopy {
+    p:not(:last-child) {
+        padding-bottom: .75rem;
+    }
+
+    a {
+        color: inherit;
+        text-decoration: underline;
+        text-underline-offset: .2em;
+    }
+
+    strong {
+        font-weight: 500;
+    }
+}
+
+/* Údaj, který v adminu chybí — ať je vidět, ne tiše prázdný. */
+.faqPlaceholder {
+    padding: .05em .3em;
+    border-radius: .2em;
+    background: #ffe45c;
+    color: #2b2400;
+    font-weight: 600;
+}
+
 .faqEmpty {
     margin: 0;
     padding: 2.5rem 0.5rem;

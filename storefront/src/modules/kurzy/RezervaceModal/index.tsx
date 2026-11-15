@@ -346,8 +346,11 @@ function RezervaceModalPanel({
   })
   const [direction, setDirection] = useState(1)
 
+  /* Seznam napřed (14. 11. 2026): při pár termínech v měsíci byl v kalendáři
+     jediný den s tečkou a člověk ho musel hledat. Kalendář má smysl, až je
+     termínů hodně. */
   const [view, setView] = useState<"calendar" | "list">(
-    draft?.view ?? "calendar"
+    draft?.view ?? (initialTerms.length > 8 ? "calendar" : "list")
   )
   const [selectedDay, setSelectedDay] = useState<string | null>(
     draft?.selectedDay ?? null
@@ -1006,17 +1009,17 @@ function RezervaceModalPanel({
                           >
                             <button
                               type="button"
+                              aria-pressed={view === "list"}
+                              onClick={() => setView("list")}
+                            >
+                              Seznam termínů
+                            </button>
+                            <button
+                              type="button"
                               aria-pressed={view === "calendar"}
                               onClick={() => setView("calendar")}
                             >
                               Kalendář
-                            </button>
-                            <button
-                              type="button"
-                              aria-pressed={view === "list"}
-                              onClick={() => setView("list")}
-                            >
-                              Seznam
                             </button>
                           </div>
 

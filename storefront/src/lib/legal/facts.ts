@@ -23,7 +23,7 @@ export type LegalFacts = Record<LegalFactKey, string | null>
 
 export const FACTS = {
   "seller.name": "Lucie Polanská",
-  "seller.address": "Putim 229, 397 01 Písek",
+  "seller.address": "Putim 229, 397 01 Putim",
   "seller.ico": "03441482",
   /* Úřad vedoucí živnostenský rejstřík (§ 435 OZ — údaj o zápisu patří na
      obchodní listiny). Potvrzeno 24. 10. 2026 (OPEN_QUESTIONS N5); sedmý pád,

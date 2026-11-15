@@ -49,13 +49,13 @@ describe("POST /store/password-reset", () => {
     expect(r.json).toHaveBeenCalledWith({ status: "sent" })
   })
 
-  it("host s objednávkami → založí přihlášení a pošle odkaz", async () => {
+  it("host bez účtu → guest, nic se nezakládá ani neposílá (14. 11. 2026)", async () => {
     const q = req("host@b.cz", { customers: [{ id: "cus_1", has_account: false }] })
     const r = res()
     await POST(q, r)
-    expect(q.services.auth.register).toHaveBeenCalled()
-    expect(run).toHaveBeenCalledTimes(1)
-    expect(r.json).toHaveBeenCalledWith({ status: "sent" })
+    expect(q.services.auth.register).not.toHaveBeenCalled()
+    expect(run).not.toHaveBeenCalled()
+    expect(r.json).toHaveBeenCalledWith({ status: "guest" })
   })
 
   it("neznámá adresa → no-account a žádný e-mail", async () => {

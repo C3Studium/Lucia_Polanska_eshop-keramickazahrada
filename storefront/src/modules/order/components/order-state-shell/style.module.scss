@@ -145,7 +145,7 @@
   padding-block: .8rem;
   border-block: 1px solid rgb(var(--ink-05-rgb) / .22);
   /* 0.75rem, not 0.7rem: 11.2px sat under the 12px legibility floor at every viewport. */
-  font: .75rem/1.2 "Sansation-Regular", sans-serif;
+  font: max(var(--text-min, 0px), calc(.75rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 
@@ -395,7 +395,7 @@
   background: var(--state-accent);
   color: var(--cream-10);
   /* 0.8rem floor keeps the glyph off the 12px legibility line on the smallest mark. */
-  font: 400 max(.8rem, calc(var(--mark-size) * .088))/1 "Sentient", serif;
+  font: 400 max(var(--text-min, 0px), calc(max(.8rem, calc(var(--mark-size) * .088)) * var(--read, 1))) / 1 "Sentient", serif;
 }
 
 .copy {
@@ -450,7 +450,7 @@
 
 .kicker {
   margin: 0 0 clamp(1rem, 2.5vh, 1.8rem);
-  font: .75rem/1.2 "Sansation-Regular", sans-serif;
+  font: max(var(--text-min, 0px), calc(.75rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgb(var(--ink-05-rgb) / .58);
@@ -528,7 +528,7 @@
 .description {
   max-width: 32rem;
   margin: clamp(1.6rem, 4vh, 3rem) 0 0;
-  font: 1.05rem/1.55 "Sansation-Regular", sans-serif;
+  font: max(var(--text-min, 0px), calc(1.05rem * var(--read, 1))) / 1.55 "Sansation-Regular", sans-serif;
   color: rgb(var(--ink-05-rgb) / .67);
   /* order-confirmed and payment-confirmed drop a support e-mail into this paragraph. */
   overflow-wrap: break-word;
@@ -584,7 +584,7 @@
   border: 1px solid rgb(var(--ink-05-rgb) / .55);
   border-radius: 999px;
   padding: .75rem 1.1rem .75rem 1.3rem;
-  font: .9rem/1 "Sansation-Regular", sans-serif;
+  font: max(var(--text-min, 0px), calc(.9rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   transition: color .28s ease, background .28s ease, transform .28s ease;
 
   /* These are <a>, and globals.scss floors <button> at 44px on touch but deliberately not links.

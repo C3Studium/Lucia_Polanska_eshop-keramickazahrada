@@ -106,6 +106,7 @@ export default function ShopToolbar({ chips, count, search, sort, filtersOpen = 
           </svg>
           <span className="sr-only">Hledat produkty</span>
           <input
+            data-pill-field
             value={search}
             onChange={(event) => onSearch(event.target.value)}
             placeholder="Hledat podle názvu"

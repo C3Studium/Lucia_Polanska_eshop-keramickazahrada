@@ -53,7 +53,7 @@ interface InvoiceIssuedEmailProps {
 }
 
 /** Texty po jazycích (lib/email-locale) — čeština je původní znění. */
-const COPY: Localized<{
+export const COPY: Localized<{
   amountLabel: Record<InvoiceKind, string>
   leadDeposit: string
   leadBalance: string

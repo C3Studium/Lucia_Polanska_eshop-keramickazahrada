@@ -23,7 +23,7 @@ import type { Localized } from "../../../lib/email-locale"
  * `commission` přepíná „zakázka" / „objednávka": v polštině a slovenštině
  * se mění i tvar slovesa a přídavného jména, proto celé věty, ne jen slovo.
  */
-const COPY: Localized<{
+export const COPY: Localized<{
   preview: (commission: boolean, orderNumber: string) => string
   eyebrow: (commission: boolean, orderNumber: string) => string
   title: string

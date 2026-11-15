@@ -202,3 +202,25 @@ describe("toMerchantOrderRow — platba u pultu", () => {
     )
   })
 })
+
+describe("toMerchantOrderRow — náhledy výrobků (14. 11. 2026)", () => {
+  it("až tři náhledy výrobků, bez balného a doběrečného, bez opakování", () => {
+    const order = {
+      id: "order_1",
+      items: [
+        { product_id: "p1", thumbnail: "https://img/a.jpg", quantity: 1 },
+        { product_id: null, thumbnail: null, quantity: 1, metadata: { packaging_fee: true } },
+        { product_id: "p1", thumbnail: "https://img/a.jpg", quantity: 1 },
+        { product_id: "p2", thumbnail: "https://img/b.jpg", quantity: 1 },
+        { product_id: "p3", thumbnail: null, quantity: 1 },
+        { product_id: "p4", thumbnail: "https://img/c.jpg", quantity: 1 },
+        { product_id: "p5", thumbnail: "https://img/d.jpg", quantity: 1 },
+      ],
+    }
+    const row = toMerchantOrderRow({ id: "s", order_id: "order_1", stage: "received" }, order, null)
+    expect(row.thumbnails).toEqual(["https://img/a.jpg", "https://img/b.jpg", "https://img/c.jpg"])
+  })
+  it("bez objednávky prázdné pole", () => {
+    expect(toMerchantOrderRow({ id: "s", order_id: "o", stage: "received" }, null, null).thumbnails).toEqual([])
+  })
+})

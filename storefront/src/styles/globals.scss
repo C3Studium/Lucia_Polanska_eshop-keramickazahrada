@@ -429,9 +429,43 @@ html[data-app="studio"] *::-webkit-scrollbar-thumb {
   }
 }
 
+/*
+ * Čtecí zóna (14. 11. 2026) — košík, pokladna, rychlý nákup, účet, objednávka a formuláře.
+ *
+ * Tam se čte a vyplňuje, a kupují tu hlavně lidé nad padesát. Změřeno na MacBooku 16":
+ * většina textu v košíku a pokladně měla 11–12px. Celý web zvětšit nejde — měřítko 0.85
+ * na šířku je rozhodnutí z 9. 11. (klientce byl web přerostlý) —, takže se zvětšuje jen
+ * tady, dvěma proměnnými, které čtou jen soubory zóny (`font-size: max(var(--text-min),
+ * calc(… * var(--read)))`, převedeno skriptem):
+ *   --read      násobič písma; s myší na šířku 1.15 (zhruba velikost před 9. 11.),
+ *               na dotyku 1 — rozvržení telefonů zůstává, jak bylo odladěné;
+ *   --text-min  nejmenší písmo v zóně: 14px s myší, 13px na dotyku.
+ * Velké nadpisy dostanou jen podlahu, ne násobič.
+ */
+:root {
+  --read: 1;
+  --text-min: 13px;
+}
+
+@media (orientation: landscape) and (hover: hover) and (pointer: fine) {
+  :root {
+    --read: 1.15;
+    --text-min: 14px;
+  }
+}
+
+/* Popisky tlačítek (PremiumActionButton) mají podlahu jen v obchodě a v účtu —
+   na úvodní stránce a v dalších sekcích webu zůstávají, jak byly. Účet si ji
+   nastavuje v account-layout.module.scss. */
+[data-shop-plain] {
+  --button-text-min: var(--text-min);
+}
+
 /* Studio je aplikace s vlastním rozvržením — měřítko webu se ho netýká. */
 html[data-app="studio"] {
   --ui-scale: 1;
+  --read: 1;
+  --text-min: 0px;
 }
 
 /*
@@ -527,4 +561,32 @@ html[data-app="studio"] {
 input::-ms-reveal,
 input::-ms-clear {
   display: none;
+}
+
+/*
+ * Rohy polí formulářů — jednotně 2.5px (15. 11. 2026, Matěj: „vypadá čistěji").
+ * Pole i rámečky kolem nich (Input, NativeSelect, předvolba) berou
+ * `--field-radius`. Výjimka: kulatá pole spárovaná s kulatým tlačítkem
+ * (novinky v patičce, slevový kód, hledání v obchodě, hlídání naskladnění)
+ * nesou `data-pill-field`. Zaškrtávátka, přepínače a posuvníky se netýká.
+ */
+:root {
+  --field-radius: 2.5px;
+}
+
+:is(
+    input:not([type="checkbox"], [type="radio"], [type="range"], [type="search"], [type="hidden"], [type="file"], [type="submit"], [type="button"], [type="image"], [type="color"]),
+    select,
+    textarea
+  ):not([data-pill-field]) {
+  border-radius: var(--field-radius) !important;
+}
+
+/*
+ * Nový řádek v textu z administrace (Texty obchodu, Právní údaje, Emaily,
+ * popis výrobku, odpověď ve Studiu…) zůstane na webu novým řádkem
+ * (15. 11. 2026, přání klientky). Mezery se slučují dál jako dřív.
+ */
+p {
+  white-space: pre-line;
 }

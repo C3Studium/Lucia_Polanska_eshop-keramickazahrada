@@ -64,3 +64,20 @@ describe("lineQuantityOf", () => {
     ])
   })
 })
+
+describe("lineRevenueOf — tržba řádku, i když query.graph nevrátí total", () => {
+  // Statistiky (14. 11. 2026): „45× Dekorativní tyčky … 0 Kč" — `items.total`
+  // je počítané pole a z query.graph nepřijde.
+  it("bez total = jednotková cena × množství z detailu", () => {
+    const { lineRevenueOf } = require("../order-quantity")
+    expect(lineRevenueOf({ unit_price: 30, detail: { quantity: 3 } })).toBe(90)
+  })
+  it("total, když je, má přednost (obsahuje slevu)", () => {
+    const { lineRevenueOf } = require("../order-quantity")
+    expect(lineRevenueOf({ total: 81, unit_price: 30, detail: { quantity: 3 } })).toBe(81)
+  })
+  it("nic = 0", () => {
+    const { lineRevenueOf } = require("../order-quantity")
+    expect(lineRevenueOf({})).toBe(0)
+  })
+})

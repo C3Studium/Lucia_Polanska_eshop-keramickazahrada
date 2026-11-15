@@ -10,6 +10,7 @@ import {
 import { itemText } from "@lib/util/site-copy"
 import type { CopyBlock } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
+import { packagingPriceCzkOf } from "@lib/util/packaging"
 
 /**
  * Texty nákupu z bloku `global.produkt` (položky `nakup.*`). V kódu zůstává:
@@ -237,7 +238,10 @@ export default function CTA({
 
       {/* Balné (Matěj 12. 10.): bez částky, jen proč — každý kus má vlastní
           balení proti poškození, v košíku je pak jako položka pod výrobkem. */}
-      {!pick && (
+      {/* Jen když se balné opravdu účtuje (14. 11. 2026) — jinak cena nad
+          tlačítkem říká „Balné u tohoto výrobku neúčtujeme" a tahle věta
+          hned pod ní „balné uvidíte v košíku". */}
+      {!pick && packagingPriceCzkOf(product as { metadata?: Record<string, unknown> | null }) > 0 && (
         <p
           className="product__details__cta__codNote"
           data-testid="product-packaging-note"

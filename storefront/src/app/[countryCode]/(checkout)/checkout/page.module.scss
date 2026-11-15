@@ -45,7 +45,7 @@
     margin-left: clamp(1rem, 1.6vw, 1.75rem);
     color: var(--checkout-olive);
     font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
-    font-size: .68em;
+    font-size: max(var(--text-min, 0px), .68em);
     font-weight: 300;
     line-height: 1.04;
   }
@@ -56,7 +56,7 @@
   padding-bottom: clamp(.5rem, .78vw, .75rem);
   border-bottom: 1px solid var(--checkout-line);
   color: rgb(var(--cream-06-rgb) / .5);
-  font: 400 clamp(.75rem, calc(1vw * var(--ui-scale)), 0.875rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(.75rem, calc(1vw * var(--ui-scale)), 0.875rem) * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -65,7 +65,7 @@
   margin: clamp(.875rem, 2vh, 1.25rem) 0 0;
   max-width: 38ch;
   color: rgb(var(--cream-06-rgb) / .68);
-  font: 300 clamp(.9375rem, calc(1.1vw * var(--ui-scale)), 1.0625rem)/1.5 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(clamp(.9375rem, calc(1.1vw * var(--ui-scale)), 1.0625rem) * var(--read, 1))) / 1.5 "Sansation-Light", sans-serif;
 }
 
 .backLink {
@@ -77,7 +77,7 @@
   padding: clamp(.5rem, .78vw, .75rem) 0;
   border-bottom: 1px solid rgb(var(--cream-06-rgb) / .4);
   color: rgb(var(--cream-06-rgb) / .82);
-  font: 400 clamp(.75rem, calc(1vw * var(--ui-scale)), .875rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(.75rem, calc(1vw * var(--ui-scale)), .875rem) * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: .08em;
   text-transform: uppercase;
   transition: color 220ms ease, border-color 220ms ease;
@@ -100,18 +100,8 @@
   background: var(--checkout-cream);
 }
 
-.ledger :global(input:not([type="checkbox"]):not([type="radio"])),
-.ledger :global(select) {
-  border-radius: 0;
-  border-color: transparent transparent rgb(var(--ink-05-rgb) / .25);
-  background: transparent;
-  box-shadow: none;
-}
-
-.ledger :global(input:not([type="checkbox"]):not([type="radio"]):focus),
-.ledger :global(select:focus) {
-  border-bottom-color: var(--checkout-green);
-}
+/* Pole v panelu kreslí samy sebe jako rámeček (input/style.module.scss,
+   14. 11. 2026). Dřív je tady panel přepisoval na holou spodní čáru. */
 
 /*
  * Jeden sloupec: úvod (bez seznamu kroků — ten nese bublinky), souhrn jako
@@ -145,13 +135,16 @@
   .ledger { padding: 20px 14px; }
 }
 
-/* Pokladna blíž ke středu (13. 11. 2026): užší celek, oba sloupce u sebe.
-   Na 1728 bylo vpravo i vlevo přes 100 px prázdna a formulář utíkal ke kraji. */
+/* Pokladna blíž ke středu (13. 11. 2026): oba sloupce u sebe.
+   Na velkých obrazovkách ale 84rem (1142 px na MacBooku 16") nechával po
+   stranách přes 290 px tmy (14. 11. 2026, Matěj: „není responzivní pro větší
+   obrazovky") — strop 108rem, takže celek roste s obrazovkou a sloupce
+   zůstávají u sebe. */
 @include from-px(1021px) {
   .root {
     grid-template-columns: minmax(20rem, .9fr) minmax(0, 1.1fr);
-    column-gap: clamp(2rem, 3.5vw, 4rem);
-    width: min(calc(90 * var(--fvw)), 84rem);
+    column-gap: clamp(2rem, 3.5vw, 4.5rem);
+    width: min(calc(90 * var(--fvw)), 108rem);
   }
 }
 

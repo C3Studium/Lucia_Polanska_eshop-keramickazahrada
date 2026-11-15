@@ -39,7 +39,7 @@
   // Podlaha .75rem, ne .72rem: .72rem je 11.52px a rig hlídá čitelnost pod 12px
   // (.rdshots/acct-shot.cjs ohlásí každý text s fs < 12). Takhle drží mikropopisek
   // dnešních 12px až do 1600 a nad 1921 ho zvedne ramp přes strop v rem.
-  font: max(10px, calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.8vw * var(--ui-scale)), 0.875rem)))/1.2 "Sansation-Regular", sans-serif;
+  font: max(var(--text-min, 10px), calc(calc(var(--account-zoom, 1) * clamp(.75rem, calc(0.8vw * var(--ui-scale)), 0.875rem)) * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -83,7 +83,7 @@
   margin: clamp(.5rem, 1.1vh, .8rem) 0 0;
   overflow-wrap: anywhere;
   color: rgb(var(--ink-05-rgb) / .7);
-  font-size: calc(var(--account-zoom, 1) * clamp(.94rem, calc(0.8vw * var(--ui-scale)), 1.125rem));
+  font-size: max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(.94rem, calc(0.8vw * var(--ui-scale)), 1.125rem)) * var(--read, 1)));
 }
 
 .accountOverviewStats {
@@ -143,14 +143,14 @@
 }
 
 .accountOverviewStatValue strong small {
-  font-size: .34em;
+  font-size: max(var(--text-min, 0px), .34em);
 }
 
 .accountOverviewStatValue p {
   max-width: 9rem;
   margin: 0 0 .2rem;
   color: rgb(var(--ink-05-rgb) / .62);
-  font-size: calc(var(--account-zoom, 1) * clamp(.85rem, calc(0.72vw * var(--ui-scale)), .95rem));
+  font-size: max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(.85rem, calc(0.72vw * var(--ui-scale)), .95rem)) * var(--read, 1)));
 }
 
 // height: 3px zůstává v px schválně — hairline pruh je fyzická věc (pravidlo 3).
@@ -174,7 +174,7 @@
   min-height: clamp(2.6rem, 5vh, 3.2rem);
   margin: 0 0 clamp(1.2rem, 3vh, 2.1rem);
   color: rgb(var(--ink-05-rgb) / .6);
-  font: calc(var(--account-zoom, 1) * clamp(.9rem, calc(0.76vw * var(--ui-scale)), 1rem))/1.5 "Sansation-Light", sans-serif;
+  font: max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(.9rem, calc(0.76vw * var(--ui-scale)), 1rem)) * var(--read, 1))) / 1.5 "Sansation-Light", sans-serif;
 }
 
 .accountOverviewAction {

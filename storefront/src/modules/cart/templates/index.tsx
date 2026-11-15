@@ -3,7 +3,6 @@ import ItemsTemplate from "./items"
 import Summary from "./summary"
 import EmptyCartMessage from "../components/empty-cart-message"
 import SignInPrompt from "../components/sign-in-prompt"
-import Divider from "@modules/common/components/divider"
 import CmsText from "@modules/common/components/cms-text"
 import { HttpTypes } from "@medusajs/types"
 import { itemFieldPath, itemValue } from "@lib/util/site-copy"
@@ -92,17 +91,15 @@ const CartTemplate = async ({
             </header>
             <div className={s.grid}>
               <div className={s.left}>
-              {!customer && (
-                <>
-                  <SignInPrompt block={copy?.["kosik.prihlaseni"]} />
-                  <Divider />
-                </>
-              )}
               <ItemsTemplate
                 cart={cart}
                 copy={copy?.["kosik.vypis"]}
                 madeToOrderTerms={madeToOrderTerms}
               />
+              {/* Nabídka přihlášení až pod výrobky (14. 11. 2026): nahoře je
+                  odsouvala dolů, a kdo přišel do košíku, chce nejdřív vidět,
+                  co v něm má. */}
+              {!customer && <SignInPrompt block={copy?.["kosik.prihlaseni"]} />}
               </div>
               <div className={s.right}>
                 <div className={s.sticky}>

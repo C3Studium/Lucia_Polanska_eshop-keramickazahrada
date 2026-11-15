@@ -142,6 +142,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
       audience: "owner",
       email: true,
       replyTo: owner.replyTo,
+      images: photoUrls,
     })
     if (outcome.email === "no-recipient") {
       logger.warn("[poptávka] e-mail majitelce neodešel — chybí adresa pro oznámení; zůstal jen zvonek.")

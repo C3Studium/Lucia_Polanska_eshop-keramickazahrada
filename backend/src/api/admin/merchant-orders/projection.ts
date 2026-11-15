@@ -66,6 +66,11 @@ export type MerchantOrderRow = {
    */
   paid_total: number | null
   item_count: number
+  /**
+   * Až tři náhledy výrobků (14. 11. 2026) — majitelka objednávku pozná podle
+   * kusu dřív než podle čísla. Bez balného a doběrečného (nemají výrobek).
+   */
+  thumbnails: string[]
   shipping_method: string | null
 
   /** Native, workflow-computed. Never derived here. */
@@ -229,6 +234,15 @@ const itemCount = (order: any): number =>
     0
   )
 
+const thumbnailsOf = (order: any): string[] =>
+  [
+    ...new Set(
+      ((order?.items || []) as any[])
+        .filter((item) => item?.product_id && item?.thumbnail)
+        .map((item) => String(item.thumbnail))
+    ),
+  ].slice(0, 3)
+
 const shippingMethod = (order: any): string | null => {
   const method = (order?.shipping_methods || [])[0]
   return method?.name || method?.title || null
@@ -287,6 +301,7 @@ export const toMerchantOrderRow = (
     total: order?.total ?? null,
     paid_total: order ? capturedTotal : null,
     item_count: itemCount(order),
+    thumbnails: thumbnailsOf(order),
     shipping_method: shippingMethod(order),
 
     payment_status: order?.payment_status ?? null,

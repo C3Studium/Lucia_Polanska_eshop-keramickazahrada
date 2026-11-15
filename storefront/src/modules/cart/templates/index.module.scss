@@ -84,7 +84,7 @@
      dvanáctipixelovou hranici, kterou shoot.cjs hlásí jako vadu (naměřeno na 1220×660).
      12px je přesně to, co se tu vysází dnes. Živé pásmo 1200–1520, nad 1921 nese strop ramp
      — v px to na 2552 zůstávalo 12px vedle 76px nadpisu. */
-  font: 400 clamp(.75rem, calc(1vw * var(--ui-scale)), .95rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(.75rem, calc(1vw * var(--ui-scale)), .95rem) * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -94,7 +94,7 @@
   margin: 0;
   max-width: 34ch;
   color: rgb(var(--cream-06-rgb) / .62);
-  font: 300 clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.1rem)/1.5 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.1rem) * var(--read, 1))) / 1.5 "Sansation-Light", sans-serif;
 }
 
 .grid {
@@ -158,7 +158,7 @@
   padding-bottom: .6875rem;
   border-bottom: 1px solid rgb(var(--ink-05-rgb) / .2);
   color: rgb(var(--ink-05-rgb) / .5);
-  font: 400 clamp(.75rem, calc(1vw * var(--ui-scale)), .95rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(.75rem, calc(1vw * var(--ui-scale)), .95rem) * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -267,7 +267,7 @@
   .root { padding-top: 72px; }
   .intro { min-height: 0; padding: 4px 0 18px; }
   .intro h1 { margin-top: 6px; font-size: 2rem; }
-  .introCopy { margin-top: 10px; font-size: .875rem; }
+  .introCopy { margin-top: 10px; font-size: max(var(--text-min, 0px), calc(.875rem * var(--read, 1))); }
   .grid { gap: 36px; padding-top: 20px; }
   .left { gap: 20px; }
 }
@@ -278,7 +278,7 @@
   .root { padding-top: 64px; }
   .intro { min-height: 0; padding: 4px 0 12px; }
   .intro h1 { font-size: 1.75rem; }
-  .introCopy { font-size: .8125rem; }
+  .introCopy { font-size: max(var(--text-min, 0px), calc(.8125rem * var(--read, 1))); }
   .grid { gap: 28px; padding-top: 16px; }
   .left { gap: 16px; }
 }

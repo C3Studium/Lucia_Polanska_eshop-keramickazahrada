@@ -184,7 +184,7 @@ export const POST = async (
         goodsReturnRequired: effective !== "discount" && !nothingToReturn,
         nothingToReturn,
         returnAddress:
-          settings?.return_address || "Keramická zahrada\nPutim 229\n397 01 Písek",
+          settings?.return_address || "Keramická zahrada\nPutim 229\n397 01 Putim",
         ...(settings?.return_instructions?.trim()
           ? { returnInstructions: settings.return_instructions.trim() }
           : {}),

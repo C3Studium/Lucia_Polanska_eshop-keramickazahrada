@@ -23,7 +23,7 @@
 
 .index {
   padding-top: .2rem;
-  font-size: .75rem;
+  font-size: max(var(--text-min, 0px), calc(.75rem * var(--read, 1)));
   letter-spacing: .12em;
   font-variant-numeric: tabular-nums;
 }
@@ -38,7 +38,7 @@
   border: 0;
   background: none;
   color: inherit;
-  font: 400 clamp(1.0625rem, calc(1.2vw * var(--ui-scale)), 1.25rem)/1.2 "Sentient-Regular", serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(1.0625rem, calc(1.2vw * var(--ui-scale)), 1.25rem) * var(--read, 1))) / 1.2 "Sentient-Regular", serif;
   letter-spacing: -.02em;
   text-align: left;
 }
@@ -55,7 +55,7 @@
 
 .desc {
   margin: .2rem 0 0;
-  font-size: .9375rem;
+  font-size: max(var(--text-min, 0px), calc(.9375rem * var(--read, 1)));
   font-weight: 300;
   line-height: 1.5;
 }

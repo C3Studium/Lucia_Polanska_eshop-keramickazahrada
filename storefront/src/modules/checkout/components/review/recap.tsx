@@ -1,7 +1,6 @@
 "use client"
 
 import { convertToLocale } from "@lib/util/money"
-import { shortTitle } from "@lib/util/short-title"
 import { PLATCE_DPH } from "@lib/util/dph"
 import styles from "./style.module.scss"
 import { pickupPointLabel } from "@lib/util/pickup-point"
@@ -78,7 +77,7 @@ export default function OrderRecap({
                       className={styles.itemTitle}
                       title={item.product_title ?? item.title}
                     >
-                      {shortTitle(item.product_title ?? item.title)}
+                      {item.product_title ?? item.title}
                       {item.variant_title ? ` · ${item.variant_title}` : ""}
                     </span>
                     {/* Miniatura pod názvem — ať je v přehledu vidět, co přesně jde do košíku. */}

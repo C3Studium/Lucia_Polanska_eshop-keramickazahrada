@@ -3,6 +3,11 @@
 import { sdk } from "@lib/config"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { filterCatalogue } from "@lib/util/catalogue-filter"
+import {
+  hasEmptyShelf,
+  isPurchasable,
+  productAvailability,
+} from "@lib/util/availability"
 import { HttpTypes } from "@medusajs/types"
 import { listCategories } from "./categories"
 import { listCollections } from "./collections"
@@ -453,6 +458,13 @@ export const listStoreCatalogue = async ({
           ? { price, sale: cheapestPrice?.price_type === "sale" }
           : null
       },
+      /* „Doporučené": co je na poličce, první; „Prodáno" nakonec. */
+      shelfRankOf: (product) =>
+        !isPurchasable(productAvailability(product))
+          ? 2
+          : hasEmptyShelf(product)
+            ? 1
+            : 0,
       collectionCategoryIds,
       onlyIds,
       offset: normalizedOffset,

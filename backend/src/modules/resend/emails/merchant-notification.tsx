@@ -1,3 +1,4 @@
+import { Img, Link, Section } from "@react-email/components"
 import {
   ButtonRow,
   EmailButton,
@@ -24,13 +25,27 @@ interface MerchantNotificationEmailProps {
   title?: string;
   description?: string;
   urgent?: boolean;
+  /** Fotky jako obrázky (poptávka zakázky) — klik otevře plnou velikost. */
+  images?: string[];
 }
 
 function MerchantNotificationEmailComponent({
   title,
   description,
   urgent,
+  images,
 }: MerchantNotificationEmailProps) {
+  const photos = (Array.isArray(images) ? images : []).filter(
+    (url) => typeof url === "string" && /^https?:\/\//.test(url)
+  );
+  /* Řádky s adresou fotky, které e-mail ukazuje jako obrázek, z textu pryč —
+     text zůstává celý pro zvonek a stránku Poptávky v adminu. */
+  const text = photos.length
+    ? (description ?? "")
+        .split("\n")
+        .filter((line) => !photos.includes(line.trim()))
+        .join("\n")
+    : description;
   const adminUrl = process.env.BACKEND_PUBLIC_URL || process.env.MEDUSA_BACKEND_URL || "";
   const heading = title || "Upozornění z e-shopu";
 
@@ -41,8 +56,23 @@ function MerchantNotificationEmailComponent({
 
       {urgent ? <Note tone="danger">Vyžaduje pozornost.</Note> : null}
 
-      {description ? (
-        <P style={{ whiteSpace: "pre-line" }}>{description}</P>
+      {text ? (
+        <P style={{ whiteSpace: "pre-line" }}>{text}</P>
+      ) : null}
+
+      {photos.length ? (
+        <Section style={{ margin: "8px 0 20px" }}>
+          {photos.map((url, index) => (
+            <Link key={url} href={url} style={{ display: "block", margin: "0 0 12px" }}>
+              <Img
+                src={url}
+                alt={`Fotka ${index + 1}`}
+                width="520"
+                style={{ display: "block", width: "100%", maxWidth: "520px", height: "auto", borderRadius: "6px" }}
+              />
+            </Link>
+          ))}
+        </Section>
       ) : null}
 
       {adminUrl && (

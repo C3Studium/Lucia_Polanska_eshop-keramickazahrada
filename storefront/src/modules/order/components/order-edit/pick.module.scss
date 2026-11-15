@@ -40,7 +40,7 @@
   margin: 0;
   /* U výměny tu stojí název výrobku — dlouhý název se láme, nepřetéká. */
   overflow-wrap: anywhere;
-  font: 400 0.78rem / 1.35 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(0.78rem * var(--read, 1))) / 1.35 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 
@@ -66,7 +66,7 @@
   border: 1px solid currentColor;
   border-radius: 999px;
   color: inherit;
-  font: 400 0.88rem / 1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(0.88rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   text-decoration: none;
   white-space: nowrap;
   transition: background-color 0.25s ease, color 0.25s ease, opacity 0.25s ease;

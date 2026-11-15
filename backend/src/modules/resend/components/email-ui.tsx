@@ -309,6 +309,9 @@ export const P = ({
       lineHeight: small ? "20px" : "24px",
       color: small ? brand.muted : brand.body,
       margin: "0 0 16px",
+      /* Nový řádek z administrace (Emaily, poznámka ke kurzu, zpráva
+         zákazníkovi…) zůstane novým řádkem (15. 11. 2026). */
+      whiteSpace: "pre-line",
       ...style,
     }}
   >
@@ -682,6 +685,7 @@ export const Note = ({
           color,
           margin: 0,
           paddingLeft: "16px",
+          whiteSpace: "pre-line",
         }}
       >
         {children}

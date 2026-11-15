@@ -36,7 +36,7 @@
   margin-bottom: clamp(.9rem, 2.6vh, 1.6rem);
   color: var(--blackText);
   font-family: "Sansation-Light";
-  font-size: .96rem;
+  font-size: max(var(--text-min, 0px), calc(.96rem * var(--read, 1)));
   font-weight: 300;
   line-height: 1.45;
   text-align: left;
@@ -60,29 +60,30 @@
   /* one control, one value: the same clamp runs in login.module.scss.
      41.6px at 640px tall, 54.4px at 837px; 49.9px on 1366x768, 46.8px on 1280x720 */
   height: clamp(2.6rem, 6.5vh, 3.4rem) !important;
-  padding: clamp(.75rem, 2vh, 1.05rem) 2.8rem clamp(.2rem, .6vh, .35rem) 0 !important;
-  border: 0 !important;
-  border-bottom: 1px solid rgb(var(--black-03-rgb) / .42) !important;
-  border-radius: 0 !important;
-  background: transparent !important;
+  /* Rámeček místo spodní čáry (14. 11. 2026) — jako v pokladně. */
+  padding: clamp(1.05rem, 2.6vh, 1.35rem) 2.8rem clamp(.2rem, .6vh, .35rem) .875rem !important;
+  border: 1px solid rgb(var(--black-03-rgb) / .42) !important;
+  border-radius: var(--field-radius) !important;
+  background: rgb(255 255 255 / .45) !important;
   color: var(--black-03) !important;
-  font-size: 1.02rem !important;
+  font-size: max(var(--text-min, 0px), calc(1.02rem * var(--read, 1))) !important;
   box-shadow: none !important;
 }
 
 .root .form .fields :global(label) {
-  left: -.25rem !important;
+  left: .875rem !important;
+  top: .5rem !important;
   margin-left: 0 !important;
-  color: rgb(var(--black-03-rgb) / .54) !important;
+  color: rgb(var(--black-03-rgb) / .72) !important;
   /* floor 12.8px keeps the .54-alpha uppercase caption above the 12px legibility floor */
-  font-size: max(10px, calc(var(--account-zoom, 1) * clamp(.8rem, calc(0.68vw * var(--ui-scale)), .9rem))) !important;
-  letter-spacing: .1em;
-  text-transform: uppercase;
+  font-size: max(var(--text-min, 10px), calc(calc(var(--account-zoom, 1) * clamp(.8rem, calc(0.68vw * var(--ui-scale)), .9rem)) * var(--read, 1))) !important;
+  letter-spacing: .01em;
+  text-transform: none;
 }
 
 .root .form .fields :global(input:focus) {
   border-color: var(--olive-07) !important;
-  box-shadow: none !important;
+  box-shadow: 0 0 0 2px rgb(var(--olive-07-rgb) / .35) !important;
 }
 
 .root .form .fields :global(input:-webkit-autofill),
@@ -104,7 +105,7 @@
   margin-top: clamp(.7rem, 2vh, 1.1rem);
   color: var(--blackText);
   font-family: "Sansation-Light";
-  font-size: .88rem;
+  font-size: max(var(--text-min, 0px), calc(.88rem * var(--read, 1)));
   font-weight: 300;
   line-height: 1.45;
   text-align: left;

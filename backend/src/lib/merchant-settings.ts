@@ -270,6 +270,16 @@ const KEY_SCHEMAS = {
   /** Kdy se texty naposledy opravdu změnily (ISO). Zapisuje server. */
   shop_texts_updated_at: isoInstantOrEmpty,
   /**
+   * Vlastní znění e-mailů (administrace → Emaily, 15. 11. 2026): šablona →
+   * pole → text. Jen čeština; chybějící pole = znění z kódu šablony,
+   * `subject` = předmět. Zápis posílá celou jednu šablonu a ta nahradí
+   * uloženou (prázdný objekt = zpátky na výchozí znění).
+   */
+  email_texts: z.record(
+    z.string().regex(/^[a-z0-9-]{2,60}$/),
+    z.record(z.string().regex(/^[A-Za-z0-9_]{1,60}$/), z.string().max(5000))
+  ),
+  /**
    * Slevový kód pro stálé zákazníky (Zákazníci+, `lib/loyalty-code.ts`):
    * výchozí sleva a platnost ručně posílaného kódu a automat „po N. zaplacené
    * objednávce". Jeden objekt, zapisuje se vždy celý (formulář má všechna
@@ -340,7 +350,7 @@ export const MERCHANT_SETTINGS_DEFAULTS: MerchantSettings = {
   /* Adresa pro vrácení zboží. Adresát je prodávající (podnikatelka
      Lucie Polanská, ne název obchodu) — stejně jako v poučení o odstoupení
      (NV 29/2023 Sb., pokyn [6] a) 2.) a v OP. */
-  return_address: "Lucie Polanská\nPutim 229\n397 01 Písek",
+  return_address: "Lucie Polanská\nPutim 229\n397 01 Putim",
   return_instructions: "",
   /* Zapnuto: firemní nákup je běžná věc a vypínač je tu pro případ, že ho
      nebude chtít, ne naopak. */
@@ -366,6 +376,7 @@ export const MERCHANT_SETTINGS_DEFAULTS: MerchantSettings = {
   shop_texts: {},
   shop_texts_off: {},
   shop_texts_updated_at: "",
+  email_texts: {},
   /* Stejné hodnoty jako LOYALTY_CODE_DEFAULTS v lib/loyalty-code-rules.ts. */
   loyalty_code: { auto_enabled: false, after_orders: 3, percentage: 10, valid_days: 60 },
 }
@@ -387,6 +398,7 @@ export const parseMerchantSettings = (
     legal_facts: { ...MERCHANT_SETTINGS_DEFAULTS.legal_facts },
     shop_texts: { ...MERCHANT_SETTINGS_DEFAULTS.shop_texts },
     shop_texts_off: { ...MERCHANT_SETTINGS_DEFAULTS.shop_texts_off },
+    email_texts: {},
   }
 
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
@@ -473,6 +485,20 @@ export const applyMerchantSettingsPatch = (
     if (!sameShopTexts(current.shop_texts, next.shop_texts)) {
       next.shop_texts_updated_at = now.toISOString()
     }
+  }
+
+  if (parsed.data.email_texts !== undefined) {
+    // Po šablonách: poslaná šablona nahradí uloženou, ostatní zůstávají.
+    // Prázdná šablona = zpátky na výchozí znění (klíč zmizí).
+    const merged = { ...current.email_texts }
+    for (const [template, fields] of Object.entries(parsed.data.email_texts)) {
+      const kept = Object.fromEntries(
+        Object.entries(fields).filter(([, value]) => value.trim() !== "")
+      )
+      if (Object.keys(kept).length) merged[template] = kept
+      else delete merged[template]
+    }
+    next.email_texts = merged
   }
 
   if (parsed.data.shop_texts_off !== undefined) {

@@ -46,7 +46,7 @@
   overflow: hidden;
   margin: 0;
   color: var(--ink-05);
-  font: 400 clamp(.875rem, calc(1vw * var(--ui-scale)), .9375rem)/1.25 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(.875rem, calc(1vw * var(--ui-scale)), .9375rem) * var(--read, 1))) / 1.25 "Sansation-Regular", sans-serif;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -54,7 +54,7 @@
 .poradi {
   margin: .125rem 0 0;
   color: rgb(var(--ink-05-rgb) / .62);
-  font: 400 .8125rem/1.2 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(.8125rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
 }
 
 .ovladani {
@@ -75,7 +75,7 @@
   background: transparent;
   color: rgb(var(--ink-05-rgb) / .62);
   cursor: pointer;
-  font: 400 1.25rem/1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(1.25rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   place-items: center;
   transition: border-color .2s ease, color .2s ease;
 }
@@ -142,12 +142,12 @@
   border-left: 2px solid rgb(var(--ink-05-rgb) / .35);
   background: rgb(var(--ink-05-rgb) / .06);
   color: var(--ink-05);
-  font: 400 .8125rem/1.4 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(.8125rem * var(--read, 1))) / 1.4 "Sansation-Regular", sans-serif;
 }
 
 .stav {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .62);
-  font: 400 .8125rem/1.3 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(.8125rem * var(--read, 1))) / 1.3 "Sansation-Regular", sans-serif;
   white-space: nowrap;
 }

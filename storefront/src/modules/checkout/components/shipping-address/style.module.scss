@@ -54,7 +54,7 @@
       color: rgb(var(--ink-05-rgb) / .5);
       /* Podlaha .75rem = původních 12px, drží do 1200px; strop .95rem od 1520.
          V rem, aby popisek nad 1921 vyrostl s rampem místo aby ztuhl na 12px. */
-      font: clamp(.75rem, calc(1vw * var(--ui-scale)), .95rem)/1.2 "Sansation-Regular", sans-serif;
+      font: max(var(--text-min, 0px), calc(clamp(.75rem, calc(1vw * var(--ui-scale)), .95rem) * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
@@ -78,7 +78,7 @@
       /* Kraje v rem. Prostředek zvednut z 1vw na 1.15vw, aby živé pásmo
          (1217-1391) padlo do laptopového rozsahu; s 1vw začínalo až na 1400
          a přes celý notebook byl clamp mrtvý na podlaze. */
-      font: clamp(.875rem, calc(1.15vw * var(--ui-scale)), 1rem)/1.5 "Sansation-Light", sans-serif;
+      font: max(var(--text-min, 0px), calc(clamp(.875rem, calc(1.15vw * var(--ui-scale)), 1rem) * var(--read, 1))) / 1.5 "Sansation-Light", sans-serif;
     }
   }
 
@@ -122,15 +122,15 @@
     background: transparent;
 
     .countryLabel {
-      font-size: 0.75rem;
+      font-size: max(var(--text-min, 0px), calc(0.75rem * var(--read, 1)));
       font-weight: 400;
-      letter-spacing: .09em;
-      text-transform: uppercase;
-      color: rgb(var(--ink-06-rgb) / .56);
+      letter-spacing: .01em;
+      text-transform: none;
+      color: rgb(var(--ink-06-rgb) / .78);
     }
 
-    strong { color: var(--ink-06); font-size: 1rem; font-weight: 300; }
-    > span:last-child { font-size: 0.75rem; opacity: .56; }
+    strong { color: var(--ink-06); font-size: max(var(--text-min, 0px), calc(1rem * var(--read, 1))); font-weight: 300; }
+    > span:last-child { font-size: max(var(--text-min, 0px), calc(0.75rem * var(--read, 1))); opacity: .56; }
   }
 
   .checkboxRow {
@@ -228,7 +228,7 @@
 .firmaPopis {
   margin: 0;
   color: rgb(var(--ink-06-rgb) / .62);
-  font-size: clamp(.8125rem, calc(1vw * var(--ui-scale)), .9375rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(.8125rem, calc(1vw * var(--ui-scale)), .9375rem) * var(--read, 1)));
   line-height: 1.45;
 }
 

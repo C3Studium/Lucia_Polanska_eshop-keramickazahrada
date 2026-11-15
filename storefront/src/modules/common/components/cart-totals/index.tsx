@@ -219,6 +219,10 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
                 amount: shipping_total ?? shipping_subtotal ?? 0,
                 currency_code,
               })
+            ) : shippingFrom?.pickupFree && (shippingFrom.amount ?? 0) > 0 ? (
+              /* „od 150,-" vedle „Osobní odběr zdarma" četl každý jinak
+                 (14. 11. 2026) — volba přijde až v pokladně, tak to říct. */
+              "vyberete v pokladně"
             ) : (
               <ShippingNotChosen
                 shippingFrom={shippingFrom}
@@ -241,6 +245,12 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
             <div className={styles.subRow}>
               <span>Osobní odběr v ateliéru</span>
               <span>zdarma</span>
+            </div>
+            <div className={styles.subRow}>
+              <span>Poštou</span>
+              <span>
+                od {convertToLocale({ amount: shippingFrom.amount ?? 0, currency_code })}
+              </span>
             </div>
           </div>
         )}
@@ -276,7 +286,9 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
         <span className={styles.total}>
           Celkem
           {PLATCE_DPH && <em className={styles.vatNote}>včetně DPH</em>}
-          {!shippingChosen && <em className={styles.vatNote}>bez dopravy</em>}
+          {!shippingChosen && (
+            <em className={styles.vatNote}>doprava se přičte podle výběru</em>
+          )}
         </span>
         <span
           className={styles.totalValue}

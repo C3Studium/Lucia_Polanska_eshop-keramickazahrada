@@ -136,6 +136,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({
                     tomu tu stálo pravidlo na `> :first-child`.
                   */}
                   <input
+                    data-pill-field
                     className={styles.input}
                     id="promotion-input"
                     name="code"

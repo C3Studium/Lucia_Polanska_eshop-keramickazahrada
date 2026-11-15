@@ -87,9 +87,8 @@
   z-index: 0;
   border-radius: inherit;
   background: var(--premium-button-fill, var(--ink-05));
-  transform: scaleX(0);
-  transform-origin: left center;
-  will-change: transform;
+  /* Prolnutí místo přejezdu (14. 11. 2026, viz motion.ts). */
+  opacity: 0;
 }
 
 .labelStack,
@@ -111,7 +110,8 @@
   /* The CTA for the whole purchase flow — the 15px UI floor applies, so
      .9375rem is the floor of the clamp and never goes below it.
      15 -> 17px, live 1304-1478. */
-  font: 400 clamp(.9375rem, calc(1.15vw * var(--ui-scale)), 1.0625rem)/1 "Sansation-Regular", sans-serif;
+  /* --button-text-min: podlaha jen v obchodě a účtu (globals.scss, 14. 11. 2026). */
+  font: 400 max(var(--button-text-min, 0px), clamp(.9375rem, calc(1.15vw * var(--ui-scale)), 1.0625rem))/1 "Sansation-Regular", sans-serif;
 }
 
 .labelOver {
@@ -169,7 +169,7 @@
 }
 
 .compact .labelStack {
-  font-size: calc(clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1rem) * var(--premium-button-scale, 1));
+  font-size: max(var(--button-text-min, 0px), calc(clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1rem) * var(--premium-button-scale, 1)));
 }
 /* .6 of the compact height (24/40). Flat like the height it sits in, so the
    ratio holds at every size instead of drifting across two axes. The old

@@ -56,7 +56,7 @@ const out = process.env.POTVRZENI_RENDER_OUT
       profile: { production_time_min_days: 14, production_time_max_days: 42 },
       facts: {
         "seller.name": "Lucie Polanská",
-        "seller.address": "Putim 229, 397 01 Písek",
+        "seller.address": "Putim 229, 397 01 Putim",
         "seller.ico": "03441482",
         "seller.email": "info@keramickazahrada.cz",
         "seller.phone": "+420 775 211 578",

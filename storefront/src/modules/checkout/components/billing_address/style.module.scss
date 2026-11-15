@@ -31,13 +31,13 @@
 			background: transparent;
 
 			span {
-				font-size: 0.75rem;
+				font-size: max(var(--text-min, 0px), calc(0.75rem * var(--read, 1)));
 				font-weight: 400;
-				letter-spacing: .09em;
-				text-transform: uppercase;
-				color: rgb(var(--ink-06-rgb) / .56);
+				letter-spacing: .01em;
+				text-transform: none;
+				color: rgb(var(--ink-06-rgb) / .78);
 			}
-			strong { color: var(--ink-06); font-size: 1rem; font-weight: 300; }
+			strong { color: var(--ink-06); font-size: max(var(--text-min, 0px), calc(1rem * var(--read, 1))); font-weight: 300; }
 		}
 	}
 

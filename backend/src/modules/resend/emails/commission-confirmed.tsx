@@ -36,7 +36,7 @@ interface CommissionConfirmedEmailProps {
 }
 
 /** Texty po jazycích (lib/email-locale) — čeština je původní znění. */
-const COPY: Localized<{
+export const COPY: Localized<{
   preview: (orderNumber: string) => string
   eyebrow: string
   title: string

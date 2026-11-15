@@ -90,6 +90,25 @@ export function SupportLink({ href, label, children }: SupportLinkProps) {
   )
 }
 
+/** Totéž jako `SupportLink`, jen akce na místě (tlačítko), ne přechod jinam. */
+export function SupportAction({
+  onClick,
+  label,
+  children,
+}: {
+  onClick: () => void
+  label: string
+  children: ReactNode
+}) {
+  return (
+    <button type="button" onClick={onClick} className={styles.route}>
+      <span>{label}</span>
+      <strong>{children}</strong>
+      <i aria-hidden="true">↗︎</i>
+    </button>
+  )
+}
+
 export function SupportLinks({ children }: { children: ReactNode }) {
   return (
     <nav className={styles.routes} aria-label="Další možnosti přístupu">

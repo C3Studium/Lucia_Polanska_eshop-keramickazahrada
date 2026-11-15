@@ -27,7 +27,7 @@
          03 payment, 04 review stojí na témž clampu) — krok 02 na ní byl jediný o 18 %
          níž, takže aktivní krok byl vizuálně nejmenší ze čtyř.
          od 1280 až po 1920. */
-      font-size: clamp(2rem, calc(2.8vw * var(--ui-scale)), 3.15rem);
+      font-size: clamp(1.625rem, calc(2vw * var(--ui-scale)), 2.25rem);
       font-weight: 400;
       gap: 0.5rem;
       align-items: baseline;
@@ -71,7 +71,7 @@
         font-family: "Sansation-Regular";
         /* Živé pásmo 1371…1752. Váha zpět na 400 — 300 prosákla z xs položky mapy,
            která přes min-width 400 platila i na 1920. */
-        font-size: clamp(.9rem, calc(1.05vw * var(--ui-scale)), 1.15rem);
+        font-size: max(var(--text-min, 0px), calc(clamp(.9rem, calc(1.05vw * var(--ui-scale)), 1.15rem) * var(--read, 1)));
 				font-weight: 400;
 				color: var(--blackText);
 				margin-bottom: 0.25rem;
@@ -79,7 +79,7 @@
       .radioAddress{
         margin: 0 !important;
         /* Živé pásmo 1333…1752. */
-        font-size: clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem);
+        font-size: max(var(--text-min, 0px), calc(clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem) * var(--read, 1)));
 				font-weight: 300;
 				color: var(--blackText);
 				margin-bottom: 0.25rem;
@@ -92,7 +92,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 0.875rem;
+    font-size: max(var(--text-min, 0px), calc(0.875rem * var(--read, 1)));
     cursor: pointer;
     /* Svisle vh (na 1080 vyjde 18.4px = strop, na 768 pak 14.6px — řádky se na
        nízkém laptopu sevřou samy), vodorovně vw (na 1280 vyjde 28.2px, na 1454+
@@ -131,7 +131,7 @@
         /* Živé pásmo 1333…1752. `white-space: nowrap` z xs/xxs položky mapy bylo
            naměřeno činné na 1920 — na desktopu jen bránilo zalomení dlouhých jmen
            dopravců, proto je pryč. */
-        font-size: clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem);
+        font-size: max(var(--text-min, 0px), calc(clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem) * var(--read, 1)));
         font-weight: 400;
         color: var(--blackText);
       }
@@ -143,7 +143,7 @@
     .radioPrice {
       justify-self: end;
       /* Živé pásmo 1333…1752. */
-      font-size: clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem);
+      font-size: max(var(--text-min, 0px), calc(clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem) * var(--read, 1)));
       font-weight: 400;
       font-family: "Sansation-Regular";
       color: var(--blackText);
@@ -152,7 +152,7 @@
   }
 
   .radioAddress {
-    font-size: 1rem;
+    font-size: max(var(--text-min, 0px), calc(1rem * var(--read, 1)));
     color: var(--ui-fg-muted, var(--blue-02));
   }
 
@@ -180,7 +180,7 @@
 
     .packetaConfirmationLabel{
       /* Živé pásmo 1333…1752. */
-      font-size: clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem);
+      font-size: max(var(--text-min, 0px), calc(clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem) * var(--read, 1)));
       font-weight: 500;
       color: var(--blackText);
       margin-bottom: 0.25rem;
@@ -189,7 +189,7 @@
 
     .packetaConfirmationValue{
       /* Živé pásmo 1333…1752. */
-      font-size: clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem);
+      font-size: max(var(--text-min, 0px), calc(clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem) * var(--read, 1)));
       color: var(--blackText);
       word-break: break-word;
       font-family: "Sansation-Light";
@@ -223,7 +223,7 @@
       align-self: start;
       padding-top: .2rem;
       color: rgb(var(--ink-05-rgb) / .68);
-      font: 600 .8125rem/1 "Sansation-Regular", sans-serif;
+      font: 600 max(var(--text-min, 0px), calc(.8125rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
@@ -236,12 +236,12 @@
 
       strong {
         color: var(--ink-05);
-        font: 400 1.05rem/1.25 "Sansation-Regular", sans-serif;
+        font: 400 max(var(--text-min, 0px), calc(1.05rem * var(--read, 1))) / 1.25 "Sansation-Regular", sans-serif;
       }
 
       span {
         color: var(--ink-05);
-        font: 400 1rem/1 "Sansation-Regular", sans-serif;
+        font: 400 max(var(--text-min, 0px), calc(1rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
         white-space: nowrap;
       }
     }
@@ -249,7 +249,7 @@
     p {
       margin: 0;
       color: rgb(var(--ink-05-rgb) / .68);
-      font: 300 .875rem/1.4 "Sansation-Light", sans-serif;
+      font: 300 max(var(--text-min, 0px), calc(.875rem * var(--read, 1))) / 1.4 "Sansation-Light", sans-serif;
     }
   }
 
@@ -260,7 +260,7 @@
     background: rgb(var(--clay-17-rgb) / .07);
     color: var(--blackText);
     font-family: "Sansation-Light", sans-serif;
-    font-size: 0.9rem;
+    font-size: max(var(--text-min, 0px), calc(0.9rem * var(--read, 1)));
     line-height: 1.45;
   }
 
@@ -274,7 +274,7 @@
     .methodLabel {
       /* Stejný clamp jako u .radioContent .methodLabel výš — tenhle zápis má nižší
          specificitu a je pro tenhle JSX vždy přebitý, ale ať se ty dvě neliší. */
-      font-size: clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem);
+      font-size: max(var(--text-min, 0px), calc(clamp(.875rem, calc(1.05vw * var(--ui-scale)), 1.15rem) * var(--read, 1)));
       font-weight: 500;
       color: var(--ui-fg-base, var(--ink-03));
       margin-bottom: 0.25rem;
@@ -282,7 +282,7 @@
     .methodText {
       /* Menší než název možnosti (10. 11. 2026): 1rem bylo větší než název dopravy nad
          ním (0.875rem), adresa ateliéru u osobního odběru tak vypadala jako nadpis. */
-      font-size: 0.8125rem;
+      font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
       color: var(--ui-fg-subtle, var(--blue-02));
     }
   }
@@ -298,7 +298,7 @@
      které si projekt drží (page.module.scss ho tak pojmenoval); původních .68rem
      = 10.88px bylo pod ním, a krok 04 měl přitom natvrdo 0.8125rem, takže
      v jednom sloupci stály dvě velikosti. Živé pásmo 1176…1373. */
-  font: 600 clamp(.75rem, calc(1.02vw * var(--ui-scale)), .875rem)/1 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(clamp(.75rem, calc(1.02vw * var(--ui-scale)), .875rem) * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: .18em;
   opacity: .48;
 }
@@ -335,7 +335,7 @@
   background: none;
   color: var(--blackText);
   font-family: "Sansation-Regular";
-  font-size: 0.9375rem;
+  font-size: max(var(--text-min, 0px), calc(0.9375rem * var(--read, 1)));
   text-decoration: underline;
   cursor: pointer;
 }
@@ -436,7 +436,7 @@
     padding-bottom: 1.5rem;
 
     &::before {
-      font-size: 0.6875rem;
+      font-size: max(var(--text-min, 0px), calc(0.6875rem * var(--read, 1)));
       letter-spacing: 0.14em;
     }
 
@@ -444,7 +444,7 @@
       margin-bottom: 0.875rem;
 
       .heading {
-      font-size: 1.375rem;
+      font-size: max(var(--text-min, 0px), calc(1.375rem * var(--read, 1)));
       line-height: 1.15;
       letter-spacing: -0.015em;
       }
@@ -464,8 +464,21 @@
   display: inline-block;
   align-self: center;
   margin-right: .6em;
-  font: 600 clamp(.75rem, calc(1.02vw * var(--ui-scale)), .875rem)/1 "Sansation-Regular", sans-serif;
+  font: 600 max(var(--text-min, 0px), calc(clamp(.75rem, calc(1.02vw * var(--ui-scale)), .875rem) * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: .18em;
   vertical-align: middle;
   opacity: .48;
+}
+
+/* Odkaz na mapu u osobního odběru (14. 11. 2026). */
+.mapLink {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 2.25rem;
+  margin-top: .125rem;
+  color: var(--ink-05);
+  font: 400 max(var(--text-min, 0px), calc(.875rem * var(--read, 1))) / 1.3 "Sansation-Regular", sans-serif;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }

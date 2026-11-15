@@ -113,7 +113,7 @@
   // .75rem je týchž 12px při rem 16 — dokumentovaná podlaha čitelnosti
   // (globals.scss: --type-eyebrow). Jako holé px byl tohle jediný text
   // na stránce, který nad 1921 zamrzl, zatímco všechno kolem rostlo.
-  font: .75rem/1 "Sansation-Regular", sans-serif;
+  font: max(var(--text-min, 0px), calc(.75rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   content: "Keramická zahrada · váš účet";
@@ -214,7 +214,7 @@
   .children::before {
     top: 24px;
     right: 18px;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: max(var(--text-min, 0px), calc(calc(13px * var(--ui-scale)) * var(--read, 1)));
   }
 
   .center,
@@ -323,4 +323,10 @@
 .section,
 .container {
   --account-display-zoom: .62 !important;
+}
+
+/* Popisky tlačítek v účtu s podlahou čtecí zóny (globals.scss, 14. 11. 2026). */
+.section,
+.container {
+  --button-text-min: var(--text-min);
 }

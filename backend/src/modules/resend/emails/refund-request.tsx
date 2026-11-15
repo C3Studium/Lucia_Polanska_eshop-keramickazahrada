@@ -66,7 +66,7 @@ interface RefundRequestEmailProps {
   wholeOrder?: boolean;
   /** Zboží už odešlo → zákazník ho vrací; jinak nic neposílá. */
   goodsShipped?: boolean;
-  /** Kam zboží vrátit („Lucie Polanská, Putim 229, 397 01 Písek"). */
+  /** Kam zboží vrátit („Lucie Polanská, Putim 229, 397 01 Putim"). */
   returnAddress?: string;
   /** Jak se peníze vrátí (karta / převod na zamaskovaný účet / není co vracet). */
   refundMethodText?: string;
@@ -347,7 +347,7 @@ const KINDS: Localized<Record<"reklamace" | "vraceni" | "odstoupeni" | "fallback
 }
 
 /** Společné texty šablony (popisky řádků, tlačítka, „co bude dál"). */
-const COPY: Localized<{
+export const COPY: Localized<{
   defaultDeadline: string
   channel: string
   order: string
@@ -825,7 +825,7 @@ function RefundRequestEmailComponent({
         <WithdrawalNextSteps
           goodsShipped={goodsShipped}
           wholeOrder={wholeOrder}
-          returnAddress={returnAddress || "Lucie Polanská, Putim 229, 397 01 Písek"}
+          returnAddress={returnAddress || "Lucie Polanská, Putim 229, 397 01 Putim"}
           autoCancelled={autoCancelled}
           nothingToRefund={nothingToRefund}
         />
@@ -895,7 +895,7 @@ const mockRefundRequest: Localized<RefundRequestEmailProps> = {
     items: "Zahradní mísa · Ø 32 cm · 1 ks · 1 305 Kč",
     wholeOrder: true,
     goodsShipped: true,
-    returnAddress: "Lucie Polanská, Putim 229, 397 01 Písek",
+    returnAddress: "Lucie Polanská, Putim 229, 397 01 Putim",
     refundMethodText:
       "Stejným platebním prostředkem, jakým jste platili — vrátím je stejnou cestou (přes ComGate).",
     deadlineText: "nejpozději do 29. 10. 2026 (14 dnů od odstoupení)",
@@ -913,7 +913,7 @@ const mockRefundRequest: Localized<RefundRequestEmailProps> = {
     items: "Záhradná misa · Ø 32 cm · 1 ks · 52,90 €",
     wholeOrder: true,
     goodsShipped: true,
-    returnAddress: "Lucie Polanská, Putim 229, 397 01 Písek",
+    returnAddress: "Lucie Polanská, Putim 229, 397 01 Putim",
     refundMethodText:
       "Rovnakým platobným prostriedkom, akým ste platili — vrátim ich rovnakou cestou (cez ComGate).",
     deadlineText: "najneskôr do 29. 10. 2026 (14 dní od odstúpenia)",
@@ -931,7 +931,7 @@ const mockRefundRequest: Localized<RefundRequestEmailProps> = {
     items: "Misa ogrodowa · Ø 32 cm · 1 szt. · 229,00 zł",
     wholeOrder: true,
     goodsShipped: true,
-    returnAddress: "Lucie Polanská, Putim 229, 397 01 Písek",
+    returnAddress: "Lucie Polanská, Putim 229, 397 01 Putim",
     refundMethodText:
       "Tym samym środkiem płatności, którym Państwo zapłacili — zwrócę je tą samą drogą (przez ComGate).",
     deadlineText: "najpóźniej do 29.10.2026 (14 dni od odstąpienia)",
@@ -949,7 +949,7 @@ const mockRefundRequest: Localized<RefundRequestEmailProps> = {
     items: "Gartenschale · Ø 32 cm · 1 Stk. · 52,90 €",
     wholeOrder: true,
     goodsShipped: true,
-    returnAddress: "Lucie Polanská, Putim 229, 397 01 Písek",
+    returnAddress: "Lucie Polanská, Putim 229, 397 01 Putim",
     refundMethodText:
       "Über dasselbe Zahlungsmittel, mit dem Sie bezahlt haben – ich erstatte den Betrag auf demselben Weg (über ComGate).",
     deadlineText: "spätestens bis 29.10.2026 (14 Tage nach dem Widerruf)",
@@ -967,7 +967,7 @@ const mockRefundRequest: Localized<RefundRequestEmailProps> = {
     items: "Garden bowl · Ø 32 cm · 1 pcs · €52.90",
     wholeOrder: true,
     goodsShipped: true,
-    returnAddress: "Lucie Polanská, Putim 229, 397 01 Písek",
+    returnAddress: "Lucie Polanská, Putim 229, 397 01 Putim",
     refundMethodText:
       "Using the same payment method you paid with — I will send it back the same way (via ComGate).",
     deadlineText: "by 29 October 2026 at the latest (14 days from your withdrawal)",

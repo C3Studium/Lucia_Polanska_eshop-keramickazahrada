@@ -27,6 +27,9 @@ module.exports = {
     ],
   },
   moduleFileExtensions: ["js", "jsx", "ts", "tsx", "json"],
+  /* Administrace si načítá globální CSS (`admin/lib/citelnost.css`);
+     v testech je to prázdný modul. */
+  moduleNameMapper: { "\\.css$": "<rootDir>/src/admin/__tests__/style-mock.js" },
   testMatch: ["**/__tests__/**/*.unit.spec.[jt]s?(x)"],
   modulePathIgnorePatterns: ["<rootDir>/.medusa/", "<rootDir>/dist/"],
 }

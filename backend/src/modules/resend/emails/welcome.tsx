@@ -18,7 +18,7 @@ interface WelcomeEmailProps {
 }
 
 /** Texty po jazycích (lib/email-locale) — čeština je původní znění. */
-const COPY: Localized<{
+export const COPY: Localized<{
   preview: string
   eyebrow: string
   title: string

@@ -1667,22 +1667,41 @@ const OrdersInner = () => {
                 </div>
 
                 <div>
+                  {/* Nejdřív kolik objednávka dělá, pod tím slovem, jak je to
+                      s penězi (14. 11. 2026). Dřív „0 Kč z 719 Kč · nedoplaceno"
+                      — dvě čísla a zápor, ze kterých se stav teprve skládal. */}
                   <Text size="small" weight="plus">
-                    {formatCzk(order.paid)}{" "}
-                    <span className="text-ui-fg-muted font-normal">
-                      z {formatCzk(order.total)}
-                    </span>
+                    {formatCzk(order.total)}
                   </Text>
-                  {order.outstanding > 0 && (
+                  {order.outstanding > 0 ? (
                     <Text size="xsmall" className="text-ui-fg-error mt-1">
-                      doplatek {formatCzk(order.outstanding)}
+                      {order.paid > 0 ? (
+                        <>
+                          Zaplaceno {formatCzk(order.paid)}
+                          <br />
+                          zbývá {formatCzk(order.outstanding)}
+                        </>
+                      ) : (
+                        `Nezaplaceno · ${formatCzk(order.outstanding)}`
+                      )}
                     </Text>
-                  )}
-                  {order.outstanding <= 0 && unpaid && (
+                  ) : unpaid ? (
                     <Text size="xsmall" className="text-ui-fg-subtle mt-1">
                       {order.is_personal_pickup
-                        ? "zaplatí při vyzvednutí"
-                        : "nedoplaceno"}
+                        ? "Zaplatí při vyzvednutí"
+                        : order.paid > 0 ? (
+                            <>
+                              Zaplaceno {formatCzk(order.paid)}
+                              <br />
+                              zbývá {formatCzk(Math.max(0, order.total - order.paid))}
+                            </>
+                          ) : (
+                            "Nezaplaceno"
+                          )}
+                    </Text>
+                  ) : (
+                    <Text size="xsmall" className="mt-1 text-ui-tag-green-text">
+                      Zaplaceno
                     </Text>
                   )}
                 </div>

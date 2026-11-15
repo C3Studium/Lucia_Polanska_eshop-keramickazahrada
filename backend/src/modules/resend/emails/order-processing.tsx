@@ -30,7 +30,7 @@ interface OrderProcessingEmailProps {
  * o nevratné záloze je právně nosná, překlad říká přesně totéž (viz
  * production-started.tsx).
  */
-const COPY: Localized<{
+export const COPY: Localized<{
   preview: (orderNumber: string) => string
   eyebrow: string
   title: string

@@ -55,12 +55,12 @@
 .statusText {
   flex: 1 1 14rem;
   margin: 0;
-  font: 400 clamp(0.95rem, calc(1.1vw * var(--ui-scale)), 1.05rem) / 1.45 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(0.95rem, calc(1.1vw * var(--ui-scale)), 1.05rem) * var(--read, 1))) / 1.45 "Sansation-Regular", sans-serif;
 }
 
 .statusMeta {
   color: rgb(var(--ink-05-rgb) / 0.62);
-  font: 400 0.72rem / 1.3 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(0.72rem * var(--read, 1))) / 1.3 "Sansation-Regular", sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -85,14 +85,14 @@
 
 .noticeTitle {
   margin: 0;
-  font: 400 clamp(1.05rem, calc(1.3vw * var(--ui-scale)), 1.25rem) / 1.25 "Sentient-Regular", "Sentient", serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(1.05rem, calc(1.3vw * var(--ui-scale)), 1.25rem) * var(--read, 1))) / 1.25 "Sentient-Regular", "Sentient", serif;
   letter-spacing: -0.01em;
 }
 
 .noticeText {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / 0.75);
-  font: 300 0.95rem / 1.5 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.95rem * var(--read, 1))) / 1.5 "Sansation-Light", sans-serif;
 }
 
 /* ── Sekce (Položky, Přidat, Doručení) ────────────────────────────────────
@@ -121,13 +121,13 @@
 .sectionTitle,
 .title {
   margin: 0;
-  font: 400 clamp(1.15rem, calc(1.4vw * var(--ui-scale)), 1.4rem) / 1.2 "Sentient-Regular", "Sentient", serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(1.15rem, calc(1.4vw * var(--ui-scale)), 1.4rem) * var(--read, 1))) / 1.2 "Sentient-Regular", "Sentient", serif;
   letter-spacing: -0.01em;
 }
 
 .sectionMeta {
   color: rgb(var(--ink-05-rgb) / 0.55);
-  font: 400 0.72rem / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(0.72rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -136,7 +136,7 @@
 .note {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / 0.72);
-  font: 300 0.95rem / 1.5 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.95rem * var(--read, 1))) / 1.5 "Sansation-Light", sans-serif;
   overflow-wrap: anywhere;
 
   strong {
@@ -151,7 +151,7 @@
 .hint {
   margin: 0;
   color: var(--clay-06);
-  font: 300 0.88rem / 1.45 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.88rem * var(--read, 1))) / 1.45 "Sansation-Light", sans-serif;
 }
 
 /* ── Položky: karty → tabulka ─────────────────────────────────────────────
@@ -176,7 +176,7 @@
   /* Řádek má .75rem odsazení + 1px linku — hlavička stejně, ať sedí sloupce. */
   padding: 0 calc(0.75rem + 1px);
   color: rgb(var(--ink-05-rgb) / 0.55);
-  font: 400 0.7rem / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(0.7rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 
@@ -252,7 +252,7 @@
 }
 
 .name {
-  font: 400 clamp(0.92rem, calc(1.1vw * var(--ui-scale)), 1rem) / 1.3 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(0.92rem, calc(1.1vw * var(--ui-scale)), 1rem) * var(--read, 1))) / 1.3 "Sansation-Regular", sans-serif;
   overflow-wrap: anywhere;
 }
 
@@ -263,7 +263,7 @@
   gap: 0.3rem;
   max-width: 100%;
   color: rgb(var(--ink-05-rgb) / 0.55);
-  font-size: 0.8rem;
+  font-size: max(var(--text-min, 0px), calc(0.8rem * var(--read, 1)));
 }
 
 .chip {
@@ -275,7 +275,7 @@
   border: 1px solid rgb(var(--ink-05-rgb) / 0.25);
   border-radius: 999px;
   color: var(--ink-05);
-  font: 400 0.78rem / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(0.78rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   overflow-wrap: anywhere;
 
   &[data-tone="new"] {
@@ -287,17 +287,17 @@
 
 .chipOld {
   color: rgb(var(--ink-05-rgb) / 0.5);
-  font: 300 0.78rem / 1.2 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.78rem * var(--read, 1))) / 1.2 "Sansation-Light", sans-serif;
 }
 
 .lockReason {
   color: rgb(var(--ink-05-rgb) / 0.72);
-  font: 300 0.85rem / 1.45 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.85rem * var(--read, 1))) / 1.45 "Sansation-Light", sans-serif;
 }
 
 .rowNote {
   color: rgb(var(--ink-05-rgb) / 0.62);
-  font: 300 0.82rem / 1.4 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.82rem * var(--read, 1))) / 1.4 "Sansation-Light", sans-serif;
 }
 
 .textButton {
@@ -306,7 +306,7 @@
   background: none;
   color: var(--ink-05);
   cursor: pointer;
-  font: 400 0.85rem / 1.4 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(0.85rem * var(--read, 1))) / 1.4 "Sansation-Regular", sans-serif;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -334,7 +334,7 @@
 
 .qtyStatic {
   color: rgb(var(--ink-05-rgb) / 0.75);
-  font: 400 0.9rem / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(0.9rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   white-space: nowrap;
 }
 
@@ -356,18 +356,18 @@
   white-space: nowrap;
 
   strong {
-    font: 400 0.95rem / 1.3 "Sansation-Regular", sans-serif;
+    font: 400 max(var(--text-min, 0px), calc(0.95rem * var(--read, 1))) / 1.3 "Sansation-Regular", sans-serif;
   }
 
   del {
     color: rgb(var(--ink-05-rgb) / 0.5);
-    font: 300 0.8rem / 1.3 "Sansation-Light", sans-serif;
+    font: 300 max(var(--text-min, 0px), calc(0.8rem * var(--read, 1))) / 1.3 "Sansation-Light", sans-serif;
   }
 }
 
 .unit {
   color: rgb(var(--ink-05-rgb) / 0.55);
-  font: 300 0.75rem / 1.3 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.75rem * var(--read, 1))) / 1.3 "Sansation-Light", sans-serif;
 }
 
 @container order-edit (min-width: 36rem) {
@@ -422,7 +422,7 @@
     background: rgb(var(--cream-06-rgb) / 0.75);
     color: var(--ink-05);
     cursor: pointer;
-    font: 400 1.1rem / 1 "Sansation-Regular", sans-serif;
+    font: 400 max(var(--text-min, 0px), calc(1.1rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
     transition: border-color 0.2s ease, opacity 0.2s ease;
 
     &:disabled {
@@ -438,7 +438,7 @@
 
   output {
     min-width: 2rem;
-    font: 400 1rem / 1 "Sansation-Regular", sans-serif;
+    font: 400 max(var(--text-min, 0px), calc(1rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
     text-align: center;
   }
 }
@@ -460,7 +460,7 @@
   background: transparent;
   color: var(--ink-05);
   cursor: pointer;
-  font: 400 0.85rem / 1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(0.85rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   text-decoration: none;
   white-space: nowrap;
   transition: border-color 0.25s ease, background-color 0.25s ease, opacity 0.25s ease;
@@ -497,7 +497,7 @@
   border-radius: 999px;
   background: var(--ink-05);
   color: var(--cream-06);
-  font: 400 0.95rem / 1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(0.95rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   text-decoration: none;
   transition: background-color 0.3s ease, color 0.3s ease;
 
@@ -586,14 +586,14 @@
 
   dt {
     color: rgb(var(--ink-05-rgb) / 0.55);
-    font: 400 0.68rem / 1.2 "Sansation-Regular", sans-serif;
+    font: 400 max(var(--text-min, 0px), calc(0.68rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
 
   dd {
     margin: 0;
-    font: 400 1rem / 1.25 "Sansation-Regular", sans-serif;
+    font: 400 max(var(--text-min, 0px), calc(1rem * var(--read, 1))) / 1.25 "Sansation-Regular", sans-serif;
     white-space: nowrap;
   }
 
@@ -613,7 +613,7 @@
   background: var(--ink-05);
   color: var(--cream-06);
   cursor: pointer;
-  font: 400 1rem / 1.15 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(1rem * var(--read, 1))) / 1.15 "Sansation-Regular", sans-serif;
   text-align: center;
   transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
 
@@ -645,20 +645,20 @@
 .summaryText {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / 0.8);
-  font: 300 0.92rem / 1.5 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.92rem * var(--read, 1))) / 1.5 "Sansation-Light", sans-serif;
 }
 
 .summaryMeta {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / 0.62);
-  font: 300 0.84rem / 1.45 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.84rem * var(--read, 1))) / 1.45 "Sansation-Light", sans-serif;
 }
 
 .summaryError,
 .error {
   margin: 0;
   color: var(--clay-06);
-  font: 400 0.92rem / 1.5 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(0.92rem * var(--read, 1))) / 1.5 "Sansation-Regular", sans-serif;
 }
 
 .confirmation {
@@ -670,7 +670,7 @@
 .confirmationTitle {
   margin: 0;
   color: var(--olive-07);
-  font: 400 clamp(1.05rem, calc(1.3vw * var(--ui-scale)), 1.25rem) / 1.25 "Sentient-Regular", "Sentient", serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(1.05rem, calc(1.3vw * var(--ui-scale)), 1.25rem) * var(--read, 1))) / 1.25 "Sentient-Regular", "Sentient", serif;
 }
 
 .confirmationActions {
@@ -743,7 +743,7 @@
 
 .sheetTitle {
   margin: 0;
-  font: 400 clamp(1.2rem, calc(1.5vw * var(--ui-scale)), 1.45rem) / 1.2 "Sentient-Regular", "Sentient", serif;
+  font: 400 max(var(--text-min, 0px), calc(clamp(1.2rem, calc(1.5vw * var(--ui-scale)), 1.45rem) * var(--read, 1))) / 1.2 "Sentient-Regular", "Sentient", serif;
 }
 
 .sheetClose {
@@ -757,14 +757,14 @@
   background: none;
   color: var(--ink-05);
   cursor: pointer;
-  font-size: 1.4rem;
+  font-size: max(var(--text-min, 0px), calc(1.4rem * var(--read, 1)));
   line-height: 1;
 }
 
 .sheetLead {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / 0.72);
-  font: 300 0.92rem / 1.45 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.92rem * var(--read, 1))) / 1.45 "Sansation-Light", sans-serif;
   overflow-wrap: anywhere;
 }
 
@@ -774,13 +774,13 @@
   border-left: 2px solid var(--clay-06);
   border-radius: 0.4rem;
   background: rgb(var(--clay-06-rgb) / 0.06);
-  font: 300 0.86rem / 1.45 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.86rem * var(--read, 1))) / 1.45 "Sansation-Light", sans-serif;
 }
 
 .sheetLabel {
   margin: 0.25rem 0 0;
   color: rgb(var(--ink-05-rgb) / 0.62);
-  font: 400 0.72rem / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(0.72rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -828,12 +828,12 @@
   min-width: 0;
 
   strong {
-    font: 400 0.95rem / 1.3 "Sansation-Regular", sans-serif;
+    font: 400 max(var(--text-min, 0px), calc(0.95rem * var(--read, 1))) / 1.3 "Sansation-Regular", sans-serif;
   }
 
   span {
     color: rgb(var(--ink-05-rgb) / 0.65);
-    font: 300 0.84rem / 1.4 "Sansation-Light", sans-serif;
+    font: 300 max(var(--text-min, 0px), calc(0.84rem * var(--read, 1))) / 1.4 "Sansation-Light", sans-serif;
   }
 }
 
@@ -881,19 +881,19 @@
 }
 
 .tileTitle {
-  font: 400 0.95rem / 1.3 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(0.95rem * var(--read, 1))) / 1.3 "Sansation-Regular", sans-serif;
   overflow-wrap: anywhere;
 }
 
 .tilePrice {
   color: rgb(var(--ink-05-rgb) / 0.75);
-  font: 300 0.85rem / 1.3 "Sansation-Light", sans-serif;
+  font: 300 max(var(--text-min, 0px), calc(0.85rem * var(--read, 1))) / 1.3 "Sansation-Light", sans-serif;
 }
 
 .tileDiff {
   margin-top: auto;
   color: rgb(var(--ink-05-rgb) / 0.6);
-  font: 400 0.78rem / 1.2 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(0.78rem * var(--read, 1))) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.02em;
 
   &[data-tone="up"] { color: var(--clay-06); }
@@ -926,7 +926,7 @@
   padding: 0 1.25rem;
   border-radius: 999px;
   cursor: pointer;
-  font: 400 0.92rem / 1 "Sansation-Regular", sans-serif;
+  font: 400 max(var(--text-min, 0px), calc(0.92rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
 
   &:disabled {

@@ -124,6 +124,11 @@ export default function CheckoutStepBubbles({
                   {index + 1}
                 </span>
               )}
+              {/* Jméno pod každým krokem (14. 11. 2026): samotná čísla 1–5
+                  neřeknou, co člověka čeká. Čtečka ho má v aria-label. */}
+              <span className={s.name} aria-hidden="true">
+                {step.label}
+              </span>
             </li>
           )
         })}

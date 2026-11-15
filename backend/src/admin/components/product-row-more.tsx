@@ -64,6 +64,7 @@ export const ProductRowMore = ({
   showMakeCommission,
   showArchive,
   showDelete,
+  storeUrl,
   trigger,
 }: {
   product: {
@@ -82,6 +83,8 @@ export const ProductRowMore = ({
   showMakeCommission: boolean;
   showArchive: boolean;
   showDelete?: boolean;
+  /** Odkaz „Otevřít v obchodě“ (dřív holá ikona v řádku, 14. 11. 2026). */
+  storeUrl?: string | null;
   trigger: ReactNode;
 }) => {
   const [open, setOpen] = useState(false);
@@ -223,10 +226,17 @@ export const ProductRowMore = ({
             </label>
           ))}
 
-          {(showShipping || showMakeCommission || showArchive) && (
+          {(showShipping || showMakeCommission || showArchive || storeUrl) && (
             <div
               className={`flex flex-col gap-y-2 ${flagKeys.length ? "border-ui-border-base border-t pt-4" : ""}`}
             >
+              {storeUrl && (
+                <Button size="small" variant="secondary" className="justify-start" asChild>
+                  <a href={storeUrl} target="_blank" rel="noreferrer">
+                    Otevřít v obchodě ↗
+                  </a>
+                </Button>
+              )}
               {showShipping && (
                 <ShippingProfileEditor
                   productId={product.id}

@@ -38,7 +38,7 @@
   border: 1px solid rgb(var(--black-03-rgb) / .2);
   // .75rem = týchž 12px při rem 16; jako holé px by rádius zamrzl, zatímco
   // výška pole (--input-height) má strop v rem a nad 1921 roste rampem.
-  border-radius: .75rem;
+  border-radius: var(--field-radius);
   appearance: none;
   background: rgb(var(--cream-10-rgb) / .42);
   box-shadow: none;
@@ -94,18 +94,32 @@
   color: var(--ink-03);
 }
 
+/*
+ * Pole jako rámeček, ne jen linka (14. 11. 2026). Samotná spodní čára na krémovém
+ * podkladu nevypadá jako místo, kam se píše — lidé nad padesát ji přehlédnou
+ * a nevědí, kam klepnout. Rámeček kolem celého pole, jemná světlá výplň
+ * a zřetelný prstenec při psaní; barvy a písmo zůstávají.
+ */
 .contact .inputWrapper {
+  /* Rámeček potřebuje nad hodnotou místo pro popisek (14. 11. 2026). */
+  --input-height: calc(clamp(2.6rem, 6.5vh, 3.4rem) + .625rem);
   min-height: var(--input-height);
-  border-bottom: 1px solid rgb(var(--ink-06-rgb) / .28);
-  background: transparent;
+  padding-inline: .875rem;
+  border: 1px solid rgb(var(--ink-06-rgb) / .42);
+  border-radius: var(--field-radius);
+  background: rgb(255 255 255 / .45);
   transition:
-    border-color .3s ease,
-    box-shadow .3s ease;
+    border-color .2s ease,
+    box-shadow .2s ease;
+}
+
+.contact .inputWrapper:hover {
+  border-color: rgb(var(--ink-06-rgb) / .6);
 }
 
 .contact .inputWrapper:focus-within {
   border-color: var(--olive-07);
-  box-shadow: 0 8px 18px -17px rgb(var(--clay-02-rgb) / .85);
+  box-shadow: 0 0 0 2px rgb(var(--olive-07-rgb) / .35);
 }
 
 .contact .inputWrapper input {
@@ -120,7 +134,7 @@
      old 1.35rem + .42rem is 28.3px. Ideal terms sum to 3.12vh = 20px at 640px
      tall and hit the old ceilings at 906px; split in the original 1.35 : .42
      ratio. 24px of padding on 1366x768, 22.5px on 1280x720. */
-  padding: clamp(.9rem, 2.38vh, 1.35rem) 2.75rem clamp(.28rem, .74vh, .42rem) 0;
+  padding: clamp(1.35rem, 2.9vh, 1.7rem) 2.75rem clamp(.28rem, .74vh, .42rem) 0;
   border: 0;
   border-radius: 0;
   appearance: none;
@@ -128,8 +142,8 @@
   background: transparent;
   color: var(--ink-06);
   font-family: inherit;
-  font-size: clamp(1rem, calc(1.333vw * var(--ui-scale)), 1.167rem);
-  font-weight: 300;
+  font-size: max(var(--text-min, 0px), calc(clamp(1rem, calc(1.333vw * var(--ui-scale)), 1.167rem) * var(--read, 1)));
+  font-weight: 400;
   line-height: 1.35;
   cursor: text;
 }
@@ -168,31 +182,33 @@
 }
 
 .contact .inputWrapper label {
-  top: .36rem;
-  left: 0;
+  top: .5rem;
+  left: .875rem;
   justify-content: flex-start;
   margin: 0;
   padding: 0;
   /* Every form label on the site rests in this state — it has to be
      readable before focus, not after. .56 was 3.5:1 at 12px. */
-  color: rgb(var(--ink-06-rgb) / .7);
-  font-size: 0.8125rem;
+  color: rgb(var(--ink-06-rgb) / .78);
+  /* Popisek pole větou, ne drobnými verzálkami (14. 11. 2026): 13px proložené
+     verzálky se nad padesát čtou špatně. */
+  font-size: max(var(--text-min, 0px), calc(0.875rem * var(--read, 1)));
   font-weight: 400;
   line-height: 1;
-  letter-spacing: .09em;
-  text-transform: uppercase;
+  letter-spacing: .01em;
+  text-transform: none;
   pointer-events: none;
 }
 
 .contact .inputWrapper input:focus + label,
 .contact .inputWrapper input:not(:placeholder-shown) + label {
-  top: .36rem;
-  font-size: 0.8125rem;
+  top: .5rem;
+  font-size: max(var(--text-min, 0px), calc(0.875rem * var(--read, 1)));
 }
 
 .contact .passwordBtn {
   top: .82rem;
-  right: 0;
+  right: .375rem;
   padding: .5rem;
 }
 
@@ -202,7 +218,7 @@
      is stripped the way leading whitespace is at the start of a line box — the
      label rendered "E-MAIL(POVINNÉ)". The gap belongs here, in em, not in JSX. */
   margin-left: .3em;
-  font-size: 0.8125rem;
+  font-size: max(var(--text-min, 0px), calc(0.8125rem * var(--read, 1)));
   letter-spacing: 0.02em;
   opacity: 0.82;
 }
@@ -230,10 +246,30 @@
   top: 0;
   bottom: 0;
   min-height: 0;
-  padding-block: clamp(.9rem, 2.38vh, 1.35rem) clamp(.28rem, .74vh, .42rem);
+  padding-block: clamp(1.35rem, 2.9vh, 1.7rem) clamp(.28rem, .74vh, .42rem);
 }
 
 .passwordBtn svg {
   display: block;
   flex: 0 0 auto;
+}
+
+/* Chyba u pole (14. 11. 2026) — rámeček a věta pod polem, viz index.tsx. */
+.invalid .inputWrapper,
+.invalid.contact .inputWrapper {
+  border-color: var(--clay-10);
+  box-shadow: 0 0 0 1px var(--clay-10);
+}
+
+.errorText {
+  margin: .375rem 0 0;
+  color: var(--clay-10);
+  font: 400 max(var(--text-min, 0px), calc(.875rem * var(--read, 1))) / 1.35 "Sansation-Regular", sans-serif;
+}
+
+/* Fokus kreslí rámeček pole (focus-within) — vnitřní obrys samotného
+   <input> se v něm zdvojoval jako druhý čtverec. */
+.contact .inputWrapper input:focus,
+.contact .inputWrapper input:focus-visible {
+  outline: none;
 }

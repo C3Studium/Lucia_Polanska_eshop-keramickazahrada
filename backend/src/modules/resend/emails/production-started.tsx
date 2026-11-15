@@ -43,7 +43,7 @@ interface ProductionStartedEmailProps {
  * zaplaceno nad ni, se vrátí do 14 dnů, doplatek se nevymáhá. Článek
  * obchodních podmínek se jmenuje česky (podmínky jiné znění nemají).
  */
-const COPY: Localized<{
+export const COPY: Localized<{
   preview: (orderNumber: string) => string
   eyebrow: string
   title: string

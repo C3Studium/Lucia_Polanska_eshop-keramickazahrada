@@ -449,7 +449,7 @@ export const buildClaimsContext = async (
   return {
     ...gate,
     return_address:
-      settings?.return_address || "Keramická zahrada\nPutim 229\n397 01 Písek",
+      settings?.return_address || "Keramická zahrada\nPutim 229\n397 01 Putim",
     return_instructions: settings?.return_instructions?.trim() || null,
     all_made_to_order: allMadeToOrder(order),
     // Pro výběr položek ve formuláři (§11.1) — ceny po slevě, s DPH; zakázka

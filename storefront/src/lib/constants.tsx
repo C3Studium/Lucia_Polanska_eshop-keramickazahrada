@@ -74,7 +74,8 @@ export const paymentInfoMap: Record<
     icon: <CreditCard />,
   },
   pp_comgate_comgate: {
-    title: "Comgate",
+    /* Lidsky, ne název firmy (14. 11. 2026) — v přehledu objednávky stálo jen „Comgate". */
+    title: "Online platba (ComGate)",
     icon: <CreditCard />
   },
   pp_comgate_card: {

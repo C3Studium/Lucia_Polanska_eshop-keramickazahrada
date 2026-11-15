@@ -126,6 +126,7 @@ const RestockForm = ({ variant, product, texts }: RestockFormProps) => {
         <label htmlFor={emailId}>Váš e-mail</label>
         <div className={s.control}>
           <input
+            data-pill-field
             id={emailId}
             type="email"
             required

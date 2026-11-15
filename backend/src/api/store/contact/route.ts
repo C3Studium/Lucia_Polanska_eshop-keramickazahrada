@@ -2,7 +2,8 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { createHash } from "crypto"
 import { z } from "zod"
-import { customerName } from "../../../lib/customer-email"
+import { customerName, sendCustomerEmail } from "../../../lib/customer-email"
+import { localeForCountry } from "../../../lib/email-locale"
 import { notifyMerchant } from "../../../lib/notify"
 import { verifyOrderAccessToken } from "../../../lib/order-access-link"
 import {
@@ -33,6 +34,8 @@ const ContactSchema = z.object({
   message: z.string().trim().min(1).max(5000),
   /** Honeypot — humans never see the field, so any content marks a bot. */
   website: z.string().max(400).optional(),
+  /** Země z adresy stránky — jazyk potvrzení zákazníkovi. */
+  country_code: z.string().trim().max(8).optional(),
 })
 
 const OrderChangeSchema = z.object({
@@ -196,6 +199,30 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     // customer instead of bouncing back to the shop's own address.
     replyTo: input.email,
   })
+
+  /*
+   * Potvrzení zákazníkovi (15. 11. 2026, Matěj) — dřív odcházela jen zpráva
+   * majitelce a zákazník neměl v ruce nic. Stejný dedupe klíč jako zpráva:
+   * dvojklik pošle jedno potvrzení. Selhání potvrzení zprávu nezruší —
+   * majitelka ji má, zákazník uvidí „Zpráva odešla".
+   */
+  try {
+    await sendCustomerEmail(req.scope, {
+      to: input.email,
+      template: "contact-received",
+      key: `contact-received:${digest}`,
+      locale: localeForCountry(input.country_code ?? "cz"),
+      data: {
+        customer_name: input.name,
+        customerName: input.name,
+        message: input.message,
+      },
+    })
+  } catch (error) {
+    req.scope
+      .resolve(ContainerRegistrationKeys.LOGGER)
+      .warn(`[contact] Potvrzení zákazníkovi se nepodařilo odeslat: ${(error as Error).message}`)
+  }
 
   res.status(200).json({ ok: true })
 }

@@ -26,7 +26,7 @@
      takže má i tentýž clamp: jedna geometrie, jedno místo. Podlaha .75rem = 12px (ne
      .72rem = 11.52px, což je pod hranicí, kterou shoot.cjs hlásí jako vadu), živé pásmo
      1200–1520, nad 1921 nese strop .95rem ramp (2552: 20.2px). */
-  font-size: clamp(.75rem, calc(1vw * var(--ui-scale)), .95rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(.75rem, calc(1vw * var(--ui-scale)), .95rem) * var(--read, 1)));
   letter-spacing: .14em;
 }
 
@@ -49,7 +49,7 @@
   margin: .25rem 0 clamp(.5rem, 1.4vh, .9rem);
   color: rgb(var(--cream-06-rgb) / .62);
   /* 15/18 px v rem; živé pásmo 1367–1636 px, nad 1921 zvedne strop ramp. */
-  font-size: clamp(.94rem, calc(1.1vw * var(--ui-scale)), 1.125rem);
+  font-size: max(var(--text-min, 0px), calc(clamp(.94rem, calc(1.1vw * var(--ui-scale)), 1.125rem) * var(--read, 1)));
   font-weight: 300;
   line-height: 1.55;
 }

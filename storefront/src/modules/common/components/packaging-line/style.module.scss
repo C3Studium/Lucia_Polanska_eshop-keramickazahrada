@@ -10,13 +10,13 @@
   padding: .55rem 1rem .6rem clamp(1rem, 4vw, 3rem);
   border-bottom: 1px solid currentColor;
   border-bottom-color: color-mix(in srgb, currentColor 12%, transparent);
-  font-size: .875rem;
+  font-size: max(var(--text-min, 0px), calc(.875rem * var(--read, 1)));
   line-height: 1.35;
 }
 
 .compact {
   padding: .35rem 0 .45rem 1rem;
-  font-size: .8125rem;
+  font-size: max(var(--text-min, 0px), calc(.8125rem * var(--read, 1)));
 }
 
 .label {
@@ -47,7 +47,7 @@
   padding-top: .4rem;
   border-top: 1px dashed currentColor;
   border-top-color: color-mix(in srgb, currentColor 22%, transparent);
-  font-size: .8125rem;
+  font-size: max(var(--text-min, 0px), calc(.8125rem * var(--read, 1)));
   line-height: 1.35;
 }
 
