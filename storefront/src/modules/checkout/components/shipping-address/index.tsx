@@ -13,6 +13,7 @@ import styles from "./style.module.scss"
 import { useTexty } from "@lib/context/texty"
 import { countryNameCs } from "@lib/util/country-name-cs"
 import { usePscMesto } from "@lib/hooks/use-psc-mesto"
+import { useAdresaNapoveda } from "@lib/hooks/use-adresa-napoveda"
 
 /*
  * Nájezdová geometrie v jednotce toho, proti čemu se pohybuje.
@@ -174,14 +175,27 @@ const ShippingAddress = ({
     }
   }, [cart, routeCountry]) // route country is the source of truth
 
+  /* Našeptávač adres (Mapy.cz, 15. 11. 2026) — bez klíče na serveru prázdný. */
+  const navrhyAdres = useAdresaNapoveda(
+    formData["shipping_address.address_1"],
+    formData["shipping_address.country_code"]
+  )
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLInputElement | HTMLSelectElement
     >
   ) => {
+    /* Vybraná adresa z našeptávače doplní i PSČ a město. */
+    const vybrana =
+      e.target.name === "shipping_address.address_1"
+        ? navrhyAdres.find((navrh) => navrh.ulice === e.target.value)
+        : undefined
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
+      ...(vybrana?.psc ? { "shipping_address.postal_code": vybrana.psc } : {}),
+      ...(vybrana?.mesto ? { "shipping_address.city": vybrana.mesto } : {}),
     })
   }
 
@@ -260,7 +274,19 @@ const ShippingAddress = ({
           data-testid="shipping-address-input"
           className={styles.input}
           variant="contact"
+          list={navrhyAdres.length ? "adresy-napoveda-dodaci" : undefined}
         />
+        {navrhyAdres.length > 0 && (
+          <datalist id="adresy-napoveda-dodaci">
+            {navrhyAdres.map((navrh) => (
+              <option
+                key={`${navrh.ulice}|${navrh.psc}|${navrh.mesto}`}
+                value={navrh.ulice}
+                label={[navrh.psc.replace(/^(\d{3})(\d{2})$/, "$1 $2"), navrh.mesto].filter(Boolean).join(" ")}
+              />
+            ))}
+          </datalist>
+        )}
         <Input
           label="PSČ"
           name="shipping_address.postal_code"
