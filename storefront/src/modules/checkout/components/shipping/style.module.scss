@@ -27,7 +27,7 @@
          03 payment, 04 review stojí na témž clampu) — krok 02 na ní byl jediný o 18 %
          níž, takže aktivní krok byl vizuálně nejmenší ze čtyř.
          od 1280 až po 1920. */
-      font-size: clamp(1.625rem, calc(2vw * var(--ui-scale)), 2.25rem);
+      font-size: clamp(1.25rem, calc(1.4vw * var(--ui-scale)), 1.5rem);
       font-weight: 400;
       gap: 0.5rem;
       align-items: baseline;

@@ -1217,7 +1217,7 @@
      * přiblíží, což v modálu znamená, že uživateli uskočí celý dialog.
      */
     .input {
-      font-size: max(var(--text-min, 0px), calc(1rem * var(--read, 1)));
+      font-size: max(var(--text-min, 0px), calc(.9375rem * var(--read, 1)));
     }
   }
 }

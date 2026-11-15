@@ -142,7 +142,7 @@
   background: transparent;
   color: var(--ink-06);
   font-family: inherit;
-  font-size: max(var(--text-min, 0px), calc(clamp(1rem, calc(1.333vw * var(--ui-scale)), 1.167rem) * var(--read, 1)));
+  font-size: max(var(--text-min, 0px), calc(.9375rem * var(--read, 1)));
   font-weight: 400;
   line-height: 1.35;
   cursor: text;
