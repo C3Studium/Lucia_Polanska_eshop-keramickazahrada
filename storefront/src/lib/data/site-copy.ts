@@ -218,6 +218,43 @@ export const getFaq = async (): Promise<FaqData> => {
   const poradiOf = (data: Record<string, unknown>) =>
     typeof data.poradi === "number" ? data.poradi : 0
 
+  /*
+   * Současný tvar (15. 11. 2026): kategorie (`faqKategorie`) zvlášť, otázky
+   * (`faqOtazka`) s kategorií vybranou odkazem. Otázka bez platné kategorie
+   * se neztratí — spadne pod „Vše".
+   */
+  try {
+    const [catRows, qRows] = await Promise.all([
+      read({ type: "faqKategorie", sort: { field: "data.poradi", direction: "asc" }, perPage: 100 }),
+      read({ type: "faqOtazka", sort: { field: "data.poradi", direction: "asc" }, perPage: 300 }),
+    ])
+    if (qRows.length) {
+      const categories = catRows
+        .map((data) => ({ id: documentId(data), nazev: stringValue(data.nazev).trim(), poradi: poradiOf(data) }))
+        .filter((row) => row.nazev)
+      const byId = new Map(categories.map((cat, index) => [cat.id, { ...cat, index }]))
+      const questions: FaqQuestion[] = qRows
+        .map((data) => {
+          const ref = (data.kategorie ?? null) as { _ref?: string } | null
+          const cat = ref?._ref ? byId.get(ref._ref) : undefined
+          return {
+            id: documentId(data) ?? stringValue(data.question),
+            docId: documentId(data),
+            docType: "faqOtazka" as const,
+            question: stringValue(data.question).trim(),
+            answer: stringValue(data.answer).trim(),
+            kategorie: cat?.nazev ?? "",
+            poradi: (cat ? cat.index : 999) * 1000 + poradiOf(data),
+          }
+        })
+        .filter((row) => row.question)
+        .sort((a, b) => a.poradi - b.poradi)
+      return { questions, categories }
+    }
+  } catch (error) {
+    console.error("[cms] FAQ (kategorie + otázky) se nepodařilo načíst.", error)
+  }
+
   try {
     const rows = await read({ type: "faq", sort: { field: "data.poradi", direction: "asc" }, perPage: 100 })
     const categories = rows

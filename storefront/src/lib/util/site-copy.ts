@@ -46,7 +46,7 @@ export type FaqQuestion = {
   id: string | null
   /** Dokument ve Studiu, který otázku drží (u FAQ celá kategorie) — pro `editableDoc`. */
   docId: string | null
-  docType: "faq" | "qna"
+  docType: "faqOtazka" | "faq" | "qna"
   question: string
   answer: string
   kategorie: string

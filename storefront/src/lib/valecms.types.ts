@@ -190,93 +190,95 @@ const soubor = defineType({
 })
 
 /**
- * FAQ — jedna kategorie = jeden dokument, otázky s odpověďmi jsou uvnitř.
+ * FAQ ve dvou sekcích Studia (15. 11. 2026, Matěj):
  *
- * Do 15. 11. 2026 byly ve Studiu dvě sekce, „Dotazy" (otázka = dokument,
- * kategorie jménem v textovém poli) a „Kategorie dotazů". Otázka se ke
- * kategorii hlásila přepsaným jménem, takže překlep založil nový čip
- * a nebylo vidět, co pod kterou kategorii patří. Teď je jedna sekce FAQ:
+ * - **FAQ — kategorie** (`faqKategorie`): čipy filtru na stránce Dotazy.
+ *   Zakládají se samostatně („Nový dokument" = nová kategorie), pořadí čipů
+ *   dává pole Pořadí.
+ * - **FAQ — otázky** (`faqOtazka`): jedna otázka = jeden dokument. Kategorie
+ *   se VYBÍRÁ ze seznamu založených kategorií (odkaz na dokument, ne
+ *   přepsané jméno), takže překlep čip nevytvoří.
  *
- * - **Nový dokument** = nová kategorie (čip ve filtru na stránce Dotazy);
- * - uvnitř kategorie tlačítko **Přidat otázku s odpovědí**;
- * - pořadí otázek = pořadí v seznamu (šipky v editoru), pořadí kategorií
- *   = pole Pořadí.
- *
- * Na stránce kliknutí na otázku v „upravit kontent" otevře formulář celé
- * její kategorie (`editableDoc`). Staré dokumenty `qna` / `qnaKategorie`
- * převede `scripts/seed-faq.mjs`; stránka je čte jen jako zálohu, dokud
- * žádná kategorie FAQ neexistuje.
+ * Dřívější tvar (`faq` s otázkami uvnitř kategorie, a ještě starší
+ * `qna` + `qnaKategorie`) převádí `scripts/seed-faq.mjs`; stránka je čte
+ * jen jako zálohu, dokud žádná otázka v novém tvaru není.
  *
  * Odpověď: prázdný řádek = nový odstavec, `**tučně**`, `[odkaz](/cesta)`
  * a údaje z adminu `{{course.cancellation}}` — vykresluje FAQ/index.tsx.
  */
-const faq = defineType({
-    name: 'faq',
-    title: 'FAQ',
+const faqKategorie = defineType({
+    name: 'faqKategorie',
+    title: 'FAQ — kategorie',
     description:
-        'Každý dokument je jedna kategorie otázek na stránce Dotazy. ' +
-        '„Nový dokument" = nová kategorie; otázky přidáte uvnitř kategorie tlačítkem „Přidat otázku s odpovědí".',
+        'Kategorie otázek na stránce Dotazy (čipy filtru). Otázky se k nim přiřazují v sekci „FAQ — otázky".',
     fields: [
         defineField({
             name: 'nazev',
-            title: 'Kategorie',
+            title: 'Název kategorie',
             type: 'string',
-            description: 'Jméno čipu ve filtru, např. Kurzy nebo Doprava a vrácení.',
+            description: 'Např. Kurzy nebo Doprava a vrácení.',
             validation: (rule) => rule.required().max(60),
         }),
         defineField({
             name: 'poradi',
-            title: 'Pořadí kategorie',
+            title: 'Pořadí',
             type: 'number',
             description: 'Menší číslo je víc vlevo (a jeho otázky výš).',
         }),
+    ],
+    preview: (doc: Record<string, unknown>) => ({
+        title: (doc?.nazev as string) || 'Bez názvu',
+        subtitle: typeof doc?.poradi === 'number' ? `pořadí ${doc.poradi}` : '',
+    }),
+    orderings: [
+        { name: 'poradi', title: 'Podle pořadí', by: [{ field: 'poradi', direction: 'asc' as const }] },
+    ],
+})
+
+const faqOtazka = defineType({
+    name: 'faqOtazka',
+    title: 'FAQ — otázky',
+    description:
+        'Jedna otázka = jeden dokument. Kategorii vyberete ze seznamu v sekci „FAQ — kategorie".',
+    fields: [
         defineField({
-            name: 'otazky',
-            title: 'Otázky a odpovědi',
-            type: 'array',
-            description: 'Pořadí v seznamu = pořadí na webu.',
-            of: [
-                {
-                    type: 'object',
-                    name: 'otazka',
-                    title: 'Otázku s odpovědí',
-                    fields: [
-                        defineField({
-                            name: 'question',
-                            title: 'Otázka',
-                            type: 'string',
-                            description: 'Jak se zákazník ptá — celou větou, s otazníkem.',
-                            validation: (rule) => rule.required().max(200),
-                        }),
-                        defineField({
-                            name: 'answer',
-                            title: 'Odpověď',
-                            type: 'text',
-                            description:
-                                'Prázdný řádek = nový odstavec. **tučně**, odkaz [text](/smluvni-podminky#kurzy). ' +
-                                'Údaje z adminu (Právní údaje) ve složených závorkách, např. {{course.cancellation}} — ' +
-                                'změní se samy, když je upravíte v adminu.',
-                            validation: (rule) => rule.required(),
-                        }),
-                    ],
-                },
-            ],
+            name: 'kategorie',
+            title: 'Kategorie',
+            type: 'reference',
+            to: [{ type: 'faqKategorie' }],
+            description: 'Vyberte ze založených kategorií. Novou založíte v „FAQ — kategorie".',
+            validation: (rule) => rule.required(),
+        }),
+        defineField({
+            name: 'question',
+            title: 'Otázka',
+            type: 'string',
+            description: 'Jak se zákazník ptá — celou větou, s otazníkem.',
+            validation: (rule) => rule.required().max(200),
+        }),
+        defineField({
+            name: 'answer',
+            title: 'Odpověď',
+            type: 'text',
+            description:
+                'Prázdný řádek = nový odstavec. **tučně**, odkaz [text](/smluvni-podminky#kurzy). ' +
+                'Údaje z adminu (Právní údaje) ve složených závorkách, např. {{course.cancellation}} — ' +
+                'změní se samy, když je upravíte v adminu.',
+            validation: (rule) => rule.required(),
+        }),
+        defineField({
+            name: 'poradi',
+            title: 'Pořadí v kategorii',
+            type: 'number',
+            description: 'Menší číslo je výš.',
         }),
     ],
-    preview: (doc: Record<string, unknown>) => {
-        const otazky = Array.isArray(doc?.otazky) ? doc.otazky.length : 0
-        const slovo = otazky === 1 ? 'otázka' : otazky >= 2 && otazky <= 4 ? 'otázky' : 'otázek'
-        return {
-            title: (doc?.nazev as string) || 'Bez názvu',
-            subtitle: `${otazky} ${slovo}`,
-        }
-    },
+    preview: (doc: Record<string, unknown>) => ({
+        title: (doc?.question as string) || 'Bez otázky',
+        subtitle: '',
+    }),
     orderings: [
-        {
-            name: 'poradi',
-            title: 'Podle pořadí',
-            by: [{ field: 'poradi', direction: 'asc' as const }],
-        },
+        { name: 'poradi', title: 'Podle pořadí', by: [{ field: 'poradi', direction: 'asc' as const }] },
     ],
 })
 
@@ -902,7 +904,7 @@ const clanek = defineType({
     ],
 })
 
-export const types = [siteCopy, review, tlacitko, soubor, pravniDokument, faq, certifikat, clanek]
+export const types = [siteCopy, review, tlacitko, soubor, pravniDokument, faqKategorie, faqOtazka, certifikat, clanek]
 
 // Typ, o kterém se píšou recenze (např. 'consultant'), nebo null.
 export const reviewSubjectType = null

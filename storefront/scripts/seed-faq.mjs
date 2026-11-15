@@ -122,17 +122,12 @@ const main = async () => {
   const isArchived = (doc) => Boolean(doc.archived_at ?? doc.archivedAt)
   const num = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0)
 
-  const existingFaq = await listAll("faq")
-  if (existingFaq.some((doc) => !isArchived(doc))) {
-    console.log(`Ve Studiu už je ${existingFaq.length} kategorií FAQ — převod proběhl, nic nedělám.`)
-    console.log("Další otázky přidávejte ve Studiu → FAQ.")
+  // Současný tvar: FAQ — kategorie (faqKategorie) + FAQ — otázky (faqOtazka).
+  const hotove = (await listAll("faqOtazka")).filter((doc) => !isArchived(doc))
+  if (hotove.length) {
+    console.log(`Ve Studiu už je ${hotove.length} otázek v sekci FAQ — otázky. Převod proběhl, nic nedělám.`)
     return
   }
-
-  // 1) Staré kategorie a otázky (sekce „Kategorie dotazů" a „Dotazy").
-  const oldCategories = (await listAll("qnaKategorie")).filter((doc) => !isArchived(doc))
-  const oldQuestions = (await listAll("qna")).filter((doc) => !isArchived(doc))
-  console.log(`Staré dokumenty: ${oldCategories.length} kategorií, ${oldQuestions.length} otázek.\n`)
 
   /** nazev → { nazev, poradi, otazky: [{question, answer, poradi}] } */
   const groups = new Map()
@@ -141,6 +136,27 @@ const main = async () => {
     if (!groups.has(key)) groups.set(key, { nazev, poradi, otazky: [] })
     return groups.get(key)
   }
+
+  // Zdroj A: kategorie s otázkami uvnitř (typ „faq", 15. 11. dopoledne).
+  const vnorene = (await listAll("faq")).filter((doc) => !isArchived(doc))
+  if (vnorene.length) {
+    console.log(`Zdroj: ${vnorene.length} kategorií FAQ s otázkami uvnitř.\n`)
+    for (const doc of vnorene) {
+      const body = bodyOf(doc)
+      const nazev = String(body.nazev ?? "").trim()
+      if (!nazev) continue
+      const group = groupFor(nazev, num(body.poradi))
+      for (const [i, item] of (Array.isArray(body.otazky) ? body.otazky : []).entries()) {
+        const question = String(item?.question ?? "").trim()
+        if (question) group.otazky.push({ question, answer: String(item?.answer ?? "").trim(), poradi: i })
+      }
+    }
+  } else {
+  // Zdroj B: staré kategorie a otázky (sekce „Kategorie dotazů" a „Dotazy").
+  const oldCategories = (await listAll("qnaKategorie")).filter((doc) => !isArchived(doc))
+  const oldQuestions = (await listAll("qna")).filter((doc) => !isArchived(doc))
+  console.log(`Staré dokumenty: ${oldCategories.length} kategorií, ${oldQuestions.length} otázek.\n`)
+
   for (const doc of [...oldCategories].sort((a, b) => num(bodyOf(a).poradi) - num(bodyOf(b).poradi))) {
     const nazev = String(bodyOf(doc).nazev ?? "").trim()
     if (nazev) groupFor(nazev, num(bodyOf(doc).poradi))
@@ -169,22 +185,16 @@ const main = async () => {
       group.otazky.push({ question: item.question, answer: legalFaqAnswerText(item), poradi: Infinity })
     }
   }
+  }
 
   const ordered = [...groups.values()].sort((a, b) => a.poradi - b.poradi)
-  let created = 0
-  for (const [index, group] of ordered.entries()) {
-    const data = {
-      nazev: group.nazev,
-      poradi: (index + 1) * 10,
-      otazky: group.otazky.map(({ question, answer }) => ({ question, answer })),
-    }
-    console.log(`  + ${group.nazev} (pořadí ${data.poradi}) — ${data.otazky.length} otázek`)
-    for (const item of data.otazky) console.log(`      · ${item.question}`)
+  const insert = async (type, data, legacyId) => {
+    const now = new Date().toISOString()
+    const id = crypto.randomUUID()
     if (WRITE) {
-      const now = new Date().toISOString()
       await documents.importRow({
-        id: crypto.randomUUID(),
-        type: "faq",
+        id,
+        type,
         status: "published",
         data,
         draft: null,
@@ -192,16 +202,40 @@ const main = async () => {
         updated_at: now,
         published_at: now,
         legacy_source: LEGACY_SOURCE,
-        legacy_id: `faq:${normalize(group.nazev).replace(/ /g, "-")}`,
+        legacy_id: legacyId,
       })
     }
-    created += 1
+    return id
+  }
+
+  let kategorii = 0
+  let otazek = 0
+  for (const [index, group] of ordered.entries()) {
+    const slug = normalize(group.nazev).replace(/ /g, "-")
+    const poradi = (index + 1) * 10
+    const catId = await insert("faqKategorie", { nazev: group.nazev, poradi }, `faq-kategorie:${slug}`)
+    kategorii += 1
+    console.log(`  + kategorie ${group.nazev} (pořadí ${poradi})`)
+    for (const [i, item] of group.otazky.entries()) {
+      await insert(
+        "faqOtazka",
+        {
+          kategorie: { _ref: catId, _type: "faqKategorie" },
+          question: item.question,
+          answer: item.answer,
+          poradi: (i + 1) * 10,
+        },
+        `faq-otazka:${slug}:${i + 1}`
+      )
+      otazek += 1
+      console.log(`      · ${item.question}`)
+    }
   }
 
   console.log(
-    `\n${WRITE ? "Založeno" : "Založím"}: ${created} kategorií FAQ.` +
+    `\n${WRITE ? "Založeno" : "Založím"}: ${kategorii} kategorií, ${otazek} otázek.` +
       (WRITE
-        ? "\nStaré dokumenty (Dotazy a Kategorie dotazů) zůstaly v databázi beze změny — web je už nečte."
+        ? "\nPředchozí dokumenty zůstaly v databázi beze změny — web je už nečte."
         : "\nNic se nezapsalo — zápis s --write.")
   )
 }
