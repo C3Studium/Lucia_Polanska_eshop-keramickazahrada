@@ -35,7 +35,7 @@ import PremiumActionButton from "@modules/common/components/premium-action-butto
 import { itemText } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
 import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
-import { isMadeToOrderLine } from "@lib/util/commission"
+import { isFragileCarriage, isMadeToOrderLine } from "@lib/util/commission"
 import { useTexty } from "@lib/context/texty"
 import { DOPRAVA_TEXT_KEY } from "@lib/util/fragile"
 
@@ -630,8 +630,12 @@ const Shipping: React.FC<ShippingProps> = ({
                       // Při omezení (křehké / zakázka) nepovolené dopravy vůbec
                       // nenabízíme — zůstane jen křehký balík a osobní odběr.
                       // Dřív se zobrazovaly zašedlé s hláškou, což mátlo.
-                      if (!restriction) return true
                       const isPickup = getFulfillmentType(option) === "pickup"
+                      // Bez křehkého kusu se křehký balík nenabízí (15. 11. 2026,
+                      // Matěj): běžné zboží jde Českou poštou nebo do Balíkovny.
+                      // S jediným křehkým kusem naopak zůstane jen křehký balík
+                      // a odběr (`deliveryAllowedUnder`).
+                      if (!restriction) return isPickup || !isFragileCarriage(option)
                       return deliveryAllowedUnder(option, isPickup, restriction)
                     })
                     .map((option) => {
@@ -671,9 +675,32 @@ const Shipping: React.FC<ShippingProps> = ({
                           />
                           <div className={styles.methodSummary}>
                             <span className={styles.methodLabel}>
-                              {isBalikovnaOption(option) && (
+                              {isPickup ? (
+                                // Osobní odběr: obchod se stříškou (dílna v Putimi).
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  width={18}
+                                  height={18}
+                                  aria-hidden="true"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth={1.8}
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className={styles.carrierIcon}
+                                >
+                                  <path d="M3.5 9.5 5 4h14l1.5 5.5" />
+                                  <path d="M3.5 9.5c0 1.4 1.1 2.5 2.5 2.5s2.5-1.1 2.5-2.5c0 1.4 1.1 2.5 2.5 2.5h2c1.4 0 2.5-1.1 2.5-2.5 0 1.4 1.1 2.5 2.5 2.5s2.5-1.1 2.5-2.5" />
+                                  <path d="M5 12v8h14v-8" />
+                                  <path d="M10 20v-4.5h4V20" />
+                                </svg>
+                              ) : (
                                 <img
-                                  src="/assets/img/balikovna.svg"
+                                  src={
+                                    isBalikovnaOption(option)
+                                      ? "/assets/img/balikovna.svg"
+                                      : "/assets/img/ceska-posta.svg"
+                                  }
                                   alt=""
                                   width={18}
                                   height={18}

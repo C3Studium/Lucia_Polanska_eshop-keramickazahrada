@@ -150,6 +150,10 @@ const fold = (value: string) =>
  * option id would break the first time she recreates it (which is exactly how the two Česká
  * pošta options ended up pointing at a provider that no longer exists).
  */
+/** Křehký balík České pošty (podle názvu volby, viz níž). */
+export const isFragileCarriage = (option: { name?: string | null } | null | undefined) =>
+  fold(option?.name ?? "").includes("krehke")
+
 export const deliveryAllowsCommission = (
   option: { name?: string | null } | null | undefined,
   isPickup: boolean
