@@ -107,6 +107,34 @@ completeCartWorkflow.hooks.validate(
       )
     }
 
+    /*
+     * Křehký kus = jen „Česká Pošta - Křehké" nebo osobní odběr (15. 11. 2026).
+     *
+     * Stačí jediný křehký kus a celý balík jde s příplatkovou službou ČP
+     * „Křehce" (11). Obyčejná zásilka na adresu ani Balíkovna ji nemají
+     * (Balíkovna ji v číselníku ČP vůbec nepřipouští). Pokladna takové volby
+     * u křehkého košíku nenabízí (`storefront lib/util/fragile.ts`); tohle je
+     * brána pro ručně složený požadavek. Křehkou metodu pozná příznak
+     * `data.fragile` (z dat možnosti), nebo název, jako všude jinde.
+     */
+    const hasFragile = ((fullCart.items ?? []) as any[]).some((item) =>
+      Boolean(item?.product?.metadata?.fragile)
+    )
+    if (hasFragile && !isPersonalPickupOrder(fullCart)) {
+      const fold = (value: string) =>
+        value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+      const nonFragile = ((fullCart.shipping_methods ?? []) as any[]).some(
+        (method) =>
+          !method?.data?.fragile && !fold(String(method?.name ?? "")).includes("krehk")
+      )
+      if (nonFragile) {
+        throw new MedusaError(
+          MedusaError.Types.NOT_ALLOWED,
+          "V košíku je křehký výrobek — zvolte prosím dopravu „Česká Pošta - Křehké“ nebo osobní odběr."
+        )
+      }
+    }
+
 
     const sessions = fullCart.payment_collection?.payment_sessions ?? []
     const usesDobirka = sessions.some(
