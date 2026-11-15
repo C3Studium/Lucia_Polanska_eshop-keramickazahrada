@@ -431,7 +431,8 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
 
               {/* Vlevo informace, vpravo nákup (15. 11. 2026, Matěj). Detaily
                   (popisek, rozměry, doprava) mají vlastní pás nad recenzemi
-                  (stránka výrobku); sem patří bezpečnost a tři značky. */}
+                  (stránka výrobku); sem patří bezpečnost. Pruh značek (Zabalíme
+                  pečlivě · Ručně vytvořeno · Ateliér) je pryč — 15. 11. 2026. */}
               <div className="product__detailsSlot product__infoSlot">
                 {/* Bezpečnostní věty podle kategorie + odkaz na protokoly
                     nezávadnosti (LEGAL_AUDIT § 0b N1/N2). Ve výběru do úpravy
@@ -442,18 +443,6 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                     description={product.description}
                   />
                 )}
-                {/* Tři značky — položky `znacky.*` bloku `global.produkt`. */}
-                <div className="product__serviceNotes">
-                  <span {...editableItem(texts, "znacky.baleni")}>
-                    {itemText(texts, "znacky.baleni", "Zabalíme pečlivě")}
-                  </span>
-                  <span {...editableItem(texts, "znacky.rucne")}>
-                    {itemText(texts, "znacky.rucne", "Ručně vytvořeno")}
-                  </span>
-                  <span {...editableItem(texts, "znacky.atelier")}>
-                    {itemText(texts, "znacky.atelier", "Ateliér · Písek")}
-                  </span>
-                </div>
               </div>
             </motion.div>
           </aside>
