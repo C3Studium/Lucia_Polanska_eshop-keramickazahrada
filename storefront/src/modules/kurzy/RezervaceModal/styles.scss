@@ -651,7 +651,7 @@
       background: var(--white);
       color: var(--kurzy-charcoal);
       /* 16px: the body floor, and below it iOS zooms the page on focus. */
-      font-size: max(var(--text-min, 0px), calc(var(--type-body, 1rem) * var(--read, 1)));
+      font-size: max(var(--text-min, 0px), calc(.9375rem * var(--read, 1)));
       transition: border-color 0.25s ease;
 
       &:focus-visible {
@@ -1083,7 +1083,7 @@
       background: var(--white);
       color: inherit;
       font: inherit;
-      font-size: max(var(--text-min, 0px), calc(var(--type-body, 1rem) * var(--read, 1)));
+      font-size: max(var(--text-min, 0px), calc(.9375rem * var(--read, 1)));
       resize: vertical;
       transition: border-color 0.25s ease;
 

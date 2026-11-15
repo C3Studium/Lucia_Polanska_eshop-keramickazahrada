@@ -66,7 +66,7 @@
   border-radius: var(--field-radius) !important;
   background: rgb(255 255 255 / .45) !important;
   color: var(--black-03) !important;
-  font-size: max(var(--text-min, 0px), calc(1.02rem * var(--read, 1))) !important;
+  font-size: max(var(--text-min, 0px), calc(.9375rem * var(--read, 1))) !important;
   box-shadow: none !important;
 }
 
