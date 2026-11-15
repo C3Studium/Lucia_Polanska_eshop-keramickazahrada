@@ -1,10 +1,11 @@
 import { HttpTypes } from "@medusajs/types"
 import Input from "@modules/common/components/input"
 import PhoneInput from "@modules/common/components/phone-input"
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import s from "./style.module.scss"
 import { countryNameCs } from "@lib/util/country-name-cs"
 import { usePscMesto } from "@lib/hooks/use-psc-mesto"
+import { useAdresaNapoveda } from "@lib/hooks/use-adresa-napoveda"
 
 const BillingAddress = ({ cart, countryCode }: { cart: HttpTypes.StoreCart | null, countryCode: string }) => {
   const routeCountry = countryCode.toLowerCase()
@@ -41,6 +42,23 @@ const BillingAddress = ({ cart, countryCode }: { cart: HttpTypes.StoreCart | nul
       )
   )
 
+  /* Našeptávač adres (Mapy.cz) — shoda s návrhem doplní PSČ a město,
+     stejně jako v doručovací adrese (15. 11. 2026). */
+  const navrhyAdres = useAdresaNapoveda(formData["billing_address.address_1"], routeCountry)
+  const adresaText = String(formData["billing_address.address_1"] ?? "").trim().toLowerCase()
+  useEffect(() => {
+    if (!adresaText) return
+    const shoda = navrhyAdres.find((navrh) => navrh.ulice.trim().toLowerCase() === adresaText)
+    if (!shoda) return
+    setFormData((pred: any) => {
+      const psc = shoda.psc || pred["billing_address.postal_code"]
+      const mesto = shoda.mesto || pred["billing_address.city"]
+      return pred["billing_address.postal_code"] === psc && pred["billing_address.city"] === mesto
+        ? pred
+        : { ...pred, "billing_address.postal_code": psc, "billing_address.city": mesto }
+    })
+  }, [adresaText, navrhyAdres])
+
   return (
     <div className={s.root}>
       <div className={s.formGrid}>
@@ -76,7 +94,19 @@ const BillingAddress = ({ cart, countryCode }: { cart: HttpTypes.StoreCart | nul
           data-testid="billing-address-input"
           className={s.input}
           variant="contact"
+          list={navrhyAdres.length ? "adresy-napoveda-fakturacni" : undefined}
         />
+        {navrhyAdres.length > 0 && (
+          <datalist id="adresy-napoveda-fakturacni">
+            {navrhyAdres.map((navrh) => (
+              <option
+                key={navrh.ulice + "|" + navrh.psc + "|" + navrh.mesto}
+                value={navrh.ulice}
+                label={[navrh.psc, navrh.mesto].filter(Boolean).join(" ")}
+              />
+            ))}
+          </datalist>
+        )}
         <Input
           label="Společnost"
           name="billing_address.company"

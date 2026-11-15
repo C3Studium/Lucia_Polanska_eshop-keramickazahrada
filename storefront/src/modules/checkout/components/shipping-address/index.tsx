@@ -181,6 +181,25 @@ const ShippingAddress = ({
     formData["shipping_address.country_code"]
   )
 
+  /*
+   * Adresa, která přesně odpovídá návrhu (vybraná ze seznamu i dopsaná
+   * ručně), doplní PSČ a město (15. 11. 2026). Samotný výběr ze seznamu
+   * nestačil: návrhy se při psaní obnovují a okamžik výběru se míjel.
+   */
+  const adresaText = String(formData["shipping_address.address_1"] ?? "").trim().toLowerCase()
+  useEffect(() => {
+    if (!adresaText) return
+    const shoda = navrhyAdres.find((navrh) => navrh.ulice.trim().toLowerCase() === adresaText)
+    if (!shoda) return
+    setFormData((pred: Record<string, any>) => {
+      const psc = shoda.psc || pred["shipping_address.postal_code"]
+      const mesto = shoda.mesto || pred["shipping_address.city"]
+      return pred["shipping_address.postal_code"] === psc && pred["shipping_address.city"] === mesto
+        ? pred
+        : { ...pred, "shipping_address.postal_code": psc, "shipping_address.city": mesto }
+    })
+  }, [adresaText, navrhyAdres])
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLInputElement | HTMLSelectElement
