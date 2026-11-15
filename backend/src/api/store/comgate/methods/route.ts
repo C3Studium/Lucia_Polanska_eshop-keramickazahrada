@@ -144,6 +144,15 @@ const sanitizeMethod = (method: unknown): ComgateMethod | null => {
   };
 };
 
+/*
+ * Seznam metod ComGate se mění zřídka, ale pokladna se ho ptá při každém
+ * kroku (15. 11. 2026: znatelná prodleva na kroku Platba). Odpověď se drží
+ * 5 minut v paměti podle dotazu (měna, země, jazyk, cena, prohlížeč).
+ */
+const METHODS_TTL_MS = 5 * 60 * 1000;
+const METHODS_CACHE_MAX = 200;
+const methodsCache = new Map<string, { at: number; methods: ComgateMethod[] }>();
+
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const requestedCurrency = firstQueryValue(req.query.curr)?.toUpperCase();
   const requestedCountry = firstQueryValue(req.query.country)?.toUpperCase();
@@ -169,6 +178,16 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
   )?.slice(0, 512);
   if (shopperUserAgent) {
     query.set("userAgent", shopperUserAgent);
+  }
+
+  const cacheKey = query.toString();
+  const cached = methodsCache.get(cacheKey);
+  if (cached && Date.now() - cached.at < METHODS_TTL_MS) {
+    res.setHeader(
+      "Cache-Control",
+      "public, max-age=60, s-maxage=300, stale-while-revalidate=600"
+    );
+    return res.status(200).json({ methods: cached.methods });
   }
 
   try {
@@ -202,6 +221,11 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
           .map(sanitizeMethod)
           .filter((method): method is ComgateMethod => Boolean(method))
       : [];
+
+    if (methods.length) {
+      if (methodsCache.size >= METHODS_CACHE_MAX) methodsCache.clear();
+      methodsCache.set(cacheKey, { at: Date.now(), methods });
+    }
 
     res.setHeader(
       "Cache-Control",
