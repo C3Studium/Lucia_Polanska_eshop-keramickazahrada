@@ -2351,3 +2351,33 @@
 .product__infoSlot .product__serviceNotes {
   margin-top: 0;
 }
+
+/*
+ * Tlačítka nákupu VŽDY v jedné řadě (15. 11. 2026, Matěj): kroužek
+ * oblíbených, „Přidat do košíku", „Koupit ihned". Nad nimi jen Počet kusů.
+ * Pilulky si v řadě dělí místo rovným dílem (`--cta-pill-w: 100%` + flex),
+ * kroužek drží svůj průměr. Nápověda „Doručíme na vaši uloženou adresu"
+ * zůstává pod „Koupit ihned".
+ */
+.product__details__cta__buy__buttons {
+  --cta-pill-w: 100%;
+  --cta-pill-px: clamp(.75rem, 1vw, 1.25rem);
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.product__details__cta__buy__buttons > :not(.product__details__cta__buy__button__add) {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+}
+
+.product__details__cta__buy__buttons > :not(.product__details__cta__buy__button__add) button {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.product__details__cta__buy__button__add {
+  flex: 0 0 auto;
+}
