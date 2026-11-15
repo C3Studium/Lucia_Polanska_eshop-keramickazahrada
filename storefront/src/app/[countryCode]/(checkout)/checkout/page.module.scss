@@ -156,3 +156,34 @@
      tmavý podklad a pod lištou zůstal bílý pruh. */
   .root { padding-top: calc(clamp(3.5rem, 8vh, 7.75rem) + 7.5vh); }
 }
+
+/*
+ * Hlavička přes oba sloupce (15. 11. 2026, Matěj): „Pokladna · 01 výrobek"
+ * vlevo, „Zpět do košíku" vpravo, linka pod nimi. Souhrn vlevo a kroky
+ * pokladny vpravo pak začínají ve stejné výšce.
+ */
+.masthead {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem 1.5rem;
+  padding-bottom: clamp(.5rem, .78vw, .75rem);
+  border-bottom: 1px solid var(--checkout-line);
+}
+
+.masthead .mastheadMeta {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.masthead .backLink {
+  margin-top: 0;
+  padding-block: .25rem;
+}
+
+/* Souhrn začíná hned nahoře, na úrovni kroků vpravo. */
+.intro .order {
+  margin-top: 0;
+}

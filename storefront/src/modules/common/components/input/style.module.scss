@@ -202,6 +202,10 @@
 
 .contact .inputWrapper input:focus + label,
 .contact .inputWrapper input:not(:placeholder-shown) + label {
+  /* Popisek v rámečku stojí na místě i po vyplnění (15. 11. 2026). Globální
+     pravidlo ze startovní šablony Medusy (globals.scss: `input:focus ~ label`,
+     `-translate-y-2`) ho posouvalo o půl řádku nahoru až na okraj rámečku. */
+  transform: none;
   top: .5rem;
   font-size: max(var(--text-min, 0px), calc(0.875rem * var(--read, 1)));
 }

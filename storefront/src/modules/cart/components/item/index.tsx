@@ -1,6 +1,6 @@
 "use client"
 
-import { Divider, clx } from "@medusajs/ui"
+import { clx } from "@medusajs/ui"
 import { updateLineItem } from "@lib/data/cart"
 import { HttpTypes } from "@medusajs/types"
 import { maxPurchasableQuantity } from "@lib/util/availability"
@@ -291,7 +291,6 @@ const Item = ({
                   </span>
                 </span>
               )}
-              <Divider />
             </>
           )}
           {type === "full" && <span className={s.controlLabel}>Celkem</span>}

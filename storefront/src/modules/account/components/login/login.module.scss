@@ -73,6 +73,7 @@
 }
 
 .fields :global(label) {
+  transform: none !important; /* bez posunu po vyplnění (15. 11. 2026) */
   left: .875rem !important;
   top: .5rem !important;
   margin-left: 0 !important;
