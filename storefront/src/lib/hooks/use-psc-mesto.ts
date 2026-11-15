@@ -5,7 +5,7 @@ import { normalizujPsc } from "@lib/util/psc"
 
 /**
  * Po napsání PSČ (ČR) zjistí obce (14. 11. 2026). Vrací seznam pro nabídku
- * u pole Město; jednu jedinou obec volající rovnou dosadí, když je město
+ * u pole Město; první (obec pošty) volající rovnou dosadí, když je město
  * prázdné (viz `doplnMesto`). Selhání = prázdný seznam, nic se neděje.
  */
 export const usePscMesto = (
@@ -29,7 +29,9 @@ export const usePscMesto = (
         if (zruseno) return
         const seznam = Array.isArray(d?.obce) ? d.obce : []
         setObce(seznam)
-        if (seznam.length === 1) doplnMesto?.(seznam[0])
+        /* První je obec pošty (397 01 → Písek); ostatní nabídne pole Město.
+           Volající dosazuje jen do prázdného města. */
+        if (seznam.length >= 1) doplnMesto?.(seznam[0])
       })
       .catch(() => !zruseno && setObce([]))
     return () => {
