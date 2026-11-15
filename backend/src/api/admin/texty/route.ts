@@ -10,6 +10,7 @@ import {
   type StoredShopTexts,
   type StoredShopTextsOff,
 } from "../../../lib/shop-texty"
+import { refreshStorefront } from "../../../lib/storefront-refresh"
 
 /**
  * Texty obchodu pro administraci (stránka „Právní věci a texty" → Texty).
@@ -52,6 +53,10 @@ export const POST = async (
     ...(texty ? { shop_texts: texty as never } : {}),
     ...(vypnute ? { shop_texts_off: vypnute as never } : {}),
   })
+
+  /* Obchod si texty obnoví hned, ne až po minutě (15. 11. 2026) — jinak to
+     vypadalo, že se uložení nepovedlo. */
+  await refreshStorefront(req.scope, { tags: ["shop-texty"], everything: true })
 
   res.status(200).json(odpoved(settings))
 }

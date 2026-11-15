@@ -14,8 +14,12 @@ type LoginPageProps = {
 
 export default async function Login({ params, searchParams }: LoginPageProps) {
   const [{ countryCode }, query] = await Promise.all([params, searchParams])
+  /* Zpátky jen do košíku nebo pokladny (15. 11. 2026: „Máte u nás účet?"
+     v pokladně) — pevný výčet, ne libovolná adresa. */
   const redirectTo =
-    query.redirectTo === "/cart" ? `/${countryCode}/cart` : undefined
+    query.redirectTo === "/cart" || query.redirectTo === "/checkout"
+      ? `/${countryCode}${query.redirectTo}`
+      : undefined
 
   // Hero vedle formuláře je globální (`global.prihlaseni`), věty ve formuláři
   // patří stránce účtu (`ucet.formular`).

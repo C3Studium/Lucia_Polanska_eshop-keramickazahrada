@@ -1,4 +1,4 @@
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 import { NextResponse } from "next/server"
 
 /**
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     )
   }
 
-  let telo: { paths?: unknown } = {}
+  let telo: { paths?: unknown; tags?: unknown; everything?: unknown } = {}
   try {
     telo = await request.json()
   } catch {
@@ -73,6 +73,24 @@ export async function POST(request: Request) {
   const cesty = Array.isArray(telo.paths)
     ? telo.paths.filter((c): c is string => typeof c === "string" && c.startsWith("/"))
     : VYCHOZI_CESTY
+
+  /*
+   * Štítky dat a „všechno" (15. 11. 2026): Právní údaje a Texty obchodu
+   * z administrace se propisují do skoro každé stránky (patička, pokladna,
+   * podmínky). Uložení je bez toho na webu ukázalo až po minutě a déle —
+   * vypadalo to, že se neuložilo.
+   */
+  const stitky = Array.isArray(telo.tags)
+    ? telo.tags.filter((t): t is string => typeof t === "string" && /^[a-z0-9-]{1,60}$/.test(t))
+    : []
+  for (const stitek of stitky) revalidateTag(stitek)
+  if (telo.everything === true) {
+    revalidatePath("/", "layout")
+    return NextResponse.json({ revalidated: true, tags: stitky, everything: true })
+  }
+  if (stitky.length && !Array.isArray(telo.paths)) {
+    return NextResponse.json({ revalidated: true, tags: stitky })
+  }
 
   for (const cesta of cesty) {
     /* `page` i pro dynamické segmenty: `/[countryCode]/store` je jedna stránka

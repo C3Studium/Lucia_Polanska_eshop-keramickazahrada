@@ -236,6 +236,123 @@ const Section = ({
   </section>
 );
 
+/**
+ * Fotky v popisu (15. 11. 2026) — fotky, které se na webu ukážou pod popiskem
+ * v Detailech výrobku (detail glazury, zadní strana, kus v místnosti). Zvlášť
+ * od galerie nahoře. Ukládá se seznam adres do `metadata.detail_images`
+ * přes `/flags` (sloučení metadat, obnova obchodu).
+ */
+const DetailImagesEditor = ({
+  images,
+  onSave,
+}: {
+  images: string[];
+  onSave: (next: string[]) => Promise<unknown>;
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+
+  const upload = async (files: File[]) => {
+    if (!files.length) return;
+    setBusy(true);
+    try {
+      const result = await sdk.admin.upload.create({ files });
+      const urls = (result.files ?? [])
+        .map((file: { url?: string }) => file.url)
+        .filter(Boolean) as string[];
+      if (!urls.length) throw new Error("Fotky se nepodařilo nahrát.");
+      await onSave([...images, ...urls].slice(0, 12));
+    } catch (error) {
+      toast.error(ceskaChyba(error, "Fotky se nepodařilo nahrát."));
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  const move = (index: number, step: number) => {
+    const next = [...images];
+    const target = index + step;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    void onSave(next);
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      {images.length > 0 ? (
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {images.map((url, index) => (
+            <li key={url} className="flex flex-col gap-1.5">
+              <img
+                src={url}
+                alt={`Fotka v popisu ${index + 1}`}
+                className="aspect-[4/3] w-full rounded-md border object-cover"
+              />
+              <div className="flex items-center justify-between gap-1">
+                <div className="flex gap-1">
+                  <Button
+                    size="small"
+                    variant="transparent"
+                    disabled={busy || index === 0}
+                    onClick={() => move(index, -1)}
+                    aria-label="Posunout dopředu"
+                  >
+                    ←
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="transparent"
+                    disabled={busy || index === images.length - 1}
+                    onClick={() => move(index, 1)}
+                    aria-label="Posunout dozadu"
+                  >
+                    →
+                  </Button>
+                </div>
+                <Button
+                  size="small"
+                  variant="transparent"
+                  disabled={busy}
+                  onClick={() => void onSave(images.filter((_, i) => i !== index))}
+                >
+                  Odebrat
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <Text size="small" className="text-ui-fg-muted">
+          Zatím žádné. Na webu se popisek ukáže bez fotek.
+        </Text>
+      )}
+      <div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(event) => void upload(Array.from(event.target.files ?? []))}
+        />
+        <Button
+          size="small"
+          variant="secondary"
+          isLoading={busy}
+          disabled={busy || images.length >= 12}
+          onClick={() => inputRef.current?.click()}
+        >
+          <Plus /> Přidat fotky
+        </Button>
+        <Text size="xsmall" className="text-ui-fg-muted mt-1">
+          Nejvýš 12. Ukážou se v Detailech pod popiskem; kliknutím se zvětší.
+        </Text>
+      </div>
+    </div>
+  );
+};
+
 const FieldLabel = ({ children }: { children: React.ReactNode }) => (
   <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
     {children}
@@ -2633,6 +2750,22 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                 </Text>
               </div>
             </div>
+          </Section>
+
+          <Section
+            title="Fotky v popisu"
+            hint="Další fotky pod popiskem v Detailech výrobku — zvlášť od hlavní galerie."
+          >
+            <DetailImagesEditor
+              images={
+                Array.isArray(product.metadata?.detail_images)
+                  ? (product.metadata.detail_images as unknown[]).filter(
+                      (url): url is string => typeof url === "string"
+                    )
+                  : []
+              }
+              onSave={(next) => saveFlags.mutateAsync({ detail_images: next })}
+            />
           </Section>
 
           {/* Jeden přepínač; zpráva pro zákazníka jen když je zapnutý.

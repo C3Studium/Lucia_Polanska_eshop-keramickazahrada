@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { MedusaError, Modules } from "@medusajs/framework/utils"
 import { applyDiscountableRule } from "../../../../../../lib/discountable"
+import revalidateStorefront from "../../../../../../subscribers/revalidate-storefront"
 import { MADE_TO_ORDER_MODULE } from "../../../../../../modules/made-to-order"
 import { z } from "@medusajs/framework/zod"
 
@@ -84,6 +85,12 @@ const PatchFlagsSchema = z
      * obecný text. Viz [[zakazka-poznamkovy-blok]].
      */
     made_to_order_prompt: z.string().trim().max(2000).nullable().optional(),
+    /**
+     * Fotky k popisu (15. 11. 2026) — ukazují se pod popiskem v Detailech
+     * výrobku (storefront čte `metadata.detail_images`). Nahrávají se přes
+     * `/admin/uploads`, sem jde seznam adres v pořadí. `null`/`[]` maže.
+     */
+    detail_images: z.array(z.string().trim().min(1).max(1000)).max(12).nullable().optional(),
     /** Whether the piece survives frost — pots and garden pieces care. */
     frost_resistant: z.boolean().optional(),
     /**
@@ -176,6 +183,14 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
         .warn(`[discountable] Přepočet po změně příznaků se nepodařil: ${(error as Error)?.message ?? error}`)
     )
   }
+
+  /* Přímý zápis do modulu nevydá `product.updated`, takže si obchod změnu
+     (rozměry, fotky k popisu, poznámky…) jinak všiml až po 5 minutách, kdy
+     vyprší mezipaměť katalogu. Obnova se vyžádá rovnou; nikdy nevyhodí. */
+  await revalidateStorefront({
+    container: req.scope,
+    event: { name: "product.flags-updated", data: { id: req.params.productId } },
+  } as never)
 
   res.status(200).json({
     id: req.params.productId,

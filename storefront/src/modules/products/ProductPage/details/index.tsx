@@ -28,7 +28,9 @@ export default function Details({
     /** Blok `global.produkt` — odstavec o doručení (`doprava.*`). */
     texts?: CopyBlock
 }) {
-    const [open, setOpen] = useState<number[]>([]);
+    /* Popisek otevřený hned (15. 11. 2026) — detaily mají teď vlastní pás
+       nad recenzemi a dlouhý popis se tam čte pohodlně. */
+    const [open, setOpen] = useState<number[]>([0]);
 
     const toggleOpen = (idx: number) => {
         setOpen(prev =>
@@ -38,28 +40,33 @@ export default function Details({
         );
     };
 
+    /*
+     * Rozměry a materiál (15. 11. 2026). Administrace ukládá rozměry jako
+     * volný text do `metadata.dimensions` („výška 12 cm, ø 9 cm" — keramika
+     * se do tří čísel nevejde), web ale četl nativní výšku/šířku/hloubku,
+     * které se nikde nevyplňují — zákazník viděl „N/A" a uložené rozměry nikdy.
+     * Nativní čísla zůstávají jako záloha pro starší výrobky.
+     */
+    const metadata = (product.metadata ?? {}) as Record<string, unknown>;
+    const textoveRozmery =
+        typeof metadata.dimensions === "string" ? metadata.dimensions.trim() : "";
+    const ciselneRozmery = [
+        product.height ? `výška ${product.height} cm` : "",
+        product.width ? `šířka ${product.width} cm` : "",
+        product.length ? `hloubka ${product.length} cm` : "",
+    ].filter(Boolean).join(", ");
     const descriptions = [
-        {
-            title: "Výška",
-            content: product.height ? `${product.height} cm` : "N/A"
-        },
-        {
-            title: "Šířka",
-            content: product.width ? `${product.width} cm` : "N/A"
-        },
-        {
-            title: "Hloubka",
-            content: product.length ? `${product.length} cm` : "N/A"
-        },
-        {
-            title: "Materiál",
-            content: product.material ? `Materiál: ${product.material}` : "N/A"
-        },
-        {
-            title: "Hmotnost",
-            content: product.weight ? `${product.weight} g` : "N/A"
-        }
-    ];
+        { title: "Rozměry", content: textoveRozmery || ciselneRozmery },
+        { title: "Materiál", content: product.material?.trim() ?? "" },
+        { title: "Hmotnost", content: product.weight ? `${product.weight} g` : "" },
+    ].filter((item) => item.content);
+
+    /* Fotky k popisu z administrace (`metadata.detail_images`). */
+    const detailImages = Array.isArray(metadata.detail_images)
+        ? (metadata.detail_images as unknown[]).filter(
+              (url): url is string => typeof url === "string" && /^(https?:\/\/|\/)/.test(url)
+          )
+        : [];
 
     /* Dopravci podle Dopravy a platby (lib/legal/documents/doprava-a-platba) —
        jen Česká pošta a osobní odběr. Vrácení je zákonné právo (§ 1829 OZ),
@@ -96,9 +103,15 @@ export default function Details({
     // sections rendered a literal "N/A" when their data was unset (spec §3.3). A panel is now
     // only offered when it has something to say.
     const details = [
-        product.description && {
+        (product.description || detailImages.length > 0) && {
             title: "Popisek",
-            component: <InfoDesc description={product.description} />
+            component: (
+                <InfoDesc
+                    description={product.description ?? ""}
+                    images={detailImages}
+                    title={product.title}
+                />
+            )
         },
         descriptions.length > 0 && {
             title: "Rozměry a materiál",

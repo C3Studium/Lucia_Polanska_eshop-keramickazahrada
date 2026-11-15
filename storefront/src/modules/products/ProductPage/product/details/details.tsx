@@ -41,7 +41,6 @@ import type { CopyBlock } from "@lib/util/site-copy"
 import { itemText } from "@lib/util/site-copy"
 import { useEditRerender } from "@lib/hooks/use-edit-rerender"
 import { editableItem } from "@modules/common/components/cms-text"
-import Details from "@modules/products/ProductPage/details"
 import RestockForm from "@modules/products/ProductPage/restock"
 import BundleActions from "@modules/products/components/bundle-actions"
 import { isEqual } from "lodash"
@@ -430,8 +429,31 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                 </div>
               )}
 
-              <div className="product__detailsSlot">
-                <Details product={product} texts={texts} />
+              {/* Vlevo informace, vpravo nákup (15. 11. 2026, Matěj). Detaily
+                  (popisek, rozměry, doprava) mají vlastní pás nad recenzemi
+                  (stránka výrobku); sem patří bezpečnost a tři značky. */}
+              <div className="product__detailsSlot product__infoSlot">
+                {/* Bezpečnostní věty podle kategorie + odkaz na protokoly
+                    nezávadnosti (LEGAL_AUDIT § 0b N1/N2). Ve výběru do úpravy
+                    objednávky ne — tam se nenakupuje. */}
+                {!pick && (
+                  <SafetyNotice
+                    categoryHandles={(categories ?? []).map((category) => category.handle ?? "")}
+                    description={product.description}
+                  />
+                )}
+                {/* Tři značky — položky `znacky.*` bloku `global.produkt`. */}
+                <div className="product__serviceNotes">
+                  <span {...editableItem(texts, "znacky.baleni")}>
+                    {itemText(texts, "znacky.baleni", "Zabalíme pečlivě")}
+                  </span>
+                  <span {...editableItem(texts, "znacky.rucne")}>
+                    {itemText(texts, "znacky.rucne", "Ručně vytvořeno")}
+                  </span>
+                  <span {...editableItem(texts, "znacky.atelier")}>
+                    {itemText(texts, "znacky.atelier", "Ateliér · Písek")}
+                  </span>
+                </div>
               </div>
             </motion.div>
           </aside>
@@ -679,31 +701,10 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                     {showMadeToOrderNotice && (
                       <MadeToOrderSteps maxDays={madeToOrderMaxDays} />
                     )}
-                    {/* Bezpečnostní věty podle kategorie + odkaz na protokoly
-                        nezávadnosti (LEGAL_AUDIT § 0b N1/N2). Ve výběru do úpravy
-                        objednávky ne — tam se nenakupuje. */}
-                    {!pick && (
-                      <SafetyNotice
-                        categoryHandles={(categories ?? []).map((category) => category.handle ?? "")}
-                        description={product.description}
-                      />
-                    )}
                   </div>
                 </>
               )}
 
-              {/* Tři značky pod nákupem — položky `znacky.*` bloku `global.produkt`. */}
-              <div className="product__serviceNotes">
-                <span {...editableItem(texts, "znacky.baleni")}>
-                  {itemText(texts, "znacky.baleni", "Zabalíme pečlivě")}
-                </span>
-                <span {...editableItem(texts, "znacky.rucne")}>
-                  {itemText(texts, "znacky.rucne", "Ručně vytvořeno")}
-                </span>
-                <span {...editableItem(texts, "znacky.atelier")}>
-                  {itemText(texts, "znacky.atelier", "Ateliér · Písek")}
-                </span>
-              </div>
 
               {/* Hlídání naskladnění do výběru nepatří — tam jde jen to, co je k mání. */}
               {!bundle && !pick && selectedVariant && !inStock && (

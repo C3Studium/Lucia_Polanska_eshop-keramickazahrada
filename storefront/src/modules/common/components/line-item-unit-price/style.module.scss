@@ -60,3 +60,23 @@
     }
   }
 }
+
+/*
+ * Úzká varianta (souhrn pokladny, buňky košíku): původní a nová cena
+ * na JEDNOM řádku vedle sebe, přeškrtnutá první (15. 11. 2026) — pod sebou
+ * vypadaly jako dvě různé položky a řádek byl nesouměrný.
+ */
+.root.tight {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0 .4em;
+  width: auto;
+  height: auto;
+  padding-bottom: 0;
+
+  p {
+    margin: 0;
+  }
+}

@@ -227,7 +227,7 @@ const Inner = () => {
           )
         )
       );
-      toast.success("Uloženo — e-maily to mají hned, web do minuty.");
+      toast.success("Uloženo — web i e-maily to mají hned.");
     },
     onError: (error) =>
       toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),

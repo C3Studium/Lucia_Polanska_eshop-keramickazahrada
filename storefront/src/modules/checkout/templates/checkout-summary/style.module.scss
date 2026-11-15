@@ -202,3 +202,9 @@
   margin-bottom: clamp(.625rem, 1.4vh, 1rem);
 }
 .discount > * { width: 100%; }
+
+/* Slevový kód pod penězi (15. 11. 2026) — tichá linka ho oddělí od součtů. */
+.discount {
+  padding-top: clamp(.75rem, 1.6vh, 1.125rem);
+  border-top: 1px solid rgb(var(--cream-06-rgb) / .14);
+}

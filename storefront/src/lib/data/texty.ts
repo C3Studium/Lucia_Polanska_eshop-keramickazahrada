@@ -10,8 +10,8 @@ import { TEXTY_DEFAULTS, type ShopTexty } from "@lib/constants/texty"
  * znění —, takže se tady nic nedoplňuje; `TEXTY_DEFAULTS` jsou jen záloha pro
  * selhaný dotaz, aby stránka výrobku nikdy nezůstala bez vět.
  *
- * Minuta cache: změna textu se v obchodě ukáže do minuty, ne za den. Po
- * uložení v administraci navíc přijde obnova katalogu, takže obvykle hned.
+ * Minuta cache jako pojistka; po uložení v administraci backend rovnou
+ * požádá o obnovu (štítek `shop-texty` + celý web), takže je změna vidět hned.
  */
 export async function getTexty(): Promise<ShopTexty> {
   const base =
@@ -26,7 +26,7 @@ export async function getTexty(): Promise<ShopTexty> {
       headers: pk
         ? { "x-publishable-api-key": pk, "x-publishable-key": pk }
         : {},
-      next: { revalidate: 60 },
+      next: { revalidate: 60, tags: ["shop-texty"] },
     })
     if (!response.ok) {
       /* Nahlas: tichá záloha vypadá přesně jako „majitelka nic neměnila". */

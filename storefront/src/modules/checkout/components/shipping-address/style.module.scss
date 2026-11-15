@@ -31,11 +31,11 @@
        zvedl ramp spolu s textem, který v nich stojí — v px by se sloupce přestaly
        hýbat právě tam, kde adresa uvnitř vyroste o třetinu. */
     @include v(md) {
-      grid-template-columns: minmax(13.75rem, .75fr) minmax(20rem, 1.25fr);
+      grid-template-columns: 1fr; /* jen výběr adres, 15. 11. 2026 */
     }
 
     @include h(xs) {
-      grid-template-columns: minmax(13.75rem, .75fr) minmax(20rem, 1.25fr);
+      grid-template-columns: 1fr;
     }
   }
 
