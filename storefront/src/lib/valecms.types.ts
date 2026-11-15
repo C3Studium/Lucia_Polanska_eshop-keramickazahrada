@@ -889,22 +889,9 @@ const certifikat = defineType({
     },
 })
 
-// Příklad vlastního typu — smaž ho nebo přepiš.
-const clanek = defineType({
-    name: 'clanek',
-    title: 'Článek',
-    fields: [
-        defineField({
-            name: 'title',
-            title: 'Nadpis',
-            type: 'string',
-            validation: (rule) => rule.required().max(200),
-        }),
-        defineField({ name: 'perex', title: 'Perex', type: 'text' }),
-    ],
-})
-
-export const types = [siteCopy, review, tlacitko, soubor, pravniDokument, faqKategorie, faqOtazka, certifikat, clanek]
+/* Ukázkový typ „Článek" ze šablony ValeCMS je pryč (15. 11. 2026) — web ho
+   nikde nezobrazoval a ve Studiu žádný článek nebyl. */
+export const types = [siteCopy, review, tlacitko, soubor, pravniDokument, faqKategorie, faqOtazka, certifikat]
 
 // Typ, o kterém se píšou recenze (např. 'consultant'), nebo null.
 export const reviewSubjectType = null

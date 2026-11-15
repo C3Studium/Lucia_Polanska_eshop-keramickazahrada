@@ -502,8 +502,59 @@ const previewPages = studioPreviewListed.map((page) =>
     definePage({ route: page.path, title: page.title, ...(page.copy ? { copy: page.copy } : {}) })
 )
 
+/*
+ * Skupiny v seznamu stránek „Upravit kontent" (15. 11. 2026, Matěj) — aby se
+ * v sedmdesáti adresách dalo zorientovat. Pořadí skupin je pořadí tady;
+ * uvnitř skupiny pořadí konfigurace. Skupinu čte záplata ValeCMS
+ * (patches/@c3studium__valecms@0.1.52.patch: definePage `group`).
+ */
+const SKUPINY_STRANEK = [
+    'Hlavní stránky',
+    'Obchod a výrobky',
+    'Košík a pokladna',
+    'Účet zákazníka',
+    'Objednávky, kurzy a poukazy',
+    'Heslo a přihlášení',
+    'Právní stránky',
+    'Ostatní',
+] as const
+
+const skupinaStranky = (route: string): (typeof SKUPINY_STRANEK)[number] => {
+    const r = route.replace(/^\/cz/, '') || '/'
+    if (['/', '/kurzy', '/o-mne', '/vyroba', '/dotazy'].includes(r)) return 'Hlavní stránky'
+    if (r.startsWith('/store') || r.startsWith('/products')) return 'Obchod a výrobky'
+    if (r.startsWith('/cart') || r.startsWith('/checkout') || r.startsWith('/payment') || r.startsWith('/express-checkout'))
+        return 'Košík a pokladna'
+    if (r.startsWith('/account')) return 'Účet zákazníka'
+    if (r.startsWith('/order') || r.startsWith('/kurzy/') || r.startsWith('/poukaz')) return 'Objednávky, kurzy a poukazy'
+    if (['/reset-password', '/verify-email', '/forgot-password'].includes(r)) return 'Heslo a přihlášení'
+    if (
+        r.startsWith('/smluvni-podminky') ||
+        ['/reklamacni-rad', '/reklamacni-protokol', '/odstoupeni-od-smlouvy', '/ochrana-osobnich-udaju', '/cookies', '/doprava-a-platba', '/certifikaty'].includes(r) ||
+        r.startsWith('/pravni-dokument')
+    )
+        return 'Právní stránky'
+    return 'Ostatní'
+}
+
+type StrankaKonfigurace = { route: string } & Record<string, unknown>
+const vsechnyStranky = [
+    homepage, kurzy, oMne, vyroba, dotazy, ...textPages, ...legalPages, ...previewPages,
+] as unknown as StrankaKonfigurace[]
+const strankySkupinami = vsechnyStranky
+    .map((page, index) => ({
+        page: definePage({ ...page, group: skupinaStranky(page.route) } as never) as unknown as StrankaKonfigurace,
+        index,
+    }))
+    .sort(
+        (x, y) =>
+            SKUPINY_STRANEK.indexOf(skupinaStranky(x.page.route)) - SKUPINY_STRANEK.indexOf(skupinaStranky(y.page.route)) ||
+            x.index - y.index
+    )
+    .map(({ page }) => page)
+
 export default defineSite({
-    pages: [homepage, kurzy, oMne, vyroba, dotazy, ...textPages, ...legalPages, ...previewPages],
+    pages: strankySkupinami,
     surfaces,
     /*
      * Jedenáct adres pro tentýž obsah.
