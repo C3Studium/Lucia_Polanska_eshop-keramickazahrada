@@ -15,7 +15,7 @@
   overflow: hidden;
   /* 1px border zustava v px — hairline, fyzicka vec (pravidlo 3). */
   border: 1px solid rgb(var(--ink-05-rgb) / .2);
-  border-radius: .75rem;
+  border-radius: var(--field-radius);
   color: var(--ink-05);
 }
 
@@ -87,7 +87,7 @@
     min-height: var(--select-height);
     padding-inline: .875rem;
     border: 1px solid rgb(var(--ink-06-rgb) / .42);
-    border-radius: .625rem;
+    border-radius: var(--field-radius);
     background: rgb(255 255 255 / .45) !important;
   }
 

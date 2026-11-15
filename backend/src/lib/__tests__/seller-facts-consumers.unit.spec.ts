@@ -12,7 +12,7 @@ describe("protocolSeller (reklamační protokol)", () => {
   it("prints the seller from the legal facts — person and IČO as in the terms", () => {
     expect(protocolSeller(LEGAL_FACT_DEFAULTS)).toEqual({
       name: "Lucie Polanská",
-      address: "Putim 229, 397 01 Písek",
+      address: "Putim 229, 397 01 Putim",
       ico: "03441482",
       email: "lucie.polanska@gmail.com",
       phone: "+420 775 211 578",
@@ -24,7 +24,7 @@ describe("protocolSeller (reklamační protokol)", () => {
 
   it("falls back per field — a document never misses the seller's address", () => {
     const seller = protocolSeller({ ...LEGAL_FACT_DEFAULTS, "seller.address": null })
-    expect(seller.address).toBe("Putim 229, 397 01 Písek")
+    expect(seller.address).toBe("Putim 229, 397 01 Putim")
     expect(protocolSeller(null).email).toBe("info@keramickazahrada.cz")
   })
 })

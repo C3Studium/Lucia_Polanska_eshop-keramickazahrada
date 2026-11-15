@@ -32,7 +32,7 @@ interface ReturnReceivedEmailProps {
 }
 
 /** Texty po jazycích (lib/email-locale) — čeština je původní znění. */
-const COPY: Localized<{
+export const COPY: Localized<{
   /** Co se děje dál — podle rozhodnutí. */
   next: Record<"repair" | "replace" | "discount" | "refund", string>
   preview: (order: string) => string

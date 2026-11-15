@@ -663,6 +663,7 @@ function Newsletter({ block }: { block?: CopyBlock }) {
       </label>
       <div className="newsletter__controls">
         <input
+          data-pill-field
           id="footer-newsletter-email"
           name="email"
           type="email"

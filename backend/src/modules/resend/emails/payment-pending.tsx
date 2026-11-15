@@ -18,7 +18,7 @@ import { useCopy } from "../components/email-i18n"
 import type { Localized } from "../../../lib/email-locale"
 
 /** Texty po jazycích (lib/email-locale) — čeština je původní znění. */
-const COPY: Localized<{
+export const COPY: Localized<{
   previewAmount: (amount: string) => string
   preview: string
   eyebrow: string

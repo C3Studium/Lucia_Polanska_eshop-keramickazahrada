@@ -530,7 +530,7 @@ const TEXT_BLOCKS = [
                 item("odeslano.nadpis", "Zpráva odešla."),
                 item(
                     "odeslano.text",
-                    "Děkuju — ozvu se vám do dvou pracovních dnů. Když stojím u pece, může to výjimečně trvat o kousek déle. Kopii zprávy jsem vám neposílala; kdybyste si nebyli jistí, napište mi kdykoliv na {email}."
+                    "Děkuju — ozvu se vám do dvou pracovních dnů. Když stojím u pece, může to výjimečně trvat o kousek déle. Potvrzení s kopií zprávy vám právě přišlo e-mailem; kdyby nedorazilo, mrkněte do spamu nebo mi napište na {email}."
                 ),
                 item("zmena-odeslano.nadpis", "Žádost o změnu odešla."),
                 item(

@@ -672,6 +672,8 @@
 
   &__count > div {
     display: flex;
+    /* Jen tak široký, jak je potřeba (15. 11. 2026) — přes půl okna působil jako pole. */
+    width: fit-content;
     align-items: stretch;
     border: 1px solid rgb(var(--ink-05-rgb) / .26);
     background: var(--white);
@@ -706,7 +708,7 @@
     }
 
     output {
-      flex: 1;
+      min-width: 3.5rem;
       display: grid;
       place-items: center;
       font-family: "Sentient-Regular", serif;

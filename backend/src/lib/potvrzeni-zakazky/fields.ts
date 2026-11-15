@@ -313,7 +313,7 @@ const nameOf = (...sources: Array<{ first_name?: string | null; last_name?: stri
   return ""
 }
 
-/** „Putim 229, 397 01 Písek" — domácí adresa (billing), výdejna je v shipping. */
+/** „Putim 229, 397 01 Putim" — domácí adresa (billing), výdejna je v shipping. */
 const addressLine = (address: AddressLike): string => {
   if (!address) return ""
   const parts = [

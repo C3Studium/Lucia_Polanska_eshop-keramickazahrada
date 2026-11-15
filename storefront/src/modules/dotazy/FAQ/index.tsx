@@ -152,7 +152,7 @@ export default function FAQBody({
      * seznamu v kódu.
      */
     cmsQuestions?: FaqQuestion[]
-    /** Dokumenty `qnaKategorie` — znění a pořadí čipů filtru. */
+    /** Kategorie FAQ (dokumenty `faq`) — znění a pořadí čipů filtru. */
     cmsCategories?: FaqCategory[]
 }) {
     /*
@@ -395,8 +395,8 @@ export default function FAQBody({
                                    pozicí v BLOKU, ne v zobrazeném seznamu, ten je
                                    filtrovaný a `index` by ukazoval na cizí otázku. */
                                 editDoc={
-                                    question.doc
-                                        ? editableDoc(question.doc, "qna")
+                                    question.doc?.docId
+                                        ? editableDoc({ id: question.doc.docId }, question.doc.docType)
                                         : undefined
                                 }
                                 editTitle={

@@ -96,11 +96,11 @@ describe("block-composed newsletter e-mail", () => {
         PromotionalEmail({ subject: "Novinky", blocks, unsubscribeLink: UNSUBSCRIBE }),
         // Nová adresa sídla; IČO výslovně nevyplněné → záloha, identifikace
         // odesílatele obchodního sdělení musí být celá.
-        { "seller.address": "Nová 1, 397 01 Písek", "seller.ico": null }
+        { "seller.address": "Nová 1, 397 01 Putim", "seller.ico": null }
       ) as React.ReactElement
     )
-    expect(html).toContain("Odesílatel: Lucie Polanská, se sídlem Nová 1, 397 01 Písek, IČO 03441482.")
-    expect(html).toContain("Prodávající: Lucie Polanská · Nová 1, 397 01 Písek")
+    expect(html).toContain("Odesílatel: Lucie Polanská, se sídlem Nová 1, 397 01 Putim, IČO 03441482.")
+    expect(html).toContain("Prodávající: Lucie Polanská · Nová 1, 397 01 Putim")
   })
 
   it("renders every block type, in order", () => {

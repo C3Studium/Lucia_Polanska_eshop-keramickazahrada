@@ -65,7 +65,7 @@ const TITLES: Record<string, Record<"sk" | "pl" | "de" | "en", string>> = {
 }
 
 /** Texty po jazycích (lib/email-locale) — čeština je původní znění. */
-const COPY: Localized<{
+export const COPY: Localized<{
   locale: "cs" | "sk" | "pl" | "de" | "en"
   number: (orderNumber: string) => string
   preview: (title: string, number: string) => string

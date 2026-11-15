@@ -223,7 +223,7 @@ export const sellerFacts = (
 }
 
 /**
- * „Lucie Polanská · Putim 229, 397 01 Písek · IČO 03441482". Chybějící údaj
+ * „Lucie Polanská · Putim 229, 397 01 Putim · IČO 03441482". Chybějící údaj
  * se vynechá — do e-mailu nikdy nejde zástupný text.
  */
 export const sellerIdentityLine = (

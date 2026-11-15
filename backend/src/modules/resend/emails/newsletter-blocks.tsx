@@ -37,7 +37,7 @@ import {
 /** Záloha identity odesílatele, když právní údaje nejsou k mání nebo chybí. */
 export const NEWSLETTER_SENDER = {
   name: "Lucie Polanská",
-  address: process.env.SIDLO_ADRESA || "Putim 229, 397 01 Písek",
+  address: process.env.SIDLO_ADRESA || "Putim 229, 397 01 Putim",
   registrationNumber: process.env.IDENTIFIKACNI_CISLO || "03441482",
 } as const
 

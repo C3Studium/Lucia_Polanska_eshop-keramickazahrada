@@ -16,7 +16,7 @@ import { useCopy } from "../components/email-i18n"
 import type { Localized } from "../../../lib/email-locale"
 
 /** Texty po jazycích (lib/email-locale) — čeština je původní znění. */
-const COPY: Localized<{
+export const COPY: Localized<{
   preview: (orderNumber: string) => string
   eyebrow: string
   title: string
@@ -209,7 +209,7 @@ function OrderReadyPickupEmailComponent({
   customerName,
   orderNumber = "",
   pickupLocation,
-  pickupAddress = "Putim 229, 397 01 Písek",
+  pickupAddress = "Putim 229, 397 01 Putim",
   pickupHours,
   readyDate,
   pickupDeadline,
@@ -281,7 +281,7 @@ export const OrderReadyPickupEmail = (props: OrderReadyPickupEmailProps) => (
 const mockOrderReadyPickup: OrderReadyPickupEmailProps = {
   customerName: "Jan Novák",
   orderNumber: "#12345",
-  pickupAddress: "Putim 229, 397 01 Písek",
+  pickupAddress: "Putim 229, 397 01 Putim",
   readyDate: "2. 11. 2026",
   orderLink: "https://keramickazahrada.cz/cz/order/order_12345/confirmed",
   // Náhled ukazuje ten horší případ — nezaplacenou objednávku.

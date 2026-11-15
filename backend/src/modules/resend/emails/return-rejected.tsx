@@ -39,7 +39,7 @@ interface ReturnRejectedEmailProps {
  * jazyce: prodávající je český podnikatel a mimosoudní řešení sporů vede
  * Česká obchodní inspekce — u přeshraničního sporu pomůže i síť ECC.
  */
-const COPY: Localized<{
+export const COPY: Localized<{
   appeal: string
   eyebrowClaim: string
   eyebrowReturn: string

@@ -56,6 +56,21 @@ export const refreshAuthToken = async (): Promise<string | null> => {
   }
 }
 
+/**
+ * Je e-mail přihlášeného zákazníka už potvrzený? Čte bez mezipaměti — stránka
+ * „Zkontrolujte poštu" se ptá opakovaně, zatímco zákazník klikne na odkaz
+ * v jiné záložce nebo na telefonu (15. 11. 2026). Při `true` zneplatní
+ * mezipaměť zákazníka, ať obnovená stránka už ukáže účet.
+ */
+export const checkEmailVerified = async (): Promise<boolean> => {
+  const customer = await retrieveCustomer({ forceFresh: true }).catch(() => null)
+  const verified = Boolean(customer?.metadata?.email_verified)
+  if (verified) {
+    revalidateTag(await getCacheTag("customers"))
+  }
+  return verified
+}
+
 export const retrieveCustomer = async (opts?: {
   forceFresh?: boolean
   _isRetry?: boolean

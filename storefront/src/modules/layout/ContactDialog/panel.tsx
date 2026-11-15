@@ -15,9 +15,6 @@ import type { CopyBlock } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
 import {
   backdropVariants,
-  closeButtonWidth,
-  closeLabelVariants,
-  closeTransition,
   contentVariants,
   detailsVariants,
   itemVariants,
@@ -107,7 +104,7 @@ const DIALOG_DEFAULTS: Record<string, string> = {
   "temata.otazka": "S čím vám můžu pomoct?",
   "odeslano.nadpis": "Zpráva odešla.",
   "odeslano.text":
-    "Děkuju — ozvu se vám do dvou pracovních dnů. Když stojím u pece, může to výjimečně trvat o kousek déle. Kopii zprávy jsem vám neposílala; kdybyste si nebyli jistí, napište mi kdykoliv na {email}.",
+    "Děkuju — ozvu se vám do dvou pracovních dnů. Když stojím u pece, může to výjimečně trvat o kousek déle. Potvrzení s kopií zprávy vám právě přišlo e-mailem; kdyby nedorazilo, mrkněte do spamu nebo mi napište na {email}.",
   "zmena-odeslano.nadpis": "Žádost o změnu odešla.",
   "zmena-odeslano.text":
     "Děkuju — změnu s vámi domluvím osobně: zavolám vám, nebo odepíšu e-mailem, zpravidla do dvou pracovních dnů. Objednávka zatím zůstává, jak byla. Kdybyste mezitím potřebovali cokoli doplnit, napište mi na {email}.",
@@ -206,7 +203,6 @@ export default function ContactDialogPanel({
       ? emails.objednavky
       : emails.dotazy
   const [hoveredInquiry, setHoveredInquiry] = useState<Inquiry | null>(null)
-  const [closeHovered, setCloseHovered] = useState(false)
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: "idle" })
   const panelRef = useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -314,6 +310,8 @@ export default function ContactDialogPanel({
                 // The topic rides along in the message so the agreed contract stays as it is.
                 message: `Téma: ${inquiry}\n\n${read("message")}`,
                 website: read("website"),
+                // Jazyk potvrzení zákazníkovi — podle země v adrese stránky.
+                country_code: window.location.pathname.split("/")[1] || "cz",
               }
         ),
       })
@@ -380,35 +378,18 @@ export default function ContactDialogPanel({
               <span {...edit("hlavicka.odpoved")}>{text("hlavicka.odpoved")}</span>
             </span>
           </div>
-          <motion.button
+          {/* Jen kroužek s křížkem (15. 11. 2026). Rozbalovací pilulka s „Zavřít"
+              po zvětšení písma nápis usekla a zbyl prázdný podklad mimo střed. */}
+          <button
             ref={closeRef}
             type="button"
             className={styles.close}
             aria-label="Zavřít"
+            title="Zavřít"
             onClick={onClose}
-            onHoverStart={() => setCloseHovered(true)}
-            onHoverEnd={() => setCloseHovered(false)}
-            initial={false}
-            animate={{
-              width: closeHovered ? closeButtonWidth.hovered : closeButtonWidth.rest,
-            }}
-            transition={closeTransition}
-            style={styleObj}
           >
-            <AnimatePresence initial={false}>
-              {closeHovered && (
-                <motion.span
-                  variants={closeLabelVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                >
-                  Zavřít
-                </motion.span>
-              )}
-            </AnimatePresence>
             <i aria-hidden="true" />
-          </motion.button>
+          </button>
         </header>
 
         <div className={styles.panelBody}>
@@ -835,7 +816,6 @@ function failureMessage(status: number) {
 
 /* Hoisted from JSX: these motion objects are static, so allocating them per
    render only gave framer-motion new references to re-diff. Values are unchanged. */
-const styleObj = { transformOrigin: "right center" as const }
 const transition = {
                                 type: "spring" as const,
                                 stiffness: 420,

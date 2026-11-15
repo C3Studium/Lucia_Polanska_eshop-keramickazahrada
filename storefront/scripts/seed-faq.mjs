@@ -1,26 +1,24 @@
-// Právní otázky stránky Dotazy z repa do Studia (typy `qna` a `qnaKategorie`).
+// FAQ stránky Dotazy do Studia — typ `faq`: jedna kategorie = jeden dokument,
+// otázky s odpověďmi uvnitř (15. 11. 2026).
 //
 // Spuštění (ze složky storefront):
 //   node --import ./scripts/lib/ts-register.mjs scripts/seed-faq.mjs            # nasucho
 //   node --import ./scripts/lib/ts-register.mjs scripts/seed-faq.mjs --write    # zapsat
 //
 // Volby:
-//   --write                       založit chybějící otázky a kategorie (bez něj jen výpis plánu)
+//   --write                       založit kategorie FAQ (bez něj jen výpis plánu)
 //   --i-know-this-is-production   povinné k --write, když cílem není souborové úložiště
 //   --no-env                      nenačítat .env.local / .env (prostředí jen z procesu)
 //
-// Do 15. 11. 2026 byla sekce „Práva a podmínky" na stránce Dotazy napevno
-// v kódu (`src/lib/legal/faq.ts`) a Lucie ji nemohla opravit. Teď je každá
-// otázka běžný dokument `qna` ve Studiu a název skupiny je její kategorie
-// (Zakázková výroba, Kurzy, Dárkové poukazy, …) — stejné čipy filtru jako
-// u ostatních otázek.
+// Převod: dřív byly ve Studiu dvě sekce — „Dotazy" (otázka = dokument,
+// kategorie jménem) a „Kategorie dotazů" — a právní otázky napevno v kódu
+// (`src/lib/legal/faq.ts`). Skript ze všech tří poskládá kategorie FAQ:
+// staré kategorie v jejich pořadí, pod nimi jejich otázky, pak právní
+// skupiny (Zakázková výroba a Kurzy se přidají k existujícím, Dárkové poukazy,
+// Nezávadnost a bezpečnost a Poškozená zásilka jako nové).
 //
-// Opakované spuštění nic nerozbije: otázka se hledá podle `legacy_id`
-// (id z repa) i podle znění otázky, kategorie podle názvu. Co ve Studiu už
-// je, se NEPŘEPÍŠE — seed zakládá výchozí stav, opravy dělá Lucie ve Studiu.
-//
-// Nové otázky jdou za ty stávající (pořadí = nejvyšší dosavadní + 10, 20, …),
-// nové kategorie za stávající čipy.
+// Jednorázově: jakmile ve Studiu nějaká kategorie FAQ je, skript nic nedělá —
+// od té chvíle je pravda ve Studiu. Staré dokumenty nemaže.
 
 import crypto from "node:crypto"
 import fs from "node:fs"
@@ -94,7 +92,7 @@ const normalize = (text) =>
 
 const main = async () => {
   const target = describeTarget()
-  console.log(`\nPrávní otázky Dotazů do CMS${WRITE ? "" : "  (nasucho)"}`)
+  console.log(`\nFAQ do CMS (kategorie s otázkami)${WRITE ? "" : "  (nasucho)"}`)
   console.log(`Cíl: ${target.label}\n`)
 
   if (WRITE && target.production && !PRODUCTION_OK) {
@@ -119,84 +117,92 @@ const main = async () => {
     }
     return rows
   }
-  const bodyOf = (doc) => doc.draft ?? doc.data ?? {}
+  /** Publikované znění (koncept jen u nikdy nepublikovaného). */
+  const bodyOf = (doc) => doc.data ?? doc.draft ?? {}
+  const isArchived = (doc) => Boolean(doc.archived_at ?? doc.archivedAt)
+  const num = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0)
 
-  const questions = await listAll("qna")
-  const categories = await listAll("qnaKategorie")
-
-  const seededIds = new Set(
-    (await documents.listByLegacySource({ source: LEGACY_SOURCE }))
-      .map((doc) => doc.legacyId ?? doc.legacy_id)
-      .filter(Boolean)
-  )
-  const knownQuestions = new Set(questions.map((doc) => normalize(bodyOf(doc).question)))
-  const knownCategories = new Set(categories.map((doc) => normalize(bodyOf(doc).nazev)))
-
-  const maxOf = (rows) =>
-    rows.reduce((max, doc) => {
-      const value = Number(bodyOf(doc).poradi)
-      return Number.isFinite(value) && value > max ? value : max
-    }, 0)
-  let nextQuestion = maxOf(questions)
-  let nextCategory = maxOf(categories)
-
-  console.log(`Ve Studiu: ${questions.length} otázek, ${categories.length} kategorií.\n`)
-
-  const insert = async (type, data, legacyId) => {
-    const now = new Date().toISOString()
-    return documents.importRow({
-      id: crypto.randomUUID(),
-      type,
-      status: "published",
-      data,
-      draft: null,
-      created_at: now,
-      updated_at: now,
-      published_at: now,
-      legacy_source: LEGACY_SOURCE,
-      legacy_id: legacyId,
-    })
+  const existingFaq = await listAll("faq")
+  if (existingFaq.some((doc) => !isArchived(doc))) {
+    console.log(`Ve Studiu už je ${existingFaq.length} kategorií FAQ — převod proběhl, nic nedělám.`)
+    console.log("Další otázky přidávejte ve Studiu → FAQ.")
+    return
   }
 
+  // 1) Staré kategorie a otázky (sekce „Kategorie dotazů" a „Dotazy").
+  const oldCategories = (await listAll("qnaKategorie")).filter((doc) => !isArchived(doc))
+  const oldQuestions = (await listAll("qna")).filter((doc) => !isArchived(doc))
+  console.log(`Staré dokumenty: ${oldCategories.length} kategorií, ${oldQuestions.length} otázek.\n`)
+
+  /** nazev → { nazev, poradi, otazky: [{question, answer, poradi}] } */
+  const groups = new Map()
+  const groupFor = (nazev, poradi) => {
+    const key = normalize(nazev)
+    if (!groups.has(key)) groups.set(key, { nazev, poradi, otazky: [] })
+    return groups.get(key)
+  }
+  for (const doc of [...oldCategories].sort((a, b) => num(bodyOf(a).poradi) - num(bodyOf(b).poradi))) {
+    const nazev = String(bodyOf(doc).nazev ?? "").trim()
+    if (nazev) groupFor(nazev, num(bodyOf(doc).poradi))
+  }
+  let nextPoradi = Math.max(0, ...[...groups.values()].map((group) => group.poradi))
+  // Otázky bez kategorie byly na webu jen pod „Vše" — v FAQ musí mít kategorii.
+  const BEZ_KATEGORIE = "Ostatní"
+  for (const doc of oldQuestions) {
+    const body = bodyOf(doc)
+    const question = String(body.question ?? "").trim()
+    if (!question) continue
+    const nazev = String(body.kategorie ?? "").trim() || BEZ_KATEGORIE
+    const group =
+      groups.get(normalize(nazev)) ??
+      groupFor(nazev, nazev === BEZ_KATEGORIE ? Number.MAX_SAFE_INTEGER : (nextPoradi += 1))
+    group.otazky.push({ question, answer: String(body.answer ?? "").trim(), poradi: num(body.poradi) })
+  }
+  for (const group of groups.values()) group.otazky.sort((a, b) => a.poradi - b.poradi)
+
+  // 2) Právní otázky z repa (dřív pevná sekce „Práva a podmínky").
+  for (const legal of LEGAL_FAQ) {
+    const group = groups.get(normalize(legal.title)) ?? groupFor(legal.title, (nextPoradi += 1))
+    const known = new Set(group.otazky.map((item) => normalize(item.question)))
+    for (const item of legal.items) {
+      if (known.has(normalize(item.question))) continue
+      group.otazky.push({ question: item.question, answer: legalFaqAnswerText(item), poradi: Infinity })
+    }
+  }
+
+  const ordered = [...groups.values()].sort((a, b) => a.poradi - b.poradi)
   let created = 0
-  let kept = 0
-
-  for (const group of LEGAL_FAQ) {
-    const categoryKey = `kategorie:${group.id}`
-    if (knownCategories.has(normalize(group.title)) || seededIds.has(categoryKey)) {
-      kept += 1
-      console.log(`  = kategorie „${group.title}" už ve Studiu je`)
-    } else {
-      nextCategory += 1
-      const data = { nazev: group.title, poradi: nextCategory }
-      if (WRITE) await insert("qnaKategorie", data, categoryKey)
-      knownCategories.add(normalize(group.title))
-      created += 1
-      console.log(`  + kategorie „${group.title}" (pořadí ${nextCategory})`)
+  for (const [index, group] of ordered.entries()) {
+    const data = {
+      nazev: group.nazev,
+      poradi: (index + 1) * 10,
+      otazky: group.otazky.map(({ question, answer }) => ({ question, answer })),
     }
-
-    for (const item of group.items) {
-      if (seededIds.has(item.id) || knownQuestions.has(normalize(item.question))) {
-        kept += 1
-        console.log(`  =   „${item.question}" už ve Studiu je — nepřepisuji`)
-        continue
-      }
-      nextQuestion += 10
-      const data = {
-        question: item.question,
-        answer: legalFaqAnswerText(item),
-        kategorie: group.title,
-        poradi: nextQuestion,
-      }
-      if (WRITE) await insert("qna", data, item.id)
-      created += 1
-      console.log(`  +   „${item.question}" → ${group.title} (pořadí ${nextQuestion})`)
+    console.log(`  + ${group.nazev} (pořadí ${data.poradi}) — ${data.otazky.length} otázek`)
+    for (const item of data.otazky) console.log(`      · ${item.question}`)
+    if (WRITE) {
+      const now = new Date().toISOString()
+      await documents.importRow({
+        id: crypto.randomUUID(),
+        type: "faq",
+        status: "published",
+        data,
+        draft: null,
+        created_at: now,
+        updated_at: now,
+        published_at: now,
+        legacy_source: LEGACY_SOURCE,
+        legacy_id: `faq:${normalize(group.nazev).replace(/ /g, "-")}`,
+      })
     }
+    created += 1
   }
 
   console.log(
-    `\n${WRITE ? "Založeno" : "Založím"}: ${created} · beze změny: ${kept}` +
-      (WRITE ? "" : "\nNic se nezapsalo — zápis s --write.")
+    `\n${WRITE ? "Založeno" : "Založím"}: ${created} kategorií FAQ.` +
+      (WRITE
+        ? "\nStaré dokumenty (Dotazy a Kategorie dotazů) zůstaly v databázi beze změny — web je už nečte."
+        : "\nNic se nezapsalo — zápis s --write.")
   )
 }
 

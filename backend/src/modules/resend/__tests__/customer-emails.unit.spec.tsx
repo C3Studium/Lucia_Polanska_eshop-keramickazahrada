@@ -133,7 +133,7 @@ describe("customer e-mail templates after the audit", () => {
     describe("Smlouva a poučení (§ 1827 odst. 2 OZ)", () => {
       const seller = {
         name: "Lucie Polanská",
-        address: "Putim 229, 397 01 Písek",
+        address: "Putim 229, 397 01 Putim",
         ico: "03441482",
         email: "info@keramickazahrada.cz",
         phone: "+420 775 211 578",

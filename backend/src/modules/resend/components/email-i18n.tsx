@@ -38,8 +38,49 @@ export const withEmailLocale = (
 
 export const useEmailLocale = (): EmailLocale => React.useContext(EmailLocaleContext)
 
-/** Texty šablony v jazyce e-mailu. */
-export const useCopy = <T,>(copy: Localized<T>): T => pick(useEmailLocale(), copy)
+/**
+ * Vlastní znění z administrace → Emaily (15. 11. 2026). Platí jen pro texty
+ * TÉ šablony, která se vykresluje (`copy` je její objekt `COPY` — porovnává se
+ * identita, ať se nepřepíšou společné texty patičky nebo podpisu), jen česky
+ * a jen u textových polí. Prázdný text = výchozí znění.
+ */
+export type EmailTextOverrides = {
+  copy: Localized<Record<string, unknown>> | null
+  values: Record<string, string>
+}
+
+export const EmailTextOverridesContext = React.createContext<EmailTextOverrides | null>(null)
+
+export const withEmailTextOverrides = (
+  email: React.ReactNode,
+  overrides: EmailTextOverrides | null | undefined
+): React.ReactNode =>
+  overrides?.copy && Object.keys(overrides.values ?? {}).length ? (
+    <EmailTextOverridesContext.Provider value={overrides}>{email}</EmailTextOverridesContext.Provider>
+  ) : (
+    email
+  )
+
+/** Texty šablony v jazyce e-mailu (s vlastním zněním z administrace). */
+export const useCopy = <T,>(copy: Localized<T>): T => {
+  const locale = useEmailLocale()
+  const overrides = React.useContext(EmailTextOverridesContext)
+  const base = pick(locale, copy)
+  if (
+    locale !== DEFAULT_EMAIL_LOCALE ||
+    !overrides ||
+    (overrides.copy as unknown) !== (copy as unknown)
+  ) {
+    return base
+  }
+  const merged: Record<string, unknown> = { ...(base as Record<string, unknown>) }
+  for (const [key, value] of Object.entries(overrides.values)) {
+    if (typeof merged[key] === "string" && typeof value === "string" && value.trim()) {
+      merged[key] = value
+    }
+  }
+  return merged as T
+}
 
 /** Datum podle jazyka e-mailu — pro šablony, které formátují samy. */
 export const useFormatDate = () => {

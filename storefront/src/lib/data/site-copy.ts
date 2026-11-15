@@ -191,77 +191,89 @@ export const getPageContentFull = async (
 
 /* --------------------------------------------------------------- dotazy -- */
 
+type DocReader = (options: {
+  type: string
+  sort?: { field: string; direction: "asc" | "desc" }
+  perPage?: number
+}) => Promise<Record<string, unknown>[]>
+
+type FaqData = { questions: FaqQuestion[]; categories: FaqCategory[] }
+
 /**
- * Otázky stránky Dotazy — dokumenty typu `qna`, seřazené podle `poradi`.
+ * FAQ ze Studia — dokumenty typu `faq`: jedna kategorie = jeden dokument,
+ * otázky uvnitř (pole `otazky`). Vrací otázky v pořadí kategorií a pořadí
+ * v seznamu a kategorie jako čipy.
  *
- * Tatáž trasa jako `getButtons`: `readerFor` přímo, v náhledu čtení konceptů
- * (to jediné připojuje `id`, na kterém visí popup `editableDoc`). Nikdy
- * nevyhodí — stránka bez otázek spadne na seznam v kódu, viz FAQBody.
+ * Dokud žádná kategorie FAQ není (před převodem `scripts/seed-faq.mjs`),
+ * čtou se staré dokumenty `qna` + `qnaKategorie`; bez nich stránka spadne
+ * na seznam v kódu (FAQBody). Nikdy nevyhodí.
+ *
+ * `readerFor` přímo jako `getButtons`; v náhledu čte koncepty (to jediné
+ * připojuje `id`, na kterém visí popup `editableDoc`).
  */
-export const getFaqQuestions = async (): Promise<FaqQuestion[]> => {
+export const getFaq = async (): Promise<FaqData> => {
   // `draftMode()` MIMO try/catch — viz `getPageCopy` výš.
   const preview = (await draftMode()).isEnabled
+  const read = readerFor({ draft: preview }) as DocReader
+  const poradiOf = (data: Record<string, unknown>) =>
+    typeof data.poradi === "number" ? data.poradi : 0
 
   try {
-    const read = readerFor({ draft: preview }) as (options: {
-      type: string
-      sort?: { field: string; direction: "asc" | "desc" }
-      perPage?: number
-    }) => Promise<Record<string, unknown>[]>
-
-    const rows = await read({
-      type: "qna",
-      sort: { field: "data.poradi", direction: "asc" },
-      perPage: 200,
-    })
-
-    return rows
-      .map((data) => ({
-        id: documentId(data),
-        question: stringValue(data.question).trim(),
-        answer: stringValue(data.answer).trim(),
-        kategorie: stringValue(data.kategorie).trim(),
-        poradi: typeof data.poradi === "number" ? data.poradi : 0,
-      }))
-      .filter((row) => row.question)
-  } catch (error) {
-    console.error("[cms] Dotazy se nepodařilo načíst.", error)
-    return []
-  }
-}
-
-/**
- * Kategorie dotazů — dokumenty `qnaKategorie`, seřazené podle `poradi`.
- *
- * Určují pořadí a znění čipů filtru; otázky se k nim hlásí jménem. Prázdný
- * seznam není chyba — čipy si pak stránka poskládá z jmen na otázkách.
- */
-export const getFaqCategories = async (): Promise<FaqCategory[]> => {
-  const preview = (await draftMode()).isEnabled
-
-  try {
-    const read = readerFor({ draft: preview }) as (options: {
-      type: string
-      sort?: { field: string; direction: "asc" | "desc" }
-      perPage?: number
-    }) => Promise<Record<string, unknown>[]>
-
-    const rows = await read({
-      type: "qnaKategorie",
-      sort: { field: "data.poradi", direction: "asc" },
-      perPage: 100,
-    })
-
-    return rows
-      .map((data) => ({
-        id: documentId(data),
-        nazev: stringValue(data.nazev).trim(),
-        poradi: typeof data.poradi === "number" ? data.poradi : 0,
-      }))
+    const rows = await read({ type: "faq", sort: { field: "data.poradi", direction: "asc" }, perPage: 100 })
+    const categories = rows
+      .map((data) => ({ data, id: documentId(data), nazev: stringValue(data.nazev).trim(), poradi: poradiOf(data) }))
       .filter((row) => row.nazev)
+    if (categories.length) {
+      const questions: FaqQuestion[] = []
+      for (const category of categories) {
+        const list = Array.isArray(category.data.otazky) ? (category.data.otazky as Record<string, unknown>[]) : []
+        list.forEach((item, index) => {
+          const question = stringValue(item?.question).trim()
+          if (!question) return
+          questions.push({
+            id: `${category.id ?? category.nazev}:${index}`,
+            docId: category.id,
+            docType: "faq",
+            question,
+            answer: stringValue(item?.answer).trim(),
+            kategorie: category.nazev,
+            poradi: category.poradi * 1000 + index,
+          })
+        })
+      }
+      return {
+        questions,
+        categories: categories.map(({ id, nazev, poradi }) => ({ id, nazev, poradi })),
+      }
+    }
   } catch (error) {
-    console.error("[cms] Kategorie dotazů se nepodařilo načíst.", error)
-    return []
+    console.error("[cms] FAQ se nepodařilo načíst.", error)
+  }
+
+  // Záloha: staré typy z doby před sloučením (15. 11. 2026).
+  try {
+    const [rows, catRows] = await Promise.all([
+      read({ type: "qna", sort: { field: "data.poradi", direction: "asc" }, perPage: 200 }),
+      read({ type: "qnaKategorie", sort: { field: "data.poradi", direction: "asc" }, perPage: 100 }),
+    ])
+    return {
+      questions: rows
+        .map((data) => ({
+          id: documentId(data) ?? stringValue(data.question),
+          docId: documentId(data),
+          docType: "qna" as const,
+          question: stringValue(data.question).trim(),
+          answer: stringValue(data.answer).trim(),
+          kategorie: stringValue(data.kategorie).trim(),
+          poradi: poradiOf(data),
+        }))
+        .filter((row) => row.question),
+      categories: catRows
+        .map((data) => ({ id: documentId(data), nazev: stringValue(data.nazev).trim(), poradi: poradiOf(data) }))
+        .filter((row) => row.nazev),
+    }
+  } catch {
+    return { questions: [], categories: [] }
   }
 }
 

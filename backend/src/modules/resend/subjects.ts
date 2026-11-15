@@ -236,6 +236,12 @@ export const LOCALIZED_SUBJECTS: Record<string, Record<Exclude<EmailLocale, "cs"
     de: "Vertragsbestätigung zu Ihrer Bestellung",
     en: "Contract confirmation for your order",
   },
+  "contact-received": {
+    sk: "Vaša správa dorazila — ozvem sa do dvoch pracovných dní",
+    pl: "Państwa wiadomość dotarła — odezwę się w ciągu dwóch dni roboczych",
+    de: "Ihre Nachricht ist angekommen – ich melde mich innerhalb von zwei Werktagen",
+    en: "Your message has arrived — I'll reply within two working days",
+  },
   "commission-inquiry-received": {
     sk: "Ďakujem za dopyt — ozvem sa s ponukou",
     pl: "Dziękuję za zapytanie — odezwę się z ofertą",

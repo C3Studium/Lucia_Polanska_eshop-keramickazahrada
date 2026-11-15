@@ -31,7 +31,7 @@ export type ProtocolSeller = {
 /** Záloha, když právní údaje nejde přečíst (nebo údaj chybí). */
 const FALLBACK_SELLER: ProtocolSeller = {
   name: process.env.SELLER_NAME || "Keramická zahrada — Lucie Polanská",
-  address: process.env.SELLER_ADDRESS || "Putim 229, 397 01 Písek",
+  address: process.env.SELLER_ADDRESS || "Putim 229, 397 01 Putim",
   // Prázdné, dokud se nenastaví — na dokladu se pak IČO prostě nevypíše.
   ico: process.env.SELLER_ICO || "",
   email: process.env.SELLER_EMAIL || "info@keramickazahrada.cz",

@@ -66,13 +66,15 @@ import { CourseReservationCancelledEmail } from "./emails/course-reservation-can
 import { CourseRequestEmail } from "./emails/course-request";
 import { CourseMessageEmail } from "./emails/course-message";
 import { CommissionInquiryReceivedEmail } from "./emails/commission-inquiry-received";
+import { ContactReceivedEmail } from "./emails/contact-received";
 import { GiftVoucherEmail } from "./emails/gift-voucher";
 import { GiftVoucherPaymentEmail } from "./emails/gift-voucher-payment";
 import { CommissionPriceAgreedEmail } from "./emails/commission-price-agreed";
 import { LoyaltyCodeEmail } from "./emails/loyalty-code";
 import { CONTACT_EMAIL, withEmailLegalFacts } from "./components/email-ui";
-import { loadEmailLegalFacts } from "./live-legal-facts";
-import { withEmailLocale } from "./components/email-i18n";
+import { loadEmailLegalFacts, loadEmailTexts } from "./live-legal-facts";
+import { EMAIL_COPY } from "./email-copy";
+import { withEmailTextOverrides, withEmailLocale } from "./components/email-i18n";
 import { localizedSubject } from "./subjects";
 import { parseEmailLocale, type EmailLocale } from "../../lib/email-locale";
 import { localizeStorefrontLinks, storefrontCountryOf, withStorefrontCountry } from "../../lib/storefront-url";
@@ -168,6 +170,8 @@ enum Templates {
   // Poptávka zakázky ze stránky Výroba — potvrzení zákazníkovi
   // (api/store/commission-inquiries).
   COMMISSION_INQUIRY_RECEIVED = "commission-inquiry-received",
+  // Potvrzení kontaktního formuláře zákazníkovi (15. 11. 2026).
+  CONTACT_RECEIVED = "contact-received",
   // Dárkové poukazy (stránka Poukazy, lib/gift-voucher-emails.ts).
   GIFT_VOUCHER = "gift-voucher",
   GIFT_VOUCHER_PAYMENT = "gift-voucher-payment",
@@ -257,6 +261,7 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.COURSE_REQUEST]: CourseRequestEmail,
   [Templates.COURSE_MESSAGE]: CourseMessageEmail,
   [Templates.COMMISSION_INQUIRY_RECEIVED]: CommissionInquiryReceivedEmail,
+  [Templates.CONTACT_RECEIVED]: ContactReceivedEmail,
   [Templates.GIFT_VOUCHER]: GiftVoucherEmail,
   [Templates.GIFT_VOUCHER_PAYMENT]: GiftVoucherPaymentEmail,
   [Templates.COMMISSION_PRICE_AGREED]: CommissionPriceAgreedEmail,
@@ -328,6 +333,7 @@ export enum EmailTemplates {
   COURSE_REQUEST = "course-request",
   COURSE_MESSAGE = "course-message",
   COMMISSION_INQUIRY_RECEIVED = "commission-inquiry-received",
+  CONTACT_RECEIVED = "contact-received",
   // Dárkové poukazy (stránka Poukazy, lib/gift-voucher-emails.ts).
   GIFT_VOUCHER = "gift-voucher",
   GIFT_VOUCHER_PAYMENT = "gift-voucher-payment",
@@ -492,6 +498,8 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
    * manifest. Pole, ne import natvrdo, ať ho test může podstrčit.
    */
   protected loadLegalFacts: () => Promise<LiveLegalFacts | null> = loadEmailLegalFacts
+  /** Vlastní znění z administrace → Emaily; v testech se dá podvrhnout. */
+  protected loadTexts: (template: string) => Promise<Record<string, string> | null> = loadEmailTexts
 
   constructor(
     { logger }: InjectedDependencies, 
@@ -660,6 +668,8 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Zpráva ke kurzu keramiky"
       case Templates.COMMISSION_INQUIRY_RECEIVED:
         return "Děkuji za poptávku — ozvu se s nabídkou"
+      case Templates.CONTACT_RECEIVED:
+        return "Vaše zpráva dorazila — ozvu se do dvou pracovních dnů"
       case Templates.GIFT_VOUCHER:
         return "Dárkový poukaz do Keramické zahrady"
       case Templates.GIFT_VOUCHER_PAYMENT:
@@ -819,6 +829,15 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
     const legalFacts =
       typeof template === "string" ? null : await this.loadLegalFacts().catch(() => null)
 
+    // Vlastní znění z administrace → Emaily — jen česky (překlady zůstávají
+    // z kódu) a jen u šablon z kódu, ne u HTML šablon z nastavení provideru.
+    const ownTexts =
+      typeof template === "string" || (emailLocale && emailLocale !== "cs")
+        ? null
+        : await this.loadTexts(String(notification.template)).catch(() => null)
+    const ownCopy = EMAIL_COPY[String(notification.template)]
+    const textOverrides = ownTexts && ownCopy ? { copy: ownCopy, values: ownTexts } : null
+
     /*
      * Jednoklikové odhlášení (RFC 8058) u všeho, co nese odhlašovací odkaz.
      *
@@ -859,7 +878,8 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       subject:
         typeof providedSubject === "string" && providedSubject.trim().length
           ? providedSubject
-          : this.getTemplateSubject(notification.template as Templates, emailLocale),
+          : ownTexts?.subject?.trim() ||
+            this.getTemplateSubject(notification.template as Templates, emailLocale),
       // Odesílá se z noreply adresy — bez Reply-To by odpověď zákazníka skončila
       // v prázdnu. Výchozí je adresa Lucie (CONTACT_EMAIL), kterou e-maily
       // nabízejí i v textu; kontaktní formulář posílá vlastní (zákazníkovu).
@@ -889,7 +909,10 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         : {
             ...commonOptions,
             ...files,
-            react: withEmailLocale(withEmailLegalFacts(template(data), legalFacts), emailLocale),
+            react: withEmailLocale(
+              withEmailLegalFacts(withEmailTextOverrides(template(data), textOverrides), legalFacts),
+              emailLocale
+            ),
           }
     }
 

@@ -28,7 +28,7 @@ const manifest: LegalManifest = {
   schema: 1,
   seller: {
     name: "Lucie Polanská",
-    address: "Putim 229, 397 01 Písek",
+    address: "Putim 229, 397 01 Putim",
     ico: "03441482",
     email: "info@keramickazahrada.cz",
     phone: "+420 775 211 578",
@@ -200,7 +200,7 @@ describe("lib/legal", () => {
 
   it("omits missing seller facts instead of printing placeholders", () => {
     expect(sellerIdentityLine(manifest)).toBe(
-      "Lucie Polanská · Putim 229, 397 01 Písek · IČO 03441482"
+      "Lucie Polanská · Putim 229, 397 01 Putim · IČO 03441482"
     )
     expect(
       sellerIdentityLine({ ...manifest, seller: { ...manifest.seller, ico: null, address: null } })
@@ -209,11 +209,11 @@ describe("lib/legal", () => {
 
   it("prefers the live legal facts from the admin, manifest only as fallback", () => {
     // Majitelka změnila adresu a smazala IČO; telefon nezná → z manifestu.
-    const live = { "seller.address": "Nová 1, 397 01 Písek", "seller.ico": null }
-    expect(sellerIdentityLine(manifest, live)).toBe("Lucie Polanská · Nová 1, 397 01 Písek")
+    const live = { "seller.address": "Nová 1, 397 01 Putim", "seller.ico": null }
+    expect(sellerIdentityLine(manifest, live)).toBe("Lucie Polanská · Nová 1, 397 01 Putim")
     expect(sellerFacts(manifest, live)).toEqual({
       ...manifest.seller,
-      address: "Nová 1, 397 01 Písek",
+      address: "Nová 1, 397 01 Putim",
       ico: null,
     })
     expect(sellerFacts(manifest, null)).toEqual(manifest.seller)

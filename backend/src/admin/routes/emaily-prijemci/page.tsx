@@ -148,7 +148,7 @@ const Inner = () => {
         <Textarea
           rows={3}
           value={returnAddress}
-          placeholder={"Keramická zahrada\nPutim 229\n397 01 Písek"}
+          placeholder={"Keramická zahrada\nPutim 229\n397 01 Putim"}
           onChange={(e) => setReturnAddress(e.target.value)}
         />
       </section>
@@ -170,7 +170,7 @@ const Inner = () => {
       <section className="px-6 py-4">
         <Text size="xsmall" className="text-ui-fg-muted">
           Prázdná adresa = použije se výchozí adresa ateliéru (Keramická
-          zahrada, Putim 229, 397 01 Písek).
+          zahrada, Putim 229, 397 01 Putim).
         </Text>
       </section>
 

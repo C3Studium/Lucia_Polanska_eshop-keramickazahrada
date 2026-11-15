@@ -468,3 +468,17 @@
   font: 400 max(var(--text-min, 0px), calc(calc(var(--account-zoom, 1) * clamp(1.3rem, calc(1.36vw * var(--ui-scale)), 1.8rem)) * var(--read, 1))) / 1.1 "Sentient-LightItalic", "Sentient-Regular", serif;
 }
 
+
+/* Akce na místě (`SupportAction`) vypadá jako odkaz vedle (15. 11. 2026). */
+button.route {
+  appearance: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}

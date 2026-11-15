@@ -38,7 +38,7 @@
   border: 1px solid rgb(var(--black-03-rgb) / .2);
   // .75rem = týchž 12px při rem 16; jako holé px by rádius zamrzl, zatímco
   // výška pole (--input-height) má strop v rem a nad 1921 roste rampem.
-  border-radius: .75rem;
+  border-radius: var(--field-radius);
   appearance: none;
   background: rgb(var(--cream-10-rgb) / .42);
   box-shadow: none;
@@ -106,7 +106,7 @@
   min-height: var(--input-height);
   padding-inline: .875rem;
   border: 1px solid rgb(var(--ink-06-rgb) / .42);
-  border-radius: .625rem;
+  border-radius: var(--field-radius);
   background: rgb(255 255 255 / .45);
   transition:
     border-color .2s ease,

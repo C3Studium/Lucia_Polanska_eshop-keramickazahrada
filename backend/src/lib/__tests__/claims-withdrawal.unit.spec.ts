@@ -361,12 +361,12 @@ describe("texty do potvrzení — pražský čas, maskovaný účet, adresa", ()
   })
 
   it("adresa pro vrácení: výchozí značka obchodu → jméno prodávající; vlastní adresa zůstane", () => {
-    expect(withdrawalReturnAddress("Keramická zahrada\nPutim 229\n397 01 Písek")).toBe(
-      "Lucie Polanská, Putim 229, 397 01 Písek"
+    expect(withdrawalReturnAddress("Keramická zahrada\nPutim 229\n397 01 Putim")).toBe(
+      "Lucie Polanská, Putim 229, 397 01 Putim"
     )
-    expect(withdrawalReturnAddress("")).toBe("Lucie Polanská, Putim 229, 397 01 Písek")
-    expect(withdrawalReturnAddress("Lucie Polanská\nJiná 1\n397 01 Písek")).toBe(
-      "Lucie Polanská, Jiná 1, 397 01 Písek"
+    expect(withdrawalReturnAddress("")).toBe("Lucie Polanská, Putim 229, 397 01 Putim")
+    expect(withdrawalReturnAddress("Lucie Polanská\nJiná 1\n397 01 Putim")).toBe(
+      "Lucie Polanská, Jiná 1, 397 01 Putim"
     )
   })
 })

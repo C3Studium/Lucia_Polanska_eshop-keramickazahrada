@@ -26,7 +26,7 @@ import type { Localized } from "../../../lib/email-locale"
  * pád, a ten se z cizího jména odhadnout nedá; jméno proto stojí jen
  * v řádku „Pre/Dla" pod textem, ne uvnitř věty. Němčina pád nemění.
  */
-const COPY: Localized<{
+export const COPY: Localized<{
   preview: (value: string, code: string) => string
   eyebrow: string
   title: string

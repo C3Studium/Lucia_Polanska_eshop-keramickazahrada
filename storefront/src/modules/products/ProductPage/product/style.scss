@@ -2196,8 +2196,21 @@
   margin: 0;
   padding: 0;
   border: 0;
+  overflow: hidden;
   background: none;
   cursor: zoom-in;
+}
+
+/* Najetí myší fotku jemně přiblíží — vidět, že se na ni dá kliknout
+   (15. 11. 2026). Jen s myší; dotyk má štítek „Zvětšit". */
+@media (hover: hover) and (pointer: fine) {
+  .product__zoom img {
+    transition: transform .35s ease;
+  }
+
+  .product__zoom:hover img {
+    transform: scale(1.04);
+  }
 }
 
 .product__zoom:focus-visible {

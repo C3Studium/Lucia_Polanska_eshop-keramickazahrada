@@ -1119,7 +1119,7 @@ const onReturnRequested = async ({
       returnMethod: pick(locale, TEXTS.returnMethod),
       // Adresa a pokyny z nastavení obchodu jsou česky (píše je majitelka).
       returnAddress:
-        settings?.return_address || "Keramická zahrada\nPutim 229\n397 01 Písek",
+        settings?.return_address || "Keramická zahrada\nPutim 229\n397 01 Putim",
       ...(settings?.return_instructions?.trim()
         ? { returnInstructions: settings.return_instructions.trim() }
         : {}),
@@ -1237,7 +1237,7 @@ const onMerchantStageChanged = async ({
       data: {
         ...common(order),
         pickupLocation: pick(locale, TEXTS.pickupLocation),
-        pickupAddress: facts["seller.address"] || "Putim 229, 397 01 Písek",
+        pickupAddress: facts["seller.address"] || "Putim 229, 397 01 Putim",
         readyDate: formatDate(new Date(), locale),
         /*
          * Vytištěný dárkový poukaz se jen vyzvedává (31. 10. 2026) — kartičku

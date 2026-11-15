@@ -57,7 +57,7 @@ const linkStyle = { color: brand.ink, textDecoration: "underline" } as const
  * právně nosné a překlad říká přesně totéž. Text zákazníka (popis, motiv,
  * termín) jde, jak ho napsal.
  */
-const COPY: Localized<{
+export const COPY: Localized<{
   preview: string
   eyebrow: string
   title: string

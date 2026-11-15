@@ -20,7 +20,7 @@ import type { Localized } from "../../../lib/email-locale"
  * obdarovaného ve slovenské a polské větě chybí schválně (pád cizího jména
  * se odhadnout nedá) — stojí v řádku „Pre/Dla" pod textem.
  */
-const COPY: Localized<{
+export const COPY: Localized<{
   preview: (value: string) => string
   eyebrow: string
   title: string

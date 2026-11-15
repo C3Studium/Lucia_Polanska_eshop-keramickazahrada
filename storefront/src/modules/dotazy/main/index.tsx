@@ -30,7 +30,7 @@ export default function DotazyMain ({
     hero?: CopyBlock
     /** Dokumenty typu `qna` — otázky, jedna = jeden dokument. */
     cmsQuestions?: FaqQuestion[]
-    /** Dokumenty `qnaKategorie` — čipy filtru. */
+    /** Kategorie FAQ — čipy filtru. */
     cmsCategories?: FaqCategory[]
 }) {
     /* Stránka se hýbe jen hodnotami ze scrollu — bez tohohle by se po zapnutí režimu

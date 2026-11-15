@@ -59,6 +59,11 @@ export type MerchantNotificationInput = {
    * The Resend provider reads it from `data.reply_to`.
    */
   replyTo?: string
+  /**
+   * Fotky (https adresy), které e-mail ukáže jako obrázky pod textem —
+   * poptávka zakázky posílá fotky místa (15. 11. 2026). Zvonek je nevykresluje.
+   */
+  images?: string[]
   /** Links the notification to an order/review/… in the notification table. */
   resource?: { id: string; type: string }
   /**
@@ -164,6 +169,7 @@ export const buildEmailNotification = (
     title: input.title,
     ...(input.description ? { description: input.description } : {}),
     ...(input.replyTo ? { reply_to: input.replyTo } : {}),
+    ...(input.images?.length ? { images: input.images } : {}),
     urgent: Boolean(input.urgent),
   },
   trigger_type: input.key.split(":")[1] ?? input.key,

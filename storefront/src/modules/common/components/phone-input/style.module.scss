@@ -39,7 +39,7 @@
   align-self: center;
   padding: 0.3125rem 0.5rem;
   border: 1px solid rgb(var(--ink-06-rgb) / 0.22);
-  border-radius: 0.4375rem;
+  border-radius: var(--field-radius);
   background: transparent;
   color: inherit;
   font: inherit;
@@ -89,7 +89,7 @@
 .dial {
   padding: 0 .75rem;
   border: 1px solid rgb(var(--ink-06-rgb) / .42);
-  border-radius: .625rem;
+  border-radius: var(--field-radius);
   background: rgb(255 255 255 / .45);
 }
 

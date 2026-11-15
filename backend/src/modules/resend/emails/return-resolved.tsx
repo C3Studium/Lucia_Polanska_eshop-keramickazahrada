@@ -50,7 +50,7 @@ interface ReturnResolvedEmailProps {
 }
 
 /** Texty po jazycích (lib/email-locale) — čeština je původní znění. */
-const COPY: Localized<{
+export const COPY: Localized<{
   outcome: Record<"repair" | "replace" | "discount" | "refund", string>
   previewClaim: (order: string) => string
   previewEdit: (order: string) => string

@@ -42,14 +42,18 @@ export type CopyBlock = {
  * jméno čipu ve filtru, slovo od slova — viz deklaraci typu.
  */
 export type FaqQuestion = {
+  /** Jedinečný klíč otázky na stránce. */
   id: string | null
+  /** Dokument ve Studiu, který otázku drží (u FAQ celá kategorie) — pro `editableDoc`. */
+  docId: string | null
+  docType: "faq" | "qna"
   question: string
   answer: string
   kategorie: string
   poradi: number
 }
 
-/** Kategorie dotazů — dokument typu `qnaKategorie`; čip ve filtru. */
+/** Kategorie dotazů — dokument typu `faq`; čip ve filtru. */
 export type FaqCategory = {
   id: string | null
   nazev: string

@@ -52,7 +52,7 @@ interface ReturnApprovedEmailProps {
 }
 
 /** Texty po jazycích (lib/email-locale) — čeština je původní znění. */
-const COPY: Localized<{
+export const COPY: Localized<{
   /** Co bude následovat — podle rozhodnutí (docs/reklamace-a-zruseni.md §6). */
   nextStep: Record<"repair" | "replace" | "discount" | "refund", string>
   defaultReturnMethod: string
@@ -482,7 +482,7 @@ const mockBase: ReturnApprovedEmailProps = {
   orderNumber: "#12345",
   kind: "vraceni",
   resolution: "refund",
-  returnAddress: "Keramická zahrada\nPutim 229\n397 01 Písek",
+  returnAddress: "Keramická zahrada\nPutim 229\n397 01 Putim",
   orderLink: "https://keramickazahrada.cz/orders/12345",
 }
 

@@ -52,7 +52,7 @@ export interface CommissionPriceAgreedEmailProps {
  * o záloze (povinná, po zahájení výroby nevratná, zbytek vratný) se
  * překládá přesně.
  */
-const COPY: Localized<{
+export const COPY: Localized<{
   preview: (productTitle: string | undefined, price: string) => string
   eyebrow: (orderNumber: string) => string
   title: string

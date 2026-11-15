@@ -252,7 +252,7 @@ describe("refund-request — potvrzení odstoupení a reklamace s datem a časem
     takeoverText: "7. 10. 2026",
     items: "Zahradní mísa · Ø 32 cm · 1 ks · 1 305 Kč",
     refundMethodText: "Převodem na účet ••••5399/0800, který jste uvedli (objednávku jste neplatili kartou).",
-    returnAddress: "Lucie Polanská, Putim 229, 397 01 Písek",
+    returnAddress: "Lucie Polanská, Putim 229, 397 01 Putim",
     deadlineText: "nejpozději do 29. 10. 2026 (14 dnů od odstoupení)",
   }
 
@@ -276,7 +276,7 @@ describe("refund-request — potvrzení odstoupení a reklamace s datem a časem
     expect(html).not.toContain("2000145399")
     // další kroky: vrácení zboží do 14 dnů na adresu, peníze do 14 dnů vč.
     // nejlevnějšího dodání, smíme počkat na zboží, § 1833
-    expect(html).toContain("Lucie Polanská, Putim 229, 397 01 Písek")
+    expect(html).toContain("Lucie Polanská, Putim 229, 397 01 Putim")
     expect(html).toContain("do 14 dnů od")
     expect(html).toContain("nejlevnějšího způsobu dodání")
     expect(html).toContain("prokážete, že jste ho odeslali")
@@ -328,7 +328,7 @@ describe("refund-request — potvrzení odstoupení a reklamace s datem a časem
     const unpaid = renderToStaticMarkup(
       RefundRequestEmail({ ...withdrawal, wholeOrder: true, goodsShipped: true, nothingToRefund: true }) as React.ReactElement
     )
-    expect(unpaid).toContain("Lucie Polanská, Putim 229, 397 01 Písek")
+    expect(unpaid).toContain("Lucie Polanská, Putim 229, 397 01 Putim")
     expect(unpaid).toContain("není co vracet")
     expect(unpaid).not.toContain("Peníze smím vrátit")
   })

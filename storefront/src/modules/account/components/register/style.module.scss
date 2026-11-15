@@ -63,7 +63,7 @@
   /* Rámeček místo spodní čáry (14. 11. 2026) — jako v pokladně. */
   padding: clamp(1.05rem, 2.6vh, 1.35rem) 2.8rem clamp(.2rem, .6vh, .35rem) .875rem !important;
   border: 1px solid rgb(var(--black-03-rgb) / .42) !important;
-  border-radius: .625rem !important;
+  border-radius: var(--field-radius) !important;
   background: rgb(255 255 255 / .45) !important;
   color: var(--black-03) !important;
   font-size: max(var(--text-min, 0px), calc(1.02rem * var(--read, 1))) !important;

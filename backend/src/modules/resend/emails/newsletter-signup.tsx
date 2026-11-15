@@ -28,7 +28,7 @@ interface NewsletterSignupEmailProps {
 }
 
 /** Texty po jazycích (lib/email-locale) — čeština je původní znění. */
-const COPY: Localized<{
+export const COPY: Localized<{
   confirmPreview: string
   confirmTitle: string
   confirmAccent: string
