@@ -61,14 +61,12 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
 
   return (
     <div className={styles.root}>
-      {/* Levý sloupec jako u poptávky zakázky (13. 11. 2026): kde jsem, co
-          mě čeká a co objednávám. Vpravo jen formulář kroku. */}
-      <div className={styles.intro}>
+      {/* Hlavička přes oba sloupce (15. 11. 2026, Matěj): kde jsem a cesta
+          zpět nahoře, takže „Přehled objednávky" vlevo a kroky pokladny
+          vpravo začínají na stejné výšce. */}
+      <header className={styles.masthead}>
         {/* Počet výrobků je údaj, ne text — „Pokladna · 02 výrobky" zůstává v kódu. */}
         <p className={styles.mastheadMeta}>Pokladna · {String(itemCount).padStart(2, "0")} {itemCount === 1 ? "výrobek" : itemCount < 5 ? "výrobky" : "výrobků"}</p>
-        {/* „Ještě pár kroků" a seznam kroků pryč (13. 11. 2026, Matěj): číslo,
-            název a věta kroku jsou teď v hlavičce formuláře (step-bubbles).
-            Vlevo zůstává jen kde jsem, cesta zpět a co objednávám. */}
         <LocalizedClientLink href="/cart" className={styles.backLink}>
           <span>←</span>{" "}
           {introDoc ? (
@@ -77,6 +75,9 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
             backLabel
           )}
         </LocalizedClientLink>
+      </header>
+      {/* Vlevo souhrn objednávky, vpravo formulář kroku. */}
+      <div className={styles.intro}>
         <aside className={styles.order}>
           <CheckoutSummary
             cart={cart}
