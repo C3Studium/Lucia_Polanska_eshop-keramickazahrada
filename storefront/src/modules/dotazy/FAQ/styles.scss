@@ -204,6 +204,22 @@
     border-top: 1px solid rgb(var(--ink-06-rgb) / .36);
 }
 
+/* Nadpis kategorie v seznamu „Vše" (15. 11. 2026). */
+.faqGroupTitle {
+    margin: 0;
+    padding: clamp(1.5rem, 3.5vh, 2.25rem) 0 .625rem;
+    border-bottom: 1px solid rgb(var(--ink-06-rgb) / .3);
+    color: rgb(var(--ink-06-rgb) / .62);
+    font-size: max(var(--text-min, 0px), clamp(0.8125rem, calc(1vw * var(--ui-scale)), 0.9375rem));
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+
+    &:first-child {
+        padding-top: 0;
+    }
+}
+
 .question {
     position: relative;
     overflow: hidden;

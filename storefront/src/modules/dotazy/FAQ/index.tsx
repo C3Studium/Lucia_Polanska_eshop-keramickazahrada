@@ -383,7 +383,26 @@ export default function FAQBody({
                     transition={listTransition}
                 >
                     <AnimatePresence mode="popLayout" initial={false}>
-                        {visibleQuestions.map((question, index) => (
+                        {visibleQuestions.flatMap((question, index) => [
+                            /* Pod „Vše" (bez hledání) nadpis kategorie nad její první
+                               otázkou — ať je vidět, kam otázka patří (15. 11. 2026). */
+                            ...(category === "vse" &&
+                            !query.trim() &&
+                            question.category !== "vse" &&
+                            (index === 0 || visibleQuestions[index - 1].category !== question.category)
+                                ? [
+                                      <motion.h3
+                                          key={`kategorie-${question.category}`}
+                                          className="faqGroupTitle"
+                                          layout
+                                          initial={questionInitial}
+                                          animate={questionAnimate}
+                                          exit={questionExit}
+                                      >
+                                          {chips.find((chip) => chip.id === question.category)?.label ?? question.category}
+                                      </motion.h3>,
+                                  ]
+                                : []),
                             <Question
                                 key={question.id}
                                 number={String(index + 1).padStart(2, "0")}
@@ -413,8 +432,8 @@ export default function FAQBody({
                                 setActive={setActive}
                                 id={question.id}
                                 index={index}
-                            />
-                        ))}
+                            />,
+                        ])}
                     </AnimatePresence>
                     {!visibleQuestions.length && (
                         <motion.p className="faqEmpty" initial={emptyInitial} animate={emptyAnimate}>
