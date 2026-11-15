@@ -5,13 +5,13 @@ import type { CopyBlock, FaqCategory, FaqQuestion } from "@lib/util/site-copy"
 import ContactTrigger from "@modules/layout/ContactDialog/trigger"
 import { AnimatePresence, motion, type Easing, type Variants } from "framer-motion"
 import Image from "next/image"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 
 import { easeReveal } from "@lib/motion-tokens"
-import { PINNED_FAQ_ANSWERS, pinnedFaqAnswer } from "@lib/legal/faq"
-import LegalFaq from "@modules/dotazy/LegalFaq"
-
-const pinnedById = (id: string) => PINNED_FAQ_ANSWERS.find((item) => item.id === id)?.answer ?? ""
+import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
+import { LEGAL_FAQ, legalFaqAnswerText } from "@lib/legal/faq"
+import { useLegalFacts } from "@lib/legal/facts-context"
+import { renderInline } from "@lib/legal/inline"
 
 /*
  * Kategorie je řetězec, ne výčet: přicházejí z CMS (bloky `dotazy.kategorie-*`),
@@ -65,19 +65,17 @@ const faq = [
         title: "Jak keramiku balíte pro bezpečnou přepravu?",
         desc: "Každý kus obalíme několika vrstvami a uložíme do pevné krabice tak, aby se v ní nemohl hýbat. Kde to jde, používáme výplně, které se dají použít znovu nebo vytřídit.",
     },
-    /* Odpovědi těchhle dvou slibují zákonná práva — drží je `@lib/legal/faq`
-       (PINNED_FAQ_ANSWERS) a přebíjejí i znění z CMS, viz `pinnedFaqAnswer`. */
     {
         id: "poskozena-zasilka",
         category: "doprava" as Category,
         title: "Jak postupovat, když zásilka dorazí poškozená?",
-        desc: pinnedById("poskozena-zasilka"),
+        desc: "Vyfoťte prosím balík i poškozený kus a ozvěte se nám s číslem objednávky — čím dřív, tím líp, ale žádná krátká lhůta pro vás neplatí. Domluvíme se na výměně nebo opravě, a když to nejde, vrátíme peníze. U České pošty nic reklamovat nemusíte, to vyřídíme my.",
     },
     {
         id: "vraceni",
         category: "doprava" as Category,
         title: "Mohu produkt vrátit nebo vyměnit?",
-        desc: pinnedById("vraceni"),
+        desc: "Výrobek z běžné nabídky můžete vrátit bez udání důvodu do 14 dnů od převzetí. Zakázkové kusy dělané přímo podle vašeho zadání vrátit nejde — pokud ovšem mají vadu, reklamujete je jako každé jiné zboží.",
     },
     {
         id: "kurzy-pro-skoly",
@@ -92,6 +90,44 @@ const faq = [
         desc: "Nejrychleji přes kontaktní formulář, nebo mi zavolejte na +420 775 211 578. Odpovídám zpravidla do dvou pracovních dnů; když stojím u pece, může to trvat o kousek déle.",
     },
 ]
+
+/*
+ * Právní otázky (zakázky, kurzy, poukazy, bezpečnost, rozbitá zásilka) jsou od
+ * 15. 11. 2026 ve Studiu jako běžné otázky — kategorie = název skupiny. Tady
+ * jen jako záloha pro stav bez CMS, ve stejných kategoriích jako ve Studiu.
+ */
+const fallbackCategoryId = (title: string): Category =>
+    fallbackCategories.find((item) => item.label === title)?.id ?? title
+
+const allFallbackCategories: { id: Category; label: string }[] = [
+    ...fallbackCategories,
+    ...LEGAL_FAQ.filter((group) => !fallbackCategories.some((item) => item.label === group.title)).map(
+        (group) => ({ id: group.title, label: group.title })
+    ),
+]
+
+const fallbackFaq = [
+    ...faq,
+    ...LEGAL_FAQ.flatMap((group) =>
+        group.items.map((item) => ({
+            id: item.id,
+            category: fallbackCategoryId(group.title),
+            title: item.question,
+            desc: legalFaqAnswerText(item),
+        }))
+    ),
+]
+
+/** Staré kotvy právní sekce (`/dotazy#faq-kurzy`) → kategorie stejného jména. */
+const categoryForHash = (hash: string): string | null =>
+    LEGAL_FAQ.find((group) => `#${group.id}` === hash)?.title ?? null
+
+/** Text odpovědi pro hledání — bez značek odkazů, tučného a `{{…}}`. */
+const plainAnswer = (text: string) =>
+    text
+        .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+        .replace(/\*\*/g, "")
+        .replace(/\{\{[^}]*\}\}/g, "")
 
 type ActiveState = string | null
 
@@ -127,7 +163,7 @@ export default function FAQBody({
      */
     const photo = block?.gallery?.[3]
 
-    const [active, setActive] = useState<ActiveState>(faq[0].id)
+    const [active, setActive] = useState<ActiveState>(fallbackFaq[0].id)
     const [category, setCategory] = useState<Category>("vse")
     const [query, setQuery] = useState("")
 
@@ -176,9 +212,7 @@ export default function FAQBody({
             id: q.id ?? `qna-${index}`,
             category: (q.kategorie || "vse") as Category,
             title: q.question,
-            /* Právní témata (rozbitá zásilka, vrácení) odpovídá kód, ne CMS —
-               viz PINNED_FAQ_ANSWERS. Otázka, kategorie a pořadí zůstávají. */
-            desc: pinnedFaqAnswer(q) ?? q.answer,
+            desc: q.answer,
             /** Celý dokument — anotace `editableDoc` otevře jeho formulář. */
             doc: q as FaqQuestion | null,
             /* Jen kvůli shodnému tvaru se záložní větví — v téhle se nečtou. */
@@ -192,14 +226,13 @@ export default function FAQBody({
     const questions = useMemo(() => {
         if (fromDocuments) return fromDocuments.list
 
-        return faq.map((item, index) => {
+        return fallbackFaq.map((item, index) => {
             const cms = texts?.questions?.[index]
             const title = cms?.question?.trim() || item.title
             return {
                 ...item,
                 title,
-                /* I tady: přišpendlené téma přebije odpověď z bloku. */
-                desc: pinnedFaqAnswer({ id: item.id, question: title }) ?? (cms?.answer?.trim() || item.desc),
+                desc: cms?.answer?.trim() || item.desc,
                 doc: null as FaqQuestion | null,
                 /** Kolikátá je v bloku — pro anotaci překryvu. */
                 cmsDoc: texts,
@@ -208,7 +241,40 @@ export default function FAQBody({
         })
     }, [fromDocuments, texts])
 
-    const chips = fromDocuments?.chips ?? fallbackCategories
+    const chips = fromDocuments?.chips ?? allFallbackCategories
+
+    /*
+     * Odpověď se vykresluje jako právní texty: prázdný řádek = nový odstavec,
+     * `**tučně**`, `[odkaz](/cesta)` a `{{fakt}}` (údaje z admin → Právní údaje).
+     * Platí pro otázky ze Studia i pro zálohu z kódu.
+     */
+    const facts = useLegalFacts()
+    const renderAnswer = (text: string): ReactNode =>
+        text
+            .split(/\n\s*\n/)
+            .map((paragraph) => paragraph.trim())
+            .filter(Boolean)
+            .map((paragraph, index) => (
+                <p key={index}>
+                    {renderInline(paragraph, {
+                        hrefFor: (path) => `/${countryCode}${path}`,
+                        placeholderClassName: "faqPlaceholder",
+                        facts,
+                    })}
+                </p>
+            ))
+
+    /* `/dotazy#faq-kurzy` (odkaz z podmínek kurzu) → vybraná kategorie Kurzy. */
+    useEffect(() => {
+        const title = categoryForHash(window.location.hash)
+        if (!title) return
+        const chip = chips.find((item) => item.label.toLocaleLowerCase("cs") === title.toLocaleLowerCase("cs"))
+        if (!chip) return
+        setCategory(chip.id)
+        scrollWithLenis("#faq-answers", { immediate: true })
+        // Jen při příchodu na stránku.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const sectionEyebrow = texts?.accent?.[0]?.trim() || "Odpovědi · 02"
     /* `null` = použij výchozí JSX se zalomením; řetězec z CMS jde bez něj. */
@@ -231,7 +297,7 @@ export default function FAQBody({
 
         return questions.filter((question) => {
             const matchesCategory = category === "vse" || question.category === category || question.category === "vse"
-            const matchesQuery = !normalizedQuery || `${question.title} ${question.desc}`.toLocaleLowerCase("cs").includes(normalizedQuery)
+            const matchesQuery = !normalizedQuery || `${question.title} ${plainAnswer(question.desc)}`.toLocaleLowerCase("cs").includes(normalizedQuery)
             return matchesCategory && matchesQuery
         })
     }, [category, query, questions])
@@ -322,7 +388,7 @@ export default function FAQBody({
                                 key={question.id}
                                 number={String(index + 1).padStart(2, "0")}
                                 title={question.title}
-                                desc={question.desc}
+                                answer={renderAnswer(question.desc)}
                                 /* Otázka z CMS je dokument: `editableDoc` na celé kartě
                                    otevře popup s formulářem (otázka + odpověď + kategorie
                                    + pořadí). Záložní režim z kódu anotuje texty v místě —
@@ -400,14 +466,13 @@ export default function FAQBody({
                 </motion.aside>
             </div>
 
-            {/* Pevná právní sekce — vždy, i když jsou otázky z CMS (viz LegalFaq). */}
-            <LegalFaq countryCode={countryCode} />
         </section>
     )
 }
 
 type QuestionProps = {
-    desc: string
+    /** Odpověď už rozdělená do odstavců (`renderAnswer`). */
+    answer: ReactNode
     title: string
     /** Atributy překryvu pro znění otázky a odpovědi. Mimo náhled prázdné. */
     editTitle?: Record<string, string | undefined>
@@ -421,7 +486,7 @@ type QuestionProps = {
     setActive: (next: ActiveState) => void
 }
 
-function Question({ desc, title, editTitle, editDesc, editDoc, id, number, index, active, setActive }: QuestionProps) {
+function Question({ answer, title, editTitle, editDesc, editDoc, id, number, index, active, setActive }: QuestionProps) {
     const isActive = active === id
 
     /* The only per-question value is the stagger delay, and it depends solely on the row's
@@ -467,14 +532,15 @@ function Question({ desc, title, editTitle, editDesc, editDoc, id, number, index
                         exit={answerInitial}
                         transition={answerTransition}
                     >
-                        <motion.p
+                        <motion.div
+                            className="faqAnswerCopy"
                             initial={answerCopyInitial}
                             animate={answerCopyAnimate}
                             transition={answerCopyTransition}
                             {...editDesc}
                         >
-                            {desc}
-                        </motion.p>
+                            {answer}
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>

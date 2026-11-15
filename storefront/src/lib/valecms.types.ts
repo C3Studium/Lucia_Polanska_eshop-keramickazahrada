@@ -263,6 +263,10 @@ const qna = defineType({
             name: 'answer',
             title: 'Odpověď',
             type: 'text',
+            description:
+                'Prázdný řádek = nový odstavec. **tučně**, odkaz [text](/smluvni-podminky#kurzy). ' +
+                'Údaje z adminu (Právní údaje) ve složených závorkách, např. {{course.cancellation}} — ' +
+                'změní se samy, když je upravíte v adminu.',
             validation: (rule) => rule.required(),
         }),
         defineField({

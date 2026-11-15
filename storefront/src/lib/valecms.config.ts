@@ -167,9 +167,11 @@ const vyroba = definePage({
  * seznamu a kontaktní výzva), `dotazy.galerie` (fotky shaderu + kontaktu),
  * `dotazy.seo` (titulek a popis pro vyhledávače).
  *
- * Dvě odpovědi (rozbitá zásilka, vrácení) dává vždy kód (`lib/legal/faq.ts`,
- * `PINNED_FAQ_ANSWERS`) — slibují zákonná práva. Otázka, kategorie a pořadí
- * zůstávají ze Studia, odpověď na tato témata se ve Studiu měnit nedá.
+ * Všechny otázky včetně právních (zakázky, kurzy, poukazy, bezpečnost,
+ * rozbitá zásilka) jsou od 15. 11. 2026 jen ve Studiu — dřív je držel kód
+ * (`lib/legal/faq.ts`, dnes už jen výchozí obsah pro `scripts/seed-faq.mjs`).
+ * Pozor při úpravách: odpovědi o vracení a reklamacích se musí shodovat
+ * s obchodními podmínkami.
  *
  * Samotné otázky NEJSOU blok: jsou to dokumenty typu `qna` (viz
  * valecms.types.ts) — jedna otázka = jeden dokument, ve Studiu vlastní
