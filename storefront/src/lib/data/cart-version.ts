@@ -232,6 +232,24 @@ export async function carryCartToCurrentVersion(): Promise<VysledekPrevodu> {
     }
   }
 
+  /*
+   * Slevové kódy a dárkové poukazy jdou s sebou (16. 11. 2026). Dřív se
+   * přenášelo jen zboží a adresa: po nasazení nové verze zmizel z košíku
+   * SLEVA10 i poukaz 9FMK229B a zákazník (objednávka #77) zaplatil plnou
+   * cenu, aniž si toho všiml. Kód, který mezitím přestal platit, Medusa
+   * tiše vynechá — ostatní se uplatní znovu.
+   */
+  const kody = ((cart.promotions ?? []) as any[])
+    .map((akce) => akce?.code)
+    .filter((kod): kod is string => typeof kod === "string" && kod.length > 0)
+  if (kody.length) {
+    try {
+      await sdk.store.cart.update(novy.id, { promo_codes: kody } as any, {}, headers)
+    } catch (chyba) {
+      console.error(`[košík] kódy ${kody.join(", ")} se nepodařilo přenést:`, chyba)
+    }
+  }
+
   await setCartId(novy.id)
 
   const krok: "address" | "delivery" =
