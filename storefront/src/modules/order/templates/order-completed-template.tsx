@@ -231,6 +231,10 @@ export default async function OrderCompletedTemplate({
       </div>
 
       <div className={s.container} data-testid="order-complete-container">
+        {/* První obrazovka (16. 11. 2026, Matěj): od hlavičky po pruh
+            „Vytvořeno · Stav · Platba · Číslo". Na šířku je vysoká jako okno,
+            poděkování sedí uprostřed a pruh údajů vždy dole. */}
+        <div className={s.firstScreen}>
         <header className={s.masthead}>
           <span>Objednávka · {orderNumber}</span>
           <span className={s.confirmed}>{orderStatusLabel}</span>
@@ -409,6 +413,7 @@ export default async function OrderCompletedTemplate({
             <strong data-testid="order-id">#{orderNumber}</strong>
           </div>
         </section>
+        </div>
 
         {/*
          * Dvousloupcové tělo objednávky:
