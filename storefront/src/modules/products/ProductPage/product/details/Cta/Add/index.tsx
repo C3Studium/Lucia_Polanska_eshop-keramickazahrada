@@ -217,8 +217,11 @@ export default function CTA({
       {pick?.note && !pick.blocked && <p>{pick.note}</p>}
 
       {/* One vocabulary, shared with the cards and the badge: Skladem / Poslední kus /
-          Prodáno / Na objednávku (spec §12). */}
+          Prodáno / Na objednávku (spec §12).
+          Skryto (16. 11. 2026, Matěj): dostupnost už stojí v hlavičce sloupce
+          („Vaše volba · Na objednávku"), tady se jen opakovala.
       <p>{availabilityLabel[availability]}</p>
+      */}
 
       {/* The wait, in the merchant's words — only when the piece really is
           being made for this order, i.e. the availability says so. */}
