@@ -54,6 +54,10 @@ export default async function Checkout(props:{
   const productionMode = await getProductionPaymentMode(cart.id)
   // Kusy zboží — balné a doběrečné do počtu nepatří.
   const itemCount = productLines(cart.items).reduce((total, item) => total + item.quantity, 0)
+  // Fotky výrobků pro tichou koláž vedle Přehledu — každý výrobek jednou, nejvýš šest.
+  const artImages = isReview
+    ? (Array.from(new Set(productLines(cart.items).map((item: any) => item.thumbnail).filter(Boolean))) as string[]).slice(0, 6)
+    : []
 
   /*
    * Úvodní věty pokladny z CMS (stránka `pokladna`). Jen hlavička, nadpis
@@ -84,6 +88,18 @@ export default async function Checkout(props:{
         </LocalizedClientLink>
       </header>
       {/* Vlevo souhrn objednávky, vpravo formulář kroku. */}
+      {/* Přehled (16. 11. 2026, Matěj): panel zůstává vpravo jako v ostatních
+          krocích, aby oko neskákalo. Místo souhrnu (údaje by se opakovaly)
+          je vlevo jen tichá koláž fotek objednaných výrobků — ozdoba, nic
+          se na ní neklikne a čtečka ji přeskočí. */}
+      {isReview && (
+        <div className={styles.reviewArt} aria-hidden="true" data-count={Math.min(artImages.length, 6)}>
+          {artImages.map((src) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={src} src={src} alt="" loading="lazy" decoding="async" />
+          ))}
+        </div>
+      )}
       {!isReview && (
         <div className={styles.intro}>
           <aside className={styles.order}>

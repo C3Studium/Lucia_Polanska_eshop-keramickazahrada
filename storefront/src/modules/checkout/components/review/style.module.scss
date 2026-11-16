@@ -66,6 +66,8 @@
 
 .content {
   overflow: hidden;
+  /* Účtenka ve dvou sloupcích se řídí šířkou panelu, ne obrazovky (níž). */
+  container-type: inline-size;
 }
 
 /* ---------- recap ---------- */
@@ -105,6 +107,15 @@
   display: grid;
   margin: 0;
   padding: 0;
+  /* Omezená výška, seznam se posouvá (16. 11. 2026, Matěj) — dlouhá
+     objednávka neodsune Doručení, Cenu ani tlačítko objednání pod okraj. */
+  max-height: min(26rem, 52svh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--ink-05-rgb) / .28) transparent;
+  /* Místo pro posuvník, ať ceny vpravo nelezou pod něj. */
+  padding-right: .5rem;
   /* Rozestup mezi produkty nese padding položky (ne gap), aby jemný předěl
      níž seděl přesně uprostřed mezi dvěma řádky, ne nalepený na jeden z nich. */
   gap: 0;
@@ -189,11 +200,13 @@
  * Vlevo co objednáváte, vpravo doručení, cena a slevový kód pod sebou.
  * Na telefonu a tabletu na výšku zůstává všechno v jednom sloupci.
  *
- * Až od 1200 px: na 1024 by pravý sloupec měl ~274 px a řádek slevového
- * kódu potřebuje 276 (pole 8.5rem + mezera + „Použít" 8.25rem). Mezi 1021
- * a 1199 jdou položky přes celou šířku a pod nimi Doručení | Cena vedle sebe.
+ * Řídí se šířkou PANELU (container query), ne obrazovky: panel vpravo vedle
+ * koláže má na 1440 ~680 px. Pravý sloupec účtenky potřebuje aspoň ~276 px
+ * na řádek slevového kódu (pole 8.5rem + mezera + „Použít" 8.25rem), takže
+ * dva sloupce až od 50rem panelu. Užší panel: položky přes celou šířku
+ * a pod nimi Doručení | Cena vedle sebe.
  */
-@include from-px(1200px) {
+@container (min-width: 50rem) {
   .recap {
     grid-template-columns: minmax(0, 1.45fr) minmax(19rem, 1fr);
     align-items: start;
