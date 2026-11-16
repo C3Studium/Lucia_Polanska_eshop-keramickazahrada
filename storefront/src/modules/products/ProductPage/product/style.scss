@@ -418,10 +418,12 @@
 }
 
 .product__galleryOutro p {
-  max-width: 15ch;
+  max-width: 18ch;
   margin: 0 0 0 auto;
   text-align: right;
-  font: 400 clamp(1.625rem, calc(2.45vw * var(--ui-scale)), 2.75rem) / 0.98 "Sentient-LightItalic", "Sentient-Regular", serif;
+  /* Nejvýš jako název výrobku (16. 11. 2026, Matěj: „menší, nebo stejný
+     jako nadpis") — název má 1.25–2.5rem, dovětek do 1.875rem (30 px). */
+  font: 400 clamp(1.25rem, calc(1.6vw * var(--ui-scale)), 1.875rem) / 1.05 "Sentient-LightItalic", "Sentient-Regular", serif;
   letter-spacing: -0.035em;
 }
 
