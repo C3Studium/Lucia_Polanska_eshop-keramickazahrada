@@ -52,8 +52,9 @@ const settledCommissionBalance = async (orderId: string, order: any) => {
     ((value as any)?.totals?.deposit_paid ?? (value as any)?.deposit_paid ?? 0) +
       ((value as any)?.totals?.balance_paid ?? (value as any)?.balance_paid ?? 0) >
       0.005
-  for (let attempt = 0; attempt < 6 && !recorded(balance); attempt++) {
-    await new Promise((resolve) => setTimeout(resolve, 500))
+  // Po 150 ms, nejvýš ~3 s: zápis trvá obvykle ~0,3 s, takže stačí 2–3 dotazy.
+  for (let attempt = 0; attempt < 20 && !recorded(balance); attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 150))
     balance = await getCommissionBalance(orderId)
   }
   return balance
@@ -74,15 +75,27 @@ export default async function OrderConfirmedPage(props: Props) {
    * (označí zaplaceno, zaúčtuje, pošle potvrzení + fakturu). Pozdní webhook/job
    * to pak nezdvojí (onBalancePaid dedupuje).
    */
-  await reconcileOrderBalance(params.id).catch(() => null)
+  /*
+   * Rychlost (16. 11. 2026): dotazy šly jeden po druhém (~10 za sebou).
+   * Teď ve třech kolech — co na sobě nezávisí, běží souběžně:
+   *  1. dorovnání doplatku + podepsaný token + texty stránky,
+   *  2. objednávka (až po dorovnání, ať nese čerstvý stav platby),
+   *  3. stav, zakázka, deník a reklamace najednou; pak jen to, co potřebuje
+   *     výsledek zakázky.
+   */
+  const [, tokenOrNull, copy] = await Promise.all([
+    reconcileOrderBalance(params.id).catch(() => null),
+    // Podepsaný token pro „Upravit / Zrušit / Reklamace" rovnou odtud (stránky
+    // jinak chtějí token z e-mailu) — a stejným tokenem i stav objednávky pro
+    // hosta bez přihlášení. `null` → tlačítka se nevykreslí.
+    getOrderAccessToken(params.id).catch(() => null),
+    // Poděkování a okénko „Potřebujete s něčím pomoct?" — bloky na stránce
+    // `kosik` (konec nákupu). Výpadek CMS = texty z kódu.
+    getPageCopy("kosik"),
+  ])
 
   const order = await retrieveOrder(params.id).catch(() => null)
-  // Podepsaný token pro „Upravit / Zrušit / Reklamace" rovnou odtud (stránky
-  // jinak chtějí token z e-mailu) — a stejným tokenem i stav objednávky pro
-  // hosta bez přihlášení. `null` → tlačítka se nevykreslí.
-  const selfServiceToken = order ? await getOrderAccessToken(params.id) : null
-  // Stav objednávky (reklamace, odesláno, výroba…). Null jen když selže.
-  const progress = order ? await getOrderProgress(params.id, selfServiceToken) : null
+  const selfServiceToken = order ? tokenOrNull : null
 
   /*
    * The zakázka's diary. The route 404s for an order that is not a commission, and the fetcher
@@ -92,23 +105,24 @@ export default async function OrderConfirmedPage(props: Props) {
   // Stav doplatku zakázky (zaplaceno zálohou / zbývá / odkaz na doplacení) —
   // Souhrn z toho pozná „jen záloha" a nabídne tlačítko doplatit. Napřed,
   // protože počká, až backend zálohu zapíše (viz `settledCommissionBalance`).
-  const commissionBalance = order ? await settledCommissionBalance(params.id, order) : null
-  const commissionNotes = order ? await listCommissionNotes(params.id) : null
-  // Zrušení zakázky (audit § 0, Z4/Z5) — jen u zakázky, tokenem hosta.
-  const commissionCancellation = commissionBalance?.is_commission
-    ? await getCommissionCancellation(params.id, selfServiceToken)
-    : null
-  // Z-A: u víc zakázek vlákno konverzace per zakázka (jinak null → vlákno objednávky).
-  const commissionNotesById = await listCommissionNotesByCommission(
-    params.id,
-    commissionBalance
-  )
-  // Reklamace a vrácení k objednávce (+ zda jde ještě odstoupit) — stejným
-  // tokenem. `null` = nepovedlo se načíst → sekce se nevykreslí a tlačítka
-  // zůstanou jako dřív (pravidla pohlídá stránka formuláře).
-  const claims = selfServiceToken
-    ? await getOrderClaims(params.id, selfServiceToken)
-    : null
+  const [progress, commissionBalance, commissionNotes, claims] = await Promise.all([
+    // Stav objednávky (reklamace, odesláno, výroba…). Null jen když selže.
+    order ? getOrderProgress(params.id, selfServiceToken) : null,
+    order ? settledCommissionBalance(params.id, order) : null,
+    order ? listCommissionNotes(params.id) : null,
+    // Reklamace a vrácení k objednávce (+ zda jde ještě odstoupit) — stejným
+    // tokenem. `null` = nepovedlo se načíst → sekce se nevykreslí a tlačítka
+    // zůstanou jako dřív (pravidla pohlídá stránka formuláře).
+    selfServiceToken ? getOrderClaims(params.id, selfServiceToken) : null,
+  ])
+  const [commissionCancellation, commissionNotesById] = await Promise.all([
+    // Zrušení zakázky (audit § 0, Z4/Z5) — jen u zakázky, tokenem hosta.
+    commissionBalance?.is_commission
+      ? getCommissionCancellation(params.id, selfServiceToken)
+      : null,
+    // Z-A: u víc zakázek vlákno konverzace per zakázka (jinak null → vlákno objednávky).
+    listCommissionNotesByCommission(params.id, commissionBalance),
+  ])
 
   /*
    * The backend redirects here after a balance payment (§4.6). That link is e-mailed, so it is
@@ -135,10 +149,6 @@ export default async function OrderConfirmedPage(props: Props) {
 
     return notFound()
   }
-
-  // Poděkování a okénko „Potřebujete s něčím pomoct?" — bloky na stránce
-  // `kosik` (konec nákupu). Výpadek CMS = texty z kódu.
-  const copy = await getPageCopy("kosik")
 
   /* Návrat z brány s otevřeným doplatkem → stránka se sama obnovuje (každé
      načtení se zeptá brány, viz reconcileOrderBalance výš), dokud nedoběhne. */

@@ -207,6 +207,14 @@ export const splitChargeNow = (
  *
  * Vrací obě čísla, ať se volající nemusí rozhodovat sám — a hlavně ať se
  * pokladna a samotná platba nemůžou rozejít.
+ *
+ * **Proč jen jedno poštovné (16. 11. 2026).** Objednávka se zakázkou odchází
+ * vždy JEDNÍM balíkem: brána odeslání (`ship-gate`, `mto_outstanding`)
+ * nepustí ven nic z objednávky, dokud zakázka není doplacená. Běžné zboží tak
+ * čeká na hotovou zakázku a jede s ní — druhá zásilka (a druhé poštovné)
+ * neexistuje. Rozdíl mezi případy je jen v tom, KDY se to jedno poštovné
+ * zaplatí. Zákazník to vidí jako větu pod rozpisem platby
+ * (storefront `parcelNote` v `lib/util/made-to-order.ts`).
  */
 export const shippingTiming = (
   shipping: number,

@@ -83,6 +83,8 @@ export type ProductionPaymentMode = {
         always_now: number
         /** Poštovné v `always_now` (0 = poštovné až v doplatku). */
         postage_now?: number
+        /** Poštovné, které se platí až s doplatkem (jen čistá zakázka). */
+        postage_later?: number
         /** Je v košíku i běžné zboží (ne jen zakázka a balné)? */
         has_plain_goods?: boolean
       })
@@ -884,4 +886,25 @@ export const commissionCancelCopy = (
     button: "Zrušit zakázku",
     confirm: "Ano, zrušit zakázku",
   }
+}
+
+/**
+ * Proč se u zakázky platí poštovné jen jednou (16. 11. 2026).
+ *
+ * Objednávka se zakázkou odchází vždy jedním balíkem — backend nepustí nic
+ * k odeslání, dokud zakázka není doplacená, takže běžné zboží čeká a jede
+ * s ní. Poštovné je tedy jedno; liší se jen to, kdy se platí:
+ * s běžným zbožím hned, u čisté zakázky s doplatkem. Osobní odběr nemá
+ * poštovné, takže věta není.
+ */
+export const parcelNote = (mode?: ProductionPaymentMode | null): string | null => {
+  const only = mode?.production_only
+  if (!mode?.has_made_to_order || !only) return null
+  if ((only.postage_now ?? 0) > 0.005) {
+    return "Vše pošleme v jednom balíku, až bude zakázka hotová. Poštovné proto platíte jen jednou — teď spolu s ostatním zbožím."
+  }
+  if ((only.postage_later ?? 0) > 0.005) {
+    return "Vše pošleme v jednom balíku, až bude zakázka hotová. Poštovné zaplatíte až s doplatkem."
+  }
+  return null
 }
