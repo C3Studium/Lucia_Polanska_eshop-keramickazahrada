@@ -196,7 +196,14 @@
 .plainButton .labelStack { white-space: normal; text-align: left; line-height: 1.2; }
 .compact .plainButton { min-height: calc(2.5rem * var(--premium-button-scale, 1)); padding-block: .35rem; }
 .plainButton .arrow { transform: none; }
-.plainButton:hover:not(:disabled),
+/* Najetí jen tam, kde najetí existuje — na dotyku by iOS první ťuknutí
+   spotřeboval na :hover (16. 11. 2026). */
+@media (hover: hover) and (pointer: fine) {
+  .plainButton:hover:not(:disabled) {
+    color: var(--premium-button-active-ink, var(--cream-06));
+    background: var(--premium-button-fill, var(--ink-05));
+  }
+}
 .plainButton:focus-visible,
 .plainActive {
   color: var(--premium-button-active-ink, var(--cream-06));

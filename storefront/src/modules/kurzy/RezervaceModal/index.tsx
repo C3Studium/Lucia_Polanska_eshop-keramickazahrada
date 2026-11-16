@@ -820,7 +820,8 @@ function RezervaceModalPanel({
             className="kurzyModal__close"
             onClick={onClose}
           >
-            Zavřít <i aria-hidden="true">×</i>
+            <span className="kurzyModal__closeText">Zavřít</span>{" "}
+            <i aria-hidden="true">×</i>
           </button>
         </header>
 
@@ -942,13 +943,16 @@ function RezervaceModalPanel({
                       {item.summary}
                     </span>
                   ) : null}
+                  {/*
+                    Podtržení aktivního kroku bez `layoutId` (16. 11. 2026).
+                    Sdílená layout animace si na iPhonu změřila podtržení
+                    během otevírání okna (panel ještě jel a škáloval) a
+                    zůstalo roztažené přes celou výšku — tmavý pruh přes
+                    levou část rezervace. Obyčejná čára jen přeskočí.
+                  */}
                   {step === item.id ? (
-                    <motion.span
+                    <span
                       className="kurzyModal__progressIndicator"
-                      layoutId="kurzy-progress-indicator"
-                      transition={
-                        reduceMotion ? instantTransition : indicatorTransition
-                      }
                       aria-hidden="true"
                     />
                   ) : null}

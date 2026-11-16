@@ -370,15 +370,8 @@ const ShippingAddress = ({
           />
         )}
       </div>
-      <div className={styles.checkboxRow}>
-        <Checkbox
-          label="Fakturační adresa je stejná jako dodací adresa"
-          name="same_as_billing"
-          checked={checked}
-          onChange={onChange}
-          data-testid="billing-address-checkbox"
-        />
-      </div>
+      {/* E-mail a telefon hned pod jménem a adresou (16. 11. 2026, Matěj),
+          zaškrtávátko fakturační adresy až za nimi. */}
       <div className={styles.contactGrid}>
         <Input
           label="E-mail"
@@ -405,6 +398,15 @@ const ShippingAddress = ({
           data-testid="shipping-phone-input"
           className={styles.input}
           variant="contact"
+        />
+      </div>
+      <div className={styles.checkboxRow}>
+        <Checkbox
+          label="Fakturační adresa je stejná jako dodací adresa"
+          name="same_as_billing"
+          checked={checked}
+          onChange={onChange}
+          data-testid="billing-address-checkbox"
         />
       </div>
         {/*

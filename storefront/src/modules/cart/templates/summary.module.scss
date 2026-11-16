@@ -252,7 +252,12 @@
 .plainButton {
   transition: background-color 120ms linear, color 120ms linear !important;
 }
-.plainButton:hover,
+@media (hover: hover) and (pointer: fine) {
+  .plainButton:hover {
+    color: var(--cream-06);
+    background-color: var(--ink-05);
+  }
+}
 .LinkButton:focus-visible .plainButton {
   color: var(--cream-06);
   background-color: var(--ink-05);
@@ -263,7 +268,14 @@
   color: var(--cream-06);
   background-color: var(--ink-05);
 }
-.button.plainButton:hover,
+/* Najetí jen tam, kde najetí existuje (16. 11. 2026) — na dotyku by se
+   barva po ťuknutí „přilepila" a iOS by první ťuknutí bral jako najetí. */
+@media (hover: hover) and (pointer: fine) {
+  .button.plainButton:hover {
+    color: var(--ink-05);
+    background-color: var(--sage-01);
+  }
+}
 .LinkButton:focus-visible .button.plainButton {
   color: var(--ink-05);
   background-color: var(--sage-01);
@@ -279,6 +291,17 @@
     height: auto !important;
     margin-block: 0 !important;
     padding-block: 2.5px !important;
+  }
+}
+
+/* „Pokračovat k pokladně" na svislém telefonu a tabletu dvakrát vyšší
+   (16. 11. 2026, Matěj: „je moc nízké") — výš je pravidlo „výška obsahu
+   + 2,5 px" pro všechna tlačítka, tohle hlavní tlačítko košíku ho přebíjí. */
+@media (orientation: portrait) and (max-width: 1199.98px) {
+  .LinkButton .button.plainButton {
+    min-height: 3rem !important;
+    padding-block: .75rem !important;
+    justify-content: center;
   }
 }
 

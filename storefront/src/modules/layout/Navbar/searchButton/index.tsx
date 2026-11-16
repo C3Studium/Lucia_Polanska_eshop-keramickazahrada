@@ -1,4 +1,4 @@
-import { AnimatePresence, Easing, motion } from 'framer-motion';
+import { Easing, motion } from 'framer-motion';
 import styles from './styles.module.scss';
 import Image from 'next/image';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
@@ -148,29 +148,37 @@ export default function SearchButton({
         aria-label={isActive ? "Zavřít vyhledávání" : "Otevřít vyhledávání"}
         aria-expanded={isActive}
         aria-controls="navbar-search"
-        onClick={onClick}
+        onClick={() => {
+          onClick?.()
+          /*
+           * Fokus HNED v ťuknutí (16. 11. 2026, Matěj: „do vyhledávání se na
+           * telefonu špatně píše"). iOS otevře klávesnici jen při fokusu
+           * přímo v obsluze dotyku; fokus po 250 ms (efekt níž) klávesnici
+           * neotevřel a člověk musel trefit drobné pole podruhé. Pole je proto
+           * v DOM pořád, zavřené jen neviditelné.
+           */
+          if (!isActive) inputRef.current?.focus({ preventScroll: true })
+        }}
       >
         <Image className={styles.searchIcon} src="/assets/icons/search.svg" alt="" width={19} height={19}/>
       </button>
-      <AnimatePresence initial={false}>
-        {isActive && (
-          <motion.input
-            ref={inputRef}
-            className={styles.input}
-            data-testid="navbar-search-input"
-            type="search"
-            value={value}
-            placeholder="Vyhledat produkty…"
-            aria-label="Vyhledat produkty"
-            autoComplete="off"
-            onChange={handleChange}
-            initial={initial}
-            animate={animate}
-            exit={initial}
-            transition={transition2}
-          />
-        )}
-      </AnimatePresence>
+      <motion.input
+        ref={inputRef}
+        className={styles.input}
+        data-testid={isActive ? "navbar-search-input" : undefined}
+        type="search"
+        value={value}
+        placeholder="Vyhledat produkty…"
+        aria-label="Vyhledat produkty"
+        aria-hidden={!isActive || undefined}
+        tabIndex={isActive ? 0 : -1}
+        autoComplete="off"
+        onChange={handleChange}
+        initial={false}
+        animate={isActive ? animate : initial}
+        transition={transition2}
+        style={isActive ? undefined : closedInputStyle}
+      />
     </motion.div>
   )
 }
@@ -183,3 +191,5 @@ const styleObj = { transformOrigin: "left center" as const }
 const initial = { opacity: 0, x: -14 }
 const animate = { opacity: 1, x: 0 }
 const transition2 = { duration: 0.25, delay: 0.12, ease }
+/* Zavřené pole: v DOM kvůli fokusu v ťuknutí, ale neviditelné a neklikatelné. */
+const closedInputStyle = { pointerEvents: "none" as const }
