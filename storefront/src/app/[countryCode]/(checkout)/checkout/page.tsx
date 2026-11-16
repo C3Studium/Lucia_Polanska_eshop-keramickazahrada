@@ -10,6 +10,7 @@ import { CopyProvider } from "@modules/common/components/cms-text/copy-context"
 import { getPageCopy } from "@lib/data/site-copy"
 import { itemFieldPath, itemText } from "@lib/util/site-copy"
 import { Metadata } from "next"
+import Image from "next/image"
 import { notFound, redirect } from "next/navigation"
 import {
   cartNeedsVoucherSetup,
@@ -54,9 +55,26 @@ export default async function Checkout(props:{
   const productionMode = await getProductionPaymentMode(cart.id)
   // Kusy zboží — balné a doběrečné do počtu nepatří.
   const itemCount = productLines(cart.items).reduce((total, item) => total + item.quantity, 0)
-  // Fotky výrobků pro tichou koláž vedle Přehledu — každý výrobek jednou, nejvýš šest.
-  const artImages = isReview
-    ? (Array.from(new Set(productLines(cart.items).map((item: any) => item.thumbnail).filter(Boolean))) as string[]).slice(0, 6)
+  /*
+   * Pozadí Přehledu: všechny fotky objednaných výrobků (náhled i galerie),
+   * opakované do stěny dlaždic. Posun o 3 na každé kolo, ať se stejná fotka
+   * neskládá do svislých pruhů.
+   */
+  const artSources = isReview
+    ? (Array.from(
+        new Set(
+          productLines(cart.items).flatMap((item: any) => [
+            item.thumbnail,
+            ...((item.variant?.product?.images ?? []) as { url?: string }[]).map((image) => image?.url),
+          ])
+        )
+      ).filter(Boolean) as string[])
+    : []
+  const ART_TILES = 96
+  const artTiles = artSources.length
+    ? Array.from({ length: ART_TILES }, (_, index) =>
+        artSources[(index + Math.floor(index / artSources.length) * 3) % artSources.length]
+      )
     : []
 
   /*
@@ -88,15 +106,23 @@ export default async function Checkout(props:{
         </LocalizedClientLink>
       </header>
       {/* Vlevo souhrn objednávky, vpravo formulář kroku. */}
-      {/* Přehled (16. 11. 2026, Matěj): panel zůstává vpravo jako v ostatních
-          krocích, aby oko neskákalo. Místo souhrnu (údaje by se opakovaly)
-          je vlevo jen tichá koláž fotek objednaných výrobků — ozdoba, nic
-          se na ní neklikne a čtečka ji přeskočí. */}
-      {isReview && (
-        <div className={styles.reviewArt} aria-hidden="true" data-count={Math.min(artImages.length, 6)}>
-          {artImages.map((src) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={src} src={src} alt="" loading="lazy" decoding="async" />
+      {/* Přehled (16. 11. 2026, Matěj): panel na střed, širší a vzdušnější.
+          Pozadí je tichá stěna fotek objednaných výrobků — jen grafika,
+          nic se na ní neklikne a čtečka ji přeskočí. Souhrn vlevo tu není,
+          údaje by se opakovaly. */}
+      {isReview && artTiles.length > 0 && (
+        <div className={styles.reviewArt} aria-hidden="true">
+          {artTiles.map((src, index) => (
+            <Image
+              key={index}
+              src={src}
+              alt=""
+              width={256}
+              height={256}
+              sizes="11rem"
+              quality={75}
+              loading="lazy"
+            />
           ))}
         </div>
       )}

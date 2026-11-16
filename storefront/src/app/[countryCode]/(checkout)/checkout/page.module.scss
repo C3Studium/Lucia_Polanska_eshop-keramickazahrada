@@ -189,51 +189,62 @@
 }
 
 /*
- * Krok Přehled (16. 11. 2026): panel kroku stojí vpravo na stejném místě jako
- * v ostatních krocích. Levý sloupec nese jen koláž fotek objednaných výrobků
- * ve velmi nízké krycí síle — grafika, ne ovládací prvek. Na telefonu
- * a tabletu na výšku (jeden sloupec) koláž není.
+ * Krok Přehled (16. 11. 2026, Matěj): souhrn vlevo tu není (údaje by se
+ * opakovaly). Na šířku je panel na střed, o desetinu širší než dřív (84rem
+ * místo 76) a s větším vnitřním odsazením. Za ním je stěna fotek objednaných
+ * výrobků ve velmi nízké krycí síle — grafika, ne ovládací prvek. Na telefonu
+ * a tabletu na výšku zůstává jeden sloupec bez pozadí.
  */
+.root[data-step="review"] .ledger {
+  grid-column: 1 / -1;
+}
+
 .reviewArt {
   display: none;
 }
 
 @include from-px(1021px) {
+  .root[data-step="review"] .masthead,
+  .root[data-step="review"] .ledger {
+    position: relative;
+    z-index: 1;
+    justify-self: center;
+    width: min(100%, 84rem);
+  }
+
+  .root[data-step="review"] .ledger {
+    padding: clamp(2.25rem, 4.4vw, 4.5rem);
+  }
+
   .reviewArt {
-    position: sticky;
-    top: calc(var(--nav-height, 5rem) + 2rem);
+    /* Přes celou šířku okna, ne jen rámu pokladny: root je na střed,
+       takže 50 % rootu je střed okna. */
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    z-index: 0;
     display: grid;
-    grid-column: 1;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: clamp(.75rem, 1.2vw, 1.25rem);
-    align-self: start;
-    max-height: 78svh;
+    width: calc(100 * var(--fvw, 1vw));
+    grid-template-columns: repeat(auto-fill, minmax(clamp(8rem, 10vw, 11rem), 1fr));
+    align-content: start;
+    gap: clamp(.5rem, .8vw, .875rem);
     overflow: hidden;
+    transform: translateX(-50%);
     pointer-events: none;
     user-select: none;
-    opacity: .16;
-    filter: grayscale(.35) sepia(.15);
-    /* Koláž se do tmy rozplývá, nekončí hranou. */
-    -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
-    mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+    opacity: .06;
+    filter: grayscale(.4) sepia(.12);
+    /* Nahoře a dole se stěna rozplývá do tmy, nekončí hranou. */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 82%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 82%, transparent 100%);
 
     img {
       display: block;
       width: 100%;
-      aspect-ratio: 4 / 5;
+      height: auto;
+      aspect-ratio: 1;
       object-fit: cover;
     }
-
-    /* Druhý sloupec posunutý dolů — volná skladba, ne mřížka katalogu. */
-    img:nth-child(even) {
-      transform: translateY(clamp(2rem, 4vw, 4rem));
-    }
-  }
-
-  /* Jeden výrobek: jedna velká fotka přes celý sloupec. */
-  .reviewArt[data-count="1"] {
-    grid-template-columns: 1fr;
-
-    img { aspect-ratio: 4 / 5; }
   }
 }
