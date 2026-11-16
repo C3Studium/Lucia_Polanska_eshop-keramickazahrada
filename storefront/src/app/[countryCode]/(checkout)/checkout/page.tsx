@@ -23,9 +23,16 @@ export const metadata: Metadata = {
   description: "Dokončení objednávky — doprava, platba a přehled.",
 }
 
-export default async function Checkout(props:{params: Promise<{countryCode:string}>}) {
+export default async function Checkout(props:{
+  params: Promise<{countryCode:string}>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const cart = await retrieveCart()
   const params = await props.params
+  /* Přehled bez levého souhrnu (16. 11. 2026, Matěj): krok Přehled sám
+     ukazuje položky i ceny, takže souhrn vlevo by tytéž údaje opakoval
+     podruhé. Slevový kód se přestěhoval do Přehledu. */
+  const isReview = (await props.searchParams)?.step === "review"
   const { countryCode } = params
   if (!cart) {
     return notFound()
@@ -60,7 +67,7 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
   const backLabel = itemText(intro, "zpet", "Zpět do košíku")
 
   return (
-    <div className={styles.root}>
+    <div className={styles.root} data-step={isReview ? "review" : undefined}>
       {/* Hlavička přes oba sloupce (15. 11. 2026, Matěj): kde jsem a cesta
           zpět nahoře, takže „Přehled objednávky" vlevo a kroky pokladny
           vpravo začínají na stejné výšce. */}
@@ -77,15 +84,17 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
         </LocalizedClientLink>
       </header>
       {/* Vlevo souhrn objednávky, vpravo formulář kroku. */}
-      <div className={styles.intro}>
-        <aside className={styles.order}>
-          <CheckoutSummary
-            cart={cart}
-            productionMode={productionMode}
-            copy={copy["pokladna.souhrn"]}
-          />
-        </aside>
-      </div>
+      {!isReview && (
+        <div className={styles.intro}>
+          <aside className={styles.order}>
+            <CheckoutSummary
+              cart={cart}
+              productionMode={productionMode}
+              copy={copy["pokladna.souhrn"]}
+            />
+          </aside>
+        </div>
+      )}
       {/* Kroky jsou hluboko (formulář → krok → adresa), proto blok kontextem, ne propem. */}
       <CopyProvider blocks={{ "pokladna.kroky": copy["pokladna.kroky"] }}>
         <section className={styles.ledger}>

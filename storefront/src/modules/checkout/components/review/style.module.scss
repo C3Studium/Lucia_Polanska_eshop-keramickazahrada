@@ -113,7 +113,7 @@
 
 .itemList li {
   display: grid;
-  align-items: baseline;
+  align-items: center;
   padding: clamp(.5rem, .93vh, .8rem) 0;
   gap: .875rem;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -153,14 +153,36 @@
   border-bottom: 1px solid rgb(var(--ink-05-rgb) / .1);
 }
 
-/* Název a pod ním miniatura fotky. */
+/* Fotka vlevo, vedle ní název a pod ním variace (16. 11. 2026). */
 .itemMain {
   display: flex;
   min-width: 0;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: .5rem;
+  align-items: center;
+  gap: clamp(.75rem, 1.1vw, 1.125rem);
 }
+
+.itemThumb { flex: none; }
+
+.itemText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: .125rem;
+}
+
+.itemVariant {
+  color: var(--review-label);
+  font: 400 max(var(--text-min, 0px), calc(clamp(.875rem, calc(1vw * var(--ui-scale)), .95rem) * var(--read, 1))) / 1.4 "Sansation-Regular", sans-serif;
+}
+
+/* Slevový kód nebo poukaz pod rekapitulací (16. 11. 2026) — v Přehledu,
+   protože levý souhrn na tomhle kroku není. */
+.discount {
+  display: flex;
+  width: 100%;
+  margin-top: clamp(1rem, 2vh, 1.5rem);
+}
+.discount > * { width: 100%; }
 
 .itemThumb {
   display: block;

@@ -72,15 +72,8 @@ export default function OrderRecap({
               const agreedLater = isPriceOnRequestLine(item)
               return (
                 <li key={item.id}>
+                  {/* Fotka vlevo, vedle ní název a pod ním variace (16. 11. 2026, Matěj). */}
                   <span className={styles.itemMain}>
-                    <span
-                      className={styles.itemTitle}
-                      title={item.product_title ?? item.title}
-                    >
-                      {item.product_title ?? item.title}
-                      {item.variant_title ? ` · ${item.variant_title}` : ""}
-                    </span>
-                    {/* Miniatura pod názvem — ať je v přehledu vidět, co přesně jde do košíku. */}
                     {item.thumbnail || item.variant?.product?.images?.length ? (
                       <span className={styles.itemThumb} data-testid="recap-thumbnail">
                         <Thumbnail
@@ -90,6 +83,19 @@ export default function OrderRecap({
                         />
                       </span>
                     ) : null}
+                    <span className={styles.itemText}>
+                      <span
+                        className={styles.itemTitle}
+                        title={item.product_title ?? item.title}
+                      >
+                        {item.product_title ?? item.title}
+                      </span>
+                      {item.variant_title ? (
+                        <span className={styles.itemVariant}>
+                          Variace: {item.variant_title}
+                        </span>
+                      ) : null}
+                    </span>
                   </span>
                   <span className={styles.itemPrices}>
                     <span className={styles.itemLine}>
