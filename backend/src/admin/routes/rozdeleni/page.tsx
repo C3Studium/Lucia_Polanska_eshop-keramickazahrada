@@ -1,6 +1,23 @@
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import {
-  ArchiveBox, ExclamationCircle, EyeSlash, Folder, ListBullet, ListTree,
+  ArchiveBox, DotsSix, ExclamationCircle, EyeSlash, Folder, ListBullet, ListTree,
 } from "@medusajs/icons";
 import {
   Badge,
@@ -39,6 +56,74 @@ import { ulozSeznam } from "../../lib/seznam-kontext"
  * kind with its label, movable to another collection or category on the
  * spot. All writes go through the native admin APIs.
  */
+
+/*
+ * Pořadí kolekcí a kategorií v menu E-shop (16. 11. 2026, Matěj).
+ *
+ * Přetažením za úchyt (šest teček) se mění `metadata.nav_order` — index od
+ * 0 do posledního v rámci seznamu. Storefront menu podle něj řadí karty
+ * kolekcí i odkazy kategorií v nich (storefront lib/data/navigation.ts).
+ * Bez indexu se řadí na konec podle názvu, takže nic nezmizí.
+ */
+const navOrderOf = (item: any): number => {
+  const raw = Number((item?.metadata as any)?.nav_order);
+  return Number.isFinite(raw) ? raw : Number.MAX_SAFE_INTEGER;
+};
+const byNavOrder = (orderOf: (item: any) => number, nameOf: (item: any) => string) =>
+  (a: any, b: any) =>
+    orderOf(a) - orderOf(b) || nameOf(a).localeCompare(nameOf(b), "cs");
+
+const DND_TEXTS = {
+  screenReaderInstructions: {
+    draggable:
+      "Položku zvednete mezerníkem nebo klávesou Enter. Šipkami nahoru a dolů ji přesunete, mezerníkem položíte, klávesou Escape přesun zrušíte.",
+  },
+  announcements: {
+    onDragStart: () => "Položka zvednuta. Šipkami ji přesuňte, mezerníkem položte.",
+    onDragOver: () => undefined,
+    onDragEnd: () => "Položka položena, nové pořadí se ukládá.",
+    onDragCancel: () => "Přesun zrušen.",
+  },
+};
+
+/** Řádek s úchytem pro přetažení; obsah řádku zůstává, jak byl. */
+const SortableRow = ({
+  id,
+  label,
+  disabled,
+  children,
+}: {
+  id: string;
+  label: string;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) => {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
+    useSortable({ id, disabled });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={isDragging ? "relative z-10 flex items-start gap-1 opacity-75" : "flex items-start gap-1"}
+    >
+      {!disabled && (
+        <button
+          type="button"
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          className="text-ui-fg-muted hover:bg-ui-bg-base-hover hover:text-ui-fg-base mt-2 cursor-grab rounded p-0.5 active:cursor-grabbing"
+          aria-roledescription="přesouvatelná položka"
+          aria-label={`Přesunout ${label}`}
+          title="Přetažením změníte pořadí v menu E-shop"
+        >
+          <DotsSix />
+        </button>
+      )}
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  );
+};
 
 const kindBadge: Record<string, { label: string; color: "green" | "orange" | "blue" | "red" }> = {
   bezne: { label: "Produkt", color: "green" },
@@ -129,7 +214,9 @@ const Inner = () => {
     refetchOnWindowFocus: true,
   });
 
-  const collections: any[] = collectionsData?.collections ?? [];
+  const collections: any[] = [...(collectionsData?.collections ?? [])].sort(
+    byNavOrder(navOrderOf, (c) => String(c?.title ?? ""))
+  );
   const allCategories: any[] = categoriesData?.product_categories ?? [];
   const products: any[] = productsData?.products ?? [];
 
@@ -157,7 +244,80 @@ const Inner = () => {
       ].map((category: any) => [category.id, category])
     ).values(),
   ];
-  const categoriesHere = collectionId ? categoriesOf(collectionId) : [];
+  /* Pořadí kategorie čte celý záznam — řádky z produktů (category_refs)
+     nesou jen id a název, metadata ne. */
+  const categoryOrderOf = (category: any) =>
+    navOrderOf(
+      allCategories.find((full: any) => full.id === category?.id) ?? category
+    );
+  const categoriesHere = collectionId
+    ? categoriesOf(collectionId).sort(
+        byNavOrder(categoryOrderOf, (c) => String(c?.name ?? ""))
+      )
+    : [];
+
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  /* Nové pořadí: index 0…n-1 do metadata.nav_order. Na obrazovce hned
+     (cache dotazu), zapisuje se jen to, co se změnilo; po uložení se
+     seznamy znovu načtou. */
+  const saveOrder = async (
+    kind: "collections" | "categories",
+    ordered: any[]
+  ) => {
+    const key = kind === "collections" ? ["rozdeleni-collections"] : ["rozdeleni-categories"];
+    const listKey = kind === "collections" ? "collections" : "product_categories";
+    const fullOf = (item: any) =>
+      kind === "collections"
+        ? item
+        : allCategories.find((full: any) => full.id === item.id) ?? item;
+    const indexOf = new Map(ordered.map((item, index) => [item.id, index]));
+    queryClient.setQueryData(key, (old: any) =>
+      old
+        ? {
+            ...old,
+            [listKey]: (old[listKey] ?? []).map((item: any) =>
+              indexOf.has(item.id)
+                ? { ...item, metadata: { ...(item.metadata ?? {}), nav_order: indexOf.get(item.id) } }
+                : item
+            ),
+          }
+        : old
+    );
+    try {
+      for (const [index, item] of ordered.entries()) {
+        const full = fullOf(item);
+        if (Number((full?.metadata as any)?.nav_order) === index) continue;
+        await sdk.client.fetch(
+          kind === "collections"
+            ? `/admin/collections/${item.id}`
+            : `/admin/product-categories/${item.id}`,
+          {
+            method: "POST",
+            body: { metadata: { ...((full?.metadata as any) ?? {}), nav_order: index } },
+          }
+        );
+      }
+      toast.success("Pořadí v menu E-shop uloženo.");
+    } catch (error) {
+      toast.error(ceskaChyba(error, "Pořadí se nepodařilo uložit."));
+    } finally {
+      await queryClient.invalidateQueries({ queryKey: key });
+    }
+  };
+
+  const onDragEndOf =
+    (kind: "collections" | "categories", list: any[]) => (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      const from = list.findIndex((item) => item.id === active.id);
+      const to = list.findIndex((item) => item.id === over.id);
+      if (from < 0 || to < 0) return;
+      void saveOrder(kind, arrayMove(list, from, to));
+    };
 
   /* The scoped column derives rows from product.category_refs, which carry
      only id+name — flags (is_active, archived) live on the full record. */
@@ -544,8 +704,19 @@ const Inner = () => {
       <div className="grid min-h-[60vh] lg:grid-cols-[260px_240px_minmax(0,1fr)] divide-x divide-ui-border-base">
         {/* ── 1. kolekce ── */}
         <div className="flex flex-col gap-1 p-3">
+          <DndContext
+            sensors={dndSensors}
+            collisionDetection={closestCenter}
+            onDragEnd={onDragEndOf("collections", collections)}
+            accessibility={DND_TEXTS}
+          >
+          <SortableContext
+            items={collections.map((collection) => collection.id)}
+            strategy={verticalListSortingStrategy}
+          >
           {collections.map((collection) => (
-            <button key={collection.id} type="button"
+            <SortableRow key={collection.id} id={collection.id} label={`kolekci ${collection.title}`}>
+            <button type="button"
               onClick={() => { setCollectionId(collection.id); setCategoryId(null); setAllCats(false); setRenaming(""); }}
               className={
                 collection.id === collectionId
@@ -642,7 +813,10 @@ const Inner = () => {
                 </div>
               )}
             </button>
+            </SortableRow>
           ))}
+          </SortableContext>
+          </DndContext>
           <div className="mt-2 flex gap-2">
             <Input size="small" placeholder="Nová kolekce…" value={newCollection}
               onChange={(e) => setNewCollection(e.target.value)} />
@@ -714,6 +888,21 @@ const Inner = () => {
                 className={categoryId === null ? "bg-ui-bg-base-pressed rounded-md px-3 py-2 text-left" : "hover:bg-ui-bg-base-hover rounded-md px-3 py-2 text-left"}>
                 <Text size="small">Vše ({inCollection.length})</Text>
               </button>
+              <DndContext
+                sensors={dndSensors}
+                collisionDetection={closestCenter}
+                onDragEnd={onDragEndOf(
+                  "categories",
+                  categoriesHere.filter((category: any) => !categoryArchived(category))
+                )}
+                accessibility={DND_TEXTS}
+              >
+              <SortableContext
+                items={categoriesHere
+                  .filter((category: any) => !categoryArchived(category))
+                  .map((category: any) => category.id)}
+                strategy={verticalListSortingStrategy}
+              >
               {(allCats
                 ? allCategories.filter((category: any) =>
                     catTab === "archiv"
@@ -728,7 +917,10 @@ const Inner = () => {
                     (category: any) => !categoryArchived(category)
                   )
               ).map((category: any) => (
-                <div key={category.id}
+                /* Přetahuje se jen v kolekci (tam je pořadí menu); v pohledu
+                   „všechny kategorie" je seznam smíšený, úchyt tam není. */
+                <SortableRow key={category.id} id={category.id} label={`kategorii ${category.name}`} disabled={allCats}>
+                <div
                   className={categoryId === category.id ? "bg-ui-bg-base-pressed rounded-md px-3 py-2" : "hover:bg-ui-bg-base-hover rounded-md px-3 py-2"}>
                   {/* Porovnání přes `?.` nezúží typ, takže uvnitř větve byl
                       `renamingCategory` pořád `| null` — proto ta dvě hlášení
@@ -829,7 +1021,10 @@ const Inner = () => {
                     </>
                   )}
                 </div>
+                </SortableRow>
               ))}
+              </SortableContext>
+              </DndContext>
               {/* Creating a category needs a collection to belong to — in the
                   all-categories view there is none, so no inline form there. */}
               {selectedCollection && (

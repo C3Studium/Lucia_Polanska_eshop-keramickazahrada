@@ -27,6 +27,20 @@ const FALLBACK_IMAGE = "/assets/img/img/home_image.png"
  */
 const SEED_CATEGORY_HANDLES = new Set(["shirts", "sweatshirts", "pants", "merch"])
 
+/*
+ * Pořadí v menu E-shop (16. 11. 2026, Matěj): `metadata.nav_order` (index
+ * 0…n), nastavuje se přetažením v adminu Kolekce a kategorie. Bez indexu
+ * na konec, podle názvu — nová kolekce tak nikdy nezmizí, jen čeká vzadu.
+ */
+const navOrder = (metadata: unknown): number => {
+  const raw = Number((metadata as Record<string, unknown> | null)?.nav_order)
+  return Number.isFinite(raw) ? raw : Number.MAX_SAFE_INTEGER
+}
+const byNavOrder = <T,>(metaOf: (item: T) => unknown, nameOf: (item: T) => string) =>
+  (a: T, b: T) =>
+    navOrder(metaOf(a)) - navOrder(metaOf(b)) ||
+    nameOf(a).localeCompare(nameOf(b), "cs")
+
 /**
  * Builds the Produkty mega-menu from real catalogue data.
  *
@@ -69,9 +83,17 @@ export const listNavigationCollections = async (): Promise<
       !(collection.metadata as Record<string, unknown> | null)?.hidden
   )
 
+  const sortedCategories = [...categories].sort(
+    byNavOrder((category) => category.metadata, (category) => category.name ?? "")
+  )
   return visibleCollections.length
-    ? toCollectionCards(visibleCollections, categories)
-    : toCategoryCards(categories)
+    ? toCollectionCards(
+        [...visibleCollections].sort(
+          byNavOrder((collection) => collection.metadata, (collection) => collection.title ?? "")
+        ),
+        sortedCategories
+      )
+    : toCategoryCards(sortedCategories)
 }
 
 function toCollectionCards(
@@ -132,7 +154,15 @@ function toCategoryCards(
          žádné kolekce nemá a karty vezmou kategorie. */
       description: subtitleOf(category.metadata),
       productCount: category.products?.length ?? 0,
-      categories: (category.category_children ?? [])
+      /* Podkategorie v pořadí z adminu — metadata čteme z plného seznamu,
+         vnořené děti je nemusí nést. */
+      categories: [...(category.category_children ?? [])]
+        .sort(
+          byNavOrder(
+            (child) => categories.find((full) => full.id === child.id)?.metadata ?? child.metadata,
+            (child) => child.name ?? ""
+          )
+        )
         .slice(0, CATEGORY_LINK_LIMIT)
         .map(toNavigationCategory),
     }))
