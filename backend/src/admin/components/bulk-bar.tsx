@@ -311,6 +311,89 @@ export const BulkNumber = ({
 };
 
 /**
+ * Hodnota textové vlastnosti napříč výběrem: shodná, nebo `"mixed"`.
+ * Totéž co `sharedNumberOf`, jen pro volbu z pevného seznamu.
+ */
+export const sharedValueOf = <T, V extends string>(
+  items: T[],
+  read: (item: T) => V
+): { kind: "same"; value: V | null } | { kind: "mixed" } => {
+  if (items.length === 0) {
+    return { kind: "same", value: null };
+  }
+  const first = read(items[0]);
+  return items.every((item) => read(item) === first)
+    ? { kind: "same", value: first }
+    : { kind: "mixed" };
+};
+
+/**
+ * Volba z pevného seznamu pro celý výběr (velikost zásilky).
+ *
+ * Výběr jde do rozpracovaných změn jako přepínače a balné — uloží se až
+ * Potvrdit. U různých hodnot stojí v poli „různé" a nic se nemění, dokud
+ * se nevybere konkrétní možnost.
+ */
+export const BulkChoice = <V extends string>({
+  label,
+  title,
+  options,
+  value,
+  mixed = false,
+  dirty = false,
+  disabled = false,
+  onSet,
+}: {
+  label: string;
+  title?: string;
+  options: { value: V; label: string }[];
+  value: V | null;
+  mixed?: boolean;
+  dirty?: boolean;
+  disabled?: boolean;
+  onSet: (next: V) => void;
+}) => (
+  <label
+    className={clx(
+      "flex shrink-0 items-center gap-1.5",
+      disabled && "cursor-not-allowed opacity-50"
+    )}
+    title={title}
+  >
+    <Text
+      size="xsmall"
+      className={dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle"}
+    >
+      {label}
+    </Text>
+    <select
+      disabled={disabled}
+      aria-label={`${label} u všech vybraných kusů`}
+      value={mixed || value === null ? "" : value}
+      onChange={(event) => {
+        const next = options.find((option) => option.value === event.target.value);
+        if (next) onSet(next.value);
+      }}
+      className={clx(
+        "border-ui-border-base bg-ui-bg-field txt-compact-xsmall rounded-md border px-2 py-1",
+        dirty && "border-ui-tag-orange-border"
+      )}
+    >
+      {(mixed || value === null) && (
+        <option value="" disabled>
+          {mixed ? "různé" : "—"}
+        </option>
+      )}
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  </label>
+);
+
+/**
  * Okamžitá akce nad výběrem — archivace, skrytí.
  *
  * Tahle tlačítka potvrzení nemají schválně: obojí je vratné a vrácení se

@@ -13,6 +13,7 @@
  *  - `other` — neznámá/nenastavená doprava (editace doručení se nenabízí).
  */
 
+import { isBalikovnaPickupMethod } from "./shipping-rates"
 import { isPersonalPickupOrder } from "./personal-pickup"
 
 const fold = (value: string) =>
@@ -46,7 +47,8 @@ export const deliveryContext = (order: any): OrderDeliveryContext => {
   const metadata = (order?.metadata ?? {}) as Record<string, unknown>
   const sa = order?.shipping_address as Record<string, unknown> | null | undefined
 
-  const isBalikovna = methods.some((m) => fold(str(m?.name)).includes("balikovna"))
+  // Jen výdejní místo — Balíkovna na adresu je doručení na adresu (16. 11. 2026).
+  const isBalikovna = methods.some((m) => isBalikovnaPickupMethod(m))
   /* Sdílené pravidlo — kód služby dopravce přebíjí zbylý příznak odběru. */
   const isPickup = isPersonalPickupOrder({ shipping_methods: methods })
 

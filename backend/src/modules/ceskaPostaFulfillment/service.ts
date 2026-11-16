@@ -11,6 +11,7 @@ import type {
   Logger,
 } from "@medusajs/framework/types"
 import { callCeskaPosta } from "./client"
+import { DEFAULT_RATES, rateGroupOf, shipmentPrice, type ShippingRates } from "../../lib/shipping-rates"
 import { rozhodniDobirku } from "./dobirka"
 import {
   chybaZOdpovedi,
@@ -206,6 +207,18 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
         service_code: CP_SERVICE_CODES.address,
       },
       {
+        /*
+         * Balíkovna s doručením na adresu (16. 11. 2026) — jediná Balíkovna,
+         * kterou smí křehké zboží (do výdejny ani BOXu ne). Kód služby u ČP
+         * záleží na smlouvě a ve veřejné dokumentaci není: proměnná
+         * BALIKOVNA_ADDRESS_SERVICE_CODE, bez ní „DR" (Balík Do ruky). Když ho
+         * ČP odmítne, podání spadne do ručního režimu — nikdy dvojí zásilka.
+         */
+        id: "balikovna-address",
+        name: "Balíkovna – na adresu",
+        service_code: process.env.BALIKOVNA_ADDRESS_SERVICE_CODE || CP_SERVICE_CODES.address,
+      },
+      {
         // Kept from the original stub: ceramics break, and the fragile service
         // is the reason this shop needs a carrier option at all.
         id: "cp-fragile",
@@ -231,7 +244,7 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
   async validateFulfillmentData(
     optionData: Record<string, unknown>,
     data: Record<string, unknown>,
-    _context: Record<string, unknown>
+    context: Record<string, unknown>
   ): Promise<Record<string, unknown>> {
     /*
      * `fragile` se veze s sebou, protože v `createFulfillment` už volba dopravy
@@ -239,10 +252,18 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
      * se stejně zahodí: službu „Křehce" tam číselník ČP nepřipouští (viz
      * `sluzbyProZasilku`).
      */
+    /*
+     * Křehce podle košíku (16. 11. 2026): samostatná volba „Česká Pošta -
+     * Křehké" skončila, příplatek za křehké se přičítá k běžné volbě. Služba
+     * „Křehce" (11) tedy jde na podání, když je v košíku jediný křehký kus —
+     * pozná se z razítka `ship_fragile` na řádku (lib/shipping-rates).
+     */
+    const items: any[] = Array.isArray((context as any)?.items) ? (context as any).items : []
+    const cartFragile = items.some((item) => item?.metadata?.ship_fragile === true)
     return {
       ...data,
       service_code: optionData?.service_code,
-      ...(optionData?.fragile ? { fragile: true } : {}),
+      ...(optionData?.fragile || cartFragile ? { fragile: true } : {}),
     }
   }
 
@@ -292,64 +313,27 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
     _data: Record<string, unknown>,
     context: Record<string, any>
   ): Promise<{ calculated_amount: number; is_calculated_price_tax_inclusive: boolean }> {
-    const serviceCode = String(
-      (optionData as any)?.service_code ?? CP_SERVICE_CODES.address
-    )
-    const base =
-      this.options_.base_price_czk?.[serviceCode] ??
-      (serviceCode === CP_SERVICE_CODES.balikovna ? 90 : 150)
-
-    const flat = { calculated_amount: base, is_calculated_price_tax_inclusive: true }
-
+    /*
+     * Cena dopravy (16. 11. 2026): velikost zásilky + příplatek za křehké
+     * podle cen z Nastavení obchodu › Doprava a platba (`data.rates` volby).
+     * Balné tu NENÍ — je to vlastní řádek košíku pod každým výrobkem.
+     * Nikdy nevyhazuje: bez ceny by pokladna volbu zablokovala, proto při
+     * chybě vrací základ malé zásilky.
+     */
+    const group = rateGroupOf(optionData)
+    const rates: ShippingRates = {
+      ...DEFAULT_RATES[group],
+      ...(((optionData as any)?.rates ?? {}) as Partial<ShippingRates>),
+    }
     try {
       const items: any[] = Array.isArray(context?.items) ? context.items : []
-      if (!items.length) return flat
-
-      const productIds = [
-        ...new Set(
-          items.map((item) => item?.product?.id ?? item?.variant?.product?.id).filter(Boolean)
-        ),
-      ]
-      if (!productIds.length) return flat
-
-      const productModule: any =
-        this.container_?.[Modules.PRODUCT] ?? this.container_?.productModuleService
-      if (!productModule?.listProducts) {
-        // No way to read the metadata here — carriage only, rather than a wrong number.
-        return flat
-      }
-
-      const products: any[] = await productModule.listProducts(
-        { id: productIds },
-        { select: ["id", "metadata"] }
-      )
-      const priceByProduct = new Map<string, number>()
-      for (const product of products) {
-        const raw = (product?.metadata as any)?.packaging_price
-        const parsed = typeof raw === "number" ? raw : Number(raw)
-        if (Number.isFinite(parsed) && parsed >= 0) {
-          priceByProduct.set(product.id, parsed)
-        }
-      }
-
-      const fallback = this.options_.default_packaging_price_czk ?? 0
-
-      const packaging = items.reduce((sum, item) => {
-        const productId = item?.product?.id ?? item?.variant?.product?.id
-        const each = priceByProduct.get(productId) ?? fallback
-        const quantity = Number(item?.quantity) || 1
-        return sum + each * quantity
-      }, 0)
-
       return {
-        calculated_amount: Math.round((base + packaging) * 100) / 100,
+        calculated_amount: shipmentPrice(rates, items),
         is_calculated_price_tax_inclusive: true,
       }
     } catch (error: any) {
-      this.logger_?.warn?.(
-        `[ceska-posta] packaging calculation failed, charging carriage only: ${error?.message}`
-      )
-      return flat
+      this.logger_?.warn?.(`[ceska-posta] výpočet ceny dopravy selhal, účtuji malou zásilku: ${error?.message}`)
+      return { calculated_amount: Number(rates.small) || 0, is_calculated_price_tax_inclusive: true }
     }
   }
 

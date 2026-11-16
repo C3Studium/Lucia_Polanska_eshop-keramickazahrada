@@ -4,6 +4,10 @@ import { applyDiscountableRule } from "../../../../../../lib/discountable"
 import revalidateStorefront from "../../../../../../subscribers/revalidate-storefront"
 import { MADE_TO_ORDER_MODULE } from "../../../../../../modules/made-to-order"
 import { z } from "@medusajs/framework/zod"
+import type { ShippingClass } from "../../../../../../lib/shipping-rates"
+
+/** Hodnoty pro z.enum (potřebuje n-tici; `SHIPPING_CLASSES` v lib je pole). */
+const SHIPPING_CLASS_VALUES = ["male", "velke", "poukaz"] as const satisfies readonly ShippingClass[]
 
 /**
  * The one place a product's workbench flags are written.
@@ -33,7 +37,7 @@ import { z } from "@medusajs/framework/zod"
  * rather than pretending otherwise.
  */
 
-const PatchFlagsSchema = z
+export const PatchFlagsSchema = z
   .object({
     /** Damaged-clearance piece — decides the Poškozené tab. */
     clearance: z.boolean().optional(),
@@ -114,6 +118,18 @@ const PatchFlagsSchema = z
      * `no_promo`: na koupi poukazu slevový kód neplatí (OP čl. XI).
      */
     gift_voucher: z.boolean().optional(),
+    /**
+     * Velikost zásilky (16. 11. 2026) — podle ní pokladna počítá poštovné:
+     * malá / velká zásilka dopravce, čisté poukazy mají vlastní cenu.
+     * Nastavuje se v Produkty+ („…" u řádku i hromadně). Bez hodnoty platí
+     * `male`, u dárkového poukazu `poukaz`. Jen tyhle tři — cokoli jiného
+     * by pokladna potichu brala jako malé, tak se to odmítne už tady.
+     */
+    shipping_class: z
+      .enum(SHIPPING_CLASS_VALUES, {
+        message: "Velikost zásilky musí být Malé, Velké, nebo Poukaz.",
+      })
+      .optional(),
   })
   .refine((body) => Object.keys(body).length > 0, {
     message: "Neposlali jste žádnou změnu.",

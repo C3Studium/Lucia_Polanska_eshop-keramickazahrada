@@ -1,3 +1,4 @@
+import { isBalikovnaPickupMethod } from "../../../../../lib/shipping-rates"
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import {
   ContainerRegistrationKeys,
@@ -124,8 +125,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
    * přeneslo na objednávku. Jede-li objednávka do Balíkovny a místo chybí,
    * je to přesně ta chyba, kterou má admin UKÁZAT, ne spolknout.
    */
+  // Jen výdejní místo — Balíkovna na adresu výdejnu nemá (16. 11. 2026).
   const viaBalikovna = (order?.shipping_methods ?? []).some((method: any) =>
-    fold(String(method?.name ?? "")).includes("balikovna")
+    isBalikovnaPickupMethod(method)
   )
   const orderMeta = (order?.metadata ?? {}) as Record<string, unknown>
   const pointZip =

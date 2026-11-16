@@ -1,3 +1,4 @@
+import { isBalikovnaPickupMethod } from "../lib/shipping-rates"
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 
@@ -76,8 +77,10 @@ export default async function applyPickupShippingAddress({
 
     // Jen když je zvolená doprava opravdu Balíkovna (metadata mohou zůstat
     // zastaralá, kdyby zákazník přepnul na jinou dopravu).
+    // Jen výdejní místo: u Balíkovny na adresu se domácí adresa NEPŘEPISUJE
+    // na výdejnu — zásilka jde právě na ni (16. 11. 2026).
     const isBalikovna = ((order.shipping_methods ?? []) as any[]).some((method) =>
-      fold(String(method?.name ?? "")).includes("balikovna")
+      isBalikovnaPickupMethod(method)
     )
     if (!isBalikovna) return
 

@@ -69,6 +69,29 @@ const parsePrice = (value: string): number | null => {
     : null;
 };
 
+/*
+ * Ceny podle velikosti zásilky (16. 11. 2026, Matěj). Pořadí podle zadání:
+ * příplatky za křehké, pak Česká pošta malá/velká, Balíkovna malá/velká,
+ * poukazy; doběrečné je níž. Ukládá se do voleb dopravy přes
+ * /admin/shipping-rates (tam je čte výpočet ceny).
+ */
+type RateGroupKey = "posta" | "balikovna";
+type RateKey = "small" | "large" | "fragile" | "poukaz";
+type RatesTable = Record<RateGroupKey, Record<RateKey, number>>;
+
+const RATE_ROWS: Array<{ group: RateGroupKey; key: RateKey; label: string; hint?: string }> = [
+  { group: "posta", key: "fragile", label: "Křehké — Česká pošta", hint: "příplatek, když je v balíku cokoli křehkého" },
+  { group: "balikovna", key: "fragile", label: "Křehké — Balíkovna", hint: "příplatek; křehké jen Balíkovnou na adresu (do výdejny ani BOXu ne)" },
+  { group: "posta", key: "small", label: "Česká pošta — malá zásilka" },
+  { group: "posta", key: "large", label: "Česká pošta — velká zásilka", hint: "stačí jediný velký výrobek" },
+  { group: "balikovna", key: "small", label: "Balíkovna — malá zásilka", hint: "výdejní místo i na adresu" },
+  { group: "balikovna", key: "large", label: "Balíkovna — velká zásilka" },
+  { group: "posta", key: "poukaz", label: "Česká pošta — jen poukazy", hint: "zásilka jen s tištěnými poukazy" },
+  { group: "balikovna", key: "poukaz", label: "Balíkovna — jen poukazy" },
+];
+
+const rateFieldKey = (group: RateGroupKey, key: RateKey) => group + "." + key;
+
 const ShippingPriceRow = ({
   option,
   value,
@@ -133,14 +156,34 @@ const Inner = () => {
         "/admin/shipping-options?fields=id,name,price_type,*prices,*prices.price_rules&limit=50"
       ),
   });
+  const { data: ratesData } = useQuery<{ rates: RatesTable }>({
+    queryKey: ["shipping-rates"],
+    queryFn: () => sdk.client.fetch("/admin/shipping-rates"),
+  });
+  const [rateEdits, setRateEdits] = useState<Record<string, string>>({});
+  const savedRate = (group: RateGroupKey, key: RateKey): number | null => {
+    const value = ratesData?.rates?.[group]?.[key];
+    return typeof value === "number" ? value : null;
+  };
+  const rateValue = (group: RateGroupKey, key: RateKey) =>
+    rateEdits[rateFieldKey(group, key)] ?? String(savedRate(group, key) ?? "");
+  const changedRates = RATE_ROWS.filter((row) => {
+    const edit = rateEdits[rateFieldKey(row.group, row.key)];
+    return edit !== undefined && parsePrice(edit) !== savedRate(row.group, row.key);
+  });
+  const invalidRates = changedRates.filter(
+    (row) => parsePrice(rateEdits[rateFieldKey(row.group, row.key)]) === null
+  );
   const { data } = useQuery<{ settings: any }>({
     queryKey: ["merchant-settings"],
     queryFn: () => sdk.client.fetch("/admin/merchant-settings"),
   });
 
-  const shippingOptions = (options?.shipping_options ?? []).sort((a, b) =>
-    a.name.localeCompare(b.name, "cs")
-  );
+  /* Volby s vypočtenou cenou (Česká pošta, Balíkovna) se nastavují cenami
+     podle velikosti výš; tady zbývají jen pevné ceny (osobní odběr). */
+  const shippingOptions = (options?.shipping_options ?? [])
+    .filter((option) => option.price_type === "flat")
+    .sort((a, b) => a.name.localeCompare(b.name, "cs"));
 
   /* Drží se jen rozepsaná pole (text, ne číslo: prázdné pole při psaní
      nesmí skákat na nulu). Co je změněné, se počítá proti uloženým cenám —
@@ -169,7 +212,7 @@ const Inner = () => {
     Math.max(0, Math.round(Number(codFee.replace(",", ".")) || 0))
   );
   const feeChanged = feeEdit !== null && savedFee !== null && codFeeParsed !== savedFee;
-  const changes = changedPrices.length + (feeChanged ? 1 : 0);
+  const changes = changedPrices.length + (feeChanged ? 1 : 0) + changedRates.length;
 
   const save = useMutation({
     mutationFn: async () => {
@@ -184,6 +227,18 @@ const Inner = () => {
           },
         });
       }
+      if (changedRates.length && ratesData?.rates) {
+        const table = {} as RatesTable;
+        for (const group of ["posta", "balikovna"] as RateGroupKey[]) {
+          table[group] = {} as Record<RateKey, number>;
+          for (const key of ["small", "large", "fragile", "poukaz"] as RateKey[]) {
+            const edit = rateEdits[rateFieldKey(group, key)];
+            const parsed = edit !== undefined ? parsePrice(edit) : null;
+            table[group][key] = parsed !== null ? parsed : savedRate(group, key) ?? 0;
+          }
+        }
+        await sdk.client.fetch("/admin/shipping-rates", { method: "POST", body: table });
+      }
       if (feeChanged) {
         await sdk.client.fetch("/admin/merchant-settings", {
           method: "POST",
@@ -194,12 +249,14 @@ const Inner = () => {
     onSuccess: async () => {
       setPriceEdits({});
       setFeeEdit(null);
+      setRateEdits({});
       toast.success("Uloženo — platí hned pro nové objednávky.");
     },
     onError: (error) =>
       toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ["shipping-prices"] });
+      await queryClient.invalidateQueries({ queryKey: ["shipping-rates"] });
       await queryClient.invalidateQueries({ queryKey: ["merchant-settings"] });
     },
   });
@@ -207,6 +264,7 @@ const Inner = () => {
   const discard = () => {
     setPriceEdits({});
     setFeeEdit(null);
+    setRateEdits({});
   };
 
   return (
@@ -221,7 +279,52 @@ const Inner = () => {
       </header>
 
       <section className="flex flex-col gap-y-1 px-6 py-5">
-        <Text size="small" weight="plus">Ceny dopravy</Text>
+        <Text size="small" weight="plus">Ceny dopravy podle velikosti zásilky</Text>
+        <Text size="xsmall" className="text-ui-fg-subtle mb-2 max-w-2xl">
+          Česká pošta a Balíkovna: cena podle toho, jestli je zásilka malá, nebo
+          velká (velikost se nastavuje u výrobku v Produkty+, stačí jeden velký
+          kus). Když je v košíku cokoli křehkého, přičte se příplatek za křehké
+          a Balíkovna jde jen na adresu. Dobírka se přičítá zvlášť (níž).
+        </Text>
+        {ratesData?.rates ? (
+          <div className="divide-y">
+            {RATE_ROWS.map((row) => {
+              const field = rateFieldKey(row.group, row.key);
+              const value = rateValue(row.group, row.key);
+              return (
+                <div key={field} className="flex flex-wrap items-center justify-between gap-3 py-2">
+                  <div>
+                    <Text size="small">{row.label}</Text>
+                    {row.hint && (
+                      <Text size="xsmall" className="text-ui-fg-subtle">{row.hint}</Text>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      size="small"
+                      type="number"
+                      min={0}
+                      max={5000}
+                      className="w-24"
+                      value={value}
+                      aria-invalid={rateEdits[field] !== undefined && parsePrice(value) === null ? true : undefined}
+                      onChange={(event) =>
+                        setRateEdits((current) => ({ ...current, [field]: event.target.value }))
+                      }
+                    />
+                    <Text size="small" className="text-ui-fg-subtle">Kč</Text>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <Text size="small" className="text-ui-fg-muted">Načítám…</Text>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-y-1 px-6 py-5">
+        <Text size="small" weight="plus">Ostatní volby dopravy</Text>
         <Text size="xsmall" className="text-ui-fg-subtle mb-2">
           Kolik zákazník zaplatí za doručení (v Kč). Balné se k tomu připočítá
           zvlášť u každého výrobku.
@@ -279,10 +382,11 @@ const Inner = () => {
         onSave={() => save.mutate()}
         onDiscard={discard}
         problem={
-          invalidPrices.length
-            ? `Cena dopravy musí být celé číslo od 0 do 5000 Kč (${invalidPrices
-                .map((option) => option.name)
-                .join(", ")}).`
+          invalidPrices.length || invalidRates.length
+            ? `Cena dopravy musí být celé číslo od 0 do 5000 Kč (${[
+                ...invalidPrices.map((option) => option.name),
+                ...invalidRates.map((row) => row.label),
+              ].join(", ")}).`
             : undefined
         }
       />

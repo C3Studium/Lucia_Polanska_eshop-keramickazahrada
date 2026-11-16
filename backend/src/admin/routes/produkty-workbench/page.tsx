@@ -31,9 +31,11 @@ import { EmptyState } from "../../components/empty-state";
 import {
   BulkAction,
   BulkBar,
+  BulkChoice,
   BulkNumber,
   BulkSwitch,
   sharedNumberOf,
+  sharedValueOf,
   triStateOf,
 } from "../../components/bulk-bar";
 import { ConfirmDialog } from "../../components/confirm-dialog";
@@ -54,7 +56,12 @@ import { ProductionProfileEditor } from "../../components/production-profile-edi
 import { formatCzk, productionStageLabels } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
 import { SelectCheckbox } from "../../components/select-checkbox";
-import { ProductRowMore } from "../../components/product-row-more";
+import {
+  ProductRowMore,
+  SHIPPING_CLASS_OPTIONS,
+  shippingClassLabel,
+} from "../../components/product-row-more";
+import type { ShippingClass } from "../../../lib/shipping-rates";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
 import { useScrollMemory } from "../../lib/scroll-memory"
@@ -112,6 +119,8 @@ type WorkbenchProduct = {
   clearance: boolean;
   /** Ručně vyloučený ze slevových kódů (přepínač „Bez slev. kódů"). */
   no_promo: boolean;
+  /** Velikost zásilky pro poštovné; server už dosadil výchozí (malé / poukaz). */
+  shipping_class: ShippingClass;
   thumbnail: string | null;
   collection: string | null;
   /** Všechny kolekce — vlastní + kolekce kategorií (filtr ho ukáže pod každou). */
@@ -651,6 +660,8 @@ const ProductsInner = () => {
         fragile?: boolean;
         /** Cena balení v Kč; null = smazat (= „Balné 0,-"). */
         packaging_price?: number | null;
+        /** Velikost zásilky — rozpracovaná z lišty výběru. */
+        shipping_class?: ShippingClass;
       }
     >
   >({});
@@ -851,7 +862,7 @@ const ProductsInner = () => {
 
   /* Okno „…" uložilo přepínač rovnou — jeho rozpracovaná hodnota v řádku
      (např. z lišty výběru) by jinak visela jako neuložená změna. */
-  const dropPendingKey = (productId: string, key: FlagKey) => {
+  const dropPendingKey = (productId: string, key: FlagKey | "shipping_class") => {
     setPendingFlags((prev) => {
       const entry = prev[productId];
       if (!entry || !(key in entry)) return prev;
@@ -903,6 +914,28 @@ const ProductsInner = () => {
       return next;
     });
   };
+
+  /* Velikost zásilky: v řádku jen štítek (mění se v „…"), hromadně volbou
+     v liště — rozpracuje se a uloží Potvrdit jako ostatní vlastnosti. */
+  const effectiveShippingClass = (product: WorkbenchProduct): ShippingClass =>
+    pendingFlags[product.id]?.shipping_class ?? product.shipping_class;
+  const stageShippingClassForSelection = (value: ShippingClass) => {
+    setPendingFlags((prev) => {
+      const next = { ...prev };
+      for (const row of selectedRows) {
+        const entry = { ...(next[row.id] ?? {}) };
+        if (row.shipping_class === value) delete entry.shipping_class;
+        else entry.shipping_class = value;
+        if (Object.keys(entry).length === 0) delete next[row.id];
+        else next[row.id] = entry;
+      }
+      return next;
+    });
+  };
+  const bulkShippingClass = sharedValueOf(selectedRows, effectiveShippingClass);
+  const bulkShippingClassDirty = selectedRows.some(
+    (row) => pendingFlags[row.id]?.shipping_class !== undefined
+  );
 
   /* Stav přepínače v liště čteme z rozpracovaných hodnot, ne z uložených —
      lišta má ukazovat to, co je vidět v řádcích. */
@@ -1086,7 +1119,9 @@ const ProductsInner = () => {
             predchozi[key] =
               key === "packaging_price"
                 ? savedPackaging(row)
-                : savedFlag(row, key as FlagKey);
+                : key === "shipping_class"
+                  ? row.shipping_class
+                  : savedFlag(row, key as FlagKey);
           }
           pamet.push({ id, body: predchozi });
         }
@@ -1435,6 +1470,28 @@ const ProductsInner = () => {
                       onFlip={() => stageFlag(product, "fragile")}
                     />
                   </div>
+                  {/* Velikost zásilky jen jako štítek — mění se v „…" nebo
+                      hromadně v liště výběru (rozpracovaná = oranžově). */}
+                  <span
+                    className={`flex w-fit items-center gap-1.5 ${pending?.shipping_class !== undefined ? "bg-ui-tag-orange-bg rounded-md px-1" : ""}`}
+                    title="Velikost zásilky — podle ní se v pokladně počítá poštovné. Mění se pod „…“."
+                  >
+                    <Text size="xsmall" className="text-ui-fg-subtle">
+                      Zásilka
+                    </Text>
+                    <Badge
+                      size="2xsmall"
+                      color={
+                        effectiveShippingClass(product) === "velke"
+                          ? "blue"
+                          : effectiveShippingClass(product) === "poukaz"
+                            ? "purple"
+                            : "grey"
+                      }
+                    >
+                      {shippingClassLabel(effectiveShippingClass(product))}
+                    </Badge>
+                  </span>
                 </>
               ) : null}
             </div>
@@ -1474,6 +1531,8 @@ const ProductsInner = () => {
                       : {}
                   }
                   onFlagSaved={(key) => dropPendingKey(product.id, key)}
+                  shippingClass={settingsOn ? effectiveShippingClass(product) : undefined}
+                  onShippingClassSaved={() => dropPendingKey(product.id, "shipping_class")}
                   showShipping
                   showMakeCommission={active === "produkty"}
                   showArchive
@@ -1763,6 +1822,15 @@ const ProductsInner = () => {
                 mixed={bulkPackaging.kind === "mixed"}
                 dirty={bulkPackagingDirty}
                 onSet={stagePackagingForSelection}
+              />
+              <BulkChoice
+                label="Velikost zásilky"
+                title="Podle velikosti zásilky se v pokladně počítá poštovné."
+                options={SHIPPING_CLASS_OPTIONS}
+                value={bulkShippingClass.kind === "same" ? bulkShippingClass.value : null}
+                mixed={bulkShippingClass.kind === "mixed"}
+                dirty={bulkShippingClassDirty}
+                onSet={stageShippingClassForSelection}
               />
             </>
           )}

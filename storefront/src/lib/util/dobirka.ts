@@ -119,5 +119,7 @@ export const deliveryCollectsDobirka = (
 ) => {
   if (isPickup) return false
   const name = fold(option?.name ?? "")
-  return name.includes("ceska posta") && !name.includes("balikovna")
+  // Balíkovna NA ADRESU dobírku smí — peníze vybere doručovatel (16. 11. 2026).
+  if (name.includes("balikovna")) return name.includes("adres")
+  return name.includes("ceska posta")
 }

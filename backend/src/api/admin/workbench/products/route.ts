@@ -11,6 +11,7 @@ import { MADE_TO_ORDER_MODULE } from "../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../modules/made-to-order/service"
 import { PRODUCT_REVIEW_MODULE } from "../../../../modules/product-review"
 import { WISHLIST_MODULE } from "../../../../modules/wishlist"
+import { shippingClassOf } from "../../../../lib/shipping-rates"
 
 /**
  * Produkty — the advanced catalog workbench (admin-advanced-plan.md).
@@ -252,6 +253,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         /* Ručně vyloučené ze slevových kódů (přepínač „Bez slev. kódů").
            Čte ho discountable engine; u balíčků se promítá i na komponenty. */
         no_promo: Boolean((product.metadata as any)?.no_promo),
+        /* Velikost zásilky — podle ní se počítá poštovné (male | velke | poukaz). */
+        shipping_class: shippingClassOf(product.metadata as Record<string, unknown> | null),
         // The handshake: what she edits, seen as the customer sees it.
         store_url: product.status === "published" ? productLink(product.handle) : null,
         thumbnail: product.thumbnail,

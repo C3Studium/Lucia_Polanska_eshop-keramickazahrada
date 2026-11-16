@@ -20,6 +20,7 @@ import {
   balikovnaPointFromMetadata,
   formatBalikovnaPoint,
   isBalikovnaOption,
+  isBalikovnaAddressOption,
   parsePickerResult,
   type BalikovnaPoint,
 } from "@lib/util/balikovna"
@@ -35,7 +36,7 @@ import PremiumActionButton from "@modules/common/components/premium-action-butto
 import { itemText } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
 import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
-import { isFragileCarriage, isMadeToOrderLine } from "@lib/util/commission"
+import { isMadeToOrderLine } from "@lib/util/commission"
 import { useTexty } from "@lib/context/texty"
 import { DOPRAVA_TEXT_KEY } from "@lib/util/fragile"
 
@@ -628,14 +629,13 @@ const Shipping: React.FC<ShippingProps> = ({
                   {deliveryOptions
                     .filter((option) => {
                       // Při omezení (křehké / zakázka) nepovolené dopravy vůbec
-                      // nenabízíme — zůstane jen křehký balík a osobní odběr.
-                      // Dřív se zobrazovaly zašedlé s hláškou, což mátlo.
+                      // nenabízíme. Dřív se zobrazovaly zašedlé s hláškou, což mátlo.
                       const isPickup = getFulfillmentType(option) === "pickup"
-                      // Bez křehkého kusu se křehký balík nenabízí (15. 11. 2026,
-                      // Matěj): běžné zboží jde Českou poštou nebo do Balíkovny.
-                      // S jediným křehkým kusem naopak zůstane jen křehký balík
-                      // a odběr (`deliveryAllowedUnder`).
-                      if (!restriction) return isPickup || !isFragileCarriage(option)
+                      // Od 16. 11. 2026 je křehké příplatek k běžné volbě (cenu
+                      // počítá backend): s křehkým kusem zmizí jen Balíkovna do
+                      // výdejního místa / BOXu — zůstane Česká pošta, Balíkovna
+                      // na adresu a osobní odběr (`deliveryAllowedUnder`).
+                      if (!restriction) return true
                       return deliveryAllowedUnder(option, isPickup, restriction)
                     })
                     .map((option) => {
@@ -697,7 +697,7 @@ const Shipping: React.FC<ShippingProps> = ({
                               ) : (
                                 <img
                                   src={
-                                    isBalikovnaOption(option)
+                                    isBalikovnaOption(option) || isBalikovnaAddressOption(option)
                                       ? "/assets/img/balikovna.svg"
                                       : "/assets/img/ceska-posta.svg"
                                   }
