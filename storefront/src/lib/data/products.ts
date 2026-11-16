@@ -317,7 +317,7 @@ const matchCatalogueTaxonomy = async (
  */
 export const listStoreCatalogue = async ({
   filters,
-  limit = 16,
+  limit = 15,
   offset = 0,
   countryCode,
   regionId,

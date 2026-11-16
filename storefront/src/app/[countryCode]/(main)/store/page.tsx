@@ -109,7 +109,7 @@ export default async function StorePage({
   const [{ products, count }, copy] = await Promise.all([
     listStoreCatalogue({
       filters: initialFilters,
-      limit: 16,
+      limit: 15,
       countryCode,
     }),
     // Redakční úvod nad katalogem. Výpadek CMS = texty z kódu, ne chyba.
