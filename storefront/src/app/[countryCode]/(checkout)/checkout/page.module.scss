@@ -226,9 +226,9 @@
     z-index: 0;
     display: grid;
     width: calc(100 * var(--fvw, 1vw));
-    grid-template-columns: repeat(auto-fill, minmax(clamp(8rem, 10vw, 11rem), 1fr));
+    /* Neviditelné čtvercové buňky; fotka sedí uvnitř své buňky (page.tsx). */
+    grid-template-columns: repeat(9, minmax(0, 1fr));
     align-content: start;
-    gap: clamp(.5rem, .8vw, .875rem);
     overflow: hidden;
     transform: translateX(-50%);
     pointer-events: none;
@@ -239,9 +239,15 @@
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 82%, transparent 100%);
     mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 82%, transparent 100%);
 
+    .artCell {
+      position: relative;
+      aspect-ratio: 1;
+    }
+
+    /* Šířka a poloha jdou z page.tsx v procentech buňky. */
     img {
+      position: absolute;
       display: block;
-      width: 100%;
       height: auto;
       aspect-ratio: 1;
       object-fit: cover;
