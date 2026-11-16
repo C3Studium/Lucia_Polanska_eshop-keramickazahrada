@@ -380,14 +380,41 @@ export class ChromeDevice {
         return { rate: Math.max(1, Number(rate) || 1) }
     }
 
-    /** Přesný viewport (CSS px + hustota), nebo `reset` zpět na okno. */
-    async viewport(width, height, dpr) {
+    /**
+     * Přesný viewport (CSS px + hustota), nebo `reset` zpět na okno.
+     *
+     * `mobile` = simulace telefonu: mobilní viewport, dotyk (pointer: coarse,
+     * hover: none) a identita Safari na iPhonu. Web se pak chová jako na
+     * telefonu (data-fx="reduced", dotykové menu), ne jako úzké okno počítače.
+     * Po zapnutí/vypnutí se stránka znovu načte, ať i server pozná prohlížeč.
+     */
+    async viewport(width, height, dpr, mobile = false) {
+        const measure = '({ width: innerWidth, height: innerHeight, dpr: devicePixelRatio, touch: matchMedia("(pointer: coarse)").matches, ua: navigator.userAgent.slice(0, 60) })'
         if (width === 'reset' || !width) {
             await this.send('Emulation.clearDeviceMetricsOverride')
-            return this.raw('({ width: innerWidth, height: innerHeight, dpr: devicePixelRatio })')
+            await this.send('Emulation.setTouchEmulationEnabled', { enabled: false }).catch(() => {})
+            await this.send('Emulation.setEmitTouchEventsForMouse', { enabled: false }).catch(() => {})
+            if (this._mobileUa) {
+                await this.send('Emulation.setUserAgentOverride', { userAgent: '' }).catch(() => {})
+                this._mobileUa = false
+                await this.send('Page.reload', {}).catch(() => {})
+                await new Promise((r) => setTimeout(r, 1500))
+            }
+            return this.raw(measure)
         }
-        await this.send('Emulation.setDeviceMetricsOverride', { width: Number(width), height: Number(height), deviceScaleFactor: Number(dpr) || 0, mobile: false })
-        return this.raw('({ width: innerWidth, height: innerHeight, dpr: devicePixelRatio })')
+        await this.send('Emulation.setDeviceMetricsOverride', { width: Number(width), height: Number(height), deviceScaleFactor: Number(dpr) || 0, mobile: Boolean(mobile) })
+        if (mobile) {
+            await this.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+            await this.send('Emulation.setEmitTouchEventsForMouse', { enabled: true, configuration: 'mobile' })
+            await this.send('Emulation.setUserAgentOverride', {
+                userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1',
+                platform: 'iPhone',
+            })
+            this._mobileUa = true
+            await this.send('Page.reload', {}).catch(() => {})
+            await new Promise((r) => setTimeout(r, 1500))
+        }
+        return this.raw(measure)
     }
 
     /** Grafika a shadery: GPU, verdikt brány shaderů na webu, frekvence monitoru. */
