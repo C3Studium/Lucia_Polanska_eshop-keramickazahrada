@@ -169,12 +169,14 @@ export default function ProductPrice({
                     : `${packaging.toLocaleString("cs-CZ")} Kč`}
                 </span>{" "}
                 za kus
+                {/* Skryto (16. 11. 2026, Matěj): „+ balné … za kus" stačí.
                 <span className={styles.note}>
                   Cena balení je u každého výrobku jiná a účtuje se zvlášť
                   {currencyCode.toLowerCase() === "czk"
                     ? "."
                     : texty["products.price_4"]}
                 </span>
+                */}
               </>
             ) : (
               texty["products.price_5"]
