@@ -288,8 +288,7 @@
     // živé pásmo 700–1200 px výšky okna
     padding-bottom: clamp(0.875rem, 2vh, 1.5rem);
 
-    > p {
-      margin-top: 0.4375rem;
+    .product__priceHeading > p {
       font-size: 0.8125rem;
     }
   }
