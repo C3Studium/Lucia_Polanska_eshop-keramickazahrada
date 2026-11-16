@@ -188,14 +188,52 @@
   margin-top: 0;
 }
 
-/* Krok Přehled bez levého souhrnu (16. 11. 2026): panel kroku přes celou
-   šířku a celek na šířku zúžený na střed — ceny nemají utéct od názvů. */
-.root[data-step="review"] .ledger {
-  grid-column: 1 / -1;
+/*
+ * Krok Přehled (16. 11. 2026): panel kroku stojí vpravo na stejném místě jako
+ * v ostatních krocích. Levý sloupec nese jen koláž fotek objednaných výrobků
+ * ve velmi nízké krycí síle — grafika, ne ovládací prvek. Na telefonu
+ * a tabletu na výšku (jeden sloupec) koláž není.
+ */
+.reviewArt {
+  display: none;
 }
 
 @include from-px(1021px) {
-  .root[data-step="review"] {
-    width: min(calc(90 * var(--fvw)), 76rem);
+  .reviewArt {
+    position: sticky;
+    top: calc(var(--nav-height, 5rem) + 2rem);
+    display: grid;
+    grid-column: 1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(.75rem, 1.2vw, 1.25rem);
+    align-self: start;
+    max-height: 78svh;
+    overflow: hidden;
+    pointer-events: none;
+    user-select: none;
+    opacity: .16;
+    filter: grayscale(.35) sepia(.15);
+    /* Koláž se do tmy rozplývá, nekončí hranou. */
+    -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+
+    img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      object-fit: cover;
+    }
+
+    /* Druhý sloupec posunutý dolů — volná skladba, ne mřížka katalogu. */
+    img:nth-child(even) {
+      transform: translateY(clamp(2rem, 4vw, 4rem));
+    }
+  }
+
+  /* Jeden výrobek: jedna velká fotka přes celý sloupec. */
+  .reviewArt[data-count="1"] {
+    grid-template-columns: 1fr;
+
+    img { aspect-ratio: 4 / 5; }
   }
 }
