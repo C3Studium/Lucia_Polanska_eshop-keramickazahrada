@@ -1486,3 +1486,33 @@
     }
   }
 }
+
+/*
+ * Zavírací křížek na svislém telefonu (16. 11. 2026, Matěj): kolečko
+ * o 0,8 velikosti hamburgeru (~51 px → ~41 px), jen „×". Slovo „Zavřít"
+ * zůstává pro čtečky obrazovky.
+ */
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .kurzyModal__close {
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    min-height: 2.6rem;
+    padding: 0;
+    gap: 0;
+
+    i {
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+  }
+
+  .kurzyModal__closeText {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}

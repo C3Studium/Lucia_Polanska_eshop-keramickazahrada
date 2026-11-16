@@ -21,6 +21,45 @@ import { useParams } from "next/navigation"
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import styles from "./style.module.scss"
 import { addToCart } from "@lib/data/cart"
+import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
+
+/*
+ * Podržení polohy po „Přidat do košíku" v obchodě (16. 11. 2026, Matěj:
+ * „na iPhonu mě přidání z obchodu odroluje dolů, na stránce výrobku ne").
+ *
+ * Příčinu se nepodařilo zachytit: v Chromiu (i v simulaci iPhonu, 45 kusů,
+ * přidání hluboko ve výpisu) poloha drží; děje se jen v Safari na iPhonu,
+ * kam se inspektor nepřipojil. Pojistka proto hlídá výsledek: chvíli po
+ * přidání (4 s — serverová akce na mobilní síti + překreslení + košík),
+ * když stránka bez dotyku člověka uskočí o víc než 150 px, vrátí ji zpět.
+ * Jakýkoli dotyk, kolečko nebo klávesa hlídání ukončí — rolování člověka
+ * se nikdy nepřebíjí.
+ */
+const holdScrollAfterAdd = () => {
+  if (typeof window === "undefined") return () => {}
+  const startY = window.scrollY
+  let stopped = false
+  const stop = () => {
+    stopped = true
+    window.removeEventListener("touchstart", stop)
+    window.removeEventListener("wheel", stop)
+    window.removeEventListener("keydown", stop)
+  }
+  window.addEventListener("touchstart", stop, { passive: true })
+  window.addEventListener("wheel", stop, { passive: true })
+  window.addEventListener("keydown", stop)
+  const until = performance.now() + 4000
+  const check = () => {
+    if (stopped) return
+    if (Math.abs(window.scrollY - startY) > 150) {
+      scrollWithLenis(startY, { immediate: true })
+    }
+    if (performance.now() < until) window.requestAnimationFrame(check)
+    else stop()
+  }
+  window.requestAnimationFrame(check)
+  return stop
+}
 
 import Cart from "@modules/common/icons/cart"
 import WishlistToggle from "@modules/products/components/wishlist-toggle"
@@ -295,6 +334,7 @@ function ProductCard({
 
       window.clearTimeout(resetTimer.current)
       setAddState("adding")
+      holdScrollAfterAdd()
 
       try {
         const result = await addToCart({

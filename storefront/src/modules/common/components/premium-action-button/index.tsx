@@ -59,7 +59,13 @@ const PremiumActionButton = ({
    * Zvolený stav (`active`) je plný, odesílání jen ztlumí.
    */
   const plain = usePlainShop()
-  if (plain) {
+  /*
+   * Na DOTYKU vždy obyčejné tlačítko (16. 11. 2026, Matěj: „Pokračovat se
+   * musí ťuknout dvakrát"). Animovaná varianta reaguje na najetí v JS
+   * (onHoverStart) a vyměňuje popisek — iOS pak první ťuknutí spotřebuje
+   * jako „najetí" a klik pošle až druhým. Bez animace jedno ťuknutí = akce.
+   */
+  if (plain || coarse) {
     return (
       <div
         className={`${styles.root} ${styles.plain} ${compact ? styles.compact : ""} ${isVisuallyActive ? styles.active : ""} ${isVisuallyActive && !active ? styles.busy : ""} ${className ?? ""}`}
