@@ -24,6 +24,64 @@ export const metadata: Metadata = {
   description: "Dokončení objednávky — doprava, platba a přehled.",
 }
 
+/*
+ * Rozházené pozadí Přehledu (16. 11. 2026, Matěj): náhodná poloha, velikost
+ * i rozestupy, ale nic se nepřekrývá. Stěna je rozdělená na neviditelné
+ * čtvercové buňky (ART_COLUMNS na řádek) a každá nese nejvýš jednu fotku —
+ * náhodně velkou (42–88 % buňky) a náhodně posunutou UVNITŘ buňky, takže
+ * nemůže zasáhnout do sousední. Část buněk zůstává prázdná.
+ *
+ * Náhoda je ze semínka podle košíku: mezi kroky a po obnovení stránky se
+ * pozadí nepřeskládá, jiný košík má jiné.
+ */
+const ART_COLUMNS = 9
+const ART_ROWS = 16
+const ART_EMPTY = 0.3
+
+const seededRandom = (seedText: string) => {
+  let seed = 0
+  for (let index = 0; index < seedText.length; index++) {
+    seed = (Math.imul(seed, 31) + seedText.charCodeAt(index)) | 0
+  }
+  return () => {
+    seed = (seed + 0x6d2b79f5) | 0
+    let value = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+    value = (value + Math.imul(value ^ (value >>> 7), 61 | value)) ^ value
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+type ArtCell = { src: string; size: number; x: number; y: number } | null
+
+const scatterArt = (sources: string[], seedText: string): ArtCell[] => {
+  const random = seededRandom(seedText || "kz")
+  const cells: ArtCell[] = []
+  const picked: number[] = []
+  for (let index = 0; index < ART_COLUMNS * ART_ROWS; index++) {
+    if (random() < ART_EMPTY) {
+      cells.push(null)
+      picked.push(-1)
+      continue
+    }
+    // Ne stejná fotka jako soused vlevo ani nad ní (když je z čeho vybírat).
+    const left = index % ART_COLUMNS ? picked[index - 1] : -1
+    const above = index >= ART_COLUMNS ? picked[index - ART_COLUMNS] : -1
+    let choice = Math.floor(random() * sources.length)
+    for (let tries = 0; tries < 4 && sources.length > 2 && (choice === left || choice === above); tries++) {
+      choice = Math.floor(random() * sources.length)
+    }
+    const size = Math.round(42 + random() * 46)
+    cells.push({
+      src: sources[choice],
+      size,
+      x: Math.round(random() * (100 - size)),
+      y: Math.round(random() * (100 - size)),
+    })
+    picked.push(choice)
+  }
+  return cells
+}
+
 export default async function Checkout(props:{
   params: Promise<{countryCode:string}>
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -70,12 +128,7 @@ export default async function Checkout(props:{
         )
       ).filter(Boolean) as string[])
     : []
-  const ART_TILES = 96
-  const artTiles = artSources.length
-    ? Array.from({ length: ART_TILES }, (_, index) =>
-        artSources[(index + Math.floor(index / artSources.length) * 3) % artSources.length]
-      )
-    : []
+  const artCells = artSources.length ? scatterArt(artSources, cart.id) : []
 
   /*
    * Úvodní věty pokladny z CMS (stránka `pokladna`). Jen hlavička, nadpis
@@ -110,19 +163,23 @@ export default async function Checkout(props:{
           Pozadí je tichá stěna fotek objednaných výrobků — jen grafika,
           nic se na ní neklikne a čtečka ji přeskočí. Souhrn vlevo tu není,
           údaje by se opakovaly. */}
-      {isReview && artTiles.length > 0 && (
+      {isReview && artCells.length > 0 && (
         <div className={styles.reviewArt} aria-hidden="true">
-          {artTiles.map((src, index) => (
-            <Image
-              key={index}
-              src={src}
-              alt=""
-              width={256}
-              height={256}
-              sizes="11rem"
-              quality={75}
-              loading="lazy"
-            />
+          {artCells.map((cell, index) => (
+            <span key={index} className={styles.artCell}>
+              {cell && (
+                <Image
+                  src={cell.src}
+                  alt=""
+                  width={256}
+                  height={256}
+                  sizes="11rem"
+                  quality={75}
+                  loading="lazy"
+                  style={{ width: `${cell.size}%`, left: `${cell.x}%`, top: `${cell.y}%` }}
+                />
+              )}
+            </span>
           ))}
         </div>
       )}
