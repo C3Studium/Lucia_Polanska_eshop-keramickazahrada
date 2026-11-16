@@ -31,6 +31,7 @@ import CmsText from "@modules/common/components/cms-text"
 import type { CopyBlocks } from "@lib/util/site-copy"
 import Thumbnail from "@modules/products/components/thumbnail"
 import s from "./styles/oder-complete.module.scss"
+import { commissionsOf } from "@lib/util/made-to-order"
 import { pickupPointLabel } from "@lib/util/pickup-point"
 import { isPackagingLine, productLines, withPackagingUnderProducts } from "@lib/util/packaging"
 import PackagingLine, { PackagingNote, packagingFor } from "@modules/common/components/packaging-line"
@@ -178,6 +179,37 @@ export default async function OrderCompletedTemplate({
       ? commissionBalance.deposit_paid
       : paidNow
   const showDeposit = isCommission && outstanding > 0.005
+
+  /*
+   * Co je u které položky zaplacené (16. 11. 2026, Matěj): malá značka pod
+   * názvem. Běžné zboží se u zakázky platí celé hned (a u běžné objednávky,
+   * když platba pokryla celou částku); zakázka má vlastní stav ze `/balance`.
+   * U dobírky a placení při převzetí nic nezaplaceno — značka se neukáže.
+   */
+  const commissionByLine = new Map(
+    commissionsOf(commissionBalance)
+      .filter((commission) => commission.line_item_id)
+      .map((commission) => [commission.line_item_id as string, commission])
+  )
+  const plainGoodsPaid =
+    paidNow > 0.005 && (isCommission || paidNow >= (order.total ?? 0) - 0.5)
+  const paidStateOf = (
+    item: any
+  ): { kind: "paid" | "deposit"; amount?: number } | null => {
+    const commission = commissionByLine.get(item.id)
+    if (commission) {
+      const paid = (commission.deposit_paid ?? 0) + (commission.balance_paid ?? 0)
+      if (paid <= 0.005) return null
+      return (commission.outstanding ?? 0) > 0.005
+        ? { kind: "deposit", amount: commission.deposit_paid ?? paid }
+        : { kind: "paid" }
+    }
+    if (isMadeToOrderLine(item)) {
+      // Zakázka bez záznamu (stará objednávka) — podle celkového stavu.
+      return showDeposit ? { kind: "deposit", amount: depositPaid } : plainGoodsPaid ? { kind: "paid" } : null
+    }
+    return plainGoodsPaid ? { kind: "paid" } : null
+  }
 
   /*
    * Platba až při převzetí (osobní odběr u pultu, dobírka u pošty) je v Meduse
@@ -562,6 +594,29 @@ export default async function OrderCompletedTemplate({
                           />
                         </div>
                         <PackagingNote item={packagingFor(items, item)} currencyCode={order.currency_code} />
+                        {(() => {
+                          const state = paidStateOf(item)
+                          if (!state) return null
+                          return (
+                            <span
+                              className={s.paidMark}
+                              data-state={state.kind}
+                              data-testid="item-paid-state"
+                            >
+                              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                                <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" strokeWidth="1.3" />
+                                {state.kind === "paid" ? (
+                                  <path d="M4.8 8.2 7 10.3l4.2-4.6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                ) : (
+                                  <path d="M8 1a7 7 0 0 1 0 14z" fill="currentColor" />
+                                )}
+                              </svg>
+                              {state.kind === "paid"
+                                ? "Zaplaceno"
+                                : `Záloha zaplacena${state.amount ? ` · ${money(state.amount)}` : ""}`}
+                            </span>
+                          )
+                        })()}
                       </div>
                       <div className={s.itemQuantity}>
                         <span>Množství</span>

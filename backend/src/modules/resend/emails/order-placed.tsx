@@ -66,6 +66,10 @@ type OrderPlacedCopy = {
   balanceDue: (amount: string) => string
   balanceText: string
   payBalance: (amount: string) => string
+  paidNow: string
+  paidGoods: string
+  paidDeposit: string
+  remaining: string
   bannerCta: string
   manage: string
   manageText: string
@@ -142,6 +146,10 @@ export const COPY: Localized<OrderPlacedCopy> = {
     balanceText:
       "Váš kousek vyrábím na zakázku. Doplatek můžete zaplatit hned, nebo počkat, až vám napíšu, že je hotový — jak je vám milejší.",
     payBalance: (amount) => `Doplatit ${amount}`,
+    paidNow: "Zaplaceno teď",
+    paidGoods: "z toho ostatní zboží, balné a doprava",
+    paidDeposit: "z toho záloha zakázky",
+    remaining: "Zbývá doplatit",
     bannerCta: "Prohlédnout",
     manage: "Správa objednávky",
     manageText:
@@ -224,6 +232,10 @@ export const COPY: Localized<OrderPlacedCopy> = {
     balanceText:
       "Váš kúsok vyrábam na zákazku. Doplatok môžete zaplatiť hneď, alebo počkať, kým vám napíšem, že je hotový — ako vám to viac vyhovuje.",
     payBalance: (amount) => `Doplatiť ${amount}`,
+    paidNow: "Zaplatené teraz",
+    paidGoods: "z toho ostatný tovar, balné a doprava",
+    paidDeposit: "z toho záloha na zákazku",
+    remaining: "Zostáva doplatiť",
     bannerCta: "Pozrieť si",
     manage: "Správa objednávky",
     manageText:
@@ -306,6 +318,10 @@ export const COPY: Localized<OrderPlacedCopy> = {
     balanceText:
       "Państwa egzemplarz wykonuję na zamówienie. Dopłatę mogą Państwo uregulować od razu albo poczekać, aż napiszę, że jest gotowy — jak Państwu wygodniej.",
     payBalance: (amount) => `Dopłać ${amount}`,
+    paidNow: "Zapłacono teraz",
+    paidGoods: "w tym pozostałe produkty, pakowanie i dostawa",
+    paidDeposit: "w tym zaliczka na zamówienie indywidualne",
+    remaining: "Pozostało do zapłaty",
     bannerCta: "Zobacz",
     manage: "Zarządzanie zamówieniem",
     manageText:
@@ -389,6 +405,10 @@ export const COPY: Localized<OrderPlacedCopy> = {
     balanceText:
       "Ihr Stück fertige ich auf Bestellung an. Den Restbetrag können Sie gleich bezahlen oder warten, bis ich Ihnen schreibe, dass es fertig ist – ganz wie es Ihnen lieber ist.",
     payBalance: (amount) => `Restbetrag ${amount} bezahlen`,
+    paidNow: "Jetzt bezahlt",
+    paidGoods: "davon übrige Waren, Verpackung und Versand",
+    paidDeposit: "davon Anzahlung für die Auftragsarbeit",
+    remaining: "Noch offen",
     bannerCta: "Ansehen",
     manage: "Bestellung verwalten",
     manageText:
@@ -472,6 +492,10 @@ export const COPY: Localized<OrderPlacedCopy> = {
     balanceText:
       "I'm making your piece to order. You can pay the remaining balance now, or wait until I write to say it's finished — whichever suits you best.",
     payBalance: (amount) => `Pay the balance of ${amount}`,
+    paidNow: "Paid now",
+    paidGoods: "of which other items, packaging and delivery",
+    paidDeposit: "of which deposit for the made-to-order piece",
+    remaining: "Remaining balance",
     bannerCta: "Take a look",
     manage: "Manage your order",
     manageText:
@@ -550,6 +574,9 @@ type OrderPlacedEmailProps = {
   /** Still owed after checkout — only ever non-zero for a commission. */
   balance_due?: number
   balance_currency?: string
+  /** Zakázka: kolik se zaplatilo v pokladně a kolik z toho je záloha (16. 11. 2026). */
+  paid_now?: number
+  deposit_now?: number
   /** Signed „doplatit" link; absent when nothing is owed. */
   balance_payment_url?: string | null
   /**
@@ -780,6 +807,8 @@ function OrderPlacedEmailComponent({
   balance_due,
   balance_payment_url,
   balance_currency,
+  paid_now,
+  deposit_now,
   payment_method,
   edit_order_url,
   refund_url,
@@ -1069,6 +1098,19 @@ function OrderPlacedEmailComponent({
         {/* No tax row on purpose: the seller is not a VAT payer, so a „Daň"
             line — even a zero one — would be a claim the invoice contradicts. */}
         <LedgerRow label={t.total} value={formatPrice(order.total)} strong />
+        {/* Zakázka: co se zaplatilo teď, za co, a kolik zbývá (16. 11. 2026). */}
+        {owes && typeof paid_now === "number" && paid_now > 0 ? (
+          <>
+            <LedgerRow label={t.paidNow} value={formatPrice(paid_now)} strong />
+            {(deposit_now ?? 0) > 0 && paid_now - (deposit_now ?? 0) > 0.005 ? (
+              <>
+                <LedgerRow label={`— ${t.paidGoods}`} value={formatPrice(Math.round((paid_now - (deposit_now ?? 0)) * 100) / 100)} />
+                <LedgerRow label={`— ${t.paidDeposit}`} value={formatPrice(deposit_now ?? 0)} />
+              </>
+            ) : null}
+            <LedgerRow label={t.remaining} value={formatPrice(balance_due as number)} strong />
+          </>
+        ) : null}
         <LedgerEnd />
       </Section>
 
