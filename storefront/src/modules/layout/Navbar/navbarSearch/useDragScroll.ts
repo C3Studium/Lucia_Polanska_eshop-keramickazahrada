@@ -69,6 +69,8 @@ export function useDragScroll<T extends HTMLElement>() {
       // is suppressed below only once the pointer has actually travelled.
       if (event.button !== 0) return
       if (maxScroll() <= 0) return
+      // Dotyk roluje pás nativně — tažení je jen pro myš a pero.
+      if (event.pointerType === "touch") return
 
       moved = false
 
@@ -78,8 +80,12 @@ export function useDragScroll<T extends HTMLElement>() {
       lastX = event.clientX
       startScroll = el.scrollLeft
       velocity = 0
-      el.setPointerCapture(event.pointerId)
-      el.dataset.dragging = "true"
+      /*
+       * Ukazatel se NEchytá hned při stisku (16. 11. 2026, Matěj: „na kartu
+       * nejde kliknout"). Se `setPointerCapture` tady dostal puštění — a tím
+       * i klik — celý pás místo odkazu karty, takže klik na výrobek nikam
+       * nevedl. Chytá se až v pohybu, když je to opravdu tažení (> 4 px).
+       */
     }
 
     const handlePointerMove = (event: PointerEvent) => {
@@ -88,9 +94,12 @@ export function useDragScroll<T extends HTMLElement>() {
       velocity = lastX - event.clientX
       lastX = event.clientX
 
-      if (Math.abs(event.clientX - startX) > 4) {
+      if (!moved && Math.abs(event.clientX - startX) > 4) {
         moved = true
+        el.setPointerCapture(event.pointerId)
+        el.dataset.dragging = "true"
       }
+      if (!moved) return
 
       el.scrollLeft = clamp(startScroll - (event.clientX - startX))
     }
