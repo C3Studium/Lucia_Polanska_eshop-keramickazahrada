@@ -97,6 +97,9 @@ export default function CTA({
   texts,
 }: CTAProps) {
   const text = (label: keyof typeof BUY_DEFAULTS) => itemText(texts, label, BUY_DEFAULTS[label])
+  const frostResistant =
+    product.metadata?.frost_resistant === true ||
+    product.metadata?.frost_resistant === "true"
   // A stepper only makes sense where more than one can be bought.
   const showStepper =
     Boolean(onQuantityChange) &&
@@ -193,6 +196,15 @@ export default function CTA({
           />
         )}
       </div>
+
+      {frostResistant && (
+        <span
+          className="product__details__cta__frostLabel"
+          data-testid="product-frost-resistant-label"
+        >
+          Mrazuvzdorné
+        </span>
+      )}
 
       {addState.kind === "error" && (
         <p className="product__details__cta__error" role="alert">

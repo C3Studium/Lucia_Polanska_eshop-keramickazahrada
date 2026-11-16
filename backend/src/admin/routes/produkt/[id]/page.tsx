@@ -38,6 +38,7 @@ import { sdk } from "../../../lib/sdk";
 import { formatCzk } from "../../../lib/workbench";
 import { adminQueryClient } from "../../../lib/query-client"
 import { ceskaChyba } from "../../../lib/ceska-chyba";
+import { SHIPPING_CLASS_OPTIONS } from "../../../components/product-row-more";
 
 /**
  * Detail produktu — jedna stránka místo nativní editace (Matěj, 2026-08-16).
@@ -138,6 +139,21 @@ const stockMeta: Record<string, { label: string; color: "green" | "orange" | "re
 
 const flagOf = (product: NativeProduct | undefined, key: string): boolean =>
   Boolean(product?.metadata?.[key]);
+
+/* Velikost zásilky (16. 11. 2026): uložená hodnota, jinak poukaz u dárkového
+   poukazu a malé u všeho ostatního — totéž pravidlo jako lib/shipping-rates
+   (sem se sdílí jen typ, admin je kód prohlížeče). */
+const shippingClassOfProduct = (product: NativeProduct | undefined): string => {
+  const meta = (product?.metadata ?? {}) as Record<string, unknown>;
+  const stored = String(meta.shipping_class ?? "");
+  if (["male", "velke", "poukaz"].includes(stored)) return stored;
+  const voucher =
+    meta.gift_voucher === true ||
+    meta.gift_voucher === "true" ||
+    meta.voucher_custom_amount === true ||
+    meta.voucher_custom_amount === "true";
+  return voucher ? "poukaz" : "male";
+};
 
 const czkPrice = (variant: NativeVariant): number | null => {
   const czk = (variant.prices ?? []).find(
@@ -1535,6 +1551,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
         "cod_allowed",
         "fragile",
         "frost_resistant",
+        "shipping_class",
         "is_personalized",
         "packaging_price",
         "dimensions",
@@ -2634,6 +2651,40 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                 disabled={saveFlags.isPending}
                 onChange={(next) => saveFlags.mutate({ fragile: next })}
               />
+              {/* Velikost zásilky i tady, ne jen v „…" v Produkty+
+                  (16. 11. 2026, Matěj) — podle ní se počítá poštovné. */}
+              <div className="flex flex-wrap items-start justify-between gap-4 py-3">
+                <div>
+                  <Text size="small" weight="plus">
+                    Velikost zásilky
+                  </Text>
+                  <Text size="small" className="text-ui-fg-subtle mt-0.5">
+                    Podle ní se v pokladně počítá poštovné — stačí jeden velký
+                    kus a celá zásilka je velká.
+                  </Text>
+                </div>
+                <div className="flex flex-wrap gap-1" role="group" aria-label="Velikost zásilky">
+                  {SHIPPING_CLASS_OPTIONS.map((option) => {
+                    const active = shippingClassOfProduct(product) === option.value;
+                    return (
+                      <Button
+                        key={option.value}
+                        size="small"
+                        variant={active ? "primary" : "secondary"}
+                        type="button"
+                        aria-pressed={active}
+                        title={option.hint}
+                        disabled={saveFlags.isPending}
+                        onClick={() => {
+                          if (!active) saveFlags.mutate({ shipping_class: option.value });
+                        }}
+                      >
+                        {option.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
               {/* Personalizace (cena podle rozměrů zadaných zákazníkem) je
                   z rozhraní schválně skrytá — obchod prodává za pevné ceny
                   (i zakázky, jen se zálohou), takže ji nikdo nepoužíval (0/266).

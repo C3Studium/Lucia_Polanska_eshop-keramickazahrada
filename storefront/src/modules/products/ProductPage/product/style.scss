@@ -799,6 +799,17 @@
   gap: 0.5625rem;
 }
 
+.product__details__cta__frostLabel {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--sage-03);
+  border-radius: 999px;
+  color: var(--sage-03);
+  font: 400 0.875rem/1.4 "Sansation-Regular", sans-serif;
+}
+
 /*
  * Add-to-cart feedback. The PDP stage is ink (--pdp-ink ≈ #20211c) with cream text, so both
  * states are set on cream tones measured against it: confirm #bcd0a8 ≈ 9.6:1, error #f3b3a4 ≈ 7.9:1.
