@@ -277,6 +277,34 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
               })
             : undefined
 
+        /*
+         * Co se zaplatilo teď a za co (16. 11. 2026, Matěj): u zakázky
+         * e-mail rozepíše platbu z pokladny na zálohu a ostatní zboží
+         * (s balným a dopravou). Obojí je v kolekci z pokladny
+         * (`prepare-made-to-order-payment`: částka + `production_lines`).
+         */
+        const num = (value: unknown): number => {
+          if (value && typeof value === "object") {
+            const record = value as Record<string, unknown>
+            return Number(record.value ?? record.numeric_ ?? 0) || 0
+          }
+          return Number(value ?? 0) || 0
+        }
+        const checkoutCollection = ((orders[0] as any).payment_collections ?? []).find(
+          (collection: any) =>
+            collection?.metadata?.made_to_order &&
+            Array.isArray(collection?.metadata?.production_lines)
+        )
+        const paidNow = checkoutCollection
+          ? num(checkoutCollection.amount ?? checkoutCollection.metadata?.checkout_payment_amount)
+          : null
+        const depositNow = checkoutCollection
+          ? (checkoutCollection.metadata.production_lines as any[]).reduce(
+              (sum: number, line: any) => sum + num(line?.deposit_amount),
+              0
+            )
+          : null
+
         return [
           {
             to: orders[0].email,
@@ -291,6 +319,7 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
               order: orders[0],
               balance_due: balance.outstanding,
               balance_currency: balance.currency_code,
+              ...(paidNow !== null && paidNow > 0 ? { paid_now: paidNow, deposit_now: depositNow ?? 0 } : {}),
               ...(payment_method ? { payment_method } : {}),
               // Čeština je výchozí — klíč jen u jiného jazyka (staré řádky
               // notifikací ho nemají a zůstávají česky).
