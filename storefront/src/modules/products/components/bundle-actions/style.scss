@@ -265,7 +265,7 @@
   // popisku o pixel menší (clamp(0.75rem, 0.68vw, 0.76rem)). Naměřeno na 320,
   // 390, 430, 568 i 932: labelCol 96, labelInk 59.03 („Barvy |") / 87.63
   // („Velikosti |") / 95.63 („Provedení |"), tedy jedna řádka bez zlomu.
-  grid-template-columns: clamp(6rem, 7.5vw, 7.75rem) minmax(0, 1fr);
+  grid-template-columns: minmax(clamp(6rem, 7.5vw, 7.75rem), max-content) minmax(0, 1fr);
   // živé pásmo 906–1170 px výšky okna
   min-height: clamp(3rem, 5.3vh, 3.875rem);
   // živé pásmo 632–1263 px výšky okna
