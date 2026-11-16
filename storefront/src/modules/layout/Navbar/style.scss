@@ -78,11 +78,13 @@
    * kontrast vůči krémovému navbaru. Uhlová plocha a bílé číslo drží i při
    * této velikosti, olivová se světlým textem nedržela.
    */
-  --nav-badge-size: 1.03125rem;
+  /* Celá bublina 0,8× (16. 11. 2026, Matěj) — na všech zařízeních. */
+  --nav-badge-scale: 0.8;
+  --nav-badge-size: calc(1.03125rem * var(--nav-badge-scale));
   --nav-badge-surface: var(--ink-05);
   --nav-badge-ink: var(--white);
   /* 13px → 14px, ať číslo roste s bublinou a nezůstane v ní plavat. */
-  --nav-badge-font: 0.875rem;
+  --nav-badge-font: calc(0.875rem * var(--nav-badge-scale));
 
   --nav-surface: rgb(var(--cream-10-rgb) / .88);
   --nav-border: rgb(var(--white-rgb) / .62);

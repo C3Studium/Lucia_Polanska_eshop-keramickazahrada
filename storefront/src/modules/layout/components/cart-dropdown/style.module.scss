@@ -62,7 +62,7 @@
         font-size: max(var(--text-min, 0px), calc(var(--nav-badge-font) * var(--read, 1)));
 
         @include vb((
-          lg: (font-size: 1.3rem),
+          lg: (font-size: calc(1.3rem * var(--nav-badge-scale, 1))),
         ));
       }
     }
