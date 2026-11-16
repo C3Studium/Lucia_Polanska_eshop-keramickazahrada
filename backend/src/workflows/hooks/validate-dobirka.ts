@@ -1,3 +1,4 @@
+import { isBalikovnaPickupMethod } from "../../lib/shipping-rates"
 import { MedusaError } from "@medusajs/framework/utils"
 import { completeCartWorkflow } from "@medusajs/medusa/core-flows"
 import {
@@ -108,29 +109,26 @@ completeCartWorkflow.hooks.validate(
     }
 
     /*
-     * Křehký kus = jen „Česká Pošta - Křehké" nebo osobní odběr (15. 11. 2026).
+     * Křehký kus nesmí do výdejního místa ani BOXu Balíkovny (16. 11. 2026).
      *
-     * Stačí jediný křehký kus a celý balík jde s příplatkovou službou ČP
-     * „Křehce" (11). Obyčejná zásilka na adresu ani Balíkovna ji nemají
-     * (Balíkovna ji v číselníku ČP vůbec nepřipouští). Pokladna takové volby
-     * u křehkého košíku nenabízí (`storefront lib/util/fragile.ts`); tohle je
-     * brána pro ručně složený požadavek. Křehkou metodu pozná příznak
-     * `data.fragile` (z dat možnosti), nebo název, jako všude jinde.
+     * Křehké se od teď neposílá samostatnou volbou: příplatek za křehké se
+     * přičte k České poště nebo k Balíkovně NA ADRESU (lib/shipping-rates)
+     * a služba „Křehce" jde na podání sama (ceskaPostaFulfillment). Do
+     * výdejny/BOXu ji ČP nepřipouští — pokladna takovou volbu u křehkého
+     * košíku skryje (storefront lib/util/fragile.ts); tohle je brána pro
+     * ručně složený požadavek.
      */
     const hasFragile = ((fullCart.items ?? []) as any[]).some((item) =>
       Boolean(item?.product?.metadata?.fragile)
     )
     if (hasFragile && !isPersonalPickupOrder(fullCart)) {
-      const fold = (value: string) =>
-        value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
-      const nonFragile = ((fullCart.shipping_methods ?? []) as any[]).some(
-        (method) =>
-          !method?.data?.fragile && !fold(String(method?.name ?? "")).includes("krehk")
+      const toPickupPoint = ((fullCart.shipping_methods ?? []) as any[]).some(
+        (method) => String(method?.data?.id ?? "") === "balikovna"
       )
-      if (nonFragile) {
+      if (toPickupPoint) {
         throw new MedusaError(
           MedusaError.Types.NOT_ALLOWED,
-          "V košíku je křehký výrobek — zvolte prosím dopravu „Česká Pošta - Křehké“ nebo osobní odběr."
+          "Křehký výrobek nejde poslat do výdejního místa ani BOXu Balíkovny — zvolte prosím Balíkovnu na adresu, Českou poštu nebo osobní odběr."
         )
       }
     }
@@ -236,10 +234,11 @@ completeCartWorkflow.hooks.validate(
      * Pokladna ji u Balíkovny nenabízí; tohle je pojistka pro starý košík nebo
      * ručně složený požadavek.
      */
+    // Balíkovna NA ADRESU dobírku smí — peníze vybere doručovatel (16. 11. 2026).
     const viaBalikovna = (fullCart.shipping_methods ?? []).some(
       (method: any) =>
         String(method?.data?.service_code ?? "").toUpperCase() === "NB" ||
-        /bal[ií]kovn/i.test(String(method?.name ?? ""))
+        isBalikovnaPickupMethod(method)
     )
     if (viaBalikovna) {
       throw new MedusaError(MedusaError.Types.NOT_ALLOWED, DOBIRKA_PICKUP_POINT_MESSAGE)

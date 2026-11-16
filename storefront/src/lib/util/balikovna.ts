@@ -23,10 +23,28 @@ const fold = (value: string) =>
     .replace(/[̀-ͯ]/g, "")
     .toLocaleLowerCase("cs")
 
-/** Balíkovna carriage, by the option's own name — same convention as dobirka.ts. */
+/**
+ * Balíkovna do VÝDEJNÍHO MÍSTA (vč. BOXu), podle názvu volby.
+ *
+ * Od 16. 11. 2026 je i „Balíkovna na adresu" — ta výdejnu nevybírá
+ * (doručuje na adresu zákazníka), takže se sem nepočítá: neotevře widget
+ * výdejen, smí křehké zboží i dobírku. Backend má totéž v
+ * `isBalikovnaPickupMethod` (lib/shipping-rates).
+ */
 export const isBalikovnaOption = (
   option: { name?: string | null } | null | undefined
-) => fold(option?.name ?? "").includes("balikovna")
+) => {
+  const name = fold(option?.name ?? "")
+  return name.includes("balikovna") && !name.includes("adres")
+}
+
+/** Balíkovna s doručením na adresu (16. 11. 2026). */
+export const isBalikovnaAddressOption = (
+  option: { name?: string | null } | null | undefined
+) => {
+  const name = fold(option?.name ?? "")
+  return name.includes("balikovna") && name.includes("adres")
+}
 
 export type BalikovnaPoint = {
   id: string

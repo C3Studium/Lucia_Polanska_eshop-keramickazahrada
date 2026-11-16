@@ -154,7 +154,19 @@ const fold = (value: string) =>
 export const isFragileCarriage = (option: { name?: string | null } | null | undefined) =>
   fold(option?.name ?? "").includes("krehke")
 
+/*
+ * Křehké / zakázka / cena po domluvě (16. 11. 2026): dřív jen samostatná
+ * volba „Česká Pošta - Křehké". Ta skončila — příplatek za křehké se přičte
+ * k běžné volbě (backend lib/shipping-rates). Smí tedy všechno KROMĚ
+ * Balíkovny do výdejního místa / BOXu (tam ČP službu „Křehce" nepřipouští):
+ * Česká pošta, Balíkovna na adresu a osobní odběr.
+ */
 export const deliveryAllowsCommission = (
   option: { name?: string | null } | null | undefined,
   isPickup: boolean
-) => isPickup || fold(option?.name ?? "").includes("krehke")
+) => {
+  if (isPickup) return true
+  const name = fold(option?.name ?? "")
+  if (name.includes("krehke")) return true
+  return !(name.includes("balikovna") && !name.includes("adres"))
+}

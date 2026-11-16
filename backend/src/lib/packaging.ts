@@ -54,12 +54,14 @@ import { decimalDigitsFor, fetchCnbRates, type CnbRateSheet } from "./cnb-rates"
 import { toNumber } from "./order-quantity"
 
 import { isPriceOnRequest } from "./price-on-request"
+import { shippingClassOf } from "./shipping-rates"
 import { isClearanceProduct } from "./clearance"
 import { isCustomAmountVoucher } from "./voucher"
 import { looksLikeVoucherCode } from "../modules/gift-voucher/code"
 import { GIFT_VOUCHER_MODULE } from "../modules/gift-voucher"
 import {
   isPackagingLine,
+  isServiceLine,
   PACKAGING_MARKER,
   PACKAGING_PRODUCT_KEY,
   PACKAGING_TITLE,
@@ -378,11 +380,36 @@ const noPromoFlipsFor = (
     })
     .map((item) => ({ id: String(item.id), is_discountable: voucher }))
 
+/**
+ * Razítka zásilky na řádcích výrobků (16. 11. 2026): `ship_class`
+ * (male/velke/poukaz) a `ship_fragile`. Cenu dopravy počítá poskytovatel,
+ * který do produktů nevidí — čte jen řádky košíku (lib/shipping-rates).
+ * Vrací jen řádky, kde razítko chybí nebo nesedí; metadata celá (sloučená),
+ * ať se nic jiného na řádku neztratí.
+ */
+const shipStampsFor = (items: any[]): { id: string; metadata: Record<string, unknown> }[] =>
+  (items ?? [])
+    .filter((item) => item?.product && !isServiceLine(item))
+    .map((item) => {
+      const productMeta = (item.product?.metadata ?? {}) as Record<string, unknown>
+      const shipClass = shippingClassOf(productMeta)
+      const fragile = productMeta.fragile === true || productMeta.fragile === "true"
+      const meta = (item.metadata ?? {}) as Record<string, unknown>
+      if (meta.ship_class === shipClass && meta.ship_fragile === fragile) return null
+      return { id: String(item.id), metadata: { ...meta, ship_class: shipClass, ship_fragile: fragile } }
+    })
+    .filter((entry) => entry !== null) as { id: string; metadata: Record<string, unknown> }[]
+
 /** Plán pro košík (bez zápisu) — sdílí ho synchronizace i kontrola dokončení. */
 export const planPackagingForCart = async (
   container: MedusaContainer,
   cartId: string
-): Promise<{ cart: any; plan: PackagingPlan; noPromoFlips: { id: string; is_discountable: boolean }[] } | null> => {
+): Promise<{
+  cart: any
+  plan: PackagingPlan
+  noPromoFlips: { id: string; is_discountable: boolean }[]
+  shipStamps: { id: string; metadata: Record<string, unknown> }[]
+} | null> => {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const { data } = await query.graph({
     entity: "cart",
@@ -404,7 +431,12 @@ export const planPackagingForCart = async (
       packagingUnitPrice(packagingPriceCzkOf(item.product?.metadata), currency, sheet),
     discountable: voucher,
   })
-  return { cart, plan, noPromoFlips: noPromoFlipsFor(cart.items ?? [], voucher) }
+  return {
+    cart,
+    plan,
+    noPromoFlips: noPromoFlipsFor(cart.items ?? [], voucher),
+    shipStamps: shipStampsFor(cart.items ?? []),
+  }
 }
 
 /**
@@ -418,12 +450,18 @@ export const syncPackagingForCart = async (
 ): Promise<{ changed: boolean }> =>
   withCartLock(cartId, async () => {
     const planned = await planPackagingForCart(container, cartId)
-    if (!planned || (isEmptyPlan(planned.plan) && !planned.noPromoFlips.length)) {
+    if (
+      !planned ||
+      (isEmptyPlan(planned.plan) && !planned.noPromoFlips.length && !planned.shipStamps.length)
+    ) {
       return { changed: false }
     }
     const { plan } = planned
 
     const cartModule = container.resolve<ICartModuleService>(Modules.CART)
+    for (const stamp of planned.shipStamps) {
+      await cartModule.updateLineItems(stamp.id, { metadata: stamp.metadata })
+    }
     for (const flip of planned.noPromoFlips) {
       await cartModule.updateLineItems(flip.id, { is_discountable: flip.is_discountable })
     }
@@ -469,7 +507,9 @@ export const syncPackagingForCart = async (
      * kryje. `refreshCartItemsWorkflow` je tatáž cesta, kterou volá Medusa po
      * přidání položky — srovná akce, daně i platební kolekci.
      */
-    if ((planned.cart?.promotions ?? []).length) {
+    /* Změněné razítko zásilky = jiná cena dopravy: přepočet celého košíku
+       přecení i už zvolenou dopravu (refreshCartItems → shipping methods). */
+    if ((planned.cart?.promotions ?? []).length || planned.shipStamps.length) {
       await refreshCartItemsWorkflow(container)
         .run({ input: { cart_id: cartId, force_refresh: true } })
         .catch(() => undefined)

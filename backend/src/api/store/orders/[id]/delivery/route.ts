@@ -1,3 +1,4 @@
+import { isBalikovnaPickupMethod } from "../../../../../lib/shipping-rates"
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import {
   ContainerRegistrationKeys,
@@ -106,8 +107,9 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     )
   }
 
+  // Jen výdejní místo — Balíkovna na adresu se upravuje jako adresa (16. 11. 2026).
   const isBalikovna = ((order.shipping_methods ?? []) as any[]).some((method) =>
-    fold(str(method?.name)).includes("balikovna")
+    isBalikovnaPickupMethod(method)
   )
 
   const home = (order.shipping_address ?? {}) as Record<string, any>

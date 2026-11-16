@@ -6,6 +6,7 @@ import { ceskaChyba } from "../lib/ceska-chyba";
 import { pushUndo, toastWithUndo } from "../lib/undo";
 import { ProductionProfileEditor } from "./production-profile-editor";
 import { ShippingProfileEditor } from "./shipping-profile-editor";
+import type { ShippingClass } from "../../lib/shipping-rates";
 
 /**
  * „…" u řádku produktu — malé okno se vzácnými nastaveními kusu.
@@ -13,7 +14,8 @@ import { ShippingProfileEditor } from "./shipping-profile-editor";
  * Matěj 3. 11. 2026: „to hlavní tam nech jako balné atd., ale to vedlejší dej
  * opět do … a to otevře malé okno". V řádku zůstává, co se mění často
  * (balné, dobírka, křehké, viditelnost); sem patří, na co se sahá jednou za
- * čas: poškozený kus, slevové kódy, profil dopravy, zakázka, archiv.
+ * čas: poškozený kus, slevové kódy, velikost zásilky, profil dopravy,
+ * zakázka, archiv.
  *
  * Všechno v tomhle okně se ukládá HNED a dá se vrátit („Vrátit zpět" /
  * Ctrl+Z) — jeden způsob pro celé okno, žádné „Uložit" navíc. Profil dopravy a zakázka
@@ -56,10 +58,26 @@ const FLAG_TEXT: Record<FlagKey, { label: string; hint: string; on: string; off:
   },
 };
 
+/**
+ * Velikost zásilky (16. 11. 2026) — podle ní pokladna počítá poštovné.
+ * Hodnoty jsou ty z `lib/shipping-rates` (typ se sdílí, kód ne: admin je
+ * balík pro prohlížeč). Čte je i řádek a lišta výběru v Produkty+.
+ */
+export const SHIPPING_CLASS_OPTIONS: { value: ShippingClass; label: string; hint: string }[] = [
+  { value: "male", label: "Malé", hint: "Vejde se do malé zásilky." },
+  { value: "velke", label: "Velké", hint: "Celá zásilka s tímto kusem pojede jako velká." },
+  { value: "poukaz", label: "Poukaz", hint: "Tištěný poukaz — vlastní cena poštovného." },
+];
+
+export const shippingClassLabel = (value: ShippingClass) =>
+  SHIPPING_CLASS_OPTIONS.find((option) => option.value === value)?.label ?? value;
+
 export const ProductRowMore = ({
   product,
   flags,
   onFlagSaved,
+  shippingClass,
+  onShippingClassSaved,
   showShipping,
   showMakeCommission,
   showArchive,
@@ -79,6 +97,10 @@ export const ProductRowMore = ({
   flags: Partial<Record<FlagKey, boolean>>;
   /** Po uložení přepínače — řádek zahodí jeho rozpracovanou hodnotu. */
   onFlagSaved?: (key: FlagKey) => void;
+  /** Velikost zásilky, jak ji vidí řádek. Bez hodnoty se volba neukáže. */
+  shippingClass?: ShippingClass;
+  /** Po uložení velikosti — řádek zahodí její rozpracovanou hodnotu. */
+  onShippingClassSaved?: () => void;
   showShipping: boolean;
   showMakeCommission: boolean;
   showArchive: boolean;
@@ -90,11 +112,13 @@ export const ProductRowMore = ({
   const [open, setOpen] = useState(false);
   /* Hodnota hned po kliknutí, než se seznam načte znovu. */
   const [local, setLocal] = useState<Partial<Record<FlagKey, boolean>>>({});
+  const [localClass, setLocalClass] = useState<ShippingClass | null>(null);
   /* Druhý krok mazání — ptá se tady, ne dalším dialogem nad dialogem. */
   const [ptaSeNaSmazani, setPtaSeNaSmazani] = useState(false);
   useEffect(() => {
     if (open) {
       setLocal({});
+      setLocalClass(null);
       setPtaSeNaSmazani(false);
     }
   }, [open]);
@@ -137,6 +161,28 @@ export const ProductRowMore = ({
       toast.error(ceskaChyba(error, "Uložení se nepodařilo."));
     },
   });
+
+  /* Velikost zásilky — ukládá se hned jako přepínače výš, vrací se volbou
+     zpátky nebo „Vrátit zpět" / Ctrl+Z po zavření okna. */
+  const saveClass = useMutation({
+    mutationFn: ({ value }: { value: ShippingClass; previous: ShippingClass }) =>
+      writeFlags({ shipping_class: value }),
+    onMutate: ({ value }) => setLocalClass(value),
+    onSuccess: async (_result, { value, previous }) => {
+      onShippingClassSaved?.();
+      await refresh();
+      pushUndo(`Velikost zásilky — ${product.title}`, async () => {
+        await writeFlags({ shipping_class: previous });
+        await refresh();
+      });
+      toast.success(`Velikost zásilky: ${shippingClassLabel(value)}.`);
+    },
+    onError: (error) => {
+      setLocalClass(null);
+      toast.error(ceskaChyba(error, "Uložení se nepodařilo."));
+    },
+  });
+  const currentClass = localClass ?? shippingClass;
 
   /*
    * Archivace = příznak (zmizí ze seznamů) + koncept (zmizí z obchodu), stejně
@@ -226,9 +272,49 @@ export const ProductRowMore = ({
             </label>
           ))}
 
-          {(showShipping || showMakeCommission || showArchive || storeUrl) && (
+          {currentClass && (
             <div
               className={`flex flex-col gap-y-2 ${flagKeys.length ? "border-ui-border-base border-t pt-4" : ""}`}
+            >
+              <span>
+                <Text size="small" weight="plus">
+                  Velikost zásilky
+                </Text>
+                <Text size="xsmall" className="text-ui-fg-subtle">
+                  Podle ní se v pokladně počítá poštovné.
+                </Text>
+              </span>
+              <div role="radiogroup" aria-label="Velikost zásilky" className="grid grid-cols-3 gap-2">
+                {SHIPPING_CLASS_OPTIONS.map((option) => {
+                  const active = option.value === currentClass;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      title={option.hint}
+                      disabled={saveClass.isPending}
+                      onClick={() => {
+                        if (!active) saveClass.mutate({ value: option.value, previous: currentClass });
+                      }}
+                      className={`txt-compact-small min-h-[40px] rounded-lg border px-3 py-2 outline-none transition-fg focus-visible:shadow-borders-focus disabled:cursor-wait ${
+                        active
+                          ? "border-ui-border-interactive bg-ui-bg-base-pressed text-ui-fg-base font-medium"
+                          : "border-ui-border-base bg-ui-bg-base text-ui-fg-subtle hover:bg-ui-bg-base-hover"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {(showShipping || showMakeCommission || showArchive || storeUrl) && (
+            <div
+              className={`flex flex-col gap-y-2 ${flagKeys.length || currentClass ? "border-ui-border-base border-t pt-4" : ""}`}
             >
               {storeUrl && (
                 <Button size="small" variant="secondary" className="justify-start" asChild>
