@@ -119,7 +119,9 @@ export default function BuyNowButton({
           {isStarting ? "Připravujeme…" : "Koupit ihned"}
         </span>
       </motion.button>
+      {/* Skryto (16. 11. 2026, Matěj).
       <p className={styles.hint}>{texty["products.buy_now_1"]}</p>
+      */}
       {error && (
         <p className={styles.error} role="alert">
           {error}
