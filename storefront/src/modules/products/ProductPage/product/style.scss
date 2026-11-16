@@ -613,11 +613,26 @@
   gap: 0.5rem;
 
   img {
+    display: block;
     width: clamp(3.5rem, 5vw, 4.75rem);
     height: clamp(3.5rem, 5vw, 4.75rem);
     object-fit: cover;
     border-radius: 0.625rem;
     border: 1px solid rgb(var(--cream-06-rgb) / .14);
+  }
+}
+
+/* Fotka provedení je tlačítko — otevře lightbox. */
+.product__variantPhoto {
+  padding: 0;
+  border: 0;
+  border-radius: 0.625rem;
+  background: none;
+  cursor: zoom-in;
+
+  &:focus-visible {
+    outline: 2px solid var(--cream-06);
+    outline-offset: 2px;
   }
 }
 

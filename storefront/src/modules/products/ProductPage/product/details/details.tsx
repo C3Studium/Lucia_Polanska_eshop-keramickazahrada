@@ -47,6 +47,7 @@ import { isEqual } from "lodash"
 import { motion } from "framer-motion"
 import { useEffect, useMemo, useRef, useState } from "react"
 import Gallery from "../Gallery/gallery"
+import Lightbox from "../Gallery/lightbox"
 import CTA from "./Cta/Add"
 import ProductPrice from "./Cta/Price"
 import { inquiryHref, isPriceOnRequest } from "@lib/util/price-on-request"
@@ -196,6 +197,9 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
     : []
   const variantNote =
     typeof variantMeta?.note === "string" ? variantMeta.note.trim() : ""
+  /* Fotky provedení jdou zvětšit (16. 11. 2026, Matěj) — stejný lightbox
+     jako fotky v detailu výrobku. */
+  const [variantPhotoIndex, setVariantPhotoIndex] = useState<number | null>(null)
 
   /* Poškozený kus: popis poškození se drží na produktu (metadata), zakládá ho
      flow „Výprodej / poškozený kus". Ukazuje se zákazníkovi, aby věděl, co
@@ -524,16 +528,42 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                     <div className="product__variantMedia">
                       {variantPhotos.length > 0 && (
                         <div className="product__variantPhotos">
-                          {variantPhotos.map((url) => (
-                            <img
+                          {variantPhotos.map((url, index) => (
+                            <button
                               key={url}
-                              src={url}
-                              alt={`${product.title} — ${selectedVariant?.title ?? "zvolené provedení"}`}
-                              loading="lazy"
-                            />
+                              type="button"
+                              className="product__variantPhoto"
+                              onClick={() => setVariantPhotoIndex(index)}
+                              aria-label={`Zvětšit fotku provedení ${selectedVariant?.title ?? ""}`.trim()}
+                            >
+                              <img
+                                src={url}
+                                alt={`${product.title} — ${selectedVariant?.title ?? "zvolené provedení"}`}
+                                loading="lazy"
+                              />
+                            </button>
                           ))}
                         </div>
                       )}
+                      <Lightbox
+                        fotky={variantPhotos.map((url) => ({
+                          url,
+                          alt: `${product.title} — ${selectedVariant?.title ?? "zvolené provedení"}`,
+                        }))}
+                        index={
+                          variantPhotoIndex !== null && variantPhotoIndex < variantPhotos.length
+                            ? variantPhotoIndex
+                            : null
+                        }
+                        onZavrit={() => setVariantPhotoIndex(null)}
+                        onPosun={(krok) =>
+                          setVariantPhotoIndex((current) =>
+                            current === null
+                              ? null
+                              : (current + krok + variantPhotos.length) % variantPhotos.length
+                          )
+                        }
+                      />
                       {variantNote && (
                         <p className="product__variantNote">{variantNote}</p>
                       )}
