@@ -52,6 +52,8 @@ type ProductionOrder = {
   agreed_total?: number | string | null;
   surcharge?: number | string | null;
   original_total: number | string;
+  /** Cena samotné zakázkové položky (bez ostatního zboží, balného a poštovného). */
+  line_total?: number | string | null;
   final_total?: number | string;
   currency_code: string;
   estimated_completion_at?: string | null;
@@ -269,6 +271,11 @@ const CommissionCard = ({
     toNum(commission.agreed_total) <= 0.005;
   const stepInDailyWork = !stepHere && Boolean(actionForStage[commission.stage]);
   const basePrice = toNum(commission.agreed_total ?? commission.original_total);
+  /* Cena samotné zakázky; null u staré zakázky bez řádku (pak jen „cena"). */
+  const itemPrice =
+    commission.line_total !== null && commission.line_total !== undefined
+      ? toNum(commission.line_total)
+      : null;
   const surcharge = toNum(commission.surcharge);
   // Poštovné a balné domluvené u ceny po domluvě — v přehledové větě musí
   // být vidět, jinak „cena 2 500" neodpovídá tomu, co zákazník platí.
@@ -303,9 +310,9 @@ const CommissionCard = ({
     <Container className="divide-y p-0">
       <div className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div className="flex items-center gap-x-2">
-            <Heading level="h2">Výroba na zakázku</Heading>
-            <Badge color={stageMeta[commission.stage].color}>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <Heading level="h2" className="whitespace-nowrap">Výroba na zakázku</Heading>
+            <Badge color={stageMeta[commission.stage].color} className="whitespace-nowrap">
               {stageMeta[commission.stage].label}
             </Badge>
             {commission.price_on_request && (
@@ -329,15 +336,39 @@ const CommissionCard = ({
               </Text>
             </div>
           )}
+          {/*
+            Cena ZAKÁZKY a cena OBJEDNÁVKY zvlášť (16. 11. 2026, Matěj).
+            Dřív tu stálo „cena 5 665" vedle zálohy 25 % — jenže 5 665 je celá
+            objednávka (i ostatní zboží, balné a poštovné), záloha se počítá
+            jen z ceny zakázky (4 300). Teď: první řádek zakázka a její
+            záloha, druhý řádek objednávka celkem.
+          */}
+          {itemPrice !== null && !priceNotSentYet && (
+            <Text size="small" className="text-ui-fg-subtle mt-1">
+              Zakázka {formatAmount(itemPrice, currency)} · smluvní záloha{" "}
+              {commission.deposit_amount !== null &&
+              commission.deposit_amount !== undefined
+                ? `${formatAmount(toNum(commission.deposit_amount), currency)} (${
+                    commission.deposit_percentage
+                  } %)`
+                : `${commission.deposit_percentage} %`}
+            </Text>
+          )}
           <Text size="small" className="text-ui-fg-subtle mt-1">
-            Smluvní záloha{" "}
-            {commission.deposit_amount !== null &&
-            commission.deposit_amount !== undefined
-              ? `${formatAmount(toNum(commission.deposit_amount), currency)} (${
-                  commission.deposit_percentage
-                } %)`
-              : `${commission.deposit_percentage} %`}{" "}
-            · cena{" "}
+            {itemPrice !== null && !priceNotSentYet ? (
+              "Objednávka celkem "
+            ) : (
+              <>
+                Smluvní záloha{" "}
+                {commission.deposit_amount !== null &&
+                commission.deposit_amount !== undefined
+                  ? `${formatAmount(toNum(commission.deposit_amount), currency)} (${
+                      commission.deposit_percentage
+                    } %)`
+                  : `${commission.deposit_percentage} %`}{" "}
+                · cena{" "}
+              </>
+            )}
             {priceNotSentYet
               ? "po domluvě (zatím neodeslaná)"
               : formatAmount(basePrice, currency)}
@@ -564,7 +595,7 @@ const CommissionCard = ({
                 <div className="flex flex-col items-start gap-1 sm:items-end">
                   <div className="flex items-center gap-2">
                     <Text size="xsmall" className="text-ui-fg-muted">
-                      Poštovné vlastní zásilky
+                      Poštovné za druhý balík
                     </Text>
                     <Input
                       type="number"
@@ -582,10 +613,10 @@ const CommissionCard = ({
                     v dluhu je (nese ho zakázka v `original_total`), takže by
                     ho vyplnění naúčtovalo podruhé. Patří sem jen DALŠÍ zásilka.
                   */}
-                  <Text size="xsmall" className="text-ui-fg-muted">
-                    Jen když tahle zakázka odejde zvlášť, jako další zásilka.
-                    U jediné zásilky nechte prázdné — poštovné z pokladny
-                    je v doplatku už spočítané.
+                  <Text size="xsmall" className="text-ui-fg-muted sm:text-right">
+                    Vyplňte jen tehdy, když zakázku pošlete samostatně —
+                    zvlášť od zbytku objednávky. Jinak nechte prázdné:
+                    poštovné za balík je už v objednávce.
                   </Text>
                 </div>
               )}
@@ -718,12 +749,34 @@ const CommissionCard = ({
                 className="bg-ui-bg-subtle shadow-borders-base flex items-center justify-between gap-3 rounded-lg px-3 py-2"
               >
                 <div>
-                  <Text size="small" weight="plus">
-                    {jeZaloha(payment) ? "Záloha" : "Doplatek"}
-                  </Text>
-                  <Text size="xsmall" className="text-ui-fg-muted">
-                    {formatAmount(payment.amount, payment.currency_code)}
-                  </Text>
+                  {/*
+                    Platba z pokladny nese u míchaného košíku víc než zálohu:
+                    i běžné zboží, balné a poštovné (16. 11. 2026, #78:
+                    2 440 = záloha 1 075 + 1 365). „Záloha 2 440" pak mátlo.
+                  */}
+                  {(() => {
+                    const amount = toNum(payment.amount);
+                    const deposit = toNum(commission.deposit_amount);
+                    const extra = Math.round((amount - deposit) * 100) / 100;
+                    const mixed = jeZaloha(payment) && deposit > 0 && extra > 0.005;
+                    return (
+                      <>
+                        <Text size="small" weight="plus">
+                          {!jeZaloha(payment)
+                            ? "Doplatek"
+                            : mixed
+                              ? "Platba při objednání"
+                              : "Záloha"}
+                        </Text>
+                        <Text size="xsmall" className="text-ui-fg-muted">
+                          {formatAmount(payment.amount, payment.currency_code)}
+                          {mixed
+                            ? ` — záloha ${formatAmount(deposit, payment.currency_code)} + ostatní zboží, balné a doprava ${formatAmount(extra, payment.currency_code)}`
+                            : ""}
+                        </Text>
+                      </>
+                    );
+                  })()}
                 </div>
                 <Badge color={stavPlatby[payment.status]?.color ?? "grey"}>
                   {stavPlatby[payment.status]?.label ?? "Čeká na zaplacení"}
