@@ -337,6 +337,20 @@ const storeInvoicePdf = async (
   }
 }
 
+/**
+ * Faktura jako příloha e-mailu (16. 11. 2026). Resend si PDF stáhne z naší
+ * kopie (https) — jen https a jméno `faktura-<číslo>.pdf` projdou kontrolou
+ * `attachmentsFromData`. Bez PDF `undefined` a e-mail ukáže tlačítko jako dřív.
+ */
+const invoiceAttachment = (
+  number: string | null | undefined,
+  pdfUrl: string | null | undefined
+): Array<{ filename: string; url: string }> | undefined => {
+  if (!pdfUrl || !pdfUrl.toLowerCase().startsWith("https://")) return undefined
+  const safe = String(number ?? "").replace(/[^0-9A-Za-z-]/g, "") || "doklad"
+  return [{ filename: `faktura-${safe}.pdf`, url: pdfUrl }]
+}
+
 const sendInvoiceEmail = async (
   container: MedusaContainer,
   order: any,
@@ -350,7 +364,10 @@ const sendInvoiceEmail = async (
     key: `invoice:${state.invoice_id}`,
     orderId: order.id,
     locale,
+    // PDF faktury jako příloha, ne odkaz (16. 11. 2026, Matěj).
+    attachments: invoiceAttachment(state.invoice_number, state.pdf_url),
     data: {
+      invoiceAttached: Boolean(invoiceAttachment(state.invoice_number, state.pdf_url)),
       customerName: customerName(order),
       orderNumber: orderNumber(order),
       orderLink: orderLink(order),
@@ -770,7 +787,10 @@ export const ensureMadeToOrderInvoices = async (
           key: `invoice:${invoice.Id}`,
           orderId: order.id,
           locale: emailLocale,
+          // PDF faktury jako příloha, ne odkaz (16. 11. 2026, Matěj).
+          attachments: invoiceAttachment(invoice.DocumentNumber, pdfUrl),
           data: {
+            invoiceAttached: Boolean(invoiceAttachment(invoice.DocumentNumber, pdfUrl)),
             customerName: customerName(order),
             orderNumber: orderNumber(order),
             orderLink: orderLink(order),

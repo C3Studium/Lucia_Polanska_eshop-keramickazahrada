@@ -102,6 +102,42 @@ const medusaConfig = {
     backendUrl: BACKEND_URL,
 
     disable: SHOULD_DISABLE_ADMIN,
+
+    /*
+     * „Došlo k chybě" po nasazení (16. 11. 2026, Matěj: „nové objednávky se
+     * hned nenačtou"). Každé nasazení přestaví administraci s novými názvy
+     * souborů; karta, která zůstala otevřená, si při otevření objednávky
+     * řekne o starý soubor, ten už neexistuje a stránka spadne. Obnovení
+     * pomůže — tak ho uděláme sami: Vite při nepovedeném načtení části
+     * stránky vyšle `vite:preloadError`, na to se stránka jednou obnoví
+     * (pojistka proti smyčce: nejvýš jednou za 20 s).
+     */
+    vite: (config) => ({
+      ...config,
+      plugins: [
+        ...(config.plugins ?? []),
+        {
+          name: 'kz-reload-on-stale-chunk',
+          transformIndexHtml() {
+            return [
+              {
+                tag: 'script',
+                injectTo: 'head',
+                children: `window.addEventListener('vite:preloadError', function (event) {
+  try {
+    var last = Number(sessionStorage.getItem('kz-chunk-reload') || 0);
+    if (Date.now() - last < 20000) return;
+    sessionStorage.setItem('kz-chunk-reload', String(Date.now()));
+  } catch (e) {}
+  event.preventDefault();
+  window.location.reload();
+});`,
+              },
+            ]
+          },
+        },
+      ],
+    }),
   },
   // Draft Orders is an official Medusa plugin, not a custom build. It was already a
   // dependency but was never registered, so its module, API routes and admin screens

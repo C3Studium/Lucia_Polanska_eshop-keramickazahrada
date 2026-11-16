@@ -35,6 +35,8 @@ interface InvoiceIssuedEmailProps {
   totalAmount?: string;
   /** Our own copy of the PDF (MinIO) — empty when the upload failed. */
   invoicePdfUrl?: string;
+  /** PDF faktury jde jako příloha e-mailu (16. 11. 2026) — místo tlačítka věta. */
+  invoiceAttached?: boolean;
   orderLink?: string;
   /**
    * Celá objednávka, aby faktura nesla stejný rozpis jako potvrzení objednávky
@@ -79,6 +81,7 @@ export const COPY: Localized<{
   subtotal: string
   total: string
   download: string
+  attached: string
   viewOrder: string
 }> = {
   cs: {
@@ -112,6 +115,7 @@ export const COPY: Localized<{
     subtotal: "Mezisoučet",
     total: "Celkem",
     download: "Stáhnout fakturu (PDF)",
+    attached: "Fakturu najdete v příloze tohoto e-mailu (PDF).",
     viewOrder: "Zobrazit objednávku",
   },
   sk: {
@@ -145,6 +149,7 @@ export const COPY: Localized<{
     subtotal: "Medzisúčet",
     total: "Spolu",
     download: "Stiahnuť faktúru (PDF)",
+    attached: "Faktúru nájdete v prílohe tohto e-mailu (PDF).",
     viewOrder: "Zobraziť objednávku",
   },
   pl: {
@@ -178,6 +183,7 @@ export const COPY: Localized<{
     subtotal: "Suma częściowa",
     total: "Razem",
     download: "Pobierz fakturę (PDF)",
+    attached: "Faktura jest w załączniku tej wiadomości (PDF).",
     viewOrder: "Zobacz zamówienie",
   },
   de: {
@@ -211,6 +217,7 @@ export const COPY: Localized<{
     subtotal: "Zwischensumme",
     total: "Gesamt",
     download: "Rechnung herunterladen (PDF)",
+    attached: "Die Rechnung finden Sie im Anhang dieser E-Mail (PDF).",
     viewOrder: "Bestellung ansehen",
   },
   en: {
@@ -244,6 +251,7 @@ export const COPY: Localized<{
     subtotal: "Subtotal",
     total: "Total",
     download: "Download invoice (PDF)",
+    attached: "The invoice is attached to this e-mail (PDF).",
     viewOrder: "View order",
   },
 }
@@ -265,6 +273,7 @@ function InvoiceIssuedEmailComponent({
   invoiceNumber = "",
   totalAmount,
   invoicePdfUrl = "",
+  invoiceAttached = false,
   orderLink = "",
   order,
   invoiceKind = "full",
@@ -541,19 +550,21 @@ function InvoiceIssuedEmailComponent({
         </Section>
       ) : null}
 
-      {invoicePdfUrl || orderLink ? (
+      {/* Faktura v příloze: místo tlačítka věta a zůstane jen „objednávka". */}
+      {invoiceAttached ? <P>{t.attached}</P> : null}
+      {(invoicePdfUrl && !invoiceAttached) || orderLink ? (
         <ButtonRow>
-          {invoicePdfUrl ? (
+          {invoicePdfUrl && !invoiceAttached ? (
             <EmailButton href={invoicePdfUrl}>{t.download}</EmailButton>
           ) : null}
           {orderLink ? (
             <>
-              {invoicePdfUrl ? (
+              {invoicePdfUrl && !invoiceAttached ? (
                 <span style={{ display: "inline-block", width: "12px" }} />
               ) : null}
               <EmailButton
                 href={orderLink}
-                variant={invoicePdfUrl ? "ghost" : "primary"}
+                variant={invoicePdfUrl && !invoiceAttached ? "ghost" : "primary"}
               >
                 {t.viewOrder}
               </EmailButton>
