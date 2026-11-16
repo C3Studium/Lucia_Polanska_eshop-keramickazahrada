@@ -998,3 +998,68 @@
     }
   }
 }
+
+/*
+ * ─── První obrazovka (16. 11. 2026, Matěj) ──────────────────────────────────
+ *
+ * Na šířku: blok od hlavičky po pruh údajů je vysoký jako okno (bez horního
+ * odsazení stránky pod lištou). Hero se roztáhne do volného místa a obsah
+ * v něm sedí svisle uprostřed a blíž ke středu vodorovně; pruh „Vytvořeno …"
+ * je tím vždy na spodku první obrazovky. Delší obsah (reklamace, upozornění)
+ * blok prostě prodlouží.
+ *
+ * Na telefonu: všechno v jednom sloupci — hero, stav, tlačítka pod sebou na
+ * celou šířku, údaje jeden pod druhým.
+ */
+.firstScreen {
+  display: flex;
+  flex-direction: column;
+}
+
+@include from-px(821px) {
+  @media (orientation: landscape) {
+    .firstScreen {
+      min-height: calc(100svh - clamp(6rem, 11vh, 8.5rem) - 1.5rem);
+    }
+
+    .firstScreen .hero {
+      flex: 1 0 auto;
+      align-items: center;
+      min-height: 0;
+      padding: clamp(2rem, 5vh, 4rem) clamp(2rem, 9vw, 12rem);
+      gap: clamp(2.5rem, 6vw, 7rem);
+    }
+
+    .firstScreen .orderMeta {
+      margin-top: clamp(1.5rem, 3vh, 2.5rem);
+      margin-bottom: 0;
+    }
+
+    .firstScreen + * {
+      margin-top: clamp(3rem, 7vh, 6rem);
+    }
+  }
+}
+
+@include below-px(620px) {
+  .selfService {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .selfServiceActions {
+    flex-direction: column;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .selfServiceBtn {
+    justify-content: center;
+    width: 100%;
+    min-height: 2.75rem;
+  }
+
+  .heroAside {
+    max-width: none;
+  }
+}
