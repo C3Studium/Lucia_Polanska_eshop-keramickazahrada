@@ -13,7 +13,7 @@ import {
   releaseLockStep,
   updatePaymentCollectionStep,
 } from "@medusajs/medusa/core-flows"
-import { shippingTiming, splitChargeNow } from "../lib/deposit-split"
+import { commissionCharge } from "../lib/deposit-split"
 import { isServiceLine } from "../lib/packaging-lines"
 import { clampContractPercentage } from "../lib/made-to-order/contract-deposit"
 import {
@@ -167,10 +167,16 @@ const calculateMadeToOrderPaymentStep = createStep(
     // „zaplaceno" bez větve kdekoli jinde.
     const ceilings: number[] = []
     let productionLinesTotal = 0
+    /* Je v košíku i běžné zboží? Pak se poštovné platí hned (`shippingTiming`).
+       Balné ani doběrečné zboží nejsou. */
+    let hasPlainGoods = false
 
     for (const item of items) {
       const profile: any = profilesByProduct.get(item.product_id)
-      if (!profile?.enabled) continue
+      if (!profile?.enabled) {
+        if (!isServiceLine(item as any)) hasPlainGoods = true
+        continue
+      }
 
       const override: any = profilesByVariant.get(item.variant_id)
 
@@ -240,19 +246,10 @@ const calculateMadeToOrderPaymentStep = createStep(
     let paymentAmount = originalTotal
 
     if (productionLines.length) {
-      // Zboží mimo zakázku se platí vždy celé a hned, ale BEZ poštovného.
-      const goodsNonProductionNow = roundMoney(
-        originalTotal - productionLinesTotal - shippingNow
-      )
       const splitLines = productionLines.map((line, index) => ({
         floor: line.deposit_amount,
         ceiling: ceilings[index],
       }))
-      const floorSum = splitLines.reduce((sum, line) => sum + line.floor, 0)
-      const ceilingSum = splitLines.reduce((sum, line) => sum + line.ceiling, 0)
-      // „Jen zálohu" bez poštovného … „zaplatit vše" vč. poštovného.
-      const minimum = roundMoney(goodsNonProductionNow + floorSum)
-      const maximum = roundMoney(goodsNonProductionNow + ceilingSum + shippingNow)
 
       // Kolik zaplatit teď: celé (posuv na strop + poštovné), posuvník (uložená
       // částka — sevře se do [minimum, maximum]), nebo jen záloha. Rozpad je
@@ -260,18 +257,20 @@ const calculateMadeToOrderPaymentStep = createStep(
       // číslo nemůžou rozejít. Sevření, ne odmítnutí: košík se mohl od volby
       // změnit a shodit celou platbu kvůli zastaralému posuvníku nikomu nepomůže
       // — podlaha drží, a to je pravidlo, na kterém záleží.
-      const target = payFullRequested
-        ? maximum
-        : customRequested
-          ? toNumber(cartMetadata?.production_payment_amount)
-          : minimum
-
-      const breakdown = splitChargeNow(
-        splitLines,
-        shippingNow,
-        goodsNonProductionNow,
-        target
-      )
+      // Tatáž funkce jako pokladna (`production-payment-mode`): zboží mimo
+      // zakázku celé, poštovné hned jen s běžným zbožím (#77, 16. 11. 2026).
+      const breakdown = commissionCharge({
+        cartTotal: originalTotal,
+        shipping: shippingNow,
+        productionTotal: productionLinesTotal,
+        lines: splitLines,
+        hasPlainGoods,
+        target: payFullRequested
+          ? "full"
+          : customRequested
+            ? toNumber(cartMetadata?.production_payment_amount)
+            : "deposit",
+      })
       paymentAmount = breakdown.chargeNow
       breakdown.productionAmounts.forEach((amount, index) => {
         const line = productionLines[index]

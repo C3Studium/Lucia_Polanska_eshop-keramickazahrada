@@ -215,3 +215,54 @@ export const shippingTiming = (
   const postage = round(Math.max(0, shipping))
   return hasPlainGoods ? { now: postage, deferred: 0 } : { now: 0, deferred: postage }
 }
+
+/**
+ * Kolik se u zakázkového košíku strhne hned — jedna funkce pro pokladnu
+ * i pro samotnou platbu (16. 11. 2026).
+ *
+ * Objednávka #77: pokladna slibovala 2 835, brána strhla 2 685. Pravidlo
+ * `shippingTiming` (s běžným zbožím se poštovné platí hned) znal jen výpočet
+ * pro pokladnu; workflow platby počítal poštovné vždy do doplatku. Tady je
+ * obojí na jednom místě, ať se zobrazené a účtované číslo nemůžou rozejít.
+ *
+ * - `alwaysNow` = zboží mimo zakázku (vč. balného) + poštovné, je-li na řadě,
+ * - `minimum` = `alwaysNow` + Σzáloh, `maximum` = celý košík (u řádku, který
+ *   plnou platbu předem zakazuje, o to méně),
+ * - `target` = „deposit" (minimum), „full" (maximum) nebo částka posuvníku
+ *   (sevře se do [minimum, maximum]).
+ */
+export const commissionCharge = ({
+  cartTotal,
+  shipping,
+  productionTotal,
+  lines,
+  hasPlainGoods,
+  target,
+}: {
+  cartTotal: number
+  shipping: number
+  productionTotal: number
+  lines: DepositSplitLine[]
+  hasPlainGoods: boolean
+  target: "deposit" | "full" | number
+}) => {
+  const shippingAll = round(Math.max(0, shipping))
+  const postage = shippingTiming(shippingAll, hasPlainGoods)
+  const goodsNonProductionNow = round(cartTotal - productionTotal - shippingAll)
+  const alwaysNow = round(goodsNonProductionNow + postage.now)
+  const floorSum = lines.reduce((sum, line) => sum + line.floor, 0)
+  const ceilingSum = lines.reduce((sum, line) => sum + line.ceiling, 0)
+  const minimum = round(alwaysNow + floorSum)
+  const maximum = round(alwaysNow + ceilingSum + postage.deferred)
+  const wanted =
+    target === "deposit" ? minimum : target === "full" ? maximum : Number(target) || 0
+  const breakdown = splitChargeNow(lines, postage.deferred, alwaysNow, wanted)
+  return {
+    postage,
+    alwaysNow,
+    minimum,
+    maximum,
+    productionAmounts: breakdown.productionAmounts,
+    chargeNow: breakdown.chargeNow,
+  }
+}

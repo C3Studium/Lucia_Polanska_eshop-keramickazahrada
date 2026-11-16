@@ -27,6 +27,38 @@ export const metadata: Metadata = {
   description: "Objednávku máme, děkujeme.",
 }
 
+/*
+ * Stav zakázky hned po zaplacení (16. 11. 2026, objednávka #77).
+ *
+ * Výrobní objednávku i záznam „záloha zaplacena" zakládá backend až chvilku
+ * po vzniku objednávky (subscriber, u #77 o 0,3 s později). Potvrzení se ale
+ * otevírá hned po bráně, takže se ptalo dřív: zbývající částka vyšla jako
+ * celá cena (6 060 místo 3 375), tlačítko chtělo doplatit všechno a panel
+ * zakázky sliboval vrátit „0,-". Když je objednávka zaplacená a obsahuje
+ * zakázku, ale backend platbu ještě nezapsal, chvilku počkáme a zeptáme se
+ * znovu (nejvýš ~3 s). U běžné objednávky se nečeká vůbec.
+ */
+const settledCommissionBalance = async (orderId: string, order: any) => {
+  const hasCommissionLine = ((order?.items ?? []) as any[]).some(
+    (item) => item?.metadata?.made_to_order
+  )
+  const paidNow = ((order?.payment_collections ?? []) as any[])
+    .flatMap((collection) => collection?.payments ?? [])
+    .reduce((sum: number, payment: any) => sum + (Number(payment?.amount) || 0), 0)
+  let balance = await getCommissionBalance(orderId)
+  if (!hasCommissionLine || paidNow <= 0.005) return balance
+  const recorded = (value: typeof balance) =>
+    Boolean(value?.is_commission) &&
+    ((value as any)?.totals?.deposit_paid ?? (value as any)?.deposit_paid ?? 0) +
+      ((value as any)?.totals?.balance_paid ?? (value as any)?.balance_paid ?? 0) >
+      0.005
+  for (let attempt = 0; attempt < 6 && !recorded(balance); attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    balance = await getCommissionBalance(orderId)
+  }
+  return balance
+}
+
 export default async function OrderConfirmedPage(props: Props) {
   const [params, searchParams] = await Promise.all([props.params, props.searchParams])
   const outcome = searchParams.platba
@@ -57,10 +89,11 @@ export default async function OrderConfirmedPage(props: Props) {
    * turns that into an empty list — so `null` here means "not a zakázka, draw nothing" while an
    * empty array means "a zakázka with nothing said yet", which still deserves the box.
    */
-  const commissionNotes = order ? await listCommissionNotes(params.id) : null
   // Stav doplatku zakázky (zaplaceno zálohou / zbývá / odkaz na doplacení) —
-  // Souhrn z toho pozná „jen záloha" a nabídne tlačítko doplatit.
-  const commissionBalance = order ? await getCommissionBalance(params.id) : null
+  // Souhrn z toho pozná „jen záloha" a nabídne tlačítko doplatit. Napřed,
+  // protože počká, až backend zálohu zapíše (viz `settledCommissionBalance`).
+  const commissionBalance = order ? await settledCommissionBalance(params.id, order) : null
+  const commissionNotes = order ? await listCommissionNotes(params.id) : null
   // Zrušení zakázky (audit § 0, Z4/Z5) — jen u zakázky, tokenem hosta.
   const commissionCancellation = commissionBalance?.is_commission
     ? await getCommissionCancellation(params.id, selfServiceToken)
