@@ -26,9 +26,10 @@
   --bar-scale: 1;
   --bar-slot: calc(44px * var(--bar-scale));
   --bar-mark: calc(27px * var(--bar-scale));
-  --bar-badge: calc(14px * var(--bar-scale));
+  /* Počítadlo 0,8× (16. 11. 2026, Matěj): 14 → 11,2 px, číslo 10 → 8 px. */
+  --bar-badge: calc(14px * 0.8 * var(--bar-scale));
   /* Bez --ui-scale (10. 11. 2026): číslo v bublině by na telefonu vyšlo na 8px. */
-  --bar-badge-text: calc(10px * var(--bar-scale));
+  --bar-badge-text: calc(10px * 0.8 * var(--bar-scale));
 
   display: grid;
   position: fixed;
