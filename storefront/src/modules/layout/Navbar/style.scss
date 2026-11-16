@@ -597,8 +597,11 @@
 
       p {
         position: absolute;
-        top: 1px;
-        right: -3px;
+        /* Bublina visí z pravého horního rohu košíku, nesedí na koši
+           (16. 11. 2026). Ve zlomcích vlastní velikosti, takže drží na všech
+           šířkách stejně. */
+        top: calc(var(--nav-badge-size) * -0.3);
+        right: calc(var(--nav-badge-size) * -0.5);
         display: grid;
         place-items: center;
         min-width: var(--nav-badge-size);
@@ -634,8 +637,8 @@
 
   .navbar__utility-count {
     position: absolute;
-    top: 0;
-    right: 0;
+    top: calc(var(--nav-badge-size) * -0.3);
+    right: calc(var(--nav-badge-size) * -0.5);
     display: grid;
     place-items: center;
     min-width: var(--nav-badge-size);

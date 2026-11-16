@@ -112,14 +112,30 @@
   max-height: min(26rem, 52svh);
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: rgb(var(--ink-05-rgb) / .28) transparent;
   /* Místo pro posuvník, ať ceny vpravo nelezou pod něj. */
   padding-right: .5rem;
   /* Rozestup mezi produkty nese padding položky (ne gap), aby jemný předěl
      níž seděl přesně uprostřed mezi dvěma řádky, ne nalepený na jeden z nich. */
   gap: 0;
   list-style: none;
+
+  /* Vlastní posuvník (16. 11. 2026): tenký zaoblený jezdec, průhledná dráha,
+     bez šipek. Chromium (Edge, Chrome) čte ::-webkit-scrollbar jen tehdy,
+     když NENÍ nastavené scrollbar-color/width — proto standardní vlastnosti
+     jen pro Firefox (@supports níž). */
+  &::-webkit-scrollbar { width: 6px; height: 6px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgb(var(--ink-05-rgb) / .28);
+  }
+  &::-webkit-scrollbar-thumb:hover { background: rgb(var(--ink-05-rgb) / .5); }
+
+  @supports (-moz-appearance: none) {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--ink-05-rgb) / .28) transparent;
+  }
 }
 
 .itemList li {

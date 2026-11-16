@@ -41,5 +41,22 @@
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
+
+  /* Vlastní posuvník (16. 11. 2026): tenký zaoblený jezdec, průhledná dráha,
+     bez šipek. Chromium (Edge, Chrome) čte ::-webkit-scrollbar jen tehdy,
+     když NENÍ nastavené scrollbar-color/width — proto standardní vlastnosti
+     jen pro Firefox (@supports níž). */
+  &::-webkit-scrollbar { width: 6px; height: 6px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgb(var(--cream-06-rgb) / .28);
+  }
+  &::-webkit-scrollbar-thumb:hover { background: rgb(var(--cream-06-rgb) / .5); }
+
+  @supports (-moz-appearance: none) {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--cream-06-rgb) / .28) transparent;
+  }
 }
