@@ -21,7 +21,7 @@ Příkazy jako u iPhonu: `status` · `tabs` · `use` · `open URL` · `reload` �
 
 Jen na PC: `move X1 Y1 X2 Y2 [--ms=]` / `move --circle` (myš v reálném čase, kvůli shaderům) ·
 `trace idle|scroll|move|load [--s=3]` (náklady hlavního vlákna a kdo vyvolal přepočet stylů) ·
-`profile …` (nejdražší funkce JS) · `cpu N` · `viewport W H [DPR] | reset` · `gpu`.
+`profile …` (nejdražší funkce JS) · `cpu N` · `viewport W H [DPR] [--mobile] | reset` (`--mobile` = simulace telefonu: dotyk, Safari iPhone, stránka se znovu načte) · `gpu`.
 
 - **Monitor je 144 Hz** (5120×1440, RTX 3080). Zásek se proto počítá proti skutečné délce snímku, tedy cokoli nad ~17 ms, ne až nad 34 ms jako na 60 Hz.
 - **Okno je na obrazovce majitele.** Když měříš, majitel na okno nesahá. Když testuje on, příkazy neposílej. Když se na okno nikdo nedívá, náhled v panelu nech vypnutý.

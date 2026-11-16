@@ -42,7 +42,7 @@ const HELP = `
   trace [idle|scroll|move|load] [--s=3]    hlavní vlákno: styly, layout, kreslení, kdo vyvolal přepočet
   profile [idle|scroll|move|load] [--s=3]  nejdražší funkce JavaScriptu
   cpu N                     zpomalit procesor N× (1 = vypnout)
-  viewport W H [DPR] | viewport reset
+  viewport W H [DPR] [--mobile] | viewport reset   (--mobile = telefon: dotyk + Safari iPhone)
   gpu                       grafická karta, frekvence monitoru, verdikt shaderů webu
   stop                      ukončit most (i prohlížeč, který pustil)
 `
@@ -232,7 +232,7 @@ async function main() {
             print(await api(port, '/api/cpu', { rate: Number(args[0]) || 1 }))
             return 0
         case 'viewport':
-            print(await api(port, '/api/viewport', args[0] === 'reset' || !args[0] ? { width: 'reset' } : { width: Number(args[0]), height: Number(args[1]), dpr: Number(args[2]) || 0 }))
+            print(await api(port, '/api/viewport', args[0] === 'reset' || !args[0] ? { width: 'reset' } : { width: Number(args[0]), height: Number(args[1]), dpr: Number(args[2]) || 0, mobile: Boolean(flags.mobile) }))
             return 0
         case 'gpu':
             print(await api(port, '/api/gpu'))

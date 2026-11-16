@@ -233,7 +233,7 @@ export async function startBridge({ port = 4601, cdp = 9333, tab: wantedTab, out
         'POST /api/viewport': async (req, res) => {
             const b = await body(req)
             const d = await needDevice()
-            json(res, 200, await d.viewport(b.width, b.height, b.dpr))
+            json(res, 200, await d.viewport(b.width, b.height, b.dpr, b.mobile))
         },
         'GET /api/gpu': async (req, res) => {
             const d = await needDevice()
