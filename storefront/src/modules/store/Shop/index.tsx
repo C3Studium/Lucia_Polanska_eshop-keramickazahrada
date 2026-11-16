@@ -50,7 +50,7 @@ type EComProps = {
   texts?: CopyBlock
 }
 
-const PRODUCT_LIMIT = 16
+const PRODUCT_LIMIT = 15
 
 /* Strop jednoho dotazu v `listStoreCatalogue`. Obnova po návratu z výrobku
    si o víc říct nemůže — nad ním se výsledek mlčky ořízne. */
