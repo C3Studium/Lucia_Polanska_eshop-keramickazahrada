@@ -19,6 +19,7 @@ import {
   commissionPieceFilled,
   commissionPiecesOf,
   readCommissionBrief,
+  parcelNote,
 } from "@lib/util/made-to-order"
 import { COMMISSION_BRIEFS_ID } from "../commission-briefs"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
@@ -320,6 +321,7 @@ const Review = ({
                           : (productionMode.production_only?.postage_now ?? 1) > 0
                             ? "Zboží a doprava"
                             : "Ostatní zboží",
+                        parcelNote: parcelNote(productionMode),
                         depositNow: Math.max(
                           0,
                           chargeNow - (productionMode.production_only?.always_now ?? 0)

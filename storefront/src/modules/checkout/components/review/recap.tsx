@@ -44,6 +44,8 @@ export default function OrderRecap({
     goodsNow?: number
     /** Popisek `goodsNow` — „Zboží a doprava" jen když v něm doprava opravdu je. */
     goodsLabel?: string
+    /** Proč jen jedno poštovné (`parcelNote`), null u odběru. */
+    parcelNote?: string | null
     depositNow?: number
   } | null
 }) {
@@ -241,6 +243,12 @@ export default function OrderRecap({
                 </div>
               )}
             </dl>
+          )}
+          {/* Jeden balík = jedno poštovné; kdy se platí (16. 11. 2026). */}
+          {deposit && deposit.later > 0.005 && deposit.parcelNote && (
+            <p className={styles.sideNote} data-testid="recap-parcel-note">
+              {deposit.parcelNote}
+            </p>
           )}
           {/* Cena po domluvě: proč u takového výrobku žádná částka není, a že
               přijde nad rámec čísel výš. Malým písmem hned pod rozpisem. */}

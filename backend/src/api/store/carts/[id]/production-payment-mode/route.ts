@@ -1,7 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/framework/utils"
 import { z } from "@medusajs/framework/zod"
-import { shippingTiming, splitChargeNow } from "../../../../../lib/deposit-split"
+import { commissionCharge } from "../../../../../lib/deposit-split"
 import { isServiceLine } from "../../../../../lib/packaging-lines"
 import { clampContractPercentage } from "../../../../../lib/made-to-order/contract-deposit"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
@@ -180,34 +180,39 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
       ? (storedMode as "full" | "custom")
       : "deposit"
 
-  // Non-production goods are always paid now — but WITHOUT postage. The slider
-  // then moves the production portion between Σfloor and Σceiling, and postage
-  // is pulled in only as it approaches „pay everything".
-  const goodsNonProductionNow = roundMoney(
-    cartTotal - productionTotal - shippingNow
-  )
-  /* Poštovné hned (je i běžné zboží), nebo až v doplatku (jen zakázka). */
-  const postage = shippingTiming(shippingNow, hasPlainGoods)
+  /*
+   * Kolik se platí teď — TATÁŽ funkce, kterou počítá samotná platba
+   * (`prepare-made-to-order-payment`), 16. 11. 2026. Dřív tu byla vlastní
+   * kopie výpočtu a u objednávky #77 se rozešly: pokladna slíbila 2 835,
+   * brána strhla 2 685. Jedna funkce = zobrazené a účtované číslo se
+   * rozejít nemůžou.
+   *
+   * Zboží mimo zakázku se platí celé hned; poštovné hned jen s běžným zbožím
+   * (`shippingTiming`), u čisté zakázky až v doplatku.
+   */
+  const chargeInput = {
+    cartTotal,
+    shipping: shippingNow,
+    productionTotal,
+    lines: splitLines,
+    hasPlainGoods,
+  }
+  const atDeposit = commissionCharge({ ...chargeInput, target: "deposit" })
+  const postage = atDeposit.postage
   /* Co se platí vždycky teď: zboží mimo zakázku + poštovné, pokud je na řadě. */
-  const alwaysNow = roundMoney(goodsNonProductionNow + postage.now)
+  const alwaysNow = atDeposit.alwaysNow
   const ceilingSum = splitLines.reduce((sum, line) => sum + line.ceiling, 0)
   // „Jen zálohu" = zboží mimo zakázku (+ poštovné u míchaného košíku) + Σzáloh.
-  const depositNow = hasProduction
-    ? roundMoney(alwaysNow + depositTotal)
-    : cartTotal
+  const depositNow = hasProduction ? atDeposit.minimum : cartTotal
   // „Zaplatit vše" = vše vč. poštovného; kdo platí celé, nemá co doplácet.
-  const sliderCeiling = hasProduction
-    ? roundMoney(alwaysNow + ceilingSum + postage.deferred)
-    : cartTotal
+  const sliderCeiling = hasProduction ? atDeposit.maximum : cartTotal
 
   // The stored custom choice, re-clamped against today's cart — items may
-  // have been added or removed since it was made. `splitChargeNow` naturally
-  // clamps to [depositNow, sliderCeiling].
+  // have been added or removed since it was made.
   const storedAmount = toNumber(metadata?.production_payment_amount)
   const customNow =
     mode === "custom" && storedAmount > 0
-      ? splitChargeNow(splitLines, postage.deferred, alwaysNow, storedAmount)
-          .chargeNow
+      ? commissionCharge({ ...chargeInput, target: storedAmount }).chargeNow
       : null
 
   return {
@@ -261,6 +266,8 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
           /* Z čeho se `always_now` skládá — pokladna podle toho píše, co se platí
              celé („Zboží a doprava" / „Ostatní zboží" / „Balné"), ne vždy „doprava". */
           postage_now: postage.now,
+          /* Poštovné, které se platí až s doplatkem (jen čistá zakázka). */
+          postage_later: postage.deferred,
           has_plain_goods: hasPlainGoods,
         }
       : null,

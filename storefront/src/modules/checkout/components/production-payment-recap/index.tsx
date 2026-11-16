@@ -1,5 +1,5 @@
 import { convertToLocale } from "@lib/util/money"
-import type { ProductionPaymentMode } from "@lib/util/made-to-order"
+import { parcelNote, type ProductionPaymentMode } from "@lib/util/made-to-order"
 
 import styles from "./style.module.scss"
 import { getTexty } from "@lib/data/texty"
@@ -61,6 +61,10 @@ export default async function ProductionPaymentRecap({
           ? texty["zakazka.doplatek_recap"]
           : "Platíte celou částku — pak už nic neřešíte."}
       </p>
+      {/* Proč jen jedno poštovné — viz `parcelNote`. */}
+      {outstanding > 0 && parcelNote(mode) && (
+        <p className={styles.note}>{parcelNote(mode)}</p>
+      )}
     </section>
   )
 }
