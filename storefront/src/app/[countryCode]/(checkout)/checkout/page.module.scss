@@ -187,3 +187,8 @@
 .intro .order {
   margin-top: 0;
 }
+
+/* Krok Přehled bez levého souhrnu (16. 11. 2026): panel kroku přes celou šířku. */
+.root[data-step="review"] .ledger {
+  grid-column: 1 / -1;
+}

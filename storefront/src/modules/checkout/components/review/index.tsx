@@ -34,6 +34,7 @@ import PreContractInfo, {
 } from "../pre-contract-info"
 import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 import OrderRecap from "./recap"
+import DiscountCode from "@modules/checkout/components/discount-code"
 import {
   contentVariants,
   errorVariants,
@@ -327,6 +328,9 @@ const Review = ({
                     : null
                 }
               />
+              <div className={styles.discount}>
+                <DiscountCode cart={cart as any} />
+              </div>
             </motion.div>
 
             {/* Zadání zakázky má od 8. 11. 2026 vlastní krok pokladny
