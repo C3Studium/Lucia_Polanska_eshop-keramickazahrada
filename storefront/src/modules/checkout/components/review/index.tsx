@@ -327,10 +327,8 @@ const Review = ({
                       }
                     : null
                 }
+                footer={<DiscountCode cart={cart as any} />}
               />
-              <div className={styles.discount}>
-                <DiscountCode cart={cart as any} />
-              </div>
             </motion.div>
 
             {/* Zadání zakázky má od 8. 11. 2026 vlastní krok pokladny

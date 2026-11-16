@@ -188,7 +188,14 @@
   margin-top: 0;
 }
 
-/* Krok Přehled bez levého souhrnu (16. 11. 2026): panel kroku přes celou šířku. */
+/* Krok Přehled bez levého souhrnu (16. 11. 2026): panel kroku přes celou
+   šířku a celek na šířku zúžený na střed — ceny nemají utéct od názvů. */
 .root[data-step="review"] .ledger {
   grid-column: 1 / -1;
+}
+
+@include from-px(1021px) {
+  .root[data-step="review"] {
+    width: min(calc(90 * var(--fvw)), 76rem);
+  }
 }

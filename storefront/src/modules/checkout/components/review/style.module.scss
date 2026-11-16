@@ -175,14 +175,41 @@
   font: 400 max(var(--text-min, 0px), calc(clamp(.875rem, calc(1vw * var(--ui-scale)), .95rem) * var(--read, 1))) / 1.4 "Sansation-Regular", sans-serif;
 }
 
-/* Slevový kód nebo poukaz pod rekapitulací (16. 11. 2026) — v Přehledu,
-   protože levý souhrn na tomhle kroku není. */
-.discount {
+/* Slevový kód nebo poukaz pod Cenou (16. 11. 2026) — v Přehledu, protože
+   levý souhrn na tomhle kroku není. Přes celou šířku mřížky sloupců. */
+.recapFooter {
   display: flex;
+  grid-column: 1 / -1;
   width: 100%;
-  margin-top: clamp(1rem, 2vh, 1.5rem);
 }
-.discount > * { width: 100%; }
+.recapFooter > * { width: 100%; }
+
+/*
+ * Přehled na šířku (16. 11. 2026, Matěj): účtenka ve dvou sloupcích.
+ * Vlevo co objednáváte, vpravo doručení, cena a slevový kód pod sebou.
+ * Na telefonu a tabletu na výšku zůstává všechno v jednom sloupci.
+ */
+@include from-px(1021px) {
+  .recap {
+    grid-template-columns: minmax(0, 1.45fr) minmax(18rem, 1fr);
+    align-items: start;
+    column-gap: clamp(2rem, 3.4vw, 3.5rem);
+  }
+
+  .recapColumns {
+    grid-template-columns: 1fr;
+    gap: clamp(1.25rem, 2.4vh, 1.75rem);
+    padding-top: 0;
+    padding-left: clamp(2rem, 3.4vw, 3.5rem);
+    border-top: 0;
+    border-left: 1px solid var(--review-rule);
+  }
+
+  .recapColumns > section + section {
+    padding-top: clamp(1rem, 2vh, 1.5rem);
+    border-top: 1px solid var(--review-rule);
+  }
+}
 
 .itemThumb {
   display: block;

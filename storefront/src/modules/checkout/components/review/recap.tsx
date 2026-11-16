@@ -33,8 +33,11 @@ import {
 export default function OrderRecap({
   cart,
   deposit,
+  footer,
 }: {
   cart: any
+  /** Pod Cenou v pravém sloupci — slevový kód nebo poukaz (16. 11. 2026). */
+  footer?: React.ReactNode
   deposit?: {
     now: number
     later: number
@@ -145,6 +148,15 @@ export default function OrderRecap({
               {money(shippingMethod.total ?? shippingMethod.amount)}
             </p>
           )}
+          {/* Výdejní místo patří k doručení — zákazníkova poslední šance
+              chybnou výdejnu zachytit (dřív samostatný řádek pod oběma
+              sloupci). */}
+          {pickupPoint && (
+            <p className={styles.pickupPoint}>
+              <span>Výdejní místo</span>
+              {pickupPoint}
+            </p>
+          )}
         </section>
 
         <section className={styles.recapBlock} aria-labelledby="recap-total">
@@ -245,18 +257,8 @@ export default function OrderRecap({
             </p>
           )}
         </section>
+        {footer ? <div className={styles.recapFooter}>{footer}</div> : null}
       </div>
-
-      {/* The pickup point is the single detail most often lost between checkout and the
-          confirmation; showing it here is the customer's last chance to catch a wrong one.
-          Full-width section pod řádkem Doručení/Platba, oddělená stejnou horní linkou jako
-          ostatní sekce souhrnu — ne stěsnaná v úzkém levém sloupci Doručení. */}
-      {pickupPoint && (
-        <p className={styles.pickupPoint}>
-          <span>Výdejní místo</span>
-          {pickupPoint}
-        </p>
-      )}
     </div>
   )
 }
