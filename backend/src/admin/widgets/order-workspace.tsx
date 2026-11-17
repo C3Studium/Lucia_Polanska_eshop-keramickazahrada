@@ -37,7 +37,10 @@ import { OrderStepsPanel } from "./order-steps";
  * úzkém displeji vykreslí nahoře v hlavním sloupci a tady ne.
  */
 
-/** Jednání — postup a štítek. */
+/**
+ * Postup objednávky a štítek — v jednom sloupci (telefon) je vykresluje
+ * hlavní sloupec hned pod číslem objednávky (`order-workspace-main.tsx`).
+ */
 export const OrderNowPanels = ({ order }: { order: AdminOrder }) => (
   <>
     <OrderStepsPanel order={order} />
@@ -50,13 +53,12 @@ const OrderWorkspaceSide = ({ order }: { order: AdminOrder }) => {
   const ref = useHideNativeCardsBefore<HTMLDivElement>();
   return (
     <div ref={ref} className="flex flex-col gap-y-3">
-      {wide && <OrderNowPanels order={order} />}
+      {/* Široký displej (17. 11. 2026, přání majitelky): Postup je vlevo
+          pod číslem objednávky, vpravo nahoře zakázka a pod ní štítek. */}
+      {wide && <MadeToOrderPanel order={order} />}
+      {wide && <CpLabelPanel order={order} />}
       <OrderReturnsPanel orderId={order.id} />
       <CpTrackingPanel order={order} />
-      {/* Zakázka (cena, zadání, poznámka, platby) vpravo nad Zpožděním —
-          přání majitelky 17. 11. 2026: patří k jednání, ne ke čtení. */}
-      {/* V jednom sloupci ji vykreslí hlavní sloupec hned pod fakturou. */}
-      {wide && <MadeToOrderPanel order={order} />}
       <OrderDelayPanel order={order} />
       <OrderConsentPanel order={order} />
       <div className="flex justify-end px-2">

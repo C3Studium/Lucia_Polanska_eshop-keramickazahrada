@@ -358,7 +358,7 @@ export const OrderStepsPanel = ({ order }: { order: AdminOrder }) => {
     <Button
       size="base"
       variant="primary"
-      className="w-full"
+      className="w-full sm:w-auto sm:min-w-[16rem] sm:self-start"
       isLoading={busy && !ceka}
       disabled={disabled || busy}
       onClick={onClick}

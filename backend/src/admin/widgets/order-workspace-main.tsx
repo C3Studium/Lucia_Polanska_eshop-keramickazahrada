@@ -11,6 +11,7 @@ import { OrderGiftVouchersPanel } from "./order-gift-vouchers";
 import { OrderHistoryPanel } from "./order-history";
 import { OrderInvoicePanel } from "./order-invoice";
 import { OrderPersonalizedPanel } from "./order-personalized";
+import { OrderStepsPanel } from "./order-steps";
 import { OrderNowPanels } from "./order-workspace";
 
 /**
@@ -19,13 +20,12 @@ import { OrderNowPanels } from "./order-workspace";
  * Shora dolů — nejdůležitější nahoře (přání majitelky 17. 11. 2026):
  *
  *  1. číslo objednávky (nativní karta, posunutá nahoru přes `order`),
- *  2. Zákazník — kdo a kam,
- *  3. nativní Souhrn (položky, součty; karty Platby a Nesplněné položky
+ *  2. Postup objednávky (v jednom sloupci i se štítkem ČP),
+ *  3. Zákazník — kdo a kam,
+ *  4. nativní Souhrn (položky, součty; karty Platby a Nesplněné položky
  *     jen v expertním režimu — opakují Souhrn a Postup),
- *  4. jen v jednom sloupci (telefon, tablet, menší notebook): Postup
- *     objednávky a štítek — na širokém displeji jsou vpravo,
- *  5. Faktura; zakázka jen v jednom sloupci (na širokém je vpravo nad
- *     Zpožděním), poukazy, výrobky na rozměr,
+ *  5. Faktura; zakázka jen v jednom sloupci (na širokém je vpravo nahoře
+ *     a pod ní štítek), poukazy, výrobky na rozměr,
  *  5. Odeslané e-maily a Historie.
  *
  * Jak se dostane Zákazník nad nativní karty: Medusa skládá nativní karty i widgety
@@ -45,10 +45,12 @@ const OrderWorkspaceMain = ({ order }: { order: AdminOrder }) => {
   return (
     <>
       <div className="flex flex-col gap-y-3" style={{ order: -1 }}>
+        {/* Postup hned pod číslem objednávky (17. 11. 2026); na telefonu
+            i se štítkem, na širokém je štítek vpravo pod zakázkou. */}
+        {wide ? <OrderStepsPanel order={order} /> : <OrderNowPanels order={order} />}
         <OrderCustomerPanel order={order} />
       </div>
       <div ref={bottom} className="flex flex-col gap-y-3">
-        {!wide && <OrderNowPanels order={order} />}
         <OrderInvoicePanel order={order} />
         {/* Zakázka je na širokém displeji vpravo (order-workspace.tsx). */}
         {!wide && <MadeToOrderPanel order={order} />}
