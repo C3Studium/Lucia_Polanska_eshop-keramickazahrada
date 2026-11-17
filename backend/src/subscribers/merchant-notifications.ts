@@ -6,6 +6,8 @@ import { toNumber } from "../lib/order-quantity"
 import { isPaymentProblem } from "../modules/merchant-order/payment-state"
 import { isPayLaterPaymentProvider } from "../lib/ship-gate"
 import { isServiceLine } from "../lib/packaging-lines"
+import { checkAttachmentUrls, type EmailAttachmentRef } from "../lib/legal/order-legal"
+import { storeWorkshopSheet } from "../lib/workshop-sheet"
 
 /**
  * Merchant awareness — the first five notifications of WorkflowPlan.md §15.
@@ -86,6 +88,40 @@ export const madeToOrderMoney = (order: any) => {
   }
 }
 
+/**
+ * List pro dílnu jako příloha e-mailu — jen když je PDF opravdu ke stažení
+ * (https a HEAD projde), jinak prázdné pole. Nikdy nevyhodí: e-mail
+ * o objednávce musí odejít i bez listu.
+ */
+const workshopSheetAttachments = async (
+  container: SubscriberArgs<unknown>["container"],
+  orderId: string
+): Promise<EmailAttachmentRef[]> => {
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+  try {
+    const stored = await storeWorkshopSheet(container, orderId)
+    if (!stored) return []
+    if (!/^https:\/\//i.test(stored.url)) {
+      logger.warn(
+        `[list pro dílnu] PDF objednávky ${orderId} nemá https adresu (úložiště bez veřejné domény) — e-mail odejde bez přílohy.`
+      )
+      return []
+    }
+    const { reachable, failed } = await checkAttachmentUrls([stored])
+    for (const item of failed) {
+      logger.warn(`[list pro dílnu] PDF objednávky ${orderId} není ke stažení (${item.reason}) — e-mail odejde bez přílohy.`)
+    }
+    return reachable
+  } catch (error) {
+    logger.error(
+      `[list pro dílnu] PDF objednávky ${orderId} se nepodařilo vytvořit: ${
+        error instanceof Error ? error.message : String(error)
+      } — e-mail odejde bez přílohy.`
+    )
+    return []
+  }
+}
+
 const ORDER_FIELDS = [
   "id",
   "display_id",
@@ -134,6 +170,18 @@ const onOrderPlaced = async ({
     payment_collections: order.payment_collections || [],
   } as any)
 
+  /*
+   * List pro dílnu (PDF, 17. 11. 2026) — přílohou k PRVNÍMU e-mailu, který
+   * o objednávce odchází: „Nová objednávka", nebo u zakázky s problémem
+   * platby „Nová zakázka". Když se list nepovede (generování, úložiště,
+   * nedostupná adresa), e-mail odejde bez něj a chyba jde do logu.
+   */
+  const sheetAttachments =
+    !isPaymentProblem(paymentStatus) || isMadeToOrder(order)
+      ? await workshopSheetAttachments(container, order.id)
+      : []
+  let sheetAttached = false
+
   // Balné a doběrečné jsou servisní řádky, ne zboží — do počtu nepatří.
   const itemCount = ((order.items || []) as any[]).filter((item) => !isServiceLine(item)).length
 
@@ -175,7 +223,9 @@ const onOrderPlaced = async ({
       // e-mail even though it is not urgent.
       email: true,
       resource: { id: order.id, type: "order" },
+      attachments: sheetAttachments,
     })
+    sheetAttached = sheetAttachments.length > 0
   }
 
   if (isMadeToOrder(order)) {
@@ -188,6 +238,7 @@ const onOrderPlaced = async ({
       // her inbox, so it goes to e-mail exactly like a new paid order does.
       email: true,
       resource: { id: order.id, type: "order" },
+      ...(sheetAttached ? {} : { attachments: sheetAttachments }),
     })
   }
 }

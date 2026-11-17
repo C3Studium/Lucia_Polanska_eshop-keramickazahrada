@@ -25,6 +25,7 @@ import {
 import { reloadOrderPageSoon } from "../lib/reload-order-page";
 import { sdk } from "../lib/sdk";
 import { stageLabel } from "../lib/stage-words";
+import { WorkshopSheetButton } from "../components/workshop-sheet-button";
 
 /**
  * „Postup objednávky" — pravý sloupec detailu objednávky, úplně nahoře
@@ -692,6 +693,12 @@ export const OrderStepsPanel = ({ order }: { order: AdminOrder }) => {
           )}
         </div>
       )}
+
+      {/* List pro dílnu — totéž PDF, které chodí v e-mailu o nové
+          objednávce (17. 11. 2026). */}
+      <div className="flex px-6 py-4">
+        <WorkshopSheetButton order={order} />
+      </div>
     </Container>
   );
 };
