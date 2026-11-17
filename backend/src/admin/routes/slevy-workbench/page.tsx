@@ -1,5 +1,11 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { ReceiptPercent } from "@medusajs/icons";
+import {
+  PauseSolid,
+  PlaySolid,
+  ReceiptPercent,
+  SquareTwoStack,
+  Trash,
+} from "@medusajs/icons";
 import {
   Badge,
   Button,
@@ -19,9 +25,12 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { ConfirmDialog } from "../../components/confirm-dialog";
 import { DiscountEditor } from "../../components/discount-editor";
 import { EmptyState } from "../../components/empty-state";
+import { RowLink } from "../../components/row-link";
+import { RowOptionsMenu } from "../../components/row-options-menu";
 import { ExpertToggle, RawData } from "../../lib/expert-mode";
 import { SubTabs } from "../../components/work-tabs";
 import { formatCzk } from "../../lib/workbench";
@@ -108,6 +117,25 @@ const tabs = [
   { key: "statistiky", label: "Statistiky" },
 ];
 
+/*
+ * Tabulky (17. 11. 2026): jedna mřížka pro hlavičku i řádky každé záložky,
+ * ať sloupce sedí; pružný je jen název. Poslední sloupec je „…".
+ */
+const PROMO_COLS = "lg:grid-cols-[minmax(0,1fr)_130px_140px_150px_40px]";
+const CAMPAIGN_COLS = "lg:grid-cols-[minmax(0,1fr)_190px_210px_150px_40px]";
+const PRICE_LIST_COLS = "lg:grid-cols-[minmax(0,1fr)_130px_210px_40px]";
+
+/** Hlavička tabulky — jen na širokém displeji, na úzkém se řádky skládají. */
+const ColumnHeader = ({ cols, names }: { cols: string; names: string[] }) => (
+  <div className={`bg-ui-bg-subtle hidden gap-x-3 px-6 py-2 lg:grid ${cols}`}>
+    {names.map((name) => (
+      <Text key={name} size="xsmall" weight="plus" className="text-ui-fg-subtle">
+        {name}
+      </Text>
+    ))}
+  </div>
+);
+
 /** Toggle a promotion between active and draft through the native API. */
 const PromotionRow = ({ promotion }: { promotion: WorkbenchPromotion }) => {
   const queryClient = useQueryClient();
@@ -152,67 +180,70 @@ const PromotionRow = ({ promotion }: { promotion: WorkbenchPromotion }) => {
   });
 
   const active = promotion.status === "active";
+  const nazev = promotion.is_automatic
+    ? "Automatická sleva"
+    : promotion.code || "—";
 
   return (
-    <article className="grid gap-3 px-6 py-4 lg:grid-cols-[minmax(0,1.2fr)_150px_170px_minmax(0,1fr)_auto] lg:items-center">
+    <article
+      className={`group hover:bg-ui-bg-base-hover relative grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 px-6 py-3 transition-colors lg:items-center ${PROMO_COLS}`}
+    >
+      {/* Celý řádek vede na podrobnosti slevy. Vlastní úprava slevy tu není
+          (DiscountEditor jen zakládá), takže je to nativní detail Medusy —
+          jediné místo, kde jde změnit hodnotu, pravidla a platnost. */}
+      <RowLink to={`/promotions/${promotion.id}`} label={`Otevřít slevu ${nazev}`} />
+
       <div className="min-w-0">
-        <Text size="small" weight="plus" className="truncate">
-          {promotion.is_automatic
-            ? "Automatická sleva"
-            : promotion.code || "—"}
+        <Text size="small" weight="plus" className="truncate group-hover:underline">
+          {nazev}
         </Text>
-        <Text size="xsmall" className="text-ui-fg-subtle mt-1">
+        <Text size="xsmall" className="text-ui-fg-subtle mt-0.5 truncate">
           {promotion.effect ?? ""}
           {promotion.campaign ? ` · kampaň ${promotion.campaign.name}` : ""}
         </Text>
       </div>
 
-      <div>
-        <Badge size="2xsmall" color={active ? "green" : "grey"}>
-          {active ? "Běží" : "Pozastaveno"}
-        </Badge>
-      </div>
-
-      <div>
-        {typeof promotion.used_count === "number" && (
-          <Text size="xsmall" className="text-ui-fg-subtle">
-            {promotion.used_count === 0
-              ? "zatím nepoužito"
-              : promotion.used_count === 1
-                ? "použito 1×"
-                : `použito ${promotion.used_count}×`}
-          </Text>
-        )}
-      </div>
-
-      <div>
-        {typeof promotion.revenue === "number" && promotion.revenue > 0 && (
-          <Text size="xsmall" className="text-ui-fg-subtle">
-            přineslo {formatCzk(promotion.revenue)}
-            {promotion.discount_given
-              ? ` · sleva ${formatCzk(promotion.discount_given)}`
-              : ""}
-          </Text>
-        )}
-      </div>
-
-      <div className="flex justify-start gap-2 lg:justify-end">
-        <Button
-          size="small"
-          variant="secondary"
-          isLoading={setStatus.isPending}
-          onClick={() => setStatus.mutate(active ? "draft" : "active")}
-        >
-          {active ? "Pozastavit" : "Spustit"}
-        </Button>
+      {/* Na úzké obrazovce „…" vpravo nahoře, zbytek pod názvem. */}
+      <div className="relative z-10 -my-1 flex justify-end lg:order-last lg:my-0">
+        <RowOptionsMenu
+          label={`Možnosti slevy ${nazev}`}
+          contentClassName="z-50"
+          items={[
+            {
+              label: active ? "Pozastavit" : "Spustit",
+              icon: active ? <PauseSolid /> : <PlaySolid />,
+              onSelect: () => setStatus.mutate(active ? "draft" : "active"),
+            },
+            ...(promotion.code && !promotion.is_automatic
+              ? [
+                  {
+                    label: "Kopírovat kód",
+                    icon: <SquareTwoStack />,
+                    // Schránka chce kliknutí, ne odložené volání.
+                    sync: true,
+                    onSelect: () => {
+                      navigator.clipboard
+                        ?.writeText(promotion.code as string)
+                        .then(
+                          () => toast.success(`Kód ${promotion.code} zkopírován.`),
+                          () => toast.error("Kód se nepodařilo zkopírovat.")
+                        );
+                    },
+                  },
+                ]
+              : []),
+            "separator" as const,
+            {
+              label: "Smazat",
+              icon: <Trash />,
+              destructive: true,
+              onSelect: () => setConfirmDelete(true),
+            },
+          ]}
+        />
         <ConfirmDialog
           open={confirmDelete}
           onOpenChange={setConfirmDelete}
-          trigger={
-            <Button size="small" variant="transparent">
-              Smazat
-            </Button>
-          }
           title="Smazat slevu?"
           description={`${
             promotion.code
@@ -224,6 +255,47 @@ const PromotionRow = ({ promotion }: { promotion: WorkbenchPromotion }) => {
           isPending={remove.isPending}
           onConfirm={() => remove.mutate()}
         />
+      </div>
+
+      <div className="col-span-2 flex flex-wrap items-center gap-x-4 gap-y-1 lg:contents">
+        <div>
+          {/* Stav jako štítek, přepnutí v „…": přepínač v klikacím řádku by
+              šlo trefit omylem a kód by zákazníkům tiše přestal platit. */}
+          <Badge size="2xsmall" color={active ? "green" : "grey"}>
+            {setStatus.isPending ? "Ukládám…" : active ? "Běží" : "Pozastaveno"}
+          </Badge>
+        </div>
+
+        <div>
+          {typeof promotion.used_count === "number" && (
+            <Text size="small" className="text-ui-fg-subtle">
+              {promotion.used_count === 0 ? (
+                "zatím nepoužito"
+              ) : (
+                <>
+                  <span className="lg:hidden">použito </span>
+                  {promotion.used_count}×
+                </>
+              )}
+            </Text>
+          )}
+        </div>
+
+        <div>
+          {typeof promotion.revenue === "number" && promotion.revenue > 0 && (
+            <>
+              <Text size="small">
+                <span className="lg:hidden">přineslo </span>
+                {formatCzk(promotion.revenue)}
+              </Text>
+              {promotion.discount_given ? (
+                <Text size="xsmall" className="text-ui-fg-subtle">
+                  sleva {formatCzk(promotion.discount_given)}
+                </Text>
+              ) : null}
+            </>
+          )}
+        </div>
       </div>
     </article>
   );
@@ -368,13 +440,17 @@ const PriceListRow = ({ list }: { list: WorkbenchPriceList }) => {
       ),
   });
 
+  /* Řádek se neotevírá: ceník patří sezónní akci (Přehled → Slevy a akce)
+     a ceny se mění tam. Nativní editor ceníku by byl druhá pravda. */
   return (
-    <article className="grid gap-3 px-6 py-4 lg:grid-cols-[minmax(0,1.2fr)_150px_190px_minmax(0,1fr)_auto] lg:items-center">
+    <article
+      className={`relative grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 px-6 py-3 lg:items-center ${PRICE_LIST_COLS}`}
+    >
       <div className="min-w-0">
         <Text size="small" weight="plus" className="truncate">
           {list.title}
         </Text>
-        <Text size="xsmall" className="text-ui-fg-subtle mt-1">
+        <Text size="xsmall" className="text-ui-fg-subtle mt-0.5">
           {list.prices_count === 1
             ? "1 cena"
             : list.prices_count <= 4
@@ -383,31 +459,34 @@ const PriceListRow = ({ list }: { list: WorkbenchPriceList }) => {
         </Text>
       </div>
 
-      <div>
-        <Badge size="2xsmall" color={active ? "green" : "grey"}>
-          {active ? "Běží" : "Pozastaveno"}
-        </Badge>
+      <div className="-my-1 flex justify-end lg:order-last lg:my-0">
+        <RowOptionsMenu
+          label={`Možnosti ceníku ${list.title}`}
+          contentClassName="z-50"
+          items={[
+            {
+              label: active ? "Pozastavit" : "Spustit",
+              icon: active ? <PauseSolid /> : <PlaySolid />,
+              onSelect: () => setStatus.mutate(active ? "draft" : "active"),
+            },
+          ]}
+        />
       </div>
 
-      <div>
-        {(list.starts_at || list.ends_at) && (
-          <Text size="xsmall" className="text-ui-fg-subtle">
-            {formatDate(list.starts_at)} – {formatDate(list.ends_at)}
-          </Text>
-        )}
-      </div>
+      <div className="col-span-2 flex flex-wrap items-center gap-x-4 gap-y-1 lg:contents">
+        <div>
+          <Badge size="2xsmall" color={active ? "green" : "grey"}>
+            {setStatus.isPending ? "Ukládám…" : active ? "Běží" : "Pozastaveno"}
+          </Badge>
+        </div>
 
-      <div />
-
-      <div className="flex justify-start gap-2 lg:justify-end">
-        <Button
-          size="small"
-          variant="secondary"
-          isLoading={setStatus.isPending}
-          onClick={() => setStatus.mutate(active ? "draft" : "active")}
-        >
-          {active ? "Pozastavit" : "Aktivovat"}
-        </Button>
+        <div>
+          {(list.starts_at || list.ends_at) && (
+            <Text size="small" className="text-ui-fg-subtle">
+              {formatDate(list.starts_at)} – {formatDate(list.ends_at)}
+            </Text>
+          )}
+        </div>
       </div>
     </article>
   );
@@ -430,25 +509,31 @@ const SlevyInner = () => {
     <Container className="divide-y p-0">
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
         <div>
-          <Heading>Slevy — správa</Heading>
+          <Heading>Slevy</Heading>
           <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
-            Kódy a automatické slevy, kampaně a akční ceníky — spouštění,
-            pozastavení a mazání na jednom místě. Sezónní akce mají svůj
-            domov v Přehledu → Slevy a akce.
+            Kódy a automatické slevy, kampaně a akční ceníky na jednom místě.
+            Sezónní výprodeje se zakládají zvlášť:{" "}
+            <Link to="/prehled/slevy" className="text-ui-fg-interactive hover:underline">
+              Sezónní akce →
+            </Link>
           </Text>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <ExpertToggle />
-          <CampaignEditor
-            trigger={
-              <Button size="small" variant="secondary">
-                Nová kampaň
-              </Button>
-            }
-          />
+          {/* Jedno hlavní tlačítko. „Nová kampaň" jen v Kampaních — jinde
+              byla druhé tlačítko, které se skoro nepoužívá. */}
+          {active === "kampane" && (
+            <CampaignEditor
+              trigger={
+                <Button size="small" variant="secondary">
+                  Nová kampaň
+                </Button>
+              }
+            />
+          )}
           <DiscountEditor
             trigger={
-              <Button size="small" variant="secondary">
+              <Button size="small" variant="primary">
                 Nová sleva
               </Button>
             }
@@ -486,10 +571,15 @@ const SlevyInner = () => {
 
       {!isLoading && !isError && active === "akce" && (
         <div className="divide-y">
-          {(data?.promotions ?? []).length === 0 && (
+          {(data?.promotions ?? []).length === 0 ? (
             <EmptyState
               title="Žádné slevy"
               description="Novou slevu vytvoříte tlačítkem nahoře."
+            />
+          ) : (
+            <ColumnHeader
+              cols={PROMO_COLS}
+              names={["Sleva", "Stav", "Použito", "Přineslo"]}
             />
           )}
           {(data?.promotions ?? []).map((promotion) => (
@@ -500,22 +590,39 @@ const SlevyInner = () => {
 
       {!isLoading && !isError && active === "kampane" && (
         <div className="divide-y">
-          {(data?.campaigns ?? []).length === 0 && (
+          {(data?.campaigns ?? []).length === 0 ? (
             <EmptyState
               title="Žádné kampaně"
               description="Kampaň drží slevy pohromadě a hlídá jejich rozpočet."
+            />
+          ) : (
+            <ColumnHeader
+              cols={CAMPAIGN_COLS}
+              names={["Kampaň", "Období", "Rozpočet", "Přineslo"]}
             />
           )}
           {(data?.campaigns ?? []).map((campaign) => (
             <article
               key={campaign.id}
-              className="grid gap-3 px-6 py-4 lg:grid-cols-[minmax(0,1.2fr)_190px_190px_minmax(0,1fr)_auto] lg:items-center"
+              className={`group hover:bg-ui-bg-base-hover relative grid gap-x-3 gap-y-1 px-6 py-3 transition-colors lg:items-center ${CAMPAIGN_COLS}`}
             >
+              {/* Celý řádek otevře úpravu kampaně (dřív tlačítko „Upravit").
+                  Jiná akce u kampaně není, proto ani „…". */}
+              <CampaignEditor
+                campaign={campaign}
+                trigger={
+                  <button
+                    type="button"
+                    aria-label={`Upravit kampaň ${campaign.name}`}
+                    className="focus-visible:shadow-borders-focus absolute inset-0 cursor-pointer outline-none"
+                  />
+                }
+              />
               <div className="min-w-0">
-                <Text size="small" weight="plus" className="truncate">
+                <Text size="small" weight="plus" className="truncate group-hover:underline">
                   {campaign.name}
                 </Text>
-                <Text size="xsmall" className="text-ui-fg-subtle mt-1">
+                <Text size="xsmall" className="text-ui-fg-subtle mt-0.5">
                   {campaign.promotions_count === 0
                     ? "zatím bez slev"
                     : campaign.promotions_count === 1
@@ -527,7 +634,7 @@ const SlevyInner = () => {
               </div>
               <div>
                 {(campaign.starts_at || campaign.ends_at) && (
-                  <Text size="xsmall" className="text-ui-fg-subtle">
+                  <Text size="small" className="text-ui-fg-subtle">
                     {formatDate(campaign.starts_at)} –{" "}
                     {formatDate(campaign.ends_at)}
                   </Text>
@@ -535,7 +642,7 @@ const SlevyInner = () => {
               </div>
               <div>
                 {campaign.budget?.limit != null && (
-                  <Text size="xsmall" className="text-ui-fg-subtle">
+                  <Text size="small" className="text-ui-fg-subtle">
                     {campaign.budget.type === "spend"
                       ? `utraceno ${formatCzk(campaign.budget.used ?? 0)} z ${formatCzk(campaign.budget.limit)}`
                       : `použito ${campaign.budget.used ?? 0}× z ${campaign.budget.limit}`}
@@ -544,22 +651,17 @@ const SlevyInner = () => {
               </div>
               <div>
                 {campaign.revenue > 0 && (
-                  <Text size="xsmall" className="text-ui-fg-subtle">
-                    přineslo {formatCzk(campaign.revenue)} ·{" "}
-                    {campaign.used_orders}{" "}
-                    {campaign.used_orders === 1 ? "objednávka" : "objednávek"}
-                  </Text>
+                  <>
+                    <Text size="small">
+                      <span className="lg:hidden">přineslo </span>
+                      {formatCzk(campaign.revenue)}
+                    </Text>
+                    <Text size="xsmall" className="text-ui-fg-subtle">
+                      {campaign.used_orders}{" "}
+                      {campaign.used_orders === 1 ? "objednávka" : "objednávek"}
+                    </Text>
+                  </>
                 )}
-              </div>
-              <div className="flex justify-start lg:justify-end">
-                <CampaignEditor
-                  campaign={campaign}
-                  trigger={
-                    <Button size="small" variant="secondary">
-                      Upravit
-                    </Button>
-                  }
-                />
               </div>
             </article>
           ))}
@@ -652,11 +754,13 @@ const SlevyInner = () => {
 
       {!isLoading && !isError && active === "ceniky" && (
         <div className="divide-y">
-          {(data?.price_lists ?? []).length === 0 && (
+          {(data?.price_lists ?? []).length === 0 ? (
             <EmptyState
               title="Žádné ceníky"
-              description="Akční ceník vzniká při sezónní akci v Přehledu → Slevy a akce."
+              description="Akční ceník vzniká při sezónní akci (odkaz Sezónní akce nahoře)."
             />
+          ) : (
+            <ColumnHeader cols={PRICE_LIST_COLS} names={["Ceník", "Stav", "Platí"]} />
           )}
           {(data?.price_lists ?? []).map((list) => (
             <PriceListRow key={list.id} list={list} />

@@ -1,6 +1,4 @@
 import { Text, clx } from "@medusajs/ui";
-import { Link } from "react-router-dom";
-import { AdminSearch } from "./admin-search";
 
 /**
  * The tab bar across the whole Přehled section.
@@ -36,74 +34,15 @@ export type WorkTabKey =
   | "emaily"
   | "statistiky";
 
-type Tab = { key: WorkTabKey; label: string; to: string };
-
 /**
- * Group boundaries render as separators rather than captions — a bar with three
- * headings in it is louder than the tabs themselves.
+ * Lišta podzáložek Přehledu (Denní práce, Zakázky, Platby, Produkty…) je od
+ * 17. 11. 2026 pryč — přání majitelky: „Přehled je jen přehled". Stejné
+ * stránky má levé menu (Objednávky, Zakázky, Produkty, Sklad, Slevy,
+ * Reklamace, E-maily, Statistiky), takže lišta byla druhá navigace navíc.
+ * Komponenta zůstává, aby stránky, které ji vkládají, nemusely měnit kód;
+ * `active` se jen nečte.
  */
-const groups: Tab[][] = [
-  [{ key: "prehled", label: "Přehled", to: "/prehled" }],
-  [
-    { key: "prace", label: "Denní práce", to: "/prehled/prace" },
-    { key: "zakazky", label: "Zakázky", to: "/prehled/zakazky" },
-    { key: "platby", label: "Platby", to: "/prehled/platby" },
-  ],
-  [
-    { key: "produkty", label: "Produkty", to: "/prehled/produkty" },
-    { key: "zasoby", label: "Zásoby", to: "/prehled/zasoby" },
-    { key: "slevy", label: "Slevy a akce", to: "/prehled/slevy" },
-    { key: "recenze", label: "Recenze", to: "/prehled/recenze" },
-    { key: "vraceni", label: "Reklamace", to: "/prehled/vraceni" },
-  ],
-  [
-    { key: "emaily", label: "Odeslané e-maily", to: "/prehled/emaily" },
-    { key: "statistiky", label: "Statistiky", to: "/prehled/statistiky" },
-  ],
-];
-
-export const WorkTabs = ({ active }: { active: WorkTabKey }) => (
-  <nav
-    aria-label="Sekce"
-    className="border-ui-border-base flex flex-wrap items-center gap-x-1 gap-y-1 border-b px-6 pb-3 pt-4"
-  >
-    {groups.map((group, index) => (
-      <div key={index} className="flex flex-wrap items-center gap-x-1 gap-y-1">
-        {index > 0 && (
-          <span
-            aria-hidden="true"
-            className="bg-ui-border-base mx-2 hidden h-4 w-px sm:block"
-          />
-        )}
-        {group.map((tab) => {
-          const isActive = tab.key === active;
-
-          return (
-            <Link
-              key={tab.key}
-              to={tab.to}
-              aria-current={isActive ? "page" : undefined}
-              className={clx(
-                "transition-fg rounded-md px-3 py-1.5 outline-none focus-visible:shadow-borders-focus",
-                isActive
-                  ? "bg-ui-bg-base-pressed text-ui-fg-base"
-                  : "text-ui-fg-subtle hover:bg-ui-bg-base-hover hover:text-ui-fg-base"
-              )}
-            >
-              <Text size="small" weight={isActive ? "plus" : "regular"}>
-                {tab.label}
-              </Text>
-            </Link>
-          );
-        })}
-      </div>
-    ))}
-    {/* Hledání odkudkoli (Ctrl+K) — na konci lišty, ať nepřebíjí záložky. */}
-    <div className="ml-auto">
-      <AdminSearch />
-    </div>
-  </nav>
-);
+export const WorkTabs = (_props: { active: WorkTabKey }) => null;
 
 /**
  * The secondary bar used inside a tab — Denní práce's stages, Recenze's

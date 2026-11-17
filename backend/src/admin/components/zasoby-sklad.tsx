@@ -22,6 +22,7 @@ import { Link } from "react-router-dom";
 import { useScrollMemory } from "../lib/scroll-memory";
 import { useUrlState } from "../lib/url-state";
 import { EmptyState, pieces } from "./empty-state";
+import { RowLink } from "./row-link";
 import { SubTabs, WorkTabs } from "./work-tabs";
 import { CopyId, ExpertToggle, useExpertMode } from "../lib/expert-mode";
 import { formatCount, formatCzk } from "../lib/workbench";
@@ -131,6 +132,12 @@ const stavSlovy: Record<Stav, string> = {
   low: "Dochází",
   ok: "Skladem",
 };
+
+/*
+ * Jedna mřížka pro hlavičku i řádky (17. 11. 2026) — dřív bez hlavičky
+ * a sloupce skákaly podle délky názvu. Pružný je jen Výrobek.
+ */
+const SKLAD_COLS = "lg:grid-cols-[minmax(0,1fr)_190px_170px_200px]";
 
 const nazev = (radek: SkladRadek) =>
   `${radek.product_title ?? "Produkt"}${radek.variant_title ? ` · ${radek.variant_title}` : ""}`;
@@ -349,10 +356,12 @@ const NazevRadku = ({ radek, odkaz }: { radek: SkladRadek; odkaz: boolean }) => 
       {radek.product_title || "—"}
     </Text>
   );
+  /* `relative z-10`: nad překryvem řádku (RowLink) — z klávesnice se na
+     produkt jde přes název, překryv je mimo tabulátor. */
   return odkaz && radek.product_id ? (
     <Link
       to={`/produkt/${radek.product_id}`}
-      className="block w-fit max-w-full hover:underline"
+      className="relative z-10 block w-fit max-w-full rounded-sm outline-none hover:underline focus-visible:shadow-borders-focus group-hover:underline"
       title="Otevřít detail produktu"
     >
       {text}
@@ -944,54 +953,73 @@ const ZasobyInner = () => {
 
       {aktivni.stav && !isLoading && !isError && radky.length > 0 && view !== "kompakt" && (
         <div className="divide-y">
+          {/* Hlavička tabulky — stejná mřížka jako řádky (17. 11. 2026). */}
+          <div className={`bg-ui-bg-subtle hidden gap-x-3 px-6 py-2 lg:grid ${SKLAD_COLS}`}>
+            {["Výrobek", "K prodeji", "Čekají", "Naskladnit"].map((nazevSloupce) => (
+              <Text key={nazevSloupce} size="xsmall" weight="plus" className="text-ui-fg-subtle">
+                {nazevSloupce}
+              </Text>
+            ))}
+          </div>
           {radky.map((radek) => (
             <article
               key={radek.variant_id}
-              className="grid gap-3 px-6 py-4 lg:grid-cols-[minmax(0,1.4fr)_200px_180px_auto] lg:items-center"
+              className={clx(
+                "relative grid gap-x-3 gap-y-2 px-6 py-3 lg:items-center",
+                SKLAD_COLS,
+                radek.product_id && "group hover:bg-ui-bg-base-hover transition-colors"
+              )}
             >
+              {/* Celý řádek vede na produkt (i Ctrl+klik). Pole „+ ks", hranice
+                  upozornění a název nad ním mají `relative z-10`. */}
+              {radek.product_id && (
+                <RowLink to={`/produkt/${radek.product_id}`} label={`Otevřít produkt ${nazev(radek)}`} />
+              )}
+
               <div className="min-w-0">
                 <NazevRadku radek={radek} odkaz />
-                <Text size="xsmall" className="text-ui-fg-subtle mt-1 truncate">
+                <Text size="xsmall" className="text-ui-fg-subtle mt-0.5 truncate">
                   {[radek.variant_title, radek.sku].filter(Boolean).join(" · ") ||
                     "bez provedení"}
                 </Text>
-                {expert && <CopyId value={radek.variant_id} />}
+                {expert && (
+                  <span className="relative z-10 block w-fit">
+                    <CopyId value={radek.variant_id} />
+                  </span>
+                )}
               </div>
 
               <div>
                 <Text
                   size="small"
                   weight="plus"
-                  className={radek.stav === "out" ? "text-ui-fg-error" : undefined}
+                  className={clx("tabular-nums", radek.stav === "out" && "text-ui-fg-error")}
                 >
-                  {radek.available} k prodeji
+                  {radek.available} ks
+                  <span className="text-ui-fg-subtle font-normal lg:hidden"> k prodeji</span>
                 </Text>
                 {radek.reserved > 0 && (
-                  <Text size="xsmall" className="text-ui-fg-subtle">
+                  <Text size="xsmall" className="text-ui-fg-subtle tabular-nums">
                     {radek.stocked} skladem · {radek.reserved} rezervováno
                   </Text>
                 )}
-                <div className="mt-1">
+                <div className="relative z-10 mt-0.5 w-fit">
                   <HraniceUpozorneni radek={radek} />
                 </div>
               </div>
 
               <div>
-                {radek.waiting_customers > 0 ? (
-                  <Cekajici radek={radek} />
-                ) : (
-                  <Text size="xsmall" className="text-ui-fg-muted">
-                    nikdo nečeká
-                  </Text>
-                )}
+                {/* Nikdo nečeká = prázdná buňka; „nikdo nečeká" u každého
+                    řádku byl jen šum. */}
+                <Cekajici radek={radek} />
                 {radek.wishlist_count > 0 && (
-                  <Text size="xsmall" className="text-ui-fg-subtle mt-1">
+                  <Text size="xsmall" className="text-ui-fg-subtle mt-0.5">
                     {radek.wishlist_count}× v oblíbených
                   </Text>
                 )}
               </div>
 
-              <div className="flex justify-start lg:justify-end">
+              <div className="relative z-10">
                 <PridatKusy radek={radek} />
               </div>
             </article>

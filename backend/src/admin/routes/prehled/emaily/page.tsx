@@ -14,7 +14,6 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState } from "../../../components/empty-state";
 import { WorkTabs } from "../../../components/work-tabs";

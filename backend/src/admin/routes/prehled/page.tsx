@@ -6,25 +6,19 @@ import {
   Badge,
   Button,
   Container,
-  DropdownMenu,
   Heading,
   Skeleton,
   Text,
-  clx,
 } from "@medusajs/ui";
 import {
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  OrderRow,
-  type MerchantOrder,
-} from "../../components/merchant-order-queue";
-import { WorkTabs } from "../../components/work-tabs";
+import type { MerchantOrder } from "../../components/merchant-order-queue";
+import { ShopOverview } from "../../components/shop-overview";
 import { StorefrontBridgeButton } from "../../components/storefront-bridge-button";
-import { formatAmount, formatDate } from "../../lib/format";
+import { formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
 import { useUrlState } from "../../lib/url-state"
@@ -119,24 +113,6 @@ type Vyber =
   | "received"
   | "shipping";
 
-const razeniLabel: Record<Razeni, string> = {
-  oldest: "Nejdéle čekající",
-  newest: "Od nejnovější",
-};
-
-const vyberLabel: Record<Vyber, string> = {
-  all: "Všechno, co čeká",
-  commissions: "Jen zakázky na míru",
-  payment_problem: "Jen potíže s platbou",
-  received: "Jen nové objednávky",
-  shipping: "Jen k odeslání",
-};
-
-const razeniPopis: Record<Razeni, string> = {
-  oldest: "Nejdéle čekající objednávky, u kterých je na tahu někdo z vás.",
-  newest: "Od té, se kterou se hýbalo naposledy — a pořád na někoho čeká.",
-};
-
 type Tone = "default" | "warning" | "critical";
 
 type Tile = {
@@ -148,82 +124,6 @@ type Tile = {
   tone?: Tone;
   to: string;
   cta: string;
-};
-
-const toneClass: Record<Tone, string> = {
-  default: "",
-  warning: "text-ui-fg-subtle",
-  critical: "text-ui-fg-error",
-};
-
-const TileCard = ({ tile }: { tile: Tile }) => (
-  <Link
-    to={tile.to}
-    className="bg-ui-bg-base hover:bg-ui-bg-base-hover transition-fg flex min-h-[8.5rem] flex-col px-6 py-6 outline-none focus-visible:shadow-borders-focus"
-  >
-    <Text size="small" className="text-ui-fg-subtle">
-      {tile.label}
-    </Text>
-    <Heading
-      level="h2"
-      className={clx("mt-2 text-2xl leading-tight", toneClass[tile.tone ?? "default"])}
-    >
-      {tile.value}
-    </Heading>
-    {tile.hint && (
-      <Text
-        size="small"
-        className={clx(
-          "mt-1.5",
-          tile.tone === "critical" ? "text-ui-fg-error" : "text-ui-fg-subtle"
-        )}
-      >
-        {tile.hint}
-      </Text>
-    )}
-    {/* Pushed to the bottom so every card's action sits on the same line,
-        however much text is above it. */}
-    <Text size="small" className="text-ui-fg-interactive mt-auto pt-3">
-      {tile.cta}
-    </Text>
-  </Link>
-);
-
-const Zone = ({
-  title,
-  description,
-  tiles,
-}: {
-  title: string;
-  description?: string;
-  tiles: Tile[];
-}) => {
-  if (!tiles.length) {
-    return null;
-  }
-  return (
-    <section className="pt-2">
-      <header className="flex flex-col gap-y-1 px-6 pb-4 pt-6">
-        <Heading level="h2">{title}</Heading>
-        {description && (
-          <Text size="small" className="text-ui-fg-subtle max-w-2xl">
-            {description}
-          </Text>
-        )}
-      </header>
-      {/*
-        `auto-fit` místo pevných tří sloupců: dlaždice se roztáhnou a vyplní
-        řádek. S `lg:grid-cols-3` zůstávalo po čtyřech dlaždicích prázdné
-        místo, kterým prosvítalo pozadí mřížky — na obrazovce to vypadalo
-        jako dvě šedé rozbité buňky.
-      */}
-      <div className="grid gap-px bg-ui-border-base grid-cols-[repeat(auto-fit,minmax(15rem,1fr))]">
-        {tiles.map((tile) => (
-          <TileCard key={tile.key} tile={tile} />
-        ))}
-      </div>
-    </section>
-  );
 };
 
 /** „1 věc / 2 věci / 5 věcí" — česky, protože „5 věci" vypadá jako chyba. */
@@ -580,101 +480,6 @@ const CekaRadek = ({ tiles }: { tiles: Tile[] }) => {
   );
 };
 
-const workTiles = (summary: OperationsSummary): Tile[] => {
-  const { today } = summary;
-  const tiles: Tile[] = [
-    {
-      key: "new-orders",
-      label: "Nové objednávky",
-      value: String(today.new_orders),
-      hint: today.new_orders === 0 ? "Žádné nové — máte klid ☕" : undefined,
-      to: "/prehled/prace?krok=nove",
-      cta: today.new_orders === 0 ? "Otevřít frontu" : "Začít",
-    },
-    {
-      key: "working",
-      label: "Připravujeme",
-      value: String(today.working),
-      hint: today.working === 0 ? "Nic rozpracovaného" : undefined,
-      to: "/prehled/prace?krok=pripravujeme",
-      cta: "Otevřít",
-    },
-    {
-      key: "shipping",
-      label: "K odeslání",
-      value: String(today.shipping),
-      hint:
-        today.shipping === 0
-          ? "Vše odesláno"
-          : today.shipping_oldest_days !== null &&
-              today.shipping_oldest_days > 3
-            ? `Nejstarší čeká ${today.shipping_oldest_days} dní.`
-            : undefined,
-      tone:
-        today.shipping > 0 &&
-        today.shipping_oldest_days !== null &&
-        today.shipping_oldest_days > 3
-          ? "critical"
-          : "default",
-      to: "/prehled/prace?krok=k-odeslani",
-      cta: "Otevřít",
-    },
-  ];
-
-  // Hidden at zero: she has no reason to think about money nobody owes.
-  if (today.awaiting_balance.count > 0) {
-    const overdue =
-      today.awaiting_balance.oldest_request_days !== null &&
-      today.awaiting_balance.oldest_request_days > 7;
-
-    tiles.push({
-      key: "awaiting-balance",
-      label: "Čeká na doplatek",
-      value: formatAmount(
-        today.awaiting_balance.outstanding_amount,
-        today.awaiting_balance.currency_code
-      ),
-      hint: overdue
-        ? `Nejstarší žádost je ${today.awaiting_balance.oldest_request_days} dní stará.`
-        : `${today.awaiting_balance.count} zakázk${
-            today.awaiting_balance.count === 1 ? "a" : "y"
-          } čeká na zaplacení.`,
-      tone: overdue ? "critical" : "default",
-      to: "/prehled/zakazky",
-      cta: "Zobrazit",
-    });
-  }
-
-  const deadlineDays =
-    today.in_production.nearest_deadline !== null
-      ? Math.ceil(
-          (new Date(today.in_production.nearest_deadline).getTime() -
-            Date.now()) /
-            (24 * 60 * 60 * 1000)
-        )
-      : null;
-
-  tiles.push({
-    key: "in-production",
-    label: "Ve výrobě",
-    value: String(today.in_production.count),
-    hint:
-      today.in_production.count === 0
-        ? "Žádná zakázka ve výrobě"
-        : today.in_production.nearest_deadline
-          ? `Nejbližší termín ${formatDate(today.in_production.nearest_deadline)}`
-          : undefined,
-    tone:
-      deadlineDays !== null && deadlineDays <= 3 && today.in_production.count > 0
-        ? "critical"
-        : "default",
-    to: "/prehled/zakazky",
-    cta: "Zobrazit",
-  });
-
-  return tiles;
-};
-
 const shopTiles = (summary: OperationsSummary): Tile[] => {
   const { shop } = summary;
   const tiles: Tile[] = [
@@ -852,8 +657,8 @@ const PrehledInner = () => {
   /* Volba platí do zavření stránky — ne do nastavení, je to pohled, ne nastavení. */
   /* V adrese, ne v paměti — odchod na detail a zpět jinak volbu zahodí
      (8. 11. 2026, viz lib/url-state). */
-  const [razeni, setRazeni] = useUrlState<Razeni>("razeni", "oldest");
-  const [vyber, setVyber] = useUrlState<Vyber>("vyber", "all");
+  const [razeni] = useUrlState<Razeni>("razeni", "oldest");
+  const [vyber] = useUrlState<Vyber>("vyber", "all");
 
   const { data, isLoading, isError, refetch, isFetching } =
     useQuery<OperationsSummary>({
@@ -888,7 +693,6 @@ const PrehledInner = () => {
   if (isLoading) {
     return (
       <Container className="divide-y p-0">
-        <WorkTabs active="prehled" />
         <header className="px-6 pb-2 pt-6">
           <Heading>Přehled</Heading>
         </header>
@@ -906,7 +710,6 @@ const PrehledInner = () => {
   if (isError || !data) {
     return (
       <Container className="p-0">
-        <WorkTabs active="prehled" />
         <div className="flex min-h-64 flex-col items-center justify-center gap-y-3 px-6 py-10 text-center">
           <Heading level="h2">Přehled se nepodařilo načíst</Heading>
           <Text size="small" className="text-ui-fg-subtle">
@@ -921,18 +724,9 @@ const PrehledInner = () => {
   }
 
   const attention = attentionTiles(data);
-  const work = workTiles(data);
   const shop = shopTiles(data);
   const waiting = waitingTiles(data.waiting, newInquiries);
   const cekaCelkem = waitingCount(data.waiting, newInquiries);
-
-  const allClear =
-    attention.length === 0 &&
-    cekaCelkem === 0 &&
-    data.today.new_orders === 0 &&
-    data.today.working === 0 &&
-    data.today.shipping === 0 &&
-    data.next_up.length === 0;
 
   /*
    * Kolik věcí dnes čeká — číslo do úvodní věty.
@@ -961,7 +755,6 @@ const PrehledInner = () => {
       <OsireleUcty />
       <ChybejiciDokumenty />
       <Container className="divide-y p-0">
-        <WorkTabs active="prehled" />
       <VitrinaCard />
 
         {/*
@@ -1011,96 +804,34 @@ const PrehledInner = () => {
 
         <CekaRadek tiles={waiting} />
 
-        {/*
-          Pořadí dne (§4): co hoří (štítky v hlavičce) → co čeká na odpověď
-          (Čeká na vás) → na čem jsem na tahu
-          (Na řadě) → kolik toho je (Dnešní práce) → obchod (řádek štítků).
-
-          „Na řadě" bývalo úplně dole, pod čtrnácti dlaždicemi. Přitom je to
-          ta odpověď na „co mám dělat teď", kvůli které stránka vznikla —
-          konkrétní objednávky s konkrétním dalším krokem, ne čísla.
-          Zóna „Vyžaduje pozornost" zmizela do štítků nahoře, zóna „Obchod"
-          do řádku dole; zůstala jedna zóna dlaždic, a ta má smysl.
-        */}
-        <section className="divide-y">
-          <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
-            <div className="min-w-0">
-              <Heading level="h2">Na řadě</Heading>
-              <Text size="small" className="text-ui-fg-subtle mt-2">
-                {razeniPopis[razeni]}
-              </Text>
-            </div>
-
-            {/* Řazení a výběr v jedné rozbalovačce — pět řádků si zaslouží
-                jedno tlačítko, ne řádek pilulek. Počítá to server. */}
-            <DropdownMenu>
-              <DropdownMenu.Trigger asChild>
-                <Button size="small" variant="secondary" isLoading={isFetching}>
-                  {razeniLabel[razeni]}
-                  {vyber === "all" ? "" : ` · ${vyberLabel[vyber]}`} ▾
-                </Button>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Content>
-                <DropdownMenu.Label>Řadit</DropdownMenu.Label>
-                <DropdownMenu.RadioGroup
-                  value={razeni}
-                  onValueChange={(value) => setRazeni(value as Razeni)}
-                >
-                  <DropdownMenu.RadioItem value="oldest">
-                    {razeniLabel.oldest}
-                  </DropdownMenu.RadioItem>
-                  <DropdownMenu.RadioItem value="newest">
-                    {razeniLabel.newest}
-                  </DropdownMenu.RadioItem>
-                </DropdownMenu.RadioGroup>
-
-                <DropdownMenu.Separator />
-
-                <DropdownMenu.Label>Ukázat</DropdownMenu.Label>
-                <DropdownMenu.RadioGroup
-                  value={vyber}
-                  onValueChange={(value) => setVyber(value as Vyber)}
-                >
-                  {(Object.keys(vyberLabel) as Vyber[]).map((key) => (
-                    <DropdownMenu.RadioItem key={key} value={key}>
-                      {vyberLabel[key]}
-                    </DropdownMenu.RadioItem>
-                  ))}
-                </DropdownMenu.RadioGroup>
-              </DropdownMenu.Content>
-            </DropdownMenu>
-          </header>
-
-          {data.next_up.length === 0 ? (
-            <div className="flex min-h-32 flex-col items-center justify-center gap-y-2 px-6 py-8 text-center">
-              <Text size="small" className="text-ui-fg-subtle max-w-md">
-                {vyber !== "all"
-                  ? "V tomhle výběru nic nečeká — zkuste ho rozbalovačkou rozšířit."
-                  : allClear
-                    ? "Všechno zvládnuto — nic nečeká. 🎉"
-                    : "Žádná objednávka nečeká na vás."}
-              </Text>
-            </div>
-          ) : (
-            <div className="divide-y">
-              {/*
-                The same card component the queues use, so an order looks and
-                behaves identically wherever she meets it.
-              */}
-              {data.next_up.map((order) => (
-                <OrderRow key={order.order_id} order={order} stage={order.stage} />
-              ))}
-            </div>
-          )}
-        </section>
-
-        <Zone
-          title="Dnešní práce"
-          description="Kolik toho je dohromady — klikem se dostanete na seznam."
-          tiles={work}
-        />
+        {/* Přehled e-shopu: tržby, objednávky, kolik lidí nakoupilo, graf
+            a nejprodávanější (přání majitelky 17. 11. 2026). Fronta „Na řadě"
+            a dlaždice „Dnešní práce" odešly — práce je v Objednávkách. */}
+        <ShopOverview />
 
         <ObchodRadek tiles={shop} />
+
+        {/* Stránky, které dřív měly záložku v liště Přehledu a nemají
+            vlastní položku v menu (17. 11. 2026). */}
+        <nav
+          aria-label="Další přehledy"
+          className="flex flex-wrap items-center gap-x-5 gap-y-2 px-6 py-4"
+        >
+          <Text size="small" className="text-ui-fg-muted">
+            Další přehledy:
+          </Text>
+          {[
+            ["/prehled/platby", "Platby"],
+            ["/prehled/recenze", "Recenze"],
+            ["/prehled/slevy", "Sezónní akce"],
+            ["/prehled/emaily", "Odeslané e-maily"],
+            ["/prehled/provoz", "Provoz"],
+          ].map(([to, label]) => (
+            <Link key={to} to={to} className="text-ui-fg-interactive text-sm hover:underline">
+              {label}
+            </Link>
+          ))}
+        </nav>
       </Container>
     </div>
   );
