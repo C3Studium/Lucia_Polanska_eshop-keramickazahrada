@@ -13,7 +13,7 @@ import type { ShippingClass } from "../../lib/shipping-rates";
  *
  * Matěj 3. 11. 2026: „to hlavní tam nech jako balné atd., ale to vedlejší dej
  * opět do … a to otevře malé okno". V řádku zůstává, co se mění často
- * (balné, dobírka, křehké, viditelnost); sem patří, na co se sahá jednou za
+ * (balné, dobírka, křehké); sem patří, na co se sahá jednou za
  * čas: poškozený kus, slevové kódy, velikost zásilky, profil dopravy,
  * zakázka, archiv.
  *
@@ -39,6 +39,14 @@ import type { ShippingClass } from "../../lib/shipping-rates";
  * Ptá se dvěma kroky uvnitř okna, ne dalším vyskakovacím dialogem: okno je
  * modální a dialog nad dialogem je na ovládání i na čtení horší než
  * potvrzovací řádek na místě. Jméno kusu stojí v hlavičce okna.
+ *
+ * ## Viditelnost a podrobnosti (17. 11. 2026)
+ *
+ * Lucie: řádek je přeplácaný, „Křehké" lezlo přes „Rozbalit". Řádek teď sám
+ * otevírá produkt, takže oko a „Rozbalit" se přestěhovaly sem: viditelnost
+ * jako přepínač (ukládá se hned jako ostatní, vrací se přes „Vrátit zpět"),
+ * podrobnosti jako tlačítko, které okno zavře a rozbalí řádek. Že je kus
+ * skrytý, říká dál štítek ve sloupci Stav.
  */
 
 type FlagKey = "clearance" | "no_promo";
@@ -83,6 +91,9 @@ export const ProductRowMore = ({
   showArchive,
   showDelete,
   storeUrl,
+  showVisibility,
+  expanded,
+  onToggleExpand,
   trigger,
 }: {
   product: {
@@ -107,18 +118,26 @@ export const ProductRowMore = ({
   showDelete?: boolean;
   /** Odkaz „Otevřít v obchodě“ (dřív holá ikona v řádku, 14. 11. 2026). */
   storeUrl?: string | null;
+  /** Přepínač „Vidět v obchodě" (dřív oko v řádku). */
+  showVisibility?: boolean;
+  /** Jestli jsou pod řádkem rozbalené podrobnosti (prodeje, hodnocení). */
+  expanded?: boolean;
+  /** Rozbalí / sbalí podrobnosti pod řádkem; bez něj se tlačítko neukáže. */
+  onToggleExpand?: () => void;
   trigger: ReactNode;
 }) => {
   const [open, setOpen] = useState(false);
   /* Hodnota hned po kliknutí, než se seznam načte znovu. */
   const [local, setLocal] = useState<Partial<Record<FlagKey, boolean>>>({});
   const [localClass, setLocalClass] = useState<ShippingClass | null>(null);
+  const [localVisible, setLocalVisible] = useState<boolean | null>(null);
   /* Druhý krok mazání — ptá se tady, ne dalším dialogem nad dialogem. */
   const [ptaSeNaSmazani, setPtaSeNaSmazani] = useState(false);
   useEffect(() => {
     if (open) {
       setLocal({});
       setLocalClass(null);
+      setLocalVisible(null);
       setPtaSeNaSmazani(false);
     }
   }, [open]);
@@ -183,6 +202,40 @@ export const ProductRowMore = ({
     },
   });
   const currentClass = localClass ?? shippingClass;
+
+  /* Viditelnost v obchodě = stav produktu (zveřejněný / koncept). Ukládá se
+     hned; vrácení vrátí přesně ten stav, který kus měl předtím. */
+  const saveVisibility = useMutation({
+    mutationFn: ({ next }: { next: boolean; previousStatus: string }) =>
+      sdk.client.fetch(`/admin/products/${product.id}`, {
+        method: "POST",
+        body: { status: next ? "published" : "draft" },
+      }),
+    onMutate: ({ next }) => setLocalVisible(next),
+    onSuccess: async (_result, { next, previousStatus }) => {
+      await refresh();
+      pushUndo(
+        `${next ? "Zobrazení" : "Skrytí"} v obchodě — ${product.title}`,
+        async () => {
+          await sdk.client.fetch(`/admin/products/${product.id}`, {
+            method: "POST",
+            body: { status: previousStatus },
+          });
+          await refresh();
+        }
+      );
+      toast.success(
+        next
+          ? "Zobrazeno v obchodě — zákazníci ho teď uvidí a mohou koupit."
+          : "Skryto z obchodu — zákazníci ho neuvidí, dokud ho zase nezobrazíte."
+      );
+    },
+    onError: (error) => {
+      setLocalVisible(null);
+      toast.error(ceskaChyba(error, "Změna se nepodařila."));
+    },
+  });
+  const currentVisible = localVisible ?? product.status === "published";
 
   /*
    * Archivace = příznak (zmizí ze seznamů) + koncept (zmizí z obchodu), stejně
@@ -253,8 +306,52 @@ export const ProductRowMore = ({
         </Prompt.Header>
 
         <div className="flex flex-col gap-y-4 px-6 pt-4">
-          {flagKeys.map((key) => (
-            <label key={key} className="flex cursor-pointer items-start justify-between gap-4">
+          {onToggleExpand && (
+            <Button
+              size="small"
+              variant="secondary"
+              className="justify-start"
+              onClick={() => {
+                setOpen(false);
+                onToggleExpand();
+              }}
+            >
+              {expanded
+                ? "Skrýt prodeje a hodnocení"
+                : "Ukázat prodeje po měsících a hodnocení"}
+            </Button>
+          )}
+
+          {showVisibility && (
+            <label
+              className={`flex cursor-pointer items-start justify-between gap-4 ${onToggleExpand ? "border-ui-border-base border-t pt-4" : ""}`}
+            >
+              <span>
+                <Text size="small" weight="plus">
+                  Vidět v obchodě
+                </Text>
+                <Text size="xsmall" className="text-ui-fg-subtle">
+                  {currentVisible
+                    ? "Zákazníci ho v obchodě vidí a mohou koupit."
+                    : "Skrytý — zákazníci ho v obchodě nevidí a nekoupí."}
+                </Text>
+              </span>
+              <Switch
+                className="mt-0.5 shrink-0"
+                checked={currentVisible}
+                disabled={saveVisibility.isPending}
+                onCheckedChange={(value) =>
+                  saveVisibility.mutate({ next: value, previousStatus: product.status })
+                }
+              />
+            </label>
+          )}
+
+          {flagKeys.map((key, index) => (
+            <label
+              key={key}
+              className={`flex cursor-pointer items-start justify-between gap-4 ${index === 0 && (showVisibility || onToggleExpand) ? "border-ui-border-base border-t pt-4" : ""}`}
+            >
               <span>
                 <Text size="small" weight="plus">
                   {FLAG_TEXT[key].label}
@@ -274,7 +371,7 @@ export const ProductRowMore = ({
 
           {currentClass && (
             <div
-              className={`flex flex-col gap-y-2 ${flagKeys.length ? "border-ui-border-base border-t pt-4" : ""}`}
+              className={`flex flex-col gap-y-2 ${flagKeys.length || showVisibility || onToggleExpand ? "border-ui-border-base border-t pt-4" : ""}`}
             >
               <span>
                 <Text size="small" weight="plus">
@@ -314,7 +411,7 @@ export const ProductRowMore = ({
 
           {(showShipping || showMakeCommission || showArchive || storeUrl) && (
             <div
-              className={`flex flex-col gap-y-2 ${flagKeys.length || currentClass ? "border-ui-border-base border-t pt-4" : ""}`}
+              className={`flex flex-col gap-y-2 ${flagKeys.length || currentClass || showVisibility || onToggleExpand ? "border-ui-border-base border-t pt-4" : ""}`}
             >
               {storeUrl && (
                 <Button size="small" variant="secondary" className="justify-start" asChild>

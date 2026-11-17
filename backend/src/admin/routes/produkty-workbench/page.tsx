@@ -1,5 +1,6 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import {
+  EllipsisHorizontal,
   Photo,
   TagSolid,
 } from "@medusajs/icons";
@@ -28,6 +29,7 @@ import { ProductLightbox, Thumb } from "../../components/product-thumb";
 import { ProductSortingGuide } from "../../components/product-sorting-guide";
 import { VisibilityEye } from "../../components/visibility-eye";
 import { EmptyState } from "../../components/empty-state";
+import { RowLink } from "../../components/row-link";
 import {
   BulkAction,
   BulkBar,
@@ -187,7 +189,14 @@ const stockBadge: Record<
 };
 
 /** „Rozbalit" — the level under the row; shared by every kind's tab. */
-const ProductExpansion = ({ productId }: { productId: string }) => {
+const ProductExpansion = ({
+  productId,
+  onClose,
+}: {
+  productId: string;
+  /** Rozbaluje se z „…" — sbalit jde rovnou tady, bez cesty zpátky do okna. */
+  onClose: () => void;
+}) => {
   const { data, isLoading } = useQuery<ProductDetail>({
     queryKey: ["workbench-product", productId],
     queryFn: () =>
@@ -207,6 +216,14 @@ const ProductExpansion = ({ productId }: { productId: string }) => {
 
   return (
     <div className="bg-ui-bg-subtle px-6 py-4">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <Text size="small" weight="plus">
+          Prodeje a hodnocení
+        </Text>
+        <Button size="small" variant="secondary" onClick={onClose}>
+          Sbalit
+        </Button>
+      </div>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <div>
           <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
@@ -333,20 +350,24 @@ const PublishToggle = ({ product }: { product: WorkbenchProduct }) => {
  * Sloupec „Balné a doprava" nese to, co se u kusu mění nejčastěji (Matěj
  * 3. 11. 2026: „to hlavní tam nech jako balné atd."): balné, dobírka,
  * křehké. Vzácná nastavení jsou pod „…" v malém okně (ProductRowMore).
+ *
+ * Celý řádek otevírá produkt (Lucie 17. 11. 2026: klikala kamkoli na řádek
+ * a čekala detail; „Křehké" navíc lezlo přes „Rozbalit"). Vpravo proto
+ * zůstalo jen „…" — oko i podrobnosti jsou v něm, „Upravit" dělá řádek sám.
  */
 const ROW_GRID =
-  "min-[1200px]:grid-cols-[minmax(0,1fr)_96px_88px_92px_176px_164px]";
+  "min-[1200px]:grid-cols-[minmax(0,1fr)_104px_112px_128px_196px_48px]";
 
 const RowHeader = ({ settings }: { settings: boolean }) => (
   <div
     className={`bg-ui-bg-subtle text-ui-fg-subtle hidden gap-x-3 px-6 py-2 min-[1200px]:grid ${ROW_GRID}`}
   >
     {[
-      ["Produkt", "", "pl-[92px]"],
+      ["Produkt", "", "pl-[84px]"],
       ["Stav", "", ""],
       ["Cena", "", ""],
       ["Prodeje 30 dní", "", ""],
-      [settings ? "Balné a doprava" : "", "", ""],
+      [settings ? "Balné a doprava" : "", "", "pl-2"],
       ["", "", ""],
     ].map(([label, title, className], index) => (
       <Text key={index} size="xsmall" weight="plus" className={className} title={title || undefined}>
@@ -355,6 +376,17 @@ const RowHeader = ({ settings }: { settings: boolean }) => (
     ))}
   </div>
 );
+
+/*
+ * Sloupec „Balné a doprava" jako malá tabulka: popisek vlevo, ovládání
+ * vpravo, každý údaj na svém řádku stejné výšky. Dřív stály Dobírka
+ * a Křehké vedle sebe a delší popisek přetekl do sousedního sloupce.
+ * Rozpracovaná změna obarví celý řádek oranžově, ne jen ovládání.
+ */
+const lineClass = (dirty: boolean) =>
+  `flex min-h-[32px] items-center justify-between gap-3 rounded-md px-2 ${dirty ? "bg-ui-tag-orange-bg" : ""}`;
+const lineLabelClass = (dirty: boolean) =>
+  dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle";
 
 const FlagSwitch = ({
   label,
@@ -369,17 +401,11 @@ const FlagSwitch = ({
   dirty: boolean;
   onFlip: () => void;
 }) => (
-  <label
-    className={`flex cursor-pointer items-center gap-1.5 ${dirty ? "bg-ui-tag-orange-bg rounded-md px-1" : ""}`}
-    title={title}
-  >
-    <Switch size="small" checked={checked} onCheckedChange={onFlip} />
-    <Text
-      size="xsmall"
-      className={`${dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle"}`}
-    >
+  <label className={`${lineClass(dirty)} cursor-pointer`} title={title}>
+    <Text size="small" className={lineLabelClass(dirty)}>
       {label}
     </Text>
+    <Switch checked={checked} onCheckedChange={onFlip} aria-label={label} />
   </label>
 );
 
@@ -410,29 +436,30 @@ const PackagingInput = ({
   };
   return (
     <label
-      className={`flex items-center gap-1.5`}
+      className={lineClass(dirty)}
       title="Cena balení za kus — zákazník ji uvidí jako „Balné“ pod výrobkem."
     >
-      <Text
-        size="xsmall"
-        className={`${dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle"}`}
-      >
+      <Text size="small" className={lineLabelClass(dirty)}>
         Balné
       </Text>
-      <input
-        type="number"
-        min={0}
-        inputMode="decimal"
-        placeholder="0"
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        onBlur={commit}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") (event.target as HTMLInputElement).blur();
-        }}
-        className={`border-ui-border-base bg-ui-bg-field txt-compact-xsmall w-16 rounded-md border px-2 py-1 text-right ${dirty ? "border-ui-tag-orange-border" : ""}`}
-      />
-      <Text size="xsmall" className={`text-ui-fg-subtle`}>Kč</Text>
+      <span className="flex items-center gap-1.5">
+        <input
+          type="number"
+          min={0}
+          inputMode="decimal"
+          placeholder="0"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") (event.target as HTMLInputElement).blur();
+          }}
+          className={`border-ui-border-base bg-ui-bg-field txt-compact-small h-8 w-16 rounded-md border px-2 text-right ${dirty ? "border-ui-tag-orange-border" : ""}`}
+        />
+        <Text size="small" className="text-ui-fg-subtle">
+          Kč
+        </Text>
+      </span>
     </label>
   );
 };
@@ -1237,7 +1264,7 @@ const ProductsInner = () => {
             <div className="flex flex-wrap items-center gap-1">
               {product.status !== "published" && (
                 <Badge size="2xsmall" color="grey">
-                  koncept
+                  skryto
                 </Badge>
               )}
               {worstStock && (
@@ -1296,7 +1323,7 @@ const ProductsInner = () => {
         </Link>
         {product.status !== "published" && (
           <Badge size="2xsmall" color="grey">
-            koncept
+            skryto
           </Badge>
         )}
         {worstStock && (
@@ -1322,32 +1349,51 @@ const ProductsInner = () => {
 
     const settingsOn = active !== "oblibene" && active !== "archivovane";
     const pending = pendingFlags[product.id];
+    const isExpanded = expanded === product.id;
+    const shippingClass = effectiveShippingClass(product);
+    const detailUrl = `/produkt/${product.id}`;
+    /* Odkazy pod názvem — nad překryvem řádku, jinak by je překryl. */
+    const subLinkClass = "text-ui-fg-interactive relative z-10 hover:underline";
 
     return (
       <Fragment key={product.id}>
+        {/*
+          Celý řádek je odkaz na produkt: opravdový <a> přes celou plochu
+          (components/row-link), takže funguje i prostřední tlačítko a Ctrl+klik.
+          Všechno klikací v řádku je `relative z-10`, aby ho překryv nespolkl.
+          Klávesnice jde přes název — překryv je mimo tabulátor.
+        */}
         <article
           id={`workbench-row-${product.id}`}
-          className={`grid gap-x-3 gap-y-2 px-6 py-3 min-[1200px]:items-center ${ROW_GRID}`}>
+          className={`group relative grid gap-x-3 gap-y-3 px-6 py-3 transition-colors hover:bg-ui-bg-base-hover min-[1200px]:items-center ${isExpanded ? "bg-ui-bg-subtle" : ""} ${ROW_GRID}`}
+        >
+          <RowLink to={detailUrl} label={`Otevřít produkt ${product.title}`} />
+
           {/* 1) Produkt: výběr, fotka, název, zařazení, odkazy */}
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3 pr-12 min-[1200px]:pr-0">
             <SelectCheckbox
+              className="relative z-10"
               checked={selected.has(product.id)}
               label={`Vybrat ${product.title}`}
               onChange={(checked) => toggleSelected(product.id, checked)}
             />
+            {/* Bez zvětšení: klik na fotku otevře produkt jako zbytek řádku.
+                Fotky v plné velikosti jsou v mřížce a v kompaktním seznamu. */}
             <Thumb
               src={product.thumbnail}
               title={product.title}
               sizeClassName="size-10"
-              onZoom={() => setLightbox({ id: product.id, title: product.title })}
             />
             <div className="min-w-0">
               <Link
-                to={`/produkt/${product.id}`}
-                className="block w-fit max-w-full hover:underline"
-                title="Otevřít detail produktu"
+                to={detailUrl}
+                className="relative z-10 block w-fit max-w-full rounded-sm outline-none focus-visible:shadow-borders-focus"
               >
-                <Text size="small" weight="plus" className="truncate">
+                <Text
+                  size="small"
+                  weight="plus"
+                  className="truncate group-hover:underline"
+                >
                   {product.title}
                 </Text>
               </Link>
@@ -1363,12 +1409,12 @@ const ProductsInner = () => {
                       : ""}
               </Text>
               {/* Odkazy, které mění podstatu kusu — malé, pod názvem. */}
-              <div className="txt-compact-xsmall mt-0.5 flex flex-wrap items-center gap-x-2">
+              <div className="txt-compact-xsmall mt-0.5 flex flex-wrap items-center gap-x-3">
                 <VariantsEditor
                   productId={product.id}
                   productTitle={product.title}
                   trigger={
-                    <button type="button" className="text-ui-fg-interactive hover:underline">
+                    <button type="button" className={subLinkClass}>
                       Varianty
                     </button>
                   }
@@ -1378,7 +1424,7 @@ const ProductsInner = () => {
                     productId={product.id}
                     productTitle={product.title}
                     trigger={
-                      <button type="button" className="text-ui-fg-interactive hover:underline">
+                      <button type="button" className={subLinkClass}>
                         Podmínky
                       </button>
                     }
@@ -1388,30 +1434,42 @@ const ProductsInner = () => {
                   <BundleEditor
                     bundleId={product.bundle.id}
                     trigger={
-                      <button type="button" className="text-ui-fg-interactive hover:underline">
+                      <button type="button" className={subLinkClass}>
                         Složení
                       </button>
                     }
                   />
                 )}
-                {expert && <CopyId value={product.id} />}
+                {expert && (
+                  <span className="relative z-10">
+                    <CopyId value={product.id} />
+                  </span>
+                )}
               </div>
             </div>
           </div>
 
           {/* 2–5) Stav, cena, prodeje, balné — na užším displeji pod názvem */}
-          <div className={`flex flex-wrap items-center gap-x-5 gap-y-2 sm:pl-[92px] min-[1200px]:contents`}>
+          <div className="flex flex-wrap items-start gap-x-6 gap-y-3 sm:pl-[84px] min-[1200px]:contents">
             <div className="flex flex-wrap gap-1">
               {product.status !== "published" && (
-                <Badge size="2xsmall" color="grey">koncept</Badge>
+                <Badge
+                  size="small"
+                  color="grey"
+                  title="Zákazníci ho v obchodě nevidí. Zobrazíte ho pod „…“."
+                >
+                  skryto
+                </Badge>
               )}
               {worstStock && (
-                <Badge size="2xsmall" color={stockBadge[worstStock].color}>
+                <Badge size="small" color={stockBadge[worstStock].color}>
                   {stockBadge[worstStock].label}
                 </Badge>
               )}
               {product.archived && (
-                <Badge size="2xsmall" color="grey">archiv</Badge>
+                <Badge size="small" color="grey">
+                  archiv
+                </Badge>
               )}
             </div>
             <div>
@@ -1436,125 +1494,122 @@ const ProductsInner = () => {
             </div>
             <div>
               <Text size="small">{product.sold_30d}× prodáno</Text>
-              <Text size="xsmall" className="text-ui-fg-subtle">
-                {product.wishlist_count > 0 ? `${product.wishlist_count}× oblíbené` : "bez oblíbení"}
-                {product.review_average !== null ? ` · ${product.review_average} ★` : ""}
+              <Text
+                size="xsmall"
+                className={product.wishlist_count > 0 ? "text-ui-fg-subtle" : "text-ui-fg-muted"}
+              >
+                {product.wishlist_count}× v oblíbených
               </Text>
+              {product.review_average !== null && (
+                <Text size="xsmall" className="text-ui-fg-subtle">
+                  hodnocení {product.review_average} ★
+                </Text>
+              )}
             </div>
             {/*
               5) Balné a doprava — to, co se u kusu mění často, rovnou v řádku.
               Píše se do rozpracovaných změn jako dřív (Potvrdit / Potvrdit vše),
-              na označeném řádku pro celý výběr.
+              na označeném řádku pro celý výběr. Celý sloupec je nad překryvem:
+              minout přepínač o kousek nesmí odvést pryč z rozpracovaných změn.
             */}
-            <div className="flex flex-col gap-1.5">
-              {settingsOn ? (
-                <>
-                  <PackagingInput
-                    value={effectivePackaging(product)}
-                    dirty={pending?.packaging_price !== undefined}
-                    onChange={(value) => stagePackaging(product, value)}
-                  />
-                  <div className="flex items-center gap-3">
-                    <FlagSwitch
-                      label="Dobírka"
-                      title="Zákazník smí platit při převzetí — jen ČR a Česká pošta na adresu."
-                      checked={effectiveFlag(product, "cod_allowed")}
-                      dirty={pending?.cod_allowed !== undefined}
-                      onFlip={() => stageFlag(product, "cod_allowed")}
-                    />
-                    <FlagSwitch
-                      label="Křehké"
-                      title="Celá zásilka s tímto kouskem pojede v křehkém režimu (Česká pošta – křehké nebo osobní odběr)."
-                      checked={effectiveFlag(product, "fragile")}
-                      dirty={pending?.fragile !== undefined}
-                      onFlip={() => stageFlag(product, "fragile")}
-                    />
-                  </div>
-                  {/* Velikost zásilky jen jako štítek — mění se v „…" nebo
-                      hromadně v liště výběru (rozpracovaná = oranžově). */}
-                  <span
-                    className={`flex w-fit items-center gap-1.5 ${pending?.shipping_class !== undefined ? "bg-ui-tag-orange-bg rounded-md px-1" : ""}`}
-                    title="Velikost zásilky — podle ní se v pokladně počítá poštovné. Mění se pod „…“."
+            {settingsOn ? (
+              <div className="relative z-10 flex w-[196px] cursor-default flex-col gap-0.5 min-[1200px]:w-auto">
+                <PackagingInput
+                  value={effectivePackaging(product)}
+                  dirty={pending?.packaging_price !== undefined}
+                  onChange={(value) => stagePackaging(product, value)}
+                />
+                <FlagSwitch
+                  label="Dobírka"
+                  title="Zákazník smí platit při převzetí — jen ČR a Česká pošta na adresu."
+                  checked={effectiveFlag(product, "cod_allowed")}
+                  dirty={pending?.cod_allowed !== undefined}
+                  onFlip={() => stageFlag(product, "cod_allowed")}
+                />
+                <FlagSwitch
+                  label="Křehké"
+                  title="Celá zásilka s tímto kouskem pojede v křehkém režimu (Česká pošta – křehké nebo osobní odběr)."
+                  checked={effectiveFlag(product, "fragile")}
+                  dirty={pending?.fragile !== undefined}
+                  onFlip={() => stageFlag(product, "fragile")}
+                />
+                {/* Velikost zásilky jen jako štítek — mění se v „…" nebo
+                    hromadně v liště výběru (rozpracovaná = oranžově). */}
+                <div
+                  className={lineClass(pending?.shipping_class !== undefined)}
+                  title="Velikost zásilky — podle ní se v pokladně počítá poštovné. Mění se pod „…“."
+                >
+                  <Text
+                    size="small"
+                    className={lineLabelClass(pending?.shipping_class !== undefined)}
                   >
-                    <Text size="xsmall" className="text-ui-fg-subtle">
-                      Zásilka
-                    </Text>
-                    <Badge
-                      size="2xsmall"
-                      color={
-                        effectiveShippingClass(product) === "velke"
-                          ? "blue"
-                          : effectiveShippingClass(product) === "poukaz"
-                            ? "purple"
-                            : "grey"
-                      }
-                    >
-                      {shippingClassLabel(effectiveShippingClass(product))}
-                    </Badge>
-                  </span>
-                </>
-              ) : null}
-            </div>
+                    Zásilka
+                  </Text>
+                  <Badge
+                    size="small"
+                    color={
+                      shippingClass === "velke"
+                        ? "blue"
+                        : shippingClass === "poukaz"
+                          ? "purple"
+                          : "grey"
+                    }
+                  >
+                    {shippingClassLabel(shippingClass)}
+                  </Badge>
+                </div>
+              </div>
+            ) : (
+              <div className="hidden min-[1200px]:block" />
+            )}
           </div>
 
-          {/* 6) Akce řádku — poslední sloupec mřížky; vzácné věci pod „…". */}
-          <div className={`flex items-center gap-3 sm:pl-[92px] min-[1200px]:justify-end min-[1200px]:pl-0`}>
-              {/* Klidnější řádek (14. 11. 2026): slovo místo šipky, „Otevřít
-                  v obchodě" pod „…". Přepínače Dobírka/Křehké a balné zůstávají
-                  v řádku (Matěj 12. 10.). */}
-              <button
-                type="button"
-                aria-expanded={expanded === product.id}
-                className="text-ui-fg-interactive txt-small hover:underline"
-                onClick={() => setExpanded(expanded === product.id ? null : product.id)}
-              >
-                {expanded === product.id ? "Sbalit" : "Rozbalit"}
-              </button>
-              <PublishToggle product={product} />
-              <Link
-                to={`/produkt/${product.id}`}
-                className="text-ui-fg-interactive txt-small hover:underline"
-              >
-                Upravit
-              </Link>
-              {active !== "oblibene" && (
-                <ProductRowMore
-                  product={product}
-                  flags={
-                    settingsOn
-                      ? {
-                          ...(active === "produkty" || active === "poskozene"
-                            ? { clearance: effectiveFlag(product, "clearance") }
-                            : {}),
-                          no_promo: effectiveFlag(product, "no_promo"),
-                        }
-                      : {}
-                  }
-                  onFlagSaved={(key) => dropPendingKey(product.id, key)}
-                  shippingClass={settingsOn ? effectiveShippingClass(product) : undefined}
-                  onShippingClassSaved={() => dropPendingKey(product.id, "shipping_class")}
-                  showShipping
-                  showMakeCommission={active === "produkty"}
-                  showArchive
-                  showDelete
-                  storeUrl={product.store_url}
-                  trigger={
-                    <button
-                      type="button"
-                      title="Další nastavení"
-                      aria-label={`Další nastavení — ${product.title}`}
-                      className="text-ui-fg-subtle hover:text-ui-fg-base hover:bg-ui-bg-base-hover rounded-md px-2 py-0.5 text-lg leading-none"
-                    >
-                      …
-                    </button>
-                  }
-                />
-              )}
+          {/*
+            6) Jediná akce vpravo: „…" (viditelnost, podrobnosti, vzácná
+            nastavení). Na užším displeji sedí v pravém horním rohu řádku.
+          */}
+          <div className="absolute right-3 top-3 min-[1200px]:static min-[1200px]:flex min-[1200px]:justify-end">
+            <ProductRowMore
+              product={product}
+              flags={
+                settingsOn
+                  ? {
+                      ...(active === "produkty" || active === "poskozene"
+                        ? { clearance: effectiveFlag(product, "clearance") }
+                        : {}),
+                      no_promo: effectiveFlag(product, "no_promo"),
+                    }
+                  : {}
+              }
+              onFlagSaved={(key) => dropPendingKey(product.id, key)}
+              shippingClass={settingsOn ? shippingClass : undefined}
+              onShippingClassSaved={() => dropPendingKey(product.id, "shipping_class")}
+              /* Oblíbené jsou přehled poptávky — tam jen viditelnost,
+                 podrobnosti a odkaz do obchodu, žádné zásahy do kusu. */
+              showShipping={active !== "oblibene"}
+              showMakeCommission={active === "produkty"}
+              showArchive={active !== "oblibene"}
+              showDelete={active !== "oblibene"}
+              showVisibility={active !== "archivovane"}
+              expanded={isExpanded}
+              onToggleExpand={() => setExpanded(isExpanded ? null : product.id)}
+              storeUrl={product.store_url}
+              trigger={
+                <button
+                  type="button"
+                  title="Další nastavení"
+                  aria-label={`Další nastavení — ${product.title}`}
+                  className="text-ui-fg-subtle hover:text-ui-fg-base hover:bg-ui-bg-base relative z-10 flex size-10 items-center justify-center rounded-lg outline-none transition-colors focus-visible:shadow-borders-focus"
+                >
+                  <EllipsisHorizontal />
+                </button>
+              }
+            />
           </div>
 
           {/* Rozpracované změny řádku — potvrzení na celou šířku, jen když jsou. */}
           {pending && (
-            <div className="bg-ui-bg-subtle flex flex-wrap items-center justify-end gap-2 rounded-md px-2 py-1 lg:pl-[92px] col-span-full">
+            <div className="bg-ui-bg-subtle relative z-10 col-span-full flex cursor-default flex-wrap items-center justify-end gap-2 rounded-md px-2 py-1 sm:pl-[84px]">
               <Text size="xsmall" className="text-ui-fg-subtle mr-auto">
                 Neuložené změny v tomto řádku
               </Text>
@@ -1582,7 +1637,9 @@ const ProductsInner = () => {
             </div>
           )}
         </article>
-        {expanded === product.id && <ProductExpansion productId={product.id} />}
+        {isExpanded && (
+          <ProductExpansion productId={product.id} onClose={() => setExpanded(null)} />
+        )}
       </Fragment>
     );
   };
@@ -1594,8 +1651,8 @@ const ProductsInner = () => {
         <div className="min-w-0">
           <Heading>Produkty — pracovní přehled</Heading>
           <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
-            Každý druh zboží má svou záložku. Balné, dobírku a křehké měníte
-            přímo v řádku, ostatní nastavení najdete pod „…“.
+            Kliknutím na řádek otevřete produkt. Balné, dobírku a křehké
+            měníte přímo v řádku, viditelnost a ostatní nastavení pod „…“.
           </Text>
         </div>
         <div className="flex flex-wrap items-center gap-4">
