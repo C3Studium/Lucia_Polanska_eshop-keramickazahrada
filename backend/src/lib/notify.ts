@@ -64,6 +64,13 @@ export type MerchantNotificationInput = {
    * poptávka zakázky posílá fotky místa (15. 11. 2026). Zvonek je nevykresluje.
    */
   images?: string[]
+  /**
+   * PDF přílohy e-mailu jako odkazy (`data.__attachments`, čte je Resend
+   * provider i opakované odeslání) — list pro dílnu u nové objednávky
+   * (17. 11. 2026). Zvonek je nenese. Jen pro e-maily, které odcházejí hned
+   * (vývojářský souhrn přílohy nepřenáší).
+   */
+  attachments?: Array<{ filename: string; url: string }>
   /** Links the notification to an order/review/… in the notification table. */
   resource?: { id: string; type: string }
   /**
@@ -170,6 +177,7 @@ export const buildEmailNotification = (
     ...(input.description ? { description: input.description } : {}),
     ...(input.replyTo ? { reply_to: input.replyTo } : {}),
     ...(input.images?.length ? { images: input.images } : {}),
+    ...(input.attachments?.length ? { __attachments: input.attachments } : {}),
     urgent: Boolean(input.urgent),
   },
   trigger_type: input.key.split(":")[1] ?? input.key,
