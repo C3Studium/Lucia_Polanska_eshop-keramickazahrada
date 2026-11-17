@@ -7,6 +7,7 @@ import { useHideNativeCardsBefore } from "../lib/native-cards";
 import { adminQueryClient } from "../lib/query-client";
 import { CpLabelPanel } from "./cp-label";
 import { CpTrackingPanel } from "./cp-tracking";
+import { MadeToOrderPanel } from "./made-to-order-order";
 import { OrderConsentPanel } from "./order-consent";
 import { OrderDelayPanel } from "./order-delay";
 import { OrderReturnsPanel } from "./order-returns";
@@ -19,10 +20,11 @@ import { OrderStepsPanel } from "./order-steps";
  *
  *  1. Postup objednávky — kroky s e-maily, jedno tlačítko na aktuální krok,
  *  2. štítek České pošty,
- *  3. občasné věci jako sbalené karty (otevřou se samy, když je co řešit):
- *     reklamace, sledování zásilky, zpoždění, souhlas (jen expert).
+ *  3. reklamace a sledování zásilky (sbalené, otevřou se, když je co řešit),
+ *  4. zakázka — cena, zadání od zákazníka, interní poznámka, platby,
+ *  5. zpoždění, souhlas (jen expert).
  *
- * Údaje (zakázka, zákazník, faktura, e-maily, historie) jsou v hlavním
+ * Údaje (číslo a souhrn, zákazník, faktura, e-maily, historie) jsou v hlavním
  * sloupci — `order-workspace-main.tsx`.
  *
  * Proč jeden widget: Medusa 2.18 skládá widgety jednoho sloupce v pořadí
@@ -51,6 +53,10 @@ const OrderWorkspaceSide = ({ order }: { order: AdminOrder }) => {
       {wide && <OrderNowPanels order={order} />}
       <OrderReturnsPanel orderId={order.id} />
       <CpTrackingPanel order={order} />
+      {/* Zakázka (cena, zadání, poznámka, platby) vpravo nad Zpožděním —
+          přání majitelky 17. 11. 2026: patří k jednání, ne ke čtení. */}
+      {/* V jednom sloupci ji vykreslí hlavní sloupec hned pod fakturou. */}
+      {wide && <MadeToOrderPanel order={order} />}
       <OrderDelayPanel order={order} />
       <OrderConsentPanel order={order} />
       <div className="flex justify-end px-2">

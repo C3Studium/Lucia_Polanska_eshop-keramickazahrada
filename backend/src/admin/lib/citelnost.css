@@ -17,6 +17,21 @@ html {
   font-size: 107.5%;
 }
 
+/* Na šířku na menších displejích (17. 11. 2026, Matěj: „zmenšit nadpisy
+   pro menší landscape"). Tablet na šířku a malý notebook mají jeden sloupec
+   a málo výšky — zpátky na výchozí velikost Medusy. Telefon na šířku má
+   výšky jen kolem 390 px: tam o stupeň menší, jinak se vešly dva řádky. */
+@media (orientation: landscape) and (max-width: 1279px) {
+  html {
+    font-size: 100%;
+  }
+}
+@media (orientation: landscape) and (max-height: 560px) {
+  html {
+    font-size: 87.5%;
+  }
+}
+
 html:not(.dark) {
   /* blue-500 → blue-600: odkazy 3,7 : 1 → 5,2 : 1 */
   --fg-interactive: rgba(37, 99, 235, 1);
@@ -42,13 +57,23 @@ html:not([data-kz-expert="1"]) [data-kz-tech="1"] {
    Medusy (lib/expert-mode.tsx). Když stránka vloží přepínač víckrát, vidět
    je jen první. */
 #kz-expert-slot {
+  display: flex;
+  align-items: center;
+}
+/* Záloha, když horní lišta není (17. 11. 2026: jinak sedí přímo v liště). */
+#kz-expert-slot[data-place="floating"] {
   position: fixed;
   top: 0;
   right: 104px;
   z-index: 40;
-  display: flex;
-  height: 56px;
-  align-items: center;
+  height: 3.5rem;
+}
+/* Telefon: lišta je úzká, popisek by vytlačil ikony — zůstane jen přepínač. */
+@media (max-width: 639px) {
+  #kz-expert-slot[data-place="topbar"] span,
+  #kz-expert-slot[data-place="topbar"] p {
+    display: none;
+  }
 }
 #kz-expert-slot > *:not(:first-child) {
   display: none;

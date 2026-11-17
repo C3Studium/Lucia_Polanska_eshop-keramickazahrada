@@ -40,3 +40,37 @@ export const useHideNativeCardsBefore = <T extends HTMLElement>(headings?: strin
   }, [key]);
   return ref;
 };
+
+/**
+ * Posune nativní kartu před naše bloky přes CSS `order` (17. 11. 2026:
+ * číslo objednávky „#52" nad Zákazníkem). Hledá mezi sourozenci PŘED
+ * prvkem `anchor` první kartu, jejíž nadpis splní `test`.
+ */
+export const useRaiseNativeCard = (
+  anchor: { current: HTMLElement | null },
+  test: (title: string) => boolean,
+  order: number
+) => {
+  useEffect(() => {
+    const root = anchor.current;
+    const column = root?.parentElement;
+    if (!root || !column) return;
+    const raise = () => {
+      for (const child of Array.from(column.children)) {
+        if (child === root) break;
+        if (!(child instanceof HTMLElement)) continue;
+        if (!child.className.includes("shadow-elevation-card")) continue;
+        const title = (child.querySelector("h1, h2")?.textContent ?? "").trim();
+        if (test(title)) {
+          if (child.style.order !== String(order)) child.style.order = String(order);
+          return;
+        }
+      }
+    };
+    raise();
+    const observer = new MutationObserver(raise);
+    observer.observe(column, { childList: true });
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order]);
+};

@@ -696,7 +696,7 @@ const CommissionCard = ({
         </div>
       )}
 
-      <div className="grid gap-px bg-ui-border-base sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-px bg-ui-border-base">
         <div className="bg-ui-bg-base px-6 py-4">
           <Text size="xsmall" className="text-ui-fg-muted uppercase">
             Zaplaceno

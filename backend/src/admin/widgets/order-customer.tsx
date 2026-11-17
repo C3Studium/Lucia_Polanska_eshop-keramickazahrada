@@ -50,7 +50,7 @@ const sameAddress = (a?: Address | null, b?: Address | null) =>
   addressLines(a).join("|") === addressLines(b).join("|") && nameOf(a) === nameOf(b);
 
 const Row = ({ label, children, edit }: { label: string; children: ReactNode; edit?: string }) => (
-  <div className="grid grid-cols-[7.5rem_minmax(0,1fr)_auto] items-start gap-x-4 px-6 py-3">
+  <div className="grid grid-cols-[4.75rem_minmax(0,1fr)_auto] items-start gap-x-3 px-4 py-3 sm:grid-cols-[7.5rem_minmax(0,1fr)_auto] sm:gap-x-4 sm:px-6">
     <Text size="small" className="text-ui-fg-subtle pt-px">
       {label}
     </Text>
@@ -98,7 +98,7 @@ export const OrderCustomerPanel = ({ order }: { order: AdminOrder }) => {
       </Row>
       <Row label="E-mail" edit={`${base}/email`}>
         {order.email ? (
-          <a href={`mailto:${order.email}`} className="text-ui-fg-base text-sm font-medium hover:underline">
+          <a href={`mailto:${order.email}`} className="text-ui-fg-base text-sm font-medium [overflow-wrap:anywhere] hover:underline">
             {order.email}
           </a>
         ) : (
@@ -107,7 +107,7 @@ export const OrderCustomerPanel = ({ order }: { order: AdminOrder }) => {
       </Row>
       <Row label="Telefon">
         {phone ? (
-          <a href={`tel:${phone.replace(/\s+/g, "")}`} className="text-ui-fg-base text-sm font-medium hover:underline">
+          <a href={`tel:${phone.replace(/\s+/g, "")}`} className="text-ui-fg-base text-sm font-medium [overflow-wrap:anywhere] hover:underline">
             {phone}
           </a>
         ) : (
