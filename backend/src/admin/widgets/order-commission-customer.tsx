@@ -9,7 +9,7 @@ import {
   toast,
 } from "@medusajs/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { sdk } from "../lib/sdk";
 import { ProductionDiary } from "../components/production-diary";
 import { PanelError } from "../components/panel-error";
@@ -63,7 +63,17 @@ type DiaryNote = {
  *
  * Vykresluje ho „Práce s objednávkou" (`order-workspace.tsx`), 3. 11. 2026.
  */
-export const OrderCommissionCustomerPanel = ({ order }: { order: AdminOrder }) => {
+export const OrderCommissionCustomerPanel = ({
+  order,
+  embedded = false,
+}: {
+  order: AdminOrder;
+  /**
+   * Uvnitř karty „Výroba na zakázku" (17. 11. 2026): bez vlastního rámečku
+   * a nadpisu — zadání stojí hned pod cenou a potvrzením zakázky.
+   */
+  embedded?: boolean;
+}) => {
   const queryClient = useQueryClient();
   const { data, isLoading, isError, refetch } = useQuery<ProductionResponse>({
     queryKey: ["made-to-order-order", order.id],
@@ -148,6 +158,7 @@ export const OrderCommissionCustomerPanel = ({ order }: { order: AdminOrder }) =
   });
 
   if (isLoading) {
+    if (embedded) return <Skeleton className="m-6 h-20 rounded-lg" />;
     return (
       <Container>
         <Skeleton className="h-28 rounded-lg" />
@@ -221,10 +232,17 @@ export const OrderCommissionCustomerPanel = ({ order }: { order: AdminOrder }) =
       return (base + delta + slots.length) % slots.length;
     });
 
+  const Wrapper = embedded ? EmbeddedWrapper : Container;
   return (
-    <Container className="divide-y p-0">
+    <Wrapper className={embedded ? "flex flex-col" : "divide-y p-0"}>
       <div className="flex items-center justify-between gap-x-2 px-6 py-4">
-        <Heading level="h2">Od zákazníka</Heading>
+        {embedded ? (
+          <Text size="small" weight="plus">
+            Zadání od zákazníka
+          </Text>
+        ) : (
+          <Heading level="h2">Od zákazníka</Heading>
+        )}
         {/* Celá konverzace se zákazníkem (deník zakázky) jako popup — jsou tam
             i NOVÉ zprávy od zákazníka, které se v bloku výš neukazovaly, a dá se
             rovnou odpovědět (odpověď viditelná zákazníkovi mu přijde e-mailem). */}
@@ -298,11 +316,13 @@ export const OrderCommissionCustomerPanel = ({ order }: { order: AdminOrder }) =
         </div>
       )}
 
-      <div className="flex flex-col gap-y-4 px-6 py-4">
+      <div className={`flex flex-col gap-y-4 px-6 ${embedded ? "pb-4" : "py-4"}`}>
         <div>
-          <Text size="xsmall" className="text-ui-fg-muted uppercase">
-            Přání zákazníka
-          </Text>
+          {!embedded && (
+            <Text size="xsmall" className="text-ui-fg-muted uppercase">
+              Přání zákazníka
+            </Text>
+          )}
           <Text size="small" className="mt-1 whitespace-pre-wrap">
             {wish && wish.trim() ? wish : "Zákazník nepřidal žádný popis."}
           </Text>
@@ -336,8 +356,8 @@ export const OrderCommissionCustomerPanel = ({ order }: { order: AdminOrder }) =
         )}
       </div>
 
-      <div className="flex flex-col gap-y-2 px-6 py-4">
-        <Text size="xsmall" className="text-ui-fg-muted uppercase">
+      <div className={`flex flex-col gap-y-2 px-6 py-4 ${embedded ? "border-t" : ""}`}>
+        <Text size="small" weight="plus">
           Interní poznámka
         </Text>
         <Textarea
@@ -349,6 +369,7 @@ export const OrderCommissionCustomerPanel = ({ order }: { order: AdminOrder }) =
         <div className="flex justify-end">
           <Button
             size="small"
+            variant="secondary"
             isLoading={saveNote.isPending}
             onClick={() => saveNote.mutate(aktivniZakazka?.id ?? null)}
           >
@@ -372,6 +393,11 @@ export const OrderCommissionCustomerPanel = ({ order }: { order: AdminOrder }) =
           />
         </div>
       )}
-    </Container>
+    </Wrapper>
   );
 };
+
+/** Vložená podoba: jen oddíly pod sebou, rámeček dává karta zakázky. */
+const EmbeddedWrapper = ({ className, children }: { className?: string; children: ReactNode }) => (
+  <div className={className}>{children}</div>
+);
