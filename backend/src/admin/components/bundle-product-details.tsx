@@ -436,7 +436,7 @@ export const BundleProductDetailsFields = ({
               <Select.Trigger id="bundle-status" className="w-32 shrink-0">
                 <Select.Value />
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content className="z-50">
                 <Select.Item value="draft">Koncept</Select.Item>
                 <Select.Item value="published">Publikováno</Select.Item>
               </Select.Content>
@@ -474,7 +474,7 @@ export const BundleProductDetailsFields = ({
               <Select.Trigger id="bundle-pricing-mode">
                 <Select.Value />
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content className="z-50">
                 <Select.Item value="component_sum">
                   Součet vybraných provedení
                 </Select.Item>

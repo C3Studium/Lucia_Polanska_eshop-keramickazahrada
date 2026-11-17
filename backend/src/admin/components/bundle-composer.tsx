@@ -386,7 +386,7 @@ const BundleComposition = ({
                   <Select.Trigger aria-label={`Provedení položky ${index + 1}`}>
                     <Select.Value />
                   </Select.Trigger>
-                  <Select.Content>
+                  <Select.Content className="z-50">
                     <Select.Item value="customer_selects">
                       Zákazník vybere provedení
                     </Select.Item>
@@ -406,7 +406,7 @@ const BundleComposition = ({
                     <Select.Trigger aria-label={`Pevné provedení položky ${index + 1}`}>
                       <Select.Value placeholder="Vyberte provedení" />
                     </Select.Trigger>
-                    <Select.Content>
+                    <Select.Content className="z-50">
                       {(item.product?.variants || []).map((variant) => (
                         <Select.Item key={variant.id} value={variant.id}>
                           {variant.title || "Výchozí provedení"}

@@ -1,9 +1,9 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk";
 import type { AdminOrder, DetailWidgetProps } from "@medusajs/framework/types";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { useMinWidth, useWideLayout } from "../components/order-section";
+import { useElementWidth, useWideLayout } from "../components/order-section";
 import { CpLabelPanel } from "./cp-label";
-import { useHideNativeCardsBefore, useRaiseNativeCard } from "../lib/native-cards";
+import { OWN, useHideNativeCards, useRaiseNativeCard } from "../lib/native-cards";
 import { adminQueryClient } from "../lib/query-client";
 import { MadeToOrderPanel } from "./made-to-order-order";
 import { OrderCustomerPanel } from "./order-customer";
@@ -13,7 +13,6 @@ import { OrderHistoryPanel } from "./order-history";
 import { OrderInvoicePanel } from "./order-invoice";
 import { OrderPersonalizedPanel } from "./order-personalized";
 import { OrderStepsPanel } from "./order-steps";
-import { OrderNowPanels } from "./order-workspace";
 
 /**
  * „Práce s objednávkou" — hlavní sloupec detailu objednávky (17. 11. 2026).
@@ -29,43 +28,63 @@ import { OrderNowPanels } from "./order-workspace";
  *     a pod ní štítek), poukazy, výrobky na rozměr,
  *  5. Odeslané e-maily a Historie.
  *
- * Jak se dostane Zákazník nad nativní karty: Medusa skládá nativní karty i widgety
- * jako sourozence jednoho flex sloupce, nativní první. Widget proto vrací dva
- * bloky — horní s `order: -1` (flexbox ho vykreslí před nativními) a dolní
- * bez něj (zůstane za nimi).
+ * Jak se karty dostanou na svá místa: Medusa skládá nativní karty i widgety
+ * jako sourozence jednoho flex sloupce — v sandboxu nativní první, na
+ * produkci widgety první. Widget proto vrací dva bloky a všemu nastaví
+ * CSS `order` výslovně (viz lib/native-cards): #číslo −3, horní blok −2,
+ * Souhrn −1, dolní blok 0.
  */
 const OrderWorkspaceMain = ({ order }: { order: AdminOrder }) => {
   const wide = useWideLayout();
-  const rowSteps = useMinWidth(768);
-  const bottom = useHideNativeCardsBefore<HTMLDivElement>([
+  /* Rozvržení podle šířky SLOUPCE (ne okna): na notebooku je hlavní sloupec
+     vedle menu a pravého sloupce kolem 800 px i při okně přes 1500 px. */
+  const [top, columnWidth] = useElementWidth<HTMLDivElement>();
+  const sideBySide = columnWidth >= 760;
+  const bottom = useHideNativeCards<HTMLDivElement>([
     "Platby",
+    "Payments",
     "Nesplněné položky",
     "Unfulfilled Items",
   ]);
-  // Číslo objednávky („#52", stav platby, „…") úplně nahoru, nad Zákazníka.
-  useRaiseNativeCard(bottom, (title) => /^#\d+/.test(title), -2);
+  /* Pořadí výslovně přes CSS `order` — na produkci Medusa kreslí nativní
+     karty AŽ ZA widgety (17. 11. 2026), takže na pořadí v DOM spoléhat nejde:
+     #číslo −3 · Postup + štítek + Zákazník −2 · Souhrn −1 · Faktura a dál 0. */
+  useRaiseNativeCard(bottom, (title) => /^#\d+/.test(title), -3, "cislo");
+  useRaiseNativeCard(
+    bottom,
+    (title) => title === "Souhrn" || title === "Summary",
+    -1
+  );
   return (
     <>
-      <div className="flex flex-col gap-y-3" style={{ order: -1 }}>
-        {/* Postup hned pod číslem objednávky (17. 11. 2026). Od tabletu
-            výš vodorovná řada kroků a vedle ní štítek České pošty (dvě karty
-            v jednom řádku); na telefonu pod sebou. Když štítek nemá co
-            ukázat (osobní odběr), Postup zabere celou šířku. */}
-        {rowSteps ? (
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch">
-            <div className="min-w-0 flex-1 [&>*]:h-full">
-              <OrderStepsPanel order={order} layout="row" />
-            </div>
-            <div className="empty:hidden lg:w-[19rem] lg:shrink-0 [&>*]:h-full">
-              <CpLabelPanel order={order} />
-            </div>
+      <div ref={top} {...OWN} className="flex flex-col gap-y-3" style={{ order: -2 }}>
+        {/* Postup hned pod číslem objednávky (17. 11. 2026). Všude stejný
+            vodorovný proužek teček — i na telefonu (přání majitele: „stejně
+            jako na šířku, je to jednodušší"); dlouhý svislý seznam kroků
+            skončil. V širokém sloupci vedle něj štítek České pošty, v úzkém
+            pod ním. Když štítek nemá co ukázat (osobní odběr), Postup zabere
+            celou šířku. */}
+        <div
+          className={
+            sideBySide ? "flex flex-row items-stretch gap-3" : "flex flex-col gap-3"
+          }
+        >
+          <div className="min-w-0 flex-1 [&>*]:h-full">
+            <OrderStepsPanel order={order} layout="row" />
           </div>
-        ) : (
-          <OrderNowPanels order={order} />
-        )}
+          <div
+            className={
+              sideBySide
+                ? "empty:hidden w-[18rem] shrink-0 [&>*]:h-full"
+                : "empty:hidden"
+            }
+          >
+            <CpLabelPanel order={order} />
+          </div>
+        </div>
         <OrderCustomerPanel order={order} />
       </div>
-      <div ref={bottom} className="flex flex-col gap-y-3">
+      <div ref={bottom} {...OWN} className="flex flex-col gap-y-3" style={{ order: 0 }}>
         <OrderInvoicePanel order={order} />
         {/* Zakázka je na širokém displeji vpravo (order-workspace.tsx). */}
         {!wide && <MadeToOrderPanel order={order} />}

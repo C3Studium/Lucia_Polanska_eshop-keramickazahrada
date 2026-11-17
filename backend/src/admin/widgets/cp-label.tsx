@@ -145,8 +145,10 @@ export const CpLabelPanel = ({ order }: { order: AdminOrder }) => {
 
   return (
     <Container className="divide-y p-0">
-      <div className="flex items-center justify-between gap-x-2 px-6 py-4">
-        <Heading level="h2">Štítek České pošty</Heading>
+      {/* Úzká karta (vedle Postupu): štítek stavu zalomí pod nadpis celý,
+          ne po slovech (17. 11. 2026). */}
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-6 py-4 [&>span]:whitespace-nowrap">
+        <Heading level="h2" className="min-w-0">Štítek České pošty</Heading>
         {data?.available ? (
           <Badge color="green">Vygenerováno</Badge>
         ) : data?.credentials_ready === false ? (

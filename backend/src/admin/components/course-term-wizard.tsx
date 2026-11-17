@@ -443,7 +443,7 @@ export const CourseTermWizard = ({
                   <Select.Trigger id="wizard-status">
                     <Select.Value />
                   </Select.Trigger>
-                  <Select.Content>
+                  <Select.Content className="z-50">
                     <Select.Item value="published">
                       Vypsaný — lze rezervovat
                     </Select.Item>

@@ -223,7 +223,7 @@ export const SeasonalSaleEditor = ({
               <Select.Trigger>
                 <Select.Value />
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content className="z-50">
                 <Select.Item value="keep_selling">
                   Vrátit na běžnou cenu a prodávat dál
                 </Select.Item>

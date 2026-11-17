@@ -208,7 +208,7 @@ const ChoiceMenu = ({
           {current ? current.label : allLabel} ▾
         </Button>
       </Popover.Trigger>
-      <Popover.Content align="start" className="w-72 p-0">
+      <Popover.Content align="start" className="z-50 w-72 p-0">
         <div className="border-ui-border-base border-b p-2">
           <Input
             type="search"

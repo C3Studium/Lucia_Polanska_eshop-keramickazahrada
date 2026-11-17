@@ -36,9 +36,10 @@ export const RowOptionsMenu = ({
   label: string;
   items: RowOption[];
   /**
-   * Třídy navíc pro rozbalenou nabídku. Portál Medusy nemá z-index, takže
-   * v seznamu s překryvem (`RowLink`) ji prvky `relative z-10` z dalších
-   * řádků přikryjí — tam se předá `z-50`.
+   * Třídy navíc pro rozbalenou nabídku. Portál Medusy nemá z-index a prvky
+   * `relative z-10` z dalších řádků (štítky dopravy v Produktech+) ho
+   * přikrývaly — proto má nabídka `z-50` vždycky (17. 11. 2026), ne jen
+   * tam, kde si na to někdo vzpomněl.
    */
   contentClassName?: string;
 }) => {
@@ -60,7 +61,7 @@ export const RowOptionsMenu = ({
       <DropdownMenu.Content
         align="end"
         className={
-          contentClassName ? `min-w-[240px] ${contentClassName}` : "min-w-[240px]"
+          contentClassName ? `z-50 min-w-[240px] ${contentClassName}` : "z-50 min-w-[240px]"
         }
         onCloseAutoFocus={(event) => {
           if (skipFocusReturn.current) {

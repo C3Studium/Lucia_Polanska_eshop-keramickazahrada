@@ -534,7 +534,7 @@ export const OrderStepsPanel = ({
   return (
     <Container className="divide-y p-0">
       <div
-        className={`flex items-center justify-between gap-x-2 px-6 ${layout === "row" ? "py-3" : "py-4"}`}
+        className={`flex flex-wrap items-center justify-between gap-x-2 gap-y-2 px-6 ${layout === "row" ? "py-3" : "py-4"}`}
       >
         <Heading level="h2">Postup objednávky</Heading>
         {/* Vodorovně stav říkají kroky a „Teď:" — místo odznaku tu je

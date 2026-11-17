@@ -715,7 +715,7 @@ const ZasobyInner = () => {
           <Select.Trigger className="w-56" aria-label="Řazení">
             <Select.Value />
           </Select.Trigger>
-          <Select.Content>
+          <Select.Content className="z-50">
             <Select.Item value="zajem">Nejdřív o co je zájem</Select.Item>
             <Select.Item value="abeceda">Podle abecedy</Select.Item>
           </Select.Content>

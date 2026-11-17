@@ -132,7 +132,7 @@ const Inner = ({ productId }: { productId: string }) => {
         <Select.Trigger>
           <Select.Value placeholder="Bez profilu" />
         </Select.Trigger>
-        <Select.Content>
+        <Select.Content className="z-50">
           {nabidka.map((profil: any) => {
             const pocet = pocetDopravy(profil.id);
             return (

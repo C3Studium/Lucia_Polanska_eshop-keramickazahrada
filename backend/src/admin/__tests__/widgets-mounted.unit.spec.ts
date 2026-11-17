@@ -72,7 +72,7 @@ describe("widgety adminu", () => {
   it("štítek České pošty visí na detailu objednávky", () => {
     expect(vykreslene().has("cp-label")).toBe(true)
     // Ne jen import do prázdna — panel se opravdu vykresluje.
-    expect(obsah.get("order-workspace")).toContain("<CpLabelPanel order={order} />")
+    expect(obsah.get("order-workspace-main")).toContain("<CpLabelPanel order={order} />")
   })
 
   /*

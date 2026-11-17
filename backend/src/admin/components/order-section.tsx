@@ -1,6 +1,12 @@
 import { ChevronDown } from "@medusajs/icons";
 import { Container, Heading, Text } from "@medusajs/ui";
-import { useState, useSyncExternalStore, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 
 /**
  * Sbalitelná karta na detailu objednávky (pravidlo 20/80, 3. 11. 2026).
@@ -87,6 +93,27 @@ export const useWideLayout = (): boolean =>
  * Je okno aspoň tak široké? (17. 11. 2026) — Postup objednávky je od
  * tabletu výš vodorovná řada vedle štítku, na telefonu pod sebou.
  */
+/**
+ * Skutečná šířka prvku (ResizeObserver) — 17. 11. 2026. Rozvržení karet
+ * na detailu objednávky se řídí šířkou SLOUPCE, ne okna: hlavní sloupec
+ * vedle menu a pravého sloupce bývá na notebooku jen ~800 px, i když je
+ * okno přes 1500 px, a dvě karty vedle sebe se pak mačkaly.
+ */
+export const useElementWidth = <T extends HTMLElement>() => {
+  const ref = useRef<T>(null);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const element = ref.current;
+    if (!element || typeof ResizeObserver === "undefined") return;
+    const measure = () => setWidth(Math.round(element.getBoundingClientRect().width));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, width] as const;
+};
+
 export const useMinWidth = (px: number): boolean => {
   const query = `(min-width: ${px}px)`;
   return useSyncExternalStore(
