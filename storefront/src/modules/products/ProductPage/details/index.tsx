@@ -1,4 +1,5 @@
 "use client";
+import { shippingClassOfProduct } from "@lib/util/shipping-kinds";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { HttpTypes } from "@medusajs/types";
@@ -59,6 +60,16 @@ export default function Details({
         { title: "Rozměry", content: textoveRozmery || ciselneRozmery },
         { title: "Materiál", content: product.material?.trim() ?? "" },
         { title: "Hmotnost", content: product.weight ? `${product.weight} g` : "" },
+        /* Velikost zásilky (17. 11. 2026, Matěj) — podle ní se počítá
+           poštovné; nastavuje se v adminu (Produkty+ / Vlastnosti prodeje). */
+        {
+            title: "Velikost zásilky",
+            content: {
+                male: "Malá zásilka",
+                velke: "Velká zásilka",
+                poukaz: "Poukaz — posíláme dopisem",
+            }[shippingClassOfProduct(metadata)],
+        },
     ].filter((item) => item.content);
 
     /* Fotky k popisu z administrace (`metadata.detail_images`). */
@@ -95,7 +106,7 @@ export default function Details({
         },
         {
             title: "Cena dopravy",
-            content: "Odvíjí se od velikosti a váhy zásilky. Přesnou částku uvidíte v pokladně ještě před dokončením objednávky.",
+            content: "Odvíjí se od velikosti zásilky (malá / velká) a u křehkých kusů se připočítá příplatek za křehké. Přesnou částku uvidíte v pokladně ještě před dokončením objednávky.",
         }
     ];
 
