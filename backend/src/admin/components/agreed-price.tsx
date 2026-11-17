@@ -474,7 +474,7 @@ export const AgreedPriceBlock = ({
               >
                 <Select.Value placeholder="Vyberte dopravu" />
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content className="z-50">
                 {shippingOptions.map((option) => (
                   <Select.Item key={option.id} value={option.id}>
                     {option.name}

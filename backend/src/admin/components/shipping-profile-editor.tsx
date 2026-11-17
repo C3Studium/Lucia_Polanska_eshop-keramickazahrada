@@ -197,7 +197,7 @@ export const ShippingProfileEditor = ({
               <Select.Trigger>
                 <Select.Value placeholder="Bez profilu" />
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content className="z-50">
                 {((profily?.shipping_profiles ?? []) as any[]).map((item) => (
                   <Select.Item key={item.id} value={item.id}>
                     {item.name}

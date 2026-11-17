@@ -188,7 +188,7 @@ const ReklamaceInner = () => {
             <Select.Trigger className="w-44">
               <Select.Value placeholder="Druh" />
             </Select.Trigger>
-            <Select.Content>
+            <Select.Content className="z-50">
               {KIND_FILTERS.map((filter) => (
                 <Select.Item key={filter.value} value={filter.value}>
                   {filter.label}

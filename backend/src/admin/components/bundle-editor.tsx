@@ -173,7 +173,7 @@ export const BundleEditor = ({
               <Select.Trigger>
                 <Select.Value />
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content className="z-50">
                 <Select.Item value="component_sum">
                   Součet cen produktů
                 </Select.Item>

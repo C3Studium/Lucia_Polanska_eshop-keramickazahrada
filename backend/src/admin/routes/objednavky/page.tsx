@@ -1877,7 +1877,7 @@ const OrdersInner = () => {
                 <Select.Trigger className="w-48">
                   <Select.Value placeholder="Kam?" />
                 </Select.Trigger>
-                <Select.Content>
+                <Select.Content className="z-50">
                   {batchTargets
                     .filter((target) => target.value !== dalsiKrok)
                     .map((target) => (

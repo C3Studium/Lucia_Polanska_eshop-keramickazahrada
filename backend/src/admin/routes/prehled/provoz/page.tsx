@@ -112,7 +112,7 @@ const ProvozInner = () => {
             <Select.Trigger className="w-52 max-w-full">
               <Select.Value />
             </Select.Trigger>
-            <Select.Content>
+            <Select.Content className="z-50">
               {OKNA.map((okno) => (
                 <Select.Item key={okno.hodnota} value={okno.hodnota}>
                   {okno.popis}

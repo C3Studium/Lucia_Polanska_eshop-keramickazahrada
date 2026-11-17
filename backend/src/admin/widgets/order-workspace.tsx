@@ -3,56 +3,36 @@ import type { AdminOrder, DetailWidgetProps } from "@medusajs/framework/types";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useWideLayout } from "../components/order-section";
 import { ExpertToggle } from "../lib/expert-mode";
-import { useHideNativeCardsBefore } from "../lib/native-cards";
+import { OWN, useHideNativeCards } from "../lib/native-cards";
 import { adminQueryClient } from "../lib/query-client";
-import { CpLabelPanel } from "./cp-label";
 import { CpTrackingPanel } from "./cp-tracking";
 import { MadeToOrderPanel } from "./made-to-order-order";
 import { OrderConsentPanel } from "./order-consent";
 import { OrderDelayPanel } from "./order-delay";
 import { OrderReturnsPanel } from "./order-returns";
-import { OrderStepsPanel } from "./order-steps";
 
 /**
  * „Práce s objednávkou" — pravý sloupec detailu objednávky (17. 11. 2026).
  *
- * Pravidlo stránky: uprostřed se čte, vpravo se jedná.
+ *  1. zakázka (jen na širokém displeji) — cena, zadání, poznámka, platby,
+ *  2. reklamace a sledování zásilky (sbalené, otevřou se, když je co řešit),
+ *  3. zpoždění, souhlas (jen expert).
  *
- *  1. Postup objednávky — kroky s e-maily, jedno tlačítko na aktuální krok,
- *  2. štítek České pošty,
- *  3. reklamace a sledování zásilky (sbalené, otevřou se, když je co řešit),
- *  4. zakázka — cena, zadání od zákazníka, interní poznámka, platby,
- *  5. zpoždění, souhlas (jen expert).
- *
- * Údaje (číslo a souhrn, zákazník, faktura, e-maily, historie) jsou v hlavním
- * sloupci — `order-workspace-main.tsx`.
+ * Postup objednávky, štítek ČP a údaje (číslo, zákazník, souhrn, faktura,
+ * e-maily, historie) jsou v hlavním sloupci — `order-workspace-main.tsx`.
  *
  * Proč jeden widget: Medusa 2.18 skládá widgety jednoho sloupce v pořadí
  * souborů na disku (na Linuxu jakkoli); jeden widget = pořadí určujeme my.
  *
- * Nativní karty Zákazník a Aktivita nad tímhle widgetem se bez expertního
- * režimu schovají — totéž ukazují naše tabulky Zákazník a Historie.
- *
- * Telefon: pravý sloupec je pod celým hlavním, takže Postup a štítek se na
- * úzkém displeji vykreslí nahoře v hlavním sloupci a tady ne.
+ * Nativní karty Zákazník a Aktivita se bez expertního režimu schovají —
+ * totéž ukazují naše tabulky Zákazník a Historie.
  */
-
-/**
- * Postup objednávky a štítek — v jednom sloupci (telefon) je vykresluje
- * hlavní sloupec hned pod číslem objednávky (`order-workspace-main.tsx`).
- */
-export const OrderNowPanels = ({ order }: { order: AdminOrder }) => (
-  <>
-    <OrderStepsPanel order={order} />
-    <CpLabelPanel order={order} />
-  </>
-);
 
 const OrderWorkspaceSide = ({ order }: { order: AdminOrder }) => {
   const wide = useWideLayout();
-  const ref = useHideNativeCardsBefore<HTMLDivElement>();
+  const ref = useHideNativeCards<HTMLDivElement>();
   return (
-    <div ref={ref} className="flex flex-col gap-y-3">
+    <div ref={ref} {...OWN} className="flex flex-col gap-y-3">
       {/* Široký displej (17. 11. 2026, přání majitelky): Postup a vedle
           něj štítek jsou vlevo pod číslem objednávky, vpravo nahoře zakázka. */}
       {wide && <MadeToOrderPanel order={order} />}

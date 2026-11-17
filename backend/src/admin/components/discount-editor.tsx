@@ -140,7 +140,7 @@ export const DiscountEditor = ({ trigger }: { trigger: React.ReactNode }) => {
               <Select.Trigger>
                 <Select.Value />
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content className="z-50">
                 <Select.Item value="order">Sleva z ceny objednávky</Select.Item>
                 <Select.Item value="shipping">Doprava zdarma</Select.Item>
               </Select.Content>
@@ -160,7 +160,7 @@ export const DiscountEditor = ({ trigger }: { trigger: React.ReactNode }) => {
                   <Select.Trigger className="w-40">
                     <Select.Value />
                   </Select.Trigger>
-                  <Select.Content>
+                  <Select.Content className="z-50">
                     <Select.Item value="percentage">Procenta</Select.Item>
                     <Select.Item value="fixed">Pevná částka</Select.Item>
                   </Select.Content>

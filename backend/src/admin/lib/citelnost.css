@@ -94,3 +94,18 @@ html:not([data-kz-expert="1"]) nav div:has(> div.w-full > a:is(
 )) {
   display: none;
 }
+
+/*
+ * Karta s číslem objednávky (nativní, `data-kz-card="cislo"` z lib/native-cards).
+ * Na úzkém sloupci tlačily štítky „Částečně zaplaceno · Nesplněno" datum
+ * do proužku a lámalo se po slovech („14. 11. / 2026 / 20:09 z / e-shopu").
+ * Teď se štítky celé zalomí pod číslo a datum (17. 11. 2026).
+ */
+[data-kz-card="cislo"] {
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
+}
+[data-kz-card="cislo"] > :first-child {
+  flex: 1 1 11rem;
+  min-width: 0;
+}

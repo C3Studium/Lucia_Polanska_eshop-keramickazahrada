@@ -412,7 +412,7 @@ const TermEditorDrawer = ({
                 <Select.Trigger id="edit-status">
                   <Select.Value />
                 </Select.Trigger>
-                <Select.Content>
+                <Select.Content className="z-50">
                   <Select.Item value="published">
                     Vypsaný — lze rezervovat
                   </Select.Item>

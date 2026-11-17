@@ -481,7 +481,7 @@ export const SettleBalanceOffline = ({
               <Select.Trigger id={`settle-method-${orderId}`}>
                 <Select.Value />
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content className="z-50">
                 {(Object.keys(offlineMethodLabels) as OfflineMethod[]).map(
                   (key) => (
                     <Select.Item key={key} value={key}>

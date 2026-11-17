@@ -198,7 +198,7 @@ export const ApprovePanel = ({
             <Select.Trigger id={`resolution-${request.id}`} className="max-w-xs">
               <Select.Value placeholder="Vyberte způsob vyřízení…" />
             </Select.Trigger>
-            <Select.Content>
+            <Select.Content className="z-50">
               {RESOLUTION_OPTIONS.map((option) => (
                 <Select.Item key={option.value} value={option.value}>
                   {option.label}
