@@ -17,7 +17,8 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import {
-  ArchiveBox, DotsSix, ExclamationCircle, EyeSlash, Folder, ListBullet, ListTree,
+  ArchiveBox, ArrowUturnLeft, DotsSix, ExclamationCircle, Eye, EyeSlash, Folder,
+  ListBullet, ListTree, PencilSquare, Photo, SidebarRight, Trash,
 } from "@medusajs/icons";
 import {
   Badge,
@@ -31,12 +32,14 @@ import {
 import {
   QueryClientProvider, useMutation, useQuery, useQueryClient,
 } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { CollectionDrawer } from "../../components/collection-drawer";
 import { ConfirmDialog } from "../../components/confirm-dialog";
 import { ProductLightbox, Thumb } from "../../components/product-thumb";
+import { RowOptionsMenu } from "../../components/row-options-menu";
 import { VisibilityEye } from "../../components/visibility-eye";
+import { useVisibilityToggle } from "../../components/visibility-toggle";
 import { sdk } from "../../lib/sdk";
 import { ViewSwitcher, gridClassName, useViewMode } from "../../lib/view-mode";
 import { adminQueryClient } from "../../lib/query-client"
@@ -132,6 +135,56 @@ const kindBadge: Record<string, { label: string; color: "green" | "orange" | "bl
   poskozene: { label: "Poškozené", color: "red" },
 };
 
+/** „1 produkt · 3 produkty · 12 produktů" — ne „1 produktů". */
+const pocetProduktu = (count: number) =>
+  `${count} ${count === 1 ? "produkt" : count >= 2 && count <= 4 ? "produkty" : "produktů"}`;
+
+/* Stav v řádku jen jako tichá značka; přepíná se v nabídce „…". */
+const StateMark = ({ kind }: { kind: "hidden" | "archived" }) => {
+  const text = kind === "hidden" ? "Skryto z obchodu" : "V archivu";
+  return (
+    <span role="img" aria-label={text} title={text} className="text-ui-fg-muted shrink-0">
+      {kind === "hidden" ? <EyeSlash /> : <ArchiveBox />}
+    </span>
+  );
+};
+
+/* Přejmenování na místě řádku: Enter uloží, Escape vrátí původní stav. */
+const RenameRow = ({
+  value,
+  label,
+  onChange,
+  onSave,
+  onCancel,
+}: {
+  value: string;
+  label: string;
+  onChange: (next: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) => (
+  <div className="bg-ui-bg-base-pressed flex flex-col gap-2 rounded-md p-2">
+    <Input
+      autoFocus
+      aria-label={label}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && value.trim()) onSave();
+        if (e.key === "Escape") onCancel();
+      }}
+    />
+    <div className="flex gap-2">
+      <Button size="base" disabled={!value.trim()} onClick={onSave}>
+        Uložit
+      </Button>
+      <Button size="base" variant="secondary" onClick={onCancel}>
+        Zrušit
+      </Button>
+    </div>
+  </div>
+);
+
 /* Thumb + ProductLightbox live in components/product-thumb.tsx — shared with
    Produkty+, so „the photo opens the photos" behaves the same everywhere. */
 
@@ -191,7 +244,20 @@ const Inner = () => {
   const [lightbox, setLightbox] = useState<{ id: string; title: string } | null>(
     null
   );
-  const [renaming, setRenaming] = useState("");
+  const [renamingCollection, setRenamingCollection] = useState<{ id: string; title: string } | null>(null);
+  /* Nabídka „…" je u každého řádku, nejen u vybraného — panel, fotka
+     i potvrzení si proto pamatují, ke které kolekci/kategorii patří. */
+  const [drawerCollectionId, setDrawerCollectionId] = useState<string | null>(null);
+  const photoInput = useRef<HTMLInputElement>(null);
+  const photoTarget = useRef<string | null>(null);
+  // Cíl zůstává i po zavření dialogu, ať titulek při zavírání nezmizí.
+  const [deletingCollection, setDeletingCollection] = useState<any>(null);
+  const [deleteCollectionOpen, setDeleteCollectionOpen] = useState(false);
+  const [deletingCategory, setDeletingCategory] = useState<any>(null);
+  const [deleteCategoryOpen, setDeleteCategoryOpen] = useState(false);
+  const [archivingCategory, setArchivingCategory] = useState<{ id: string; name: string; archive: boolean } | null>(null);
+  const [archiveCategoryOpen, setArchiveCategoryOpen] = useState(false);
+  const visibility = useVisibilityToggle();
 
   const invalidate = async () => {
     await queryClient.invalidateQueries({ queryKey: ["rozdeleni-collections"] });
@@ -470,14 +536,15 @@ const Inner = () => {
   const deleteCollection = useMutation({
     mutationFn: (id: string) =>
       sdk.client.fetch(`/admin/collections/${id}`, { method: "DELETE" }),
-    onSuccess: async () => {
-      setCollectionId(null); await invalidate();
+    onSuccess: async (_, id) => {
+      if (id === collectionId) setCollectionId(null);
+      await invalidate();
       toast.success("Kolekce smazána — produkty zůstaly, jen bez kolekce.");
     },
     onError: (e) => toast.error(ceskaChyba(e, "Nepodařilo se.")),
   });
   const setCollectionImage = useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async ({ id, file }: { id: string; file: File }) => {
       const formData = new FormData();
       formData.append("files", file);
       const response = await fetch(`/admin/uploads`, {
@@ -487,9 +554,9 @@ const Inner = () => {
       const payload = await response.json();
       const url: string | undefined = payload?.files?.[0]?.url;
       if (!url) throw new Error("Úložiště nevrátilo adresu fotky.");
-      const current = collections.find((c) => c.id === collectionId);
+      const current = collections.find((c) => c.id === id);
       // metadata.image — stejný klíč, který už čte storefront navbar.
-      return sdk.client.fetch(`/admin/collections/${collectionId}`, {
+      return sdk.client.fetch(`/admin/collections/${id}`, {
         method: "POST",
         body: { metadata: { ...(current?.metadata ?? {}), image: url } },
       });
@@ -516,8 +583,8 @@ const Inner = () => {
   const deleteCategory = useMutation({
     mutationFn: (id: string) =>
       sdk.client.fetch(`/admin/product-categories/${id}`, { method: "DELETE" }),
-    onSuccess: async () => {
-      setCategoryId(null);
+    onSuccess: async (_, id) => {
+      if (id === categoryId) setCategoryId(null);
       await queryClient.invalidateQueries({ queryKey: ["rozdeleni-categories"] });
       await invalidate();
       toast.success("Kategorie smazána — produkty zůstaly.");
@@ -528,7 +595,7 @@ const Inner = () => {
   /* Archiv kategorie = metadata.archived (celý objekt se posílá sloučený —
      nativní update metadata NAHRAZUJE). Archivace zároveň kategorii skryje
      z obchodu (is_active: false); návrat z archivu ji sám nezveřejní —
-     o očku rozhoduje ona. */
+     o zobrazení rozhoduje ona. */
   const archiveCategory = useMutation({
     mutationFn: (payload: { id: string; archive: boolean }) => {
       const full = fullCategory(payload.id);
@@ -547,7 +614,7 @@ const Inner = () => {
       toast.success(
         payload.archive
           ? "Kategorie archivována — z obchodu i ze seznamů zmizela, produkty zůstaly."
-          : "Kategorie vrácena z archivu. V obchodě se ukáže, až ji zobrazíte očkem."
+          : "Kategorie vrácena z archivu. V obchodě se ukáže, až zvolíte Zobrazit v obchodě."
       );
     },
     onError: (e) => toast.error(ceskaChyba(e, "Nepodařilo se.")),
@@ -688,8 +755,59 @@ const Inner = () => {
     setPickerOpen(false);
     setPickerSelected(new Set());
     setSelected(new Set());
-    setRenaming("");
+    setRenamingCollection(null);
   };
+
+  /* Položky nabídky „…" — tytéž zápisy, které dřív visely v řádku jako odkazy. */
+  const toggleCollectionVisibility = (collection: any) =>
+    visibility.toggle({
+      visible: !(collection.metadata as any)?.hidden,
+      label: `kolekci ${collection.title}`,
+      hideText:
+        "Zákazníci ji přestanou vidět v menu Eshop produktů i v obchodě. Produkty v ní zůstanou dostupné jinými cestami.",
+      showText: "Kolekce se vrátí do menu a do obchodu.",
+      onToggle: (next) =>
+        sdk.client.fetch(`/admin/collections/${collection.id}`, {
+          method: "POST",
+          body: {
+            /* Metadata update REPLACES — always send merged. */
+            metadata: { ...(collection.metadata ?? {}), hidden: !next },
+          },
+        }),
+      onDone: invalidate,
+    });
+  const toggleCategoryVisibility = (category: any) =>
+    visibility.toggle({
+      visible: !categoryHidden(category),
+      label: `kategorii ${category.name}`,
+      hideText:
+        "Zákazníci ji přestanou vidět v menu i ve filtrech obchodu. Produkty v ní zůstanou dostupné jinými cestami.",
+      showText: "Kategorie se vrátí do menu a filtrů obchodu.",
+      onToggle: (next) =>
+        sdk.client.fetch(`/admin/product-categories/${category.id}`, {
+          method: "POST",
+          body: { is_active: next },
+        }),
+      onDone: async () => {
+        await queryClient.invalidateQueries({ queryKey: ["rozdeleni-categories"] });
+        await invalidate();
+      },
+    });
+
+  /* Co je vpravo nahoře napsané: kde právě stojí a kolik toho vidí. */
+  const contextTitle = allCats
+    ? "Všechny kategorie"
+    : selectedCollection
+      ? `${selectedCollection.title}${
+          categoryId === "none"
+            ? " › Bez kategorie"
+            : categoryId
+              ? ` › ${fullCategory(categoryId)?.name ?? "kategorie"}`
+              : ""
+        }`
+      : "Celý obchod";
+  const pickerTargetLabel =
+    categoryId && categoryId !== "none" ? "kategorie" : "kolekce";
 
   return (
     <Container className="p-0">
@@ -714,109 +832,98 @@ const Inner = () => {
             items={collections.map((collection) => collection.id)}
             strategy={verticalListSortingStrategy}
           >
-          {collections.map((collection) => (
+          {collections.map((collection) => {
+            const active = collection.id === collectionId;
+            const hidden = Boolean((collection.metadata as any)?.hidden);
+            const hasImage = Boolean((collection.metadata as any)?.image);
+            return (
             <SortableRow key={collection.id} id={collection.id} label={`kolekci ${collection.title}`}>
-            <button type="button"
-              onClick={() => { setCollectionId(collection.id); setCategoryId(null); setAllCats(false); setRenaming(""); }}
-              className={
-                collection.id === collectionId
-                  ? "bg-ui-bg-base-pressed rounded-md px-3 py-2 text-left"
-                  : "hover:bg-ui-bg-base-hover rounded-md px-3 py-2 text-left"
+            {/* Řádek = jedna věc: klik vybere kolekci. Vše ostatní je v „…"
+                (17. 11. 2026 — dřív se vybraný řádek rozbalil do řady odkazů). */}
+            {renamingCollection && renamingCollection.id === collection.id ? (
+              <RenameRow
+                value={renamingCollection.title}
+                label={`Nový název kolekce ${collection.title}`}
+                onChange={(title) => setRenamingCollection({ id: collection.id, title })}
+                onSave={() => {
+                  renameCollection.mutate({ id: collection.id, title: renamingCollection.title.trim() });
+                  setRenamingCollection(null);
+                }}
+                onCancel={() => setRenamingCollection(null)}
+              />
+            ) : (
+              <div className={
+                active
+                  ? "bg-ui-bg-base-pressed flex items-center rounded-md"
+                  : "hover:bg-ui-bg-base-hover flex items-center rounded-md"
               }>
-              <span className="flex items-center gap-1.5">
-                <Text size="small" weight={collection.id === collectionId ? "plus" : "regular"}>
-                  {collection.title}
-                </Text>
-                {Boolean((collection.metadata as any)?.hidden) && (
-                  <EyeSlash className="text-ui-fg-muted shrink-0" />
-                )}
-              </span>
-              <Text size="xsmall" className="text-ui-fg-muted">
-                {products.filter((p) => p.collection_id === collection.id).length} produktů
-              </Text>
-              {collection.id === collectionId && (
-                <div className="mt-2 flex flex-wrap items-center gap-2"
-                  onClick={(e) => e.stopPropagation()}>
-                  {(collection.metadata as any)?.image && (
-                    <img src={(collection.metadata as any).image} alt=""
-                      className="h-8 w-8 rounded object-cover" />
-                  )}
-                  {/* Jméno, fotka a popisek na jednom místě — všechno, co o kolekci
-                      uvidí zákazník. Drobné „Nastavit fotku" tu zůstalo pro rychlou
-                      výměnu obrázku bez otevírání panelu. */}
-                  <button type="button"
-                    className="text-ui-fg-interactive txt-xsmall cursor-pointer hover:underline"
-                    onClick={() => setDrawerOpen(true)}>
-                    Zobrazit kolekci
-                  </button>
-                  <label className="text-ui-fg-interactive txt-xsmall cursor-pointer hover:underline">
-                    {(collection.metadata as any)?.image ? "Změnit fotku" : "Nastavit fotku"}
-                    <input type="file" accept="image/*" className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) setCollectionImage.mutate(file);
-                        e.currentTarget.value = "";
-                      }} />
-                  </label>
-                  {renaming === "" ? (
-                    <>
-                      <VisibilityEye
-                        visible={!(collection.metadata as any)?.hidden}
-                        label={`kolekci ${collection.title}`}
-                        hideText="Zákazníci ji přestanou vidět v menu Eshop produktů i v obchodě. Produkty v ní zůstanou dostupné jinými cestami."
-                        showText="Kolekce se vrátí do menu a do obchodu."
-                        onToggle={(next) =>
-                          sdk.client.fetch(`/admin/collections/${collection.id}`, {
-                            method: "POST",
-                            body: {
-                              /* Metadata update REPLACES — always send merged. */
-                              metadata: {
-                                ...(collection.metadata ?? {}),
-                                hidden: !next,
-                              },
-                            },
-                          })
-                        }
-                        onDone={invalidate}
-                      />
-                      <button type="button"
-                        className="text-ui-fg-interactive txt-xsmall hover:underline"
-                        onClick={() => setRenaming(collection.title)}>
-                        Přejmenovat
-                      </button>
-                      <ConfirmDialog
-                        trigger={
-                          <button type="button"
-                            className="text-ui-fg-subtle txt-xsmall hover:underline">
-                            Smazat
-                          </button>
-                        }
-                        title={`Smazat kolekci ${collection.title}?`}
-                        description="Produkty zůstanou v obchodě, jen přijdou o kolekci."
-                        consequence="Smazanou kolekci nejde vrátit."
-                        confirmLabel="Smazat kolekci"
-                        isPending={deleteCollection.isPending}
-                        onConfirm={() => deleteCollection.mutate(collection.id)}
-                      />
-                    </>
-                  ) : (
-                    <span className="flex items-center gap-1">
-                      <Input size="small" value={renaming}
-                        onChange={(e) => setRenaming(e.target.value)} />
-                      <Button size="small" variant="secondary"
-                        onClick={() => {
-                          renameCollection.mutate({ id: collection.id, title: renaming });
-                          setRenaming("");
-                        }}>OK</Button>
-                    </span>
-                  )}
-                </div>
-              )}
-            </button>
+                <button type="button"
+                  aria-current={active ? "true" : undefined}
+                  onClick={() => { setCollectionId(collection.id); setCategoryId(null); setAllCats(false); setRenamingCollection(null); }}
+                  className="min-w-0 flex-1 py-2 pl-3 pr-1 text-left">
+                  <span className="flex items-center gap-1.5">
+                    <Text size="base" weight={active ? "plus" : "regular"} className="truncate">
+                      {collection.title}
+                    </Text>
+                    {hidden && <StateMark kind="hidden" />}
+                  </span>
+                  <Text size="small" className="text-ui-fg-muted">
+                    {pocetProduktu(products.filter((p) => p.collection_id === collection.id).length)}
+                  </Text>
+                </button>
+                <RowOptionsMenu
+                  label={`Možnosti kolekce ${collection.title}`}
+                  items={[
+                    {
+                      // Jméno, fotka a popisek na jednom místě — co o kolekci uvidí zákazník.
+                      label: "Zobrazit kolekci",
+                      icon: <SidebarRight />,
+                      onSelect: () => { setDrawerCollectionId(collection.id); setDrawerOpen(true); },
+                    },
+                    {
+                      label: hasImage ? "Změnit fotku" : "Nastavit fotku",
+                      icon: <Photo />,
+                      // Okno se soubory jen přímo z kliknutí (Safari).
+                      sync: true,
+                      onSelect: () => { photoTarget.current = collection.id; photoInput.current?.click(); },
+                    },
+                    {
+                      label: hidden ? "Zobrazit v obchodě" : "Skrýt z obchodu",
+                      icon: hidden ? <Eye /> : <EyeSlash />,
+                      onSelect: () => toggleCollectionVisibility(collection),
+                    },
+                    {
+                      label: "Přejmenovat",
+                      icon: <PencilSquare />,
+                      takesFocus: true,
+                      onSelect: () => setRenamingCollection({ id: collection.id, title: collection.title }),
+                    },
+                    "separator",
+                    {
+                      label: "Smazat",
+                      icon: <Trash />,
+                      destructive: true,
+                      onSelect: () => { setDeletingCollection(collection); setDeleteCollectionOpen(true); },
+                    },
+                  ]}
+                />
+              </div>
+            )}
             </SortableRow>
-          ))}
+            );
+          })}
           </SortableContext>
           </DndContext>
+          {/* Jedno skryté pole pro fotku kolekce — spouští ho „Změnit fotku"
+              v nabídce kteréhokoli řádku, cíl drží `photoTarget`. */}
+          <input ref={photoInput} type="file" accept="image/*" className="hidden"
+            aria-hidden="true" tabIndex={-1}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              const id = photoTarget.current;
+              if (file && id) setCollectionImage.mutate({ id, file });
+              e.currentTarget.value = "";
+            }} />
           <div className="mt-2 flex gap-2">
             <Input size="small" placeholder="Nová kolekce…" value={newCollection}
               onChange={(e) => setNewCollection(e.target.value)} />
@@ -886,7 +993,7 @@ const Inner = () => {
               )}
               <button type="button" onClick={() => setCategoryId(null)}
                 className={categoryId === null ? "bg-ui-bg-base-pressed rounded-md px-3 py-2 text-left" : "hover:bg-ui-bg-base-hover rounded-md px-3 py-2 text-left"}>
-                <Text size="small">Vše ({inCollection.length})</Text>
+                <Text size="base">Vše ({inCollection.length})</Text>
               </button>
               <DndContext
                 sensors={dndSensors}
@@ -916,113 +1023,79 @@ const Inner = () => {
                 : categoriesHere.filter(
                     (category: any) => !categoryArchived(category)
                   )
-              ).map((category: any) => (
+              ).map((category: any) => {
+                const active = categoryId === category.id;
+                const hidden = categoryHidden(category);
+                const archived = categoryArchived(category);
+                return (
                 /* Přetahuje se jen v kolekci (tam je pořadí menu); v pohledu
                    „všechny kategorie" je seznam smíšený, úchyt tam není. */
                 <SortableRow key={category.id} id={category.id} label={`kategorii ${category.name}`} disabled={allCats}>
-                <div
-                  className={categoryId === category.id ? "bg-ui-bg-base-pressed rounded-md px-3 py-2" : "hover:bg-ui-bg-base-hover rounded-md px-3 py-2"}>
                   {/* Porovnání přes `?.` nezúží typ, takže uvnitř větve byl
                       `renamingCategory` pořád `| null` — proto ta dvě hlášení
                       z typecheck. Explicitní test zúží. */}
                   {renamingCategory && renamingCategory.id === category.id ? (
-                    <span className="flex items-center gap-1">
-                      <Input size="small" value={renamingCategory.name}
-                        onChange={(e) => setRenamingCategory({ id: category.id, name: e.target.value })} />
-                      <Button size="small" variant="secondary"
-                        onClick={() => {
-                          renameCategory.mutate(renamingCategory);
-                          setRenamingCategory(null);
-                        }}>OK</Button>
-                    </span>
+                    <RenameRow
+                      value={renamingCategory.name}
+                      label={`Nový název kategorie ${category.name}`}
+                      onChange={(name) => setRenamingCategory({ id: category.id, name })}
+                      onSave={() => {
+                        renameCategory.mutate({ id: category.id, name: renamingCategory.name.trim() });
+                        setRenamingCategory(null);
+                      }}
+                      onCancel={() => setRenamingCategory(null)}
+                    />
                   ) : (
-                    <>
-                      <button type="button" className="w-full text-left"
+                    <div className={
+                      active
+                        ? "bg-ui-bg-base-pressed flex items-center rounded-md"
+                        : "hover:bg-ui-bg-base-hover flex items-center rounded-md"
+                    }>
+                      <button type="button"
+                        aria-current={active ? "true" : undefined}
+                        className="min-w-0 flex-1 py-2.5 pl-3 pr-1 text-left"
                         onClick={() => setCategoryId(category.id)}>
                         <span className="flex items-center gap-1.5">
-                          <Text size="small">{category.name}</Text>
-                          {categoryHidden(category) && (
-                            <EyeSlash className="text-ui-fg-muted shrink-0" />
-                          )}
+                          <Text size="base" weight={active ? "plus" : "regular"} className="truncate">
+                            {category.name}
+                          </Text>
+                          {hidden && <StateMark kind="hidden" />}
+                          {archived && <StateMark kind="archived" />}
                         </span>
                       </button>
-                      {categoryId === category.id && (
-                        <span className="mt-1 flex items-center gap-2">
-                          <VisibilityEye
-                            visible={!categoryHidden(category)}
-                            label={`kategorii ${category.name}`}
-                            hideText="Zákazníci ji přestanou vidět v menu i ve filtrech obchodu. Produkty v ní zůstanou dostupné jinými cestami."
-                            showText="Kategorie se vrátí do menu a filtrů obchodu."
-                            onToggle={(next) =>
-                              sdk.client.fetch(
-                                `/admin/product-categories/${category.id}`,
-                                {
-                                  method: "POST",
-                                  body: { is_active: next },
-                                }
-                              )
-                            }
-                            onDone={async () => {
-                              await queryClient.invalidateQueries({
-                                queryKey: ["rozdeleni-categories"],
-                              });
-                              await invalidate();
-                            }}
-                          />
-                          <ConfirmDialog
-                            trigger={
-                              <button type="button"
-                                title={categoryArchived(category) ? "Vrátit z archivu" : "Archivovat"}
-                                className="text-ui-fg-subtle hover:text-ui-fg-base">
-                                <ArchiveBox />
-                              </button>
-                            }
-                            destructive={!categoryArchived(category)}
-                            title={
-                              categoryArchived(category)
-                                ? `Vrátit kategorii ${category.name} z archivu?`
-                                : `Archivovat kategorii ${category.name}?`
-                            }
-                            description={
-                              categoryArchived(category)
-                                ? "Vrátí se do seznamů. V obchodě se ukáže, až ji zobrazíte očkem."
-                                : "Zmizí z obchodu i ze seznamů, produkty o ni nepřijdou. Najdete ji v záložce archivu (ikona krabice)."
-                            }
-                            confirmLabel={categoryArchived(category) ? "Vrátit z archivu" : "Archivovat"}
-                            isPending={archiveCategory.isPending}
-                            onConfirm={() =>
-                              archiveCategory.mutate({
-                                id: category.id,
-                                archive: !categoryArchived(category),
-                              })
-                            }
-                          />
-                          <button type="button"
-                            className="text-ui-fg-interactive txt-xsmall hover:underline"
-                            onClick={() => setRenamingCategory({ id: category.id, name: category.name })}>
-                            Přejmenovat
-                          </button>
-                          <ConfirmDialog
-                            trigger={
-                              <button type="button"
-                                className="text-ui-fg-subtle txt-xsmall hover:underline">
-                                Smazat
-                              </button>
-                            }
-                            title={`Smazat kategorii ${category.name}?`}
-                            description="Produkty zůstanou, jen přijdou o tuhle kategorii."
-                            consequence="Smazanou kategorii nejde vrátit — když ji chcete jen schovat, použijte Archivovat."
-                            confirmLabel="Smazat kategorii"
-                            isPending={deleteCategory.isPending}
-                            onConfirm={() => deleteCategory.mutate(category.id)}
-                          />
-                        </span>
-                      )}
-                    </>
+                      <RowOptionsMenu
+                        label={`Možnosti kategorie ${category.name}`}
+                        items={[
+                          {
+                            label: hidden ? "Zobrazit v obchodě" : "Skrýt z obchodu",
+                            icon: hidden ? <Eye /> : <EyeSlash />,
+                            onSelect: () => toggleCategoryVisibility(category),
+                          },
+                          {
+                            label: "Přejmenovat",
+                            icon: <PencilSquare />,
+                            takesFocus: true,
+                            onSelect: () => setRenamingCategory({ id: category.id, name: category.name }),
+                          },
+                          {
+                            label: archived ? "Vrátit z archivu" : "Archivovat",
+                            icon: archived ? <ArrowUturnLeft /> : <ArchiveBox />,
+                            onSelect: () => { setArchivingCategory({ id: category.id, name: category.name, archive: !archived }); setArchiveCategoryOpen(true); },
+                          },
+                          "separator",
+                          {
+                            label: "Smazat",
+                            icon: <Trash />,
+                            destructive: true,
+                            onSelect: () => { setDeletingCategory(category); setDeleteCategoryOpen(true); },
+                          },
+                        ]}
+                      />
+                    </div>
                   )}
-                </div>
                 </SortableRow>
-              ))}
+                );
+              })}
               </SortableContext>
               </DndContext>
               {/* Creating a category needs a collection to belong to — in the
@@ -1040,7 +1113,7 @@ const Inner = () => {
                 (allCats ? allCategories : categoriesHere).length > 0 && (
                 <button type="button" onClick={() => setCategoryId("none")}
                   className={categoryId === "none" ? "bg-ui-bg-base-pressed rounded-md px-3 py-2 text-left" : "hover:bg-ui-bg-base-hover rounded-md px-3 py-2 text-left"}>
-                  <Text size="small">Bez kategorie ({uncategorised.length})</Text>
+                  <Text size="base">Bez kategorie ({uncategorised.length})</Text>
                 </button>
               )}
             </>
@@ -1052,7 +1125,7 @@ const Inner = () => {
                 setAllCats(true);
                 setCollectionId(null);
                 setCategoryId(null);
-                setRenaming("");
+                setRenamingCollection(null);
               }}>
               Zobrazit všechny kategorie
             </Button>
@@ -1061,59 +1134,75 @@ const Inner = () => {
 
         {/* ── 3. produkty ── */}
         <div className="flex flex-col divide-y divide-ui-border-base">
-          <div className="flex flex-col gap-2 px-4 py-3">
+          <div className="flex flex-col gap-3 px-4 py-3">
+            {/* Hlavička sloupce (17. 11. 2026): vlevo kde stojí, vpravo jedna
+                hlavní akce. Dřív se tu filtry, přepínač a tři tlačítka
+                zalamovaly do druhé řádky napřeskáčku. */}
             <div className="flex flex-wrap items-center gap-2">
-              {([
-                ["vse", "Vše"],
-                ["bezne", "Produkty"],
-                ["zakazka", "Zakázky"],
-                ["balicek", "Balíčky"],
-                ["poskozene", "Poškozené"],
-              ] as const).map(([key, label]) => (
-                <button key={key} type="button" onClick={() => setKindTab(key)}
-                  className={
-                    kindTab === key
-                      ? "border-ui-border-interactive bg-ui-bg-base-pressed txt-small rounded-lg border px-3 py-1.5"
-                      : "border-ui-border-base bg-ui-bg-base hover:bg-ui-bg-base-hover txt-small rounded-lg border px-3 py-1.5"
-                  }>
-                  {label}
-                </button>
-              ))}
+              <div className="min-w-0 flex-1 basis-40">
+                <Text size="base" weight="plus" className="truncate">
+                  {contextTitle}
+                </Text>
+                <Text size="small" className="text-ui-fg-muted">
+                  {pocetProduktu(listedProducts.length)}
+                </Text>
+              </div>
+              {/* Zařadit existující produkty sem — jen když je kam (kolekce)
+                  a výběr ještě není otevřený; zavírá se v něm samotném. */}
+              {selectedCollection && !pickerOpen && (
+                <Button size="large" variant="secondary"
+                  onClick={() => setPickerOpen(true)}>
+                  Přidat produkty do {pickerTargetLabel}
+                </Button>
+              )}
+              <Button size="large" variant="primary" asChild>
+                <Link to="/novy-produkt">Přidat produkt</Link>
+              </Button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div role="group" aria-label="Druh produktu"
+                className="border-ui-border-base bg-ui-bg-subtle flex shrink-0 items-center gap-0.5 rounded-lg border p-0.5">
+                {([
+                  ["vse", "Vše"],
+                  ["bezne", "Produkty"],
+                  ["zakazka", "Zakázky"],
+                  ["balicek", "Balíčky"],
+                  ["poskozene", "Poškozené"],
+                ] as const).map(([key, label]) => (
+                  <button key={key} type="button" onClick={() => setKindTab(key)}
+                    aria-pressed={kindTab === key}
+                    className={
+                      kindTab === key
+                        ? "bg-ui-bg-base text-ui-fg-base shadow-elevation-card-rest txt-compact-small-plus h-9 rounded-md px-3"
+                        : "text-ui-fg-subtle hover:bg-ui-bg-base-hover hover:text-ui-fg-base txt-compact-small h-9 rounded-md px-3"
+                    }>
+                    {label}
+                  </button>
+                ))}
+              </div>
               {/* `ml-auto`, ne rozpěrka s `flex-1`: v zalamovacím řádku by
                   rozpěrka spolkla celou další řádku a přepínač odsunula ještě
                   o jednu níž — v úzkém třetím sloupci na Windows přesně to se
                   dělo a vypadalo to, že tam přepínač není. */}
               <ViewSwitcher value={view} onChange={changeView} className="ml-auto" />
-              {pendingCount > 0 && (
-                <>
-                  <Button size="small"
-                    isLoading={applyPending.isPending}
-                    onClick={() => applyPending.mutate(Object.keys(pending))}>
-                    Potvrdit vše ({pendingCount})
-                  </Button>
-                  <Button size="small" variant="secondary"
-                    disabled={applyPending.isPending}
-                    onClick={() => setPending({})}>
-                    Zrušit vše
-                  </Button>
-                </>
-              )}
-              {selectedCollection && (
-                <Button size="small" variant="secondary"
-                  onClick={() => setPickerOpen((open) => !open)}>
-                  {pickerOpen
-                    ? "Zavřít výběr"
-                    : `Přidat produkty do ${
-                        categoryId && categoryId !== "none"
-                          ? "kategorie"
-                          : "kolekce"
-                      }`}
-                </Button>
-              )}
-              <Button size="small" variant="secondary" asChild>
-                <Link to="/novy-produkt">Přidat produkt</Link>
-              </Button>
             </div>
+            {pendingCount > 0 && (
+              <div className="bg-ui-bg-subtle flex flex-wrap items-center gap-2 rounded-lg px-3 py-2">
+                <Text size="small" className="text-ui-fg-subtle mr-auto">
+                  Neuložené přeřazení: {pendingCount}
+                </Text>
+                <Button size="small"
+                  isLoading={applyPending.isPending}
+                  onClick={() => applyPending.mutate(Object.keys(pending))}>
+                  Potvrdit vše ({pendingCount})
+                </Button>
+                <Button size="small" variant="secondary"
+                  disabled={applyPending.isPending}
+                  onClick={() => setPending({})}>
+                  Zrušit vše
+                </Button>
+              </div>
+            )}
             {selected.size > 0 && (
               <div className="flex flex-wrap items-center gap-2">
                 <Text size="xsmall" className="text-ui-fg-subtle">
@@ -1158,21 +1247,28 @@ const Inner = () => {
             <div className="border-ui-border-base flex flex-col gap-2 border-b p-4">
               {/* Where the batch will land — updates live as she clicks other
                   categories, so the sticky picker never aims silently. */}
-              <Text size="xsmall" className="text-ui-fg-subtle">
-                Zařazuje se do:{" "}
-                <span className="text-ui-fg-base font-medium">
-                  {selectedCollection.title}
-                  {categoryId && categoryId !== "none"
-                    ? ` → ${
-                        allCategories.find(
-                          (category: any) => category.id === categoryId
-                        )?.name ?? "kategorie"
-                      }`
-                    : ""}
-                </span>{" "}
-                — cíl změníte kliknutím na jinou kategorii, výběr zůstane
-                otevřený.
-              </Text>
+              <div className="flex items-start gap-3">
+                <Text size="small" className="text-ui-fg-subtle min-w-0 flex-1">
+                  Zařazuje se do:{" "}
+                  <span className="text-ui-fg-base font-medium">
+                    {selectedCollection.title}
+                    {categoryId && categoryId !== "none"
+                      ? ` → ${
+                          allCategories.find(
+                            (category: any) => category.id === categoryId
+                          )?.name ?? "kategorie"
+                        }`
+                      : ""}
+                  </span>{" "}
+                  — cíl změníte kliknutím na jinou kategorii, výběr zůstane
+                  otevřený.
+                </Text>
+                {/* Zavírá se tam, kde je otevřený — ne tlačítkem v hlavičce. */}
+                <Button size="base" variant="secondary" className="shrink-0"
+                  onClick={() => setPickerOpen(false)}>
+                  Zavřít výběr
+                </Button>
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Input size="small" type="search" className="min-w-56 flex-1"
                   placeholder="Filtrovat produkty…"
@@ -1240,10 +1336,10 @@ const Inner = () => {
               </Text>
               {/* The picker writes collection_id, so it needs a collection —
                   in the all-categories view there is none to offer. */}
-              {selectedCollection && (
-                <Button size="small" variant="secondary"
+              {selectedCollection && !pickerOpen && (
+                <Button size="base" variant="secondary"
                   onClick={() => setPickerOpen(true)}>
-                  Přidat produkty do {categoryId && categoryId !== "none" ? "kategorie" : "kolekce"}
+                  Přidat produkty do {pickerTargetLabel}
                 </Button>
               )}
             </div>
@@ -1499,10 +1595,65 @@ const Inner = () => {
       {/* Panel vpravo: jméno, fotka a popisek vybrané kolekce — všechno, co o ní
           uvidí zákazník, na jednom místě. */}
       <CollectionDrawer
-        collection={collections.find((c) => c.id === collectionId) ?? null}
+        collection={collections.find((c) => c.id === drawerCollectionId) ?? null}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         onSaved={invalidate}
+      />
+
+      {/* Potvrzení z nabídek „…" — stejná znění jako dřív u odkazů v řádku. */}
+      {visibility.dialog}
+      <ConfirmDialog
+        open={deleteCollectionOpen}
+        onOpenChange={setDeleteCollectionOpen}
+        title={`Smazat kolekci ${deletingCollection?.title ?? ""}?`}
+        description="Produkty zůstanou v obchodě, jen přijdou o kolekci."
+        consequence="Smazanou kolekci nejde vrátit."
+        confirmLabel="Smazat kolekci"
+        isPending={deleteCollection.isPending}
+        onConfirm={() => {
+          if (deletingCollection) deleteCollection.mutate(deletingCollection.id);
+        }}
+      />
+      <ConfirmDialog
+        open={archiveCategoryOpen}
+        onOpenChange={setArchiveCategoryOpen}
+        destructive={archivingCategory?.archive !== false}
+        title={
+          archivingCategory?.archive === false
+            ? `Vrátit kategorii ${archivingCategory.name} z archivu?`
+            : `Archivovat kategorii ${archivingCategory?.name ?? ""}?`
+        }
+        description={
+          archivingCategory?.archive === false
+            ? "Vrátí se do seznamů. V obchodě se ukáže, až zvolíte Zobrazit v obchodě."
+            : "Zmizí z obchodu i ze seznamů, produkty o ni nepřijdou. Najdete ji v záložce archivu (ikona krabice)."
+        }
+        confirmLabel={
+          archivingCategory?.archive === false
+            ? "Vrátit z archivu"
+            : "Archivovat"
+        }
+        isPending={archiveCategory.isPending}
+        onConfirm={() => {
+          if (archivingCategory)
+            archiveCategory.mutate({
+              id: archivingCategory.id,
+              archive: archivingCategory.archive,
+            });
+        }}
+      />
+      <ConfirmDialog
+        open={deleteCategoryOpen}
+        onOpenChange={setDeleteCategoryOpen}
+        title={`Smazat kategorii ${deletingCategory?.name ?? ""}?`}
+        description="Produkty zůstanou, jen přijdou o tuhle kategorii."
+        consequence="Smazanou kategorii nejde vrátit — když ji chcete jen schovat, použijte Archivovat."
+        confirmLabel="Smazat kategorii"
+        isPending={deleteCategory.isPending}
+        onConfirm={() => {
+          if (deletingCategory) deleteCategory.mutate(deletingCategory.id);
+        }}
       />
     </Container>
   );
