@@ -111,11 +111,14 @@ const medusaConfig = {
      * pomůže — tak ho uděláme sami: Vite při nepovedeném načtení části
      * stránky vyšle `vite:preloadError`, na to se stránka jednou obnoví
      * (pojistka proti smyčce: nejvýš jednou za 20 s).
+     *
+     * Vrací se JEN přídavek: Medusa výsledek slučuje se svým nastavením přes
+     * `mergeConfig`, který pole pluginů spojí. Vrácený celý config zdvojil
+     * všechny pluginy (i React) a vývojový admin padal na „inWebWorker has
+     * already been declared" (17. 11. 2026).
      */
-    vite: (config) => ({
-      ...config,
+    vite: () => ({
       plugins: [
-        ...(config.plugins ?? []),
         {
           name: 'kz-reload-on-stale-chunk',
           transformIndexHtml() {

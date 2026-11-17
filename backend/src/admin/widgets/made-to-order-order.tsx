@@ -27,7 +27,6 @@ import { maZakazkovouPolozku } from "../lib/order-commission";
 import {
   productionStageMeta as stageMeta,
   productionStep as actionForStage,
-  productionStepPlacement,
   type ProductionStage,
 } from "../lib/production-stage";
 
@@ -269,7 +268,9 @@ const CommissionCard = ({
   const priceNotSentYet =
     Boolean(commission.price_on_request) &&
     toNum(commission.agreed_total) <= 0.005;
-  const stepInDailyWork = !stepHere && Boolean(actionForStage[commission.stage]);
+  /* Jediná zakázka: příplatek a výzvu k doplacení má Postup objednávky
+     vpravo (17. 11. 2026); u víc zakázek zůstávají tady, každá svá. */
+  const actionsInPanel = count === 1;
   const basePrice = toNum(commission.agreed_total ?? commission.original_total);
   /* Cena samotné zakázky; null u staré zakázky bez řádku (pak jen „cena"). */
   const itemPrice =
@@ -438,12 +439,6 @@ const CommissionCard = ({
               Potvrzení zakázky (PDF): zatím nevygenerováno.
             </Text>
           )}
-          {stepInDailyWork && (
-            <Text size="xsmall" className="text-ui-fg-muted mt-1">
-              Další krok výroby ({actionForStage[commission.stage]?.label})
-              je v Denní práci.
-            </Text>
-          )}
         </div>
 
         {/* Příplatek (vpravo nahoře) + další krok. Příplatek je vlastní částka
@@ -451,7 +446,7 @@ const CommissionCard = ({
         <div className="flex flex-col items-start gap-2 sm:items-end">
           {/* Zaplacená a hotová zakázka — příplatek je zaplacený, není co
               upravovat ani potvrzovat (14. 10. 2026). */}
-          {settled ? null : editingSurcharge ? (
+          {settled || actionsInPanel ? null : editingSurcharge ? (
             <div className="flex items-center gap-2">
               <Input
                 type="number"
@@ -577,7 +572,7 @@ const CommissionCard = ({
 
           {/* Doplatek — pošle zákazníkovi e-mail s platebním odkazem. Vidět
               vždy, když něco zbývá doplatit, ne jen ve fázi „čeká na doplatek". */}
-          {canRequestBalance && (
+          {canRequestBalance && !actionsInPanel && (
             <div className="flex flex-col items-start gap-1 sm:items-end">
               {/*
                 Poštovné za VLASTNÍ zásilku (6. 11. 2026).
@@ -833,15 +828,10 @@ export const MadeToOrderPanel = ({ order }: { order: AdminOrder }) => {
   if (!commissions.length) return null;
 
   /*
-   * Kde se ovládá postup výroby — a tím i odkud odcházejí e-maily o zahájení
-   * a průběhu: u jediné zakázky bez dalšího zboží v Denní práci, jinak v
-   * kartě každé zakázky (`lib/production-stage`).
+   * Kroky výroby (a jejich e-maily) má od 17. 11. 2026 vždycky Postup
+   * objednávky vpravo — i u víc zakázek, tam řádek pro každou zvlášť.
    */
-  const stepHere =
-    productionStepPlacement({
-      pureCommission: Boolean(commissions[0]?.pure_commission),
-      commissionCount: commissions.length,
-    }) === "commission-card";
+  const stepHere = false;
 
   return (
     <div className="flex flex-col gap-y-3">

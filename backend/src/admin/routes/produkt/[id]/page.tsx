@@ -477,7 +477,7 @@ const FlagRow = ({
   disabled?: boolean;
 }) => (
   <label className="flex items-start justify-between gap-4 py-3">
-    <div>
+    <div className="min-w-0">
       <Text size="small" weight="plus">
         {label}
       </Text>
@@ -485,7 +485,7 @@ const FlagRow = ({
         {description}
       </Text>
     </div>
-    <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} />
+    <Switch className="mt-0.5 shrink-0" checked={checked} onCheckedChange={onChange} disabled={disabled} />
   </label>
 );
 
