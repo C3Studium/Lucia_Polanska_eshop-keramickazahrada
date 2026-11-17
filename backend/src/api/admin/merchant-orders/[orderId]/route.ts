@@ -80,6 +80,10 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       : null,
     order,
     production_order,
+    // Historie fází pro kartu „Aktivita" na detailu objednávky (17. 11. 2026).
+    stage_history: Array.isArray((state as any)?.stage_history)
+      ? (state as any).stage_history
+      : [],
   })
 }
 
