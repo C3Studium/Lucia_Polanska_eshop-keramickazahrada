@@ -68,13 +68,31 @@ export const useExpertMode = (): boolean =>
  * všechny kopie ale jdou do jednoho pevného slotu a vidět je jen první.
  */
 const SLOT_ID = "kz-expert-slot";
+/*
+ * Slot sedí PŘÍMO v horní liště Medusy, jako první prvek její pravé části
+ * (vedle ikon nastavení a zvonku) — 17. 11. 2026. Dřív byl pevně umístěný
+ * nad lištou (`position: fixed; right: 104px`) a překrýval tlačítka, která
+ * tam Medusa ukazuje při úpravě rozložení stránky („Personal / Default",
+ * „Zrušit", „Uložit"); a když se lišta na menším displeji zmenšila, seděl
+ * níž než ikony. Jako součást lišty se zarovná sám a uhne s ostatními.
+ * Bez lišty (přihlášení) zůstává záložní plovoucí slot v `body`.
+ */
+const TOPBAR_RIGHT = "div.grid.grid-cols-2.border-b > div.justify-end";
+
 const slot = (): HTMLElement | null => {
   if (typeof document === "undefined") return null;
   let el = document.getElementById(SLOT_ID);
   if (!el) {
     el = document.createElement("div");
     el.id = SLOT_ID;
+  }
+  const topbar = document.querySelector<HTMLElement>(TOPBAR_RIGHT);
+  if (topbar) {
+    if (el.parentElement !== topbar) topbar.prepend(el);
+    el.dataset.place = "topbar";
+  } else if (!el.isConnected) {
     document.body.appendChild(el);
+    el.dataset.place = "floating";
   }
   return el;
 };

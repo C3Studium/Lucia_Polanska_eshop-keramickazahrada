@@ -1,4 +1,4 @@
-import { ArrowUpRightOnBox, ChevronDown, Photo, Plus, Trash } from "@medusajs/icons";
+import { ArrowUpRightOnBox, CheckMini, ChevronDown, Photo, Plus, Trash } from "@medusajs/icons";
 import {
   Badge,
   Button,
@@ -30,7 +30,6 @@ import {
   InspectorSwitchRow,
 } from "../../../components/product-inspector";
 import { SaveIndicator } from "../../../components/save-indicator";
-import { StepRow, type StepState } from "../../../components/step-list";
 import { PhotoStrip, PhotoViewer } from "../../../components/photo-strip";
 import { ProductionProfileEditor } from "../../../components/production-profile-editor";
 import { ProductDetailMenu } from "../../../components/product-detail-menu";
@@ -679,7 +678,7 @@ const VariantRow = ({
       </>
     ) : (
       <div className={className}>
-        <div className="mb-1 lg:hidden">
+        <div className="mb-1">
           <FieldLabel>{label}</FieldLabel>
         </div>
         {children}
@@ -687,18 +686,18 @@ const VariantRow = ({
     );
 
   return (
-    <div className={solo ? "px-6 pb-2" : "px-6 py-4"}>
+    <div className={solo ? "px-3 py-2.5" : "px-3 py-3"}>
     <div
       className={
         solo
           ? "grid items-start gap-x-4 gap-y-2.5 sm:grid-cols-[6rem_minmax(0,1fr)]"
-          : "grid items-center gap-x-3 gap-y-2 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_120px_150px_170px_auto]"
+          : "grid grid-cols-2 items-start gap-x-3 gap-y-2"
       }
     >
       {/* Název provedení: při jediném je to vždy „Standardní" a nikoho
           nezajímá. Objeví se, jakmile je provedení víc. */}
       {!solo && (
-        <div className="min-w-0">
+        <div className="col-span-2 min-w-0">
           <InlineText
             value={variant.title ?? ""}
             required
@@ -815,7 +814,7 @@ const VariantRow = ({
         )}
       </Pole>
       <Pole label="Skladem">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Text size="small" className="tabular-nums">
             {stock?.available ?? "—"}
           </Text>
@@ -1024,7 +1023,7 @@ const AddVariantRow = ({
 
   if (!open) {
     return (
-      <div className="mx-6 my-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+      <div className="mx-3 my-2.5 flex flex-wrap items-center gap-x-3 gap-y-1">
         <Button size="small" variant="secondary" onClick={() => setOpen(true)}>
           <Plus /> Přidat provedení
         </Button>
@@ -1040,7 +1039,7 @@ const AddVariantRow = ({
   }
 
   return (
-    <div className="mx-6 my-3 flex flex-wrap items-center gap-2 rounded-lg border border-dashed p-2">
+    <div className="mx-3 my-2.5 flex flex-wrap items-center gap-2 rounded-lg border border-dashed p-2">
       <Input
         size="small"
         className="min-w-40 flex-1"
@@ -1094,10 +1093,10 @@ type ShippingCheck = {
 type JumpTarget = { id: string; focus?: string };
 
 /**
- * „Připraveno k prodeji" — očíslované kroky nahoře v pravém sloupci
- * (17. 11. 2026, Matěj). Dřív oranžový pruh přes celou šířku pod hlavičkou;
- * teď vypadá jako „Postup objednávky": hotové kroky zelené, první chybějící
- * modře s jedním tlačítkem, které skočí k poli. Výpočet kontrol je beze
+ * „Před prodejem" — drobná lišta pod názvem výrobku (17. 11. 2026, Matěj).
+ * Dřív oranžový pruh přes celou šířku, pak karta s kroky v pravém sloupci;
+ * teď jedna řádka teček jako zmenšený „Postup objednávky" a u prvního
+ * chybějícího kroku krátký důvod a jedno tlačítko, které skočí k poli. Výpočet kontrol je beze
  * změny, jen pořadí jde podle práce na kusu (fotky → popis → cena → …),
  * a kontroly, které se načítají déle (doprava, obchod), jsou na konci, ať
  * se čísla prvních kroků po načtení neposouvají.
@@ -1156,8 +1155,8 @@ const ReadinessCard = ({
   const jumpButton = (label: string, target: JumpTarget) => (
     <Button
       size="small"
-      variant="secondary"
-      className="self-start"
+      variant="transparent"
+      className="text-ui-fg-interactive h-7 px-2"
       onClick={() => onJump(target)}
     >
       {label}
@@ -1182,8 +1181,8 @@ const ReadinessCard = ({
       action: (
         <Button
           size="small"
-          variant="secondary"
-          className="self-start"
+          variant="transparent"
+          className="text-ui-fg-interactive h-7 px-2"
           isLoading={uploadingPhotos}
           onClick={onUploadPhotos}
         >
@@ -1256,17 +1255,16 @@ const ReadinessCard = ({
             action: shipping.fixTarget ? (
               <Button
                 size="small"
-                variant="secondary"
-                className="self-start"
+                variant="transparent"
+                className="text-ui-fg-interactive h-7 px-2"
                 isLoading={shipping.fixing}
                 onClick={shipping.onFix}
               >
                 Nastavit běžnou dopravu ({shipping.fixTarget.name})
               </Button>
             ) : (
-              <Text size="small" className="text-ui-fg-error">
-                Obchod nemá žádnou dopravu, na kterou by šel kus přeřadit —
-                ozvěte se prosím Matějovi.
+              <Text size="xsmall" className="text-ui-fg-error">
+                Není kam přeřadit — ozvěte se prosím Matějovi.
               </Text>
             ),
           },
@@ -1287,8 +1285,8 @@ const ReadinessCard = ({
             action: (
               <Button
                 size="small"
-                variant="secondary"
-                className="self-start"
+                variant="transparent"
+                className="text-ui-fg-interactive h-7 px-2"
                 isLoading={addingToShop}
                 onClick={onAddToShop}
               >
@@ -1298,58 +1296,69 @@ const ReadinessCard = ({
           },
         ]),
   ];
-  const missing = checks.filter((check) => !check.ok).length;
   const currentIndex = checks.findIndex((check) => !check.ok);
-  const allDone = missing === 0;
+  const current = currentIndex >= 0 ? checks[currentIndex] : null;
+
+  if (!current) {
+    return (
+      <Text
+        size="xsmall"
+        weight="plus"
+        className="text-ui-tag-green-text mt-1.5"
+        title={checks.map((check) => `✓ ${check.label}`).join("\n")}
+      >
+        ✓ Připraveno k prodeji
+      </Text>
+    );
+  }
 
   return (
-    <section className="px-5 py-4">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
-        <Heading level="h2">Před prodejem</Heading>
-        {allDone ? (
-          <Badge size="small" color="green">
-            Připraveno k prodeji
-          </Badge>
-        ) : (
-          <Badge size="small" color="orange">
-            Zbývá {missing} z {checks.length}
-          </Badge>
-        )}
-      </div>
-      <div className="bg-ui-bg-base shadow-borders-base rounded-lg px-4 py-3">
-        <ol className="flex flex-col">
-          {checks.map((check, index) => {
-            const state: StepState = check.ok
-              ? "done"
-              : index === currentIndex
-                ? "current"
-                : "todo";
-            return (
-              <StepRow
-                key={check.label}
-                state={state}
-                index={index}
-                last={index === checks.length - 1}
-                compact={allDone}
-                title={<span title={check.why}>{check.label}</span>}
-              >
-                {state !== "done" && (
-                  <Text size="small" className="text-ui-fg-subtle">
-                    {check.short}
-                  </Text>
-                )}
-                {state === "current" ? check.action : null}
-              </StepRow>
-            );
-          })}
-        </ol>
-      </div>
-      {!allDone && (
-        <Text size="xsmall" className="text-ui-fg-muted mt-1.5 px-1">
-          Jen upozornění — publikovat můžete i tak.
-        </Text>
-      )}
-    </section>
+    <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+      <Text
+        size="xsmall"
+        className="text-ui-fg-muted"
+        title="Jen upozornění — publikovat můžete i tak."
+      >
+        Před prodejem:
+      </Text>
+      {/* Tečky jako zmenšený „Postup objednávky": zelená s fajfkou = hotovo,
+          modrý kroužek = na řadě, šedá = potom. Název kroku v title. */}
+      <ol className="flex items-center gap-1" aria-label="Kroky před prodejem">
+        {checks.map((check, index) => {
+          const state = check.ok
+            ? "done"
+            : index === currentIndex
+              ? "current"
+              : "todo";
+          return (
+            <li
+              key={check.label}
+              title={`${index + 1}. ${check.label} — ${check.ok ? "hotovo" : check.short}`}
+              className={`flex size-[18px] shrink-0 items-center justify-center rounded-full text-[10px] font-medium leading-none ${
+                state === "done"
+                  ? "bg-ui-tag-green-icon text-ui-fg-on-color"
+                  : state === "current"
+                    ? "bg-ui-bg-base text-ui-fg-interactive ring-2 ring-ui-fg-interactive"
+                    : "bg-ui-bg-base text-ui-fg-muted ring-1 ring-ui-border-strong"
+              }`}
+            >
+              <span className="sr-only">
+                {state === "done" ? "Hotovo: " : state === "current" ? "Teď: " : "Později: "}
+                {check.label}
+              </span>
+              <span aria-hidden>
+                {state === "done" ? <CheckMini className="size-3" /> : index + 1}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+      <Text size="xsmall" className="text-ui-fg-subtle" title={current.why}>
+        <span className="text-ui-fg-base font-medium">{current.label}</span> —{" "}
+        {current.short}
+      </Text>
+      {current.action}
+    </div>
   );
 };
 
@@ -2234,6 +2243,32 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               <Text size="small" className="text-ui-fg-subtle mt-1 truncate" title={quietFacts}>
                 {quietFacts}
               </Text>
+              {/* Co chybí k prodeji — jedna drobná řádka (Matěj, 17. 11.). */}
+              <ReadinessCard
+                product={product}
+                detail={detail}
+                inShop={inShop}
+                onAddToShop={addToShop}
+                addingToShop={saveProduct.isPending}
+                onJump={jumpTo}
+                onUploadPhotos={() => fileInput.current?.click()}
+                uploadingPhotos={uploadImages.isPending}
+                shipping={
+                  shippingState === null
+                    ? null
+                    : {
+                        state: shippingState,
+                        profileName: currentProfile?.name ?? null,
+                        fixTarget: shippingFixTarget
+                          ? { id: shippingFixTarget.id, name: shippingFixTarget.name }
+                          : null,
+                        onFix: () => {
+                          if (shippingFixTarget) fixShipping.mutate(shippingFixTarget.id);
+                        },
+                        fixing: fixShipping.isPending,
+                      }
+                }
+              />
             </div>
           </div>
 
@@ -2290,19 +2325,20 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
 
       {/*
         Rozvržení (17. 11. 2026, Matěj — „obsah uprostřed, nastavení vpravo"):
-          hlavní sloupec — co vidí zákazník: Fotky, Popis, Cena a sklad;
-                           dole Statistiky a sbalené zřídka používané věci
-          pravý sloupec  — Před prodejem (kroky), pak nastavení po skupinách:
-                           Prodej, Doprava, Zařazení, Materiál a rozměry
-        Na úzkém displeji (pod 1280 px) jde všechno pod sebe v pořadí
-        kroky → obsah → nastavení → statistiky. Obaly sloupců jsou tam
+          hlavní sloupec — Fotky, Popis; dole Statistiky a sbalené
+                           zřídka používané věci
+          pravý sloupec  — nastavení po skupinách: Prodej, Doprava, Cena
+                           a sklad, Zařazení, Materiál a rozměry
+        Kroky „Před prodejem" jsou drobná řádka v hlavičce. Na úzkém
+        displeji (pod 1280 px) jde všechno pod sebe v pořadí
+        obsah → nastavení → statistiky. Obaly sloupců jsou tam
         `contents` (bez vlastního boxu), takže o pořadí rozhoduje `order-*`
         jejich dětí; na širokém jsou z nich zase dva sloupce.
       */}
       <div className="flex flex-col xl:grid xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         {/* ————— Hlavní sloupec ————— */}
         <div className="contents xl:col-start-1 xl:row-start-1 xl:flex xl:min-w-0 xl:flex-col">
-          <div className="order-2 divide-y border-t xl:border-t-0">
+          <div className="order-1 divide-y">
             <section
               id="produkt-fotky"
               className={`scroll-mt-24 px-6 py-5 transition-colors ${
@@ -2446,65 +2482,10 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               </div>
             </Section>
 
-            <section id="produkt-cena" className="scroll-mt-24 py-5">
-              <div className="px-6">
-                <Heading level="h2">
-                  {variants.length === 1 ? "Cena a sklad" : "Provedení a ceny"}
-                </Heading>
-                {variants.length > 1 && (
-                  <Text size="small" className="text-ui-fg-subtle mt-1">
-                    Každé provedení má vlastní název, cenu a sklad.
-                  </Text>
-                )}
-              </div>
-              {/* Hlavička sloupců dává smysl jen nad tabulkou. */}
-              {variants.length > 1 && (
-                <div className="mt-4 hidden gap-2 px-6 pb-1 lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_120px_150px_170px_auto]">
-                  <FieldLabel>Název</FieldLabel>
-                  <FieldLabel>Kód</FieldLabel>
-                  <FieldLabel>Cena</FieldLabel>
-                  <FieldLabel>Skladem</FieldLabel>
-                  <FieldLabel>Naskladnit</FieldLabel>
-                  <span />
-                </div>
-              )}
-              <div className={variants.length > 1 ? "divide-y border-t" : "mt-4"}>
-                {variants.map((variant) => (
-                  <VariantRow
-                    key={variant.id}
-                    productId={product.id}
-                    variant={variant}
-                    stock={stockByVariant.get(variant.id)}
-                    canDelete={variants.length > 1}
-                    expert={expert}
-                    invalidate={invalidate}
-                    solo={variants.length === 1}
-                    priceOnRequest={priceOnRequest}
-                    option={singleOption}
-                    siblings={variants.filter((other) => other.id !== variant.id)}
-                  />
-                ))}
-              </div>
-              <AddVariantRow
-                productId={product.id}
-                option={singleOption}
-                invalidate={invalidate}
-                solo={variants.length === 1}
-                priceOnRequest={priceOnRequest}
-              />
-              {/* Přepínače „Cena po domluvě" a „Objednání bez kusů na
-                  skladu" jsou nastavení, ne obsah — přesunuté vpravo do
-                  skupiny Prodej (17. 11. 2026). Tady jen odkaz, ať je
-                  najde, když je hledá u ceny. */}
-              <Text size="xsmall" className="text-ui-fg-muted mx-6 mt-1">
-                Cenu po domluvě a objednání bez kusů na skladu najdete
-                v nastavení Prodej.
-              </Text>
-            </section>
           </div>
 
           {/* ————— Hlavní sloupec, dole: čísla a zřídka používané věci ————— */}
-          <div className="order-4 divide-y border-t">
+          <div className="order-3 divide-y border-t">
             {/* Čísla až pod obsah (Lucie, 17. 11. 2026): nahoře je jen to,
                 s čím se něco dělá. */}
             <ProductStats
@@ -2623,37 +2604,10 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
           </div>
         </div>
 
-        {/* ————— Pravý sloupec: kroky před prodejem a nastavení ————— */}
+        {/* ————— Pravý sloupec: nastavení ————— */}
         <div className="contents xl:bg-ui-bg-subtle xl:col-start-2 xl:row-start-1 xl:block xl:border-l">
-          <div className="bg-ui-bg-subtle order-1">
-            <ReadinessCard
-              product={product}
-              detail={detail}
-              inShop={inShop}
-              onAddToShop={addToShop}
-              addingToShop={saveProduct.isPending}
-              onJump={jumpTo}
-              onUploadPhotos={() => fileInput.current?.click()}
-              uploadingPhotos={uploadImages.isPending}
-              shipping={
-                shippingState === null
-                  ? null
-                  : {
-                      state: shippingState,
-                      profileName: currentProfile?.name ?? null,
-                      fixTarget: shippingFixTarget
-                        ? { id: shippingFixTarget.id, name: shippingFixTarget.name }
-                        : null,
-                      onFix: () => {
-                        if (shippingFixTarget) fixShipping.mutate(shippingFixTarget.id);
-                      },
-                      fixing: fixShipping.isPending,
-                    }
-              }
-            />
-          </div>
 
-          <div className="bg-ui-bg-subtle order-3 border-t pb-2 xl:border-t-0">
+          <div className="bg-ui-bg-subtle order-2 border-t pb-2 xl:border-t-0">
             {/* Prodej — jak se kus prodává. Vypnutí podmínky zakázky nemaže,
                 uložená zpráva pro zákazníka po vypnutí zůstává. */}
             <InspectorGroup title="Prodej">
@@ -2853,6 +2807,42 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                     }
                   />
                 }
+              />
+            </InspectorGroup>
+
+            {/* Cena a sklad — z hlavního sloupce sem pod Dopravu (Matěj,
+                17. 11. 2026). Řádky provedení jsou v úzkém sloupci pod sebou,
+                ne tabulka o šesti sloupcích. */}
+            <InspectorGroup
+              title={variants.length === 1 ? "Cena a sklad" : "Provedení a ceny"}
+              id="produkt-cena"
+              note={
+                variants.length > 1
+                  ? "Každé provedení má vlastní název, cenu a sklad."
+                  : undefined
+              }
+            >
+              {variants.map((variant) => (
+                <VariantRow
+                  key={variant.id}
+                  productId={product.id}
+                  variant={variant}
+                  stock={stockByVariant.get(variant.id)}
+                  canDelete={variants.length > 1}
+                  expert={expert}
+                  invalidate={invalidate}
+                  solo={variants.length === 1}
+                  priceOnRequest={priceOnRequest}
+                  option={singleOption}
+                  siblings={variants.filter((other) => other.id !== variant.id)}
+                />
+              ))}
+              <AddVariantRow
+                productId={product.id}
+                option={singleOption}
+                invalidate={invalidate}
+                solo={variants.length === 1}
+                priceOnRequest={priceOnRequest}
               />
             </InspectorGroup>
 
