@@ -8,20 +8,15 @@ import {
   clx,
   toast,
 } from "@medusajs/ui";
-import {
-  QueryClientProvider,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import { Link, useSearchParams } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Fragment, type ReactNode } from "react";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { PhotoGallery } from "../../../components/claims/photo-lightbox";
 import { EmptyState } from "../../../components/empty-state";
 import { InquiryOrderDrawer } from "../../../components/inquiry-order-drawer";
-import { SubTabs, WorkTabs } from "../../../components/work-tabs";
+import { SubTabs } from "../../../components/work-tabs";
 import { ceskaChyba } from "../../../lib/ceska-chyba";
 import { formatDateTime } from "../../../lib/format";
-import { adminQueryClient } from "../../../lib/query-client";
 import { sdk } from "../../../lib/sdk";
 
 /**
@@ -245,7 +240,13 @@ const InquiryCard = ({ inquiry }: { inquiry: Inquiry }) => (
   </article>
 );
 
-const PoptavkyInner = () => {
+/**
+ * Seznam poptávek. Od 17. 11. 2026 žije jako samostatná část Objednávek
+ * (Vše · Výrobky · Zakázky | Poptávky) — `embedded` vynechá vlastní kartu
+ * a nadpis, Objednávky mají svoje. Stará adresa
+ * `/zakazkova-vyroba/poptavky` tam přesměruje.
+ */
+export const PoptavkyList = ({ embedded = false }: { embedded?: boolean }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const active = tabs.find((tab) => tab.key === searchParams.get("stav")) ?? tabs[0];
 
@@ -261,22 +262,33 @@ const PoptavkyInner = () => {
   );
   const counts = data?.counts;
 
-  return (
-    <Container className="divide-y p-0">
-      <WorkTabs active="zakazky" />
+  const Wrap = embedded ? Fragment : PageCard;
 
-      <header className="px-6 pb-2 pt-6">
-        <Heading>Poptávky zakázek</Heading>
-        <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
-          Co lidé poslali formulářem „Výroba na zakázku". Odpovězte e-mailem a
-          pak jedním kliknutím označte, jak to s poptávkou je.
-        </Text>
-      </header>
+  return (
+    <Wrap>
+      {!embedded && (
+        <header className="px-6 pb-2 pt-6">
+          <Heading>Poptávky zakázek</Heading>
+          <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
+            Co lidé poslali formulářem „Výroba na zakázku". Odpovězte e-mailem a
+            pak jedním kliknutím označte, jak to s poptávkou je.
+          </Text>
+        </header>
+      )}
 
       <SubTabs
         active={active.key}
         onSelect={(key) =>
-          setSearchParams(key === tabs[0].key ? {} : { stav: key }, { replace: true })
+          /* Jen klíč `stav` — ostatní (např. `druh` v Objednávkách) zůstanou. */
+          setSearchParams(
+            (current) => {
+              const next = new URLSearchParams(current);
+              if (key === tabs[0].key) next.delete("stav");
+              else next.set("stav", key);
+              return next;
+            },
+            { replace: true }
+          )
         }
         tabs={tabs.map((tab) => ({
           key: tab.key,
@@ -321,14 +333,24 @@ const PoptavkyInner = () => {
         </div>
       )}
 
-    </Container>
+    </Wrap>
   );
 };
 
-const PoptavkyPage = () => (
-  <QueryClientProvider client={adminQueryClient}>
-    <PoptavkyInner />
-  </QueryClientProvider>
+const PageCard = ({ children }: { children: ReactNode }) => (
+  <Container className="divide-y p-0">{children}</Container>
 );
+
+/* Stará adresa (zvonek, starší odkazy) vede do Objednávek → Poptávky. */
+const PoptavkyPage = () => {
+  const [searchParams] = useSearchParams();
+  const stav = searchParams.get("stav");
+  return (
+    <Navigate
+      to={`/objednavky?druh=poptavky${stav ? `&stav=${encodeURIComponent(stav)}` : ""}`}
+      replace
+    />
+  );
+};
 
 export default PoptavkyPage;

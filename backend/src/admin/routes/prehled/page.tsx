@@ -239,7 +239,7 @@ const attentionTiles = (summary: OperationsSummary): Tile[] => {
       value: String(attention.overdue_production),
       tone: "critical",
       hint: "Slíbený termín už uplynul.",
-      to: "/prehled/zakazky",
+      to: "/objednavky?druh=zakazky&zalozka=vyroba",
       cta: "Zobrazit zakázky",
     });
   }
@@ -314,7 +314,7 @@ const waitingTiles = (
         "nových poptávek zakázek"
       ),
       hint: "Zákazník popsal, co by chtěl — pošlete mu nabídku.",
-      to: "/zakazkova-vyroba/poptavky",
+      to: "/objednavky?druh=poptavky",
       cta: "Otevřít",
     });
   }
@@ -337,7 +337,7 @@ const waitingTiles = (
         "zakázek čeká na potvrzení zadání nebo ceny"
       ),
       hint: "Přečtěte si zadání a potvrďte ho, u ceny po domluvě pošlete cenu.",
-      to: "/prehled/zakazky",
+      to: "/objednavky?druh=zakazky&zalozka=zadani",
       cta: "Otevřít",
     });
   }

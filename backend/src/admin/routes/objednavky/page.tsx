@@ -41,10 +41,12 @@ import { RowOptionsMenu } from "../../components/row-options-menu";
 import { SubTabs } from "../../components/work-tabs";
 import {
   formatCzk,
+  productionStageLabels,
   stageColors,
   stageLabel,
   stageLabels,
 } from "../../lib/workbench";
+import { PoptavkyList } from "../zakazkova-vyroba/poptavky/page";
 import { formatDateTime } from "../../lib/format";
 import { useUrlState } from "../../lib/url-state";
 import {
@@ -96,6 +98,8 @@ type WorkbenchOrder = {
   stage_changed_at: string | null;
   made_to_order: boolean;
   production_stage: string | null;
+  /** Domluvená cena zakázek včetně dopravy (0 = cena teprve po domluvě). */
+  commission_total?: number;
   outstanding: number;
   is_personal_pickup: boolean;
   shipped: boolean;
@@ -106,9 +110,36 @@ type WorkbenchOrder = {
 
 type WorkbenchOrdersResponse = {
   counts?: Record<string, number>;
+  /** Počty pro přepínač druhu (Vše · Výrobky · Zakázky). */
+  kinds?: { vse: number; goods: number; commission: number };
+  /** Kolik objednávek má zakázku v dané fázi výroby. */
+  production_counts?: Record<string, number>;
   orders: WorkbenchOrder[];
   count: number;
 };
+
+/*
+ * Druh objednávky (17. 11. 2026, přání majitele): Objednávky jsou jediné
+ * místo pro objednávky i zakázky. Nahoře Vše · Výrobky · Zakázky jako filtr
+ * a za čárkou Poptávky — formuláře „Výroba na zakázku" z webu, ze kterých
+ * se objednávka teprve zakládá. Samostatná stránka Zakázky skončila
+ * a její adresy sem přesměrují.
+ */
+type Druh = "vse" | "vyrobky" | "zakazky" | "poptavky";
+const DRUHY: Druh[] = ["vse", "vyrobky", "zakazky", "poptavky"];
+
+/*
+ * U zakázek jsou záložky fáze VÝROBY — to je u zakázky ta podstatná otázka.
+ * Klik na řádek otevře objednávku; cena, záloha i zadání se řeší tam.
+ */
+const commissionTabs: { key: string; label: string; stages?: string[] }[] = [
+  { key: "vse", label: "Vše" },
+  { key: "zadani", label: "Nové zadání", stages: ["specification_pending"] },
+  { key: "vyroba", label: "Ve výrobě", stages: ["confirmed", "in_production"] },
+  { key: "doplatek", label: "Čeká na doplatek", stages: ["awaiting_balance"] },
+  { key: "predat", label: "Hotové k předání", stages: ["ready_to_ship"] },
+  { key: "dokoncene", label: "Dokončené", stages: ["completed"] },
+];
 
 const filterTabs = [
   { key: "vse", label: "Vše" },
@@ -984,7 +1015,17 @@ const PaymentLine = ({ order }: { order: WorkbenchOrder }) => {
 
   let text: ReactNode;
   let className: string;
-  if (order.outstanding > 0 && order.paid > 0) {
+  /* Zakázka za 0 Kč (z poptávky / cena po domluvě): peníze jdou přes
+     platební žádosti zakázky, ne přes objednávku. */
+  const priceLater =
+    order.made_to_order && order.total < 0.01 && !(order.commission_total ?? 0);
+  if (priceLater) {
+    text = "Cena po domluvě";
+    className = "text-ui-fg-subtle";
+  } else if (order.made_to_order && order.outstanding > 0 && order.paid <= 0) {
+    text = "Čeká na zálohu";
+    className = tone("text-ui-tag-orange-text");
+  } else if (order.outstanding > 0 && order.paid > 0) {
     text = `${order.made_to_order ? "Záloha" : "Zaplaceno"} ${formatCzk(order.paid)} · zbývá ${formatCzk(order.outstanding)}`;
     className = tone("text-ui-tag-orange-text");
   } else if (order.outstanding > 0 || unpaid) {
@@ -1097,8 +1138,12 @@ const OrderListRow = ({
         <div className="text-ui-fg-subtle mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
           <Text size="xsmall">{pocetPolozek(order.items_count)}</Text>
           {order.made_to_order && (
+            /* Zakázka nese i fázi výroby — v seznamu je hned vidět, kde je. */
             <Badge size="2xsmall" color="purple">
-              zakázka
+              {order.production_stage &&
+              productionStageLabels[order.production_stage]
+                ? `zakázka · ${productionStageLabels[order.production_stage]}`
+                : "zakázka"}
             </Badge>
           )}
           {order.is_personal_pickup && (
@@ -1134,7 +1179,11 @@ const OrderListRow = ({
       <div className="[grid-area:amt] min-w-0">
         {/* Nejdřív kolik objednávka dělá, pod tím jedna věta o penězích. */}
         <Text size="small" weight="plus">
-          {formatCzk(order.total)}
+          {formatCzk(
+            order.made_to_order && order.total < 0.01
+              ? (order.commission_total ?? 0)
+              : order.total
+          )}
         </Text>
         <PaymentLine order={order} />
       </div>
@@ -1205,6 +1254,21 @@ const OrdersInner = () => {
      objednávky zahodí a člověk se vrací na začátek seznamu (8. 11. 2026,
      viz lib/url-state). */
   const [active, setActive] = useUrlState<string>("zalozka", "vse");
+  const [druhRaw, setDruh] = useUrlState<string>("druh", "vse");
+  const druh: Druh = DRUHY.includes(druhRaw as Druh) ? (druhRaw as Druh) : "vse";
+  const isCommissionView = druh === "zakazky";
+  /* Záložky stavu podle druhu: u zakázek fáze výroby, u výrobků bez
+     doplatku (ten mají jen zakázky), reklamací a statistik. */
+  const stageTabs = isCommissionView
+    ? commissionTabs
+    : druh === "vyrobky"
+      ? filterTabs.filter(
+          (tab) => !["dluzi", "zadosti", "statistiky"].includes(tab.key)
+        )
+      : filterTabs;
+  const commissionTab = isCommissionView
+    ? commissionTabs.find((tab) => tab.key === active)
+    : undefined;
   const [search, setSearch] = useUrlState<string>("hledat", "");
   /* The input updates instantly; the QUERY fires 350 ms after she stops
      typing — one request per thought, not one per keystroke. Výchozí hodnota
@@ -1311,7 +1375,11 @@ const OrdersInner = () => {
   });
 
   const params = new URLSearchParams();
-  if (active === "dluzi") {
+  if (druh === "vyrobky") params.set("kind", "goods");
+  if (isCommissionView) {
+    params.set("kind", "commission");
+    if (commissionTab?.stages) params.set("production", commissionTab.stages.join(","));
+  } else if (active === "dluzi") {
     params.set("owing", "true");
   } else if (active === "naposta") {
     // „Na poštu" is the handover subset of the shipping stage.
@@ -1337,12 +1405,43 @@ const OrdersInner = () => {
   const isClaimTab = active === "zadosti";
 
   const { data, isLoading, isError } = useQuery<WorkbenchOrdersResponse>({
-    queryKey: ["workbench-orders", active, search, expert, pageLimit],
+    queryKey: ["workbench-orders", druh, active, search, expert, pageLimit],
     enabled: active !== "statistiky" && !isClaimTab,
+    /* Na Poptávkách se seznam nekreslí — stačí jeden řádek kvůli počtům
+       v přepínači Vše · Výrobky · Zakázky. */
     queryFn: () =>
-      sdk.client.fetch(`/admin/workbench/orders?${params.toString()}`),
+      sdk.client.fetch(
+        druh === "poptavky"
+          ? `/admin/workbench/orders?limit=1`
+          : `/admin/workbench/orders?${params.toString()}`
+      ),
     refetchOnWindowFocus: true,
   });
+
+  /* Počty druhů drží poslední známou hodnotu — na Poptávkách se seznam
+     objednávek nenačítá, ale čísla v přepínači mají zůstat. */
+  const [kinds, setKinds] = useState<WorkbenchOrdersResponse["kinds"]>();
+  useEffect(() => {
+    if (data?.kinds) setKinds(data.kinds);
+  }, [data?.kinds]);
+  /* Tentýž dotaz (a klíč) jako seznam poptávek — sdílí mezipaměť. */
+  const inquiriesQuery = useQuery<{ counts?: { new: number; answered: number } }>({
+    queryKey: ["commission-inquiries"],
+    queryFn: () => sdk.client.fetch("/admin/commission-inquiries"),
+    refetchOnWindowFocus: true,
+  });
+  const inquiryCounts = inquiriesQuery.data?.counts;
+  const openInquiries = inquiryCounts
+    ? inquiryCounts.new + inquiryCounts.answered
+    : undefined;
+  const commissionCount = (key: string) => {
+    if (key === "vse") return data?.kinds?.commission;
+    const stages = commissionTabs.find((tab) => tab.key === key)?.stages ?? [];
+    return stages.reduce(
+      (sum, stage) => sum + (data?.production_counts?.[stage] ?? 0),
+      0
+    );
+  };
 
   const allRows = data?.orders ?? [];
   const rows =
@@ -1545,12 +1644,32 @@ const OrdersInner = () => {
       {/* Co nejnižší záhlaví (17. 11. 2026): nadpis a hledání v jednom
           řádku, popis jedna věta. */}
       <header className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
-        <div className="min-w-0">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-2">
           <Heading>Objednávky</Heading>
-          <Text size="small" className="text-ui-fg-subtle mt-0.5">
-            Klikem na řádek otevřete objednávku, další volby jsou pod „…“.
-          </Text>
+          <SubTabs
+            bare
+            tabs={[
+              { key: "vse", label: "Vše", count: kinds?.vse },
+              { key: "vyrobky", label: "Výrobky", count: kinds?.goods },
+              { key: "zakazky", label: "Zakázky", count: kinds?.commission },
+              {
+                key: "poptavky",
+                label: "Poptávky",
+                count: openInquiries,
+                separated: true,
+              },
+            ]}
+            active={druh}
+            onSelect={(key) => {
+              if (key === druh) return;
+              setDruh(key);
+              // Záložka stavu z jiného druhu tu nemusí existovat.
+              setActive("vse");
+              setSelected(new Set());
+            }}
+          />
         </div>
+        {druh !== "poptavky" && (
         <div className="flex flex-wrap items-center gap-3">
         {/* Vrácení posledního hromadného přesunu. Totéž umí Ctrl+Z. */}
         {lastUndo && (
@@ -1567,16 +1686,21 @@ const OrdersInner = () => {
         <Input
           size="small"
           type="search"
-          placeholder="Hledat e-mail nebo číslo objednávky…"
+          placeholder="Hledat e-mail, číslo nebo výrobek…"
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
           className="w-64 max-w-full"
         />
         </div>
+        )}
       </header>
 
+      {druh === "poptavky" ? (
+        <PoptavkyList embedded />
+      ) : (
+      <>
       <SubTabs
-        tabs={filterTabs.map((tab) => ({
+        tabs={stageTabs.map((tab) => ({
           ...tab,
           count:
             tab.key === "statistiky"
@@ -1587,7 +1711,9 @@ const OrdersInner = () => {
                     (sum, claim) => sum + (claimCounts[claim.key] ?? 0),
                     0
                   ) || undefined
-                : data?.counts?.[tab.key],
+                : isCommissionView
+                  ? commissionCount(tab.key)
+                  : data?.counts?.[tab.key],
         }))}
         active={active}
         onSelect={(key) => {
@@ -1922,6 +2048,8 @@ const OrdersInner = () => {
             )}
           </div>
         )}
+      </>
+      )}
     </Container>
   );
 };
