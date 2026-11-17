@@ -37,3 +37,6 @@ next-env.d.ts
 
 # pracovni kopie agentu (git worktree) - nikdy se neverzuji
 .claude/worktrees/
+
+# Snímky a stav nástrojů valecms (pc-devices, browser, devices)
+.valecms/
