@@ -17,6 +17,9 @@ import {
 import {
   deliveryAllowedUnder,
   deliveryRestrictionFor,
+} from "@lib/util/fragile"
+import { shippingKindAllowed } from "@lib/util/shipping-kinds"
+import {
   restrictionNotice,
   type DeliveryRestriction,
 } from "@lib/util/fragile"
@@ -84,14 +87,15 @@ export const Shipping = ({
     cart as never,
     (cart.items ?? []).some(isMadeToOrderLine)
   )
+  /* Dopis jen pro samé poukazy, BOX jen malá zásilka (17. 11. 2026). */
   const shownMethods = useMemo(
     () =>
-      restriction
-        ? shippingMethods.filter((method) =>
-            deliveryAllowedUnder(method, isPickupOption(method), restriction)
-          )
-        : shippingMethods,
-    [shippingMethods, restriction]
+      shippingMethods.filter(
+        (method) =>
+          shippingKindAllowed(method, isPickupOption(method), cart as never) &&
+          (!restriction || deliveryAllowedUnder(method, isPickupOption(method), restriction))
+      ),
+    [shippingMethods, restriction, cart]
   )
 
   /* Brief k zakázce (co si zákazník představuje + fotky). Sbírá se tady v kroku

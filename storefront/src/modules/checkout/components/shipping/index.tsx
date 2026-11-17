@@ -37,6 +37,7 @@ import { itemText } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
 import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
 import { isMadeToOrderLine } from "@lib/util/commission"
+import { shippingKindAllowed } from "@lib/util/shipping-kinds"
 import { useTexty } from "@lib/context/texty"
 import { DOPRAVA_TEXT_KEY } from "@lib/util/fragile"
 
@@ -635,6 +636,9 @@ const Shipping: React.FC<ShippingProps> = ({
                       // počítá backend): s křehkým kusem zmizí jen Balíkovna do
                       // výdejního místa / BOXu — zůstane Česká pošta, Balíkovna
                       // na adresu a osobní odběr (`deliveryAllowedUnder`).
+                      // Dopis jen pro samé poukazy, BOX jen malá zásilka
+                      // (17. 11. 2026, lib/util/shipping-kinds).
+                      if (!shippingKindAllowed(option, isPickup, cart as never)) return false
                       if (!restriction) return true
                       return deliveryAllowedUnder(option, isPickup, restriction)
                     })

@@ -70,25 +70,54 @@ const parsePrice = (value: string): number | null => {
 };
 
 /*
- * Ceny podle velikosti zásilky (16. 11. 2026, Matěj). Pořadí podle zadání:
- * příplatky za křehké, pak Česká pošta malá/velká, Balíkovna malá/velká,
- * poukazy; doběrečné je níž. Ukládá se do voleb dopravy přes
- * /admin/shipping-rates (tam je čte výpočet ceny).
+ * Ceny dopravy podle druhu (17. 11. 2026, Matěj). Čtyři samostatné volby:
+ * Česká pošta a Balíkovna na adresu (malá / velká + příplatek za křehké),
+ * Balíkovna BOX / výdejní místo (jedna cena, bez velké zásilky a křehkého)
+ * a dopis České pošty jen s poukazy (jedna cena). Ukládá se do voleb
+ * dopravy přes /admin/shipping-rates (tam je čte výpočet ceny); první
+ * uložení zároveň volby založí / přepne (backend lib/shipping-setup).
  */
-type RateGroupKey = "posta" | "balikovna";
-type RateKey = "small" | "large" | "fragile" | "poukaz";
-type RatesTable = Record<RateGroupKey, Record<RateKey, number>>;
+type RateGroupKey = "posta" | "balikovna_adresa" | "balikovna_box" | "dopis";
+type RateKey = "small" | "large" | "fragile" | "price";
+type RatesTable = Record<RateGroupKey, Partial<Record<RateKey, number>>>;
 
-const RATE_ROWS: Array<{ group: RateGroupKey; key: RateKey; label: string; hint?: string }> = [
-  { group: "posta", key: "fragile", label: "Křehké — Česká pošta", hint: "příplatek, když je v balíku cokoli křehkého" },
-  { group: "balikovna", key: "fragile", label: "Křehké — Balíkovna", hint: "příplatek; křehké jen Balíkovnou na adresu (do výdejny ani BOXu ne)" },
-  { group: "posta", key: "small", label: "Česká pošta — malá zásilka" },
-  { group: "posta", key: "large", label: "Česká pošta — velká zásilka", hint: "stačí jediný velký výrobek" },
-  { group: "balikovna", key: "small", label: "Balíkovna — malá zásilka", hint: "výdejní místo i na adresu" },
-  { group: "balikovna", key: "large", label: "Balíkovna — velká zásilka" },
-  { group: "posta", key: "poukaz", label: "Česká pošta — jen poukazy", hint: "zásilka jen s tištěnými poukazy" },
-  { group: "balikovna", key: "poukaz", label: "Balíkovna — jen poukazy" },
+const RATE_SECTIONS: Array<{
+  title: string;
+  hint: string;
+  rows: Array<{ group: RateGroupKey; key: RateKey; label: string }>;
+}> = [
+  {
+    title: "Česká pošta",
+    hint: "Na adresu. Velká zásilka = aspoň jeden velký výrobek. Jde na dobírku.",
+    rows: [
+      { group: "posta", key: "small", label: "Malá zásilka" },
+      { group: "posta", key: "large", label: "Velká zásilka" },
+      { group: "posta", key: "fragile", label: "Příplatek za křehké" },
+    ],
+  },
+  {
+    title: "Balíkovna na adresu",
+    hint: "Doručení na adresu zákazníka. Malá / velká, křehké i dobírka.",
+    rows: [
+      { group: "balikovna_adresa", key: "small", label: "Malá zásilka" },
+      { group: "balikovna_adresa", key: "large", label: "Velká zásilka" },
+      { group: "balikovna_adresa", key: "fragile", label: "Příplatek za křehké" },
+    ],
+  },
+  {
+    title: "Balíkovna — výdejní místo / BOX",
+    hint: "Zákazník vybírá místo ve widgetu. Jen malá zásilka — velký ani křehký výrobek sem nejde, dobírka taky ne.",
+    rows: [{ group: "balikovna_box", key: "price", label: "Cena" }],
+  },
+  {
+    title: "Česká pošta — dopis (jen poukazy)",
+    hint: "Nabízí se jen košíku, ve kterém jsou samé tištěné poukazy.",
+    rows: [{ group: "dopis", key: "price", label: "Cena" }],
+  },
 ];
+const RATE_ROWS = RATE_SECTIONS.flatMap((section) =>
+  section.rows.map((row) => ({ ...row, label: section.title + " — " + row.label }))
+);
 
 const rateFieldKey = (group: RateGroupKey, key: RateKey) => group + "." + key;
 
@@ -156,7 +185,7 @@ const Inner = () => {
         "/admin/shipping-options?fields=id,name,price_type,*prices,*prices.price_rules&limit=50"
       ),
   });
-  const { data: ratesData } = useQuery<{ rates: RatesTable }>({
+  const { data: ratesData } = useQuery<{ rates: RatesTable; setup_done?: boolean }>({
     queryKey: ["shipping-rates"],
     queryFn: () => sdk.client.fetch("/admin/shipping-rates"),
   });
@@ -212,7 +241,10 @@ const Inner = () => {
     Math.max(0, Math.round(Number(codFee.replace(",", ".")) || 0))
   );
   const feeChanged = feeEdit !== null && savedFee !== null && codFeeParsed !== savedFee;
-  const changes = changedPrices.length + (feeChanged ? 1 : 0) + changedRates.length;
+  /* Volby dopravy ještě nejsou nastavené → uložení je potřeba i bez změny cen. */
+  const setupPending = ratesData ? ratesData.setup_done === false : false;
+  const changes =
+    changedPrices.length + (feeChanged ? 1 : 0) + changedRates.length + (setupPending && !changedRates.length ? 1 : 0);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -227,15 +259,15 @@ const Inner = () => {
           },
         });
       }
-      if (changedRates.length && ratesData?.rates) {
+      if ((changedRates.length || setupPending) && ratesData?.rates) {
         const table = {} as RatesTable;
-        for (const group of ["posta", "balikovna"] as RateGroupKey[]) {
-          table[group] = {} as Record<RateKey, number>;
-          for (const key of ["small", "large", "fragile", "poukaz"] as RateKey[]) {
-            const edit = rateEdits[rateFieldKey(group, key)];
-            const parsed = edit !== undefined ? parsePrice(edit) : null;
-            table[group][key] = parsed !== null ? parsed : savedRate(group, key) ?? 0;
-          }
+        for (const row of RATE_ROWS) {
+          const edit = rateEdits[rateFieldKey(row.group, row.key)];
+          const parsed = edit !== undefined ? parsePrice(edit) : null;
+          table[row.group] = {
+            ...(table[row.group] ?? {}),
+            [row.key]: parsed !== null ? parsed : savedRate(row.group, row.key) ?? 0,
+          };
         }
         await sdk.client.fetch("/admin/shipping-rates", { method: "POST", body: table });
       }
@@ -279,25 +311,34 @@ const Inner = () => {
       </header>
 
       <section className="flex flex-col gap-y-1 px-6 py-5">
-        <Text size="small" weight="plus">Ceny dopravy podle velikosti zásilky</Text>
+        <Text size="small" weight="plus">Ceny dopravy</Text>
         <Text size="xsmall" className="text-ui-fg-subtle mb-2 max-w-2xl">
-          Česká pošta a Balíkovna: cena podle toho, jestli je zásilka malá, nebo
-          velká (velikost se nastavuje u výrobku v Produkty+, stačí jeden velký
-          kus). Když je v košíku cokoli křehkého, přičte se příplatek za křehké
-          a Balíkovna jde jen na adresu. Dobírka se přičítá zvlášť (níž).
+          Velikost zásilky se nastavuje u výrobku (Produkty+ nebo detail
+          výrobku › Vlastnosti prodeje); stačí jeden velký kus a celá zásilka
+          je velká. Když je v košíku cokoli křehkého, přičte se příplatek za
+          křehké. Dobírka se přičítá zvlášť (níž).
         </Text>
+        {setupPending && (
+          <Text size="xsmall" className="text-ui-fg-interactive mb-2 max-w-2xl">
+            Uložením se volby dopravy nastaví: přibude Balíkovna na adresu
+            a dopis pro poukazy, zmizí stará „Česká Pošta - Křehké" a ceny se
+            začnou počítat podle velikosti.
+          </Text>
+        )}
         {ratesData?.rates ? (
-          <div className="divide-y">
-            {RATE_ROWS.map((row) => {
+          <div className="flex flex-col gap-y-4">
+            {RATE_SECTIONS.map((section) => (
+              <div key={section.title}>
+                <Text size="small" weight="plus">{section.title}</Text>
+                <Text size="xsmall" className="text-ui-fg-subtle">{section.hint}</Text>
+                <div className="divide-y">
+            {section.rows.map((row) => {
               const field = rateFieldKey(row.group, row.key);
               const value = rateValue(row.group, row.key);
               return (
                 <div key={field} className="flex flex-wrap items-center justify-between gap-3 py-2">
                   <div>
                     <Text size="small">{row.label}</Text>
-                    {row.hint && (
-                      <Text size="xsmall" className="text-ui-fg-subtle">{row.hint}</Text>
-                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Input
@@ -317,6 +358,9 @@ const Inner = () => {
                 </div>
               );
             })}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <Text size="small" className="text-ui-fg-muted">Načítám…</Text>

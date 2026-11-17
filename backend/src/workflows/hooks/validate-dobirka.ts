@@ -1,4 +1,4 @@
-import { isBalikovnaPickupMethod } from "../../lib/shipping-rates"
+import { isBalikovnaPickupMethod, shippingClassOf } from "../../lib/shipping-rates"
 import { MedusaError } from "@medusajs/framework/utils"
 import { completeCartWorkflow } from "@medusajs/medusa/core-flows"
 import {
@@ -133,6 +133,37 @@ completeCartWorkflow.hooks.validate(
       }
     }
 
+    /*
+     * BOX / výdejní místo bere jen malou zásilku a dopis jen poukazy
+     * (17. 11. 2026, Matěj). Pokladna nepovolené volby skryje
+     * (storefront lib/util/shipping-kinds.ts); tohle je brána pro ručně
+     * složený požadavek.
+     */
+    const goods = ((fullCart.items ?? []) as any[]).filter(
+      (item) => item?.product && !item?.metadata?.packaging_fee && !item?.metadata?.dobirka_fee
+    )
+    const methodIds = ((fullCart.shipping_methods ?? []) as any[]).map((method) =>
+      String(method?.data?.id ?? "")
+    )
+    if (
+      methodIds.includes("balikovna") &&
+      goods.some((item) => shippingClassOf(item?.product?.metadata) === "velke")
+    ) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "Velký výrobek se do výdejního místa ani BOXu Balíkovny nevejde — zvolte prosím Balíkovnu na adresu, Českou poštu nebo osobní odběr."
+      )
+    }
+    if (
+      methodIds.includes("cp-letter") &&
+      goods.some((item) => shippingClassOf(item?.product?.metadata) !== "poukaz")
+    ) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "Dopisem jde poslat jen dárkový poukaz — pro výrobky zvolte prosím jinou dopravu."
+      )
+    }
+
 
     const sessions = fullCart.payment_collection?.payment_sessions ?? []
     const usesDobirka = sessions.some(
@@ -242,6 +273,17 @@ completeCartWorkflow.hooks.validate(
     )
     if (viaBalikovna) {
       throw new MedusaError(MedusaError.Types.NOT_ALLOWED, DOBIRKA_PICKUP_POINT_MESSAGE)
+    }
+    // Dopis s poukazem dobírku nemá (17. 11. 2026).
+    if (
+      ((fullCart.shipping_methods ?? []) as any[]).some(
+        (method) => String(method?.data?.id ?? "") === "cp-letter"
+      )
+    ) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "Poukaz poslaný dopisem nejde zaplatit na dobírku — zvolte prosím platbu předem."
+      )
     }
 
     /*

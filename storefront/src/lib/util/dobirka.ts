@@ -119,6 +119,8 @@ export const deliveryCollectsDobirka = (
 ) => {
   if (isPickup) return false
   const name = fold(option?.name ?? "")
+  // Dopis s poukazem dobírku nemá (17. 11. 2026).
+  if (name.includes("dopis")) return false
   // Balíkovna NA ADRESU dobírku smí — peníze vybere doručovatel (16. 11. 2026).
   if (name.includes("balikovna")) return name.includes("adres")
   return name.includes("ceska posta")
