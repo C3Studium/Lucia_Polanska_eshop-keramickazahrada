@@ -80,6 +80,7 @@ export const BulkBar = ({
   onConfirm,
   onDiscard,
   isSaving = false,
+  layout = "inline",
   children,
 }: {
   /** Kolik řádků je vybráno. Lišta se vykresluje jen když je to > 0. */
@@ -90,6 +91,12 @@ export const BulkBar = ({
   onConfirm?: () => void;
   onDiscard?: () => void;
   isSaving?: boolean;
+  /**
+   * „inline" = vše v jednom řádku (objednávky, pár akcí). „stacked" = nahoře
+   * počet a potvrzení, pod tím skupiny ovladačů — pro seznamy, kde se hromadně
+   * nastavuje víc vlastností (Produkty+).
+   */
+  layout?: "inline" | "stacked";
   /** Ovladače vlastností a akce — `BulkSwitch`, `BulkNumber`, `BulkAction`. */
   children: ReactNode;
 }) => {
@@ -103,16 +110,58 @@ export const BulkBar = ({
 
   const hasPending = pendingCount > 0 && Boolean(onConfirm);
 
+  const frame = clx(
+    "sticky bottom-3 z-20 mx-4 mb-3 mt-2 rounded-lg border px-3 py-2.5",
+    "border-ui-border-interactive bg-ui-bg-base shadow-elevation-card-rest",
+    "transition-transform duration-150 ease-out motion-reduce:transition-none",
+    shown ? "translate-y-0" : "translate-y-3"
+  );
+
+  /*
+   * Dvě patra: nahoře co je vybrané a co s tím (Zrušit výběr · Potvrdit),
+   * dole ovladače ve skupinách. U šesti vlastností v jednom řádku se
+   * „Potvrdit" ztrácelo mezi přepínači; takhle stojí vždy na stejném místě.
+   * „Zrušit výběr" zůstává i s rozpracovanou změnou — výběr a změny jsou
+   * dvě různé věci (zrušený výběr změny nechá v řádcích k potvrzení).
+   */
+  if (layout === "stacked") {
+    return (
+      <div role="region" aria-label={`Hromadná úprava, vybráno ${count}`} className={frame}>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <Text size="small" weight="plus" className="shrink-0">
+            Vybráno: {count}
+          </Text>
+          <Button size="small" variant="transparent" disabled={isSaving} onClick={onClear}>
+            Zrušit výběr
+          </Button>
+          {hasPending && (
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <Button size="small" variant="transparent" disabled={isSaving} onClick={onDiscard}>
+                Zahodit změny
+              </Button>
+              <Button size="small" isLoading={isSaving} onClick={onConfirm}>
+                Potvrdit ({pendingCount})
+              </Button>
+            </div>
+          )}
+        </div>
+        <div className="border-ui-border-base mt-2 flex flex-wrap items-center gap-x-5 gap-y-3 border-t pt-2.5">
+          {children}
+        </div>
+        {hasPending && (
+          <Text size="xsmall" className="text-ui-fg-muted mt-2">
+            Změny se uloží u všech vybraných kusů naráz, až dáte Potvrdit.
+          </Text>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       role="region"
       aria-label={`Hromadná úprava, vybráno ${count}`}
-      className={clx(
-        "sticky bottom-3 z-20 mx-4 mb-3 mt-2 rounded-lg border px-3 py-2.5",
-        "border-ui-border-interactive bg-ui-bg-base shadow-elevation-card-rest",
-        "transition-transform duration-150 ease-out motion-reduce:transition-none",
-        shown ? "translate-y-0" : "translate-y-3"
-      )}
+      className={frame}
     >
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <Text size="small" weight="plus" className="shrink-0">
@@ -229,10 +278,16 @@ export const BulkNumber = ({
   mixed = false,
   dirty = false,
   disabled = false,
+  applyLabel,
   onSet,
 }: {
   label: string;
   unit?: string;
+  /**
+   * Text tlačítka vedle pole („Použít"). Zapisuje i opuštění pole a Enter;
+   * tlačítko je tu pro ruku na myši, která čeká, že se číslo někam „pošle".
+   */
+  applyLabel?: string;
   value: number | null;
   /** Vybrané kusy mají různé hodnoty — pole zůstane prázdné s popiskem. */
   mixed?: boolean;
@@ -305,6 +360,17 @@ export const BulkNumber = ({
         <Text size="xsmall" className="text-ui-fg-subtle">
           {unit}
         </Text>
+      )}
+      {applyLabel && (
+        <Button
+          size="small"
+          variant="secondary"
+          type="button"
+          disabled={disabled || draft.trim() === (mixed ? "" : asText(value))}
+          onClick={commit}
+        >
+          {applyLabel}
+        </Button>
       )}
     </label>
   );
@@ -424,4 +490,101 @@ export const BulkAction = ({
   >
     {children}
   </Button>
+);
+
+/**
+ * Skupina ovladačů v liště (Doprava, Obchod) — popisek a za ním ovladače.
+ * Skupiny dělí svislá čára, aby se dlouhá lišta četla po kouscích.
+ */
+export const BulkGroup = ({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) => (
+  <div
+    role="group"
+    aria-label={label}
+    className="border-ui-border-base flex flex-wrap items-center gap-x-4 gap-y-2 sm:border-l sm:pl-5 sm:first:border-l-0 sm:first:pl-0"
+  >
+    <Text size="xsmall" weight="plus" className="text-ui-fg-muted w-full uppercase sm:w-auto">
+      {label}
+    </Text>
+    {children}
+  </div>
+);
+
+/**
+ * Volba z pár možností jako spojená tlačítka (Dobírka Ano | Ne,
+ * Zásilka Malé | Velké).
+ *
+ * Proč ne přepínač: u výběru je běžné „různé" a přepínač ho neumí ukázat
+ * jinak než slovem vedle. Tady je to vidět rovnou — není stisknuté nic —
+ * a klik nastaví konkrétní hodnotu, ne „opak". Jde do rozpracovaných změn
+ * jako ostatní ovladače lišty, uloží se až Potvrdit.
+ */
+export const BulkSegmented = <V extends string>({
+  label,
+  title,
+  options,
+  value,
+  dirty = false,
+  disabled = false,
+  onSet,
+}: {
+  label: string;
+  title?: string;
+  options: { value: V; label: string }[];
+  /** Shodná hodnota výběru; `null` = vybrané kusy ji mají různě. */
+  value: V | null;
+  dirty?: boolean;
+  disabled?: boolean;
+  onSet: (next: V) => void;
+}) => (
+  <div
+    className={clx("flex shrink-0 items-center gap-1.5", disabled && "opacity-50")}
+    title={title}
+  >
+    <Text
+      size="xsmall"
+      className={dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle"}
+    >
+      {label}
+    </Text>
+    <div
+      role="group"
+      aria-label={`${label} u všech vybraných kusů`}
+      className={clx(
+        "bg-ui-bg-subtle flex rounded-md border p-0.5",
+        dirty ? "border-ui-tag-orange-border" : "border-ui-border-base"
+      )}
+    >
+      {options.map((option) => {
+        const pressed = option.value === value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            disabled={disabled}
+            aria-pressed={pressed}
+            onClick={() => onSet(option.value)}
+            className={clx(
+              "txt-compact-xsmall min-h-[28px] rounded px-2.5 outline-none transition-fg focus-visible:shadow-borders-focus",
+              pressed
+                ? "bg-ui-bg-base text-ui-fg-base shadow-borders-base font-medium"
+                : "text-ui-fg-subtle hover:text-ui-fg-base"
+            )}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+    {value === null && (
+      <Text size="xsmall" className="text-ui-fg-muted">
+        různé
+      </Text>
+    )}
+  </div>
 );

@@ -1,66 +1,77 @@
-import { Button, Prompt, Switch, Text, toast } from "@medusajs/ui";
+import {
+  ArchiveBox,
+  ArrowUpRightOnBox,
+  ArrowUturnLeft,
+  ChartBar,
+  Eye,
+  EyeSlash,
+  PencilSquare,
+  ReceiptPercent,
+  SquareTwoStack,
+  Swatch,
+  Tools,
+  Trash,
+  TruckFast,
+} from "@medusajs/icons";
+import { toast } from "@medusajs/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba } from "../lib/ceska-chyba";
-import { pushUndo, toastWithUndo } from "../lib/undo";
+import { toastWithUndo } from "../lib/undo";
+import { BundleEditor } from "./bundle-editor";
+import { ConfirmDialog } from "./confirm-dialog";
 import { ProductionProfileEditor } from "./production-profile-editor";
+import { RowOptionsMenu, type RowOption } from "./row-options-menu";
 import { ShippingProfileEditor } from "./shipping-profile-editor";
+import { VariantsEditor } from "./variants-editor";
 import type { ShippingClass } from "../../lib/shipping-rates";
 
 /**
- * „…" u řádku produktu — malé okno se vzácnými nastaveními kusu.
+ * „…" u řádku produktu — vedlejší akce kusu v nabídce (RowOptionsMenu).
  *
- * Matěj 3. 11. 2026: „to hlavní tam nech jako balné atd., ale to vedlejší dej
- * opět do … a to otevře malé okno". V řádku zůstává, co se mění často
- * (balné, dobírka, křehké); sem patří, na co se sahá jednou za
- * čas: poškozený kus, slevové kódy, velikost zásilky, profil dopravy,
- * zakázka, archiv.
+ * ## Proč nabídka, a ne okno (17. 11. 2026)
  *
- * Všechno v tomhle okně se ukládá HNED a dá se vrátit („Vrátit zpět" /
- * Ctrl+Z) — jeden způsob pro celé okno, žádné „Uložit" navíc. Profil dopravy a zakázka
- * otevírají své vlastní panely se svým Uložit, stejně jako dřív z řádku.
+ * Dřív tu bylo modální okno „Další nastavení" s přepínači a řadou tlačítek.
+ * Matěj: nabídka „…" z Rozdělení je to, co chce vidět všude — jeden klik,
+ * velké položky, mazání červeně za čarou. Okno navíc schovávalo i věci, které
+ * se mění často (velikost zásilky); ta je teď u balného a dobírky v okénku
+ * „Doprava" přímo v řádku.
+ *
+ * Každá položka buď něco hned udělá (skrýt, poškozený kus, slevové kódy,
+ * archiv) a v hlášce nabídne „Vrátit zpět", nebo otevře svůj panel (varianty,
+ * profil dopravy, zakázka) se svým Uložit. Nabídka se po kliknutí zavře, takže
+ * se na tlačítko v hlášce dá kliknout — v modálním okně nešlo.
  *
  * ## Archiv není mazání (9. 11. 2026)
  *
- * Matěj: „když ho smažu, tak tam zůstane". Nezůstával — nebylo ho čím smazat.
- * Produkty+ uměly jen archivovat, a archivovaný kus v Archivovaných z principu
- * leží dál. Mazání tedy chybělo, ne selhávalo.
- *
- * Teď je tu obojí vedle sebe a liší se tím, co drží:
  * - **Archivovat** kus schová, ale nechá ho. Vratné.
- * - **Smazat** ho odstraní z obchodu i ze všech seznamů. Nevratné.
+ * - **Smazat** ho odstraní z obchodu i ze všech seznamů. Nevratné, proto se
+ *   ptá potvrzovacím dialogem se jménem kusu. Objednávky si svůj záznam
+ *   nechávají — řádek objednávky má vlastní kopii názvu i ceny.
  *
- * Měřeno na nanečisto založeném kusu (9. 11. 2026): po smazání zmizí
- * i ze záložky Archivované a jeho adresa se uvolní, takže kus stejného
- * jména jde založit znovu. Objednávky si svůj záznam nechávají — řádek
- * objednávky má vlastní kopii názvu i ceny, takže faktury zůstanou celé.
+ * ## Panely bez vlastního řízení
  *
- * Ptá se dvěma kroky uvnitř okna, ne dalším vyskakovacím dialogem: okno je
- * modální a dialog nad dialogem je na ovládání i na čtení horší než
- * potvrzovací řádek na místě. Jméno kusu stojí v hlavičce okna.
- *
- * ## Viditelnost a podrobnosti (17. 11. 2026)
- *
- * Lucie: řádek je přeplácaný, „Křehké" lezlo přes „Rozbalit". Řádek teď sám
- * otevírá produkt, takže oko a „Rozbalit" se přestěhovaly sem: viditelnost
- * jako přepínač (ukládá se hned jako ostatní, vrací se přes „Vrátit zpět"),
- * podrobnosti jako tlačítko, které okno zavře a rozbalí řádek. Že je kus
- * skrytý, říká dál štítek ve sloupci Stav.
+ * Editory variant, zakázky, balíčku a profilu dopravy se otevírají jen přes
+ * svůj `trigger`. Nabídka proto drží jejich skrytá spouštěcí tlačítka a klikne
+ * na ně — editory zůstávají beze změny a fungují dál i odjinud.
  */
 
 type FlagKey = "clearance" | "no_promo";
 
-const FLAG_TEXT: Record<FlagKey, { label: string; hint: string; on: string; off: string }> = {
+const FLAG_TEXT: Record<
+  FlagKey,
+  { onLabel: string; offLabel: string; on: string; off: string }
+> = {
   clearance: {
-    label: "Poškozený kus",
-    hint: "Jeden kus s vadou, prodává se zvlášť se slevou. Po prodeji se sám schová.",
+    onLabel: "Označit jako poškozený kus",
+    offLabel: "Už to není poškozený kus",
     on: "Označeno jako poškozený kus — najdete ho v záložce Poškozené.",
     off: "Už to není poškozený kus — vrátil se mezi běžné produkty.",
   },
   no_promo: {
-    label: "Bez slevových kódů",
-    hint: "Slevové kódy se na tento produkt nevztahují.",
+    onLabel: "Vyloučit ze slevových kódů",
+    offLabel: "Povolit slevové kódy",
     on: "Na produkt už slevové kódy neplatí.",
     off: "Na produkt zase platí slevové kódy.",
   },
@@ -69,7 +80,7 @@ const FLAG_TEXT: Record<FlagKey, { label: string; hint: string; on: string; off:
 /**
  * Velikost zásilky (16. 11. 2026) — podle ní pokladna počítá poštovné.
  * Hodnoty jsou ty z `lib/shipping-rates` (typ se sdílí, kód ne: admin je
- * balík pro prohlížeč). Čte je i řádek a lišta výběru v Produkty+.
+ * balík pro prohlížeč). Čte je i detail produktu a okénko Doprava v Produkty+.
  */
 export const SHIPPING_CLASS_OPTIONS: { value: ShippingClass; label: string; hint: string }[] = [
   { value: "male", label: "Malé", hint: "Vejde se do malé zásilky." },
@@ -80,21 +91,36 @@ export const SHIPPING_CLASS_OPTIONS: { value: ShippingClass; label: string; hint
 export const shippingClassLabel = (value: ShippingClass) =>
   SHIPPING_CLASS_OPTIONS.find((option) => option.value === value)?.label ?? value;
 
+/** Skryté spouštěcí tlačítko panelu — klikne na něj nabídka. */
+const HiddenTrigger = ({
+  buttonRef,
+}: {
+  buttonRef: RefObject<HTMLButtonElement>;
+}) => (
+  <button
+    ref={buttonRef}
+    type="button"
+    tabIndex={-1}
+    aria-hidden="true"
+    className="sr-only"
+  />
+);
+
 export const ProductRowMore = ({
   product,
   flags,
   onFlagSaved,
-  shippingClass,
-  onShippingClassSaved,
+  onEditShipping,
+  showVariants = true,
+  commission = null,
+  bundleId = null,
   showShipping,
-  showMakeCommission,
   showArchive,
   showDelete,
   storeUrl,
   showVisibility,
   expanded,
   onToggleExpand,
-  trigger,
 }: {
   product: {
     id: string;
@@ -104,44 +130,57 @@ export const ProductRowMore = ({
     fragile: boolean;
     packaging_price: number | null;
   };
-  /** Přepínače, které okno ukáže — s hodnotou, jakou vidí řádek. */
+  /** Příznaky, které nabídka nabídne — s hodnotou, jakou vidí řádek. */
   flags: Partial<Record<FlagKey, boolean>>;
-  /** Po uložení přepínače — řádek zahodí jeho rozpracovanou hodnotu. */
+  /** Po uložení příznaku — řádek zahodí jeho rozpracovanou hodnotu. */
   onFlagSaved?: (key: FlagKey) => void;
-  /** Velikost zásilky, jak ji vidí řádek. Bez hodnoty se volba neukáže. */
-  shippingClass?: ShippingClass;
-  /** Po uložení velikosti — řádek zahodí její rozpracovanou hodnotu. */
-  onShippingClassSaved?: () => void;
+  /** Otevře okénko Doprava v řádku; bez něj se položka neukáže. */
+  onEditShipping?: () => void;
+  showVariants?: boolean;
+  /** „terms" = podmínky zakázky, „make" = udělat z kusu zakázku. */
+  commission?: "terms" | "make" | null;
+  /** Balíček, jehož složení se dá upravit. */
+  bundleId?: string | null;
   showShipping: boolean;
-  showMakeCommission: boolean;
   showArchive: boolean;
   showDelete?: boolean;
-  /** Odkaz „Otevřít v obchodě“ (dřív holá ikona v řádku, 14. 11. 2026). */
+  /** Odkaz „Otevřít v obchodě“. */
   storeUrl?: string | null;
-  /** Přepínač „Vidět v obchodě" (dřív oko v řádku). */
+  /** „Skrýt z obchodu" / „Zobrazit v obchodě". */
   showVisibility?: boolean;
   /** Jestli jsou pod řádkem rozbalené podrobnosti (prodeje, hodnocení). */
   expanded?: boolean;
-  /** Rozbalí / sbalí podrobnosti pod řádkem; bez něj se tlačítko neukáže. */
+  /** Rozbalí / sbalí podrobnosti pod řádkem; bez něj se položka neukáže. */
   onToggleExpand?: () => void;
-  trigger: ReactNode;
 }) => {
-  const [open, setOpen] = useState(false);
-  /* Hodnota hned po kliknutí, než se seznam načte znovu. */
-  const [local, setLocal] = useState<Partial<Record<FlagKey, boolean>>>({});
-  const [localClass, setLocalClass] = useState<ShippingClass | null>(null);
-  const [localVisible, setLocalVisible] = useState<boolean | null>(null);
-  /* Druhý krok mazání — ptá se tady, ne dalším dialogem nad dialogem. */
-  const [ptaSeNaSmazani, setPtaSeNaSmazani] = useState(false);
-  useEffect(() => {
-    if (open) {
-      setLocal({});
-      setLocalClass(null);
-      setLocalVisible(null);
-      setPtaSeNaSmazani(false);
-    }
-  }, [open]);
   const queryClient = useQueryClient();
+  const [ptaSeNaSmazani, setPtaSeNaSmazani] = useState(false);
+  const variantsRef = useRef<HTMLButtonElement>(null);
+  const commissionRef = useRef<HTMLButtonElement>(null);
+  const bundleRef = useRef<HTMLButtonElement>(null);
+  const profileRef = useRef<HTMLButtonElement>(null);
+
+  /* Panely se připojí až při prvním otevření — dvě stě řádků po čtyřech
+     panelech by jinak držely osm set spících dialogů. Po připojení se
+     klikne na jejich spouštěč (až po vykreslení, proto efekt). */
+  type PanelKey = "variants" | "commission" | "bundle" | "profile";
+  const [mounted, setMounted] = useState<Set<PanelKey>>(new Set());
+  const [toOpen, setToOpen] = useState<PanelKey | null>(null);
+  const openPanel = (key: PanelKey) => {
+    setMounted((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
+    setToOpen(key);
+  };
+  useEffect(() => {
+    if (!toOpen) return;
+    const refs = {
+      variants: variantsRef,
+      commission: commissionRef,
+      bundle: bundleRef,
+      profile: profileRef,
+    };
+    refs[toOpen].current?.click();
+    setToOpen(null);
+  }, [toOpen, mounted]);
 
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
@@ -158,63 +197,36 @@ export const ProductRowMore = ({
   const saveFlag = useMutation({
     mutationFn: ({ key, value }: { key: FlagKey; value: boolean }) =>
       writeFlags({ [key]: value }),
-    onMutate: ({ key, value }) => setLocal((previous) => ({ ...previous, [key]: value })),
     onSuccess: async (_result, { key, value }) => {
       onFlagSaved?.(key);
       await refresh();
-      /* Bez tlačítka v toastu: otevřené okno je modální a na toast se nedá
-         kliknout. Vrací se přepínačem zpátky, po zavření i „Vrátit zpět"
-         v hlavičce stránky nebo Ctrl+Z. */
-      pushUndo(`${FLAG_TEXT[key].label} — ${product.title}`, async () => {
-        await writeFlags({ [key]: !value });
-        await refresh();
-      });
-      toast.success(value ? FLAG_TEXT[key].on : FLAG_TEXT[key].off);
+      toastWithUndo(
+        value ? FLAG_TEXT[key].on : FLAG_TEXT[key].off,
+        `${value ? FLAG_TEXT[key].onLabel : FLAG_TEXT[key].offLabel} — ${product.title}`,
+        async () => {
+          await writeFlags({ [key]: !value });
+          await refresh();
+        }
+      );
     },
-    onError: (error, { key }) => {
-      setLocal((previous) => {
-        const next = { ...previous };
-        delete next[key];
-        return next;
-      });
-      toast.error(ceskaChyba(error, "Uložení se nepodařilo."));
-    },
+    onError: (error) => toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
   });
 
-  /* Velikost zásilky — ukládá se hned jako přepínače výš, vrací se volbou
-     zpátky nebo „Vrátit zpět" / Ctrl+Z po zavření okna. */
-  const saveClass = useMutation({
-    mutationFn: ({ value }: { value: ShippingClass; previous: ShippingClass }) =>
-      writeFlags({ shipping_class: value }),
-    onMutate: ({ value }) => setLocalClass(value),
-    onSuccess: async (_result, { value, previous }) => {
-      onShippingClassSaved?.();
-      await refresh();
-      pushUndo(`Velikost zásilky — ${product.title}`, async () => {
-        await writeFlags({ shipping_class: previous });
-        await refresh();
-      });
-      toast.success(`Velikost zásilky: ${shippingClassLabel(value)}.`);
-    },
-    onError: (error) => {
-      setLocalClass(null);
-      toast.error(ceskaChyba(error, "Uložení se nepodařilo."));
-    },
-  });
-  const currentClass = localClass ?? shippingClass;
-
-  /* Viditelnost v obchodě = stav produktu (zveřejněný / koncept). Ukládá se
-     hned; vrácení vrátí přesně ten stav, který kus měl předtím. */
+  /* Viditelnost v obchodě = stav produktu (zveřejněný / koncept). Vrácení
+     vrátí přesně ten stav, který kus měl předtím. */
+  const visible = product.status === "published";
   const saveVisibility = useMutation({
     mutationFn: ({ next }: { next: boolean; previousStatus: string }) =>
       sdk.client.fetch(`/admin/products/${product.id}`, {
         method: "POST",
         body: { status: next ? "published" : "draft" },
       }),
-    onMutate: ({ next }) => setLocalVisible(next),
     onSuccess: async (_result, { next, previousStatus }) => {
       await refresh();
-      pushUndo(
+      toastWithUndo(
+        next
+          ? "Zobrazeno v obchodě — zákazníci ho teď uvidí a mohou koupit."
+          : "Skryto z obchodu — zákazníci ho neuvidí, dokud ho zase nezobrazíte.",
         `${next ? "Zobrazení" : "Skrytí"} v obchodě — ${product.title}`,
         async () => {
           await sdk.client.fetch(`/admin/products/${product.id}`, {
@@ -224,18 +236,9 @@ export const ProductRowMore = ({
           await refresh();
         }
       );
-      toast.success(
-        next
-          ? "Zobrazeno v obchodě — zákazníci ho teď uvidí a mohou koupit."
-          : "Skryto z obchodu — zákazníci ho neuvidí, dokud ho zase nezobrazíte."
-      );
     },
-    onError: (error) => {
-      setLocalVisible(null);
-      toast.error(ceskaChyba(error, "Změna se nepodařila."));
-    },
+    onError: (error) => toast.error(ceskaChyba(error, "Změna se nepodařila.")),
   });
-  const currentVisible = localVisible ?? product.status === "published";
 
   /*
    * Archivace = příznak (zmizí ze seznamů) + koncept (zmizí z obchodu), stejně
@@ -254,7 +257,6 @@ export const ProductRowMore = ({
       }
     },
     onSuccess: async () => {
-      setOpen(false);
       await refresh();
       const previousStatus = product.status;
       toastWithUndo(
@@ -277,15 +279,12 @@ export const ProductRowMore = ({
     onError: (error) => toast.error(ceskaChyba(error, "Změna se nepodařila.")),
   });
 
-  /*
-   * Mazání se nevrací. Proto žádné `toastWithUndo` jako u archivace — toast
-   * s tlačítkem, které nic neumí, je horší než žádný.
-   */
+  /* Mazání se nevrací — proto žádné „Vrátit zpět", jen potvrzení předem. */
   const smazat = useMutation({
     mutationFn: () =>
       sdk.client.fetch(`/admin/products/${product.id}`, { method: "DELETE" }),
     onSuccess: async () => {
-      setOpen(false);
+      setPtaSeNaSmazani(false);
       await refresh();
       toast.success(`${product.title} smazán.`);
     },
@@ -296,225 +295,187 @@ export const ProductRowMore = ({
     (key) => flags[key] !== undefined
   );
 
+  /* Pořadí: úpravy kusu → co je vidět → vzácná nastavení → archiv a mazání. */
+  const edits: RowOption[] = [
+    ...(onEditShipping
+      ? [
+          {
+            label: "Upravit balné a dopravu",
+            icon: <TruckFast />,
+            takesFocus: true,
+            onSelect: onEditShipping,
+          },
+        ]
+      : []),
+    ...(showVariants
+      ? [
+          {
+            label: "Varianty a ceny",
+            icon: <Swatch />,
+            takesFocus: true,
+            onSelect: () => openPanel("variants"),
+          },
+        ]
+      : []),
+    ...(commission === "terms"
+      ? [
+          {
+            label: "Podmínky zakázky",
+            icon: <Tools />,
+            takesFocus: true,
+            onSelect: () => openPanel("commission"),
+          },
+        ]
+      : []),
+    ...(bundleId
+      ? [
+          {
+            label: "Složení balíčku",
+            icon: <SquareTwoStack />,
+            takesFocus: true,
+            onSelect: () => openPanel("bundle"),
+          },
+        ]
+      : []),
+    ...(onToggleExpand
+      ? [
+          {
+            label: expanded ? "Skrýt prodeje a hodnocení" : "Prodeje po měsících a hodnocení",
+            icon: <ChartBar />,
+            onSelect: onToggleExpand,
+          },
+        ]
+      : []),
+  ];
+
+  const shop: RowOption[] = [
+    ...(showVisibility
+      ? [
+          {
+            label: visible ? "Skrýt z obchodu" : "Zobrazit v obchodě",
+            icon: visible ? <EyeSlash /> : <Eye />,
+            onSelect: () =>
+              saveVisibility.mutate({ next: !visible, previousStatus: product.status }),
+          },
+        ]
+      : []),
+    ...(storeUrl
+      ? [
+          {
+            label: "Otevřít v obchodě",
+            icon: <ArrowUpRightOnBox />,
+            // Nové okno jen přímo z kliknutí, jinak ho Safari zablokuje.
+            sync: true,
+            onSelect: () => window.open(storeUrl, "_blank", "noopener"),
+          },
+        ]
+      : []),
+  ];
+
+  const rare: RowOption[] = [
+    ...flagKeys.map((key) => ({
+      label: flags[key] ? FLAG_TEXT[key].offLabel : FLAG_TEXT[key].onLabel,
+      icon: key === "no_promo" ? <ReceiptPercent /> : <PencilSquare />,
+      onSelect: () => saveFlag.mutate({ key, value: !flags[key] }),
+    })),
+    ...(showShipping
+      ? [
+          {
+            label: "Profil dopravy…",
+            icon: <TruckFast />,
+            takesFocus: true,
+            onSelect: () => openPanel("profile"),
+          },
+        ]
+      : []),
+    ...(commission === "make"
+      ? [
+          {
+            label: "Nastavit jako zakázku…",
+            icon: <Tools />,
+            takesFocus: true,
+            onSelect: () => openPanel("commission"),
+          },
+        ]
+      : []),
+  ];
+
+  const end: RowOption[] = [
+    ...(showArchive
+      ? [
+          {
+            label: archiving ? "Archivovat" : "Obnovit z archivu",
+            icon: archiving ? <ArchiveBox /> : <ArrowUturnLeft />,
+            onSelect: () => archive.mutate(),
+          },
+        ]
+      : []),
+    ...(showDelete !== false
+      ? [
+          {
+            label: "Smazat…",
+            icon: <Trash />,
+            destructive: true,
+            takesFocus: true,
+            onSelect: () => setPtaSeNaSmazani(true),
+          },
+        ]
+      : []),
+  ];
+
+  /* Skupiny oddělené čarou; prázdná skupina čáru nedělá. */
+  const items = [edits, shop, rare, end]
+    .filter((group) => group.length > 0)
+    .flatMap((group, index) =>
+      index === 0 ? group : (["separator", ...group] as RowOption[])
+    );
+
   return (
-    <Prompt open={open} onOpenChange={setOpen} variant="confirmation">
-      <Prompt.Trigger asChild>{trigger}</Prompt.Trigger>
-      <Prompt.Content>
-        <Prompt.Header>
-          <Prompt.Title>Další nastavení</Prompt.Title>
-          <Prompt.Description>{product.title}</Prompt.Description>
-        </Prompt.Header>
+    <>
+      <RowOptionsMenu label={`Možnosti produktu ${product.title}`} items={items} />
 
-        <div className="flex flex-col gap-y-4 px-6 pt-4">
-          {onToggleExpand && (
-            <Button
-              size="small"
-              variant="secondary"
-              className="justify-start"
-              onClick={() => {
-                setOpen(false);
-                onToggleExpand();
-              }}
-            >
-              {expanded
-                ? "Skrýt prodeje a hodnocení"
-                : "Ukázat prodeje po měsících a hodnocení"}
-            </Button>
-          )}
+      {/* Panely se svým Uložit — otevírá je nabídka přes skrytý spouštěč. */}
+      {showVariants && mounted.has("variants") && (
+        <VariantsEditor
+          productId={product.id}
+          productTitle={product.title}
+          trigger={<HiddenTrigger buttonRef={variantsRef} />}
+        />
+      )}
+      {commission && mounted.has("commission") && (
+        <ProductionProfileEditor
+          productId={product.id}
+          productTitle={product.title}
+          trigger={<HiddenTrigger buttonRef={commissionRef} />}
+        />
+      )}
+      {bundleId && mounted.has("bundle") && (
+        <BundleEditor bundleId={bundleId} trigger={<HiddenTrigger buttonRef={bundleRef} />} />
+      )}
+      {showShipping && mounted.has("profile") && (
+        <ShippingProfileEditor
+          productId={product.id}
+          productTitle={product.title}
+          fragile={product.fragile}
+          packagingPrice={product.packaging_price}
+          trigger={<HiddenTrigger buttonRef={profileRef} />}
+        />
+      )}
 
-          {showVisibility && (
-            <label
-              className={`flex cursor-pointer items-start justify-between gap-4 ${onToggleExpand ? "border-ui-border-base border-t pt-4" : ""}`}
-            >
-              <span>
-                <Text size="small" weight="plus">
-                  Vidět v obchodě
-                </Text>
-                <Text size="xsmall" className="text-ui-fg-subtle">
-                  {currentVisible
-                    ? "Zákazníci ho v obchodě vidí a mohou koupit."
-                    : "Skrytý — zákazníci ho v obchodě nevidí a nekoupí."}
-                </Text>
-              </span>
-              <Switch
-                className="mt-0.5 shrink-0"
-                checked={currentVisible}
-                disabled={saveVisibility.isPending}
-                onCheckedChange={(value) =>
-                  saveVisibility.mutate({ next: value, previousStatus: product.status })
-                }
-              />
-            </label>
-          )}
-
-          {flagKeys.map((key, index) => (
-            <label
-              key={key}
-              className={`flex cursor-pointer items-start justify-between gap-4 ${index === 0 && (showVisibility || onToggleExpand) ? "border-ui-border-base border-t pt-4" : ""}`}
-            >
-              <span>
-                <Text size="small" weight="plus">
-                  {FLAG_TEXT[key].label}
-                </Text>
-                <Text size="xsmall" className="text-ui-fg-subtle">
-                  {FLAG_TEXT[key].hint}
-                </Text>
-              </span>
-              <Switch
-                className="mt-0.5 shrink-0"
-                checked={local[key] ?? Boolean(flags[key])}
-                disabled={saveFlag.isPending}
-                onCheckedChange={(value) => saveFlag.mutate({ key, value })}
-              />
-            </label>
-          ))}
-
-          {currentClass && (
-            <div
-              className={`flex flex-col gap-y-2 ${flagKeys.length || showVisibility || onToggleExpand ? "border-ui-border-base border-t pt-4" : ""}`}
-            >
-              <span>
-                <Text size="small" weight="plus">
-                  Velikost zásilky
-                </Text>
-                <Text size="xsmall" className="text-ui-fg-subtle">
-                  Podle ní se v pokladně počítá poštovné.
-                </Text>
-              </span>
-              <div role="radiogroup" aria-label="Velikost zásilky" className="grid grid-cols-3 gap-2">
-                {SHIPPING_CLASS_OPTIONS.map((option) => {
-                  const active = option.value === currentClass;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      role="radio"
-                      aria-checked={active}
-                      title={option.hint}
-                      disabled={saveClass.isPending}
-                      onClick={() => {
-                        if (!active) saveClass.mutate({ value: option.value, previous: currentClass });
-                      }}
-                      className={`txt-compact-small min-h-[40px] rounded-lg border px-3 py-2 outline-none transition-fg focus-visible:shadow-borders-focus disabled:cursor-wait ${
-                        active
-                          ? "border-ui-border-interactive bg-ui-bg-base-pressed text-ui-fg-base font-medium"
-                          : "border-ui-border-base bg-ui-bg-base text-ui-fg-subtle hover:bg-ui-bg-base-hover"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {(showShipping || showMakeCommission || showArchive || storeUrl) && (
-            <div
-              className={`flex flex-col gap-y-2 ${flagKeys.length || currentClass || showVisibility || onToggleExpand ? "border-ui-border-base border-t pt-4" : ""}`}
-            >
-              {storeUrl && (
-                <Button size="small" variant="secondary" className="justify-start" asChild>
-                  <a href={storeUrl} target="_blank" rel="noreferrer">
-                    Otevřít v obchodě ↗
-                  </a>
-                </Button>
-              )}
-              {showShipping && (
-                <ShippingProfileEditor
-                  productId={product.id}
-                  productTitle={product.title}
-                  fragile={product.fragile}
-                  packagingPrice={product.packaging_price}
-                  trigger={
-                    <Button size="small" variant="secondary" className="justify-start">
-                      Profil dopravy…
-                    </Button>
-                  }
-                />
-              )}
-              {showMakeCommission && (
-                <ProductionProfileEditor
-                  productId={product.id}
-                  productTitle={product.title}
-                  trigger={
-                    <Button size="small" variant="secondary" className="justify-start">
-                      Nastavit jako zakázku…
-                    </Button>
-                  }
-                />
-              )}
-              {showArchive && (
-                <Button
-                  size="small"
-                  variant="secondary"
-                  className="justify-start"
-                  isLoading={archive.isPending}
-                  onClick={() => archive.mutate()}
-                >
-                  {archiving ? "Archivovat (zmizí z obchodu i ze seznamů)" : "Obnovit z archivu"}
-                </Button>
-              )}
-            </div>
-          )}
-
-          {showDelete !== false && (
-            <div className="border-ui-border-base flex flex-col gap-y-2 border-t pt-4">
-              {ptaSeNaSmazani ? (
-                <>
-                  <Text size="xsmall" className="text-ui-fg-subtle">
-                    Smazat natrvalo? Kus zmizí z obchodu i ze všech seznamů
-                    včetně archivu a zpátky už ho nevrátíte. Objednávky, ve
-                    kterých už je, si svůj záznam nechají — faktury zůstanou
-                    celé.
-                  </Text>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      size="small"
-                      variant="danger"
-                      isLoading={smazat.isPending}
-                      onClick={() => smazat.mutate()}
-                    >
-                      Smazat natrvalo
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="secondary"
-                      disabled={smazat.isPending}
-                      onClick={() => setPtaSeNaSmazani(false)}
-                    >
-                      Nechat
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <Button
-                    size="small"
-                    variant="danger"
-                    className="justify-start"
-                    onClick={() => setPtaSeNaSmazani(true)}
-                  >
-                    Smazat produkt…
-                  </Button>
-                  {showArchive && archiving && (
-                    <Text size="xsmall" className="text-ui-fg-muted">
-                      Archiv kus jen schová a jde vrátit. Mazání ne.
-                    </Text>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-        <Prompt.Footer>
-          <Text size="xsmall" className="text-ui-fg-muted mr-auto">
-            Změny se ukládají hned.
-          </Text>
-          <Prompt.Cancel>Zavřít</Prompt.Cancel>
-        </Prompt.Footer>
-      </Prompt.Content>
-    </Prompt>
+      <ConfirmDialog
+        open={ptaSeNaSmazani}
+        onOpenChange={setPtaSeNaSmazani}
+        title="Smazat tenhle kus natrvalo?"
+        description={product.title}
+        consequence="Kus zmizí z obchodu i ze všech seznamů včetně archivu a zpátky už ho nevrátíte. Objednávky, ve kterých už je, si svůj záznam nechají — faktury zůstanou celé."
+        confirmLabel="Smazat natrvalo"
+        isPending={smazat.isPending}
+        onConfirm={(event) => {
+          // Dialog zůstane otevřený, dokud mazání nedoběhne.
+          event.preventDefault();
+          smazat.mutate();
+        }}
+      />
+    </>
   );
 };
