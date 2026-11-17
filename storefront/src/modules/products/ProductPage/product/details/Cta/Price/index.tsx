@@ -95,24 +95,26 @@ export default function ProductPrice({
   return (
     <div className="product__details__cta__price">
       {/* Nezlomitelná mezera: na 320px se „|" zalamovalo na vlastní řádek. */}
-      <p>Cena&nbsp;|</p>
       <div className="product__details__cta__price__main">
-        <span
-          className={[
-            "product__priceCurrent",
-            saleStyled ? "product__priceCurrent--sale" : "",
-            !hasPrice ? "product__priceUnavailable" : "",
-            className ?? "",
-          ].filter(Boolean).join(" ")}
-          data-testid="product-price"
-          data-value={selectedPrice?.calculated_price_number}
-        >
-          {hasPrice
-            ? String(calculatedPrice).replace(/czk/i, "").trim()
-            : priceOnRequest
-              ? "Cena po domluvě"
-              : "Cena na dotaz"}
-        </span>
+        <div className="product__priceHeading">
+          <p>Cena&nbsp;|</p>
+          <span
+            className={[
+              "product__priceCurrent",
+              saleStyled ? "product__priceCurrent--sale" : "",
+              !hasPrice ? "product__priceUnavailable" : "",
+              className ?? "",
+            ].filter(Boolean).join(" ")}
+            data-testid="product-price"
+            data-value={selectedPrice?.calculated_price_number}
+          >
+            {hasPrice
+              ? String(calculatedPrice).replace(/czk/i, "").trim()
+              : priceOnRequest
+                ? "Cena po domluvě"
+                : "Cena na dotaz"}
+          </span>
+        </div>
 
         {/* Cena po domluvě: do košíku za 0 Kč, cena přijde e-mailem. */}
         {priceOnRequest && texty["produkt.cena_po_domluve"] && (

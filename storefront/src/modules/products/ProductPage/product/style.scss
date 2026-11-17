@@ -703,8 +703,17 @@
   padding-bottom: 1.25rem;
 }
 
-.product__details__cta__price > p {
-  margin: 0.3125rem 0 0;
+.product__priceHeading {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.625rem;
+}
+
+.product__priceHeading > p {
+  flex-shrink: 0;
+  margin: 0;
+  white-space: nowrap;
   color: rgb(var(--cream-06-rgb) / .62);
   font: 400 clamp(0.75rem, calc(1vw * var(--ui-scale)), 0.875rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
@@ -720,13 +729,13 @@
   text-align: right;
 }
 
-.product__details__cta__price__main > span:first-child {
+.product__priceHeading > .product__priceCurrent {
   color: var(--pdp-cream);
   font: 400 clamp(2.125rem, calc(2.8vw * var(--ui-scale)), 3.25rem) / 0.9 "Sentient-Regular", serif;
   letter-spacing: -0.04em;
 }
 
-.product__details__cta__price__main > .product__priceUnavailable {
+.product__priceHeading > .product__priceUnavailable {
   max-width: 8ch;
   font-size: clamp(1.3125rem, calc(1.6vw * var(--ui-scale)), 1.75rem);
   line-height: 1;
@@ -797,6 +806,17 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 0.5625rem;
+}
+
+.product__details__cta__frostLabel {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--sage-03);
+  border-radius: 999px;
+  color: var(--sage-03);
+  font: 400 0.875rem/1.4 "Sansation-Regular", sans-serif;
 }
 
 /*
