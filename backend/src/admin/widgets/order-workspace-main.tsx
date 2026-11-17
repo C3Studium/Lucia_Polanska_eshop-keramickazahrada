@@ -53,7 +53,8 @@ const OrderWorkspaceMain = ({ order }: { order: AdminOrder }) => {
   useRaiseNativeCard(
     bottom,
     (title) => title === "Souhrn" || title === "Summary",
-    -1
+    -1,
+    "souhrn"
   );
   return (
     <>

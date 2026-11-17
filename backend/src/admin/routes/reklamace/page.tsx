@@ -267,7 +267,7 @@ const ReklamaceInner = () => {
       )}
 
       {!listQuery.isLoading && !listQuery.isError && rows.length > 0 && (
-        <div className="overflow-x-auto">
+        <div className="kz-stack overflow-x-auto">
           <Table>
             <Table.Header>
               <Table.Row>

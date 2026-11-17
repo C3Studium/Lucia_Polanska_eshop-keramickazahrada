@@ -42,10 +42,10 @@ const Block = ({ title, children }: { title: string; children: React.ReactNode }
 const Bars = ({ data, label }: { data: { key: string; value: number; hint?: string }[]; label: (v: number) => string }) => {
   const max = Math.max(1, ...data.map((d) => d.value));
   return (
-    <div className="flex items-end gap-1.5 overflow-x-auto pb-1" aria-hidden="true">
+    <div className="flex items-end gap-1 pb-1" aria-hidden="true">
       {data.map((d) => (
-        <div key={d.key} className="flex flex-col items-center gap-1">
-          <div className="bg-ui-fg-interactive w-7 rounded-sm"
+        <div key={d.key} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+          <div className="bg-ui-fg-interactive w-full max-w-7 rounded-sm"
             style={{ height: `${8 + (d.value / max) * 56}px`, opacity: d.value ? 1 : 0.25 }}
             title={`${d.key}: ${label(d.value)}${d.hint ? ` · ${d.hint}` : ""}`} />
           <Text size="xsmall" className="text-ui-fg-muted">{d.key.slice(5)}</Text>

@@ -55,6 +55,7 @@ import {
 import { adminQueryClient } from "../../lib/query-client"
 import { useScrollMemory } from "../../lib/scroll-memory"
 import { useUrlState } from "../../lib/url-state"
+import { useElementWidth } from "../../components/order-section"
 
 /**
  * Kurzy — terms and reservations in one place (docs/kurzy-system.md).
@@ -1223,6 +1224,14 @@ const TermsViewSwitch = ({
 /* Velký kalendář unese víc — den s pěti termíny je výjimka, ne pravidlo. */
 const MAX_DAY_CHIPS = 6;
 
+/** Barva tečky v úzkém kalendáři — tytéž stavy jako štítek termínu. */
+const termDotClass = (term: AdminTerm): string => {
+  if (term.status === "draft") return "bg-ui-fg-muted";
+  if (term.seats_left <= 0) return "bg-ui-tag-red-icon";
+  const ratio = term.capacity ? term.seats_taken / term.capacity : 0;
+  return ratio >= 0.75 ? "bg-ui-tag-orange-icon" : "bg-ui-tag-green-icon";
+};
+
 const CalendarTermChip = ({
   term,
   dayKey,
@@ -1295,9 +1304,24 @@ const TermsCalendar = ({ terms }: { terms: AdminTerm[] }) => {
   const monthHasTerms = weeks
     .flat()
     .some((cell) => cell && byDay.has(cell.key));
+  /*
+   * Telefon (17. 11. 2026): sedm sloupců se štítky „17:00 · 0/4 · volno"
+   * se na 390 px lámalo po písmenech. Úzký kalendář je jako Kalendář
+   * v iPhonu — malá mřížka s tečkou u dne s termínem a pod ní seznam
+   * termínů měsíce přes celou šířku.
+   */
+  const [box, width] = useElementWidth<HTMLDivElement>();
+  const compact = width > 0 && width < 600;
+  const monthDays = weeks
+    .flat()
+    .filter((cell): cell is NonNullable<typeof cell> => Boolean(cell && byDay.has(cell.key)));
+  const sortedTerms = (key: string) =>
+    (byDay.get(key) ?? [])
+      .slice()
+      .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
 
   return (
-    <div className="flex flex-col gap-y-4">
+    <div ref={box} className="flex flex-col gap-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-x-2">
           <Button
@@ -1329,6 +1353,69 @@ const TermsCalendar = ({ terms }: { terms: AdminTerm[] }) => {
         </Button>
       </div>
 
+      {compact ? (
+        <>
+          <div className="grid grid-cols-7 gap-1">
+            {CZECH_WEEKDAYS.map((weekday) => (
+              <Text
+                key={weekday.short}
+                size="xsmall"
+                weight="plus"
+                className="text-ui-fg-muted text-center uppercase"
+                aria-label={weekday.long}
+              >
+                {weekday.short}
+              </Text>
+            ))}
+            {weeks.flat().map((cell, index) =>
+              cell ? (
+                <div
+                  key={cell.key}
+                  className={`flex min-h-11 flex-col items-center justify-start gap-1 rounded-md py-1 ${
+                    cell.key === todayKey ? "bg-ui-bg-interactive text-ui-fg-on-color" : ""
+                  }`}
+                >
+                  <Text size="small" weight={cell.key === todayKey ? "plus" : "regular"}>
+                    {cell.day}
+                  </Text>
+                  <span className="flex gap-0.5">
+                    {sortedTerms(cell.key)
+                      .slice(0, 3)
+                      .map((term) => (
+                        <span
+                          key={term.id}
+                          aria-hidden
+                          className={`size-1.5 rounded-full ${termDotClass(term)}`}
+                        />
+                      ))}
+                  </span>
+                </div>
+              ) : (
+                <div key={`pad-${index}`} aria-hidden="true" />
+              )
+            )}
+          </div>
+          {monthDays.length > 0 && (
+            <div className="flex flex-col gap-y-3">
+              {monthDays.map((cell) => (
+                <div key={cell.key} className="flex flex-col gap-y-1.5">
+                  <Text
+                    size="xsmall"
+                    weight="plus"
+                    className={cell.key === todayKey ? "text-ui-fg-interactive" : "text-ui-fg-subtle"}
+                  >
+                    {dayLabel(cell.key)}
+                    {cell.key === todayKey ? " · dnes" : ""}
+                  </Text>
+                  {sortedTerms(cell.key).map((term) => (
+                    <CalendarTermChip key={term.id} term={term} dayKey={cell.key} />
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
       <div className="grid grid-cols-7 gap-1.5">
         {CZECH_WEEKDAYS.map((weekday) => (
           <Text
@@ -1415,6 +1502,7 @@ const TermsCalendar = ({ terms }: { terms: AdminTerm[] }) => {
           )
         )}
       </div>
+      )}
 
       {!monthHasTerms ? (
         <Text size="small" className="text-ui-fg-muted">

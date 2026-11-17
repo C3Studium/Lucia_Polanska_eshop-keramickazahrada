@@ -1161,7 +1161,7 @@ const Inner = () => {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <div role="group" aria-label="Druh produktu"
-                className="border-ui-border-base bg-ui-bg-subtle flex shrink-0 items-center gap-0.5 rounded-lg border p-0.5">
+                className="border-ui-border-base bg-ui-bg-subtle flex max-w-full flex-wrap items-center gap-0.5 rounded-lg border p-0.5">
                 {([
                   ["vse", "Vše"],
                   ["bezne", "Produkty"],
