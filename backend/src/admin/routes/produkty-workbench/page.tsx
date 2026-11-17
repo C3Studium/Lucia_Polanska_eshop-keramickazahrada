@@ -1,18 +1,19 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import {
-  EllipsisHorizontal,
+  ArchiveBox,
   Photo,
+  ReceiptPercent,
   TagSolid,
+  Trash,
 } from "@medusajs/icons";
 import {
   Badge,
   Button,
   Container,
   Heading,
-  Input,
   Skeleton,
-  Switch,
   Text,
+  clx,
   toast,
 } from "@medusajs/ui";
 import {
@@ -23,8 +24,6 @@ import {
 } from "@tanstack/react-query";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { BundleEditor } from "../../components/bundle-editor";
-import { VariantsEditor } from "../../components/variants-editor";
 import { ProductLightbox, Thumb } from "../../components/product-thumb";
 import { ProductSortingGuide } from "../../components/product-sorting-guide";
 import { VisibilityEye } from "../../components/visibility-eye";
@@ -33,9 +32,9 @@ import { RowLink } from "../../components/row-link";
 import {
   BulkAction,
   BulkBar,
-  BulkChoice,
+  BulkGroup,
   BulkNumber,
-  BulkSwitch,
+  BulkSegmented,
   sharedNumberOf,
   sharedValueOf,
   triStateOf,
@@ -49,19 +48,22 @@ import {
   undoById,
 } from "../../lib/undo";
 import { ViewSwitcher, gridClassName, useViewMode } from "../../lib/view-mode";
+import { useCatalogFilterUrl } from "../../components/catalog-filter";
 import {
-  CatalogFilterBar,
-  applyCatalogFilter,
-  useCatalogFilterUrl,
-} from "../../components/catalog-filter";
-import { ProductionProfileEditor } from "../../components/production-profile-editor";
+  ProductFilterToolbar,
+  applyProductFilters,
+  stockOf,
+  type DopravaFiltr,
+  type StavFiltr,
+} from "../../components/product-filter-toolbar";
+import { ProductShippingCell } from "../../components/product-shipping-cell";
+import { RowOptionsMenu, type RowOption } from "../../components/row-options-menu";
 import { formatCzk, productionStageLabels } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
 import { SelectCheckbox } from "../../components/select-checkbox";
 import {
   ProductRowMore,
   SHIPPING_CLASS_OPTIONS,
-  shippingClassLabel,
 } from "../../components/product-row-more";
 import type { ShippingClass } from "../../../lib/shipping-rates";
 import { adminQueryClient } from "../../lib/query-client"
@@ -179,13 +181,63 @@ type ProductDetail = {
   };
 };
 
-const stockBadge: Record<
-  string,
-  { label: string; color: "green" | "orange" | "red" }
-> = {
-  ok: { label: "skladem", color: "green" },
-  low: { label: "dochází", color: "orange" },
-  out: { label: "vyprodáno", color: "red" },
+/*
+ * Stav kusu stejnými slovy v řádcích, mřížce i kompaktním seznamu
+ * (17. 11. 2026). Dřív byl sloupec Stav u běžného zveřejněného kusu prázdný
+ * a jinde stálo „skryto" malými písmeny — Lucie nevěděla, jestli prázdno
+ * znamená „v pořádku", nebo „nevím". Teď má každý kus štítek a pod ním sklad.
+ */
+const StavBadge = ({
+  product,
+  size = "xsmall",
+}: {
+  product: Pick<WorkbenchProduct, "status" | "archived">;
+  size?: "2xsmall" | "xsmall";
+}) =>
+  product.archived ? (
+    <Badge size={size} color="grey" title="Archivovaný — z obchodu i ze seznamů pryč, historie zůstává.">
+      Archiv
+    </Badge>
+  ) : product.status === "published" ? (
+    <Badge size={size} color="green" title="Zákazníci ho v obchodě vidí a mohou koupit.">
+      V obchodě
+    </Badge>
+  ) : (
+    <Badge size={size} color="grey" title="Zákazníci ho v obchodě nevidí. Zobrazíte ho pod „…“.">
+      Skryto
+    </Badge>
+  );
+
+/** Druhý řádek Stavu: kolik kusů, nebo proč žádný. */
+const StockLine = ({ variants }: { variants: WorkbenchVariant[] }) => {
+  const stock = stockOf(variants);
+  if (stock.kind === "vyprodano") {
+    return (
+      <Text size="xsmall" weight="plus" className="text-ui-tag-orange-text">
+        Vyprodáno
+      </Text>
+    );
+  }
+  if (stock.kind === "na-objednavku") {
+    return (
+      <Text
+        size="xsmall"
+        className="text-ui-fg-subtle"
+        title="Kusy se u něj nepočítají — koupit jde kdykoli."
+      >
+        Bez skladu
+      </Text>
+    );
+  }
+  return (
+    <Text
+      size="xsmall"
+      className={stock.low ? "text-ui-tag-orange-text" : "text-ui-fg-subtle"}
+      title={stock.low ? "Dochází — zbývá málo kusů." : undefined}
+    >
+      {stock.count} ks{stock.low ? " · dochází" : ""}
+    </Text>
+  );
 };
 
 /** „Rozbalit" — the level under the row; shared by every kind's tab. */
@@ -330,139 +382,48 @@ const PublishToggle = ({ product }: { product: WorkbenchProduct }) => {
   );
 };
 
-/**
- * One flag of the piece as a small switch — Dobírka or Poškozené.
- *
- * Presentational only: flipping STAGES the change (Rozdělení pattern), it
- * does not save. Saving happens through the row's Potvrdit or the toolbar's
- * Potvrdit vše, both of which go through the workbench flags route — the one
- * safe metadata writer (native product update REPLACES metadata).
- *
- * Dobírka stays per product because the risk is per product: a refused parcel
- * costs her the carriage both ways — survivable on a mug, not on a commission.
- * Checkout still refuses dobírka outside Czechia and off Česká pošta.
- */
 /*
  * Seznam jako TABULKA (Matěj 12. 10. 2026: „mít 2 řádky je o ničem, když to
  * má být list"). Od 1200 px jeden řádek na produkt se sloupci a hlavičkou;
  * užší displej skládá údaje pod název.
  *
- * Sloupec „Balné a doprava" nese to, co se u kusu mění nejčastěji (Matěj
- * 3. 11. 2026: „to hlavní tam nech jako balné atd."): balné, dobírka,
- * křehké. Vzácná nastavení jsou pod „…" v malém okně (ProductRowMore).
- *
  * Celý řádek otevírá produkt (Lucie 17. 11. 2026: klikala kamkoli na řádek
- * a čekala detail; „Křehké" navíc lezlo přes „Rozbalit"). Vpravo proto
- * zůstalo jen „…" — oko i podrobnosti jsou v něm, „Upravit" dělá řádek sám.
+ * a čekala detail). Vpravo je jen „…" s vedlejšími akcemi.
+ *
+ * Sloupec „Doprava" (17. 11. 2026, Matěj: „možnosti ať tam jsou, ale
+ * jednodušeji"): místo čtyř ovladačů pod sebou jeden řádek štítků, klik na
+ * ně otevře okénko s ovladači (components/product-shipping-cell). Řádek tak
+ * klesl ze 165 px na zhruba 72 px a seznam jde přehlédnout. Dobírka zůstává
+ * po kusech, protože riziko je po kusech: odmítnutý balík stojí poštovné
+ * tam i zpět — u hrnku přežitelné, u zakázky ne.
  */
 const ROW_GRID =
-  "min-[1200px]:grid-cols-[minmax(0,1fr)_104px_112px_128px_196px_48px]";
+  "min-[1200px]:grid-cols-[minmax(0,1fr)_120px_112px_120px_264px_40px]";
 
-const RowHeader = ({ settings }: { settings: boolean }) => (
+const RowHeader = ({
+  settings,
+  selectAll,
+}: {
+  settings: boolean;
+  /** Zaškrtávátko „vybrat vše" v místě, kde mají řádky svoje. */
+  selectAll: React.ReactNode;
+}) => (
   <div
-    className={`bg-ui-bg-subtle text-ui-fg-subtle hidden gap-x-3 px-6 py-2 min-[1200px]:grid ${ROW_GRID}`}
+    className={`bg-ui-bg-subtle text-ui-fg-subtle hidden items-center gap-x-3 px-6 py-2 min-[1200px]:grid ${ROW_GRID}`}
   >
-    {[
-      ["Produkt", "", "pl-[84px]"],
-      ["Stav", "", ""],
-      ["Cena", "", ""],
-      ["Prodeje 30 dní", "", ""],
-      [settings ? "Balné a doprava" : "", "", "pl-2"],
-      ["", "", ""],
-    ].map(([label, title, className], index) => (
-      <Text key={index} size="xsmall" weight="plus" className={className} title={title || undefined}>
+    <div className="flex items-center gap-3">
+      {selectAll}
+      <Text size="xsmall" weight="plus" className="pl-[52px]">
+        Produkt
+      </Text>
+    </div>
+    {["Stav", "Cena", "Prodeje 30 dní", settings ? "Doprava" : "", ""].map((label, index) => (
+      <Text key={index} size="xsmall" weight="plus">
         {label}
       </Text>
     ))}
   </div>
 );
-
-/*
- * Sloupec „Balné a doprava" jako malá tabulka: popisek vlevo, ovládání
- * vpravo, každý údaj na svém řádku stejné výšky. Dřív stály Dobírka
- * a Křehké vedle sebe a delší popisek přetekl do sousedního sloupce.
- * Rozpracovaná změna obarví celý řádek oranžově, ne jen ovládání.
- */
-const lineClass = (dirty: boolean) =>
-  `flex min-h-[32px] items-center justify-between gap-3 rounded-md px-2 ${dirty ? "bg-ui-tag-orange-bg" : ""}`;
-const lineLabelClass = (dirty: boolean) =>
-  dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle";
-
-const FlagSwitch = ({
-  label,
-  title,
-  checked,
-  dirty,
-  onFlip,
-}: {
-  label: string;
-  title: string;
-  checked: boolean;
-  dirty: boolean;
-  onFlip: () => void;
-}) => (
-  <label className={`${lineClass(dirty)} cursor-pointer`} title={title}>
-    <Text size="small" className={lineLabelClass(dirty)}>
-      {label}
-    </Text>
-    <Switch checked={checked} onCheckedChange={onFlip} aria-label={label} />
-  </label>
-);
-
-/**
- * Balné [cena] v řádku (Matěj 12. 10. 2026: neschovávat do okna). Píše se
- * jako přepínače do rozpracovaných změn — uloží se Potvrdit / Potvrdit vše.
- * Prázdné = bez ceny balení (zákazník uvidí „Balné 0,-").
- */
-const PackagingInput = ({
-  value,
-  dirty,
-  onChange,
-}: {
-  value: number | null;
-  dirty: boolean;
-  onChange: (value: number | null) => void;
-}) => {
-  const [draft, setDraft] = useState(value === null ? "" : String(value));
-  useEffect(() => {
-    setDraft(value === null ? "" : String(value));
-  }, [value]);
-  const commit = () => {
-    const trimmed = draft.trim();
-    if (trimmed === "") return onChange(null);
-    const parsed = Number(trimmed.replace(",", "."));
-    if (Number.isFinite(parsed) && parsed >= 0) onChange(Math.round(parsed * 100) / 100);
-    else setDraft(value === null ? "" : String(value));
-  };
-  return (
-    <label
-      className={lineClass(dirty)}
-      title="Cena balení za kus — zákazník ji uvidí jako „Balné“ pod výrobkem."
-    >
-      <Text size="small" className={lineLabelClass(dirty)}>
-        Balné
-      </Text>
-      <span className="flex items-center gap-1.5">
-        <input
-          type="number"
-          min={0}
-          inputMode="decimal"
-          placeholder="0"
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          onBlur={commit}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") (event.target as HTMLInputElement).blur();
-          }}
-          className={`border-ui-border-base bg-ui-bg-field txt-compact-small h-8 w-16 rounded-md border px-2 text-right ${dirty ? "border-ui-tag-orange-border" : ""}`}
-        />
-        <Text size="small" className="text-ui-fg-subtle">
-          Kč
-        </Text>
-      </span>
-    </label>
-  );
-};
 
 const StatsView = () => {
   const { data, isLoading } = useQuery<any>({
@@ -668,7 +629,14 @@ const ProductsInner = () => {
   const [view, changeView] = useViewMode("kz-view-produkty");
   /* Sekundární filtr podle zařazení — kolekce a kategorie z řádků záložky.
      Taky v adrese, ze stejného důvodu jako záložka výš. */
-  const [catalog, setCatalog] = useCatalogFilterUrl();
+  const [catalog] = useCatalogFilterUrl();
+  /* Stav a Doprava — taky v adrese (lišta filtrů, 17. 11. 2026). Zápis
+     všech filtrů jde jedním `zapisAdresu`, ať se klíče nepřepíšou navzájem. */
+  const [stav] = useUrlState<StavFiltr>("stav");
+  const [doprava] = useUrlState<DopravaFiltr>("doprava");
+  /* Který řádek má otevřené okénko „Balné a doprava" — otevírá ho klik na
+     štítky i položka v „…", proto žije tady a ne v řádku. */
+  const [shippingEditorFor, setShippingEditorFor] = useState<string | null>(null);
   /* Klik na miniaturu otevře fotky v plné velikosti (sdílený ProductLightbox). */
   const [lightbox, setLightbox] = useState<{ id: string; title: string } | null>(null);
   /* Klik na kartu v mřížce vede na detail produktu (fotky mají vlastní ikonu). */
@@ -803,7 +771,17 @@ const ProductsInner = () => {
               : active === "archivovane"
                 ? archivedRows
                 : [];
-  const rows = applyCatalogFilter(tabRows, catalog);
+  /* Stav nemá v Archivovaných smysl (všechno je tam skryté) a Doprava se
+     v Oblíbených a Archivovaných neukazuje. Filtr, jehož rozbalovačka na
+     záložce není, se nesmí uplatnit potichu — seznam by byl záhadně kratší. */
+  const settingsTab = active !== "oblibene" && active !== "archivovane";
+  const stavShown = active !== "archivovane";
+  const filters = {
+    catalog,
+    stav: stavShown ? stav : null,
+    doprava: settingsTab ? doprava : null,
+  };
+  const rows = applyProductFilters(tabRows, filters);
   /*
    * Ohlásit pořadí, v jakém výpis právě stojí — detail z něj skládá
    * „Další" a cestu zpět (8. 11. 2026, lib/seznam-kontext). Posílá se
@@ -821,6 +799,49 @@ const ProductsInner = () => {
     );
   }, [poradiIds]);
 
+  /* Výběr drží jen kusy, které jsou vidět. Jinak by po změně filtru zůstaly
+     vybrané i schované řádky a hromadná akce by sáhla na něco, co Lucie
+     zrovna nevidí („Vybráno: 5" a na obrazovce dva). */
+  useEffect(() => {
+    setSelected((prev) => {
+      if (prev.size === 0) return prev;
+      const visible = new Set(poradiIds ? poradiIds.split(",") : []);
+      const next = new Set([...prev].filter((id) => visible.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [poradiIds]);
+
+  type PendingEntry = {
+    cod_allowed?: boolean;
+    clearance?: boolean;
+    no_promo?: boolean;
+    fragile?: boolean;
+    packaging_price?: number | null;
+    shipping_class?: ShippingClass;
+  };
+  /**
+   * Rozpracuje jednu vlastnost u daných kusů. Kde nová hodnota sedí
+   * s uloženou, rozpracovaná změna zmizí — vrátit přepínač zpátky není
+   * „neuložená změna".
+   */
+  const stageValue = <K extends keyof PendingEntry>(
+    targets: WorkbenchProduct[],
+    key: K,
+    value: PendingEntry[K],
+    saved: (row: WorkbenchProduct) => PendingEntry[K]
+  ) => {
+    setPendingFlags((prev) => {
+      const next = { ...prev };
+      for (const row of targets) {
+        const entry: PendingEntry = { ...(next[row.id] ?? {}) };
+        if (saved(row) === value) delete entry[key];
+        else entry[key] = value;
+        if (Object.keys(entry).length === 0) delete next[row.id];
+        else next[row.id] = entry;
+      }
+      return next;
+    });
+  };
 
   type FlagKey = "cod_allowed" | "clearance" | "no_promo" | "fragile";
   const savedFlag = (product: WorkbenchProduct, key: FlagKey) =>
@@ -834,60 +855,32 @@ const ProductsInner = () => {
   const effectiveFlag = (product: WorkbenchProduct, key: FlagKey) =>
     pendingFlags[product.id]?.[key] ?? savedFlag(product, key);
 
-  const stageFlag = (product: WorkbenchProduct, key: FlagKey) => {
-    const newValue = !effectiveFlag(product, key);
-    /* Flip on a checked row = the whole selection gets the same VALUE (not a
-       per-row toggle — mixed states flipping in opposite directions would be
-       chaos). An unchecked row stages only itself. */
-    const targets =
-      selected.size > 0 && selected.has(product.id)
-        ? [...selected]
-        : [product.id];
-    setPendingFlags((prev) => {
-      const next = { ...prev };
-      for (const id of targets) {
-        const target = rows.find((row) => row.id === id);
-        if (!target) continue;
-        const entry = { ...(next[id] ?? {}) };
-        if (savedFlag(target, key) === newValue) {
-          // Back at the saved state — nothing pending for this flag.
-          delete entry[key];
-        } else {
-          entry[key] = newValue;
-        }
-        if (Object.keys(entry).length === 0) delete next[id];
-        else next[id] = entry;
-      }
-      return next;
-    });
-  };
+  /*
+   * Okénko „Balné a doprava" v řádku rozpracovává jen SVŮJ kus. Dřív
+   * přepínač na zaškrtnutém řádku tiše rozpracoval totéž celému výběru —
+   * dávalo to smysl, dokud hromadné nastavení neumělo všechno. Teď má lišta
+   * výběru dole každou vlastnost, takže řádek dělá jen to, co je na něm vidět.
+   */
+  const stageFlag = (product: WorkbenchProduct, key: FlagKey) =>
+    stageValue([product], key, !effectiveFlag(product, key), (row) => savedFlag(row, key));
 
-  /* Balení: zadaná cena se rozpracuje pro řádek — na označeném řádku pro celý
-     výběr (stejně jako přepínače). Prázdné pole = null (balné 0,-). */
+  /* Balení: prázdné pole = null (balné 0,-). */
   const savedPackaging = (product: WorkbenchProduct) => product.packaging_price ?? null;
   const effectivePackaging = (product: WorkbenchProduct): number | null =>
     pendingFlags[product.id] && "packaging_price" in pendingFlags[product.id]
       ? (pendingFlags[product.id].packaging_price ?? null)
       : savedPackaging(product);
-  const stagePackaging = (product: WorkbenchProduct, value: number | null) => {
-    const targets =
-      selected.size > 0 && selected.has(product.id) ? [...selected] : [product.id];
-    setPendingFlags((prev) => {
-      const next = { ...prev };
-      for (const id of targets) {
-        const target = rows.find((row) => row.id === id);
-        if (!target) continue;
-        const entry = { ...(next[id] ?? {}) };
-        if (savedPackaging(target) === value) delete entry.packaging_price;
-        else entry.packaging_price = value;
-        if (Object.keys(entry).length === 0) delete next[id];
-        else next[id] = entry;
-      }
-      return next;
-    });
-  };
+  const stagePackaging = (product: WorkbenchProduct, value: number | null) =>
+    stageValue([product], "packaging_price", value, savedPackaging);
 
-  /* Okno „…" uložilo přepínač rovnou — jeho rozpracovaná hodnota v řádku
+  /* Velikost zásilky — v okénku Doprava i v liště výběru se rozpracuje
+     a uloží Potvrdit jako ostatní vlastnosti. */
+  const effectiveShippingClass = (product: WorkbenchProduct): ShippingClass =>
+    pendingFlags[product.id]?.shipping_class ?? product.shipping_class;
+  const stageShippingClass = (product: WorkbenchProduct, value: ShippingClass) =>
+    stageValue([product], "shipping_class", value, (row) => row.shipping_class);
+
+  /* „…" uložilo příznak rovnou — jeho rozpracovaná hodnota v řádku
      (např. z lišty výběru) by jinak visela jako neuložená změna. */
   const dropPendingKey = (productId: string, key: FlagKey | "shipping_class") => {
     setPendingFlags((prev) => {
@@ -902,6 +895,15 @@ const ProductsInner = () => {
     });
   };
 
+  /* Zahodí všechny rozpracované změny jednoho řádku. */
+  const discardRow = (productId: string) =>
+    setPendingFlags((prev) => {
+      if (!prev[productId]) return prev;
+      const next = { ...prev };
+      delete next[productId];
+      return next;
+    });
+
   /*
    * Lišta výběru (components/bulk-bar.tsx).
    *
@@ -914,51 +916,12 @@ const ProductsInner = () => {
   const selectedRows = rows.filter((row) => selected.has(row.id));
 
   /** Nastaví vlastnost celému výběru na konkrétní hodnotu (ne přepnutí). */
-  const stageFlagForSelection = (key: FlagKey, value: boolean) => {
-    setPendingFlags((prev) => {
-      const next = { ...prev };
-      for (const row of selectedRows) {
-        const entry = { ...(next[row.id] ?? {}) };
-        if (savedFlag(row, key) === value) delete entry[key];
-        else entry[key] = value;
-        if (Object.keys(entry).length === 0) delete next[row.id];
-        else next[row.id] = entry;
-      }
-      return next;
-    });
-  };
-
-  const stagePackagingForSelection = (value: number | null) => {
-    setPendingFlags((prev) => {
-      const next = { ...prev };
-      for (const row of selectedRows) {
-        const entry = { ...(next[row.id] ?? {}) };
-        if (savedPackaging(row) === value) delete entry.packaging_price;
-        else entry.packaging_price = value;
-        if (Object.keys(entry).length === 0) delete next[row.id];
-        else next[row.id] = entry;
-      }
-      return next;
-    });
-  };
-
-  /* Velikost zásilky: v řádku jen štítek (mění se v „…"), hromadně volbou
-     v liště — rozpracuje se a uloží Potvrdit jako ostatní vlastnosti. */
-  const effectiveShippingClass = (product: WorkbenchProduct): ShippingClass =>
-    pendingFlags[product.id]?.shipping_class ?? product.shipping_class;
-  const stageShippingClassForSelection = (value: ShippingClass) => {
-    setPendingFlags((prev) => {
-      const next = { ...prev };
-      for (const row of selectedRows) {
-        const entry = { ...(next[row.id] ?? {}) };
-        if (row.shipping_class === value) delete entry.shipping_class;
-        else entry.shipping_class = value;
-        if (Object.keys(entry).length === 0) delete next[row.id];
-        else next[row.id] = entry;
-      }
-      return next;
-    });
-  };
+  const stageFlagForSelection = (key: FlagKey, value: boolean) =>
+    stageValue(selectedRows, key, value, (row) => savedFlag(row, key));
+  const stagePackagingForSelection = (value: number | null) =>
+    stageValue(selectedRows, "packaging_price", value, savedPackaging);
+  const stageShippingClassForSelection = (value: ShippingClass) =>
+    stageValue(selectedRows, "shipping_class", value, (row) => row.shipping_class);
   const bulkShippingClass = sharedValueOf(selectedRows, effectiveShippingClass);
   const bulkShippingClassDirty = selectedRows.some(
     (row) => pendingFlags[row.id]?.shipping_class !== undefined
@@ -1131,6 +1094,48 @@ const ProductsInner = () => {
     onError: (e) => toast.error(ceskaChyba(e, "Skrytí se nepodařilo.")),
   });
 
+  /* Opak skrytí — tatáž cesta (stav produktu), tatáž paměť pro vrácení.
+     Lišta uměla jen skrýt, takže vrátit deset kusů do obchodu znamenalo
+     deset návštěv „…" (17. 11. 2026). */
+  const bulkShow = useMutation({
+    mutationFn: () =>
+      zapisPoJednom(
+        [...selected],
+        (id) =>
+          sdk.client.fetch(`/admin/products/${id}`, {
+            method: "POST",
+            body: { status: "published" },
+          }),
+        (id) => {
+          const row = rows.find((item) => item.id === id);
+          return row ? { id, status: row.status } : null;
+        }
+      ),
+    onSuccess: ({ hotove, neuspesne }) =>
+      poHromadneAkci(
+        neuspesne,
+        hotove.length,
+        `Zobrazeno ${hotove.length} produktů — zákazníci je teď v obchodě uvidí.`,
+        `Zobrazení ${hotove.length} kusů`,
+        async () => {
+          for (const item of hotove) {
+            await sdk.client.fetch(`/admin/products/${item.id}`, {
+              method: "POST",
+              body: { status: item.status },
+            });
+          }
+          await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+          await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
+        }
+      ),
+    onError: (e) => toast.error(ceskaChyba(e, "Zobrazení se nepodařilo.")),
+  });
+
+  /* Archivace a mazání z „…" v liště — dialogy řízené odsud, protože
+     nabídka se po kliknutí zavře i se svým obsahem. */
+  const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+
   const applyFlags = useMutation({
     mutationFn: async (ids: string[]) => {
       /* Co u kusu platilo před zápisem — jen u klíčů, kterých se změna
@@ -1186,14 +1191,19 @@ const ProductsInner = () => {
   });
   const pendingCount = Object.keys(pendingFlags).length;
 
-  // Best variant wins — „can I sell it at all?" Skladem beats Dochází
-  // beats Vyprodáno; a product is only Vyprodáno when EVERY variant is.
-  const worstStockOf = (product: WorkbenchProduct) =>
-    product.variants.reduce<"ok" | "low" | "out" | null>((best, variant) => {
-      if (variant.stock_state === "ok" || best === "ok") return "ok";
-      if (variant.stock_state === "low" || best === "low") return "low";
-      return variant.stock_state ?? best;
-    }, null);
+  /* „Vybrat vše" = všechny řádky, které jsou právě vidět (po filtrech). */
+  const allSelected = rows.length > 0 && rows.every((row) => selected.has(row.id));
+  const someSelected = rows.some((row) => selected.has(row.id));
+  const selectAllBox = (
+    <SelectCheckbox
+      checked={allSelected}
+      indeterminate={someSelected}
+      label={allSelected ? "Zrušit výběr všech" : "Vybrat všechny zobrazené"}
+      onChange={(checked) =>
+        setSelected(checked ? new Set(rows.map((row) => row.id)) : new Set())
+      }
+    />
+  );
 
   const toggleSelected = (productId: string, checked: boolean) => {
     const next = new Set(selected);
@@ -1205,7 +1215,6 @@ const ProductsInner = () => {
   /* Mřížka — fotky vedle sebe, 2 sloupce na telefonu. Rychlé akce a rozbalení
      patří řádkům; tady je vizuální kontrola, výběr a cesta na detail. */
   const renderGridCard = (product: WorkbenchProduct) => {
-    const worstStock = worstStockOf(product);
     /* Celá karta vede na detail; fotky mají vlastní ikonu (viz níž) — majitelka
        klikala na kartu a čekala detail, místo toho jí vyskakoval lightbox. */
     const openDetail = () => navigate(`/produkt/${product.id}`);
@@ -1261,17 +1270,9 @@ const ProductsInner = () => {
             {product.title}
           </Text>
           <div className="flex items-center justify-between gap-1">
-            <div className="flex flex-wrap items-center gap-1">
-              {product.status !== "published" && (
-                <Badge size="2xsmall" color="grey">
-                  skryto
-                </Badge>
-              )}
-              {worstStock && (
-                <Badge size="2xsmall" color={stockBadge[worstStock].color}>
-                  {stockBadge[worstStock].label}
-                </Badge>
-              )}
+            <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
+              <StavBadge product={product} size="2xsmall" />
+              <StockLine variants={product.variants} />
             </div>
             {/* Vlastní ovládání — klik nesmí propadnout do přechodu na detail. */}
             <div
@@ -1299,7 +1300,6 @@ const ProductsInner = () => {
 
   /* Kompaktní — hustý seznam pro dlouhé záložky a telefon. */
   const renderCompactRow = (product: WorkbenchProduct) => {
-    const worstStock = worstStockOf(product);
     return (
       <div key={product.id} className="flex items-center gap-2 px-6 py-1.5">
         <SelectCheckbox
@@ -1321,22 +1321,15 @@ const ProductsInner = () => {
             {product.title}
           </Text>
         </Link>
-        {product.status !== "published" && (
-          <Badge size="2xsmall" color="grey">
-            skryto
-          </Badge>
-        )}
-        {worstStock && (
-          <Badge size="2xsmall" color={stockBadge[worstStock].color}>
-            {stockBadge[worstStock].label}
-          </Badge>
-        )}
+        <span className="shrink-0">
+          <StockLine variants={product.variants} />
+        </span>
+        <StavBadge product={product} size="2xsmall" />
       </div>
     );
   };
 
   const renderRow = (product: WorkbenchProduct) => {
-    const worstStock = worstStockOf(product);
     const priced = product.variants.filter(
       (variant) => variant.price_czk !== null
     );
@@ -1347,13 +1340,11 @@ const ProductsInner = () => {
       ? Math.max(...priced.map((variant) => variant.price_czk!))
       : null;
 
-    const settingsOn = active !== "oblibene" && active !== "archivovane";
     const pending = pendingFlags[product.id];
     const isExpanded = expanded === product.id;
-    const shippingClass = effectiveShippingClass(product);
     const detailUrl = `/produkt/${product.id}`;
-    /* Odkazy pod názvem — nad překryvem řádku, jinak by je překryl. */
-    const subLinkClass = "text-ui-fg-interactive relative z-10 hover:underline";
+    const isSaving =
+      applyFlags.isPending && (applyFlags.variables ?? []).includes(product.id);
 
     return (
       <Fragment key={product.id}>
@@ -1365,11 +1356,11 @@ const ProductsInner = () => {
         */}
         <article
           id={`workbench-row-${product.id}`}
-          className={`group relative grid gap-x-3 gap-y-3 px-6 py-3 transition-colors hover:bg-ui-bg-base-hover min-[1200px]:items-center ${isExpanded ? "bg-ui-bg-subtle" : ""} ${ROW_GRID}`}
+          className={`group relative grid gap-x-3 gap-y-2 px-6 py-3 transition-colors hover:bg-ui-bg-base-hover min-[1200px]:min-h-[72px] min-[1200px]:items-center ${isExpanded ? "bg-ui-bg-subtle" : ""} ${ROW_GRID}`}
         >
           <RowLink to={detailUrl} label={`Otevřít produkt ${product.title}`} />
 
-          {/* 1) Produkt: výběr, fotka, název, zařazení, odkazy */}
+          {/* 1) Produkt: výběr, fotka, název, zařazení */}
           <div className="flex min-w-0 items-center gap-3 pr-12 min-[1200px]:pr-0">
             <SelectCheckbox
               className="relative z-10"
@@ -1397,51 +1388,20 @@ const ProductsInner = () => {
                   {product.title}
                 </Text>
               </Link>
-              <Text size="xsmall" className="text-ui-fg-subtle truncate">
-                {[product.collection, ...product.categories].filter(Boolean).join(" · ") ||
-                  "bez zařazení"}
-                {product.kind === "zakazka" && product.production
-                  ? ` · záloha min. ${product.production.deposit_floor_percentage} %, ${product.production.production_time_min_days}–${product.production.production_time_max_days} dní`
-                  : product.kind === "balicek" && product.bundle
-                    ? ` · balíček ${product.bundle.title}`
-                    : product.kind === "poskozene"
-                      ? " · jednorázový kus"
-                      : ""}
-              </Text>
-              {/* Odkazy, které mění podstatu kusu — malé, pod názvem. */}
-              <div className="txt-compact-xsmall mt-0.5 flex flex-wrap items-center gap-x-3">
-                <VariantsEditor
-                  productId={product.id}
-                  productTitle={product.title}
-                  trigger={
-                    <button type="button" className={subLinkClass}>
-                      Varianty
-                    </button>
-                  }
-                />
-                {active === "zakazky" && (
-                  <ProductionProfileEditor
-                    productId={product.id}
-                    productTitle={product.title}
-                    trigger={
-                      <button type="button" className={subLinkClass}>
-                        Podmínky
-                      </button>
-                    }
-                  />
-                )}
-                {active === "balicky" && product.bundle && (
-                  <BundleEditor
-                    bundleId={product.bundle.id}
-                    trigger={
-                      <button type="button" className={subLinkClass}>
-                        Složení
-                      </button>
-                    }
-                  />
-                )}
+              <div className="flex min-w-0 items-center gap-2">
+                <Text size="xsmall" className="text-ui-fg-subtle truncate">
+                  {[product.collection, ...product.categories].filter(Boolean).join(" · ") ||
+                    "bez zařazení"}
+                  {product.kind === "zakazka" && product.production
+                    ? ` · záloha min. ${product.production.deposit_floor_percentage} %, ${product.production.production_time_min_days}–${product.production.production_time_max_days} dní`
+                    : product.kind === "balicek" && product.bundle
+                      ? ` · balíček ${product.bundle.title}`
+                      : product.kind === "poskozene"
+                        ? " · jednorázový kus"
+                        : ""}
+                </Text>
                 {expert && (
-                  <span className="relative z-10">
+                  <span className="relative z-10 shrink-0">
                     <CopyId value={product.id} />
                   </span>
                 )}
@@ -1449,28 +1409,11 @@ const ProductsInner = () => {
             </div>
           </div>
 
-          {/* 2–5) Stav, cena, prodeje, balné — na užším displeji pod názvem */}
-          <div className="flex flex-wrap items-start gap-x-6 gap-y-3 sm:pl-[84px] min-[1200px]:contents">
-            <div className="flex flex-wrap gap-1">
-              {product.status !== "published" && (
-                <Badge
-                  size="small"
-                  color="grey"
-                  title="Zákazníci ho v obchodě nevidí. Zobrazíte ho pod „…“."
-                >
-                  skryto
-                </Badge>
-              )}
-              {worstStock && (
-                <Badge size="small" color={stockBadge[worstStock].color}>
-                  {stockBadge[worstStock].label}
-                </Badge>
-              )}
-              {product.archived && (
-                <Badge size="small" color="grey">
-                  archiv
-                </Badge>
-              )}
+          {/* 2–5) Stav, cena, prodeje, doprava — na užším displeji pod názvem */}
+          <div className="flex flex-wrap items-start gap-x-6 gap-y-2 sm:pl-[84px] min-[1200px]:contents">
+            <div className="flex flex-col items-start gap-0.5">
+              <StavBadge product={product} />
+              <StockLine variants={product.variants} />
             </div>
             <div>
               <Text size="small">
@@ -1499,65 +1442,44 @@ const ProductsInner = () => {
                 className={product.wishlist_count > 0 ? "text-ui-fg-subtle" : "text-ui-fg-muted"}
               >
                 {product.wishlist_count}× v oblíbených
+                {product.review_average !== null ? ` · ${product.review_average} ★` : ""}
               </Text>
-              {product.review_average !== null && (
-                <Text size="xsmall" className="text-ui-fg-subtle">
-                  hodnocení {product.review_average} ★
-                </Text>
-              )}
             </div>
             {/*
-              5) Balné a doprava — to, co se u kusu mění často, rovnou v řádku.
-              Píše se do rozpracovaných změn jako dřív (Potvrdit / Potvrdit vše),
-              na označeném řádku pro celý výběr. Celý sloupec je nad překryvem:
-              minout přepínač o kousek nesmí odvést pryč z rozpracovaných změn.
+              5) Doprava — štítky, klik otevře okénko s ovladači. Okénko
+              rozpracovává jako dřív řádek; uloží se v něm, pod řádkem nebo
+              „Potvrdit vše" nahoře.
             */}
-            {settingsOn ? (
-              <div className="relative z-10 flex w-[196px] cursor-default flex-col gap-0.5 min-[1200px]:w-auto">
-                <PackagingInput
-                  value={effectivePackaging(product)}
-                  dirty={pending?.packaging_price !== undefined}
-                  onChange={(value) => stagePackaging(product, value)}
+            {settingsTab ? (
+              <div className="min-w-0">
+                <ProductShippingCell
+                  productTitle={product.title}
+                  values={{
+                    packaging: effectivePackaging(product),
+                    codAllowed: effectiveFlag(product, "cod_allowed"),
+                    fragile: effectiveFlag(product, "fragile"),
+                    shippingClass: effectiveShippingClass(product),
+                  }}
+                  dirty={{
+                    packaging: pending?.packaging_price !== undefined,
+                    codAllowed: pending?.cod_allowed !== undefined,
+                    fragile: pending?.fragile !== undefined,
+                    shippingClass: pending?.shipping_class !== undefined,
+                  }}
+                  open={shippingEditorFor === product.id}
+                  onOpenChange={(open) => setShippingEditorFor(open ? product.id : null)}
+                  onPackaging={(value) => stagePackaging(product, value)}
+                  onFlip={(key) => stageFlag(product, key)}
+                  onShippingClass={(value) => stageShippingClass(product, value)}
+                  hasPending={Boolean(pending)}
+                  isSaving={isSaving}
+                  onSave={() =>
+                    applyFlags.mutate([product.id], {
+                      onSuccess: () => setShippingEditorFor(null),
+                    })
+                  }
+                  onDiscard={() => discardRow(product.id)}
                 />
-                <FlagSwitch
-                  label="Dobírka"
-                  title="Zákazník smí platit při převzetí — jen ČR a Česká pošta na adresu."
-                  checked={effectiveFlag(product, "cod_allowed")}
-                  dirty={pending?.cod_allowed !== undefined}
-                  onFlip={() => stageFlag(product, "cod_allowed")}
-                />
-                <FlagSwitch
-                  label="Křehké"
-                  title="Celá zásilka s tímto kouskem pojede v křehkém režimu (Česká pošta – křehké nebo osobní odběr)."
-                  checked={effectiveFlag(product, "fragile")}
-                  dirty={pending?.fragile !== undefined}
-                  onFlip={() => stageFlag(product, "fragile")}
-                />
-                {/* Velikost zásilky jen jako štítek — mění se v „…" nebo
-                    hromadně v liště výběru (rozpracovaná = oranžově). */}
-                <div
-                  className={lineClass(pending?.shipping_class !== undefined)}
-                  title="Velikost zásilky — podle ní se v pokladně počítá poštovné. Mění se pod „…“."
-                >
-                  <Text
-                    size="small"
-                    className={lineLabelClass(pending?.shipping_class !== undefined)}
-                  >
-                    Zásilka
-                  </Text>
-                  <Badge
-                    size="small"
-                    color={
-                      shippingClass === "velke"
-                        ? "blue"
-                        : shippingClass === "poukaz"
-                          ? "purple"
-                          : "grey"
-                    }
-                  >
-                    {shippingClassLabel(shippingClass)}
-                  </Badge>
-                </div>
               </div>
             ) : (
               <div className="hidden min-[1200px]:block" />
@@ -1565,14 +1487,14 @@ const ProductsInner = () => {
           </div>
 
           {/*
-            6) Jediná akce vpravo: „…" (viditelnost, podrobnosti, vzácná
+            6) Jediná akce vpravo: „…" (úpravy, viditelnost, vzácná
             nastavení). Na užším displeji sedí v pravém horním rohu řádku.
           */}
-          <div className="absolute right-3 top-3 min-[1200px]:static min-[1200px]:flex min-[1200px]:justify-end">
+          <div className="absolute right-3 top-2 z-10 min-[1200px]:relative min-[1200px]:right-auto min-[1200px]:top-auto min-[1200px]:flex min-[1200px]:justify-end">
             <ProductRowMore
               product={product}
               flags={
-                settingsOn
+                settingsTab
                   ? {
                       ...(active === "produkty" || active === "poskozene"
                         ? { clearance: effectiveFlag(product, "clearance") }
@@ -1582,28 +1504,23 @@ const ProductsInner = () => {
                   : {}
               }
               onFlagSaved={(key) => dropPendingKey(product.id, key)}
-              shippingClass={settingsOn ? shippingClass : undefined}
-              onShippingClassSaved={() => dropPendingKey(product.id, "shipping_class")}
+              onEditShipping={
+                settingsTab ? () => setShippingEditorFor(product.id) : undefined
+              }
+              commission={
+                active === "zakazky" ? "terms" : active === "produkty" ? "make" : null
+              }
+              bundleId={active === "balicky" ? (product.bundle?.id ?? null) : null}
               /* Oblíbené jsou přehled poptávky — tam jen viditelnost,
                  podrobnosti a odkaz do obchodu, žádné zásahy do kusu. */
+              showVariants={active !== "oblibene"}
               showShipping={active !== "oblibene"}
-              showMakeCommission={active === "produkty"}
               showArchive={active !== "oblibene"}
               showDelete={active !== "oblibene"}
               showVisibility={active !== "archivovane"}
               expanded={isExpanded}
               onToggleExpand={() => setExpanded(isExpanded ? null : product.id)}
               storeUrl={product.store_url}
-              trigger={
-                <button
-                  type="button"
-                  title="Další nastavení"
-                  aria-label={`Další nastavení — ${product.title}`}
-                  className="text-ui-fg-subtle hover:text-ui-fg-base hover:bg-ui-bg-base relative z-10 flex size-10 items-center justify-center rounded-lg outline-none transition-colors focus-visible:shadow-borders-focus"
-                >
-                  <EllipsisHorizontal />
-                </button>
-              }
             />
           </div>
 
@@ -1615,7 +1532,7 @@ const ProductsInner = () => {
               </Text>
               <Button
                 size="small"
-                isLoading={applyFlags.isPending && (applyFlags.variables ?? []).includes(product.id)}
+                isLoading={isSaving}
                 onClick={() => applyFlags.mutate([product.id])}
               >
                 Potvrdit
@@ -1624,13 +1541,7 @@ const ProductsInner = () => {
                 size="small"
                 variant="transparent"
                 disabled={applyFlags.isPending}
-                onClick={() =>
-                  setPendingFlags((prev) => {
-                    const next = { ...prev };
-                    delete next[product.id];
-                    return next;
-                  })
-                }
+                onClick={() => discardRow(product.id)}
               >
                 Zrušit
               </Button>
@@ -1644,115 +1555,168 @@ const ProductsInner = () => {
     );
   };
 
+  /* Nahoře jedno hlavní tlačítko: Přidat produkt, nebo Potvrdit vše, když
+     něco čeká na uložení — dvě modrá tlačítka vedle sebe by si konkurovala. */
+  const canCreate =
+    active === "produkty" ||
+    active === "zakazky" ||
+    active === "balicky" ||
+    active === "poskozene";
+  const listTab = active !== "statistiky" && active !== "trideni";
+
+  /* Bulk „…": slevové kódy a vzácné kroky s potvrzením. */
+  const noPromoState = triStateOf(selectedRows, (row) => effectiveFlag(row, "no_promo"));
+  const bulkMoreItems: RowOption[] = [
+    ...(settingsTab && noPromoState !== "on"
+      ? [
+          {
+            label: "Vyloučit ze slevových kódů",
+            icon: <ReceiptPercent />,
+            onSelect: () => stageFlagForSelection("no_promo", true),
+          },
+        ]
+      : []),
+    ...(settingsTab && noPromoState !== "off"
+      ? [
+          {
+            label: "Povolit slevové kódy",
+            icon: <ReceiptPercent />,
+            onSelect: () => stageFlagForSelection("no_promo", false),
+          },
+        ]
+      : []),
+    ...(settingsTab ? (["separator"] as RowOption[]) : []),
+    ...(active !== "archivovane"
+      ? [
+          {
+            label: "Archivovat…",
+            icon: <ArchiveBox />,
+            takesFocus: true,
+            onSelect: () => setBulkArchiveOpen(true),
+          },
+        ]
+      : []),
+    {
+      label: "Smazat…",
+      icon: <Trash />,
+      destructive: true,
+      takesFocus: true,
+      onSelect: () => setBulkDeleteOpen(true),
+    },
+  ];
+  const anyHidden = selectedRows.some((row) => row.status !== "published");
+  const anyVisible = selectedRows.some((row) => row.status === "published");
+  const anyVoucher = selectedRows.some((row) => effectiveShippingClass(row) === "poukaz");
+  const codState = bulkState("cod_allowed");
+  const fragileState = bulkState("fragile");
+
   return (
     <Container className="divide-y p-0">
       <ProductLightbox product={lightbox} onClose={() => setLightbox(null)} />
-      <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
-        <div className="min-w-0">
-          <Heading>Produkty — pracovní přehled</Heading>
-          <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
-            Kliknutím na řádek otevřete produkt. Balné, dobírku a křehké
-            měníte přímo v řádku, viditelnost a ostatní nastavení pod „…“.
-          </Text>
-        </div>
-        <div className="flex flex-wrap items-center gap-4">
-          {pendingCount > 0 && (
-            <>
-              <Button size="small"
-                isLoading={applyFlags.isPending}
-                onClick={() => applyFlags.mutate(Object.keys(pendingFlags))}>
-                Potvrdit vše ({pendingCount})
-              </Button>
-              <Button size="small" variant="secondary"
-                disabled={applyFlags.isPending}
-                onClick={() => setPendingFlags({})}>
-                Zrušit vše
-              </Button>
-            </>
-          )}
-          {/* Vrácení posledního hromadného úkonu. Totéž umí Ctrl+Z, ale
-              zkratku nikdo nehledá — tlačítko je tu pro ruku na myši. */}
-          {lastUndo && (
-            <Button
-              size="small"
-              variant="secondary"
-              title={`${lastUndo.label} — vrátit zpět (Ctrl+Z)`}
-              onClick={() => void undoById(lastUndo.id)}
-            >
-              Vrátit zpět
-            </Button>
-          )}
-          <ViewSwitcher value={view} onChange={changeView} />
-          <ExpertToggle />
-          {/* Every kind starts in the one Nový produkt panel — the button just
-              carries the tab's kind so the right card is preselected. Oblíbené,
-              Archivované and Statistiky are read-outs of what exists, so they
-              get no button. */}
-          {(active === "produkty" ||
-            active === "zakazky" ||
-            active === "balicky" ||
-            active === "poskozene") && (
-            <Button size="small" variant="secondary" asChild>
-              <Link
-                to={`/novy-produkt?druh=${
-                  { produkty: "produkt", zakazky: "zakazka", balicky: "balicek", poskozene: "poskozeny" }[active]
-                }`}
+      <header className="flex flex-col gap-4 px-6 pb-4 pt-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <Heading>Produkty — pracovní přehled</Heading>
+            <Text size="small" className="text-ui-fg-subtle mt-1 max-w-2xl">
+              Klik na řádek otevře produkt. Balné a dopravu změníte klikem na
+              štítky ve sloupci Doprava, ostatní pod „…“.
+            </Text>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Vrácení posledního úkonu. Totéž umí Ctrl+Z, ale zkratku nikdo
+                nehledá — tlačítko je tu pro ruku na myši. */}
+            {lastUndo && (
+              <Button
+                size="small"
+                variant="secondary"
+                title={`${lastUndo.label} — vrátit zpět (Ctrl+Z)`}
+                onClick={() => void undoById(lastUndo.id)}
               >
-                Přidat produkt
-              </Link>
-            </Button>
-          )}
-          <Input
-            size="small"
-            type="search"
-            placeholder="Hledat název…"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            className="w-56"
-          />
+                Vrátit zpět
+              </Button>
+            )}
+            <ViewSwitcher value={view} onChange={changeView} />
+            <ExpertToggle />
+            {pendingCount > 0 && (
+              <>
+                <Button
+                  size="small"
+                  variant="secondary"
+                  disabled={applyFlags.isPending}
+                  onClick={() => setPendingFlags({})}
+                >
+                  Zrušit vše
+                </Button>
+                <Button
+                  size="small"
+                  isLoading={applyFlags.isPending}
+                  onClick={() => applyFlags.mutate(Object.keys(pendingFlags))}
+                >
+                  Potvrdit vše ({pendingCount})
+                </Button>
+              </>
+            )}
+            {/* Každý druh začíná v jednom panelu Nový produkt — tlačítko jen
+                nese druh záložky. Oblíbené, Archivované a Statistiky jsou
+                přehledy toho, co existuje, tlačítko nemají. */}
+            {canCreate && (
+              <Button size="small" variant={pendingCount > 0 ? "secondary" : "primary"} asChild>
+                <Link
+                  to={`/novy-produkt?druh=${
+                    { produkty: "produkt", zakazky: "zakazka", balicky: "balicek", poskozene: "poskozeny" }[active]
+                  }`}
+                >
+                  Přidat produkt
+                </Link>
+              </Button>
+            )}
+          </div>
         </div>
-      </header>
 
-      {/* Lišta výběru sedí dole u hrany okna, viz konec této komponenty. */}
-      <div className="flex flex-wrap items-center gap-2 px-6 py-4">
-        {tabs.map((tab) => {
-          const isActive = tab.key === active;
-          const count =
-            tab.key === "produkty"
-              ? data?.kinds.bezne
-              : tab.key === "zakazky"
-                ? data?.kinds.zakazka
-                : tab.key === "balicky"
-                  ? data?.kinds.balicek
-                  : tab.key === "poskozene"
-                    ? data?.kinds.poskozene
-                    : tab.key === "archivovane"
-                      ? data?.archived_count
-                      : undefined;
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActive(tab.key)}
-              aria-current={isActive ? "page" : undefined}
-              className={
-                isActive
-                  ? "border-ui-border-interactive bg-ui-bg-base-pressed transition-fg flex items-center gap-x-2 rounded-lg border px-3 py-2 outline-none"
-                  : "border-ui-border-base bg-ui-bg-base hover:bg-ui-bg-base-hover transition-fg flex items-center gap-x-2 rounded-lg border px-3 py-2 outline-none"
-              }
-            >
-              <Text size="small" weight={isActive ? "plus" : "regular"}>
-                {tab.label}
-              </Text>
-              {typeof count === "number" && count > 0 && (
-                <Text size="xsmall" className="text-ui-fg-muted">
-                  {count}
-                </Text>
-              )}
-            </button>
-          );
-        })}
-      </div>
+        {/*
+          Záložky jako přepínač v jednom kusu (17. 11. 2026): dřív osm
+          samostatných orámovaných tlačítek, která vypadala jako akce a vizuálně
+          přebíjela seznam. Na telefonu se dají posunout do strany.
+        */}
+        <nav aria-label="Druhy produktů" className="-mx-6 overflow-x-auto px-6">
+          <div className="bg-ui-bg-subtle inline-flex gap-0.5 rounded-lg p-0.5">
+            {tabs.map((tab) => {
+              const isActive = tab.key === active;
+              const count =
+                tab.key === "produkty"
+                  ? data?.kinds.bezne
+                  : tab.key === "zakazky"
+                    ? data?.kinds.zakazka
+                    : tab.key === "balicky"
+                      ? data?.kinds.balicek
+                      : tab.key === "poskozene"
+                        ? data?.kinds.poskozene
+                        : tab.key === "archivovane"
+                          ? data?.archived_count
+                          : undefined;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActive(tab.key)}
+                  aria-current={isActive ? "page" : undefined}
+                  className={clx(
+                    "txt-compact-small flex h-8 shrink-0 items-center gap-x-1.5 whitespace-nowrap rounded-md px-3 outline-none transition-fg focus-visible:shadow-borders-focus",
+                    isActive
+                      ? "bg-ui-bg-base text-ui-fg-base shadow-elevation-card-rest font-medium"
+                      : "text-ui-fg-subtle hover:text-ui-fg-base"
+                  )}
+                >
+                  {tab.label}
+                  {typeof count === "number" && count > 0 && (
+                    <span className="text-ui-fg-muted txt-compact-xsmall">{count}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      </header>
 
       {active === "statistiky" ? (
         <StatsView />
@@ -1762,10 +1726,42 @@ const ProductsInner = () => {
         <ProductSortingGuide />
       ) : (
         <>
-          <CatalogFilterBar
+          <ProductFilterToolbar
             products={tabRows}
-            value={catalog}
-            onChange={setCatalog}
+            search={searchInput}
+            onSearch={setSearchInput}
+            filters={filters}
+            onChange={(next) =>
+              zapisAdresu({
+                ...(next.catalog
+                  ? { kolekce: next.catalog.collection, kategorie: next.catalog.category }
+                  : {}),
+                ...("stav" in next ? { stav: next.stav ?? null } : {}),
+                ...("doprava" in next ? { doprava: next.doprava ?? null } : {}),
+              })
+            }
+            onClearAll={() => {
+              setSearchInput("");
+              zapisAdresu({
+                hledat: null,
+                kolekce: null,
+                kategorie: null,
+                stav: null,
+                doprava: null,
+              });
+            }}
+            shownCount={rows.length}
+            showStav={stavShown}
+            showDoprava={settingsTab}
+            selectAll={
+              rows.length > 0 ? (
+                /* V tabulce je „vybrat vše" v hlavičce; jinde (mřížka,
+                   kompaktní, úzký displej) tady. */
+                <span className={view === "radky" ? "min-[1200px]:hidden" : undefined}>
+                  {selectAllBox}
+                </span>
+              ) : null
+            }
           />
           {isLoading && (
             <div className="flex flex-col gap-y-3 px-6 py-5">
@@ -1784,28 +1780,32 @@ const ProductsInner = () => {
           {!isLoading && !isError && rows.length === 0 && (
             <EmptyState
               title={
-                active === "zakazky"
-                  ? "Žádné zakázkové produkty"
-                  : active === "balicky"
-                    ? "Žádné balíčky"
-                    : active === "poskozene"
-                      ? "Žádné poškozené kusy"
-                      : active === "oblibene"
-                        ? "Zákazníci si zatím nic neuložili"
-                        : active === "archivovane"
-                          ? "Archiv je prázdný"
-                          : "Nic nenalezeno"
+                tabRows.length > 0
+                  ? "Filtrům nic neodpovídá"
+                  : active === "zakazky"
+                    ? "Žádné zakázkové produkty"
+                    : active === "balicky"
+                      ? "Žádné balíčky"
+                      : active === "poskozene"
+                        ? "Žádné poškozené kusy"
+                        : active === "oblibene"
+                          ? "Zákazníci si zatím nic neuložili"
+                          : active === "archivovane"
+                            ? "Archiv je prázdný"
+                            : "Nic nenalezeno"
               }
               description={
-                active === "poskozene"
-                  ? "Poškozený kus založíte tlačítkem Přidat produkt nahoře, nebo existující označíte v záložce Produkty pod „…“."
-                  : active === "balicky"
-                    ? "Balíček sestavíte tlačítkem Přidat produkt nahoře."
-                    : active === "zakazky"
-                      ? "Zakázku založíte tlačítkem Přidat produkt nahoře, nebo existující produkt nastavíte v záložce Produkty pod „…“ → Nastavit jako zakázku."
-                      : active === "archivovane"
-                        ? "Archivované kusy zmizí z obchodu i ze seznamů, ale zůstanou v historii objednávek."
-                        : "Zkuste jiné hledání."
+                tabRows.length > 0
+                  ? "Zkuste jiný filtr, nebo filtry zrušte odkazem nahoře."
+                  : active === "poskozene"
+                    ? "Poškozený kus založíte tlačítkem Přidat produkt nahoře, nebo existující označíte v záložce Produkty pod „…“."
+                    : active === "balicky"
+                      ? "Balíček sestavíte tlačítkem Přidat produkt nahoře."
+                      : active === "zakazky"
+                        ? "Zakázku založíte tlačítkem Přidat produkt nahoře, nebo existující produkt nastavíte v záložce Produkty pod „…“ → Nastavit jako zakázku."
+                        : active === "archivovane"
+                          ? "Archivované kusy zmizí z obchodu i ze seznamů, ale zůstanou v historii objednávek."
+                          : "Zkuste jiné hledání."
               }
             />
           )}
@@ -1816,7 +1816,7 @@ const ProductsInner = () => {
             ) : (
               <div className="divide-y">
                 {view !== "kompakt" && (
-                  <RowHeader settings={active !== "oblibene" && active !== "archivovane"} />
+                  <RowHeader settings={settingsTab} selectAll={selectAllBox} />
                 )}
                 {rows.map(view === "kompakt" ? renderCompactRow : renderRow)}
               </div>
@@ -1837,11 +1837,16 @@ const ProductsInner = () => {
       {/*
         Lišta vybraných kusů (spec §2). Je až tady, protože se drží u dolní
         hrany okna — `sticky bottom` funguje jen tehdy, když je prvek na konci
-        obsahu, který roluje. Jeden ovladač na vlastnost místo dvojice
-        „zapnout"/„vypnout", a nic se neodešle bez Potvrdit.
+        obsahu, který roluje.
+
+        Hromadně jde totéž co v okénku Doprava u řádku (balné, dobírka,
+        křehké, velikost zásilky) — rozpracuje se a uloží jedním Potvrdit
+        s „Vrátit zpět". Zobrazit / skrýt zapisuje hned a vrací se z hlášky.
+        Vzácné kroky (slevové kódy, archiv, mazání) jsou pod „…".
       */}
-      {selected.size > 0 && (
+      {listTab && selected.size > 0 && (
         <BulkBar
+          layout="stacked"
           count={selected.size}
           onClear={() => setSelected(new Set())}
           pendingCount={selectedPendingIds.length}
@@ -1849,107 +1854,112 @@ const ProductsInner = () => {
           onDiscard={discardSelectedPending}
           isSaving={applyFlags.isPending}
         >
-          {active !== "oblibene" && active !== "archivovane" && (
-            <>
-              <BulkSwitch
-                label="Dobírka"
-                title="Zákazník smí platit při převzetí — jen ČR a Česká pošta na adresu."
-                state={bulkState("cod_allowed")}
-                dirty={bulkDirty("cod_allowed")}
-                onSet={(next) => stageFlagForSelection("cod_allowed", next)}
-              />
-              <BulkSwitch
-                label="Křehké"
-                title="Celá zásilka s tímto kouskem pojede v křehkém režimu."
-                state={bulkState("fragile")}
-                dirty={bulkDirty("fragile")}
-                onSet={(next) => stageFlagForSelection("fragile", next)}
-              />
-              <BulkSwitch
-                label="Bez slev. kódů"
-                title="Slevové kódy se na vybrané kusy nevztahují."
-                state={bulkState("no_promo")}
-                dirty={bulkDirty("no_promo")}
-                onSet={(next) => stageFlagForSelection("no_promo", next)}
-              />
+          {settingsTab && (
+            <BulkGroup label="Doprava">
               <BulkNumber
                 label="Balné"
                 unit="Kč"
+                applyLabel="Použít"
                 value={bulkPackaging.kind === "same" ? bulkPackaging.value : null}
                 mixed={bulkPackaging.kind === "mixed"}
                 dirty={bulkPackagingDirty}
                 onSet={stagePackagingForSelection}
               />
-              <BulkChoice
-                label="Velikost zásilky"
+              <BulkSegmented
+                label="Dobírka"
+                title="Zákazník smí platit při převzetí — jen ČR a Česká pošta na adresu."
+                options={[
+                  { value: "on", label: "Ano" },
+                  { value: "off", label: "Ne" },
+                ]}
+                value={codState === "mixed" ? null : codState}
+                dirty={bulkDirty("cod_allowed")}
+                onSet={(next) => stageFlagForSelection("cod_allowed", next === "on")}
+              />
+              <BulkSegmented
+                label="Křehké"
+                title="Celá zásilka s tímto kouskem pojede v křehkém režimu."
+                options={[
+                  { value: "on", label: "Ano" },
+                  { value: "off", label: "Ne" },
+                ]}
+                value={fragileState === "mixed" ? null : fragileState}
+                dirty={bulkDirty("fragile")}
+                onSet={(next) => stageFlagForSelection("fragile", next === "on")}
+              />
+              <BulkSegmented
+                label="Zásilka"
                 title="Podle velikosti zásilky se v pokladně počítá poštovné."
-                options={SHIPPING_CLASS_OPTIONS}
+                /* Poukaz jen když už ve výběru je — hromadně se mění malé
+                   a velké, tištěný poukaz je výjimka. */
+                options={SHIPPING_CLASS_OPTIONS.filter(
+                  (option) => option.value !== "poukaz" || anyVoucher
+                )}
                 value={bulkShippingClass.kind === "same" ? bulkShippingClass.value : null}
-                mixed={bulkShippingClass.kind === "mixed"}
                 dirty={bulkShippingClassDirty}
                 onSet={stageShippingClassForSelection}
               />
-            </>
+            </BulkGroup>
           )}
-          {/*
-            Skrytí je vratné a vrácení se nabídne hned po něm — dialog by tu
-            jen překážel. Archivace vratná taky je, ale sáhne na celý výběr
-            a kus pak zmizí ze všech seznamů; na to se ptáme jmény (§12).
-          */}
-          <BulkAction
-            onClick={() => bulkHide.mutate()}
-            isLoading={bulkHide.isPending}
-          >
-            Skrýt z obchodu
-          </BulkAction>
-          <ConfirmDialog
-            trigger={
-              <Button size="small" variant="danger" className="shrink-0">
-                Archivovat
-              </Button>
-            }
-            title={
-              selected.size === 1
-                ? "Archivovat tenhle kus?"
-                : `Archivovat ${selected.size < 5 ? `tyhle ${selected.size} kusy` : `těchhle ${selected.size} kusů`}?`
-            }
-            description="Z obchodu i ze seznamů zmizí; historie objednávek zůstává. Najdete je v záložce Archivované."
-            items={selectedRows.map((row) => row.title)}
-            consequence="Vrátit zpět to půjde deset minut (Ctrl+Z), potom už jen ručně v Archivovaných."
-            confirmLabel={
-              selected.size === 1
-                ? "Archivovat kus"
-                : `Archivovat ${selected.size} kusů`
-            }
-            isPending={bulkArchive.isPending}
-            onConfirm={() => bulkArchive.mutate()}
-          />
-          {/*
-            Mazání vedle archivace: v Archivovaných je to jediná cesta, jak se
-            zkušebních kusů opravdu zbavit (9. 11. 2026).
-          */}
-          <ConfirmDialog
-            trigger={
-              <Button size="small" variant="danger" className="shrink-0">
-                Smazat
-              </Button>
-            }
-            title={
-              selected.size === 1
-                ? "Smazat tenhle kus?"
-                : `Smazat ${selected.size < 5 ? `tyhle ${selected.size} kusy` : `těchhle ${selected.size} kusů`}?`
-            }
-            description="Zmizí z obchodu i ze všech seznamů včetně archivu. Když je chcete jen stáhnout z obchodu a nechat si je, použijte Archivovat."
-            items={selectedRows.map((row) => row.title)}
-            consequence="Smazané kusy se nevrátí ani přes Ctrl+Z. Objednávky, ve kterých už jsou, si svůj záznam nechají — faktury zůstanou celé."
-            confirmLabel={
-              selected.size === 1 ? "Smazat kus" : `Smazat ${selected.size} kusů`
-            }
-            isPending={bulkDelete.isPending}
-            onConfirm={() => bulkDelete.mutate()}
-          />
+          {active !== "archivovane" && (
+            <BulkGroup label="Obchod">
+              {/* Skrytí i zobrazení jsou vratné a vrácení se nabídne hned
+                  v hlášce — dialog by tu jen překážel. Nabízí se jen to,
+                  co u výběru něco změní. */}
+              {anyHidden && (
+                <BulkAction onClick={() => bulkShow.mutate()} isLoading={bulkShow.isPending}>
+                  Zobrazit v obchodě
+                </BulkAction>
+              )}
+              {anyVisible && (
+                <BulkAction onClick={() => bulkHide.mutate()} isLoading={bulkHide.isPending}>
+                  Skrýt z obchodu
+                </BulkAction>
+              )}
+            </BulkGroup>
+          )}
+          <div className="ml-auto">
+            <RowOptionsMenu label="Další hromadné akce" items={bulkMoreItems} />
+          </div>
         </BulkBar>
       )}
+
+      {/* Archivace sáhne na celý výběr a kus pak zmizí ze všech seznamů —
+          na to se ptáme jmény (§12). */}
+      <ConfirmDialog
+        open={bulkArchiveOpen}
+        onOpenChange={setBulkArchiveOpen}
+        title={
+          selected.size === 1
+            ? "Archivovat tenhle kus?"
+            : `Archivovat ${selected.size < 5 ? `tyhle ${selected.size} kusy` : `těchhle ${selected.size} kusů`}?`
+        }
+        description="Z obchodu i ze seznamů zmizí; historie objednávek zůstává. Najdete je v záložce Archivované."
+        items={selectedRows.map((row) => row.title)}
+        consequence="Vrátit zpět to půjde deset minut (Ctrl+Z), potom už jen ručně v Archivovaných."
+        confirmLabel={
+          selected.size === 1 ? "Archivovat kus" : `Archivovat ${selected.size} kusů`
+        }
+        isPending={bulkArchive.isPending}
+        onConfirm={() => bulkArchive.mutate()}
+      />
+      {/* Mazání vedle archivace: v Archivovaných je to jediná cesta, jak se
+          zkušebních kusů opravdu zbavit (9. 11. 2026). */}
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        title={
+          selected.size === 1
+            ? "Smazat tenhle kus?"
+            : `Smazat ${selected.size < 5 ? `tyhle ${selected.size} kusy` : `těchhle ${selected.size} kusů`}?`
+        }
+        description="Zmizí z obchodu i ze všech seznamů včetně archivu. Když je chcete jen stáhnout z obchodu a nechat si je, použijte Archivovat."
+        items={selectedRows.map((row) => row.title)}
+        consequence="Smazané kusy se nevrátí ani přes Ctrl+Z. Objednávky, ve kterých už jsou, si svůj záznam nechají — faktury zůstanou celé."
+        confirmLabel={selected.size === 1 ? "Smazat kus" : `Smazat ${selected.size} kusů`}
+        isPending={bulkDelete.isPending}
+        onConfirm={() => bulkDelete.mutate()}
+      />
     </Container>
   );
 };

@@ -53,3 +53,19 @@ html:not([data-kz-expert="1"]) [data-kz-tech="1"] {
 #kz-expert-slot > *:not(:first-child) {
   display: none;
 }
+
+/* Menu bez dvojic (17. 11. 2026): Medusiny Objednávky, Produkty, Sklad,
+   Zákazníci, Propagace a Ceníky mají každá naši jednodušší obdobu níž
+   v menu (Objednávky, Produkty, Sklad, Zákazníci, Slevy). Majitelka viděla
+   všechno dvakrát. V expertním režimu jsou zpátky. Detail objednávky
+   i výrobku dál běží na adresách Medusy — skrývá se jen položka menu. */
+html:not([data-kz-expert="1"]) nav div:has(> div.w-full > a:is(
+  [href="/app/orders"],
+  [href="/app/products"],
+  [href="/app/inventory"],
+  [href="/app/customers"],
+  [href="/app/promotions"],
+  [href="/app/price-lists"]
+)) {
+  display: none;
+}

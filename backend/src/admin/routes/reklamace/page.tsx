@@ -1,5 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { ArrowUturnLeft } from "@medusajs/icons";
+import { ArrowUturnLeft, ChevronRightMini } from "@medusajs/icons";
 import {
   Badge,
   Button,
@@ -302,11 +302,11 @@ const ReklamaceInner = () => {
                     }}
                   >
                     <Table.Cell>
-                      <Button size="small" variant="transparent" asChild>
-                        <Link to={`/orders/${request.order_id}`}>
-                          #{request.order_display_id}
-                        </Link>
-                      </Button>
+                      {/* Jen číslo: klik kamkoli v řádku otevře žádost,
+                          objednávka je odkazem až v ní (17. 11. 2026). */}
+                      <Text size="small" weight="plus">
+                        #{request.order_display_id}
+                      </Text>
                     </Table.Cell>
                     <Table.Cell>
                       <Text size="small">{request.customer_name ?? "—"}</Text>
@@ -383,9 +383,13 @@ const ReklamaceInner = () => {
                     </Table.Cell>
                     <Table.Cell>
                       <div className="flex justify-end">
-                        <Button size="small" variant="secondary" asChild>
-                          <Link to={reklamaceLink(request)}>Detail</Link>
-                        </Button>
+                        <Link
+                          to={reklamaceLink(request)}
+                          aria-label={`Otevřít žádost k objednávce #${request.order_display_id}`}
+                          className="text-ui-fg-muted hover:text-ui-fg-base rounded p-1"
+                        >
+                          <ChevronRightMini />
+                        </Link>
                       </div>
                     </Table.Cell>
                   </Table.Row>

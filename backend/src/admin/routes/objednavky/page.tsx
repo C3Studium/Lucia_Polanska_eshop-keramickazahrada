@@ -1,5 +1,11 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { ShoppingCart } from "@medusajs/icons";
+import {
+  ArrowUpRightOnBox,
+  BookOpen,
+  ChevronDownMini,
+  ChevronUpMini,
+  ShoppingCart,
+} from "@medusajs/icons";
 import {
   Badge,
   Button,
@@ -17,8 +23,8 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { Fragment, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { Link, useHref } from "react-router-dom";
 import { BulkAction, BulkBar } from "../../components/bulk-bar";
 import { ConfirmDialog } from "../../components/confirm-dialog";
 import { EmptyState } from "../../components/empty-state";
@@ -30,6 +36,8 @@ import {
 import { toastWithUndo, undoById, useLastUndo, useUndoHotkey } from "../../lib/undo";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
 import { ProductionDiary } from "../../components/production-diary";
+import { RowLink } from "../../components/row-link";
+import { RowOptionsMenu } from "../../components/row-options-menu";
 import { SubTabs } from "../../components/work-tabs";
 import {
   formatCzk,
@@ -242,7 +250,6 @@ const ClaimOrderRow = ({
   category: ClaimCategory;
   expert: boolean;
 }) => {
-  const navigate = useNavigate();
   const claim = order.claim ?? null;
   const kind = claim && isReturnKind(claim.kind) ? claim.kind : null;
   const status = claim && isReturnStatus(claim.status) ? claim.status : null;
@@ -261,33 +268,24 @@ const ClaimOrderRow = ({
   const detailHref = `/orders/${order.order_id}`;
 
   return (
-    <article
-      role="link"
-      tabIndex={0}
-      title={`Otevřít detail objednávky #${order.display_id ?? ""}`}
-      onClick={(e) => {
-        if ((e.target as HTMLElement).closest("button, a, input, label")) {
-          return;
-        }
-        navigate(detailHref);
-      }}
-      onKeyDown={(e) => {
-        if (e.target !== e.currentTarget) return;
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          navigate(detailHref);
-        }
-      }}
-      className="hover:bg-ui-bg-base-hover focus-visible:shadow-borders-focus grid cursor-pointer gap-3 px-6 py-4 outline-none transition-colors lg:grid-cols-[150px_minmax(0,1.1fr)_220px_minmax(0,1.5fr)_170px_auto] lg:items-center"
-    >
+    <article className="group hover:bg-ui-bg-base-hover relative grid cursor-pointer gap-3 px-6 py-4 transition-colors lg:grid-cols-[150px_minmax(0,1.1fr)_220px_minmax(0,1.5fr)_170px_auto] lg:items-center">
+      {/* Celý řádek vede na objednávku (i Ctrl+klik); odkazy nad ním mají `relative z-10`. */}
+      <RowLink to={detailHref} label={`Objednávka #${order.display_id ?? ""}`} />
       <div className="min-w-0">
-        <Text size="small" weight="plus">
+        <Link
+          to={detailHref}
+          className="txt-compact-small-plus text-ui-fg-base relative z-10 rounded-sm outline-none group-hover:underline focus-visible:shadow-borders-focus"
+        >
           #{order.display_id ?? "—"}
-        </Text>
+        </Link>
         <Text size="xsmall" className="text-ui-fg-subtle mt-1 whitespace-nowrap">
           {formatDateTime(order.created_at)}
         </Text>
-        {expert && <CopyId value={order.order_id} />}
+        {expert && (
+          <span className="relative z-10 block">
+            <CopyId value={order.order_id} />
+          </span>
+        )}
       </div>
 
       <div className="min-w-0">
@@ -365,14 +363,15 @@ const ClaimOrderRow = ({
       </div>
 
       <div className="flex flex-wrap justify-start gap-x-3 gap-y-1 lg:justify-end">
+        {/* Detail otevírá celý řádek; tady jen cesta k rozhodnutí o žádosti. */}
         {link && (
-          <Link to={link} className="text-ui-fg-interactive txt-small hover:underline">
+          <Link
+            to={link}
+            className="text-ui-fg-interactive txt-small relative z-10 hover:underline"
+          >
             Otevřít v Reklamace a vrácení
           </Link>
         )}
-        <Link to={detailHref} className="text-ui-fg-interactive txt-small hover:underline">
-          Detail
-        </Link>
       </div>
     </article>
   );
@@ -949,6 +948,255 @@ const buildPrintDocument = (orders: PrintableOrder[]) => {
 </style></head><body>${sheets}</body></html>`;
 };
 
+/* --------------------------------------------------- řádek objednávky ---- */
+
+/*
+ * Jedna mřížka pro hlavičku i řádky (17. 11. 2026) — dřív měl každý řádek
+ * sloupce „auto", a stav i částka tak skákaly podle délky jména. Šířky jsou
+ * pevné, pružný je jen Zákazník. Pod 1024 px se řádek skládá do tří řádků:
+ * číslo + stav nahoře, zákazník, částka; „…" vpravo nahoře.
+ *
+ * Na poště je pod stavem ještě tlačítko předání — v mřížce má vlastní místo
+ * (`btn`), ať se sloupce kvůli němu nerozjedou.
+ */
+const ORDER_COLS_LG =
+  "lg:grid-cols-[28px_140px_minmax(0,1fr)_160px_190px_40px]";
+const ORDER_AREAS_LG = "lg:[grid-template-areas:'sel_num_cust_stav_amt_act']";
+const ORDER_AREAS_LG_POSTA =
+  "lg:[grid-template-areas:'sel_num_cust_stav_amt_act'_'sel_num_cust_btn_amt_act']";
+const ORDER_GRID_SM =
+  "grid-cols-[auto_minmax(0,1fr)_auto_auto] [grid-template-areas:'sel_num_stav_act'_'sel_cust_cust_cust'_'sel_amt_amt_amt']";
+const ORDER_GRID_SM_POSTA =
+  "grid-cols-[auto_minmax(0,1fr)_auto_auto] [grid-template-areas:'sel_num_stav_act'_'sel_cust_cust_cust'_'sel_amt_amt_amt'_'sel_btn_btn_btn']";
+
+const pocetPolozek = (count: number) =>
+  `${count} ${count === 1 ? "položka" : count >= 2 && count <= 4 ? "položky" : "položek"}`;
+
+/**
+ * Jak je to s penězi, jednou klidnou větou. Čísla jdou z řádku tak, jak je
+ * spočítal server (`paid`, `outstanding`); červeně jen skutečný problém
+ * s platbou — záloha se zbytkem je běžný stav zakázky, ne chyba.
+ */
+const PaymentLine = ({ order }: { order: WorkbenchOrder }) => {
+  const unpaid = order.total - order.paid > 0.009;
+  const problem = order.stage === "payment_problem";
+  const tone = (calm: string) => (problem ? "text-ui-fg-error" : calm);
+
+  let text: ReactNode;
+  let className: string;
+  if (order.outstanding > 0 && order.paid > 0) {
+    text = `${order.made_to_order ? "Záloha" : "Zaplaceno"} ${formatCzk(order.paid)} · zbývá ${formatCzk(order.outstanding)}`;
+    className = tone("text-ui-tag-orange-text");
+  } else if (order.outstanding > 0 || unpaid) {
+    if (order.is_personal_pickup && order.paid <= 0) {
+      text = "Platí při vyzvednutí";
+      className = tone("text-ui-fg-subtle");
+    } else if (order.paid > 0) {
+      text = `Zaplaceno ${formatCzk(order.paid)} · zbývá ${formatCzk(Math.max(0, order.total - order.paid))}`;
+      className = tone("text-ui-tag-orange-text");
+    } else {
+      text = "Nezaplaceno";
+      className = tone("text-ui-fg-subtle");
+    }
+  } else {
+    // Zaplacené je zaplacené i ve frontě „Problém s platbou" — červená by lhala.
+    text = "Zaplaceno";
+    className = "text-ui-tag-green-text";
+  }
+
+  return (
+    <>
+      <Text size="xsmall" className={`mt-0.5 ${className}`}>
+        {text}
+      </Text>
+      {order.refunded > 0 && (
+        <Text size="xsmall" className="text-ui-fg-subtle mt-0.5">
+          vráceno {formatCzk(order.refunded)}
+        </Text>
+      )}
+    </>
+  );
+};
+
+/**
+ * Řádek seznamu objednávek. Celý řádek je odkaz na detail (`RowLink`, takže
+ * funguje i Ctrl+klik a prostřední tlačítko); z klávesnice se jde přes číslo
+ * objednávky, které je skutečný odkaz. Vedlejší věci (podrobnosti, deník,
+ * nové okno) jsou v „…", v řádku zůstává nanejvýš jedno tlačítko kroku.
+ */
+const OrderListRow = ({
+  order,
+  posta,
+  expert,
+  selected,
+  onSelect,
+  expanded,
+  onToggleExpanded,
+  handoverPending,
+  onHandover,
+}: {
+  order: WorkbenchOrder;
+  /** Záložka „Na poštu" — v řádku je tlačítko předání. */
+  posta: boolean;
+  expert: boolean;
+  selected: boolean;
+  onSelect: (checked: boolean) => void;
+  expanded: boolean;
+  onToggleExpanded: () => void;
+  handoverPending: boolean;
+  onHandover: () => void;
+}) => {
+  const detail = `/orders/${order.id}`;
+  /* Plná adresa i s předponou adminu (/app) — pro „Otevřít v novém okně". */
+  const detailHref = useHref(detail);
+  /* Deník je šuplík, který umí otevřít jen svůj spouštěč — ten je skrytý
+     a „…" na něj klikne. */
+  const diaryTrigger = useRef<HTMLButtonElement>(null);
+  const cislo = `#${order.display_id}`;
+
+  return (
+    <article
+      className={`group relative grid cursor-pointer items-start gap-x-3 gap-y-1.5 px-6 py-3 transition-colors lg:items-center lg:gap-y-2 ${
+        expanded ? "bg-ui-bg-subtle" : "hover:bg-ui-bg-base-hover"
+      } ${posta ? ORDER_GRID_SM_POSTA : ORDER_GRID_SM} ${ORDER_COLS_LG} ${
+        posta ? ORDER_AREAS_LG_POSTA : ORDER_AREAS_LG
+      }`}
+    >
+      {/* Celý řádek vede na objednávku; prvky nad ním musí mít `relative z-10`. */}
+      <RowLink to={detail} label={`Objednávka ${cislo}`} />
+
+      <div className="[grid-area:sel] relative z-10 flex h-10 items-center lg:h-auto">
+        <SelectCheckbox
+          checked={selected}
+          label={`Vybrat objednávku ${cislo}`}
+          onChange={onSelect}
+        />
+      </div>
+
+      <div className="[grid-area:num] min-w-0">
+        <Link
+          to={detail}
+          className="txt-compact-small-plus text-ui-fg-base relative z-10 rounded-sm outline-none group-hover:underline focus-visible:shadow-borders-focus"
+        >
+          {cislo}
+        </Link>
+        <Text size="xsmall" className="text-ui-fg-subtle mt-0.5 whitespace-nowrap">
+          {formatDateTime(order.created_at)}
+        </Text>
+        {expert && (
+          <span className="relative z-10 block">
+            <CopyId value={order.id} />
+          </span>
+        )}
+      </div>
+
+      <div className="[grid-area:cust] min-w-0">
+        <Text size="small" className="truncate">
+          {order.customer_name || order.email || "—"}
+        </Text>
+        <div className="text-ui-fg-subtle mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
+          <Text size="xsmall">{pocetPolozek(order.items_count)}</Text>
+          {order.made_to_order && (
+            <Badge size="2xsmall" color="purple">
+              zakázka
+            </Badge>
+          )}
+          {order.is_personal_pickup && (
+            <Text size="xsmall">· osobní odběr</Text>
+          )}
+        </div>
+      </div>
+
+      <div className="[grid-area:stav] min-w-0 justify-self-end text-right lg:justify-self-start lg:text-left">
+        {order.stage ? (
+          <Badge size="2xsmall" color={stageColors[order.stage] ?? "grey"}>
+            {/* Odběr nic neodesílá — „K odeslání" je tam
+                „Připraveno k vyzvednutí" (admin/lib/stage-words). */}
+            {stageLabel(order.stage, order.is_personal_pickup)}
+          </Badge>
+        ) : (
+          <Text size="xsmall" className="text-ui-fg-muted">
+            mimo dílnu
+          </Text>
+        )}
+        {order.shipped && !order.delivered && (
+          <Text size="xsmall" className="text-ui-fg-subtle mt-0.5">
+            na cestě
+          </Text>
+        )}
+        {order.delivered && (
+          <Text size="xsmall" className="text-ui-fg-subtle mt-0.5">
+            doručeno
+          </Text>
+        )}
+      </div>
+
+      <div className="[grid-area:amt] min-w-0">
+        {/* Nejdřív kolik objednávka dělá, pod tím jedna věta o penězích. */}
+        <Text size="small" weight="plus">
+          {formatCzk(order.total)}
+        </Text>
+        <PaymentLine order={order} />
+      </div>
+
+      {/* Jediné viditelné tlačítko kroku — jen na poště, kde je taška v ruce. */}
+      {posta && (
+        <div className="[grid-area:btn] relative z-10">
+          <Button size="small" isLoading={handoverPending} onClick={onHandover}>
+            Předala jsem dopravci
+          </Button>
+        </div>
+      )}
+
+      <div className="[grid-area:act] relative z-10 -my-1 flex justify-end lg:my-0">
+        <RowOptionsMenu
+          label={`Možnosti objednávky ${cislo}`}
+          items={[
+            {
+              label: expanded ? "Skrýt podrobnosti" : "Ukázat podrobnosti",
+              icon: expanded ? <ChevronUpMini /> : <ChevronDownMini />,
+              onSelect: onToggleExpanded,
+            },
+            ...(order.made_to_order
+              ? [
+                  {
+                    label: "Deník zakázky",
+                    icon: <BookOpen />,
+                    onSelect: () => diaryTrigger.current?.click(),
+                  },
+                ]
+              : []),
+            {
+              label: "Otevřít v novém okně",
+              icon: <ArrowUpRightOnBox />,
+              // Nové okno jen přímo z kliknutí, jinak ho Safari zablokuje.
+              sync: true,
+              onSelect: () => {
+                window.open(detailHref, "_blank", "noopener");
+              },
+            },
+          ]}
+        />
+        {order.made_to_order && (
+          <ProductionDiary
+            orderId={order.id}
+            label={cislo}
+            trigger={
+              <button
+                ref={diaryTrigger}
+                type="button"
+                hidden
+                tabIndex={-1}
+                aria-hidden="true"
+              />
+            }
+          />
+        )}
+      </div>
+    </article>
+  );
+};
+
 const OrdersInner = () => {
   /* Návrat z detailu vrátí i tam, kde ve výpisu byla — ne nahoru
      (8. 11. 2026, viz lib/scroll-memory). */
@@ -971,7 +1219,6 @@ const OrdersInner = () => {
     return () => window.clearTimeout(timer);
   }, [searchInput]);
   const expert = useExpertMode();
-  const navigate = useNavigate();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<string | null>(null);
   const [batchStage, setBatchStage] = useState<string>("");
@@ -1539,219 +1786,71 @@ const OrdersInner = () => {
 
       {active !== "statistiky" && !isClaimTab && !isLoading && !isError && rows.length > 0 && (
         <div className="divide-y">
-          <div className="bg-ui-bg-subtle flex items-center gap-3 px-6 py-2">
-            <SelectCheckbox
-              checked={pageAllSelected}
-              indeterminate={pageSomeSelected}
-              label="Vybrat vše na stránce"
-              onChange={(checked) => toggleSelectAllOnPage(checked)}
-            />
-            <Text size="xsmall" weight="plus" className="text-ui-fg-subtle">
+          {/* Hlavička tabulky — stejná mřížka jako řádky, ať sloupce sedí.
+              Na úzké obrazovce jen „Vybrat vše na stránce". */}
+          <div
+            className={`bg-ui-bg-subtle flex items-center gap-3 px-6 py-2 lg:grid lg:gap-x-3 ${ORDER_COLS_LG} ${ORDER_AREAS_LG}`}
+          >
+            <div className="[grid-area:sel] flex items-center">
+              <SelectCheckbox
+                checked={pageAllSelected}
+                indeterminate={pageSomeSelected}
+                label="Vybrat vše na stránce"
+                onChange={(checked) => toggleSelectAllOnPage(checked)}
+              />
+            </div>
+            <Text size="xsmall" weight="plus" className="text-ui-fg-subtle lg:hidden">
               Vybrat vše na stránce
             </Text>
-          </div>
-          {rows.map((order) => {
-            const unpaid = order.total - order.paid > 0.009;
-
-            return (
-              <Fragment key={order.id}>
-              <article
-                role="link"
-                tabIndex={0}
-                title={`Otevřít detail objednávky #${order.display_id}`}
-                onClick={(e) => {
-                  // Klik na řádek → detail objednávky. Klik na ovládací prvky
-                  // uvnitř (checkbox, Rozbalit/Deník, Detail, tlačítka) necháme
-                  // být — jinak by se navigace prala s jejich akcí.
-                  if (
-                    (e.target as HTMLElement).closest(
-                      "button, a, input, label, [role='checkbox']"
-                    )
-                  ) {
-                    return;
-                  }
-                  navigate(`/orders/${order.id}`);
-                }}
-                onKeyDown={(e) => {
-                  if (e.target !== e.currentTarget) return;
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    navigate(`/orders/${order.id}`);
-                  }
-                }}
-                className="hover:bg-ui-bg-base-hover focus-visible:shadow-borders-focus grid cursor-pointer gap-3 px-6 py-4 outline-none transition-colors lg:grid-cols-[160px_minmax(0,1.3fr)_170px_190px_minmax(0,1fr)_auto] lg:items-center"
+            {(
+              [
+                ["num", "Objednávka"],
+                ["cust", "Zákazník"],
+                ["stav", "Stav"],
+                ["amt", "Částka"],
+              ] as const
+            ).map(([area, nazev]) => (
+              <Text
+                key={area}
+                size="xsmall"
+                weight="plus"
+                className="text-ui-fg-subtle hidden lg:block"
+                style={{ gridArea: area }}
               >
-                <div className="flex items-center gap-3">
-                  <SelectCheckbox
-                    checked={selected.has(order.id)}
-                    label={`Vybrat objednávku #${order.display_id}`}
-                    onChange={(checked) => {
-                      const next = new Set(selected);
-                      if (checked) {
-                        next.add(order.id);
-                      } else {
-                        next.delete(order.id);
-                      }
-                      setSelected(next);
-                    }}
-                  />
-                  <div className="min-w-0">
-                    <Text size="small" weight="plus">
-                      #{order.display_id}
-                    </Text>
-                    <Text
-                      size="xsmall"
-                      className="text-ui-fg-subtle mt-1 whitespace-nowrap"
-                    >
-                      {formatDateTime(order.created_at)}
-                    </Text>
-                    {expert && <CopyId value={order.id} />}
-                  </div>
-                </div>
-
-                <div className="min-w-0">
-                  <Text size="small" className="truncate">
-                    {order.customer_name || order.email || "—"}
-                  </Text>
-                  <Text size="xsmall" className="text-ui-fg-subtle mt-1">
-                    {order.items_count}{" "}
-                    {order.items_count === 1
-                      ? "položka"
-                      : order.items_count <= 4
-                        ? "položky"
-                        : "položek"}
-                    {order.made_to_order ? " · zakázka" : ""}
-                    {order.is_personal_pickup ? " · osobní odběr" : ""}
-                  </Text>
-                </div>
-
-                <div>
-                  {order.stage ? (
-                    <Badge
-                      size="2xsmall"
-                      color={stageColors[order.stage] ?? "grey"}
-                    >
-                      {/* Odběr nic neodesílá — „K odeslání" je tam
-                          „Připraveno k vyzvednutí" (admin/lib/stage-words). */}
-                      {stageLabel(order.stage, order.is_personal_pickup)}
-                    </Badge>
-                  ) : (
-                    <Text size="xsmall" className="text-ui-fg-muted">
-                      mimo dílnu
-                    </Text>
-                  )}
-                  {order.shipped && !order.delivered && (
-                    <Text size="xsmall" className="text-ui-fg-subtle mt-1">
-                      na cestě
-                    </Text>
-                  )}
-                  {order.delivered && (
-                    <Text size="xsmall" className="text-ui-fg-subtle mt-1">
-                      doručeno
-                    </Text>
-                  )}
-                  {active === "naposta" && (
-                    <div className="mt-2">
-                      <Button
-                        size="small"
-                        isLoading={
-                          rowHandover.isPending &&
-                          rowHandover.variables === order.id
-                        }
-                        onClick={() => rowHandover.mutate(order.id)}
-                      >
-                        Předala jsem dopravci
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  {/* Nejdřív kolik objednávka dělá, pod tím slovem, jak je to
-                      s penězi (14. 11. 2026). Dřív „0 Kč z 719 Kč · nedoplaceno"
-                      — dvě čísla a zápor, ze kterých se stav teprve skládal. */}
-                  <Text size="small" weight="plus">
-                    {formatCzk(order.total)}
-                  </Text>
-                  {order.outstanding > 0 ? (
-                    <Text size="xsmall" className="text-ui-fg-error mt-1">
-                      {order.paid > 0 ? (
-                        <>
-                          Zaplaceno {formatCzk(order.paid)}
-                          <br />
-                          zbývá {formatCzk(order.outstanding)}
-                        </>
-                      ) : (
-                        `Nezaplaceno · ${formatCzk(order.outstanding)}`
-                      )}
-                    </Text>
-                  ) : unpaid ? (
-                    <Text size="xsmall" className="text-ui-fg-subtle mt-1">
-                      {order.is_personal_pickup
-                        ? "Zaplatí při vyzvednutí"
-                        : order.paid > 0 ? (
-                            <>
-                              Zaplaceno {formatCzk(order.paid)}
-                              <br />
-                              zbývá {formatCzk(Math.max(0, order.total - order.paid))}
-                            </>
-                          ) : (
-                            "Nezaplaceno"
-                          )}
-                    </Text>
-                  ) : (
-                    <Text size="xsmall" className="mt-1 text-ui-tag-green-text">
-                      Zaplaceno
-                    </Text>
-                  )}
-                </div>
-
-                <div className="min-w-0">
-                  {order.refunded > 0 && (
-                    <Text size="xsmall" className="text-ui-fg-subtle">
-                      vráceno {formatCzk(order.refunded)}
-                    </Text>
-                  )}
-                </div>
-
-                <div className="flex justify-start gap-2 lg:justify-end">
-                  <button
-                    type="button"
-                    className="text-ui-fg-interactive txt-small hover:underline"
-                    onClick={() =>
-                      setExpanded(expanded === order.id ? null : order.id)
-                    }
-                  >
-                    {expanded === order.id ? "Skrýt" : "Rozbalit"}
-                  </button>
-                  {order.made_to_order && (
-                    <ProductionDiary
-                      orderId={order.id}
-                      label={`#${order.display_id}`}
-                      trigger={
-                        <button
-                          type="button"
-                          className="text-ui-fg-interactive txt-small hover:underline"
-                        >
-                          Deník
-                        </button>
-                      }
-                    />
-                  )}
-                  <Link
-                    to={`/orders/${order.id}`}
-                    className="text-ui-fg-interactive txt-small hover:underline"
-                  >
-                    Detail
-                  </Link>
-                </div>
-              </article>
+                {nazev}
+              </Text>
+            ))}
+          </div>
+          {rows.map((order) => (
+            <Fragment key={order.id}>
+              <OrderListRow
+                order={order}
+                posta={active === "naposta"}
+                expert={expert}
+                selected={selected.has(order.id)}
+                onSelect={(checked) => {
+                  const next = new Set(selected);
+                  if (checked) {
+                    next.add(order.id);
+                  } else {
+                    next.delete(order.id);
+                  }
+                  setSelected(next);
+                }}
+                expanded={expanded === order.id}
+                onToggleExpanded={() =>
+                  setExpanded(expanded === order.id ? null : order.id)
+                }
+                handoverPending={
+                  rowHandover.isPending && rowHandover.variables === order.id
+                }
+                onHandover={() => rowHandover.mutate(order.id)}
+              />
               {expanded === order.id && (
                 <OrderExpansion orderId={order.id} madeToOrder={order.made_to_order} />
               )}
-              </Fragment>
-            );
-          })}
+            </Fragment>
+          ))}
         </div>
       )}
 

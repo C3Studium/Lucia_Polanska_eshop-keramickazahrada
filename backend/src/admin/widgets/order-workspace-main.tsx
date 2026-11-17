@@ -5,7 +5,6 @@ import { useWideLayout } from "../components/order-section";
 import { useHideNativeCardsBefore } from "../lib/native-cards";
 import { adminQueryClient } from "../lib/query-client";
 import { MadeToOrderPanel } from "./made-to-order-order";
-import { OrderCommissionCustomerPanel } from "./order-commission-customer";
 import { OrderCustomerPanel } from "./order-customer";
 import { OrderEmailsPanel } from "./order-emails";
 import { OrderGiftVouchersPanel } from "./order-gift-vouchers";
@@ -19,8 +18,9 @@ import { OrderNowPanels } from "./order-workspace";
  *
  * Shora dolů, jak to majitelka čte (přání 17. 11. 2026):
  *
- *  1. zakázka — zadání od zákazníka, poznámky a ceny (jen když zakázka je),
- *  2. Zákazník — kdo a kam,
+ *  1. Zákazník — kdo a kam,
+ *  2. zakázka — cena a potvrzení, pod tím zadání od zákazníka a interní
+ *     poznámka, pak platby (jen když zakázka je),
  *  3. nativní Medusa: číslo objednávky, položky a souhrn (karty Platby
  *     a Nesplněné položky jen v expertním režimu — opakují Souhrn a Postup),
  *  4. Faktura, poukazy, výrobky na rozměr,
@@ -42,9 +42,8 @@ const OrderWorkspaceMain = ({ order }: { order: AdminOrder }) => {
     <>
       <div className="flex flex-col gap-y-3" style={{ order: -1 }}>
         {!wide && <OrderNowPanels order={order} />}
-        <OrderCommissionCustomerPanel order={order} />
-        <MadeToOrderPanel order={order} />
         <OrderCustomerPanel order={order} />
+        <MadeToOrderPanel order={order} />
       </div>
       <div ref={bottom} className="flex flex-col gap-y-3">
         <OrderInvoicePanel order={order} />

@@ -11,7 +11,7 @@ import {
   toast,
 } from "@medusajs/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { SettleBalanceOffline } from "../components/production-order-actions";
 import {
   AgreedPriceBlock,
@@ -23,6 +23,7 @@ import { sdk } from "../lib/sdk";
 import { ceskaChyba } from "../lib/ceska-chyba";
 import { reloadOrderPageSoon } from "../lib/reload-order-page";
 import { PanelError } from "../components/panel-error";
+import { OrderCommissionCustomerPanel } from "./order-commission-customer";
 import { maZakazkovouPolozku } from "../lib/order-commission";
 import {
   productionStageMeta as stageMeta,
@@ -173,8 +174,11 @@ const CommissionCard = ({
   index,
   count,
   stepHere,
+  brief,
 }: {
   order: AdminOrder;
+  /** Zadání od zákazníka vložené do karty (jen u jediné zakázky). */
+  brief?: ReactNode;
   commission: ProductionOrder;
   /** Kolikátá zakázka objednávky (od nuly) — do záhlaví karty. */
   index: number;
@@ -675,6 +679,9 @@ const CommissionCard = ({
         </div>
       </div>
 
+      {/* Zadání od zákazníka hned pod cenou a potvrzením (17. 11. 2026). */}
+      {brief}
+
       {/* Cena po domluvě — blok u KAŽDÉ takové zakázky (položky) zvlášť. */}
       {commission.price_on_request && (
         <div className="px-6 py-5">
@@ -843,8 +850,17 @@ export const MadeToOrderPanel = ({ order }: { order: AdminOrder }) => {
           index={index}
           count={commissions.length}
           stepHere={stepHere}
+          brief={
+            commissions.length === 1 ? (
+              <div>
+                <OrderCommissionCustomerPanel order={order} embedded />
+              </div>
+            ) : undefined
+          }
         />
       ))}
+      {/* Víc zakázek: zadání s přepínačem kusů zvlášť pod kartami. */}
+      {commissions.length > 1 && <OrderCommissionCustomerPanel order={order} />}
     </div>
   );
 };
