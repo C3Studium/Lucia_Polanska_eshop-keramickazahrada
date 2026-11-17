@@ -1,6 +1,7 @@
 import { Heading, Skeleton, Text, clx } from "@medusajs/ui";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { useElementWidth } from "./order-section";
 import { useUrlState } from "../lib/url-state";
 import { sdk } from "../lib/sdk";
 
@@ -126,9 +127,13 @@ const RevenueChart = ({
   currency: string;
 }) => {
   const max = Math.max(1, ...series.map((point) => point.revenue));
-  const every = Math.max(1, Math.ceil(series.length / 12));
+  /* Popisků jen tolik, kolik se jich vejde (~56 px na „30. 10.") — na
+     telefonu se dřív slévaly do „1030. 102. 11." (17. 11. 2026). */
+  const [box, width] = useElementWidth<HTMLDivElement>();
+  const fit = width > 0 ? Math.max(2, Math.floor(width / 56)) : 12;
+  const every = Math.max(1, Math.ceil(series.length / Math.min(12, fit)));
   return (
-    <div>
+    <div ref={box} className="min-w-0">
       <div className="flex h-40 items-end gap-[2px]" role="img" aria-label="Tržby v čase">
         {series.map((point) => {
           const height = point.revenue > 0 ? Math.max(3, (point.revenue / max) * 100) : 0;
@@ -227,7 +232,7 @@ export const ShopOverview = () => {
           Statistiky se teď nepodařilo načíst.
         </Text>
       ) : isLoading || !data ? (
-        <div className="grid gap-px bg-ui-border-base sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-px bg-ui-border-base sm:grid-cols-2 xl:grid-cols-4">
           {[0, 1, 2, 3].map((index) => (
             <div key={index} className="bg-ui-bg-base px-6 py-5">
               <Skeleton className="h-16 rounded-lg" />
@@ -236,7 +241,7 @@ export const ShopOverview = () => {
         </div>
       ) : (
         <>
-          <div className="grid gap-px bg-ui-border-base sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-px bg-ui-border-base sm:grid-cols-2 xl:grid-cols-4">
             <Metric
               label="Tržby"
               value={kc(data.orders.revenue, currency)}
@@ -279,7 +284,7 @@ export const ShopOverview = () => {
             </div>
           )}
 
-          <div className="grid gap-px bg-ui-border-base lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+          <div className="grid grid-cols-1 gap-px bg-ui-border-base lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
             <div className="bg-ui-bg-base px-6 py-5">
               <Text size="small" weight="plus">
                 Nejprodávanější
@@ -311,12 +316,16 @@ export const ShopOverview = () => {
                         <Text size="small" weight="plus" className="min-w-0 flex-1 truncate">
                           {product.title}
                         </Text>
-                        <Text size="small" className="text-ui-fg-subtle tabular-nums">
-                          {cislo(product.quantity)} ks
-                        </Text>
-                        <Text size="small" weight="plus" className="w-24 text-right tabular-nums">
-                          {kc(product.revenue, currency)}
-                        </Text>
+                        {/* Na telefonu kusy a částka pod sebou — název pak
+                            nekončí na „Sandbo…" (17. 11. 2026). */}
+                        <div className="flex shrink-0 flex-col items-end sm:flex-row sm:items-center sm:gap-x-3">
+                          <Text size="small" weight="plus" className="text-right tabular-nums sm:order-2 sm:w-24">
+                            {kc(product.revenue, currency)}
+                          </Text>
+                          <Text size="small" className="text-ui-fg-subtle tabular-nums sm:order-1">
+                            {cislo(product.quantity)} ks
+                          </Text>
+                        </div>
                       </Link>
                     </li>
                   ))}

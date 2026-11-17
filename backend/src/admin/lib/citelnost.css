@@ -109,3 +109,72 @@ html:not([data-kz-expert="1"]) nav div:has(> div.w-full > a:is(
   flex: 1 1 11rem;
   min-width: 0;
 }
+
+/*
+ * Grid se na telefonu nesmí roztáhnout přes šířku (17. 11. 2026).
+ * `grid` bez `grid-cols-*` (na telefonu jeden sloupec) má implicitní
+ * stopu `auto` a buňka s `min-width: auto` ji natáhne podle nejdelšího
+ * nezalomitelného textu (název produktu, „Tržby — 12 měsíců…") — hlavní
+ * plocha adminu se pak posouvala do strany (Přehled 584 px, Statistiky
+ * 507 px, Kolekce 450 px na 390px telefonu). S `min-width: 0` se buňka
+ * vejde do sloupce a dlouhý text se zalomí nebo zkrátí (`truncate`).
+ */
+main .grid > * {
+  min-width: 0;
+}
+
+/*
+ * Nativní Souhrn objednávky na telefonu (17. 11. 2026). Řádek položky je
+ * mřížka „produkt | cena · počet · celkem" a na 390 px se sloupce slévaly
+ * („1x2 400,00 Kč", přes ně „Přiděleno"). Na úzkém displeji jdou čísla
+ * na vlastní řádek pod název, zarovnaná doprava; když se nevejdou, zalomí se.
+ */
+@media (max-width: 639px) {
+  [data-kz-card="souhrn"] .grid.grid-cols-2.px-6 {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0.5rem;
+  }
+  [data-kz-card="souhrn"] .grid.grid-cols-2.px-6 > .grid.grid-cols-3 {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.25rem 1rem;
+  }
+}
+
+/*
+ * Tabulka na telefonu jako řádky (17. 11. 2026) — obal s `kz-stack`.
+ * Reklamace měly osm sloupců (946 px) a na telefonu se posouvaly do
+ * strany. Na úzkém displeji zmizí hlavička a buňky jednoho řádku jdou za
+ * sebou a zalamují se; první buňka (číslo) je tučně, poslední (šipka)
+ * vpravo. Klik na řádek funguje dál.
+ */
+@media (max-width: 639px) {
+  .kz-stack thead {
+    display: none;
+  }
+  .kz-stack table,
+  .kz-stack tbody {
+    display: block;
+    width: 100%;
+  }
+  .kz-stack tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.75rem;
+    padding: 0.75rem 1.5rem;
+    height: auto;
+  }
+  .kz-stack tbody td {
+    display: block;
+    height: auto;
+    /* !important: Medusa dává krajním buňkám pl-6/pr-6 přes
+       [&:first-child], a to má vyšší specifičnost. */
+    padding: 0 !important;
+    border: 0;
+  }
+  .kz-stack tbody td:last-child {
+    margin-left: auto;
+  }
+}
