@@ -256,8 +256,6 @@ const PoukazyInner = () => {
         </Button>
       </header>
 
-      <VoucherLimits />
-
       {!noVouchersAtAll && (
         <div className="grid gap-3 px-6 py-4 sm:grid-cols-3">
           {summary ? (
@@ -365,6 +363,9 @@ const PoukazyInner = () => {
         </>
       )}
 
+      {/* Nastavení se mění jednou za čas — dole a sbalené (17. 11. 2026). */}
+      <VoucherLimits />
+
       <GiftVoucherCreateDrawer
         open={createOpen}
         onOpenChange={setCreateOpen}
@@ -422,6 +423,7 @@ const VoucherLimits = () => {
   });
 
   const [draft, setDraft] = useState<{ min: string; max: string; step: string } | null>(null);
+  const [open, setOpen] = useState(false);
   const limits = data?.limits;
   const hodnoty = draft ?? {
     min: String(limits?.min ?? ""),
@@ -464,11 +466,39 @@ const VoucherLimits = () => {
   const zmeneno =
     cisla[0] !== limits?.min || cisla[1] !== limits?.max || cisla[2] !== limits?.step;
 
+  const kc = (value?: number) => (value ?? 0).toLocaleString("cs-CZ");
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="hover:bg-ui-bg-base-hover flex w-full items-center justify-between gap-x-3 px-6 py-4 text-left transition-colors"
+      >
+        <div>
+          <Text size="small" weight="plus">
+            Poukaz s vlastní částkou
+          </Text>
+          <Text size="small" className="text-ui-fg-subtle">
+            Zákazník volí {kc(limits?.min)}–{kc(limits?.max)} Kč po {kc(limits?.step)} Kč
+          </Text>
+        </div>
+        <Text size="small" className="text-ui-fg-interactive">
+          Změnit
+        </Text>
+      </button>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-y-2 px-6 py-4">
-      <Text size="small" weight="plus">
-        Poukaz s vlastní částkou — od kolika do kolika
-      </Text>
+      <div className="flex items-center justify-between gap-x-3">
+        <Text size="small" weight="plus">
+          Poukaz s vlastní částkou — od kolika do kolika
+        </Text>
+        <Button size="small" variant="transparent" onClick={() => { setDraft(null); setOpen(false); }}>
+          Zavřít
+        </Button>
+      </div>
       <Text size="xsmall" className="text-ui-fg-subtle">
         Platí pro „{data.product.title}" v obchodě: zákazník si zvolí částku
         v těchhle mezích a po tomhle kroku.
