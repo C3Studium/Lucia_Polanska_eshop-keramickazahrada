@@ -99,6 +99,20 @@ export const planCommissions = (input: {
   const items = (input.orderItems ?? []).filter(Boolean)
   const used = new Set<string>()
   const matchItem = (line: any): any | null => {
+    /*
+     * Řádek objednávky přímo podle id — zakázka z poptávky (17. 11. 2026,
+     * `lib/commission-inquiry-order.ts`) nemá variantu ani výrobek, snímek
+     * nese rovnou id řádku OBJEDNÁVKY. Pokladní snímek nese id řádku
+     * košíku, které se s řádkem objednávky nikdy neshoduje — tam tohle
+     * nenajde nic a páruje se dál podle varianty jako dřív.
+     */
+    const byId = items.find(
+      (item) => !used.has(item.id) && line?.line_item_id && item.id === line.line_item_id
+    )
+    if (byId) {
+      used.add(byId.id)
+      return byId
+    }
     const byVariant = items.find(
       (item) => !used.has(item.id) && line?.variant_id && item.variant_id === line.variant_id
     )

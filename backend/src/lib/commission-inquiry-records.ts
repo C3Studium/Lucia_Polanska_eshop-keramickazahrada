@@ -21,6 +21,10 @@ import { productLink } from "./storefront-url"
  *   že se text a čtení nerozejdou).
  * - **Stav**: `data.inquiry_status`. Bez něj = „Nová". Zvonek čte jen
  *   `data.title`/`data.description`, další klíče mu nevadí.
+ * - **Objednávka**: `data.inquiry_order` (`{ order_id, display_id,
+ *   created_at }`) — když z poptávky majitelka založila objednávku
+ *   (`lib/commission-inquiry-order.ts`). Podle ní se druhá objednávka
+ *   odmítne a stránka místo tlačítka ukáže odkaz na objednávku.
  *
  * Čisté funkce nahoře jdou do unit testu bez kontejneru; dvě funkce dole
  * sahají na notifikační modul.
@@ -75,6 +79,16 @@ export type InquiryRecord = {
   product_url: string | null
   photo_urls: string[]
   photos_failed: number
+  /** Objednávka založená z poptávky (jen když existuje). */
+  order_id?: string
+  order_display_id?: number | null
+}
+
+/** Co se ukládá do `data.inquiry_order`, když z poptávky vznikne objednávka. */
+export type InquiryOrderRef = {
+  order_id: string
+  display_id: number | null
+  created_at: string
 }
 
 const clean = (value: unknown): string => (typeof value === "string" ? value.trim() : "")
@@ -192,6 +206,25 @@ const asStored = (value: unknown): StoredInquiry | null => {
   return candidate as StoredInquiry
 }
 
+/** Objednávka z `data.inquiry_order`, nebo `null`. */
+export const inquiryOrderOf = (
+  data: Record<string, unknown> | null | undefined
+): InquiryOrderRef | null => {
+  const ref = data?.inquiry_order as Partial<InquiryOrderRef> | null | undefined
+  if (!ref || typeof ref !== "object" || !clean(ref.order_id)) return null
+  const display = Number(ref.display_id)
+  return {
+    order_id: clean(ref.order_id),
+    display_id: Number.isFinite(display) && display > 0 ? display : null,
+    created_at: clean(ref.created_at),
+  }
+}
+
+const orderFields = (data: Record<string, unknown>) => {
+  const ref = inquiryOrderOf(data)
+  return ref ? { order_id: ref.order_id, order_display_id: ref.display_id } : {}
+}
+
 const isoOf = (value: string | Date | null | undefined): string => {
   const date = value instanceof Date ? value : new Date(value ?? "")
   return Number.isNaN(date.getTime()) ? "" : date.toISOString()
@@ -225,6 +258,7 @@ export const inquiryFromNotification = (
       product_url: productLink(orNull(stored.product_handle)) || null,
       photo_urls: photos,
       photos_failed: Number(stored.photos_failed) || 0,
+      ...orderFields(data),
     }
   }
 
@@ -235,6 +269,7 @@ export const inquiryFromNotification = (
     received_at: isoOf(notification.created_at),
     status,
     ...parsed,
+    ...orderFields(data),
   }
 }
 
@@ -274,6 +309,19 @@ export const withInquiryStatus = (
   data: Record<string, unknown> | null | undefined,
   status: InquiryStatus
 ): Record<string, unknown> => ({ ...(data ?? {}), inquiry_status: status })
+
+/**
+ * Nová data položky s objednávkou: poptávka je tím vyřízená (stav „done"),
+ * ostatní klíče zůstanou.
+ */
+export const withInquiryOrder = (
+  data: Record<string, unknown> | null | undefined,
+  ref: InquiryOrderRef
+): Record<string, unknown> => ({
+  ...(data ?? {}),
+  inquiry_order: ref,
+  inquiry_status: "done",
+})
 
 /** Nová data položky s údaji poptávky — ostatní klíče i stav zůstanou. */
 export const withStoredInquiry = (
@@ -331,6 +379,30 @@ export const setInquiryStatus = async (
   const row = await findInquiryNotification(container, { id })
   if (!row) return null
   const data = withInquiryStatus(row.data, status)
+  await notificationStore(container).updateNotifications({ id: row.id, data })
+  return inquiryFromNotification({ ...row, data })
+}
+
+/** Poptávka podle id i se syrovými daty položky (kvůli objednávce z ní). */
+export const getInquiry = async (
+  container: MedusaContainer,
+  id: string
+): Promise<{ record: InquiryRecord; data: Record<string, unknown> } | null> => {
+  const row = await findInquiryNotification(container, { id })
+  if (!row) return null
+  const record = inquiryFromNotification(row)
+  return record ? { record, data: row.data ?? {} } : null
+}
+
+/** Zapíše k poptávce založenou objednávku a označí ji jako vyřízenou. */
+export const setInquiryOrder = async (
+  container: MedusaContainer,
+  id: string,
+  ref: InquiryOrderRef
+): Promise<InquiryRecord | null> => {
+  const row = await findInquiryNotification(container, { id })
+  if (!row) return null
+  const data = withInquiryOrder(row.data, ref)
   await notificationStore(container).updateNotifications({ id: row.id, data })
   return inquiryFromNotification({ ...row, data })
 }

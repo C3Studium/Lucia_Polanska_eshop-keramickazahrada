@@ -14,9 +14,10 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { PhotoGallery } from "../../../components/claims/photo-lightbox";
 import { EmptyState } from "../../../components/empty-state";
+import { InquiryOrderDrawer } from "../../../components/inquiry-order-drawer";
 import { SubTabs, WorkTabs } from "../../../components/work-tabs";
 import { ceskaChyba } from "../../../lib/ceska-chyba";
 import { formatDateTime } from "../../../lib/format";
@@ -53,6 +54,9 @@ type Inquiry = {
   product_url: string | null;
   photo_urls: string[];
   photos_failed: number;
+  /** Objednávka založená z poptávky (17. 11. 2026). */
+  order_id?: string;
+  order_display_id?: number | null;
 };
 
 type InquiriesResponse = {
@@ -219,7 +223,21 @@ const InquiryCard = ({ inquiry }: { inquiry: Inquiry }) => (
     </div>
 
     <div className="flex flex-col items-start gap-y-3 lg:items-end">
-      <Button size="small" variant={inquiry.status === "new" ? "primary" : "secondary"} asChild>
+      {/* Z poptávky rovnou objednávka se zakázkou (17. 11. 2026); když už
+          vznikla, místo tlačítka odkaz na ni. */}
+      {inquiry.order_id ? (
+        <Button size="small" variant="secondary" asChild>
+          <Link to={`/orders/${inquiry.order_id}`}>
+            Objednávka {inquiry.order_display_id ? `#${inquiry.order_display_id}` : ""} →
+          </Link>
+        </Button>
+      ) : (
+        <InquiryOrderDrawer
+          inquiry={inquiry}
+          trigger={<Button size="small">Vytvořit objednávku</Button>}
+        />
+      )}
+      <Button size="small" variant="secondary" asChild>
         <a href={replyHref(inquiry)}>Odpovědět e-mailem</a>
       </Button>
       <StatusButtons inquiry={inquiry} />

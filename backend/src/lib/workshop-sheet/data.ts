@@ -278,7 +278,11 @@ const sheetItems = (order: any, commissionIds: Set<string>): SheetItem[] => {
     const service = isServiceLine(item)
     const quantity = lineQuantityOf(item) || 1
     const unit = toNumber(item?.unit_price)
-    const onRequest = !service && unit <= 0.005 && isPriceOnRequest(item?.product?.metadata)
+    // Řádek zakázky z poptávky nemá výrobek — příznak nese sám (lib/commission-inquiry-order).
+    const onRequest =
+      !service &&
+      unit <= 0.005 &&
+      (isPriceOnRequest(item?.product?.metadata) || isPriceOnRequest(item?.metadata))
     return {
       title: service
         ? text(item?.title) || "Balné"
