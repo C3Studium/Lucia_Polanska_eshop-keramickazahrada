@@ -57,6 +57,25 @@ const toNumber = (value: unknown): number => {
 }
 
 /** Region s Českem (CZK) a výchozí prodejní kanál obchodu. */
+/**
+ * Zákazník s účtem na webu (registrovaný, ne host) se stejným e-mailem.
+ * Hostovské záznamy se přeskočí — objednávka bez účtu je běžná a host
+ * ji vidí přes odkaz v e-mailu. Selhání hledání objednávku nezastaví.
+ */
+const accountCustomerId = async (
+  container: MedusaContainer,
+  email: string
+): Promise<string | null> => {
+  try {
+    const customers = (await container
+      .resolve(Modules.CUSTOMER)
+      .listCustomers({ email: email.trim().toLowerCase() } as never)) as any[]
+    return customers.find((customer) => customer?.has_account)?.id ?? null
+  } catch {
+    return null
+  }
+}
+
 const shopContext = async (container: MedusaContainer) => {
   const regionModule: any = container.resolve(Modules.REGION)
   const regions: any[] = await regionModule.listRegions({}, { relations: ["countries"], take: 50 })
@@ -118,11 +137,15 @@ export const createOrderFromInquiry = async (
   }
 
   const { region, salesChannelId } = await shopContext(container)
+  const customerId = await accountCustomerId(container, plan.email)
 
   // 1) Objednávka.
   const { result: created } = await createOrderWorkflow(container).run({
     input: {
       region_id: region.id,
+      // Má-li zákazník na webu účet se stejným e-mailem, objednávka se mu
+      // ukáže v „Moje objednávky" jako každá jiná (17. 11. 2026).
+      ...(customerId ? { customer_id: customerId } : {}),
       ...(salesChannelId ? { sales_channel_id: salesChannelId } : {}),
       email: plan.email,
       currency_code: String(region.currency_code ?? "czk").toLowerCase(),

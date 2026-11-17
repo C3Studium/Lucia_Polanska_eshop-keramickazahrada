@@ -29,7 +29,8 @@ import type MerchantOrderModuleService from "../../../../modules/merchant-order/
  * showing them as one number is how a pickup order that authorized-but-not-
  * captured gets shipped.
  *
- * Filters: `?stage=`, `?q=` (e-mail or order number), `?owing=true`,
+ * Filters: `?stage=`, `?q=` (e-mail, order number or product name),
+ * `?kind=goods|commission` (jen výrobky / jen zakázky), `?owing=true`,
  * `?limit/offset`.
  */
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
@@ -47,6 +48,89 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     typeof req.query.stage === "string" ? req.query.stage : null
   const searchParam =
     typeof req.query.q === "string" ? req.query.q.trim() : ""
+  const kindParam =
+    req.query.kind === "goods" || req.query.kind === "commission"
+      ? req.query.kind
+      : null
+
+  /*
+   * Druh objednávky (17. 11. 2026): Objednávky mají nahoře Vše · Výrobky ·
+   * Zakázky — samostatná stránka Zakázky skončila. Zakázka = objednávka,
+   * ke které existuje výrobní příkaz; těch je málo, tak se načtou celé
+   * (stejně je potřebují počty „Čeká na doplatek").
+   */
+  const allProduction = (await madeToOrder.listProductionOrders(
+    {} as never
+  )) as any[]
+  const commissionOrderIds = [
+    ...new Set(
+      allProduction.map((production) => production.order_id).filter(Boolean)
+    ),
+  ] as string[]
+  /*
+   * U zakázek se filtruje podle fáze VÝROBY (`?production=a,b`), ne podle
+   * fáze obchodu — „Nové zadání", „Ve výrobě", „Čeká na doplatek" jsou to,
+   * co u zakázky zajímá. Objednávka se počítá, když v té fázi stojí aspoň
+   * jedna její živá zakázka.
+   */
+  const productionParam =
+    typeof req.query.production === "string"
+      ? req.query.production.split(",").map((s) => s.trim()).filter(Boolean)
+      : []
+  const ordersInProduction = (stages: string[]) => [
+    ...new Set(
+      allProduction
+        .filter((production) => stages.includes(production.stage))
+        .map((production) => production.order_id)
+        .filter(Boolean)
+    ),
+  ] as string[]
+  const productionCounts: Record<string, number> = {}
+  for (const stage of new Set(allProduction.map((p) => String(p.stage)))) {
+    productionCounts[stage] = ordersInProduction([stage]).length
+  }
+  const commissionScope = productionParam.length
+    ? ordersInProduction(productionParam)
+    : commissionOrderIds
+  /** Filtr podle druhu nad sloupcem s id objednávky (`id` / `order_id`). */
+  const kindFilter = (column: "id" | "order_id"): Record<string, unknown> => {
+    if (kindParam === "commission") {
+      return {
+        [column]: commissionScope.length ? commissionScope : ["__zadna__"],
+      }
+    }
+    if (kindParam === "goods" && commissionOrderIds.length) {
+      return { [column]: { $nin: commissionOrderIds } }
+    }
+    return {}
+  }
+
+  /*
+   * Hledání i podle výrobku (17. 11. 2026): „kdo si koupil hrnek Levandule?"
+   * Názvy jsou na řádcích objednávky (order_line_item), k objednávce je váže
+   * order_item — tuhle cestu query.graph filtrem neumí, tak přímo SQL.
+   */
+  const productMatchIds = async (): Promise<string[]> => {
+    if (searchParam.length < 2) return []
+    try {
+      const pg = req.scope.resolve(ContainerRegistrationKeys.PG_CONNECTION) as any
+      const needle = `%${searchParam.replace(/[%_]/g, (c) => `\\${c}`)}%`
+      const rows = await pg("order_item as oi")
+        .join("order_line_item as li", "li.id", "oi.item_id")
+        .whereNull("oi.deleted_at")
+        .andWhere((builder: any) =>
+          builder
+            .whereILike("li.title", needle)
+            .orWhereILike("li.product_title", needle)
+        )
+        .distinct("oi.order_id")
+        .limit(500)
+      return (rows as any[]).map((row) => row.order_id).filter(Boolean)
+    } catch {
+      return []
+    }
+  }
+  const productIds = await productMatchIds()
 
   const ORDER_FIELDS = [
     "id",
@@ -97,6 +181,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     const conditions: Record<string, unknown>[] = [
       { email: { $ilike: `%${searchParam}%` } },
     ]
+    if (productIds.length) {
+      conditions.push({ id: productIds })
+    }
     const numeric = Number(searchParam.replace(/^#/, ""))
     if (Number.isInteger(numeric) && numeric > 0) {
       conditions.push({ display_id: numeric })
@@ -112,7 +199,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     // fetch exactly those orders (same pattern as /admin/merchant-orders).
     const [states, stateCount] =
       await merchantOrders.listAndCountMerchantOrderStates(
-        { stage: stageParam } as never,
+        { stage: stageParam, ...kindFilter("order_id") } as never,
         searchParam
           ? { take: 1000, order: { created_at: "DESC" } }
           : { take: limit, skip: offset, order: { created_at: "DESC" } }
@@ -124,15 +211,15 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         entity: "order",
         fields: ORDER_FIELDS,
         filters: { id: stageOrderIds, ...searchFilters() } as never,
-        ...(searchParam
-          ? {
-              pagination: {
-                take: limit,
-                skip: offset,
-                order: { created_at: "DESC" },
-              },
-            }
-          : {}),
+        // Vždy nejnovější nahoře — bez řazení vracela databáze stránku
+        // v libovolném pořadí (#44, #48, #49… místo #53, #51…).
+        pagination: searchParam
+          ? { take: limit, skip: offset, order: { created_at: "DESC" } }
+          : {
+              take: stageOrderIds.length,
+              skip: 0,
+              order: { created_at: "DESC" },
+            },
       })) as any
       orders = result.data
       if (searchParam) {
@@ -146,7 +233,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     const result = (await query.graph({
       entity: "order",
       fields: ORDER_FIELDS,
-      filters: { ...searchFilters() } as never,
+      filters: { ...kindFilter("id"), ...searchFilters() } as never,
       pagination: {
         // The owing filter needs the money computed first — scan a wider
         // window so it has something real to filter (MTO orders are few).
@@ -279,6 +366,22 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         stage_changed_at: state?.stage_changed_at ?? null,
         made_to_order: Boolean(production),
         production_stage: production?.stage ?? null,
+        /* Domluvená cena zakázek (cena + příplatek + poštovné + balné).
+           Objednávka z poptávky nebo s cenou po domluvě má v Meduse řádek
+           za 0 Kč — seznam pak ukáže tuhle částku, ne „0 Kč". */
+        commission_total: round(
+          commissions
+            .filter((candidate) => candidate.stage !== "cancelled")
+            .reduce(
+              (sum, candidate) =>
+                sum +
+                toNumber(candidate.agreed_total ?? candidate.original_total) +
+                toNumber(candidate.surcharge) +
+                toNumber(candidate.shipping_total) +
+                toNumber(candidate.packaging_total),
+              0
+            )
+        ),
         commissions_count: commissions.length,
         outstanding,
         is_personal_pickup: isPickup,
@@ -300,16 +403,13 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       async (stage) => {
         const [, stageCount] =
           await merchantOrders.listAndCountMerchantOrderStates(
-            { stage } as never,
+            { stage, ...kindFilter("order_id") } as never,
             { take: 1 }
           )
         return [stage, stageCount] as const
       }
     )
   )
-  const allProduction = (await madeToOrder.listProductionOrders(
-    {} as never
-  )) as any[]
   const allProductionIds = allProduction.map((production) => production.id)
   const allRequests = allProductionIds.length
     ? ((await madeToOrder.listProductionPaymentRequests({
@@ -336,17 +436,35 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   ).size
 
   // The „Vše" badge counts the whole shop regardless of the active filter.
-  const allOrdersResult = (await query.graph({
-    entity: "order",
-    fields: ["id"],
-    pagination: { take: 1, skip: 0 },
-  })) as any
+  const countOrders = async (filters: Record<string, unknown>) =>
+    (((await query.graph({
+      entity: "order",
+      fields: ["id"],
+      filters: filters as never,
+      pagination: { take: 1, skip: 0 },
+    })) as any).metadata?.count ?? 0) as number
+  const [allCount, goodsCount] = await Promise.all([
+    countOrders({}),
+    commissionOrderIds.length
+      ? countOrders({ id: { $nin: commissionOrderIds } })
+      : countOrders({}),
+  ])
   const counts = {
-    vse: allOrdersResult.metadata?.count ?? totalCount,
+    vse:
+      kindParam === "commission"
+        ? commissionOrderIds.length
+        : kindParam === "goods"
+          ? goodsCount
+          : allCount,
     ...Object.fromEntries(stageCountEntries),
-    dluzi: dluziCount,
+    dluzi: kindParam === "goods" ? 0 : dluziCount,
   }
-
+  /* Počty pro přepínač Vše · Výrobky · Zakázky — nezávisle na stavu. */
+  const kinds = {
+    vse: allCount,
+    goods: goodsCount,
+    commission: commissionOrderIds.length,
+  }
   const rows = mappedAll.filter((row) => {
       if (owingOnly && row.outstanding <= 0) return false
       return true
@@ -354,6 +472,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
   res.status(200).json({
     counts,
+    kinds,
+    production_counts: productionCounts,
     orders: rows,
     /* Total matching the ACTIVE filter — the UI can page beyond this response. */
     count: totalCount,

@@ -1,4 +1,5 @@
 import { Text, clx } from "@medusajs/ui";
+import { Fragment } from "react";
 
 /**
  * The tab bar across the whole Přehled section.
@@ -57,26 +58,35 @@ export type SubTab = {
   label: string;
   /** Rendered as a count. Omit where a number would be noise. */
   count?: number;
+  /** Svislá čárka před záložkou — „tohle je jiná věc" (např. Poptávky). */
+  separated?: boolean;
 };
 
 export const SubTabs = ({
   tabs,
   active,
   onSelect,
+  bare = false,
 }: {
   tabs: SubTab[];
   active: string;
   onSelect: (key: string) => void;
+  /** Bez vlastního okraje — do záhlaví vedle nadpisu. */
+  bare?: boolean;
 }) => (
   /* Nízký segmentový přepínač (17. 11. 2026) — stejný jako záložky
      Produkty+ a období na Přehledu. Dřív řada vysokých karet, která na
      každé stránce zabírala skoro sto pixelů. */
-  <div className="px-6 py-3">
-    <div className="bg-ui-bg-subtle inline-flex max-w-full flex-wrap gap-0.5 rounded-lg p-0.5">
+  <div className={bare ? "min-w-0 max-w-full" : "px-6 py-3"}>
+    <div className="bg-ui-bg-subtle inline-flex max-w-full flex-wrap items-center gap-0.5 rounded-lg p-0.5">
       {tabs.map((tab) => {
         const isActive = tab.key === active;
 
         return (
+          <Fragment key={tab.key}>
+          {tab.separated && (
+            <span aria-hidden className="bg-ui-border-strong mx-1 h-5 w-px" />
+          )}
           <button
             key={tab.key}
             type="button"
@@ -102,6 +112,7 @@ export const SubTabs = ({
               </Text>
             )}
           </button>
+          </Fragment>
         );
       })}
     </div>
