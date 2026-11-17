@@ -83,7 +83,7 @@ export const TEXTY_DEFAULTS = {
   "pokladna.cena_po_domluve_nula":
     "Teď se nic neplatí. Až spolu domluvíme cenu, pošlu vám ji e-mailem — i s poštovným, pokud si kus necháte poslat — a zaplatíte zálohu nebo celou částku.",
   "pokladna.doprava_krehke":
-    "Vybrali jste křehký kus. Aby dorazil v pořádku, posíláme ho jen jako křehký balík Českou poštou — nebo si pro něj můžete přijet do ateliéru.",
+    "Vybrali jste křehký kus. Aby dorazil v pořádku, pošleme ho jako křehký balík — Českou poštou nebo Balíkovnou na adresu, s příplatkem za křehké. Nebo si pro něj můžete přijet do ateliéru.",
   "pokladna.doprava_zakazka":
     "Zakázkovou výrobu posíláme jen jako křehký balík. Nebo si pro ni můžete přijet do ateliéru.",
   "pokladna.doprava_cena_po_domluve":

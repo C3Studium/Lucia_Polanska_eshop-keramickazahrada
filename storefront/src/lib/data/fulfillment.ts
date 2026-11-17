@@ -24,7 +24,7 @@ export const listCartShippingMethods = async (cartId: string) => {
              like a carrier shipment, Osobní odběr fell into the courier list, and the
              pickup picker below it never appeared at all. */
           fields:
-            "+service_zone.fulfillment_set.type,*service_zone.fulfillment_set.location.address",
+            "+data,+service_zone.fulfillment_set.type,*service_zone.fulfillment_set.location.address",
         },
         headers,
         next,

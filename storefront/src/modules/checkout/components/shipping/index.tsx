@@ -38,6 +38,7 @@ import { editableItem } from "@modules/common/components/cms-text"
 import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
 import { isMadeToOrderLine } from "@lib/util/commission"
 import { shippingKindAllowed } from "@lib/util/shipping-kinds"
+import { cartHasFragile } from "@lib/util/fragile"
 import { useTexty } from "@lib/context/texty"
 import { DOPRAVA_TEXT_KEY } from "@lib/util/fragile"
 
@@ -742,6 +743,28 @@ const Shipping: React.FC<ShippingProps> = ({
                                 {restrictionRowHint[restriction]}
                               </span>
                             )}
+                            {/* Rozpad ceny u křehkého košíku (17. 11. 2026,
+                                Matěj): základ dopravy + příplatek za křehké
+                                zvlášť, ne jen součet. Příplatek z cen volby
+                                (data.rates), základ = cena − příplatek. */}
+                            {(() => {
+                              const total = calculatedPricesMap[option.id]
+                              const fee = Number((option as any)?.data?.rates?.fragile) || 0
+                              if (
+                                option.price_type !== "calculated" ||
+                                typeof total !== "number" ||
+                                fee <= 0 ||
+                                !cartHasFragile(cart as never)
+                              )
+                                return null
+                              const money = (amount: number) =>
+                                convertToLocale({ amount, currency_code: cart?.currency_code })
+                              return (
+                                <span className={styles.methodText}>
+                                  Doprava {money(total - fee)} + příplatek za křehké {money(fee)}
+                                </span>
+                              )
+                            })()}
                             {!blockedByRestriction &&
                               option.insufficient_inventory && (
                                 <span className={styles.methodText}>
