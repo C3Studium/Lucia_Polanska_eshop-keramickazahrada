@@ -1542,13 +1542,13 @@ const OrdersInner = () => {
 
   return (
     <Container className="divide-y p-0">
-      <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
-        <div>
+      {/* Co nejnižší záhlaví (17. 11. 2026): nadpis a hledání v jednom
+          řádku, popis jedna věta. */}
+      <header className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
+        <div className="min-w-0">
           <Heading>Objednávky</Heading>
-          <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
-            Každá objednávka s penězi, stavem výroby i dopravou vedle sebe.
-            Běžný den zvládnete v Přehledu → Denní práce; sem se chodí, když
-            je potřeba vidět všechno najednou.
+          <Text size="small" className="text-ui-fg-subtle mt-0.5">
+            Klikem na řádek otevřete objednávku, další volby jsou pod „…“.
           </Text>
         </div>
         <div className="flex flex-wrap items-center gap-3">

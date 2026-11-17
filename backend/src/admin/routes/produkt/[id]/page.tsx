@@ -2325,13 +2325,13 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
 
       {/*
         Rozvržení (17. 11. 2026, Matěj — „obsah uprostřed, nastavení vpravo"):
-          hlavní sloupec — Fotky, Popis; dole Statistiky a sbalené
-                           zřídka používané věci
-          pravý sloupec  — nastavení po skupinách: Prodej, Doprava, Cena
-                           a sklad, Zařazení, Materiál a rozměry
+          hlavní sloupec — Fotky, Popis, Doprava, Cena a sklad, Zařazení;
+                           dole Statistiky a sbalené zřídka používané věci
+          pravý sloupec  — jen Prodej a Materiál a rozměry (+ expertní
+                           Prodejní kanály)
         Kroky „Před prodejem" jsou drobná řádka v hlavičce. Na úzkém
         displeji (pod 1280 px) jde všechno pod sebe v pořadí
-        obsah → nastavení → statistiky. Obaly sloupců jsou tam
+        hlavní sloupec nahoře → Prodej, Materiál → Statistiky a zbytek. Obaly sloupců jsou tam
         `contents` (bez vlastního boxu), takže o pořadí rozhoduje `order-*`
         jejich dětí; na širokém jsou z nich zase dva sloupce.
       */}
@@ -2482,6 +2482,322 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               </div>
             </Section>
 
+            {/* Doprava, Cena a sklad, Zařazení — v hlavním sloupci, v tomhle
+                pořadí (Matěj, 17. 11. 2026). Rámečky jako vpravo, jen přes
+                celou šířku; jeden obal, ať mezi nimi nejsou čáry. */}
+            <div className="py-1">
+            {/* Doprava — všechno, z čeho se počítá poštovné a balné. */}
+            <InspectorGroup title="Doprava">
+              {/* Velikost zásilky i tady, ne jen v „…" v Produkty+
+                  (16. 11. 2026, Matěj) — podle ní se počítá poštovné. */}
+              <InspectorRow
+                label="Velikost zásilky"
+                hint="Podle ní se počítá poštovné."
+                info="Podle ní se v pokladně počítá poštovné — stačí jeden velký kus a celá zásilka je velká."
+              >
+                <div
+                  role="radiogroup"
+                  aria-label="Velikost zásilky"
+                  className="grid grid-cols-3 gap-2"
+                >
+                  {SHIPPING_CLASS_OPTIONS.map((option) => {
+                    const active = currentShippingClass === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        title={option.hint}
+                        disabled={saveFlags.isPending}
+                        onClick={() => {
+                          if (!active) saveFlags.mutate({ shipping_class: option.value });
+                        }}
+                        className={`txt-compact-small min-h-[36px] rounded-lg border px-3 py-1.5 outline-none transition-fg focus-visible:shadow-borders-focus disabled:cursor-wait ${
+                          active
+                            ? "border-ui-border-interactive bg-ui-bg-base-pressed text-ui-fg-base font-medium"
+                            : "border-ui-border-base bg-ui-bg-base text-ui-fg-subtle hover:bg-ui-bg-base-hover"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </InspectorRow>
+              <InspectorSwitchRow
+                label="Křehké"
+                hint="Celá zásilka pojede jako křehká."
+                info="Celá zásilka s tímto kouskem pojede jako křehká."
+                checked={flagOf(product, "fragile")}
+                disabled={saveFlags.isPending}
+                onChange={(next) => saveFlags.mutate({ fragile: next })}
+              />
+              <InspectorSwitchRow
+                label="Dobírka"
+                hint="Vypnuto = jen platba předem."
+                info="Zapnuto (výchozí) = jde poslat na dobírku; vypnuto = jen platba předem. Zakázky a zahraničí ji nemají nikdy."
+                checked={product?.metadata?.cod_allowed !== false}
+                disabled={saveFlags.isPending}
+                onChange={(next) => saveFlags.mutate({ cod_allowed: next })}
+              />
+              <InspectorRow
+                label="Cena balení"
+                hint="Balné za kus; prázdné = 0 Kč."
+                info="Balné za kus — zákazník ho uvidí jako položku pod výrobkem (i u osobního odběru). Prázdné = 0 Kč. V cizí měně se přepočte kurzem ČNB a zaokrouhlí nahoru na 0,50."
+                control={
+                  <InlineAmount
+                    value={packagingPrice}
+                    unit="Kč"
+                    placeholder="0"
+                    widthClassName="w-28"
+                    onSave={(next) => saveFlags.mutateAsync({ packaging_price: next })}
+                  />
+                }
+              />
+              <InspectorRow
+                id="produkt-hmotnost"
+                label="Hmotnost"
+                hint="Z ní se počítá cena dopravy."
+                info="Z hmotnosti se počítá cena dopravy u počítaných možností. Bez ní se počítá z výchozího odhadu."
+                control={
+                  <InlineAmount
+                    value={product.weight}
+                    unit="g"
+                    placeholder="—"
+                    widthClassName="w-28"
+                    onSave={(next) =>
+                      saveProduct.mutateAsync({
+                        weight: next === null ? null : Math.round(Number(next)),
+                      })
+                    }
+                  />
+                }
+              />
+            </InspectorGroup>
+
+            {/* Cena a sklad — rámeček jako ostatní skupiny (Matěj,
+                17. 11. 2026); řádky provedení pod sebou, ne tabulka
+                o šesti sloupcích. */}
+            <InspectorGroup
+              title={variants.length === 1 ? "Cena a sklad" : "Provedení a ceny"}
+              id="produkt-cena"
+              note={
+                variants.length > 1
+                  ? "Každé provedení má vlastní název, cenu a sklad."
+                  : undefined
+              }
+            >
+              {variants.map((variant) => (
+                <VariantRow
+                  key={variant.id}
+                  productId={product.id}
+                  variant={variant}
+                  stock={stockByVariant.get(variant.id)}
+                  canDelete={variants.length > 1}
+                  expert={expert}
+                  invalidate={invalidate}
+                  solo={variants.length === 1}
+                  priceOnRequest={priceOnRequest}
+                  option={singleOption}
+                  siblings={variants.filter((other) => other.id !== variant.id)}
+                />
+              ))}
+              <AddVariantRow
+                productId={product.id}
+                option={singleOption}
+                invalidate={invalidate}
+                solo={variants.length === 1}
+                priceOnRequest={priceOnRequest}
+              />
+            </InspectorGroup>
+
+            {/* Zařazení — v hlavním sloupci pod Cenou a skladem (Matěj,
+                17. 11. 2026). */}
+            <InspectorGroup
+              title="Zařazení"
+              id="produkt-zarazeni"
+              note="Nejdřív kolekce — kategorie se pak nabídnou podle ní."
+            >
+              {(() => {
+                /* Kaskáda: kategorie patří kolekci přes metadata.collection_id
+                   (nastavuje se v Kolekce a kategorie; stejnou vazbu čte menu obchodu).
+                   Plochý mrak všech 20 kategorií nutil Lucii pamatovat si,
+                   co kam patří — teď jí stránka nabídne jen ty správné. */
+                const collectionId = product.collection_id ?? null;
+                const inCollection = collectionId
+                  ? categories.filter(
+                      (category) =>
+                        (category.metadata ?? {})["collection_id"] === collectionId
+                    )
+                  : [];
+                const inCollectionIds = new Set(
+                  inCollection.map((category) => category.id)
+                );
+                /* Už zařazené kategorie z JINÝCH kolekcí nikdy neschovávat —
+                   jinak by nešly odebrat a produkt by v obchodě strašil tam,
+                   kam nepatří. */
+                const assignedElsewhere = categories.filter(
+                  (category) =>
+                    selectedCategories.has(category.id) &&
+                    !inCollectionIds.has(category.id)
+                );
+                const collectionTitle =
+                  (collectionsQuery.data?.collections ?? []).find(
+                    (collection) => collection.id === collectionId
+                  )?.title ?? "";
+
+                const chip = (category: { id: string; name: string }) => {
+                  const selected = selectedCategories.has(category.id);
+                  return (
+                    <button
+                      key={category.id}
+                      type="button"
+                      aria-pressed={selected}
+                      disabled={saveProduct.isPending}
+                      onClick={() => toggleCategory(category.id)}
+                      className={`transition-fg min-h-[36px] rounded-full border px-3.5 py-1.5 ${
+                        selected
+                          ? "border-ui-border-interactive bg-ui-bg-base-pressed text-ui-fg-base"
+                          : "border-ui-border-base bg-ui-bg-base text-ui-fg-subtle hover:bg-ui-bg-base-hover"
+                      }`}
+                    >
+                      <Text size="small" weight={selected ? "plus" : "regular"}>
+                        {selected ? "✓ " : ""}
+                        {category.name}
+                      </Text>
+                    </button>
+                  );
+                };
+
+                return (
+                  <>
+                    <InspectorRow
+                      label="Kolekce"
+                      control={
+                        <div className="w-48">
+                          <Select
+                            value={product.collection_id ?? "none"}
+                            onValueChange={(next) =>
+                              saveProduct.mutate({
+                                collection_id: next === "none" ? null : next,
+                              })
+                            }
+                          >
+                            <Select.Trigger>
+                              <Select.Value placeholder="Bez kolekce" />
+                            </Select.Trigger>
+                            <Select.Content className="z-50">
+                              <Select.Item value="none">Bez kolekce</Select.Item>
+                              {(collectionsQuery.data?.collections ?? []).map(
+                                (collection) => (
+                                  <Select.Item
+                                    key={collection.id}
+                                    value={collection.id}
+                                  >
+                                    {collection.title}
+                                  </Select.Item>
+                                )
+                              )}
+                            </Select.Content>
+                          </Select>
+                        </div>
+                      }
+                    />
+                    <InspectorRow label="Kategorie">
+                      <div className="flex flex-wrap gap-2">
+                        {categories.length === 0 && (
+                          <Text size="small" className="text-ui-fg-subtle">
+                            Zatím žádné kategorie — založíte je v{" "}
+                            <Link
+                              to="/rozdeleni"
+                              className="text-ui-fg-interactive hover:underline"
+                            >
+                              Kolekce a kategorie
+                            </Link>
+                            .
+                          </Text>
+                        )}
+                        {categories.length > 0 && !collectionId && (
+                          <Text size="small" className="text-ui-fg-subtle">
+                            Nejdřív vyberte kolekci — kategorie se nabídnou podle
+                            ní.
+                          </Text>
+                        )}
+                        {categories.length > 0 &&
+                          collectionId &&
+                          inCollection.length === 0 && (
+                            <Text size="small" className="text-ui-fg-subtle">
+                              Kolekce „{collectionTitle}" nemá vlastní kategorie —
+                              stačí samotné zařazení do kolekce.
+                            </Text>
+                          )}
+                        {inCollection.map(chip)}
+                      </div>
+                    </InspectorRow>
+
+                    {/* Kategorie z JINÝCH kolekcí (Matěj 12. 10. 2026): kousek
+                        může patřit do víc kolekcí — třeba zápich do „Zápichy"
+                        (Do zahrady) i „Drobnosti pro radost" (Do bytu). Obchod
+                        i Produkty+ ho pak ukážou v každé kolekci, ze které má
+                        kategorii; kolekce nahoře zůstává hlavní. */}
+                    {categories.length > 0 && (
+                      <details
+                        open={assignedElsewhere.length > 0}
+                        className="px-3 py-2.5"
+                      >
+                        <summary className="min-h-[32px] cursor-pointer pt-1">
+                          <Text size="small" weight="plus" className="inline">
+                            Zařadit i do jiné kolekce
+                          </Text>
+                          {assignedElsewhere.length > 0 && (
+                            <Text size="xsmall" className="text-ui-fg-subtle ml-2 inline">
+                              ({assignedElsewhere.map((category) => category.name).join(", ")})
+                            </Text>
+                          )}
+                        </summary>
+                        <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                          Kliknutím kousek přidáte i do kategorie jiné kolekce
+                          (nebo ho z ní odeberete). V obchodě se pak ukáže
+                          v obou kolekcích.
+                        </Text>
+                        <div className="mt-2 flex flex-col gap-3">
+                          {[
+                            ...(collectionsQuery.data?.collections ?? [])
+                              .filter((collection) => collection.id !== collectionId)
+                              .map((collection) => ({
+                                title: collection.title,
+                                items: categories.filter(
+                                  (category) =>
+                                    (category.metadata ?? {})["collection_id"] === collection.id
+                                ),
+                              })),
+                            {
+                              title: "Bez kolekce",
+                              items: categories.filter(
+                                (category) => !(category.metadata ?? {})["collection_id"]
+                              ),
+                            },
+                          ]
+                            .filter((group) => group.items.length > 0)
+                            .map((group) => (
+                              <div key={group.title}>
+                                <Text size="xsmall" className="text-ui-fg-subtle">
+                                  {group.title}
+                                </Text>
+                                <div className="mt-1 flex flex-wrap gap-2">
+                                  {group.items.map(chip)}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </details>
+                    )}
+                  </>
+                );
+              })()}
+            </InspectorGroup>
+            </div>
           </div>
 
           {/* ————— Hlavní sloupec, dole: čísla a zřídka používané věci ————— */}
@@ -2718,318 +3034,6 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                   Funkce i flag `is_personalized` na backendu zůstávají spící
                   (flags endpoint, validate-personalized-product.ts), takže se
                   dá kdykoli vrátit přidáním přepínače sem. */}
-            </InspectorGroup>
-
-            {/* Doprava — všechno, z čeho se počítá poštovné a balné. */}
-            <InspectorGroup title="Doprava">
-              {/* Velikost zásilky i tady, ne jen v „…" v Produkty+
-                  (16. 11. 2026, Matěj) — podle ní se počítá poštovné. */}
-              <InspectorRow
-                label="Velikost zásilky"
-                hint="Podle ní se počítá poštovné."
-                info="Podle ní se v pokladně počítá poštovné — stačí jeden velký kus a celá zásilka je velká."
-              >
-                <div
-                  role="radiogroup"
-                  aria-label="Velikost zásilky"
-                  className="grid grid-cols-3 gap-2"
-                >
-                  {SHIPPING_CLASS_OPTIONS.map((option) => {
-                    const active = currentShippingClass === option.value;
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        role="radio"
-                        aria-checked={active}
-                        title={option.hint}
-                        disabled={saveFlags.isPending}
-                        onClick={() => {
-                          if (!active) saveFlags.mutate({ shipping_class: option.value });
-                        }}
-                        className={`txt-compact-small min-h-[36px] rounded-lg border px-3 py-1.5 outline-none transition-fg focus-visible:shadow-borders-focus disabled:cursor-wait ${
-                          active
-                            ? "border-ui-border-interactive bg-ui-bg-base-pressed text-ui-fg-base font-medium"
-                            : "border-ui-border-base bg-ui-bg-base text-ui-fg-subtle hover:bg-ui-bg-base-hover"
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </InspectorRow>
-              <InspectorSwitchRow
-                label="Křehké"
-                hint="Celá zásilka pojede jako křehká."
-                info="Celá zásilka s tímto kouskem pojede jako křehká."
-                checked={flagOf(product, "fragile")}
-                disabled={saveFlags.isPending}
-                onChange={(next) => saveFlags.mutate({ fragile: next })}
-              />
-              <InspectorSwitchRow
-                label="Dobírka"
-                hint="Vypnuto = jen platba předem."
-                info="Zapnuto (výchozí) = jde poslat na dobírku; vypnuto = jen platba předem. Zakázky a zahraničí ji nemají nikdy."
-                checked={product?.metadata?.cod_allowed !== false}
-                disabled={saveFlags.isPending}
-                onChange={(next) => saveFlags.mutate({ cod_allowed: next })}
-              />
-              <InspectorRow
-                label="Cena balení"
-                hint="Balné za kus; prázdné = 0 Kč."
-                info="Balné za kus — zákazník ho uvidí jako položku pod výrobkem (i u osobního odběru). Prázdné = 0 Kč. V cizí měně se přepočte kurzem ČNB a zaokrouhlí nahoru na 0,50."
-                control={
-                  <InlineAmount
-                    value={packagingPrice}
-                    unit="Kč"
-                    placeholder="0"
-                    widthClassName="w-28"
-                    onSave={(next) => saveFlags.mutateAsync({ packaging_price: next })}
-                  />
-                }
-              />
-              <InspectorRow
-                id="produkt-hmotnost"
-                label="Hmotnost"
-                hint="Z ní se počítá cena dopravy."
-                info="Z hmotnosti se počítá cena dopravy u počítaných možností. Bez ní se počítá z výchozího odhadu."
-                control={
-                  <InlineAmount
-                    value={product.weight}
-                    unit="g"
-                    placeholder="—"
-                    widthClassName="w-28"
-                    onSave={(next) =>
-                      saveProduct.mutateAsync({
-                        weight: next === null ? null : Math.round(Number(next)),
-                      })
-                    }
-                  />
-                }
-              />
-            </InspectorGroup>
-
-            {/* Cena a sklad — z hlavního sloupce sem pod Dopravu (Matěj,
-                17. 11. 2026). Řádky provedení jsou v úzkém sloupci pod sebou,
-                ne tabulka o šesti sloupcích. */}
-            <InspectorGroup
-              title={variants.length === 1 ? "Cena a sklad" : "Provedení a ceny"}
-              id="produkt-cena"
-              note={
-                variants.length > 1
-                  ? "Každé provedení má vlastní název, cenu a sklad."
-                  : undefined
-              }
-            >
-              {variants.map((variant) => (
-                <VariantRow
-                  key={variant.id}
-                  productId={product.id}
-                  variant={variant}
-                  stock={stockByVariant.get(variant.id)}
-                  canDelete={variants.length > 1}
-                  expert={expert}
-                  invalidate={invalidate}
-                  solo={variants.length === 1}
-                  priceOnRequest={priceOnRequest}
-                  option={singleOption}
-                  siblings={variants.filter((other) => other.id !== variant.id)}
-                />
-              ))}
-              <AddVariantRow
-                productId={product.id}
-                option={singleOption}
-                invalidate={invalidate}
-                solo={variants.length === 1}
-                priceOnRequest={priceOnRequest}
-              />
-            </InspectorGroup>
-
-            {/* Zařazení — přesunuté z hlavního sloupce pod nastavení prodeje
-                (Matěj, 17. 11. 2026). */}
-            <InspectorGroup
-              title="Zařazení"
-              id="produkt-zarazeni"
-              note="Nejdřív kolekce — kategorie se pak nabídnou podle ní."
-            >
-              {(() => {
-                /* Kaskáda: kategorie patří kolekci přes metadata.collection_id
-                   (nastavuje se v Kolekce a kategorie; stejnou vazbu čte menu obchodu).
-                   Plochý mrak všech 20 kategorií nutil Lucii pamatovat si,
-                   co kam patří — teď jí stránka nabídne jen ty správné. */
-                const collectionId = product.collection_id ?? null;
-                const inCollection = collectionId
-                  ? categories.filter(
-                      (category) =>
-                        (category.metadata ?? {})["collection_id"] === collectionId
-                    )
-                  : [];
-                const inCollectionIds = new Set(
-                  inCollection.map((category) => category.id)
-                );
-                /* Už zařazené kategorie z JINÝCH kolekcí nikdy neschovávat —
-                   jinak by nešly odebrat a produkt by v obchodě strašil tam,
-                   kam nepatří. */
-                const assignedElsewhere = categories.filter(
-                  (category) =>
-                    selectedCategories.has(category.id) &&
-                    !inCollectionIds.has(category.id)
-                );
-                const collectionTitle =
-                  (collectionsQuery.data?.collections ?? []).find(
-                    (collection) => collection.id === collectionId
-                  )?.title ?? "";
-
-                const chip = (category: { id: string; name: string }) => {
-                  const selected = selectedCategories.has(category.id);
-                  return (
-                    <button
-                      key={category.id}
-                      type="button"
-                      aria-pressed={selected}
-                      disabled={saveProduct.isPending}
-                      onClick={() => toggleCategory(category.id)}
-                      className={`transition-fg min-h-[36px] rounded-full border px-3.5 py-1.5 ${
-                        selected
-                          ? "border-ui-border-interactive bg-ui-bg-base-pressed text-ui-fg-base"
-                          : "border-ui-border-base bg-ui-bg-base text-ui-fg-subtle hover:bg-ui-bg-base-hover"
-                      }`}
-                    >
-                      <Text size="small" weight={selected ? "plus" : "regular"}>
-                        {selected ? "✓ " : ""}
-                        {category.name}
-                      </Text>
-                    </button>
-                  );
-                };
-
-                return (
-                  <>
-                    <InspectorRow
-                      label="Kolekce"
-                      control={
-                        <div className="w-48">
-                          <Select
-                            value={product.collection_id ?? "none"}
-                            onValueChange={(next) =>
-                              saveProduct.mutate({
-                                collection_id: next === "none" ? null : next,
-                              })
-                            }
-                          >
-                            <Select.Trigger>
-                              <Select.Value placeholder="Bez kolekce" />
-                            </Select.Trigger>
-                            <Select.Content className="z-50">
-                              <Select.Item value="none">Bez kolekce</Select.Item>
-                              {(collectionsQuery.data?.collections ?? []).map(
-                                (collection) => (
-                                  <Select.Item
-                                    key={collection.id}
-                                    value={collection.id}
-                                  >
-                                    {collection.title}
-                                  </Select.Item>
-                                )
-                              )}
-                            </Select.Content>
-                          </Select>
-                        </div>
-                      }
-                    />
-                    <InspectorRow label="Kategorie">
-                      <div className="flex flex-wrap gap-2">
-                        {categories.length === 0 && (
-                          <Text size="small" className="text-ui-fg-subtle">
-                            Zatím žádné kategorie — založíte je v{" "}
-                            <Link
-                              to="/rozdeleni"
-                              className="text-ui-fg-interactive hover:underline"
-                            >
-                              Kolekce a kategorie
-                            </Link>
-                            .
-                          </Text>
-                        )}
-                        {categories.length > 0 && !collectionId && (
-                          <Text size="small" className="text-ui-fg-subtle">
-                            Nejdřív vyberte kolekci — kategorie se nabídnou podle
-                            ní.
-                          </Text>
-                        )}
-                        {categories.length > 0 &&
-                          collectionId &&
-                          inCollection.length === 0 && (
-                            <Text size="small" className="text-ui-fg-subtle">
-                              Kolekce „{collectionTitle}" nemá vlastní kategorie —
-                              stačí samotné zařazení do kolekce.
-                            </Text>
-                          )}
-                        {inCollection.map(chip)}
-                      </div>
-                    </InspectorRow>
-
-                    {/* Kategorie z JINÝCH kolekcí (Matěj 12. 10. 2026): kousek
-                        může patřit do víc kolekcí — třeba zápich do „Zápichy"
-                        (Do zahrady) i „Drobnosti pro radost" (Do bytu). Obchod
-                        i Produkty+ ho pak ukážou v každé kolekci, ze které má
-                        kategorii; kolekce nahoře zůstává hlavní. */}
-                    {categories.length > 0 && (
-                      <details
-                        open={assignedElsewhere.length > 0}
-                        className="px-3 py-2.5"
-                      >
-                        <summary className="min-h-[32px] cursor-pointer pt-1">
-                          <Text size="small" weight="plus" className="inline">
-                            Zařadit i do jiné kolekce
-                          </Text>
-                          {assignedElsewhere.length > 0 && (
-                            <Text size="xsmall" className="text-ui-fg-subtle ml-2 inline">
-                              ({assignedElsewhere.map((category) => category.name).join(", ")})
-                            </Text>
-                          )}
-                        </summary>
-                        <Text size="xsmall" className="text-ui-fg-muted mt-1">
-                          Kliknutím kousek přidáte i do kategorie jiné kolekce
-                          (nebo ho z ní odeberete). V obchodě se pak ukáže
-                          v obou kolekcích.
-                        </Text>
-                        <div className="mt-2 flex flex-col gap-3">
-                          {[
-                            ...(collectionsQuery.data?.collections ?? [])
-                              .filter((collection) => collection.id !== collectionId)
-                              .map((collection) => ({
-                                title: collection.title,
-                                items: categories.filter(
-                                  (category) =>
-                                    (category.metadata ?? {})["collection_id"] === collection.id
-                                ),
-                              })),
-                            {
-                              title: "Bez kolekce",
-                              items: categories.filter(
-                                (category) => !(category.metadata ?? {})["collection_id"]
-                              ),
-                            },
-                          ]
-                            .filter((group) => group.items.length > 0)
-                            .map((group) => (
-                              <div key={group.title}>
-                                <Text size="xsmall" className="text-ui-fg-subtle">
-                                  {group.title}
-                                </Text>
-                                <div className="mt-1 flex flex-wrap gap-2">
-                                  {group.items.map(chip)}
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      </details>
-                    )}
-                  </>
-                );
-              })()}
             </InspectorGroup>
 
             <InspectorGroup title="Materiál a rozměry">
