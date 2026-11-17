@@ -36,14 +36,33 @@ export type ShippingRates = {
   poukaz?: number | null
 }
 
-/** Skupina cen: Česká pošta (Balík Do ruky) nebo Balíkovna (výdejna i na adresu). */
-export type RateGroup = "posta" | "balikovna"
+/**
+ * Tři samostatné druhy dopravy (17. 11. 2026, Matěj):
+ *
+ * - `posta` — Česká pošta na adresu: malá / velká, příplatek za křehké, dobírka.
+ * - `balikovna_adresa` — Balíkovna na adresu: malá / velká, křehké, dobírka.
+ * - `balikovna_box` — Balíkovna do výdejního místa / BOXu (widget): JEDNA
+ *   cena, bez velké zásilky, bez křehkého a bez dobírky. Velký nebo křehký
+ *   kus sem nesmí — pokladna volbu skryje a backend ji odmítne.
+ */
+export type RateGroup = "posta" | "balikovna_adresa" | "balikovna_box"
+
+export const RATE_GROUPS: RateGroup[] = ["posta", "balikovna_adresa", "balikovna_box"]
 
 /** Výchozí ceny, než je majitelka nastaví — vychází z dosavadních pevných cen. */
 export const DEFAULT_RATES: Record<RateGroup, ShippingRates> = {
   posta: { small: 90, large: 130, fragile: 60, poukaz: 90 },
-  balikovna: { small: 60, large: 90, fragile: 60, poukaz: 60 },
+  balikovna_adresa: { small: 90, large: 130, fragile: 60, poukaz: 90 },
+  balikovna_box: { small: 60, large: 60, fragile: null, poukaz: 60 },
 }
+
+/** BOX má jednu cenu: z ní se doplní velká i poukaz, křehké žádné. */
+export const boxRates = (price: number): ShippingRates => ({
+  small: price,
+  large: price,
+  fragile: null,
+  poukaz: price,
+})
 
 /* Stejné poznání poukazu jako všude jinde (i poukaz s vlastní částkou). */
 const isVoucherMeta = (meta: Record<string, unknown>) => isGiftVoucherProduct(meta)
@@ -99,12 +118,13 @@ export const shipmentPrice = (rates: ShippingRates, lines: LineLike[]): number =
   return Math.round((base + surcharge) * 100) / 100
 }
 
-/** Skupina cen volby dopravy podle jejích dat. */
+/** Skupina cen volby dopravy podle jejích dat (rozhoduje id volby). */
 export const rateGroupOf = (optionData: Record<string, unknown> | null | undefined): RateGroup => {
   const data = optionData ?? {}
-  if (data.rate_group === "posta" || data.rate_group === "balikovna") return data.rate_group
   const id = String(data.id ?? "")
-  return id.startsWith("balikovna") || String(data.service_code ?? "") === "NB" ? "balikovna" : "posta"
+  if (id === "balikovna" || String(data.service_code ?? "") === "NB") return "balikovna_box"
+  if (id === "balikovna-address") return "balikovna_adresa"
+  return "posta"
 }
 
 /** Výdejní místo / BOX Balíkovny — křehké sem nesmí (jen na adresu). */
