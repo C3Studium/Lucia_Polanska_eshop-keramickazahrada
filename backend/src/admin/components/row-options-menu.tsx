@@ -30,10 +30,17 @@ export type RowOption =
 export const RowOptionsMenu = ({
   label,
   items,
+  contentClassName,
 }: {
   /** Přístupný název tlačítka, např. „Možnosti kolekce Hrnečky". */
   label: string;
   items: RowOption[];
+  /**
+   * Třídy navíc pro rozbalenou nabídku. Portál Medusy nemá z-index, takže
+   * v seznamu s překryvem (`RowLink`) ji prvky `relative z-10` z dalších
+   * řádků přikryjí — tam se předá `z-50`.
+   */
+  contentClassName?: string;
 }) => {
   const skipFocusReturn = useRef(false);
   return (
@@ -52,7 +59,9 @@ export const RowOptionsMenu = ({
       </DropdownMenu.Trigger>
       <DropdownMenu.Content
         align="end"
-        className="min-w-[240px]"
+        className={
+          contentClassName ? `min-w-[240px] ${contentClassName}` : "min-w-[240px]"
+        }
         onCloseAutoFocus={(event) => {
           if (skipFocusReturn.current) {
             event.preventDefault();
