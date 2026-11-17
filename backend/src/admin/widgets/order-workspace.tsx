@@ -53,10 +53,9 @@ const OrderWorkspaceSide = ({ order }: { order: AdminOrder }) => {
   const ref = useHideNativeCardsBefore<HTMLDivElement>();
   return (
     <div ref={ref} className="flex flex-col gap-y-3">
-      {/* Široký displej (17. 11. 2026, přání majitelky): Postup je vlevo
-          pod číslem objednávky, vpravo nahoře zakázka a pod ní štítek. */}
+      {/* Široký displej (17. 11. 2026, přání majitelky): Postup a vedle
+          něj štítek jsou vlevo pod číslem objednávky, vpravo nahoře zakázka. */}
       {wide && <MadeToOrderPanel order={order} />}
-      {wide && <CpLabelPanel order={order} />}
       <OrderReturnsPanel orderId={order.id} />
       <CpTrackingPanel order={order} />
       <OrderDelayPanel order={order} />

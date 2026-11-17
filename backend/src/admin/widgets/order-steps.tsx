@@ -211,7 +211,14 @@ const StepRow = ({
   </li>
 );
 
-export const OrderStepsPanel = ({ order }: { order: AdminOrder }) => {
+export const OrderStepsPanel = ({
+  order,
+  layout = "column",
+}: {
+  order: AdminOrder;
+  /** „row" = vodorovná řada kroků (širší displej), „column" = pod sebou (telefon). */
+  layout?: "row" | "column";
+}) => {
   const cache = useQueryClient();
   const stateQuery = useQuery<{ merchant_order: MerchantOrder | null }>({
     queryKey: ["merchant-order-state", order.id],
@@ -555,22 +562,90 @@ export const OrderStepsPanel = ({ order }: { order: AdminOrder }) => {
         </div>
       )}
 
-      <ol className="flex flex-col px-6 py-5" aria-label="Kroky objednávky">
-        {steps.map((step, index) => {
-          const words = stepWords(step.key, pickup, merchantOrder.pickup_payment_due);
-          return (
-            <StepRow
-              key={step.key}
-              step={step}
-              index={index}
-              last={index === steps.length - 1}
-              title={words.title}
-            >
-              {step.state === "current" ? currentControls(step) : null}
-            </StepRow>
-          );
-        })}
-      </ol>
+      {layout === "row" ? (
+        <>
+          {/* Vodorovně 1 → 7 (širší displej, 17. 11. 2026): názvy pod
+              kolečky, aktuální krok a jeho tlačítko v kartičce pod řadou. */}
+          <ol className="flex items-start px-4 pt-5" aria-label="Kroky objednávky">
+            {steps.map((step, index) => {
+              const words = stepWords(step.key, pickup, merchantOrder.pickup_payment_due);
+              const previousDone = index > 0 && steps[index - 1].state === "done";
+              return (
+                <li
+                  key={step.key}
+                  className="relative flex min-w-0 flex-1 flex-col items-center text-center"
+                >
+                  {index > 0 && (
+                    <span
+                      aria-hidden
+                      className={`absolute right-1/2 top-[13px] h-px w-full ${
+                        previousDone && step.state === "done"
+                          ? "bg-ui-tag-green-icon"
+                          : "bg-ui-border-base"
+                      }`}
+                    />
+                  )}
+                  <span
+                    aria-hidden
+                    className={`relative z-10 flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-medium ${
+                      step.state === "done"
+                        ? "bg-ui-tag-green-icon text-ui-fg-on-color"
+                        : step.state === "current"
+                          ? "bg-ui-bg-base text-ui-fg-interactive ring-2 ring-ui-fg-interactive"
+                          : "bg-ui-bg-base text-ui-fg-muted ring-1 ring-ui-border-strong"
+                    }`}
+                  >
+                    {step.state === "done" ? <CheckMini /> : index + 1}
+                  </span>
+                  <Text
+                    size="xsmall"
+                    weight={step.state === "current" ? "plus" : "regular"}
+                    className={`mt-2 px-1 leading-tight ${
+                      step.state === "current" ? "text-ui-fg-base" : "text-ui-fg-subtle"
+                    }`}
+                  >
+                    <span className="sr-only">
+                      {step.state === "done" ? "Hotovo: " : step.state === "current" ? "Teď: " : "Později: "}
+                    </span>
+                    {words.title}
+                  </Text>
+                </li>
+              );
+            })}
+          </ol>
+          {(() => {
+            const current = steps.find((step) => step.state === "current");
+            if (!current) return <div className="pb-5" />;
+            return (
+              <div className="px-6 pb-5 pt-4">
+                <div className="bg-ui-bg-subtle flex flex-col gap-y-2 rounded-lg px-4 py-3">
+                  <Text size="small" weight="plus">
+                    Teď: {stepWords(current.key, pickup, merchantOrder.pickup_payment_due).title}
+                  </Text>
+                  {currentControls(current)}
+                </div>
+              </div>
+            );
+          })()}
+        </>
+      ) : (
+        <ol className="flex flex-col px-6 py-5" aria-label="Kroky objednávky">
+          {steps.map((step, index) => {
+            const words = stepWords(step.key, pickup, merchantOrder.pickup_payment_due);
+            return (
+              <StepRow
+                key={step.key}
+                step={step}
+                index={index}
+                last={index === steps.length - 1}
+                title={words.title}
+              >
+                {step.state === "current" ? currentControls(step) : null}
+              </StepRow>
+            );
+          })}
+        </ol>
+      )}
 
       {pickup && merchantOrder.pickup_payment_due && stage !== "cancelled" && stage !== "shipped" && (
         <div className="flex flex-col gap-y-2 px-6 py-4">
