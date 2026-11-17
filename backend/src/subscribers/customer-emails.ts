@@ -1132,9 +1132,14 @@ const onReturnRequested = async ({
  * „K odeslání" (zabaleno, čeká na předání dopravci). Mezikrok mezi potvrzením a
  * odesláním, který u běžného zboží chyběl. NEposílá se u:
  *  - osobního odběru (má „k vyzvednutí" na shipment.created);
- *  - čistě zakázkové objednávky (má „zakázka hotová" na dokončení výroby) —
- *    jinak by u ní přišel generický „připraveno" i „hotová".
- * U smíšené (produkty + zakázka) se pošle normálně, vedle zakázkových e-mailů.
+ *
+ * Od 17. 11. 2026 (přání majitelky) má objednávka jednu řadu e-mailů:
+ *  - běžné zboží: přijata → připravujeme → zabaleno → odesláno;
+ *  - se zakázkou (čistou i smíšenou): přijata → zadání potvrzeno → ve výrobě
+ *    → výroba hotová → zabaleno → odesláno. „Připravujeme" se u ní
+ *    neposílá — lidé u smíšené objednávky čekají na všechno najednou a
+ *    roli „začínáme" hraje potvrzení zadání. „Zabaleno" chodí i u čisté
+ *    zakázky: „výroba hotová" ještě neznamená, že je balík nachystaný.
  */
 const onMerchantStageChanged = async ({
   event: { data },
@@ -1159,15 +1164,12 @@ const onMerchantStageChanged = async ({
   // Mezikrok mezi potvrzením a „připraveno k odeslání", který u běžného zboží
   // chyběl.
   if (data.stage === "working") {
-    // Čistě zakázková objednávka má „začínáme" přes onSpecificationConfirmed
-    // (potvrzení zadání ji taky posune do „working"); generický „připravujeme"
-    // by u ní byl matoucí a dubloval by. Posíláme jen, je-li ve hře běžné zboží.
-    // Balné a doběrečné nejsou zboží — „čistou zakázku" nesmí otočit.
-    const items = ((order.items || []) as any[]).filter((item) => !isServiceLine(item))
-    const pureCommission =
-      items.length > 0 &&
-      items.every((item: any) => Boolean((item?.metadata as any)?.made_to_order))
-    if (pureCommission) {
+    // Objednávka se zakázkou (i smíšená) má „začínáme" přes potvrzení zadání
+    // (to ji taky posune do „working"); generický „připravujeme" by dubloval.
+    const hasCommission = ((order.items || []) as any[]).some(
+      (item: any) => !isServiceLine(item) && Boolean((item?.metadata as any)?.made_to_order)
+    )
+    if (hasCommission) {
       return
     }
 
@@ -1260,17 +1262,7 @@ const onMerchantStageChanged = async ({
     return
   }
 
-  // Čistě zakázková objednávka má „připraveno" = „zakázka hotová"; generický
-  // e-mail by u ní dubloval. Posíláme jen když je ve hře i běžné zboží.
-  // Balné a doběrečné nejsou zboží — „čistou zakázku" nesmí otočit.
-  const items = ((order.items || []) as any[]).filter((item) => !isServiceLine(item))
-  const pureCommission =
-    items.length > 0 &&
-    items.every((item: any) => Boolean((item?.metadata as any)?.made_to_order))
-  if (pureCommission) {
-    return
-  }
-
+  // „Zabaleno" chodí u každé zásilky, i u čisté zakázky (17. 11. 2026).
   await sendCustomerEmail(container, {
     template: "order-ready",
     to: order.email,
