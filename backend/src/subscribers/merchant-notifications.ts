@@ -135,6 +135,7 @@ const ORDER_FIELDS = [
   "shipping_address.last_name",
   "payment_collections.*",
   "payment_collections.payments.*",
+  "metadata",
 ]
 
 /**
@@ -191,10 +192,24 @@ const onOrderPlaced = async ({
     .flatMap((collection) => collection?.payments ?? [])
     .some((payment) => isPayLaterPaymentProvider(String(payment?.provider_id ?? "")))
 
+  /*
+   * Objednávka, kterou majitelka sama založila z poptávky (17. 11. 2026,
+   * lib/commission-inquiry-order-create) — zadání zná, takže jí stačí jeden
+   * e-mail s listem pro dílnu, ne „přečtěte si zadání".
+   */
+  const fromInquiry = (order as any)?.metadata?.created_from === "commission-inquiry"
+
   if (!isPaymentProblem(paymentStatus)) {
     const commission = isMadeToOrder(order) ? madeToOrderMoney(order) : null
     const zaplaceno = commission?.pureCommission ? "zaplacená záloha" : "zaplaceno"
-    const title = commission
+    // Zakázka za 0 Kč (cena po domluvě) je v Meduse „zaplacená" — nulová
+    // kolekce se počítá jako zaplacená. „Zaplacená celá" by ale lhalo.
+    const priceLater = Boolean(commission) && Number(commission?.total ?? 0) <= 0.5
+    const title = fromInquiry
+      ? `Objednávka #${order.display_id} z poptávky — založená`
+      : priceLater
+        ? `Nová zakázka #${order.display_id} — cena po domluvě`
+        : commission
       ? commission.outstanding > 0.5
         ? `Nová zakázka #${order.display_id} — ${zaplaceno} ${formatMoney(commission.paid, order.currency_code)}`
         : `Nová zakázka #${order.display_id} — zaplacená celá`
@@ -228,7 +243,7 @@ const onOrderPlaced = async ({
     sheetAttached = sheetAttachments.length > 0
   }
 
-  if (isMadeToOrder(order)) {
+  if (isMadeToOrder(order) && !fromInquiry) {
     await notifyMerchant(container, {
       key: `mn:mto-new:${order.id}`,
       title: `Nová zakázka #${order.display_id} — přečtěte si zadání`,
