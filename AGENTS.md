@@ -1,18 +1,24 @@
 # AGENTS.md
 
-## Testování v prohlížeči na tomhle PC (tools/pc-devices)
+## Testování v prohlížeči na tomhle PC (valecms browser)
 
-Most k prohlížeči na tomhle počítači přes Chrome DevTools Protocol. Má stejné příkazy a API jako
-`valecms devices` pro iPhone (níž), jen běží na jiném portu. Je postavený tak, aby se dal přenést
-do valecms jako druhý cíl. Panel je na http://localhost:4601. Prohlížeč se pouští s **vlastním
+Most k prohlížeči na tomhle počítači přes Chrome DevTools Protocol, od valecms 0.1.62 součást
+balíčku jako `valecms browser`. Má stejné příkazy a API jako `valecms devices` pro iPhone (níž),
+jen běží na jiném portu. Panel je na http://localhost:4601. Prohlížeč se pouští s **vlastním
 profilem** (`~/.valecms/pc-browser`) a bez škrcení na pozadí. Bere se Chrome, když tu je, jinak Edge.
-Jiný prohlížeč jde nastavit proměnnou `VALECMS_BROWSER`.
+Jiný prohlížeč jde nastavit proměnnou `VALECMS_BROWSER`. Spouští se ze `storefront/`:
 
 ```sh
-node tools/pc-devices/cli.mjs --url=https://dev.keramickazahrada.cz/cz --no-open   # na pozadí
-node tools/pc-devices/cli.mjs status        # prohlížeč, viewport, fps, frekvence monitoru, shadery
-node tools/pc-devices/cli.mjs stop          # ukončí most i prohlížeč, který pustil
+cd storefront
+npx valecms browser --url=https://dev.keramickazahrada.cz/cz --no-open   # na pozadí
+npx valecms browser --headless --no-open      # bez okna — když okno na obrazovce používá majitel
+npx valecms browser status        # prohlížeč, viewport, fps, frekvence monitoru, shadery
+npx valecms browser guide         # návod pro agenty
+npx valecms browser stop          # ukončí most i prohlížeč, který pustil
 ```
+
+`node tools/pc-devices/cli.mjs …` je starší kopie téhož (stejné příkazy i API); nové věci jen
+do balíčku valecms.
 
 Příkazy jako u iPhonu: `status` · `tabs` · `use` · `open URL` · `reload` · `shot` ·
 `eval "kód"` (await i holý objekt jako v konzoli) · `tap X Y` (skutečné kliknutí myší) ·
@@ -33,14 +39,14 @@ Most z tohoto PC do Safari na iPhonu přes USB (Google `ios-webkit-debug-proxy`)
 http://localhost:4600 ukazuje stav stránky, scroll, výšku spodní lišty Safari, fps, zaseknutí
 po sekcích, chyby konzole a událost „crash“. Agent dostane totéž jako příkazy.
 
-Zatím není na npm, spouští se ze zdroje (Node 22+). Aktuální verze je 0.1.60 na větvi `feature/devices`, před testem stačí `git pull`:
+Je v nainstalovaném valecms (0.1.62, Node 22+), spouští se ze `storefront/`. Níž v příkazech
+`node $D devices` znamená totéž:
 
 ```sh
-D=C:/Users/ADMIN/Documents/GitHub/valecms-devices/bin/valecms.mjs
+cd storefront
+D=node_modules/@c3studium/valecms/bin/valecms.mjs   # nebo rovnou: npx valecms devices <příkaz>
 node $D devices <příkaz>
 ```
-
-Až bude v projektu nainstalovaná verze valecms s `devices`, totéž dělá `npx valecms devices <příkaz>`.
 
 ### Spuštění
 
