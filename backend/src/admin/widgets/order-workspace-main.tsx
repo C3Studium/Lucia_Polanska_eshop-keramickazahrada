@@ -1,7 +1,8 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk";
 import type { AdminOrder, DetailWidgetProps } from "@medusajs/framework/types";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { useWideLayout } from "../components/order-section";
+import { useMinWidth, useWideLayout } from "../components/order-section";
+import { CpLabelPanel } from "./cp-label";
 import { useHideNativeCardsBefore, useRaiseNativeCard } from "../lib/native-cards";
 import { adminQueryClient } from "../lib/query-client";
 import { MadeToOrderPanel } from "./made-to-order-order";
@@ -35,6 +36,7 @@ import { OrderNowPanels } from "./order-workspace";
  */
 const OrderWorkspaceMain = ({ order }: { order: AdminOrder }) => {
   const wide = useWideLayout();
+  const rowSteps = useMinWidth(768);
   const bottom = useHideNativeCardsBefore<HTMLDivElement>([
     "Platby",
     "Nesplněné položky",
@@ -45,9 +47,22 @@ const OrderWorkspaceMain = ({ order }: { order: AdminOrder }) => {
   return (
     <>
       <div className="flex flex-col gap-y-3" style={{ order: -1 }}>
-        {/* Postup hned pod číslem objednávky (17. 11. 2026); na telefonu
-            i se štítkem, na širokém je štítek vpravo pod zakázkou. */}
-        {wide ? <OrderStepsPanel order={order} /> : <OrderNowPanels order={order} />}
+        {/* Postup hned pod číslem objednávky (17. 11. 2026). Od tabletu
+            výš vodorovná řada kroků a vedle ní štítek České pošty (dvě karty
+            v jednom řádku); na telefonu pod sebou. Když štítek nemá co
+            ukázat (osobní odběr), Postup zabere celou šířku. */}
+        {rowSteps ? (
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch">
+            <div className="min-w-0 flex-1 [&>*]:h-full">
+              <OrderStepsPanel order={order} layout="row" />
+            </div>
+            <div className="empty:hidden lg:w-[19rem] lg:shrink-0 [&>*]:h-full">
+              <CpLabelPanel order={order} />
+            </div>
+          </div>
+        ) : (
+          <OrderNowPanels order={order} />
+        )}
         <OrderCustomerPanel order={order} />
       </div>
       <div ref={bottom} className="flex flex-col gap-y-3">

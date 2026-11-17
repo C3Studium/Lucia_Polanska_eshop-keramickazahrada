@@ -82,3 +82,24 @@ const readWide = () =>
 /** Má detail objednávky dva sloupce (počítač), nebo jeden (telefon)? */
 export const useWideLayout = (): boolean =>
   useSyncExternalStore(subscribeWide, readWide, () => true);
+
+/**
+ * Je okno aspoň tak široké? (17. 11. 2026) — Postup objednávky je od
+ * tabletu výš vodorovná řada vedle štítku, na telefonu pod sebou.
+ */
+export const useMinWidth = (px: number): boolean => {
+  const query = `(min-width: ${px}px)`;
+  return useSyncExternalStore(
+    (listener) => {
+      if (typeof window === "undefined" || !window.matchMedia) return () => {};
+      const media = window.matchMedia(query);
+      media.addEventListener("change", listener);
+      return () => media.removeEventListener("change", listener);
+    },
+    () =>
+      typeof window !== "undefined" && window.matchMedia
+        ? window.matchMedia(query).matches
+        : true,
+    () => true
+  );
+};
