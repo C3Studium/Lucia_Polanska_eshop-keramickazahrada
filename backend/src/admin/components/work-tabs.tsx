@@ -68,33 +68,42 @@ export const SubTabs = ({
   active: string;
   onSelect: (key: string) => void;
 }) => (
-  <div className="flex flex-wrap items-center gap-2 px-6 py-4">
-    {tabs.map((tab) => {
-      const isActive = tab.key === active;
+  /* Nízký segmentový přepínač (17. 11. 2026) — stejný jako záložky
+     Produkty+ a období na Přehledu. Dřív řada vysokých karet, která na
+     každé stránce zabírala skoro sto pixelů. */
+  <div className="px-6 py-3">
+    <div className="bg-ui-bg-subtle inline-flex max-w-full flex-wrap gap-0.5 rounded-lg p-0.5">
+      {tabs.map((tab) => {
+        const isActive = tab.key === active;
 
-      return (
-        <button
-          key={tab.key}
-          type="button"
-          onClick={() => onSelect(tab.key)}
-          aria-current={isActive ? "page" : undefined}
-          className={clx(
-            "transition-fg flex items-center gap-x-2 rounded-lg border px-3 py-2 outline-none focus-visible:shadow-borders-focus",
-            isActive
-              ? "border-ui-border-interactive bg-ui-bg-base-pressed"
-              : "border-ui-border-base bg-ui-bg-base hover:bg-ui-bg-base-hover"
-          )}
-        >
-          <Text size="small" weight={isActive ? "plus" : "regular"}>
-            {tab.label}
-          </Text>
-          {typeof tab.count === "number" && tab.count > 0 && (
-            <Text size="xsmall" className="text-ui-fg-muted">
-              {tab.count}
+        return (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => onSelect(tab.key)}
+            aria-current={isActive ? "page" : undefined}
+            className={clx(
+              "transition-fg flex min-h-[34px] items-center gap-x-1.5 rounded-md px-3 outline-none focus-visible:shadow-borders-focus",
+              isActive
+                ? "bg-ui-bg-base shadow-elevation-card-rest"
+                : "hover:bg-ui-bg-base-hover"
+            )}
+          >
+            <Text
+              size="small"
+              weight={isActive ? "plus" : "regular"}
+              className={isActive ? "text-ui-fg-base" : "text-ui-fg-subtle"}
+            >
+              {tab.label}
             </Text>
-          )}
-        </button>
-      );
-    })}
+            {typeof tab.count === "number" && tab.count > 0 && (
+              <Text size="xsmall" className="text-ui-fg-muted tabular-nums">
+                {tab.count}
+              </Text>
+            )}
+          </button>
+        );
+      })}
+    </div>
   </div>
 );

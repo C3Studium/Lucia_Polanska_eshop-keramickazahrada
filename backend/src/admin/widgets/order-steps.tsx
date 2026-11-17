@@ -366,7 +366,7 @@ export const OrderStepsPanel = ({
     <Button
       size="base"
       variant="primary"
-      className="w-full sm:w-auto sm:min-w-[16rem] sm:self-start"
+      className="w-full sm:w-auto sm:min-w-[11rem] sm:self-start"
       isLoading={busy && !ceka}
       disabled={disabled || busy}
       onClick={onClick}
@@ -533,9 +533,17 @@ export const OrderStepsPanel = ({
 
   return (
     <Container className="divide-y p-0">
-      <div className="flex items-center justify-between gap-x-2 px-6 py-4">
+      <div
+        className={`flex items-center justify-between gap-x-2 px-6 ${layout === "row" ? "py-3" : "py-4"}`}
+      >
         <Heading level="h2">Postup objednávky</Heading>
-        <Badge color={badge.color}>{badge.label}</Badge>
+        {/* Vodorovně stav říkají kroky a „Teď:" — místo odznaku tu je
+            list pro dílnu, ať karta nemá řádek navíc (17. 11. 2026). */}
+        {layout === "row" ? (
+          <WorkshopSheetButton order={order} />
+        ) : (
+          <Badge color={badge.color}>{badge.label}</Badge>
+        )}
       </div>
 
       {(merchantOrder.attention_reason ||
@@ -566,7 +574,7 @@ export const OrderStepsPanel = ({
         <>
           {/* Vodorovně 1 → 7 (širší displej, 17. 11. 2026): názvy pod
               kolečky, aktuální krok a jeho tlačítko v kartičce pod řadou. */}
-          <ol className="flex items-start px-4 pt-5" aria-label="Kroky objednávky">
+          <ol className="flex items-start px-4 pt-4" aria-label="Kroky objednávky">
             {steps.map((step, index) => {
               const words = stepWords(step.key, pickup, merchantOrder.pickup_payment_due);
               const previousDone = index > 0 && steps[index - 1].state === "done";
@@ -578,7 +586,7 @@ export const OrderStepsPanel = ({
                   {index > 0 && (
                     <span
                       aria-hidden
-                      className={`absolute right-1/2 top-[13px] h-px w-full ${
+                      className={`absolute right-1/2 top-[10px] h-px w-full ${
                         previousDone && step.state === "done"
                           ? "bg-ui-tag-green-icon"
                           : "bg-ui-border-base"
@@ -587,7 +595,7 @@ export const OrderStepsPanel = ({
                   )}
                   <span
                     aria-hidden
-                    className={`relative z-10 flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-medium ${
+                    className={`relative z-10 flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-medium leading-none ${
                       step.state === "done"
                         ? "bg-ui-tag-green-icon text-ui-fg-on-color"
                         : step.state === "current"
@@ -600,7 +608,7 @@ export const OrderStepsPanel = ({
                   <Text
                     size="xsmall"
                     weight={step.state === "current" ? "plus" : "regular"}
-                    className={`mt-2 px-1 leading-tight ${
+                    className={`mt-1.5 px-1 leading-tight ${
                       step.state === "current" ? "text-ui-fg-base" : "text-ui-fg-subtle"
                     }`}
                   >
@@ -615,13 +623,17 @@ export const OrderStepsPanel = ({
           </ol>
           {(() => {
             const current = steps.find((step) => step.state === "current");
-            if (!current) return <div className="pb-5" />;
+            if (!current) return <div className="pb-4" />;
             return (
-              <div className="px-6 pb-5 pt-4">
-                <div className="bg-ui-bg-subtle flex flex-col gap-y-2 rounded-lg px-4 py-3">
-                  <Text size="small" weight="plus">
-                    Teď: {stepWords(current.key, pickup, merchantOrder.pickup_payment_due).title}
-                  </Text>
+              <div className="px-6 pb-4 pt-3">
+                {/* Nadpis kroku přes celou šířku, pod ním věta a tlačítko
+                    v jednom řádku — co nejnižší karta (17. 11. 2026). */}
+                <div className="bg-ui-bg-subtle flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg px-4 py-2.5 [&>p]:min-w-[10rem] [&>p]:flex-1">
+                  <div className="basis-full">
+                    <Text size="small" weight="plus">
+                      Teď: {stepWords(current.key, pickup, merchantOrder.pickup_payment_due).title}
+                    </Text>
+                  </div>
                   {currentControls(current)}
                 </div>
               </div>
@@ -662,7 +674,7 @@ export const OrderStepsPanel = ({
       )}
 
       {showSurcharge && single && (
-        <div className="flex flex-col gap-y-3 px-6 py-4">
+        <div className={`flex flex-col gap-y-3 px-6 ${layout === "row" ? "py-3" : "py-4"}`}>
           <div className="flex items-center justify-between gap-x-3">
             <div>
               <Text size="small" weight="plus">
@@ -771,9 +783,11 @@ export const OrderStepsPanel = ({
 
       {/* List pro dílnu — totéž PDF, které chodí v e-mailu o nové
           objednávce (17. 11. 2026). */}
-      <div className="flex px-6 py-4">
-        <WorkshopSheetButton order={order} />
-      </div>
+      {layout !== "row" && (
+        <div className="flex px-6 py-4">
+          <WorkshopSheetButton order={order} />
+        </div>
+      )}
     </Container>
   );
 };
