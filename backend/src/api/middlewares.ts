@@ -69,6 +69,7 @@ import { PostNewsletterTestSchema } from "./admin/newsletter/test/route";
 import { PostNewsletterDraftSchema } from "./admin/newsletter/drafts/route";
 import { requireRefundedBeforeCancel } from "../lib/claims/money";
 import { zapisovacProvozu } from "../lib/provozni-hlidka/sber";
+import { obnovaObchoduPoZapisu } from "../lib/storefront-refresh";
 
 export default defineMiddlewares({
   routes: [
@@ -79,7 +80,8 @@ export default defineMiddlewares({
      */
     {
       matcher: "/admin/*",
-      middlewares: [zapisovacProvozu()],
+      // Druhý: po každém úspěšném uložení klepne obchod (lib/storefront-refresh).
+      middlewares: [zapisovacProvozu(), obnovaObchoduPoZapisu()],
     },
     {
       matcher: "/store/*",

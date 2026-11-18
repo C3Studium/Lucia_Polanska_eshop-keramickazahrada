@@ -1,5 +1,6 @@
 import { revalidatePath, revalidateTag } from "next/cache"
 import { NextResponse } from "next/server"
+import { ohlasit } from "@lib/server/live-bus"
 
 /**
  * „Něco se v obchodě změnilo, zahoď uloženou podobu stránek."
@@ -86,10 +87,13 @@ export async function POST(request: Request) {
   for (const stitek of stitky) revalidateTag(stitek)
   if (telo.everything === true) {
     revalidatePath("/", "layout")
-    return NextResponse.json({ revalidated: true, tags: stitky, everything: true })
+    /* Otevřené záložky si obsah obnoví hned (18. 11. 2026, lib/server/live-bus). */
+    const zalozky = ohlasit("changed", { everything: true })
+    return NextResponse.json({ revalidated: true, tags: stitky, everything: true, zalozky })
   }
   if (stitky.length && !Array.isArray(telo.paths)) {
-    return NextResponse.json({ revalidated: true, tags: stitky })
+    const zalozky = ohlasit("changed", { tags: stitky })
+    return NextResponse.json({ revalidated: true, tags: stitky, zalozky })
   }
 
   for (const cesta of cesty) {
@@ -98,5 +102,6 @@ export async function POST(request: Request) {
     revalidatePath(cesta, "page")
   }
 
-  return NextResponse.json({ revalidated: true, paths: cesty })
+  const zalozky = ohlasit("changed", { paths: cesty })
+  return NextResponse.json({ revalidated: true, paths: cesty, zalozky })
 }
