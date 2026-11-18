@@ -41,6 +41,15 @@ import { useUrlState } from "../../lib/url-state";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
 import {
+  VYPRODEJ_TYPE,
+  VyprodejWizard,
+  useVyprodeje,
+  useVyprodejWrites,
+  vyprodejScope,
+  type VyprodejRowData,
+} from "../../components/vyprodej";
+import { useExpertMode } from "../../lib/expert-mode";
+import {
   ProductSaleDialog,
   SALE_STATE,
   salePeriod,
@@ -117,10 +126,13 @@ type DiscountsResponse = {
   orders_scanned: number;
 };
 
-const tabs = [
+/* Kampaně (obal slevových kódů s rozpočtem) jen v expertním režimu —
+   na jejich místě jsou Výprodeje (18. 11. 2026, přání majitele). */
+const tabsFor = (expert: boolean) => [
   { key: "vyrobky", label: "Zlevněné výrobky" },
+  { key: "vyprodeje", label: "Výprodeje" },
   { key: "akce", label: "Akce a kódy" },
-  { key: "kampane", label: "Kampaně" },
+  ...(expert ? [{ key: "kampane", label: "Kampaně" }] : []),
   { key: "ceniky", label: "Ceníky" },
   { key: "statistiky", label: "Statistiky" },
 ];
@@ -132,7 +144,8 @@ const tabs = [
 const PROMO_COLS = "lg:grid-cols-[minmax(0,1fr)_130px_140px_150px_40px]";
 const CAMPAIGN_COLS = "lg:grid-cols-[minmax(0,1fr)_190px_210px_150px_40px]";
 const PRICE_LIST_COLS = "lg:grid-cols-[minmax(0,1fr)_130px_210px_40px]";
-const SALE_COLS = "lg:grid-cols-[minmax(0,1fr)_170px_120px_200px_40px]";
+const VYPRODEJ_COLS = "lg:grid-cols-[minmax(0,1fr)_200px_120px_200px_40px]";
+const SALE_COLS ="lg:grid-cols-[minmax(0,1fr)_170px_120px_200px_40px]";
 
 /** Hlavička tabulky — jen na širokém displeji, na úzkém se řádky skládají. */
 const ColumnHeader = ({ cols, names }: { cols: string; names: string[] }) => (
@@ -510,6 +523,120 @@ type ProductSaleRowData = ProductSale & {
   variants_count: number;
 };
 
+const pocetVyrobku = (n: number) =>
+  n === 1 ? "1 výrobek" : n >= 2 && n <= 4 ? `${n} výrobky` : `${n} výrobků`;
+
+/** Výprodeje — celá kolekce, kategorie nebo vybrané výrobky (lib/vyprodej). */
+const VyprodejListRow = ({ row, onEdit }: { row: VyprodejRowData; onEdit: () => void }) => {
+  const { update, remove } = useVyprodejWrites();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const enabled = row.status === "active";
+  const state = SALE_STATE[row.state];
+  const ended = row.state === "ended";
+
+  return (
+    <article
+      className={`group hover:bg-ui-bg-base-hover relative grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 px-6 py-3 transition-colors lg:items-center ${VYPRODEJ_COLS}`}
+    >
+      {/* Celý řádek otevře úpravu výprodeje. */}
+      <button
+        type="button"
+        aria-label={`Upravit výprodej ${row.title}`}
+        onClick={onEdit}
+        className="focus-visible:shadow-borders-focus absolute inset-0 cursor-pointer outline-none"
+      />
+      <div className="min-w-0">
+        <Text size="small" weight="plus" className="truncate group-hover:underline">
+          {row.title} · −{row.percent} %
+        </Text>
+        <Text size="xsmall" className="text-ui-fg-subtle mt-0.5 truncate">
+          {VYPRODEJ_TYPE[row.type].label} · {vyprodejScope(row)}
+          {row.excluded_count ? ` · ${row.excluded_count} vyřazeno` : ""}
+        </Text>
+      </div>
+
+      <div className="relative z-10 -my-1 flex justify-end lg:order-last lg:my-0">
+        <RowOptionsMenu
+          label={`Možnosti výprodeje ${row.title}`}
+          contentClassName="z-50"
+          items={[
+            ...(!ended
+              ? [
+                  {
+                    label: enabled ? "Vypnout" : "Zapnout",
+                    icon: enabled ? <PauseSolid /> : <PlaySolid />,
+                    onSelect: () =>
+                      update.mutate(
+                        { id: row.id, body: { enabled: !enabled } },
+                        {
+                          onSuccess: () =>
+                            toast.success(
+                              enabled ? "Výprodej vypnutý — ceny jsou zpátky." : "Výprodej zapnutý."
+                            ),
+                        }
+                      ),
+                  },
+                ]
+              : []),
+            { label: "Upravit", icon: <ReceiptPercent />, onSelect: onEdit },
+            "separator" as const,
+            {
+              label: "Smazat",
+              icon: <Trash />,
+              destructive: true,
+              onSelect: () => setConfirmDelete(true),
+            },
+          ]}
+        />
+        <ConfirmDialog
+          open={confirmDelete}
+          onOpenChange={setConfirmDelete}
+          title={`Smazat výprodej „${row.title}“?`}
+          description="Výrobky se vrátí na plnou cenu. Objednávek, které už ve výprodeji proběhly, se to nedotkne."
+          consequence="Smazaný výprodej nejde vrátit — dá se jen založit znovu."
+          confirmLabel="Smazat"
+          isPending={remove.isPending}
+          onConfirm={() => remove.mutate(row.id)}
+        />
+      </div>
+
+      <div className="col-span-2 flex flex-wrap items-center gap-x-4 gap-y-1 lg:contents">
+        <div className="flex items-center gap-2">
+          <div className="flex -space-x-2">
+            {row.members.slice(0, 4).map((member) => (
+              <span
+                key={member.id}
+                className="bg-ui-bg-subtle ring-ui-bg-base size-7 overflow-hidden rounded-full ring-2"
+              >
+                {member.thumbnail && (
+                  <img src={member.thumbnail} alt="" className="size-full object-cover" />
+                )}
+              </span>
+            ))}
+          </div>
+          <Text size="small" className="text-ui-fg-subtle">
+            {pocetVyrobku(row.members_count)}
+          </Text>
+        </div>
+        <div>
+          <Badge size="2xsmall" color={state.color}>
+            {update.isPending || remove.isPending ? "Ukládám…" : state.label}
+          </Badge>
+        </div>
+        <div>
+          <Text size="small" className="text-ui-fg-subtle">
+            {row.type === "stock"
+              ? ended
+                ? "vyprodáno"
+                : "do vyprodání zásob"
+              : salePeriod(row)}
+          </Text>
+        </div>
+      </div>
+    </article>
+  );
+};
+
 /** Zlevněné výrobky — sleva nastavená přímo u ceny výrobku (lib/product-sale). */
 const SaleProductRow = ({ row }: { row: ProductSaleRowData }) => {
   const [editing, setEditing] = useState(false);
@@ -626,6 +753,10 @@ const SlevyInner = () => {
     queryFn: () => sdk.client.fetch("/admin/workbench/product-sales"),
     refetchOnWindowFocus: true,
   });
+  const vyprodeje = useVyprodeje();
+  const expert = useExpertMode();
+  const [wizard, setWizard] = useState<{ editing: VyprodejRowData | null } | null>(null);
+  const vlastniData = active === "vyrobky" || active === "vyprodeje";
 
   return (
     <Container className="divide-y p-0">
@@ -633,9 +764,11 @@ const SlevyInner = () => {
         <div>
           <Heading>Slevy</Heading>
           <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
-            Zlevněné výrobky, kódy a automatické slevy, kampaně a akční ceníky
-            na jednom místě. Slevu na jeden výrobek nastavíte u jeho ceny.
-            Sezónní výprodeje se zakládají zvlášť:{" "}
+            Zlevněné výrobky, výprodeje, slevové kódy a akční ceníky na jednom
+            místě. Slevu na jeden výrobek nastavíte u jeho ceny, výprodej celé
+            kolekce, kategorie nebo vybraných kusů tady nebo z detailu výrobku.
+            Přednost: výprodej, pak sleva výrobku — na zlevněné kusy slevové
+            kódy neplatí. Výběry s vlastní stránkou v obchodě:{" "}
             <Link to="/prehled/slevy" className="text-ui-fg-interactive hover:underline">
               Sezónní akce →
             </Link>
@@ -654,9 +787,14 @@ const SlevyInner = () => {
               }
             />
           )}
+          {active === "vyprodeje" && (
+            <Button size="small" variant="primary" onClick={() => setWizard({ editing: null })}>
+              Nový výprodej
+            </Button>
+          )}
           {/* Na Zlevněných výrobcích ne — sleva výrobku se zakládá u jeho
               ceny, „Nová sleva" tady je kód do košíku. */}
-          {active !== "vyrobky" && (
+          {!vlastniData && (
             <DiscountEditor
               trigger={
                 <Button size="small" variant="primary">
@@ -669,11 +807,13 @@ const SlevyInner = () => {
       </header>
 
       <SubTabs
-        tabs={tabs.map((tab) => ({
+        tabs={tabsFor(expert).map((tab) => ({
           ...tab,
           count:
             tab.key === "vyrobky"
               ? productSales.data?.sales.length
+              : tab.key === "vyprodeje"
+              ? vyprodeje.data?.vyprodeje.filter((item) => item.state !== "ended").length
               : tab.key === "akce"
               ? data?.promotions.length
               : tab.key === "kampane"
@@ -684,18 +824,47 @@ const SlevyInner = () => {
         onSelect={setActive}
       />
 
-      {isLoading && active !== "vyrobky" && (
+      {isLoading && !vlastniData && (
         <div className="flex flex-col gap-y-3 px-6 py-5">
           <Skeleton className="h-12 rounded-lg" />
           <Skeleton className="h-12 rounded-lg" />
         </div>
       )}
 
-      {isError && active !== "vyrobky" && (
+      {isError && !vlastniData && (
         <EmptyState
           title="Slevy se nepodařilo načíst"
           description="Zkuste stránku obnovit."
         />
+      )}
+
+      <VyprodejWizard
+        open={wizard !== null}
+        onOpenChange={(next) => !next && setWizard(null)}
+        editing={wizard?.editing ?? null}
+      />
+
+      {active === "vyprodeje" && (
+        <div className="divide-y">
+          {vyprodeje.isLoading ? (
+            <div className="flex flex-col gap-y-3 px-6 py-5">
+              <Skeleton className="h-12 rounded-lg" />
+              <Skeleton className="h-12 rounded-lg" />
+            </div>
+          ) : (vyprodeje.data?.vyprodeje ?? []).length === 0 ? (
+            <EmptyState
+              title="Žádný výprodej"
+              description="Výprodej zlevní celou kolekci, kategorii nebo vybrané výrobky — na čas, nebo do vyprodání zásob. Založíte ho tlačítkem Nový výprodej nebo z detailu výrobku."
+            />
+          ) : (
+            <>
+              <ColumnHeader cols={VYPRODEJ_COLS} names={["Výprodej", "Výrobky", "Stav", "Platí"]} />
+              {(vyprodeje.data?.vyprodeje ?? []).map((row) => (
+                <VyprodejListRow key={row.id} row={row} onEdit={() => setWizard({ editing: row })} />
+              ))}
+            </>
+          )}
+        </div>
       )}
 
       {active === "vyrobky" && (

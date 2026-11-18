@@ -35,5 +35,7 @@ export default sUlohou("sync-discountable", syncDiscountableDaily)
 
 export const config = {
   name: "sync-discountable",
-  schedule: "30 1 * * *",
+  /* Každou hodinu (18. 11. 2026): sleva u výrobku a výprodej začínají
+     a končí podle data — slevové kódy se mají srovnat do hodiny. */
+  schedule: "30 * * * *",
 }

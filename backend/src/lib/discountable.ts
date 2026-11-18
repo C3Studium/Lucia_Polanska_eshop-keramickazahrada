@@ -38,6 +38,8 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { isClearanceProduct } from "./clearance"
 import { isCustomAmountVoucher } from "./voucher"
+import { parseSaleDescription, saleState } from "./product-sale"
+import { parseVyprodej } from "./vyprodej-config"
 
 export type DiscountableProduct = {
   id: string
@@ -142,6 +144,43 @@ export const rozdilyDiscountable = (
  * shodit zápis do katalogu.
  */
 export const loadSaleMembership = async (
+  container: MedusaContainer
+): Promise<SaleMembership> => {
+  const [seasonal, priced] = await Promise.all([
+    loadSeasonalMembership(container),
+    loadPricedMembership(container),
+  ])
+  return { saleProductIds: new Set([...seasonal.saleProductIds, ...priced]) }
+}
+
+/**
+ * Sleva u výrobku a výprodej (18. 11. 2026, přednost: výprodej > sleva >
+ * slevové kódy). Obojí je akční ceník poznaný podle popisu; rozhoduje, jestli
+ * ceník právě platí (stav + období), stejně jako u sezónních akcí.
+ */
+const loadPricedMembership = async (container: MedusaContainer): Promise<Set<string>> => {
+  const ids = new Set<string>()
+  try {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const { data } = await query.graph({
+      entity: "price_list",
+      fields: ["id", "description", "status", "starts_at", "ends_at"],
+      pagination: { take: 1000, skip: 0 },
+    })
+    for (const list of data as any[]) {
+      if (saleState(list) !== "running") continue
+      const sale = parseSaleDescription(list.description)
+      if (sale) ids.add(sale.productId)
+      const vyprodej = parseVyprodej(list.description)
+      if (vyprodej) vyprodej.members.forEach((id) => ids.add(id))
+    }
+  } catch {
+    // Stejně jako u sezónních akcí: bez seznamu raději nic než shodit zápis.
+  }
+  return ids
+}
+
+const loadSeasonalMembership = async (
   container: MedusaContainer
 ): Promise<SaleMembership> => {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
