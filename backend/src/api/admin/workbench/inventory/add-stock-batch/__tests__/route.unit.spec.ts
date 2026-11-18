@@ -158,22 +158,22 @@ describe("POST /admin/workbench/inventory/add-stock (jedna položka, po přesunu
     expect(levels.get("a")!.stocked_quantity).toBe(0)
   })
 
-  it("neodebere kusy rezervované objednávkami ani pod nulu", async () => {
+  it("odebere přesně, kolik se řekne — i pod nulu (oprava záporného stavu)", async () => {
     const { levels, req } = sklad({ a: 3 })
     levels.get("a")!.reserved_quantity = 1
     const res = response()
     await singlePOST(req({ inventory_item_id: "a", quantity: -10 }), res)
-    expect(res.body).toMatchObject({ removed: 2, reserved: 1, stocked_quantity: 1 })
-    expect(levels.get("a")!.stocked_quantity).toBe(1)
+    expect(res.body).toMatchObject({ removed: 10, reserved: 1, stocked_quantity: -7 })
+    expect(levels.get("a")!.stocked_quantity).toBe(-7)
   })
 
-  it("záporný sklad pod rezervací odebíráním nezvedne (−4 skladem, 3 rezervováno)", async () => {
+  it("záporný stav jde ubrat dál a nikdy se odebráním nezvedne (−4 skladem)", async () => {
     const { levels, req } = sklad({ a: -4 })
     levels.get("a")!.reserved_quantity = 3
     const res = response()
     await singlePOST(req({ inventory_item_id: "a", quantity: -1 }), res)
-    expect(res.body).toMatchObject({ removed: 0, stocked_quantity: -4 })
-    expect(levels.get("a")!.stocked_quantity).toBe(-4)
+    expect(res.body).toMatchObject({ removed: 1, stocked_quantity: -5 })
+    expect(levels.get("a")!.stocked_quantity).toBe(-5)
   })
 
   it("nulu odmítne česky", async () => {
