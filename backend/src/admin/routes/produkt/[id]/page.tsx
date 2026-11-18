@@ -1729,6 +1729,11 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
             categories: (product.categories ?? []).map((category) => ({
               id: category.id,
             })),
+            // Kanál obchodu z originálu (18. 11. 2026) — bez něj by kopii
+            // obchod nenašel; pojistkou je i subscriber product-shop-defaults.
+            ...((product.sales_channels ?? []).length
+              ? { sales_channels: (product.sales_channels ?? []).map((sc) => ({ id: sc.id })) }
+              : {}),
             ...(product.thumbnail ? { thumbnail: product.thumbnail } : {}),
             images: (product.images ?? []).map((image) => ({ url: image.url })),
             options: [
