@@ -304,6 +304,9 @@ export const VyprodejWizard = ({
     const first =
       (collectionIds[0] && collectionTitle.get(collectionIds[0])) ||
       (categoryIds[0] && (categories.data?.product_categories ?? []).find((item) => item.id === categoryIds[0])?.name) ||
+      /* Výprodej jednoho výrobku (z jeho detailu) se jmenuje po něm. */
+      (productIds.length === 1 &&
+        (products.data?.products ?? []).find((item) => item.id === productIds[0])?.title) ||
       "";
     return first ? `Výprodej — ${first}` : "Výprodej";
   };
