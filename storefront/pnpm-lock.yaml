@@ -8,17 +8,17 @@ overrides:
   webpack: ^5
 
 patchedDependencies:
-  '@c3studium/valecms@0.1.62':
+  '@c3studium/valecms@0.1.64':
     hash: 6ee5f209598eb746d17104bdf2cb4a4cfdccd9e04e68e5b264bb9c9b51eabed5
-    path: patches/@c3studium__valecms@0.1.62.patch
+    path: patches/@c3studium__valecms@0.1.64.patch
 
 importers:
 
   .:
     dependencies:
       '@c3studium/valecms':
-        specifier: 0.1.62
-        version: 0.1.62(patch_hash=6ee5f209598eb746d17104bdf2cb4a4cfdccd9e04e68e5b264bb9c9b51eabed5)(next@15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0))(react-dom@19.0.5(react@19.0.5))(react@19.0.5)
+        specifier: 0.1.64
+        version: 0.1.64(patch_hash=6ee5f209598eb746d17104bdf2cb4a4cfdccd9e04e68e5b264bb9c9b51eabed5)(next@15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0))(react-dom@19.0.5(react@19.0.5))(react@19.0.5)
       '@headlessui/react':
         specifier: ^2.2.7
         version: 2.2.7(react-dom@19.0.5(react@19.0.5))(react@19.0.5)
@@ -266,8 +266,8 @@ packages:
     resolution: {integrity: sha512-ruv7Ae4J5dUYULmeXw1gmb7rYRz57OWCPM57pHojnLq/3Z1CK2lNSLTCVjxVk1F/TZHwOZZrOWi0ur95BbLxNQ==}
     engines: {node: '>=6.9.0'}
 
-  '@c3studium/valecms@0.1.62':
-    resolution: {integrity: sha512-OPLKA3kLl97N8whCedMw1BAPmMz9RKX3AWV2mNJtZOgB2KcnJg4Kct5sGf2dwhCc48+yKUMbVNKgvFLXgnED4w==, tarball: https://npm.pkg.github.com/download/@c3studium/valecms/0.1.62/185e89db9b1814e1a25a6eb99e390cb131270d67}
+  '@c3studium/valecms@0.1.64':
+    resolution: {integrity: sha512-ggZjMSDR/Gk497y/mXalag+ISnWf4VPIpwr/+cpsIILzyboFZfuizESBZZ+TuNYrfg5wOaDT21U9bAZt9OzCGg==, tarball: https://npm.pkg.github.com/download/@c3studium/valecms/0.1.64/254a5473cb2ffbbca2c1a9e96171b316e0a98fd8}
     engines: {node: '>=18.18'}
     hasBin: true
     peerDependencies:
@@ -5386,7 +5386,7 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.27.1
 
-  '@c3studium/valecms@0.1.62(patch_hash=6ee5f209598eb746d17104bdf2cb4a4cfdccd9e04e68e5b264bb9c9b51eabed5)(next@15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0))(react-dom@19.0.5(react@19.0.5))(react@19.0.5)':
+  '@c3studium/valecms@0.1.64(patch_hash=6ee5f209598eb746d17104bdf2cb4a4cfdccd9e04e68e5b264bb9c9b51eabed5)(next@15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0))(react-dom@19.0.5(react@19.0.5))(react@19.0.5)':
     dependencies:
       next: 15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0)
       react: 19.0.5

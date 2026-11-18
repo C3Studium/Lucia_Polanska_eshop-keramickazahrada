@@ -1,2 +1,2 @@
 patchedDependencies:
-  '@c3studium/valecms@0.1.62': patches/@c3studium__valecms@0.1.62.patch
+  '@c3studium/valecms@0.1.64': patches/@c3studium__valecms@0.1.64.patch
