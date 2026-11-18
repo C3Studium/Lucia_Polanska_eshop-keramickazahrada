@@ -37,3 +37,35 @@ export const refreshStorefront = async (
     )
   }
 }
+
+/*
+ * Obnova obchodu po KAŽDÉM uložení v administraci (18. 11. 2026, přání
+ * majitele: „změna musí být vidět hned — backend zavolá obchod, jinak nic
+ * nekontrolovat"). Dřív obchod klepaly jen vybrané události (výrobky,
+ * kolekce, slevy, texty); fotky, nastavení, kurzy, poukazy a další se
+ * propsaly až po vypršení mezipaměti.
+ *
+ * Middleware na /admin/*: když zápis (POST/PUT/PATCH/DELETE) skončí
+ * úspěchem, za chvilku pošle obchodu jedno „everything". Víc uložení těsně
+ * po sobě (hromadné úpravy, přetažení fotek) se sloučí do jednoho klepnutí.
+ * Obchod pak obnoví mezipaměť a dá vědět otevřeným záložkám (/api/live).
+ */
+const ZAPIS = new Set(["POST", "PUT", "PATCH", "DELETE"])
+const SLOUCENI_MS = 700
+let odlozeno: ReturnType<typeof setTimeout> | null = null
+
+export const obnovaObchoduPoZapisu = () => {
+  return (req: any, res: any, next: () => void) => {
+    if (ZAPIS.has(String(req.method).toUpperCase())) {
+      res.on("finish", () => {
+        if (res.statusCode >= 400) return
+        if (odlozeno) clearTimeout(odlozeno)
+        odlozeno = setTimeout(() => {
+          odlozeno = null
+          void refreshStorefront(req.scope, { everything: true })
+        }, SLOUCENI_MS)
+      })
+    }
+    next()
+  }
+}

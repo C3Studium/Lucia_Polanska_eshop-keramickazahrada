@@ -18,14 +18,34 @@ import { handleCmsRequest } from '@c3studium/valecms/server/handlers/index.js'
 import { asAppRoute } from '@c3studium/valecms/runtime/appRoute.js'
 
 import { guardLegalCmsRequest } from '@lib/data/legal-cms-guard'
+import { ohlasit } from '@lib/server/live-bus'
 
 const cmsHandler = asAppRoute(handleCmsRequest)
 
 type RouteContext = { params: Promise<Record<string, string | string[]>> }
 
+/*
+ * Publikování ze Studia → otevřené záložky si obsah obnoví hned (18. 11. 2026,
+ * `lib/server/live-bus`). Jen to, co mění veřejný web: přechod dokumentu
+ * (publish, unpublish, archive, restore) a nastavení webu. Ukládání konceptu
+ * je vidět jen ve Studiu, to záložky nebudí.
+ */
+const VEREJNE_PRECHODY = new Set(['publish', 'unpublish', 'archive', 'restore'])
+
+const menilVerejnyWeb = (request: Request, params: Record<string, string | string[]>) => {
+    if (request.method === 'GET' || request.method === 'HEAD') return false
+    const casti = ([] as string[]).concat(params.route ?? [])
+    if (casti[0] === 'settings') return true
+    return casti[0] === 'documents' && VEREJNE_PRECHODY.has(String(casti[2] ?? ''))
+}
+
 const handler = async (request: Request, context: RouteContext): Promise<Response> => {
-    const refused = await guardLegalCmsRequest(request, await context.params)
-    return refused ?? cmsHandler(request, context)
+    const params = await context.params
+    const refused = await guardLegalCmsRequest(request, params)
+    if (refused) return refused
+    const response = await cmsHandler(request, context)
+    if (response.ok && menilVerejnyWeb(request, params)) ohlasit('changed', { cms: true })
+    return response
 }
 
 export { handler as GET, handler as POST, handler as PUT, handler as PATCH, handler as DELETE }

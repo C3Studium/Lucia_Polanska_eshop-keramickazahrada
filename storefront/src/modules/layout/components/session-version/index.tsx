@@ -8,7 +8,6 @@ import {
   CART_PENDING_KEY,
   CART_VERSION_ENDPOINT,
   RELOAD_GUARD_KEY,
-  VERSION_ENDPOINT,
   clearAppStorage,
 } from "@lib/util/session-version"
 
@@ -20,12 +19,10 @@ import {
  * verzi nemá jak vědět — drží v paměti router i balík té staré a při přechodu
  * na další stránku si řekne o soubory, které na serveru už nejsou.
  *
- * Ptá se při návratu k záložce, při každém přechodu na jinou stránku
- * a jednou za minutu (18. 11. 2026, dřív pět minut — majitel chce novou
- * verzi u lidí hned). Dotaz jen na viditelné záložce, takže mobil na
- * pozadí se kvůli němu nebudí.
+ * Od 18. 11. 2026 se neptá pravidelně: poslouchá živé spojení `/api/live`
+ * (viz efekt níž a `lib/server/live-bus`).
  */
-const INTERVAL_MS = 60 * 1000
+const LIVE_ENDPOINT = "/api/live"
 
 /*
  * Kde se znovunačíst nesmí. Rozepsaná data v pokladně, návrat od platební
@@ -59,7 +56,7 @@ const bezpecneZnovunacist = () => {
 const SessionVersionWatch = () => {
   const router = useRouter()
   const pathname = usePathname()
-  const zkontrolovatRef = useRef<(() => Promise<void>) | null>(null)
+  const dohnatRef = useRef<(() => void) | null>(null)
 
   /*
    * Košík na novou verzi.
@@ -126,74 +123,116 @@ const SessionVersionWatch = () => {
     }
   }, [router])
 
+  /*
+   * Živé spojení s obchodem (18. 11. 2026, přání majitele: „změna hned,
+   * backend zavolá obchod, jinak nic nekontrolovat"). Žádné dotazování —
+   * záložka poslouchá `/api/live`:
+   *
+   * - `changed` = v administraci se něco uložilo a obchod už zahodil
+   *   mezipaměť. Záložka si obsah obnoví na místě (`router.refresh` — bez
+   *   znovunačtení, rozepsané věci i poloha zůstanou).
+   * - `hello` přijde po každém (znovu)připojení s otiskem verze. Po nasazení
+   *   se spojení přeruší, prohlížeč se připojí znovu a jiný otisk znamená
+   *   novou verzi → jedno celé znovunačtení.
+   *
+   * Obojí jen v bezpečnou chvíli (`bezpecneZnovunacist`: ne v pokladně,
+   * účtu, košíku, na objednávce ani při psaní). Jinak se to odloží na
+   * nejbližší přechod jinam nebo na chvíli, kdy pole přestane mít fokus.
+   */
   useEffect(() => {
-    // Bez otisku není s čím porovnávat — build proběhl mimo náš skript.
-    if (!BUILD_STAMP) return
+    if (typeof EventSource === "undefined") return
 
     let zruseno = false
+    let novaVerze: string | null = null
+    let obnovit = false
+    let zdroj: EventSource | null = null
 
-    const zkontrolovat = async () => {
-      if (zruseno || document.visibilityState !== "visible") return
-
-      let stamp: string | undefined
-
-      try {
-        const odpoved = await fetch(VERSION_ENDPOINT, { cache: "no-store" })
-        if (!odpoved.ok) return
-        stamp = (await odpoved.json())?.stamp
-      } catch {
-        // Offline nebo restart serveru. Zeptáme se příště.
-        return
-      }
-
-      if (zruseno || !stamp || stamp === BUILD_STAMP) return
-
+    const nacistNovouVerzi = () => {
+      if (!novaVerze || zruseno) return
       /*
        * Pojistka proti smyčce. Při postupném nasazení může chvíli vedle sebe
        * běžet stará i nová instance a odpovědi se střídají — bez tohohle by
        * se záložka načítala dokola.
        */
       try {
-        if (window.localStorage.getItem(RELOAD_GUARD_KEY) === stamp) return
+        if (window.localStorage.getItem(RELOAD_GUARD_KEY) === novaVerze) return
       } catch {
         return
       }
-
       if (!bezpecneZnovunacist()) return
-
       zruseno = true
-
       // Pořadí: úklid maže i klíče s předponou `kz:`, tedy i tuhle pojistku.
       clearAppStorage()
       try {
-        window.localStorage.setItem(RELOAD_GUARD_KEY, stamp)
+        window.localStorage.setItem(RELOAD_GUARD_KEY, novaVerze)
       } catch {
         // Bez úložiště se pojistka nezapíše; smyčku hlídá `zruseno`.
       }
-
       window.location.reload()
     }
 
-    const priNavratu = () => {
-      if (document.visibilityState === "visible") void zkontrolovat()
+    const obnovitObsah = () => {
+      if (!obnovit || zruseno) return
+      if (!bezpecneZnovunacist()) return
+      obnovit = false
+      router.refresh()
     }
 
+    const dohnat = () => {
+      nacistNovouVerzi()
+      obnovitObsah()
+    }
+
+    const pripojit = () => {
+      zdroj?.close()
+      zdroj = new EventSource(LIVE_ENDPOINT)
+      zdroj.addEventListener("hello", (event) => {
+        let stamp: string | undefined
+        try {
+          stamp = JSON.parse((event as MessageEvent).data)?.stamp
+        } catch {
+          return
+        }
+        if (BUILD_STAMP && stamp && stamp !== BUILD_STAMP) {
+          novaVerze = stamp
+          nacistNovouVerzi()
+        }
+      })
+      zdroj.addEventListener("changed", () => {
+        obnovit = true
+        obnovitObsah()
+      })
+    }
+
+    pripojit()
+    dohnatRef.current = dohnat
+
+    /* Mobil na pozadí spojení zavře; po návratu se připojí znovu (a z `hello`
+       se dozví, jestli mezitím nevyšla nová verze). */
+    const priNavratu = () => {
+      if (document.visibilityState !== "visible") return
+      if (!zdroj || zdroj.readyState === EventSource.CLOSED) pripojit()
+      dohnat()
+    }
+    /* Pole přestalo mít fokus — odložená obnova se může dohnat. */
+    const poOpusteniPole = () => window.setTimeout(dohnat, 0)
+
     document.addEventListener("visibilitychange", priNavratu)
-    const timer = window.setInterval(() => void zkontrolovat(), INTERVAL_MS)
-    zkontrolovatRef.current = zkontrolovat
+    document.addEventListener("focusout", poOpusteniPole)
 
     return () => {
       zruseno = true
-      zkontrolovatRef.current = null
+      dohnatRef.current = null
+      zdroj?.close()
       document.removeEventListener("visibilitychange", priNavratu)
-      window.clearInterval(timer)
+      document.removeEventListener("focusout", poOpusteniPole)
     }
-  }, [])
+  }, [router])
 
-  /* Přechod na jinou stránku je nejbezpečnější chvíle: nic rozepsaného
-     tu ještě není. Chráněné stránky hlídá `bezpecneZnovunacist`. */
+  /* Přechod na jinou stránku: odložená nová verze se načte teď (nic
+     rozepsaného tu ještě není). Chráněné stránky hlídá `bezpecneZnovunacist`. */
   useEffect(() => {
-    void zkontrolovatRef.current?.()
+    dohnatRef.current?.()
   }, [pathname])
 
   return null
