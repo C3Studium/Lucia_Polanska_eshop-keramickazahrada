@@ -167,6 +167,15 @@ describe("POST /admin/workbench/inventory/add-stock (jedna položka, po přesunu
     expect(levels.get("a")!.stocked_quantity).toBe(1)
   })
 
+  it("záporný sklad pod rezervací odebíráním nezvedne (−4 skladem, 3 rezervováno)", async () => {
+    const { levels, req } = sklad({ a: -4 })
+    levels.get("a")!.reserved_quantity = 3
+    const res = response()
+    await singlePOST(req({ inventory_item_id: "a", quantity: -1 }), res)
+    expect(res.body).toMatchObject({ removed: 0, stocked_quantity: -4 })
+    expect(levels.get("a")!.stocked_quantity).toBe(-4)
+  })
+
   it("nulu odmítne česky", async () => {
     const { req } = sklad({ a: 3 })
     await expect(singlePOST(req({ inventory_item_id: "a", quantity: 0 }), response())).rejects.toThrow(/odebrat/)

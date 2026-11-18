@@ -33,7 +33,7 @@ import { SaveIndicator } from "../../../components/save-indicator";
 import { PhotoStrip, PhotoViewer } from "../../../components/photo-strip";
 import { PhotoOrderEditor } from "../../../components/photo-order-editor";
 import { mainFirst } from "../../../components/photo-strip-order";
-import { precistZmenu } from "../../../lib/naskladneni";
+import { StockStepper } from "../../../components/stock-stepper";
 import { ProductionProfileEditor } from "../../../components/production-profile-editor";
 import { ProductDetailMenu } from "../../../components/product-detail-menu";
 import { ProductStats } from "../../../components/product-stats";
@@ -474,87 +474,6 @@ const FieldLabel = ({ children }: { children: React.ReactNode }) => (
   </Text>
 );
 
-/** Inline restock — kolik kusů přišlo z pece, nic víc. */
-const RestockCell = ({
-  inventoryItemId,
-  onDone,
-}: {
-  inventoryItemId: string | null;
-  onDone: () => Promise<unknown>;
-}) => {
-  const [amount, setAmount] = useState("");
-  /* „3" přidá, „-2" odebere (18. 11. 2026, Lucie: sklad šel jen přidat). */
-  const zmena = precistZmenu(amount);
-  const odebira = zmena.druh === "ok" && zmena.kusy < 0;
-  const add = useMutation({
-    mutationFn: () => {
-      if (zmena.druh !== "ok") {
-        throw new Error("Napište prosím, kolik kusů přidat (3), nebo odebrat (-2).");
-      }
-      return sdk.client.fetch(`/admin/workbench/inventory/add-stock`, {
-        method: "POST",
-        body: { inventory_item_id: inventoryItemId, quantity: zmena.kusy },
-      }) as Promise<{ removed?: number; reserved?: number }>;
-    },
-    onSuccess: async (vysledek) => {
-      const kusy = zmena.druh === "ok" ? zmena.kusy : 0;
-      setAmount("");
-      await onDone();
-      if (kusy < 0) {
-        const odebrano = vysledek?.removed ?? 0;
-        toast.success(
-          odebrano < Math.abs(kusy)
-            ? `Odebráno ${pieces(odebrano)}. Víc nešlo — ${pieces(vysledek?.reserved ?? 0)} drží otevřené objednávky.`
-            : `Odebráno ${pieces(odebrano)}.`
-        );
-        return;
-      }
-      toast.success(`Přidáno ${pieces(kusy)}.`);
-    },
-    onError: (error) =>
-      toast.error(ceskaChyba(error, "Změna skladu se nepodařila.")),
-  });
-
-  if (!inventoryItemId) {
-    return (
-      <Text size="xsmall" className="text-ui-fg-muted">
-        bez skladové karty
-      </Text>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-1">
-      {/* Text, ne number: číselné pole a klávesnice iPhonu mínus neumí. */}
-      <Input
-        size="small"
-        type="text"
-        className="w-16"
-        placeholder="± ks"
-        title="Kolik kusů přidat (3), nebo odebrat (-2)"
-        aria-label="Přidat (3) nebo odebrat (-2) kusy"
-        aria-invalid={zmena.druh === "chyba"}
-        value={amount}
-        onChange={(event) => setAmount(event.target.value)}
-        onKeyDown={(event) => {
-          // Enter uloží (bez hledání tlačítka), Esc rozepsané číslo smaže.
-          if (event.key === "Enter" && zmena.druh === "ok") add.mutate();
-          if (event.key === "Escape") setAmount("");
-        }}
-        disabled={add.isPending}
-      />
-      <Button
-        size="small"
-        variant="secondary"
-        isLoading={add.isPending}
-        disabled={zmena.druh !== "ok"}
-        onClick={() => add.mutate()}
-      >
-        {odebira ? "Odebrat" : "Přidat"}
-      </Button>
-    </div>
-  );
-};
 
 /**
  * Řádek provedení — a při jediném provedení prostě „Cena a sklad".
@@ -834,24 +753,27 @@ const VariantRow = ({
         )}
       </Pole>
       <Pole label="Skladem">
-        <div className="flex flex-wrap items-center gap-2">
-          <Text size="small" className="tabular-nums">
-            {stock?.available ?? "—"}
-          </Text>
+        {/* − stav + (18. 11. 2026): přidat i odebrat přímo u čísla, jako
+            „Počet kusů" v obchodě. Číslo uprostřed jde přepsat. */}
+        <div className="flex flex-wrap items-center gap-2" data-jump="sklad">
+          {stock?.inventory_item_id && typeof stock.available === "number" ? (
+            <StockStepper
+              inventoryItemId={stock.inventory_item_id}
+              available={stock.available}
+              onDone={invalidate}
+            />
+          ) : (
+            <Text size="small" className="tabular-nums">
+              {stock?.available ?? "—"}
+              {!stock?.inventory_item_id && stock && (
+                <span className="text-ui-fg-muted ml-2">bez skladové karty</span>
+              )}
+            </Text>
+          )}
           {state && (
             <Badge size="2xsmall" color={state.color}>
               {state.label}
             </Badge>
-          )}
-          {/* U jediného provedení stojí naskladnění hned u stavu — je to
-              úkon nad tímhle číslem, ne vlastní sloupec. */}
-          {solo && (
-            <div data-jump="sklad">
-              <RestockCell
-                inventoryItemId={stock?.inventory_item_id ?? null}
-                onDone={invalidate}
-              />
-            </div>
           )}
         </div>
         {(Number(stock?.reserved) > 0 ||
@@ -870,16 +792,6 @@ const VariantRow = ({
           </Text>
         )}
       </Pole>
-      {!solo && (
-        <Pole label="Naskladnit">
-          <div data-jump="sklad">
-            <RestockCell
-              inventoryItemId={stock?.inventory_item_id ?? null}
-              onDone={invalidate}
-            />
-          </div>
-        </Pole>
-      )}
       <div className="flex justify-end">
         {canDelete && (
           <ConfirmDialog
