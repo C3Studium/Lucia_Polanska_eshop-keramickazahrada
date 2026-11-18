@@ -482,12 +482,15 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
   "zakazka.panel_lhuta": {
     label: "Lhůta (když je v profilu vyplněná)",
     help:
-      "První věta panelu. Číslo dnů se bere z výrobního profilu toho kusu, takže jedno znění platí pro hrnek i pro plastiku.",
+      "První věta panelu. Číslo dnů se bere z výrobního profilu toho kusu, takže jedno znění platí pro hrnek i pro plastiku. Lhůtu můžete napsat i slovy (např. „6–8 týdnů“) — pak značku {{dny}} vynechte.",
     group: "Panel u ceny (stránka výrobku)",
     multiline: true,
     maxLength: 300,
+    /* {{dny}} nepovinná od 18. 11. 2026: majitelka chce psát lhůtu
+       slovy („alespoň 6–8 týdnů, dle aktuálních podmínek") a s povinnou
+       značkou nešla věta uložit. */
     znacky: [
-      { znacka: "{{dny}}", popis: "nejdelší lhůta ve dnech z profilu", povinna: true },
+      { znacka: "{{dny}}", popis: "nejdelší lhůta ve dnech z profilu", povinna: false },
       { znacka: "{{obvykle}}", popis: "rozpětí v závorce, např. „ (obvykle 14–42 dní)“; bez rozpětí zmizí", povinna: false },
     ],
   },
@@ -2127,7 +2130,7 @@ export const SHOP_TEXT_DEFAULTS: Readonly<ShopTextValues> = Object.freeze({
   "pokladna.cena_po_domluve_nula":
     "Teď se nic neplatí. Až spolu domluvíme cenu, pošlu vám ji e-mailem — i s poštovným, pokud si kus necháte poslat — a zaplatíte zálohu nebo celou částku.",
   "pokladna.doprava_krehke":
-    "Vybrali jste křehký kus. Aby dorazil v pořádku, posíláme ho jen jako křehký balík Českou poštou — nebo si pro něj můžete přijet do ateliéru.",
+    "Vybrali jste křehký kus. Aby dorazil v pořádku, pošleme ho jako křehký balík — Českou poštou nebo Balíkovnou na adresu, s příplatkem za křehké. Nebo si pro něj můžete přijet do ateliéru.",
   "pokladna.doprava_zakazka":
     "Zakázkovou výrobu posíláme jen jako křehký balík. Nebo si pro ni můžete přijet do ateliéru.",
   "pokladna.doprava_cena_po_domluve":

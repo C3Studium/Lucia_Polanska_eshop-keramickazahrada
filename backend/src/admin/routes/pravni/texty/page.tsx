@@ -72,6 +72,17 @@ type TextyResponse = {
 
 const fieldId = (key: ShopTextKey) => `text-${key.replace(/\./g, "-")}`;
 
+/** Slova pro volné hledání: bez diakritiky, čísel, značek {{…}} a interpunkce. */
+const slovaKHledani = (text: string): string[] =>
+  text
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/\{\{[^}]*\}\}/g, " ")
+    .replace(/[^a-z]+/g, " ")
+    .split(" ")
+    .filter((slovo) => slovo.length >= 2);
+
 const TextField = ({
   textKey,
   value,
@@ -259,14 +270,22 @@ const Inner = () => {
   const valueOf = (key: ShopTextKey) => edits[key] ?? savedText(key);
   const zapnutoSaved = (key: ShopTextKey) => data?.vypnute?.[key] !== true;
 
+  /*
+   * Věta zkopírovaná z obchodu („Hotovo do 42 dnů… (obvykle 14–42 dní)")
+   * se doslova nenajde: uložené znění má místo čísel značky („{{dny}}").
+   * Majitelka ji tak 18. 11. 2026 nenašla. Proto se navíc porovnávají slova
+   * bez čísel, značek a diakritiky — stačí, když sedí většina z nich.
+   */
+  const hledanaSlova = slovaKHledani(hledaneSlovo);
   const sedi = (key: ShopTextKey) => {
     if (!hledaneSlovo) return true;
     const meta = SHOP_TEXT_META[key];
-    return (
-      `${meta.label} ${meta.help} ${valueOf(key)} ${meta.group}`
-        .toLowerCase()
-        .includes(hledaneSlovo)
-    );
+    const text = `${meta.label} ${meta.help} ${valueOf(key)} ${meta.group}`;
+    if (text.toLowerCase().includes(hledaneSlovo)) return true;
+    if (hledanaSlova.length < 3) return false;
+    const slova = new Set(slovaKHledani(text));
+    const shoda = hledanaSlova.filter((slovo) => slova.has(slovo)).length;
+    return shoda / hledanaSlova.length >= 0.7;
   };
   const nalezeno = SHOP_TEXT_KEYS.filter(sedi);
 
