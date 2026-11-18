@@ -1,5 +1,5 @@
 import { ArrowUpRightOnBox, EllipsisHorizontal, Trash } from "@medusajs/icons";
-import { Button, Input, Prompt, Switch, Text } from "@medusajs/ui";
+import { Button, Prompt, Switch, Text } from "@medusajs/ui";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { setExpertMode, useExpertMode } from "../lib/expert-mode";
@@ -44,7 +44,6 @@ export const ProductDetailMenu = ({
   productId,
   productTitle,
   priceLabel,
-  damaged,
   archived,
   isPublished,
   storeUrl,
@@ -59,7 +58,6 @@ export const ProductDetailMenu = ({
   productTitle: string;
   /** Dnešní cena („450 Kč" / „450 Kč – 600 Kč"); `null` = není co zlevnit. */
   priceLabel: string | null;
-  damaged: boolean;
   archived: boolean;
   isPublished: boolean;
   /** U konceptu je hlavním tlačítkem Publikovat — odkaz do obchodu je tady. */
@@ -67,35 +65,25 @@ export const ProductDetailMenu = ({
   pending: {
     duplicate: boolean;
     visibility: boolean;
-    discount: boolean;
     archive: boolean;
     remove: boolean;
   };
   onDuplicate: () => void;
   onSetPublished: (next: boolean) => void;
-  onDiscount: (input: { percent: number; markClearance: boolean }) => void;
+  /** Dovede na řádek „Sleva" u ceny (lib/product-sale). */
+  onDiscount: () => void;
   onArchive: (next: boolean) => void;
   onDelete: () => void;
 }) => {
   const expert = useExpertMode();
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState<"menu" | "discount">("menu");
-  const [percent, setPercent] = useState("20");
-  const [markDamaged, setMarkDamaged] = useState(true);
-
-  const percentValue = Number(percent);
-  const percentOk =
-    Number.isFinite(percentValue) && percentValue >= 1 && percentValue <= 99;
   const busy = Object.values(pending).some(Boolean);
 
   return (
     <Prompt
       variant="confirmation"
       open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (!next) setView("menu");
-      }}
+      onOpenChange={setOpen}
     >
       <Prompt.Trigger asChild>
         <Button
@@ -110,7 +98,6 @@ export const ProductDetailMenu = ({
       </Prompt.Trigger>
       {/* Na telefonu okraj kolem okna, ať je poznat, že je to okno. */}
       <Prompt.Content className="w-[calc(100%-2rem)]">
-        {view === "menu" ? (
           <>
             <Prompt.Header>
               <Prompt.Title>Další akce</Prompt.Title>
@@ -156,15 +143,20 @@ export const ProductDetailMenu = ({
                   </a>
                 )
               )}
+              {/* Sleva (18. 11. 2026) se nastavuje u ceny — procenta, od–do,
+                  vypnout. Tohle jen dovede na řádek „Sleva" v Ceně a skladu. */}
               <ActionRow
                 label="Zlevnit"
                 description={
                   priceLabel
-                    ? "Sníží cenu o zadaná procenta; původní cenu si zapamatuje."
+                    ? "Sleva v % s datem od–do — nastavuje se u ceny (Cena a sklad)."
                     : "Kus zatím nemá cenu — není co zlevnit."
                 }
                 disabled={!priceLabel}
-                onClick={() => setView("discount")}
+                onClick={() => {
+                  setOpen(false);
+                  onDiscount();
+                }}
               />
               <ActionRow
                 label={archived ? "Obnovit z archivu" : "Archivovat"}
@@ -230,57 +222,6 @@ export const ProductDetailMenu = ({
               <Prompt.Cancel>Zavřít</Prompt.Cancel>
             </Prompt.Footer>
           </>
-        ) : (
-          <>
-            <Prompt.Header>
-              <Prompt.Title>Zlevnit „{productTitle}"</Prompt.Title>
-              <Prompt.Description>
-                Sníží cenu všech provedení o zadaná procenta.
-                {priceLabel ? ` Teď: ${priceLabel}.` : ""} Původní cena se
-                zapamatuje.
-              </Prompt.Description>
-            </Prompt.Header>
-            <div className="flex flex-col gap-3 px-6 py-3">
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={1}
-                  max={99}
-                  className="w-24"
-                  value={percent}
-                  onChange={(event) => setPercent(event.target.value)}
-                />
-                <Text size="small">% sleva</Text>
-              </div>
-              {!damaged && (
-                <label className="flex items-center gap-2">
-                  <Switch checked={markDamaged} onCheckedChange={setMarkDamaged} />
-                  <Text size="small">Zároveň označit jako poškozený kus</Text>
-                </label>
-              )}
-            </div>
-            <Prompt.Footer>
-              <Button size="small" variant="secondary" onClick={() => setView("menu")}>
-                Zpět
-              </Button>
-              <Button
-                size="small"
-                disabled={!percentOk}
-                isLoading={pending.discount}
-                onClick={() => {
-                  onDiscount({
-                    percent: Math.round(percentValue),
-                    markClearance: !damaged && markDamaged,
-                  });
-                  setOpen(false);
-                  setView("menu");
-                }}
-              >
-                Zlevnit
-              </Button>
-            </Prompt.Footer>
-          </>
-        )}
       </Prompt.Content>
     </Prompt>
   );
