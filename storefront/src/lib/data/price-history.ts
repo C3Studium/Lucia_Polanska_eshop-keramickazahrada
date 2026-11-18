@@ -20,6 +20,8 @@ export type PriceReference = {
   sale_started_on: string | null
   /** Historie pokrývá celých 30 dní před slevou. */
   complete: boolean
+  /** Název výprodeje / sezónní akce; u slevy přímo u výrobku `null`. */
+  sale_name?: string | null
 }
 
 const MAX_IDS = 100

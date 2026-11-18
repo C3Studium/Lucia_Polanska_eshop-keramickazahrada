@@ -15,6 +15,8 @@ import {
   type PriceReference,
 } from "../../../../lib/price-reference"
 import { PRICE_HISTORY_MODULE } from "../../../../modules/price-history"
+import { parseSaleDescription } from "../../../../lib/product-sale"
+import { parseVyprodej } from "../../../../lib/vyprodej-config"
 import type PriceHistoryModuleService from "../../../../modules/price-history/service"
 
 /**
@@ -31,8 +33,10 @@ import type PriceHistoryModuleService from "../../../../modules/price-history/se
  * hodinou tu je hned, i když ji job ještě nezapsal. Výpočet je
  * `computePriceReference` (pravidlo a jeho okrajové případy jsou tam).
  *
- * Odpověď: `{ references: { [variant_id]: { lowest_30d, sale_started_on, complete } } }`
- * — varianta mimo slevu má `lowest_30d: null`.
+ * Odpověď: `{ references: { [variant_id]: { lowest_30d, sale_started_on, complete, sale_name } } }`
+ * — varianta mimo slevu má `lowest_30d: null`. `sale_name` (18. 11. 2026)
+ * = název výprodeje nebo sezónní akce, která cenu dává; u slevy přímo
+ * u výrobku `null` (obchod napíše „Sleva").
  */
 
 const MAX_VARIANTS = 100
@@ -51,7 +55,20 @@ const parseCurrency = (raw: unknown): string | null => {
   return /^[a-z]{3}$/.test(value) ? value : null
 }
 
-const EMPTY: PriceReference = {
+/**
+ * Jak se sleva jmenuje u ceny: výprodej svým názvem, sezónní akce bez
+ * přípony „– sleva N %", sleva přímo u výrobku bez názvu.
+ */
+const saleNameOf = (list: { title?: string | null; description?: string | null }) => {
+  if (parseSaleDescription(list.description)) return null
+  const title = String(list.title ?? "").trim()
+  if (!title) return null
+  if (parseVyprodej(list.description)) return title
+  return title.replace(/\s+[–-]\s+sleva\s+\d+\s*%$/i, "").trim() || null
+}
+
+const EMPTY: PriceReference & { sale_name: string | null } = {
+  sale_name: null,
   lowest_30d: null,
   sale_started_on: null,
   complete: false,
@@ -120,16 +137,23 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     ),
   ]
   const startsOnByList = new Map<string, string | null>()
+  const nameByList = new Map<string, string | null>()
   if (priceListIds.length) {
     const lists = (await pricingModule.listPriceLists(
       { id: priceListIds },
-      { select: ["id", "starts_at"] }
-    )) as Array<{ id: string; starts_at?: string | Date | null }>
+      { select: ["id", "starts_at", "title", "description"] }
+    )) as Array<{
+      id: string
+      starts_at?: string | Date | null
+      title?: string | null
+      description?: string | null
+    }>
     for (const list of lists) {
       startsOnByList.set(
         list.id,
         list.starts_at ? pragueDay(new Date(list.starts_at)) : null
       )
+      nameByList.set(list.id, saleNameOf(list))
     }
   }
 
@@ -154,14 +178,16 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     }
   }
 
-  const references: Record<string, PriceReference> = {}
+  const references: Record<string, PriceReference & { sale_name: string | null }> = {}
   for (const id of variantIds) {
     const state = live.get(id)
     if (!state?.onSale) {
       references[id] = EMPTY
       continue
     }
-    references[id] = computePriceReference({
+    references[id] = {
+      sale_name: state.priceListId ? nameByList.get(state.priceListId) ?? null : null,
+      ...computePriceReference({
       entries: entriesByVariant.get(id) ?? [],
       today,
       onSaleNow: true,
@@ -169,7 +195,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         ? startsOnByList.get(state.priceListId) ?? null
         : null,
       currentBase: state.base,
-    })
+      }),
+    }
   }
 
   // Storefront si odpověď drží sám (Next revalidate); krátká cache tu jen
