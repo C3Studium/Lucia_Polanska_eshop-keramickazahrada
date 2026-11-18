@@ -2,6 +2,7 @@ import { Button, Container, Heading, Input, Label, Text, toast } from "@medusajs
 import {
   QueryClientProvider,
   useMutation,
+  useQuery,
 } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -108,6 +109,18 @@ const defaultShippingProfileId = async (): Promise<string | undefined> => {
   }
 };
 
+/** Výchozí prodejní kanál obchodu — ten, ve kterém web hledá výrobky. */
+const defaultSalesChannelId = async (): Promise<string | undefined> => {
+  try {
+    const { stores } = await sdk.client.fetch<{
+      stores: { default_sales_channel_id?: string | null }[];
+    }>("/admin/stores?fields=id,default_sales_channel_id");
+    return stores?.[0]?.default_sales_channel_id ?? undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 const isKind = (value: string | null): value is Kind =>
   value === "produkt" ||
   value === "zakazka" ||
@@ -130,6 +143,35 @@ const NovyProduktInner = () => {
       : ""
   );
   const [nameTouched, setNameTouched] = useState(false);
+  /*
+   * Zařazení a cena už při založení (18. 11. 2026). Dřív se zakládal jen
+   * název: výrobek byl „bez zařazení", bez ceny a bez kanálu obchodu —
+   * po publikování ho obchod nenašel („Stránka nenalezena") a v adminu ho
+   * Lucie v kategorii neviděla. Teď se vybere kolekce, kategorie a cena
+   * hned tady a výrobek vznikne rovnou v kanálu obchodu.
+   */
+  const [collectionId, setCollectionId] = useState("");
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [price, setPrice] = useState("");
+  const collectionsQuery = useQuery<{ collections: { id: string; title: string }[] }>({
+    queryKey: ["produkt-collections"],
+    queryFn: () => sdk.client.fetch(`/admin/collections?limit=100&fields=id,title`),
+    staleTime: 5 * 60_000,
+  });
+  const categoriesQuery = useQuery<{
+    product_categories: { id: string; name: string; metadata?: Record<string, unknown> | null }[];
+  }>({
+    queryKey: ["produkt-categories"],
+    queryFn: () =>
+      sdk.client.fetch(`/admin/product-categories?limit=100&fields=id,name,is_active,metadata`),
+    staleTime: 5 * 60_000,
+  });
+  const collections = collectionsQuery.data?.collections ?? [];
+  const categoriesInCollection = (categoriesQuery.data?.product_categories ?? []).filter(
+    (category) => collectionId && (category.metadata ?? {})["collection_id"] === collectionId
+  );
+  const priceNumber = Number(price.replace(/\s/g, "").replace(",", "."));
+  const priceOk = price.trim() === "" || (Number.isFinite(priceNumber) && priceNumber > 0);
 
   const selectedCard = cards.find((card) => card.id === selected) ?? null;
 
@@ -143,11 +185,20 @@ const NovyProduktInner = () => {
 
   const create = useMutation({
     mutationFn: async ({ kind, title }: { kind: Kind; title: string }) => {
-      const shippingProfileId = await defaultShippingProfileId();
+      const [shippingProfileId, shopChannelId] = await Promise.all([
+        defaultShippingProfileId(),
+        defaultSalesChannelId(),
+      ]);
+      const czk = price.trim() && priceOk ? Math.round(priceNumber * 100) / 100 : null;
       const created: any = await sdk.admin.product.create({
         title,
         status: "draft",
         ...(shippingProfileId ? { shipping_profile_id: shippingProfileId } : {}),
+        // Kanál obchodu hned — bez něj ho obchod nenajde (pojistkou je i
+        // subscriber product-shop-defaults na backendu).
+        ...(shopChannelId ? { sales_channels: [{ id: shopChannelId }] } : {}),
+        ...(collectionId ? { collection_id: collectionId } : {}),
+        ...(categoryIds.length ? { categories: categoryIds.map((id) => ({ id })) } : {}),
         ...(kind === "poskozeny" ? { metadata: { clearance: true } } : {}),
         options: [{ title: "Provedení", values: ["Standardní"] }],
         variants: [
@@ -166,8 +217,9 @@ const NovyProduktInner = () => {
             // honest value — a price belongs to Lucia, and the product page's
             // readiness card says „chybí cena" until she fills it. Prefilling
             // 0 Kč instead would be a real price a published product can sell
-            // for.
-            prices: [],
+            // for. Vyplněná cena (Kč) jde rovnou; eura a zloté dopočítá
+            // denní úloha z kurzu ČNB.
+            prices: czk ? [{ currency_code: "czk", amount: czk }] : [],
           },
         ],
       } as never);
@@ -202,10 +254,14 @@ const NovyProduktInner = () => {
     },
   });
 
+  /* Kategorie je povinná — výrobek „bez zařazení" není v obchodě k nalezení
+     v žádné kategorii a v adminu ho Lucie hledala marně. */
   const canCreate =
     selectedCard !== null &&
     selectedCard.id !== "balicek" &&
     name.trim().length > 0 &&
+    categoryIds.length > 0 &&
+    priceOk &&
     !create.isPending;
 
   const submit = () => {
@@ -266,17 +322,102 @@ const NovyProduktInner = () => {
               placeholder={selectedCard.defaultName}
             />
           </div>
-          <Button
-            onClick={submit}
-            disabled={!canCreate}
-            isLoading={create.isPending}
-          >
-            Založit a otevřít
-          </Button>
-          <Text size="xsmall" className="text-ui-fg-subtle w-full">
-            Fotky, cenu a případné varianty doplníte hned potom v editoru
-            produktu.
-          </Text>
+          <div className="w-40">
+            <Label htmlFor="new-product-price">
+              Cena (Kč){selectedCard.id === "zakazka" ? " — nepovinná" : ""}
+            </Label>
+            <Input
+              id="new-product-price"
+              className="mt-1"
+              type="text"
+              inputMode="decimal"
+              value={price}
+              aria-invalid={!priceOk}
+              onChange={(event) => setPrice(event.target.value)}
+              placeholder="např. 580"
+            />
+          </div>
+          <div className="w-full">
+            <Label>Kolekce</Label>
+            <div className="mt-1 flex flex-wrap gap-2">
+              {collections.map((collection) => (
+                <button
+                  key={collection.id}
+                  type="button"
+                  aria-pressed={collectionId === collection.id}
+                  onClick={() => {
+                    setCollectionId(collection.id);
+                    setCategoryIds([]);
+                  }}
+                  className={`min-h-[36px] rounded-full border px-3.5 py-1.5 ${
+                    collectionId === collection.id
+                      ? "border-ui-border-interactive bg-ui-bg-base-pressed text-ui-fg-base"
+                      : "border-ui-border-base bg-ui-bg-base text-ui-fg-subtle hover:bg-ui-bg-base-hover"
+                  }`}
+                >
+                  <Text size="small" weight={collectionId === collection.id ? "plus" : "regular"}>
+                    {collectionId === collection.id ? "✓ " : ""}
+                    {collection.title}
+                  </Text>
+                </button>
+              ))}
+            </div>
+          </div>
+          {collectionId && (
+            <div className="w-full">
+              <Label>Kategorie</Label>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {categoriesInCollection.length === 0 && (
+                  <Text size="small" className="text-ui-fg-muted">
+                    Tahle kolekce zatím nemá kategorie — přidejte je v Kolekce a kategorie.
+                  </Text>
+                )}
+                {categoriesInCollection.map((category) => {
+                  const on = categoryIds.includes(category.id);
+                  return (
+                    <button
+                      key={category.id}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() =>
+                        setCategoryIds((current) =>
+                          on ? current.filter((id) => id !== category.id) : [...current, category.id]
+                        )
+                      }
+                      className={`min-h-[36px] rounded-full border px-3.5 py-1.5 ${
+                        on
+                          ? "border-ui-border-interactive bg-ui-bg-base-pressed text-ui-fg-base"
+                          : "border-ui-border-base bg-ui-bg-base text-ui-fg-subtle hover:bg-ui-bg-base-hover"
+                      }`}
+                    >
+                      <Text size="small" weight={on ? "plus" : "regular"}>
+                        {on ? "✓ " : ""}
+                        {category.name}
+                      </Text>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          <div className="flex w-full flex-wrap items-center gap-3">
+            <Button
+              onClick={submit}
+              disabled={!canCreate}
+              isLoading={create.isPending}
+            >
+              Založit a otevřít
+            </Button>
+            <Text size="xsmall" className="text-ui-fg-subtle">
+              {!collectionId
+                ? "Vyberte kolekci a kategorii — podle nich výrobek najdete v obchodě i tady."
+                : categoryIds.length === 0
+                  ? "Vyberte aspoň jednu kategorii."
+                  : !priceOk
+                    ? "Cena musí být kladné číslo."
+                    : "Fotky a případné varianty doplníte hned potom v editoru produktu."}
+            </Text>
+          </div>
         </div>
       )}
 

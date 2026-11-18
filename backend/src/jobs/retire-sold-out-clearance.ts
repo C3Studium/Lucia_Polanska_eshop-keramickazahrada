@@ -23,7 +23,7 @@ import { sUlohou } from "../lib/provozni-hlidka/uloha"
  * settling state rather than a single event.
  */
 
-async function retireSoldOutClearance(
+export async function retireSoldOutClearance(
   container: MedusaContainer
 ) {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
