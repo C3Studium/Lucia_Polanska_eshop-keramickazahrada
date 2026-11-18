@@ -2,6 +2,7 @@ import {
   odpovidaHledani,
   pocetProduktu,
   precistPocet,
+  precistZmenu,
   seradit,
   uProduktu,
   type SkladRadek,
@@ -88,3 +89,20 @@ describe("souhrn", () => {
     ).toBe(2);
   });
 });
+
+describe("precistZmenu (přidat i odebrat u jednoho výrobku)", () => {
+  it.each([
+    ["3", { druh: "ok", kusy: 3 }],
+    ["+3", { druh: "ok", kusy: 3 }],
+    ["-2", { druh: "ok", kusy: -2 }],
+    ["−2", { druh: "ok", kusy: -2 }],
+    ["– 3", { druh: "ok", kusy: -3 }],
+    ["0", { druh: "prazdne" }],
+    ["-", { druh: "prazdne" }],
+    ["", { druh: "prazdne" }],
+    ["1,5", { druh: "chyba" }],
+    ["abc", { druh: "chyba" }],
+  ])("%s", (text, ocekavano) => {
+    expect(precistZmenu(text)).toEqual(ocekavano)
+  })
+})

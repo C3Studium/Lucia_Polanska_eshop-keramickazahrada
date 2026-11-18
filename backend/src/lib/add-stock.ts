@@ -107,6 +107,34 @@ export const addStockToItem = async (
   return { previous: 0, stocked_quantity: quantity, reserved: 0 }
 }
 
+/**
+ * Odebrání kusů ze skladu (18. 11. 2026, Lucie: „potřebuji sklad změnit
+ * ze 2 kusů na 0, ale jde jen přidat"). Kusy rezervované otevřenými
+ * objednávkami zůstanou — sklad nejde pod ně, jinak by Medusa objednávku
+ * nemohla vyřídit. Vrací, kolik se skutečně odebralo.
+ */
+export const removeStockFromItem = async (
+  inventory: InventoryService,
+  locationId: string,
+  inventoryItemId: string,
+  quantity: number
+): Promise<{ previous: number; stocked_quantity: number; reserved: number; removed: number }> => {
+  const [level] = await inventory.listInventoryLevels({
+    inventory_item_id: inventoryItemId,
+    location_id: locationId,
+  })
+  if (!level) return { previous: 0, stocked_quantity: 0, reserved: 0, removed: 0 }
+  const previous = toNumber(level.stocked_quantity)
+  const reserved = toNumber(level.reserved_quantity)
+  const next = Math.max(reserved, previous - Math.abs(quantity), 0)
+  if (next !== previous) {
+    await inventory.updateInventoryLevels([
+      { inventory_item_id: inventoryItemId, location_id: locationId, stocked_quantity: next },
+    ])
+  }
+  return { previous, stocked_quantity: next, reserved, removed: previous - next }
+}
+
 export type RestockItemInput = { inventory_item_id: string; quantity: number }
 
 export type RestockItemResult =
