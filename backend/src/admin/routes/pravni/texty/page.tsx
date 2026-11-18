@@ -280,7 +280,9 @@ const Inner = () => {
   const sedi = (key: ShopTextKey) => {
     if (!hledaneSlovo) return true;
     const meta = SHOP_TEXT_META[key];
-    const text = `${meta.label} ${meta.help} ${valueOf(key)} ${meta.group}`;
+    /* Uložené I rozepsané znění — jinak pole zmizí z výsledků v okamžiku,
+       kdy do něj člověk začne psát novou větu (18. 11. 2026). */
+    const text = `${meta.label} ${meta.help} ${savedText(key)} ${valueOf(key)} ${meta.group}`;
     if (text.toLowerCase().includes(hledaneSlovo)) return true;
     if (hledanaSlova.length < 3) return false;
     const slova = new Set(slovaKHledani(text));
