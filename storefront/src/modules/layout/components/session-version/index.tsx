@@ -159,7 +159,15 @@ const SessionVersionWatch = () => {
       } catch {
         return
       }
-      if (!bezpecneZnovunacist()) return
+      /*
+       * Nová verze (nové nasazení na Railway) se načte VŽDY a u každého
+       * (18. 11. 2026, přání majitele) — jen ne v editoru Studia, kde se
+       * rozepsaný text do běžných polí neukládá. Rozepsaná pole uloží
+       * a po načtení vrátí strážce (`lib/util/reload-keeper`); obnoví až
+       * po chvíli klidu, v pokladně a na objednávce po delší, ať se
+       * nepřeruší rozběhlá platba.
+       */
+      if (window.location.pathname.startsWith("/studio")) return
       zruseno = true
       // Pořadí: úklid maže i klíče s předponou `kz:`, tedy i tuhle pojistku.
       clearAppStorage()
@@ -168,7 +176,12 @@ const SessionVersionWatch = () => {
       } catch {
         // Bez úložiště se pojistka nezapíše; smyčku hlídá `zruseno`.
       }
-      window.location.reload()
+      const pokladna = /\/(checkout|order)(\/|$)/.test(window.location.pathname)
+      const keeper = (window as unknown as {
+        __kzReloadKeeper?: { reload: (idleMs?: number) => void }
+      }).__kzReloadKeeper
+      if (keeper) keeper.reload(pokladna ? 8000 : 2000)
+      else window.location.reload()
     }
 
     const obnovitObsah = () => {
@@ -213,6 +226,20 @@ const SessionVersionWatch = () => {
       if (document.visibilityState !== "visible") return
       if (!zdroj || zdroj.readyState === EventSource.CLOSED) pripojit()
       dohnat()
+      /* Pojistka k živému spojení: při návratu do záložky se jednou zeptá na
+         otisk verze (z Railway: commit + sestavení) — kdyby spojení nasazení
+         nezachytilo (mobil na pozadí, proxy). Není to pravidelné dotazování. */
+      if (BUILD_STAMP) {
+        fetch("/api/version", { cache: "no-store" })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((body: { stamp?: string } | null) => {
+            if (body?.stamp && body.stamp !== BUILD_STAMP) {
+              novaVerze = body.stamp
+              nacistNovouVerzi()
+            }
+          })
+          .catch(() => {})
+      }
     }
     /* Pole přestalo mít fokus — odložená obnova se může dohnat. */
     const poOpusteniPole = () => window.setTimeout(dohnat, 0)
