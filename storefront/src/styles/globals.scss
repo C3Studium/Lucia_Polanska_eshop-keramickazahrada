@@ -207,6 +207,22 @@
   outline-offset: var(--focus-ring-offset);
 }
 
+/*
+ * Jedno zvýraznění pole (18. 11. 2026, Matěj: „ne dvojité zvýraznění —
+ * celá lišta a pak ještě input"). Textová pole a výběry ukazují fokus svým
+ * rámečkem nebo obalem (focus-within) — kroužek výš k tomu kreslil druhý
+ * obdélník uvnitř. Zaškrtávátka, přepínače a tlačítka ho mají dál.
+ * `:where` = nulová váha: pole, které kroužek chce jako jediné zvýraznění
+ * (poukaz), si ho třídou zapne zpátky.
+ */
+:where(
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="button"], [type="submit"], [type="reset"]),
+  textarea,
+  select
+):focus-visible {
+  outline: none;
+}
+
 body {
   font-family: "Sansation-Regular", sans-serif;
   -webkit-font-smoothing: antialiased;

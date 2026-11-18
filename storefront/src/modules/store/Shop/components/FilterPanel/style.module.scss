@@ -271,9 +271,9 @@
 
     &::-webkit-outer-spin-button,
     &::-webkit-inner-spin-button { margin: 0; -webkit-appearance: none; }
-    /* No `outline: 0`: its :focus specificity beat the global :focus-visible
-       ring, leaving keyboard focus as a faint border shift only. */
-    &:focus { border-color: rgb(var(--cream-06-rgb) / .65); }
+    /* Jediné zvýraznění pole (globals.scss: pole kroužek nekreslí) — proto
+       zřetelné: rámeček i světlý lem. */
+    &:focus { border-color: var(--olive-16); box-shadow: 0 0 0 2px rgb(var(--olive-07-rgb) / .35); }
     &::placeholder { color: var(--grey-03); }
   }
 

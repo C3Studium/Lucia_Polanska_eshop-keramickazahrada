@@ -15,8 +15,8 @@
 
 .root :global(button:focus-visible),
 .root :global(a:focus-visible),
-.root :global(input:focus-visible),
-.root :global(select:focus-visible) {
+.root :global(input[type="checkbox"]:focus-visible),
+.root :global(input[type="radio"]:focus-visible) {
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 3px;
 }

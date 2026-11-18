@@ -248,6 +248,12 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
   border-radius: 999px;
 }
 
+/* Jediné zvýraznění: celá pilulka, ne pole uvnitř (globals.scss). */
+.search:has(input:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 .search input {
   min-width: 0;
   height: clamp(2.5rem, 5.4vh, 2.8125rem);
