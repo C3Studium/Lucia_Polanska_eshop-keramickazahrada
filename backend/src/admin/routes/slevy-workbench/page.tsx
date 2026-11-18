@@ -526,6 +526,77 @@ type ProductSaleRowData = ProductSale & {
 const pocetVyrobku = (n: number) =>
   n === 1 ? "1 výrobek" : n >= 2 && n <= 4 ? `${n} výrobky` : `${n} výrobků`;
 
+/**
+ * Statistiky výprodejů pod jejich seznamem (18. 11. 2026, Matěj): celkem
+ * a po výprodejích — kusy, objednávky, tržba, kolik zákazníci ušetřili
+ * a nejprodávanější výrobky. Počítají se jen kusy prodané za cenu
+ * výprodeje v jeho období (lib/vyprodej-stats).
+ */
+const VyprodejeStats = ({ rows, scanned }: { rows: VyprodejRowData[]; scanned: number }) => {
+  const withStats = rows.filter((row) => row.stats);
+  const total = withStats.reduce(
+    (sum, row) => ({
+      units: sum.units + (row.stats?.units ?? 0),
+      orders: sum.orders + (row.stats?.orders ?? 0),
+      revenue: sum.revenue + (row.stats?.revenue ?? 0),
+      saved: sum.saved + (row.stats?.saved ?? 0),
+    }),
+    { units: 0, orders: 0, revenue: 0, saved: 0 }
+  );
+  const tile = (label: string, value: string) => (
+    <div className="bg-ui-bg-subtle rounded-lg px-4 py-3">
+      <Text size="xsmall" className="text-ui-fg-subtle uppercase tracking-wide">
+        {label}
+      </Text>
+      <Text size="xlarge" weight="plus" className="tabular-nums">
+        {value}
+      </Text>
+    </div>
+  );
+
+  return (
+    <section className="flex flex-col gap-4 px-6 py-5">
+      <div>
+        <Text size="small" weight="plus">
+          Co výprodeje přinesly
+        </Text>
+        <Text size="xsmall" className="text-ui-fg-subtle mt-1">
+          Jen kusy prodané za cenu výprodeje v jeho období, bez zrušených
+          objednávek. Počítáno z {scanned} objednávek od začátku nejstaršího
+          výprodeje.
+        </Text>
+      </div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {tile("Prodáno", `${total.units} ks`)}
+        {tile("Objednávek", String(total.orders))}
+        {tile("Tržba", formatCzk(total.revenue))}
+        {tile("Zákazníci ušetřili", formatCzk(total.saved))}
+      </div>
+      <div className="shadow-borders-base divide-y rounded-lg">
+        {withStats.map((row) => (
+          <div key={row.id} className="flex flex-col gap-1 px-4 py-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <Text size="small" weight="plus">
+                {row.title} · −{row.percent} %
+              </Text>
+              <Text size="small" className="text-ui-fg-subtle tabular-nums">
+                {row.stats!.units} ks · {row.stats!.orders}{" "}
+                {row.stats!.orders === 1 ? "objednávka" : row.stats!.orders >= 2 && row.stats!.orders <= 4 ? "objednávky" : "objednávek"}{" "}
+                · {formatCzk(row.stats!.revenue)} · ušetřeno {formatCzk(row.stats!.saved)}
+              </Text>
+            </div>
+            <Text size="xsmall" className="text-ui-fg-muted">
+              {row.stats!.top.length
+                ? `Nejvíc: ${row.stats!.top.map((item) => `${item.title} (${item.units} ks)`).join(", ")}`
+                : "Zatím se nic neprodalo."}
+            </Text>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+};
+
 /** Výprodeje — celá kolekce, kategorie nebo vybrané výrobky (lib/vyprodej). */
 const VyprodejListRow = ({ row, onEdit }: { row: VyprodejRowData; onEdit: () => void }) => {
   const { update, remove } = useVyprodejWrites();
@@ -614,9 +685,16 @@ const VyprodejListRow = ({ row, onEdit }: { row: VyprodejRowData; onEdit: () => 
               </span>
             ))}
           </div>
-          <Text size="small" className="text-ui-fg-subtle">
-            {pocetVyrobku(row.members_count)}
-          </Text>
+          <div>
+            <Text size="small" className="text-ui-fg-subtle">
+              {pocetVyrobku(row.members_count)}
+            </Text>
+            {row.stats && row.stats.units > 0 && (
+              <Text size="xsmall" className="text-ui-fg-muted">
+                prodáno {row.stats.units} ks
+              </Text>
+            )}
+          </div>
         </div>
         <div>
           <Badge size="2xsmall" color={state.color}>
@@ -862,6 +940,10 @@ const SlevyInner = () => {
               {(vyprodeje.data?.vyprodeje ?? []).map((row) => (
                 <VyprodejListRow key={row.id} row={row} onEdit={() => setWizard({ editing: row })} />
               ))}
+              <VyprodejeStats
+                rows={vyprodeje.data?.vyprodeje ?? []}
+                scanned={vyprodeje.data?.orders_scanned ?? 0}
+              />
             </>
           )}
         </div>

@@ -20,6 +20,9 @@ export type VyprodejConfig = {
   members: string[]
   /** Otisk zapsaných cen — beze změny se ceník nepřepisuje. */
   sig?: string
+  /** Všechny výrobky, které výprodej kdy zlevnil (statistiky — prodaný kus
+   *  „do vyprodání zásob" z `members` vypadne). */
+  ever?: string[]
 }
 
 const strings = (value: unknown): string[] =>
@@ -49,6 +52,7 @@ export const parseVyprodej = (description: string | null | undefined): VyprodejC
     members: strings(raw.members),
   }
   if (typeof raw.sig === "string") config.sig = raw.sig
+  if (Array.isArray(raw.ever)) config.ever = strings(raw.ever)
   return config
 }
 

@@ -43,7 +43,7 @@ import { formatDate, formatDateTime } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
 import { formatCzk } from "../../../lib/workbench";
 import { ProductSaleRow } from "../../../components/product-sale";
-import { ProductVyprodejRow } from "../../../components/vyprodej";
+import { ProductOwnVyprodejRow, ProductVyprodejRow } from "../../../components/vyprodej";
 import { adminQueryClient } from "../../../lib/query-client"
 import { ceskaChyba } from "../../../lib/ceska-chyba";
 
@@ -2630,6 +2630,13 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                           ? "Nejdřív nastavte cenu."
                           : null
                 }
+              />
+              {/* Výprodej jen tohoto výrobku (18. 11. 2026, Matěj) — okno
+                  jako u Slevy, na čas nebo do vyprodání zásob. */}
+              <ProductOwnVyprodejRow
+                productId={product.id}
+                productTitle={product.title}
+                price={priceMin}
               />
               {/* Výprodej (18. 11. 2026) — přidat do existujícího nebo
                   založit nový; přednost má před Slevou nad ním. */}

@@ -2,6 +2,7 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import { createVyprodej, loadVyprodeje, vyprodejMembersPreview } from "../../../../lib/vyprodej"
 import { datesOk, VyprodejBody } from "./schema"
+import { computeVyprodejStats, type VyprodejStats } from "../../../../lib/vyprodej-stats"
 
 /**
  * Slevy → Výprodeje (18. 11. 2026). Jádro a pravidla viz `lib/vyprodej.ts`.
@@ -14,6 +15,38 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     query.graph({ entity: "product_collection", fields: ["id", "title"], pagination: { take: 500, skip: 0 } }),
     query.graph({ entity: "product_category", fields: ["id", "name"], pagination: { take: 1000, skip: 0 } }),
   ])
+  /* Statistiky: objednávky od začátku nejstaršího výprodeje (lib/vyprodej-stats). */
+  const windows = vyprodeje.map((vyprodej) => ({
+    id: vyprodej.id,
+    start: vyprodej.starts_at ?? vyprodej.created_at ?? new Date(0).toISOString(),
+    end: vyprodej.ends_at,
+    productIds: [
+      ...new Set([
+        ...(vyprodej.config.ever ?? []),
+        ...vyprodej.config.members,
+        ...vyprodej.config.product_ids,
+      ]),
+    ],
+  }))
+  let stats = new Map<string, VyprodejStats>()
+  let ordersScanned = 0
+  if (windows.length) {
+    const since = windows.map((window) => window.start).sort()[0]
+    try {
+      const { data: orders } = await query.graph({
+        entity: "order",
+        /* `items.*` — zápis `*items` je pro admin API, query.graph by položky vynechal. */
+        fields: ["id", "created_at", "status", "items.*"],
+        filters: { created_at: { $gte: since } } as any,
+        pagination: { take: 2000, skip: 0, order: { created_at: "DESC" } },
+      })
+      ordersScanned = (orders as any[]).length
+      stats = computeVyprodejStats(windows, orders as any[])
+    } catch {
+      // Statistiky jsou doplněk — seznam výprodejů kvůli nim nespadne.
+    }
+  }
+
   const collectionTitle = new Map((collections as any[]).map((item) => [item.id, item.title]))
   const categoryName = new Map((categories as any[]).map((item) => [item.id, item.name]))
 
@@ -36,12 +69,13 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         excluded_count: vyprodej.config.excluded_product_ids.length,
         members_count: vyprodej.config.members.length,
         members: await vyprodejMembersPreview(req.scope, vyprodej.config.members.slice(0, 6)),
+        stats: stats.get(vyprodej.id) ?? null,
       }
     })
   )
   const order = { running: 0, scheduled: 1, off: 2, ended: 3 } as const
   rows.sort((a, b) => order[a.state] - order[b.state] || String(b.created_at).localeCompare(String(a.created_at)))
-  res.status(200).json({ vyprodeje: rows })
+  res.status(200).json({ vyprodeje: rows, orders_scanned: ordersScanned })
 }
 
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
