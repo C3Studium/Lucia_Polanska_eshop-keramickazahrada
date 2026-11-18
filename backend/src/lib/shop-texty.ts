@@ -569,11 +569,13 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
   },
   "zakazka.stitek_vyroba": {
     label: "Štítek — část o lhůtě",
-    help: "Dosadí se za {{vyroba}}, když je v profilu nejdelší lhůta.",
+    help:
+      "Dosadí se za {{vyroba}}, když je v profilu nejdelší lhůta. Lhůtu můžete napsat i slovy (např. „výroba 6–8 týdnů“) — pak značku {{dny}} vynechte.",
     group: "Štítek pod cenou (stránka výrobku)",
     multiline: false,
     maxLength: 100,
-    znacky: [{ znacka: "{{dny}}", popis: "nejdelší lhůta ve dnech", povinna: true }],
+    // Nepovinná od 18. 11. 2026 — stejně jako u věty v panelu (zakazka.panel_lhuta).
+    znacky: [{ znacka: "{{dny}}", popis: "nejdelší lhůta ve dnech", povinna: false }],
   },
 
   "zakazka.kroky_nadpis": {
