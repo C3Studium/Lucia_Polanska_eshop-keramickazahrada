@@ -57,6 +57,7 @@ const SessionVersionWatch = () => {
   const router = useRouter()
   const pathname = usePathname()
   const dohnatRef = useRef<(() => void) | null>(null)
+  const prejitRef = useRef<(() => void) | null>(null)
 
   /*
    * Košík na novou verzi.
@@ -144,8 +145,16 @@ const SessionVersionWatch = () => {
 
     let zruseno = false
     let novaVerze: string | null = null
+    let nabidnuto = false
     let obnovit = false
     let zdroj: EventSource | null = null
+    const keeper = () =>
+      (window as unknown as {
+        __kzReloadKeeper?: {
+          reload: (idleMs?: number, maxMs?: number) => void
+          offer: (text: string) => void
+        }
+      }).__kzReloadKeeper
 
     const nacistNovouVerzi = () => {
       if (!novaVerze || zruseno) return
@@ -160,13 +169,22 @@ const SessionVersionWatch = () => {
         return
       }
       /*
-       * Nová verze (nové nasazení na Railway) se načte VŽDY a u každého
-       * (18. 11. 2026, přání majitele) — jen ne v editoru Studia, kde se
-       * rozepsaný text do běžných polí neukládá. Rozepsaná pole uloží
-       * a po načtení vrátí strážce (`lib/util/reload-keeper`) — uloží hned
-       * a obnoví skoro hned (nejvýš 3 s), v pokladně počká až 1,5 s na klid,
-       * ať se nepřeruší kliknutí na Zaplatit.
+       * Nová verze (nové nasazení na Railway) — banner „Byla spuštěna nová
+       * verze e-shopu. [Obnovit stránku]" (18. 11. 2026, přání majitele).
+       * Klik uloží rozepsaná pole, obnoví a pole vrátí (strážce
+       * `lib/util/reload-keeper`). Kdo neklikne, dostane novou verzi při
+       * přechodu na jinou stránku (efekt na `pathname` níž) nebo po návratu
+       * do záložky — nic rozepsaného se neztratí. Ve Studiu nic.
        */
+      if (window.location.pathname.startsWith("/studio")) return
+      if (nabidnuto) return
+      nabidnuto = true
+      keeper()?.offer("Byla spuštěna nová verze e-shopu.")
+    }
+
+    /* Přechod jinam po nabídnuté nové verzi = nová verze hned. */
+    const prejitNaNovouVerzi = () => {
+      if (!nabidnuto || zruseno || !novaVerze) return
       if (window.location.pathname.startsWith("/studio")) return
       zruseno = true
       // Pořadí: úklid maže i klíče s předponou `kz:`, tedy i tuhle pojistku.
@@ -176,11 +194,8 @@ const SessionVersionWatch = () => {
       } catch {
         // Bez úložiště se pojistka nezapíše; smyčku hlídá `zruseno`.
       }
-      const pokladna = /\/(checkout|order)(\/|$)/.test(window.location.pathname)
-      const keeper = (window as unknown as {
-        __kzReloadKeeper?: { reload: (idleMs?: number) => void }
-      }).__kzReloadKeeper
-      if (keeper) keeper.reload(pokladna ? 1500 : 400)
+      const k = keeper()
+      if (k) k.reload(0, 0)
       else window.location.reload()
     }
 
@@ -219,6 +234,7 @@ const SessionVersionWatch = () => {
 
     pripojit()
     dohnatRef.current = dohnat
+    prejitRef.current = prejitNaNovouVerzi
 
     /* Mobil na pozadí spojení zavře; po návratu se připojí znovu (a z `hello`
        se dozví, jestli mezitím nevyšla nová verze). */
@@ -260,6 +276,7 @@ const SessionVersionWatch = () => {
      rozepsaného tu ještě není). Chráněné stránky hlídá `bezpecneZnovunacist`. */
   useEffect(() => {
     dohnatRef.current?.()
+    prejitRef.current?.()
   }, [pathname])
 
   return null
