@@ -42,6 +42,7 @@ import { CopyId, RawData, useExpertMode } from "../../../lib/expert-mode";
 import { formatDate, formatDateTime } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
 import { formatCzk } from "../../../lib/workbench";
+import { ProductSaleRow } from "../../../components/product-sale";
 import { adminQueryClient } from "../../../lib/query-client"
 import { ceskaChyba } from "../../../lib/ceska-chyba";
 
@@ -1629,55 +1630,6 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
   });
 
   /*
-   * A quick price cut for a damaged piece: every variant's CZK price drops by
-   * the given percentage (foreign currencies re-derive from the daily ČNB
-   * job), the pre-discount prices are remembered in metadata, and by default
-   * the piece is flagged Poškozený kus (`clearance`) — the same switch the
-   * workbenches use.
-   */
-  const applyDiscount = useMutation({
-    mutationFn: async (input: { percent: number; markClearance: boolean }) => {
-      const before: Record<string, number> = {};
-      for (const variant of product?.variants ?? []) {
-        const price = czkPrice(variant);
-        if (price === null) continue;
-        before[variant.id] = price;
-        const next = Math.max(1, Math.round((price * (100 - input.percent)) / 100));
-        await sdk.client.fetch(`/admin/products/${productId}/variants/${variant.id}`, {
-          method: "POST",
-          body: {
-            prices: [
-              { currency_code: "czk", amount: next },
-              ...(variant.prices ?? [])
-                .filter((entry) => String(entry.currency_code).toLowerCase() !== "czk")
-                .map((entry) => ({
-                  currency_code: entry.currency_code,
-                  amount: entry.amount,
-                })),
-            ],
-          },
-        });
-      }
-      await sdk.client.fetch(`/admin/products/${productId}`, {
-        method: "POST",
-        body: { metadata: { price_before_discount: before } },
-      });
-      if (input.markClearance) {
-        await sdk.client.fetch(`/admin/workbench/products/${productId}/flags`, {
-          method: "POST",
-          body: { clearance: true },
-        });
-      }
-    },
-    onSuccess: async (_, input) => {
-      await invalidate();
-      toast.success(`Cena snížena o ${input.percent} %.`);
-    },
-    onError: (error) =>
-      toast.error(ceskaChyba(error, "Slevu se nepodařilo nastavit.")),
-  });
-
-  /*
    * She throws series — six mugs from one glaze test. „Duplikovat" copies
    * everything describable (texts, zařazení, flags, photos, variants with
    * prices) into a DRAFT with no SKUs and no stock, and jumps straight to it.
@@ -2301,14 +2253,12 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               productId={product.id}
               productTitle={product.title}
               priceLabel={priceLabel}
-              damaged={clearance}
               archived={archived}
               isPublished={isPublished}
               storeUrl={detail?.store_url ?? null}
               pending={{
                 duplicate: duplicateProduct.isPending,
                 visibility: saveProduct.isPending,
-                discount: applyDiscount.isPending,
                 archive: archive.isPending,
                 remove: removeProduct.isPending,
               }}
@@ -2316,7 +2266,11 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               onSetPublished={(next) =>
                 saveProduct.mutate({ status: next ? "published" : "draft" })
               }
-              onDiscount={(input) => applyDiscount.mutate(input)}
+              onDiscount={() =>
+                document
+                  .getElementById("produkt-sleva")
+                  ?.scrollIntoView({ behavior: "smooth", block: "center" })
+              }
               onArchive={(next) => archive.mutate(next)}
               onDelete={() => removeProduct.mutate()}
             />
@@ -2657,6 +2611,24 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                 invalidate={invalidate}
                 solo={variants.length === 1}
                 priceOnRequest={priceOnRequest}
+              />
+              {/* Sleva přímo u ceny (18. 11. 2026) — vlastní akční ceník
+                  výrobku, seznam všech ve Slevách → Zlevněné výrobky. */}
+              <ProductSaleRow
+                productId={product.id}
+                productTitle={product.title}
+                price={priceMin}
+                blockedReason={
+                  priceOnRequest
+                    ? "U ceny po domluvě se sleva nenastavuje."
+                    : shippingClassOfProduct(product) === "poukaz"
+                      ? "Dárkový poukaz se nezlevňuje."
+                      : clearance
+                        ? "Poškozený kus má vlastní slevu (Poškozený kus níž)."
+                        : priceMin === null
+                          ? "Nejdřív nastavte cenu."
+                          : null
+                }
               />
             </InspectorGroup>
 

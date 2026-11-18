@@ -7,6 +7,7 @@ import {
 } from "../../../../lib/sale-stats"
 import { MERCHANT_CATALOG_MODULE } from "../../../../modules/merchant-catalog"
 import { VOUCHER_CAMPAIGN_PREFIX } from "../../../../modules/gift-voucher/code"
+import { parseSaleDescription } from "../../../../lib/product-sale"
 
 /**
  * Slevy+ — the joined read for the last missing domain (phase 3).
@@ -229,7 +230,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       }
     }),
     orders_scanned: scan.length,
-    price_lists: (priceLists as any[]).map((list) => ({
+    // Slevy u výrobků mají vlastní záložku „Zlevněné výrobky" (lib/product-sale).
+    price_lists: (priceLists as any[]).filter((list) => !parseSaleDescription(list.description)).map((list) => ({
       id: list.id,
       title: list.title,
       description: list.description ?? null,

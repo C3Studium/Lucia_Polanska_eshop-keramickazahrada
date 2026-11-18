@@ -40,6 +40,13 @@ import { useScrollMemory } from "../../lib/scroll-memory";
 import { useUrlState } from "../../lib/url-state";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
+import {
+  ProductSaleDialog,
+  SALE_STATE,
+  salePeriod,
+  useProductSaleWrites,
+  type ProductSale,
+} from "../../components/product-sale";
 
 /**
  * Slevy — promotions, campaigns and price lists as one workbench
@@ -111,6 +118,7 @@ type DiscountsResponse = {
 };
 
 const tabs = [
+  { key: "vyrobky", label: "Zlevněné výrobky" },
   { key: "akce", label: "Akce a kódy" },
   { key: "kampane", label: "Kampaně" },
   { key: "ceniky", label: "Ceníky" },
@@ -124,6 +132,7 @@ const tabs = [
 const PROMO_COLS = "lg:grid-cols-[minmax(0,1fr)_130px_140px_150px_40px]";
 const CAMPAIGN_COLS = "lg:grid-cols-[minmax(0,1fr)_190px_210px_150px_40px]";
 const PRICE_LIST_COLS = "lg:grid-cols-[minmax(0,1fr)_130px_210px_40px]";
+const SALE_COLS = "lg:grid-cols-[minmax(0,1fr)_170px_120px_200px_40px]";
 
 /** Hlavička tabulky — jen na širokém displeji, na úzkém se řádky skládají. */
 const ColumnHeader = ({ cols, names }: { cols: string; names: string[] }) => (
@@ -492,16 +501,129 @@ const PriceListRow = ({ list }: { list: WorkbenchPriceList }) => {
   );
 };
 
+type ProductSaleRowData = ProductSale & {
+  title: string;
+  thumbnail: string | null;
+  product_status: string;
+  price_before: number | null;
+  price_after: number | null;
+  variants_count: number;
+};
+
+/** Zlevněné výrobky — sleva nastavená přímo u ceny výrobku (lib/product-sale). */
+const SaleProductRow = ({ row }: { row: ProductSaleRowData }) => {
+  const [editing, setEditing] = useState(false);
+  const { save, remove } = useProductSaleWrites(row.product_id);
+  const enabled = row.status === "active";
+  const state = SALE_STATE[row.state];
+
+  return (
+    <article
+      className={`group hover:bg-ui-bg-base-hover relative grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 px-6 py-3 transition-colors lg:items-center ${SALE_COLS}`}
+    >
+      <RowLink to={`/produkt/${row.product_id}`} label={`Otevřít výrobek ${row.title}`} />
+
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="bg-ui-bg-subtle size-10 shrink-0 overflow-hidden rounded-md">
+          {row.thumbnail && (
+            <img src={row.thumbnail} alt="" className="size-full object-cover" />
+          )}
+        </div>
+        <div className="min-w-0">
+          <Text size="small" weight="plus" className="truncate group-hover:underline">
+            {row.title}
+          </Text>
+          <Text size="xsmall" className="text-ui-fg-subtle mt-0.5">
+            −{row.percent} %
+            {row.variants_count > 1 ? ` · všechna provedení (${row.variants_count})` : ""}
+            {row.product_status !== "published" ? " · není v obchodě" : ""}
+          </Text>
+        </div>
+      </div>
+
+      <div className="relative z-10 -my-1 flex justify-end lg:order-last lg:my-0">
+        <RowOptionsMenu
+          label={`Možnosti slevy ${row.title}`}
+          contentClassName="z-50"
+          items={[
+            {
+              label: enabled ? "Vypnout slevu" : "Zapnout slevu",
+              icon: enabled ? <PauseSolid /> : <PlaySolid />,
+              onSelect: () =>
+                save.mutate(
+                  { enabled: !enabled },
+                  {
+                    onSuccess: () =>
+                      toast.success(enabled ? "Sleva vypnutá." : "Sleva zapnutá."),
+                  }
+                ),
+            },
+            {
+              label: "Upravit slevu",
+              icon: <ReceiptPercent />,
+              onSelect: () => setEditing(true),
+            },
+            "separator" as const,
+            {
+              label: "Odebrat slevu",
+              icon: <Trash />,
+              destructive: true,
+              onSelect: () => remove.mutate(),
+            },
+          ]}
+        />
+        <ProductSaleDialog
+          productId={row.product_id}
+          productTitle={row.title}
+          price={row.price_before}
+          sale={row}
+          open={editing}
+          onOpenChange={setEditing}
+        />
+      </div>
+
+      <div className="col-span-2 flex flex-wrap items-center gap-x-4 gap-y-1 lg:contents">
+        <div>
+          {row.price_before !== null && (
+            <Text size="small" className="tabular-nums">
+              <span className="text-ui-fg-muted line-through">
+                {formatCzk(row.price_before)}
+              </span>{" "}
+              <span className="font-medium">{formatCzk(row.price_after)}</span>
+            </Text>
+          )}
+        </div>
+        <div>
+          <Badge size="2xsmall" color={state.color}>
+            {save.isPending || remove.isPending ? "Ukládám…" : state.label}
+          </Badge>
+        </div>
+        <div>
+          <Text size="small" className="text-ui-fg-subtle">
+            {salePeriod(row)}
+          </Text>
+        </div>
+      </div>
+    </article>
+  );
+};
+
 const SlevyInner = () => {
   /* Návrat z detailu slevy vrátí i tam, kde v seznamu byla. */
   useScrollMemory("slevy");
   /* Záložka v adrese, ne v paměti: odchodem by se zahodila a návrat by
      začínal zase u „Akce a kódy" (měřeno 11. 11. 2026). */
-  const [active, setActive] = useUrlState<string>("zalozka", "akce");
+  const [active, setActive] = useUrlState<string>("zalozka", "vyrobky");
 
   const { data, isLoading, isError } = useQuery<DiscountsResponse>({
     queryKey: ["workbench-discounts"],
     queryFn: () => sdk.client.fetch("/admin/workbench/discounts"),
+    refetchOnWindowFocus: true,
+  });
+
+  const productSales = useQuery<{ sales: ProductSaleRowData[] }>({
+    queryKey: ["product-sales"],
+    queryFn: () => sdk.client.fetch("/admin/workbench/product-sales"),
     refetchOnWindowFocus: true,
   });
 
@@ -511,7 +633,8 @@ const SlevyInner = () => {
         <div>
           <Heading>Slevy</Heading>
           <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
-            Kódy a automatické slevy, kampaně a akční ceníky na jednom místě.
+            Zlevněné výrobky, kódy a automatické slevy, kampaně a akční ceníky
+            na jednom místě. Slevu na jeden výrobek nastavíte u jeho ceny.
             Sezónní výprodeje se zakládají zvlášť:{" "}
             <Link to="/prehled/slevy" className="text-ui-fg-interactive hover:underline">
               Sezónní akce →
@@ -531,13 +654,17 @@ const SlevyInner = () => {
               }
             />
           )}
-          <DiscountEditor
-            trigger={
-              <Button size="small" variant="primary">
-                Nová sleva
-              </Button>
-            }
-          />
+          {/* Na Zlevněných výrobcích ne — sleva výrobku se zakládá u jeho
+              ceny, „Nová sleva" tady je kód do košíku. */}
+          {active !== "vyrobky" && (
+            <DiscountEditor
+              trigger={
+                <Button size="small" variant="primary">
+                  Nová sleva
+                </Button>
+              }
+            />
+          )}
         </div>
       </header>
 
@@ -545,7 +672,9 @@ const SlevyInner = () => {
         tabs={tabs.map((tab) => ({
           ...tab,
           count:
-            tab.key === "akce"
+            tab.key === "vyrobky"
+              ? productSales.data?.sales.length
+              : tab.key === "akce"
               ? data?.promotions.length
               : tab.key === "kampane"
                 ? data?.campaigns.length
@@ -555,18 +684,49 @@ const SlevyInner = () => {
         onSelect={setActive}
       />
 
-      {isLoading && (
+      {isLoading && active !== "vyrobky" && (
         <div className="flex flex-col gap-y-3 px-6 py-5">
           <Skeleton className="h-12 rounded-lg" />
           <Skeleton className="h-12 rounded-lg" />
         </div>
       )}
 
-      {isError && (
+      {isError && active !== "vyrobky" && (
         <EmptyState
           title="Slevy se nepodařilo načíst"
           description="Zkuste stránku obnovit."
         />
+      )}
+
+      {active === "vyrobky" && (
+        <div className="divide-y">
+          {productSales.isLoading ? (
+            <div className="flex flex-col gap-y-3 px-6 py-5">
+              <Skeleton className="h-12 rounded-lg" />
+              <Skeleton className="h-12 rounded-lg" />
+            </div>
+          ) : productSales.isError ? (
+            <EmptyState
+              title="Zlevněné výrobky se nepodařilo načíst"
+              description="Zkuste stránku obnovit."
+            />
+          ) : (productSales.data?.sales ?? []).length === 0 ? (
+            <EmptyState
+              title="Žádný výrobek není ve slevě"
+              description="Slevu nastavíte na detailu výrobku u ceny — tlačítko Přidat slevu."
+            />
+          ) : (
+            <>
+              <ColumnHeader
+                cols={SALE_COLS}
+                names={["Výrobek", "Cena", "Stav", "Platí"]}
+              />
+              {(productSales.data?.sales ?? []).map((row) => (
+                <SaleProductRow key={row.price_list_id} row={row} />
+              ))}
+            </>
+          )}
+        </div>
       )}
 
       {!isLoading && !isError && active === "akce" && (
