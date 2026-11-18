@@ -68,6 +68,21 @@ export const precistPocet = (text: string): Pocet => {
   return { druh: "ok", kusy };
 };
 
+/**
+ * Změna u jednoho výrobku (18. 11. 2026): „3" nebo „+3" přidá, „-2" odebere.
+ * Bere i typografické minus „−" a pomlčku „–", jak je napíše telefon.
+ * Hromadné „po výpalu" dál čte jen kladná čísla (`precistPocet`).
+ */
+export const precistZmenu = (text: string): Pocet => {
+  const ocisteny = text.trim().replace(/\s+/g, "").replace(/^[−–—]/, "-");
+  if (!ocisteny || ocisteny === "-" || ocisteny === "+") return { druh: "prazdne" };
+  if (!/^[+-]?\d+$/.test(ocisteny)) return { druh: "chyba" };
+  const kusy = Number(ocisteny);
+  if (kusy === 0) return { druh: "prazdne" };
+  if (Math.abs(kusy) > 100_000) return { druh: "chyba" };
+  return { druh: "ok", kusy };
+};
+
 /** „u 1 produktu", „u 6 produktů". */
 export const uProduktu = (pocet: number): string =>
   pocet === 1 ? "u 1 produktu" : `u ${pocet} produktů`;

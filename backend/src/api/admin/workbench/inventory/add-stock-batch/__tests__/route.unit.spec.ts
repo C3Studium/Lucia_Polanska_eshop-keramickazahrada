@@ -143,9 +143,33 @@ describe("POST /admin/workbench/inventory/add-stock (jedna položka, po přesunu
       inventory_item_id: "a",
       location_id: "sloc_1",
       added: 6,
+      removed: 0,
+      reserved: 0,
       stocked_quantity: 8,
     })
     expect(levels.get("a")!.stocked_quantity).toBe(8)
+  })
+
+  it("záporné číslo kusy odebere (18. 11. 2026 — sklad šel jen přidat)", async () => {
+    const { levels, req } = sklad({ a: 3 })
+    const res = response()
+    await singlePOST(req({ inventory_item_id: "a", quantity: -3 }), res)
+    expect(res.body).toMatchObject({ added: 0, removed: 3, stocked_quantity: 0 })
+    expect(levels.get("a")!.stocked_quantity).toBe(0)
+  })
+
+  it("neodebere kusy rezervované objednávkami ani pod nulu", async () => {
+    const { levels, req } = sklad({ a: 3 })
+    levels.get("a")!.reserved_quantity = 1
+    const res = response()
+    await singlePOST(req({ inventory_item_id: "a", quantity: -10 }), res)
+    expect(res.body).toMatchObject({ removed: 2, reserved: 1, stocked_quantity: 1 })
+    expect(levels.get("a")!.stocked_quantity).toBe(1)
+  })
+
+  it("nulu odmítne česky", async () => {
+    const { req } = sklad({ a: 3 })
+    await expect(singlePOST(req({ inventory_item_id: "a", quantity: 0 }), response())).rejects.toThrow(/odebrat/)
   })
 
   it("založí úroveň u nikdy nenaskladněné položky", async () => {

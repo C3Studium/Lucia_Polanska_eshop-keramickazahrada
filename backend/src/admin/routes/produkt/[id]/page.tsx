@@ -33,6 +33,7 @@ import { SaveIndicator } from "../../../components/save-indicator";
 import { PhotoStrip, PhotoViewer } from "../../../components/photo-strip";
 import { PhotoOrderEditor } from "../../../components/photo-order-editor";
 import { mainFirst } from "../../../components/photo-strip-order";
+import { precistZmenu } from "../../../lib/naskladneni";
 import { ProductionProfileEditor } from "../../../components/production-profile-editor";
 import { ProductDetailMenu } from "../../../components/product-detail-menu";
 import { ProductStats } from "../../../components/product-stats";
@@ -482,25 +483,36 @@ const RestockCell = ({
   onDone: () => Promise<unknown>;
 }) => {
   const [amount, setAmount] = useState("");
+  /* „3" přidá, „-2" odebere (18. 11. 2026, Lucie: sklad šel jen přidat). */
+  const zmena = precistZmenu(amount);
+  const odebira = zmena.druh === "ok" && zmena.kusy < 0;
   const add = useMutation({
     mutationFn: () => {
-      const parsed = Number(amount);
-      if (!Number.isInteger(parsed) || parsed < 1) {
-        throw new Error("Napište prosím, kolik kusů přibylo.");
+      if (zmena.druh !== "ok") {
+        throw new Error("Napište prosím, kolik kusů přidat (3), nebo odebrat (-2).");
       }
       return sdk.client.fetch(`/admin/workbench/inventory/add-stock`, {
         method: "POST",
-        body: { inventory_item_id: inventoryItemId, quantity: parsed },
-      });
+        body: { inventory_item_id: inventoryItemId, quantity: zmena.kusy },
+      }) as Promise<{ removed?: number; reserved?: number }>;
     },
-    onSuccess: async () => {
-      const added = Number(amount);
+    onSuccess: async (vysledek) => {
+      const kusy = zmena.druh === "ok" ? zmena.kusy : 0;
       setAmount("");
       await onDone();
-      toast.success(`Přidáno ${pieces(added)}.`);
+      if (kusy < 0) {
+        const odebrano = vysledek?.removed ?? 0;
+        toast.success(
+          odebrano < Math.abs(kusy)
+            ? `Odebráno ${pieces(odebrano)}. Víc nešlo — ${pieces(vysledek?.reserved ?? 0)} drží otevřené objednávky.`
+            : `Odebráno ${pieces(odebrano)}.`
+        );
+        return;
+      }
+      toast.success(`Přidáno ${pieces(kusy)}.`);
     },
     onError: (error) =>
-      toast.error(ceskaChyba(error, "Naskladnění se nepodařilo.")),
+      toast.error(ceskaChyba(error, "Změna skladu se nepodařila.")),
   });
 
   if (!inventoryItemId) {
@@ -513,17 +525,20 @@ const RestockCell = ({
 
   return (
     <div className="flex items-center gap-1">
+      {/* Text, ne number: číselné pole a klávesnice iPhonu mínus neumí. */}
       <Input
         size="small"
-        type="number"
-        min={1}
+        type="text"
         className="w-16"
-        placeholder="+ ks"
+        placeholder="± ks"
+        title="Kolik kusů přidat (3), nebo odebrat (-2)"
+        aria-label="Přidat (3) nebo odebrat (-2) kusy"
+        aria-invalid={zmena.druh === "chyba"}
         value={amount}
         onChange={(event) => setAmount(event.target.value)}
         onKeyDown={(event) => {
-          // Enter přidá (bez hledání tlačítka), Esc rozepsané číslo smaže.
-          if (event.key === "Enter" && amount) add.mutate();
+          // Enter uloží (bez hledání tlačítka), Esc rozepsané číslo smaže.
+          if (event.key === "Enter" && zmena.druh === "ok") add.mutate();
           if (event.key === "Escape") setAmount("");
         }}
         disabled={add.isPending}
@@ -532,10 +547,10 @@ const RestockCell = ({
         size="small"
         variant="secondary"
         isLoading={add.isPending}
-        disabled={!amount}
+        disabled={zmena.druh !== "ok"}
         onClick={() => add.mutate()}
       >
-        Přidat
+        {odebira ? "Odebrat" : "Přidat"}
       </Button>
     </div>
   );

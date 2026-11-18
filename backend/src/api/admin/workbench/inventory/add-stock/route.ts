@@ -3,24 +3,25 @@ import { MedusaError, Modules } from "@medusajs/framework/utils"
 import { z } from "@medusajs/framework/zod"
 import {
   addStockToItem,
+  removeStockFromItem,
   resolveRestockLocation,
   withStockLock,
 } from "../../../../../lib/add-stock"
 
-/**
- * Additive restock that works even for never-stocked items
- * (Matěj, 2026-08-06: a fresh Vyprodáno variant has no location level, the
- * inline field disabled itself, and she was sent on the five-click native
- * trek — with exactly one workshop location, absurd).
- *
- * The rule: she says HOW MANY came out of the kiln; everything else is the
- * backend's problem. One stock location → used automatically, the level
- * created if it never existed. If a second location ever appears, this
- * route refuses politely rather than guessing where six mugs went.
+/*
+ * Změna počtu kusů u výrobku. Kladné číslo přidá (po výpalu), záporné
+ * odebere (18. 11. 2026, Lucie: „sklad potřebuji změnit ze 2 na 0, ale jde
+ * jen přidat"). Odebrat nejde pod kusy rezervované otevřenými objednávkami —
+ * odpověď vrací, kolik se skutečně odebralo.
  */
 const BodySchema = z.object({
   inventory_item_id: z.string().min(1),
-  quantity: z.number().int().min(1).max(100_000),
+  quantity: z
+    .number()
+    .int()
+    .min(-100_000)
+    .max(100_000)
+    .refine((value) => value !== 0),
 })
 
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
@@ -28,25 +29,37 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   if (!parsed.success) {
     throw new MedusaError(
       MedusaError.Types.INVALID_DATA,
-      "Napište prosím, kolik kusů přibylo."
+      "Napište prosím, kolik kusů přidat (např. 3), nebo odebrat (např. -2)."
     )
   }
   const { inventory_item_id, quantity } = parsed.data
 
   const inventory = req.scope.resolve(Modules.INVENTORY) as any
 
-  // Stejné přičítání jako dávka po výpalu — jedna logika v lib/add-stock.ts
-  // (jedno skladové místo, chybějící úroveň se založí).
-  const { locationId, stocked_quantity } = await withStockLock(async () => {
+  // Jedna logika v lib/add-stock.ts (jedno skladové místo, chybějící úroveň
+  // se při přidání založí); přičítání i odebírání jdou za sebou ve frontě.
+  const result = await withStockLock(async () => {
     const locationId = await resolveRestockLocation(req.scope)
-    const added = await addStockToItem(inventory, locationId, inventory_item_id, quantity)
-    return { locationId, stocked_quantity: added.stocked_quantity }
+    if (quantity > 0) {
+      const added = await addStockToItem(inventory, locationId, inventory_item_id, quantity)
+      return { locationId, stocked_quantity: added.stocked_quantity, added: quantity, removed: 0, reserved: added.reserved }
+    }
+    const removed = await removeStockFromItem(inventory, locationId, inventory_item_id, quantity)
+    return {
+      locationId,
+      stocked_quantity: removed.stocked_quantity,
+      added: 0,
+      removed: removed.removed,
+      reserved: removed.reserved,
+    }
   })
 
   res.status(200).json({
     inventory_item_id,
-    location_id: locationId,
-    added: quantity,
-    stocked_quantity,
+    location_id: result.locationId,
+    added: result.added,
+    removed: result.removed,
+    reserved: result.reserved,
+    stocked_quantity: result.stocked_quantity,
   })
 }
