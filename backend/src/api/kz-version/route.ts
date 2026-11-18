@@ -15,3 +15,5 @@ export const GET = async (_req: MedusaRequest, res: MedusaResponse) => {
     deployment: process.env.RAILWAY_DEPLOYMENT_ID || null,
   })
 }
+
+// Zkušební nasazení 18. 11. 2026 — ověření lišty „Byla spuštěna nová verze".

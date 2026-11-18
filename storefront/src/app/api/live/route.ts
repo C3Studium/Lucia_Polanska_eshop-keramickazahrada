@@ -61,3 +61,5 @@ export function GET(request: Request) {
     },
   })
 }
+
+// Zkušební nasazení 18. 11. 2026 — ověření lišty „Byla spuštěna nová verze".
