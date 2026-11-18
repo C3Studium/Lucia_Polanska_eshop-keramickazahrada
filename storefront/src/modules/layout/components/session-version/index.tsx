@@ -1,7 +1,7 @@
 "use client"
 
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { usePathname, useRouter } from "next/navigation"
+import { useEffect, useRef } from "react"
 
 import {
   BUILD_STAMP,
@@ -20,18 +20,26 @@ import {
  * verzi nemá jak vědět — drží v paměti router i balík té staré a při přechodu
  * na další stránku si řekne o soubory, které na serveru už nejsou.
  *
- * Ptá se proto při návratu k záložce a jednou za pět minut. Ne častěji:
- * odpověď je levná, ale probouzet kvůli ní mobil na pozadí je zbytečné.
+ * Ptá se při návratu k záložce, při každém přechodu na jinou stránku
+ * a jednou za minutu (18. 11. 2026, dřív pět minut — majitel chce novou
+ * verzi u lidí hned). Dotaz jen na viditelné záložce, takže mobil na
+ * pozadí se kvůli němu nebudí.
  */
-const INTERVAL_MS = 5 * 60 * 1000
+const INTERVAL_MS = 60 * 1000
 
 /*
  * Kde se znovunačíst nesmí. Rozepsaná data v pokladně, návrat od platební
- * brány a rozeditovaný text ve studiu ValeCMS — ve všech třech případech by
- * obnovení stránky vzalo něco, co uživatel nemá jak získat zpět. Nová verze
- * na něj počká; dostane ji při nejbližším přechodu jinam.
+ * brány, účet (adresy, heslo, úprava objednávky), košík a rozeditovaný text
+ * ve studiu ValeCMS — obnovení by vzalo něco, co uživatel nemá jak získat
+ * zpět. Nová verze na něj počká; dostane ji při nejbližším přechodu jinam.
  */
-const CHRANENE_CESTY = [/\/checkout(\/|$|\?)/, /\/order\//, /^\/studio/]
+const CHRANENE_CESTY = [
+  /\/checkout(\/|$|\?)/,
+  /\/order\//,
+  /\/account(\/|$)/,
+  /\/cart(\/|$)/,
+  /^\/studio/,
+]
 
 const bezpecneZnovunacist = () => {
   if (CHRANENE_CESTY.some((cesta) => cesta.test(window.location.pathname))) {
@@ -50,6 +58,8 @@ const bezpecneZnovunacist = () => {
 
 const SessionVersionWatch = () => {
   const router = useRouter()
+  const pathname = usePathname()
+  const zkontrolovatRef = useRef<(() => Promise<void>) | null>(null)
 
   /*
    * Košík na novou verzi.
@@ -170,13 +180,21 @@ const SessionVersionWatch = () => {
 
     document.addEventListener("visibilitychange", priNavratu)
     const timer = window.setInterval(() => void zkontrolovat(), INTERVAL_MS)
+    zkontrolovatRef.current = zkontrolovat
 
     return () => {
       zruseno = true
+      zkontrolovatRef.current = null
       document.removeEventListener("visibilitychange", priNavratu)
       window.clearInterval(timer)
     }
   }, [])
+
+  /* Přechod na jinou stránku je nejbezpečnější chvíle: nic rozepsaného
+     tu ještě není. Chráněné stránky hlídá `bezpecneZnovunacist`. */
+  useEffect(() => {
+    void zkontrolovatRef.current?.()
+  }, [pathname])
 
   return null
 }
