@@ -39,6 +39,12 @@ export const RELOAD_KEEPER_JS = `(function () {
     if (desc && desc.set) desc.set.call(el, value); else el.value = value;
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
+    /* Pole, která se ukládají při opuštění (admin: InlineText), by vrácenou
+       hodnotu jen ukázala — vypadala by uložená a nebyla (18. 11. 2026). */
+    setTimeout(function () {
+      el.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+      el.dispatchEvent(new FocusEvent('blur'));
+    }, 60);
   }
   function restore() {
     var raw = null, data = null;

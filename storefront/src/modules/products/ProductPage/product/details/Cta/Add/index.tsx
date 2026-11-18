@@ -7,6 +7,7 @@ import {
   isPurchasable,
   type Availability,
 } from "@lib/util/availability"
+import { backorderNote as vlastniCekani } from "@lib/util/backorder"
 import { itemText } from "@lib/util/site-copy"
 import type { CopyBlock } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
@@ -133,6 +134,29 @@ export default function CTA({
   showStock = false,
 }: CTAProps) {
   const stock = showStock && selectedVariant && !pick ? stockStatus(availability, selectedVariant) : null
+
+  /*
+   * Poznámka o čekání (18. 11. 2026, Lucie: „zpráva pro zákazníka tam
+   * není"). Vyprodaný kus = celá věta. Kus SKLADEM, který jde objednat
+   * i po vyprodání, dřív neukázal nic — a kdo bere víc kusů, než je na
+   * skladě, se o čekání nedozvěděl. Teď i tam, uvedené tím, že jde o další
+   * kusy; jen vlastní věta výrobku (společná věta „Není-li výrobek skladem…"
+   * je psaná pro vyprodaný kus).
+   */
+  const vlastni = vlastniCekani(product)
+  const cekani =
+    availability === "made-to-order"
+      ? backorderNote
+      : vlastni &&
+          selectedVariant?.allow_backorder &&
+          (availability === "in-stock" || availability === "last-one")
+        ? `Další kusy na objednávku — ${
+            // Malé první písmeno jen u běžného slova, ne u zkratky („ČR").
+            vlastni.length > 1 && vlastni[1] === vlastni[1].toLocaleLowerCase("cs")
+              ? vlastni[0].toLocaleLowerCase("cs") + vlastni.slice(1)
+              : vlastni
+          }`
+        : null
   const text = (label: keyof typeof BUY_DEFAULTS) => itemText(texts, label, BUY_DEFAULTS[label])
   const frostResistant =
     product.metadata?.frost_resistant === true ||
@@ -281,9 +305,7 @@ export default function CTA({
 
       {/* The wait, in the merchant's words — only when the piece really is
           being made for this order, i.e. the availability says so. */}
-      {availability === "made-to-order" && backorderNote && (
-        <p className="product__details__cta__backorderNote">{backorderNote}</p>
-      )}
+      {cekani && <p className="product__details__cta__backorderNote">{cekani}</p>}
 
       {/* Dobírka, said before checkout — finding out at the payment step
           feels like a trap, so the product page says it here. Ve výběru do

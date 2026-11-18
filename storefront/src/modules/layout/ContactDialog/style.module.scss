@@ -489,10 +489,6 @@
   box-shadow: 0 8px 18px -17px rgb(var(--clay-02-rgb) / .85);
 }
 
-.input:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring);
-  outline-offset: 0.25rem;
-}
 
 .message {
   margin-top: clamp(1rem, 2.6vh, 1.75rem);

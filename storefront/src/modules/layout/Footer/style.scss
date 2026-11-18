@@ -358,8 +358,8 @@
   }
 }
 
-/* No `outline: 0` here: the global :focus-visible ring must survive —
-   a border-color shift alone is not a visible focus state. */
+/* Fokus pole = rámeček v barvě textu + světlé pozadí (jediné zvýraznění,
+   globals.scss: pole kroužek nekreslí). */
 .newsletter__input:hover,
 .newsletter__input:focus,
 .newsletter__input:focus-visible {

@@ -132,9 +132,8 @@
 
 .section :global(a:focus-visible),
 .section :global(button:focus-visible),
-.section :global(input:focus-visible),
-.section :global(select:focus-visible),
-.section :global(textarea:focus-visible) {
+.section :global(input[type="checkbox"]:focus-visible),
+.section :global(input[type="radio"]:focus-visible) {
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 3px;
 }

@@ -99,6 +99,12 @@
     border-radius: 999px;
     background: rgb(var(--white-rgb) / .56);
 
+    /* Jediné zvýraznění: celá pilulka, ne pole uvnitř (globals.scss). */
+    &:has(input:focus-visible) {
+        outline: var(--focus-ring-width) solid var(--focus-ring);
+        outline-offset: 2px;
+    }
+
     > span:first-child {
         position: absolute;
         /* Fyzicky 1px — schovavaci trik pro odecitac, ne velikost. */
