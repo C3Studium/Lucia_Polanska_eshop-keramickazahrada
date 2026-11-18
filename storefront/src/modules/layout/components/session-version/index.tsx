@@ -163,9 +163,9 @@ const SessionVersionWatch = () => {
        * Nová verze (nové nasazení na Railway) se načte VŽDY a u každého
        * (18. 11. 2026, přání majitele) — jen ne v editoru Studia, kde se
        * rozepsaný text do běžných polí neukládá. Rozepsaná pole uloží
-       * a po načtení vrátí strážce (`lib/util/reload-keeper`); obnoví až
-       * po chvíli klidu, v pokladně a na objednávce po delší, ať se
-       * nepřeruší rozběhlá platba.
+       * a po načtení vrátí strážce (`lib/util/reload-keeper`) — uloží hned
+       * a obnoví skoro hned (nejvýš 3 s), v pokladně počká až 1,5 s na klid,
+       * ať se nepřeruší kliknutí na Zaplatit.
        */
       if (window.location.pathname.startsWith("/studio")) return
       zruseno = true
@@ -180,7 +180,7 @@ const SessionVersionWatch = () => {
       const keeper = (window as unknown as {
         __kzReloadKeeper?: { reload: (idleMs?: number) => void }
       }).__kzReloadKeeper
-      if (keeper) keeper.reload(pokladna ? 8000 : 2000)
+      if (keeper) keeper.reload(pokladna ? 1500 : 400)
       else window.location.reload()
     }
 

@@ -7,7 +7,7 @@
  * `backend/medusa-config.js`, držet obě stejné). Dává na `window`
  * `__kzReloadKeeper.reload()`:
  *
- * 1. počká, až člověk ~2 s nepíše ani nekliká (ne uprostřed úhozu),
+ * 1. hned uloží pole a obnoví — počká jen, dokud člověk zrovna mačká klávesu,
  * 2. uloží hodnoty všech polí stránky do `sessionStorage` — kromě hesel,
  *    údajů karet a jednorázových kódů,
  * 3. stránku obnoví (nová verze = nové soubory, stará mezipaměť se nepoužije),
@@ -106,17 +106,21 @@ export const RELOAD_KEEPER_JS = `(function () {
   }
   var waiting = false;
   window.__kzReloadKeeper = {
-    /* idleMs: kolik klidu počkat (pokladna delší — ať se nepřeruší platba). */
-    reload: function (idleMs) {
+    /* Uloží hned a obnoví skoro hned (2. kolo 18. 11.: „čekat na klid ne,
+       člověk se dívá i přes 10 s"). Počká jen, dokud zrovna mačká klávesu
+       (idleMs, výchozí 400 ms) — nejvýš maxMs, pak obnoví tak jako tak. */
+    reload: function (idleMs, maxMs) {
       if (waiting) return;
       waiting = true;
-      var need = typeof idleMs === 'number' ? idleMs : 2000;
+      save();
+      var need = typeof idleMs === 'number' ? idleMs : 400;
+      var deadline = Date.now() + (typeof maxMs === 'number' ? maxMs : 3000);
       var timer = setInterval(function () {
-        if (!document.hidden && Date.now() - last < need) return;
+        if (!document.hidden && Date.now() - last < need && Date.now() < deadline) return;
         clearInterval(timer);
         save();
         location.reload();
-      }, 400);
+      }, 100);
     },
     save: save,
   };
