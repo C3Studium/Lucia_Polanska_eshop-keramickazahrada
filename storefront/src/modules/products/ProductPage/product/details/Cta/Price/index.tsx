@@ -89,6 +89,8 @@ export default function ProductPrice({
     : null
 
   const showReference = isSale && percent != null && lowest != null
+  const saleName =
+    reference.status === "ready" ? reference.reference.sale_name?.trim() || null : null
   const saleStyled = showReference
   const packaging = packagingPriceCzk(product)
 
@@ -96,8 +98,27 @@ export default function ProductPrice({
     <div className="product__details__cta__price">
       {/* Nezlomitelná mezera: na 320px se „|" zalamovalo na vlastní řádek. */}
       <div className="product__details__cta__price__main">
+        {/* Sleva (18. 11. 2026, Matěj): nahoře název výprodeje (u slevy
+            přímo u výrobku „Sleva") a o kolik, pod tím přeškrtnutá
+            předchozí cena a nová cena zeleně. */}
+        {showReference && (
+          <p className="product__saleTag" data-testid="sale-name">
+            <span>{saleName ?? "Sleva"}</span>
+            <span className="product__priceDiscount">−{percent} %</span>
+          </p>
+        )}
         <div className="product__priceHeading">
           <p>Cena&nbsp;|</p>
+          {showReference && (
+            <span
+              className="product__priceOriginal product__priceWas"
+              data-testid="price-reference"
+              data-value={lowest}
+              aria-label={`Předchozí cena ${formatAmount(lowest!, currencyCode)}`}
+            >
+              {formatAmount(lowest!, currencyCode)}
+            </span>
+          )}
           <span
             className={[
               "product__priceCurrent",
@@ -123,24 +144,15 @@ export default function ProductPrice({
           </p>
         )}
 
-        {showReference && (
-          <>
-            <span className="product__priceDiscount">−{percent} %</span>
-            <p className={styles.line} data-testid="price-reference">
-              <span className="product__priceOriginalLabel">
-                {reference.status === "ready" && reference.reference.complete
-                  ? texty["products.price_3"]
-                  : "Nejnižší cena před slevou: "}
-              </span>
-              <span className={styles.amount} data-value={lowest}>
-                {formatAmount(lowest!, currencyCode)}
-              </span>
-              {reference.status === "ready" && !reference.reference.complete && (
-                <span className={styles.note}>
-                  {texty["products.price_1"]}</span>
-              )}
-            </p>
-          </>
+        {/* § 12a ZOS: přeškrtnutá cena JE nejnižší cena za 30 dní před
+            slevou. Říká se to jen tam, kde to záznam cen celých 30 dní
+            dokládá; bez něj se neříká nic (Matěj, 18. 11. 2026). */}
+        {showReference && reference.status === "ready" && reference.reference.complete && (
+          <p className={styles.line} data-testid="price-reference-note">
+            <span className="product__priceOriginalLabel">
+              Přeškrtnutá cena je nejnižší cena za 30 dní před slevou.
+            </span>
+          </p>
         )}
 
         {clearance && hasPrice && (

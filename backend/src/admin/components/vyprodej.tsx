@@ -14,6 +14,7 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { ceskaChyba } from "../lib/ceska-chyba";
 import { sdk } from "../lib/sdk";
 import { formatCzk } from "../lib/workbench";
+import { ConfirmDialog } from "./confirm-dialog";
 import { InspectorRow } from "./product-inspector";
 import {
   endOfDay,
@@ -784,8 +785,9 @@ export const ProductVyprodejRow = ({
 }) => {
   const info = useProductVyprodej(productId);
   const list = useVyprodeje();
-  const { update } = useVyprodejWrites();
+  const { update, remove } = useVyprodejWrites();
   const [picking, setPicking] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [wizard, setWizard] = useState<{ editing: VyprodejRowData | null } | null>(null);
 
   const current = info.data?.vyprodej ?? null;
@@ -879,8 +881,31 @@ export const ProductVyprodejRow = ({
             >
               Vyřadit
             </Button>
+            {/* Celý výprodej pryč i odsud (18. 11. 2026, Matěj) — ne jen
+                tenhle výrobek. Nevratné, proto s potvrzením. */}
+            <Button
+              size="small"
+              variant="transparent"
+              className="text-ui-fg-error hover:text-ui-fg-error"
+              isLoading={remove.isPending}
+              onClick={() => setConfirmDelete(true)}
+            >
+              Smazat
+            </Button>
           </div>
         }
+      />
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title={`Smazat celý výprodej „${current.title}“?`}
+        description={`Zmizí pro všechny výrobky${
+          row ? ` (${pocet(row.members_count)})` : ""
+        } a ty se vrátí na plnou cenu. Jen tenhle výrobek vyřadíte tlačítkem Vyřadit.`}
+        consequence="Smazaný výprodej nejde vrátit — dá se jen založit znovu."
+        confirmLabel="Smazat výprodej"
+        isPending={remove.isPending}
+        onConfirm={() => remove.mutate(current.id, { onSuccess: () => setConfirmDelete(false) })}
       />
       {dialogs}
     </>
