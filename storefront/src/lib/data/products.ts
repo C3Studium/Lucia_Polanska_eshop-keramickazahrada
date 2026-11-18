@@ -476,8 +476,15 @@ export const listStoreCatalogue = async ({
     const {
       response: { products, count },
     } = await listProducts({
-      pageParam: Math.floor(normalizedOffset / normalizedLimit) + 1,
-      queryParams,
+      /*
+       * Skutečný posun, ne číslo stránky (18. 11. 2026). „Zobrazit další"
+       * posílá offset = kolik kusů je vidět; když první dávka měla 15 místo
+       * 16 (jeden kus odfiltrovaný), dělalo floor(15/16)+1 = stránka 1 →
+       * znovu tytéž výrobky, všechny zahozené jako duplikáty — při hledání
+       * se „další" nikdy nenačetly. `listProducts` pouští `queryParams`
+       * až za svůj offset, takže tenhle ho přepíše.
+       */
+      queryParams: { ...queryParams, offset: normalizedOffset },
       countryCode,
       regionId,
       cacheMode: "no-store",

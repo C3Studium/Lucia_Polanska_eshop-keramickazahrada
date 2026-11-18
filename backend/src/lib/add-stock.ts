@@ -126,11 +126,11 @@ export const removeStockFromItem = async (
   if (!level) return { previous: 0, stocked_quantity: 0, reserved: 0, removed: 0 }
   const previous = toNumber(level.stocked_quantity)
   const reserved = toNumber(level.reserved_quantity)
-  /* Spodní hranice = rezervované kusy (a nula). Když už je sklad pod ní
-     (prodáno víc, než bylo — třeba −4 skladem a 3 rezervováno), odebírání
-     nic nedělá; nesmí stav naopak „zvednout" na hranici. */
-  const floor = Math.max(reserved, 0)
-  const next = previous <= floor ? previous : Math.max(floor, previous - Math.abs(quantity))
+  /* Odebere přesně, kolik majitelka řekla — i pod nulu (druhé kolo
+     18. 11. 2026: „i když je tam záporné číslo, ať jde ubrat dál, ať to
+     opraví"). Změna v adminu je teď za tlačítkem Uložit, takže omyl jde
+     ještě před uložením zrušit. */
+  const next = previous - Math.abs(quantity)
   if (next !== previous) {
     await inventory.updateInventoryLevels([
       { inventory_item_id: inventoryItemId, location_id: locationId, stocked_quantity: next },
