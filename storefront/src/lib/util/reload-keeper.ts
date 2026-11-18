@@ -122,6 +122,32 @@ export const RELOAD_KEEPER_JS = `(function () {
         location.reload();
       }, 100);
     },
+    /* Banner „Byla spuštěna nová verze… [Obnovit stránku]" (3. kolo
+       18. 11., přání majitele). Klik uloží pole a obnoví. Kdo neklikne,
+       dostane novou verzi, až odejde ze záložky a vrátí se (taky
+       s uložením polí) — uprostřed práce ho nic samo nepřeruší. */
+    offer: function (text) {
+      if (document.getElementById('kz-new-version')) return;
+      var bar = document.createElement('div');
+      bar.id = 'kz-new-version';
+      bar.setAttribute('role', 'status');
+      bar.style.cssText = 'position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top, 0px));transform:translateX(-50%);z-index:2147483000;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px 14px;max-width:calc(100vw - 32px);box-sizing:border-box;padding:10px 10px 10px 18px;border-radius:24px;background:#1c1d1d;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.28);font:500 15px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif;';
+      var label = document.createElement('span');
+      label.textContent = text || 'Byla spuštěna nová verze.';
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = 'Obnovit stránku';
+      button.style.cssText = 'border:0;border-radius:999px;padding:9px 18px;background:#fff;color:#1c1d1d;font:600 15px/1 system-ui,-apple-system,"Segoe UI",sans-serif;cursor:pointer;';
+      button.addEventListener('click', function () { save(); location.reload(); });
+      bar.appendChild(label);
+      bar.appendChild(button);
+      (document.body || document.documentElement).appendChild(bar);
+      var left = false;
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) { left = true; save(); return; }
+        if (left) { save(); location.reload(); }
+      });
+    },
     save: save,
   };
   restore();

@@ -173,7 +173,7 @@ const medusaConfig = {
   function newVersion() {
     if (fired) return;
     fired = true;
-    if (window.__kzReloadKeeper) window.__kzReloadKeeper.reload(400);
+    if (window.__kzReloadKeeper) window.__kzReloadKeeper.offer('Byla spuštěna nová verze administrace.');
     else window.location.reload();
   }
   function check() {
