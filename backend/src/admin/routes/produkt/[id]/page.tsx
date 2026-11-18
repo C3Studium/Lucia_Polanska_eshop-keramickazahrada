@@ -1,4 +1,4 @@
-import { ArrowUpRightOnBox, CheckMini, ChevronDown, Photo, Plus, Trash } from "@medusajs/icons";
+import { ArrowUpRightOnBox, CheckMini, ChevronDown, DotsSix, Photo, Plus, Trash } from "@medusajs/icons";
 import {
   Badge,
   Button,
@@ -30,7 +30,8 @@ import {
   InspectorSwitchRow,
 } from "../../../components/product-inspector";
 import { SaveIndicator } from "../../../components/save-indicator";
-import { PhotoStrip, PhotoViewer, usePhotoDrag } from "../../../components/photo-strip";
+import { PhotoStrip, PhotoViewer } from "../../../components/photo-strip";
+import { PhotoOrderEditor } from "../../../components/photo-order-editor";
 import { mainFirst } from "../../../components/photo-strip-order";
 import { ProductionProfileEditor } from "../../../components/production-profile-editor";
 import { ProductDetailMenu } from "../../../components/product-detail-menu";
@@ -637,8 +638,9 @@ const VariantRow = ({
     typeof variant.metadata?.note === "string" ? variant.metadata.note : "";
   const saveMeta = (patch: Record<string, unknown>) =>
     save.mutateAsync({ metadata: { ...(variant.metadata ?? {}), ...patch } });
-  /* Fotky varianty jdou přetahovat; pořadí = pořadí v obchodě, první hlavní. */
-  const photoDrag = usePhotoDrag(photos, (next) => void saveMeta({ images: next }));
+  /* Řazení fotek varianty („Nastavit pořadí" → Zrušit / Uložit); první hlavní. */
+  const [photoOrder, setPhotoOrder] = useState<string[] | null>(null);
+  const [orderSaving, setOrderSaving] = useState(false);
 
   const uploadPhotos = useMutation({
     mutationFn: async (files: File[]) => {
@@ -895,18 +897,43 @@ const VariantRow = ({
         skrývat nesmí. */}
     {(!solo || photos.length > 0 || note) && (
     <div className="bg-ui-bg-subtle mt-3 flex flex-col gap-2 rounded-lg px-3 py-2.5">
+      {photoOrder ? (
+        /* Režim řazení fotek varianty — stejný jako u fotek výrobku. */
+        <div className="flex flex-col gap-2">
+          <PhotoOrderEditor photos={photoOrder} onChange={setPhotoOrder} sizeClassName="size-16" />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="small" variant="secondary" disabled={orderSaving} onClick={() => setPhotoOrder(null)}>
+              Zrušit
+            </Button>
+            <Button
+              size="small"
+              isLoading={orderSaving}
+              onClick={async () => {
+                if (photoOrder.join("|") !== photos.join("|")) {
+                  setOrderSaving(true);
+                  try {
+                    await saveMeta({ images: photoOrder });
+                  } finally {
+                    setOrderSaving(false);
+                  }
+                }
+                setPhotoOrder(null);
+              }}
+            >
+              Uložit
+            </Button>
+            <Text size="xsmall" className="text-ui-fg-muted">
+              Chyťte fotku a přetáhněte ji. První je hlavní.
+            </Text>
+          </div>
+        </div>
+      ) : (
       <div className="flex flex-wrap items-center gap-2">
-        {/* Přetažením se mění pořadí, první je hlavní (18. 11. 2026). */}
         {photos.map((url, index) => (
-          <figure key={url} {...photoDrag.itemProps(index, "group relative m-0")}>
-            {photoDrag.marker(index)}
+          <figure key={url} className="group relative m-0">
             <button
               type="button"
-              title={
-                index === 0
-                  ? "Hlavní fotka varianty — pořadí změníte přetažením"
-                  : "Klikem nastavíte jako hlavní, přetažením změníte pořadí"
-              }
+              title={index === 0 ? "Hlavní fotka varianty" : "Nastavit jako hlavní"}
               onClick={() => {
                 if (index === 0) return;
                 void saveMeta({
@@ -953,12 +980,18 @@ const VariantRow = ({
         >
           <Plus /> Fotka varianty
         </Button>
+        {photos.length > 1 && (
+          <Button size="small" variant="secondary" onClick={() => setPhotoOrder(photos)}>
+            <DotsSix /> Nastavit pořadí
+          </Button>
+        )}
         <Text size="xsmall" className="text-ui-fg-muted">
           {photos.length
             ? "Zákazník je uvidí po zvolení tohohle provedení."
             : "Bez vlastních fotek platí fotky produktu."}
         </Text>
       </div>
+      )}
       <div className="flex items-center gap-2">
         <FieldLabel>Poznámka</FieldLabel>
         <div className="min-w-0 flex-1">
@@ -1384,6 +1417,8 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
   const fileInput = useRef<HTMLInputElement>(null);
   /* Fotky přetahované nad oddílem Fotky — oddíl se rozsvítí. */
   const [draggingPhotos, setDraggingPhotos] = useState(false);
+  /** Rozpracované pořadí fotek; `null` = režim řazení je zavřený. */
+  const [photoOrder, setPhotoOrder] = useState<string[] | null>(null);
 
   const productQuery = useQuery<{ product: NativeProduct }>({
     queryKey: ["produkt", productId],
@@ -1995,12 +2030,15 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
    * jinou fotkou. Přetažení i „Nastavit jako hlavní" proto ukládají pořadí
    * a hlavní fotku zároveň (Medusa dá pořadí podle pole).
    */
-  const saveImageOrder = (urls: string[]) => {
+  const saveImageOrder = (urls: string[], onDone?: () => void) => {
     const byUrl = new Map((product.images ?? []).map((image) => [image.url, image]));
-    saveProduct.mutate({
-      images: urls.map((url) => ({ id: byUrl.get(url)?.id, url })),
-      thumbnail: urls[0] ?? null,
-    });
+    saveProduct.mutate(
+      {
+        images: urls.map((url) => ({ id: byUrl.get(url)?.id, url })),
+        thumbnail: urls[0] ?? null,
+      },
+      { onSuccess: () => onDone?.() }
+    );
   };
 
   /* Fotky galerie; bez nich aspoň hlavní fotka, ať jde zvětšit z hlavičky. */
@@ -2408,17 +2446,58 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                     event.target.value = "";
                   }}
                 />
-                {gallery.length > 0 && (
-                  <Button
-                    size="small"
-                    variant="secondary"
-                    className="min-h-[36px]"
-                    isLoading={uploadImages.isPending}
-                    onClick={() => fileInput.current?.click()}
-                  >
-                    <Plus /> Nahrát fotky
-                  </Button>
-                )}
+                {photoOrder ? (
+                  /* Režim řazení: Zrušit vrátí, Uložit zapíše pořadí
+                     a první fotku jako hlavní. */
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="small"
+                      variant="secondary"
+                      className="min-h-[36px]"
+                      disabled={saveProduct.isPending}
+                      onClick={() => setPhotoOrder(null)}
+                    >
+                      Zrušit
+                    </Button>
+                    <Button
+                      size="small"
+                      className="min-h-[36px]"
+                      isLoading={saveProduct.isPending}
+                      onClick={() => {
+                        const next = photoOrder;
+                        if (next.join("|") === gallery.join("|")) {
+                          setPhotoOrder(null);
+                          return;
+                        }
+                        saveImageOrder(next, () => setPhotoOrder(null));
+                      }}
+                    >
+                      Uložit
+                    </Button>
+                  </div>
+                ) : gallery.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {gallery.length > 1 && (
+                      <Button
+                        size="small"
+                        variant="secondary"
+                        className="min-h-[36px]"
+                        onClick={() => setPhotoOrder(gallery)}
+                      >
+                        <DotsSix /> Nastavit pořadí
+                      </Button>
+                    )}
+                    <Button
+                      size="small"
+                      variant="secondary"
+                      className="min-h-[36px]"
+                      isLoading={uploadImages.isPending}
+                      onClick={() => fileInput.current?.click()}
+                    >
+                      <Plus /> Nahrát fotky
+                    </Button>
+                  </div>
+                ) : null}
               </div>
               <div className="mt-3">
                 {gallery.length === 0 ? (
@@ -2439,20 +2518,25 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                   </button>
                 ) : (
                   <>
-                    <PhotoStrip
-                      photos={gallery}
-                      mainUrl={product.thumbnail}
-                      onOpen={setViewing}
-                      onReorder={saveImageOrder}
-                    />
+                    {photoOrder ? (
+                      <PhotoOrderEditor photos={photoOrder} onChange={setPhotoOrder} />
+                    ) : (
+                      <PhotoStrip
+                        photos={gallery}
+                        mainUrl={product.thumbnail}
+                        onOpen={setViewing}
+                      />
+                    )}
                     <Text
                       size="xsmall"
                       className="text-ui-fg-muted mt-2"
                       title="Hlavní fotka se ukazuje v seznamech a na kartě výrobku."
                     >
-                      {draggingPhotos
-                        ? "Pusťte fotky sem — nahrají se na konec."
-                        : "Pořadí změníte přetažením — první fotka je hlavní. Klikem fotku zvětšíte nebo smažete; nové sem můžete přetáhnout z počítače."}
+                      {photoOrder
+                        ? "Chyťte fotku a přetáhněte ji na jiné místo (na telefonu prst chvilku podržte). První fotka je hlavní — tou web začíná."
+                        : draggingPhotos
+                          ? "Pusťte fotky sem — nahrají se na konec."
+                          : "Klikněte na fotku — zvětšíte ji, nastavíte jako hlavní nebo smažete. Nové fotky sem můžete i přetáhnout."}
                     </Text>
                   </>
                 )}
