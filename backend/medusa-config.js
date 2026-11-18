@@ -53,6 +53,7 @@ import {
   IDOKLAD_NUMERIC_SEQUENCE_ID,
   IDOKLAD_TEST_MODE
 } from 'lib/constants';
+import { RELOAD_KEEPER_JS } from 'lib/reload-keeper-script';
 console.log('[Medusa Config] Constants imported successfully')
 console.log('[Medusa Config] DATABASE_URL present:', !!DATABASE_URL)
 console.log('[Medusa Config] JWT_SECRET present:', !!JWT_SECRET)
@@ -137,45 +138,62 @@ const medusaConfig = {
 });`,
               },
               /*
-               * Hlídka verze (18. 11. 2026, přání majitele: „ať klientka dostane
-               * novou verzi hned, jako u obchodu"). Každou minutu a při návratu
-               * do záložky si přečte /app/ a porovná hlavní skript
-               * (assets/index-<otisk>.js). Když se po nasazení změnil, stránku
-               * obnoví — ale jen v bezpečnou chvíli: nic se nepíše do pole,
-               * není otevřený dialog a na stránce nesvítí „Neuložen…". Jinak
-               * počká a zkusí to znovu. Ve vývojovém adminu (bez otisku) nedělá nic.
+               * Obnovení po nové verzi, napojené na Railway (18. 11. 2026,
+               * přání majitele: „každý, kdo má admin otevřený, se musí obnovit
+               * na novou verzi; rozepsané vstupy uložit a pak obnovit").
+               *
+               * 1) Strážce (lib/reload-keeper-script — stejný jako v obchodě):
+               *    uloží rozepsaná pole, obnoví stránku a pole vrátí.
+               * 2) Otisk sestavení: commit z Railway (RAILWAY_GIT_COMMIT_SHA)
+               *    se při sestavení zapíše do index.html. Otevřený admin ho
+               *    porovná s tím, co hlásí běžící backend (/kz-version) — po
+               *    30 s a při návratu do záložky. Jiný commit = nové nasazení
+               *    → obnovit (po ~2 s klidu, s uložením polí). Bez commitu
+               *    (mimo Railway) se porovná název hlavního skriptu
+               *    assets/index-<otisk>.js s aktuálním /app/.
                */
               {
                 tag: 'script',
+                injectTo: 'head',
+                children: RELOAD_KEEPER_JS,
+              },
+              {
+                tag: 'script',
                 injectTo: 'body',
-                children: `(function () {
+                children: `window.__KZ_ADMIN_COMMIT = ${JSON.stringify(
+                  (process.env.RAILWAY_GIT_COMMIT_SHA || '').slice(0, 12)
+                )};
+(function () {
+  var built = window.__KZ_ADMIN_COMMIT || '';
   var pattern = /assets\\/index-[\\w-]+\\.js/;
   var own = document.querySelector('script[type="module"][src*="assets/index-"]');
   var current = own ? (own.getAttribute('src').match(pattern) || [])[0] : null;
-  if (!current) return;
-  var pending = false;
-  function safe() {
-    var a = document.activeElement;
-    if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.isContentEditable)) return false;
-    if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return false;
-    if (/Neuložen/.test(document.body.innerText || '')) return false;
-    return true;
-  }
-  function tryReload() {
-    if (pending && safe()) window.location.reload();
+  if (!built && !current) return;
+  var fired = false;
+  function newVersion() {
+    if (fired) return;
+    fired = true;
+    if (window.__kzReloadKeeper) window.__kzReloadKeeper.reload(2000);
+    else window.location.reload();
   }
   function check() {
-    if (pending) return tryReload();
+    if (fired) return;
+    if (built) {
+      fetch(window.location.origin + '/kz-version', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (b) { if (b && b.commit && b.commit !== built) newVersion(); })
+        .catch(function () {});
+      return;
+    }
     fetch(window.location.origin + '/app/', { cache: 'no-store', credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.text() : ''; })
       .then(function (html) {
         var next = (html.match(pattern) || [])[0];
-        if (next && next !== current) { pending = true; tryReload(); }
+        if (next && next !== current) newVersion();
       })
       .catch(function () {});
   }
-  setInterval(check, 60000);
-  setInterval(tryReload, 10000);
+  setInterval(check, 30000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
   window.addEventListener('focus', check);
 })();`,

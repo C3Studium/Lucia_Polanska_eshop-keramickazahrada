@@ -4,6 +4,7 @@ import EffectBudgetFlag from "@modules/layout/components/effect-budget-flag"
 import ScrollResetOnRoute from "@lib/helpers/scrollResetOnRoute"
 import SessionVersionWatch from "@modules/layout/components/session-version"
 import { bootResetScript } from "@lib/util/session-version"
+import { RELOAD_KEEPER_JS } from "@lib/util/reload-keeper"
 import { StateProvider } from "@lib/context/StateContext"
 import { getBaseURL } from "@lib/util/env"
 import CookieNotice from "@modules/layout/CookieNotice"
@@ -52,6 +53,9 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         {uklidPoStareVerzi ? (
           <script dangerouslySetInnerHTML={{ __html: uklidPoStareVerzi }} />
         ) : null}
+        {/* Strážce obnovení po nové verzi: uloží rozepsaná pole, obnoví
+            stránku a pole vrátí (lib/util/reload-keeper, 18. 11. 2026). */}
+        <script dangerouslySetInnerHTML={{ __html: RELOAD_KEEPER_JS }} />
         {vychoziSouhlas ? (
           <script
             id="kz-consent-default"
