@@ -55,6 +55,14 @@ export const CART_VERSION_ENDPOINT = "/api/cart/version"
  */
 const RESET_PREFIXES = ["kz_", "kz-", "kz:", "shop:", "cart_id", "region_id"]
 
+/*
+ * Volby zákazníka nová verze nezastará (18. 11. 2026, přání majitele: „ať
+ * lidé o nic nepřijdou"). Naposledy zvolená platba, zavřené oznámení
+ * a schovaná lišta správce se proto při úklidu NEMAŽOU — jinak by po
+ * každém nasazení oznámení vyskočilo znovu a pokladna zapomněla platbu.
+ */
+const KEEP_PREFIXES = ["kz_last_payment_method", "kz-banner-dismissed", "kz-admin-bar-hidden"]
+
 /** Jmenovka serverové cache Medusy. Není httpOnly, takže na ni skript dosáhne. */
 const CACHE_ID_COOKIE = "_medusa_cache_id"
 
@@ -66,6 +74,7 @@ const sweep = (store: Storage | null, keep: string[]) => {
   for (let i = 0; i < store.length; i += 1) {
     const key = store.key(i)
     if (key === null || keep.includes(key)) continue
+    if (KEEP_PREFIXES.some((prefix) => key.startsWith(prefix))) continue
     if (RESET_PREFIXES.some((prefix) => key.startsWith(prefix))) doomed.push(key)
   }
 
@@ -105,16 +114,18 @@ export const bootResetScript = (): string => {
     RESET_PREFIXES,
     CACHE_ID_COOKIE,
     CART_PENDING_KEY,
+    KEEP_PREFIXES,
   ]
     .map((value) => JSON.stringify(value))
     .join(",")
 
-  return `(function(s,k,g,p,c,q){try{
+  return `(function(s,k,g,p,c,q,h){try{
 var L=window.localStorage,S=window.sessionStorage,d=L.getItem(k);
 if(d===s)return;
 if(d!==null){
-var u=function(t,keep){if(!t)return;var r=[],i,j,x;
+var u=function(t,keep){if(!t)return;var r=[],i,j,x,z;
 for(i=0;i<t.length;i++){x=t.key(i);if(x===null||x===keep)continue;
+z=false;for(j=0;j<h.length;j++){if(x.indexOf(h[j])===0){z=true;break}}if(z)continue;
 for(j=0;j<p.length;j++){if(x.indexOf(p[j])===0){r.push(x);break}}}
 for(i=0;i<r.length;i++)t.removeItem(r[i])};
 u(L,k);u(S,null);
