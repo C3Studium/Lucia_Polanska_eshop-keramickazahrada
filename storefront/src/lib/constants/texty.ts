@@ -26,7 +26,7 @@ export const TEXTY_DEFAULTS = {
     "Recenze mohou psát přihlášení zákazníci. Štítek „Ověřený nákup“ má jen recenze od zákazníka, který si výrobek u nás koupil. Recenze schvalujeme ručně kvůli spamu a vulgaritám; negativní hodnocení nemažeme.",
 
   "zakazka.panel_nadpis": "Vyrábí se na zakázku",
-  "zakazka.panel_lhuta": "Hotovo do {{dny}} dnů od zahájení výroby{{obvykle}}.",
+  "zakazka.panel_lhuta": "Na výrobu potřebuji alespoň 6–8 týdnů, dle aktuálních podmínek.",
   "zakazka.panel_lhuta_rozmezi": "Hotovo zhruba za {{rozmezi}}.",
   "zakazka.panel_zaloha":
     "Platí se záloha {{procento}} %{{castka}}. Zbytek doplatíte, až bude hotovo. Po zahájení výroby se záloha nevrací.",
@@ -39,7 +39,7 @@ export const TEXTY_DEFAULTS = {
   "zakazka.stitek": "Na zakázku · {{zaloha}} · {{vyroba}} · bez 14denní lhůty na vrácení",
   "zakazka.stitek_zaloha": "záloha {{procento}} %",
   "zakazka.stitek_zaloha_po_domluve": "záloha po domluvě ceny",
-  "zakazka.stitek_vyroba": "výroba do {{dny}} dnů",
+  "zakazka.stitek_vyroba": "výroba 6–8 týdnů",
 
   "zakazka.kroky_nadpis": "Jak zakázka probíhá",
   "zakazka.krok_zahajeni_nazev": "Zahájení výroby",

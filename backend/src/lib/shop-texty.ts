@@ -480,19 +480,15 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     maxLength: 80,
   },
   "zakazka.panel_lhuta": {
-    label: "Lhůta (když je v profilu vyplněná)",
+    label: "Jak dlouho trvá výroba",
     help:
-      "První věta panelu. Číslo dnů se bere z výrobního profilu toho kusu, takže jedno znění platí pro hrnek i pro plastiku. Lhůtu můžete napsat i slovy (např. „6–8 týdnů“) — pak značku {{dny}} vynechte.",
+      "První věta panelu u ceny zakázkového výrobku. Platí pro všechny zakázky — napište ji obyčejně, např. „Na výrobu potřebuji alespoň 6–8 týdnů.“",
     group: "Panel u ceny (stránka výrobku)",
     multiline: true,
     maxLength: 300,
-    /* {{dny}} nepovinná od 18. 11. 2026: majitelka chce psát lhůtu
-       slovy („alespoň 6–8 týdnů, dle aktuálních podmínek") a s povinnou
-       značkou nešla věta uložit. */
-    znacky: [
-      { znacka: "{{dny}}", popis: "nejdelší lhůta ve dnech z profilu", povinna: false },
-      { znacka: "{{obvykle}}", popis: "rozpětí v závorce, např. „ (obvykle 14–42 dní)“; bez rozpětí zmizí", povinna: false },
-    ],
+    /* Bez značek od 18. 11. 2026 (přání majitele): lhůta se píše slovy,
+       v adminu nemá být žádné {{dny}}. Obchod značky dál umí dosadit,
+       kdyby je tam někdo ze starého znění měl. */
   },
   "zakazka.panel_lhuta_rozmezi": {
     label: "Lhůta (jen rozpětí, bez nejdelší)",
@@ -569,13 +565,11 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
   },
   "zakazka.stitek_vyroba": {
     label: "Štítek — část o lhůtě",
-    help:
-      "Dosadí se za {{vyroba}}, když je v profilu nejdelší lhůta. Lhůtu můžete napsat i slovy (např. „výroba 6–8 týdnů“) — pak značku {{dny}} vynechte.",
+    help: "Krátký údaj o délce výroby ve štítku pod cenou, např. „výroba 6–8 týdnů“.",
     group: "Štítek pod cenou (stránka výrobku)",
     multiline: false,
     maxLength: 100,
-    // Nepovinná od 18. 11. 2026 — stejně jako u věty v panelu (zakazka.panel_lhuta).
-    znacky: [{ znacka: "{{dny}}", popis: "nejdelší lhůta ve dnech", povinna: false }],
+    // Bez značek od 18. 11. 2026 — stejně jako „Jak dlouho trvá výroba“.
   },
 
   "zakazka.kroky_nadpis": {
@@ -2075,7 +2069,7 @@ export const SHOP_TEXT_DEFAULTS: Readonly<ShopTextValues> = Object.freeze({
     "Recenze mohou psát přihlášení zákazníci. Štítek „Ověřený nákup“ má jen recenze od zákazníka, který si výrobek u nás koupil. Recenze schvalujeme ručně kvůli spamu a vulgaritám; negativní hodnocení nemažeme.",
 
   "zakazka.panel_nadpis": "Vyrábí se na zakázku",
-  "zakazka.panel_lhuta": "Hotovo do {{dny}} dnů od zahájení výroby{{obvykle}}.",
+  "zakazka.panel_lhuta": "Na výrobu potřebuji alespoň 6–8 týdnů, dle aktuálních podmínek.",
   "zakazka.panel_lhuta_rozmezi": "Hotovo zhruba za {{rozmezi}}.",
   "zakazka.panel_zaloha":
     "Platí se záloha {{procento}} %{{castka}}. Zbytek doplatíte, až bude hotovo. Po zahájení výroby se záloha nevrací.",
@@ -2088,7 +2082,7 @@ export const SHOP_TEXT_DEFAULTS: Readonly<ShopTextValues> = Object.freeze({
   "zakazka.stitek": "Na zakázku · {{zaloha}} · {{vyroba}} · bez 14denní lhůty na vrácení",
   "zakazka.stitek_zaloha": "záloha {{procento}} %",
   "zakazka.stitek_zaloha_po_domluve": "záloha po domluvě ceny",
-  "zakazka.stitek_vyroba": "výroba do {{dny}} dnů",
+  "zakazka.stitek_vyroba": "výroba 6–8 týdnů",
 
   "zakazka.kroky_nadpis": "Jak zakázka probíhá",
   "zakazka.krok_zahajeni_nazev": "Zahájení výroby",
