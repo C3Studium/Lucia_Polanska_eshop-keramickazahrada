@@ -662,6 +662,14 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                       }
                       quantity={pick?.fixedQuantity ?? quantity}
                       maxQuantity={maxQuantity}
+                      // Stav skladu vedle počtu kusů — jen běžné zboží (18. 11. 2026).
+                      showStock={
+                        !bundle &&
+                        !isMadeToOrder &&
+                        !isCommissionCategory &&
+                        !isVoucher &&
+                        !isGiftVoucher
+                      }
                       // Pevný počet (výměna řádku) = žádný stepper.
                       onQuantityChange={pick?.fixedQuantity ? undefined : setQuantity}
                       isValidVariant={isValidVariant}

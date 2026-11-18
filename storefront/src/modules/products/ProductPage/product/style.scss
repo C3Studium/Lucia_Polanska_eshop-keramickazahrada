@@ -903,6 +903,40 @@
   gap: 0.875rem;
 }
 
+/* Stav skladu vlevo v řádku „Počet kusů" (18. 11. 2026). Na úzkém sloupci
+   se řádek zalomí a stav spadne nad počet kusů. */
+.product__details__cta__quantity {
+  flex-wrap: wrap;
+}
+
+.product__details__cta__stock {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 auto 0 0;
+  color: var(--pdp-cream, var(--cream-06));
+  font-family: "Sansation-Bold", "Sansation-Regular", sans-serif;
+  font-size: clamp(0.8125rem, calc(1.083vw * var(--ui-scale)), 0.948rem);
+  letter-spacing: 0.04em;
+}
+
+.product__details__cta__stockDot {
+  flex: none;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+}
+
+.product__details__cta__stock--in .product__details__cta__stockDot {
+  background: #7fbf6a;
+  box-shadow: 0 0 0 3px rgb(127 191 106 / 0.22);
+}
+
+.product__details__cta__stock--out .product__details__cta__stockDot {
+  background: #d9a35b;
+  box-shadow: 0 0 0 3px rgb(217 163 91 / 0.22);
+}
+
 .product__details__cta__quantity > span {
   color: var(--pdp-cream, var(--cream-06));
   font-family: "Sansation-Regular", sans-serif;
