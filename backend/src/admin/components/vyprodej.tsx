@@ -54,6 +54,14 @@ export type VyprodejRowData = {
   excluded_count: number;
   members_count: number;
   members: { id: string; title: string; thumbnail: string | null }[];
+  /** Co výprodej přinesl (lib/vyprodej-stats); `null`, když se nepodařilo spočítat. */
+  stats: {
+    orders: number;
+    units: number;
+    revenue: number;
+    saved: number;
+    top: { product_id: string; title: string; units: number }[];
+  } | null;
 };
 
 export const VYPRODEJ_TYPE: Record<VyprodejType, { label: string; hint: string }> = {
@@ -76,7 +84,7 @@ export const vyprodejScope = (row: Pick<VyprodejRowData, "collections" | "catego
 const pocet = (n: number) => (n === 1 ? "1 výrobek" : n >= 2 && n <= 4 ? `${n} výrobky` : `${n} výrobků`);
 
 export const useVyprodeje = () =>
-  useQuery<{ vyprodeje: VyprodejRowData[] }>({
+  useQuery<{ vyprodeje: VyprodejRowData[]; orders_scanned?: number }>({
     queryKey: ["vyprodeje"],
     queryFn: () => sdk.client.fetch("/admin/workbench/vyprodeje"),
   });
@@ -92,6 +100,8 @@ export type ProductVyprodejInfo = {
     starts_at: string | null;
     ends_at: string | null;
     via: "product" | "category" | "collection" | null;
+    /** Výprodej jen tohoto výrobku (řádek „Výprodej tohoto produktu"). */
+    single?: boolean;
   } | null;
   blocked: string | null;
 };
@@ -776,6 +786,308 @@ const VyprodejPicker = ({
   );
 };
 
+/**
+ * Okno „Výprodej tohoto produktu" (18. 11. 2026, Matěj) — jako okno slevy,
+ * navíc volba na čas / do vyprodání zásob. Zakládá výprodej s jediným
+ * výrobkem; u existujícího ho upraví nebo smaže.
+ */
+const OwnVyprodejDialog = ({
+  productId,
+  productTitle,
+  price,
+  existing,
+  open,
+  onOpenChange,
+}: {
+  productId: string;
+  productTitle: string;
+  price: number | null;
+  existing: NonNullable<ProductVyprodejInfo["vyprodej"]> | null;
+  open: boolean;
+  onOpenChange: (next: boolean) => void;
+}) => {
+  const ids = useId();
+  const invalidate = useInvalidateVyprodej();
+  const { remove } = useVyprodejWrites();
+  const [type, setType] = useState<VyprodejType>("stock");
+  const [percent, setPercent] = useState("20");
+  const [from, setFrom] = useState(today());
+  const [to, setTo] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    setType(existing?.type ?? "stock");
+    setPercent(String(existing?.percent ?? 20));
+    setFrom(existing ? toInputDate(existing.starts_at) : today());
+    setTo(existing ? toInputDate(existing.ends_at) : "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const value = Number(percent);
+  const percentOk = Number.isInteger(value) && value >= 1 && value <= 90;
+  const datesOk = type === "stock" || !from || !to || from <= to;
+
+  const save = useMutation({
+    mutationFn: () => {
+      const body = {
+        type,
+        percent: value,
+        starts_at: type === "stock" ? null : startOfDay(from),
+        ends_at: type === "stock" ? null : endOfDay(to),
+      };
+      return existing
+        ? sdk.client.fetch(`/admin/workbench/vyprodeje/${existing.id}`, { method: "POST", body })
+        : sdk.client.fetch("/admin/workbench/vyprodeje", {
+            method: "POST",
+            body: { ...body, title: `Výprodej — ${productTitle}`, product_ids: [productId] },
+          });
+    },
+    onSuccess: async () => {
+      await invalidate();
+      toast.success(
+        existing
+          ? "Výprodej uložen."
+          : type === "stock"
+            ? `Výprodej −${value} % do vyprodání zásob.`
+            : `Výprodej −${value} % nastavený.`
+      );
+      onOpenChange(false);
+    },
+    onError: (error) => toast.error(ceskaChyba(error, "Výprodej se nepodařilo uložit.")),
+  });
+
+  return (
+    <Prompt variant="confirmation" open={open} onOpenChange={onOpenChange}>
+      <Prompt.Content className="w-[calc(100%-2rem)]">
+        <Prompt.Header>
+          <Prompt.Title>{existing ? "Upravit výprodej" : "Výprodej tohoto produktu"}</Prompt.Title>
+          <Prompt.Description>{productTitle}</Prompt.Description>
+        </Prompt.Header>
+
+        <div className="flex flex-col gap-4 px-6 py-4">
+          <div className="flex flex-col gap-2">
+            <Text size="small" weight="plus">
+              Jak dlouho
+            </Text>
+            <div className="grid grid-cols-2 gap-2">
+              {(["stock", "time"] as VyprodejType[]).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={type === key}
+                  onClick={() => setType(key)}
+                  className={`flex min-h-[56px] flex-col items-start rounded-lg border px-3 py-2 text-left ${
+                    type === key
+                      ? "border-ui-border-interactive bg-ui-bg-base-pressed"
+                      : "border-ui-border-base hover:bg-ui-bg-base-hover"
+                  }`}
+                >
+                  <Text size="small" weight="plus">
+                    {VYPRODEJ_TYPE[key].label}
+                  </Text>
+                  <Text size="xsmall" className="text-ui-fg-subtle">
+                    {key === "stock" ? "Skončí, až se kusy prodají." : "Od–do, pak plná cena."}
+                  </Text>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor={`${ids}-pct`} size="small" weight="plus">
+              Sleva
+            </Label>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative w-28">
+                <Input
+                  id={`${ids}-pct`}
+                  type="number"
+                  min={1}
+                  max={90}
+                  inputMode="numeric"
+                  value={percent}
+                  className="pr-8 tabular-nums"
+                  onChange={(event) => setPercent(event.target.value)}
+                />
+                <span className="text-ui-fg-muted txt-compact-small pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                  %
+                </span>
+              </div>
+              {QUICK.map((quick) => (
+                <button
+                  key={quick}
+                  type="button"
+                  aria-pressed={value === quick}
+                  onClick={() => setPercent(String(quick))}
+                  className={`min-h-[36px] rounded-full border px-3 ${
+                    value === quick
+                      ? "border-ui-border-interactive bg-ui-bg-base-pressed"
+                      : "border-ui-border-base hover:bg-ui-bg-base-hover"
+                  }`}
+                >
+                  <Text size="small">{quick} %</Text>
+                </button>
+              ))}
+            </div>
+            {!percentOk && (
+              <Text size="xsmall" className="text-ui-fg-error">
+                Zadejte celé číslo od 1 do 90.
+              </Text>
+            )}
+          </div>
+
+          {type === "time" && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor={`${ids}-from`} size="small" weight="plus">
+                    Od
+                  </Label>
+                  <Input id={`${ids}-from`} type="date" value={from} onChange={(event) => setFrom(event.target.value)} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor={`${ids}-to`} size="small" weight="plus">
+                    Do
+                  </Label>
+                  <Input
+                    id={`${ids}-to`}
+                    type="date"
+                    value={to}
+                    min={from || undefined}
+                    onChange={(event) => setTo(event.target.value)}
+                  />
+                </div>
+              </div>
+              <Text size="xsmall" className={datesOk ? "text-ui-fg-subtle -mt-2" : "text-ui-fg-error -mt-2"}>
+                {datesOk
+                  ? "Prázdné „Do“ = platí, dokud ho nevypnete. Poslední den platí celý."
+                  : "Konec musí být po začátku."}
+              </Text>
+            </>
+          )}
+
+          {price !== null && percentOk && (
+            <div className="bg-ui-bg-subtle flex flex-wrap items-baseline gap-2 rounded-lg px-3 py-2.5">
+              <Text size="small" className="text-ui-fg-muted line-through">
+                {formatCzk(price)}
+              </Text>
+              <Text size="large" weight="plus">
+                {formatCzk(salePrice(price, value))}
+              </Text>
+              <Text size="small" className="text-ui-fg-subtle">
+                − {value} % · ruší vlastní slevu, slevové kódy na něj neplatí
+              </Text>
+            </div>
+          )}
+        </div>
+
+        <Prompt.Footer className="flex-wrap">
+          {existing && (
+            <Button
+              size="small"
+              variant="transparent"
+              className="text-ui-fg-error hover:text-ui-fg-error mr-auto"
+              isLoading={remove.isPending}
+              onClick={() => remove.mutate(existing.id, { onSuccess: () => onOpenChange(false) })}
+            >
+              Smazat výprodej
+            </Button>
+          )}
+          <Prompt.Cancel>Zrušit</Prompt.Cancel>
+          <Button size="small" disabled={!percentOk || !datesOk} isLoading={save.isPending} onClick={() => save.mutate()}>
+            {existing ? "Uložit" : "Spustit výprodej"}
+          </Button>
+        </Prompt.Footer>
+      </Prompt.Content>
+    </Prompt>
+  );
+};
+
+/** Řádek „Výprodej tohoto produktu" — mezi Slevou a Výprodejem. */
+export const ProductOwnVyprodejRow = ({
+  productId,
+  productTitle,
+  price,
+}: {
+  productId: string;
+  productTitle: string;
+  price: number | null;
+}) => {
+  const info = useProductVyprodej(productId);
+  const [open, setOpen] = useState(false);
+  const current = info.data?.vyprodej ?? null;
+  const blocked = info.data?.blocked ?? null;
+  const own = current?.single ? current : null;
+
+  const dialog = (
+    <OwnVyprodejDialog
+      productId={productId}
+      productTitle={productTitle}
+      price={price}
+      existing={own}
+      open={open}
+      onOpenChange={setOpen}
+    />
+  );
+
+  if (!own) {
+    const hint = blocked
+      ? blocked
+      : current
+        ? `Je ve výprodeji „${current.title}“ (níž) — vlastní až po vyřazení z něj.`
+        : "Jen tento kus — na čas, nebo do vyprodání zásob.";
+    return (
+      <>
+        <InspectorRow
+          id="produkt-vyprodej-vlastni"
+          label="Výprodej tohoto produktu"
+          hint={hint}
+          control={
+            blocked || current ? undefined : (
+              <Button size="small" variant="secondary" disabled={info.isLoading || price === null} onClick={() => setOpen(true)}>
+                Nastavit výprodej
+              </Button>
+            )
+          }
+        />
+        {dialog}
+      </>
+    );
+  }
+
+  const state = SALE_STATE[own.state];
+  return (
+    <>
+      <InspectorRow
+        id="produkt-vyprodej-vlastni"
+        label={`Výprodej tohoto produktu −${own.percent} %`}
+        hint={
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-0.5">
+            <Badge size="2xsmall" color={state.color}>
+              {state.label}
+            </Badge>
+            {price !== null && (
+              <span>
+                <span className="line-through">{formatCzk(price)}</span>{" "}
+                <span className="text-ui-fg-base font-medium">{formatCzk(salePrice(price, own.percent))}</span>
+              </span>
+            )}
+            <span>
+              {own.type === "stock" ? "do vyprodání zásob" : salePeriod(own)}
+            </span>
+          </span>
+        }
+        control={
+          <Button size="small" variant="secondary" onClick={() => setOpen(true)}>
+            Upravit
+          </Button>
+        }
+      />
+      {dialog}
+    </>
+  );
+};
+
 /** Řádek „Výprodej" pod Slevou na detailu výrobku. */
 export const ProductVyprodejRow = ({
   productId,
@@ -828,6 +1140,20 @@ export const ProductVyprodejRow = ({
               </Button>
             )
           }
+        />
+        {dialogs}
+      </>
+    );
+  }
+
+  /* Vlastní výprodej výrobku řídí řádek nad tímhle (ProductOwnVyprodejRow). */
+  if (current.single) {
+    return (
+      <>
+        <InspectorRow
+          id="produkt-vyprodej"
+          label="Výprodej"
+          hint="Má vlastní výprodej (výš). Do výprodeje kolekce nebo kategorie půjde, až ten vlastní smažete."
         />
         {dialogs}
       </>

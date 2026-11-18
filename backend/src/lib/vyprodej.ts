@@ -251,6 +251,13 @@ const syncAllNow = async (container: MedusaContainer) => {
               ...vyprodej.config,
               members: resolved.productIds,
               sig,
+              ever: [
+                ...new Set([
+                  ...(vyprodej.config.ever ?? []),
+                  ...vyprodej.config.members,
+                  ...resolved.productIds,
+                ]),
+              ],
             }),
             ...(soldOut ? { ends_at: new Date().toISOString() } : {}),
           } as any,

@@ -22,6 +22,12 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           starts_at: vyprodej.starts_at,
           ends_at: vyprodej.ends_at,
           via: vyprodej.via,
+          /* Výprodej jen tohoto výrobku (řádek „Výprodej tohoto produktu"). */
+          single:
+            !vyprodej.config.collection_ids.length &&
+            !vyprodej.config.category_ids.length &&
+            vyprodej.config.product_ids.length === 1 &&
+            vyprodej.config.product_ids[0] === req.params.productId,
         }
       : null,
     blocked: vyprodejBlockReason((data as any[])[0]?.metadata ?? null),
