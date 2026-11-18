@@ -72,7 +72,41 @@ type CTAProps = {
   pick?: { label: string; blocked: boolean; blockedText?: string; note?: string }
   /** Blok `global.produkt` — texty nákupu (viz BUY_DEFAULTS). */
   texts?: CopyBlock
+  /**
+   * Stav skladu vedle „Počet kusů" (18. 11. 2026, Lucie: „není na první
+   * pohled zřejmé, jestli je produkt skladem, nebo na objednávku"). Jen
+   * u běžného zboží — zakázka, poukaz a balíček mají vlastní věty.
+   */
+  showStock?: boolean
 }
+
+/** „Skladem · 3 ks" / „Skladem · poslední kus" / „Není skladem — …". */
+const stockStatus = (
+  availability: Availability,
+  variant?: HttpTypes.StoreProductVariant
+): { inStock: boolean; text: string } => {
+  const kusu = variant?.manage_inventory ? (variant.inventory_quantity ?? 0) : null
+  if (availability === "last-one") return { inStock: true, text: "Skladem · poslední kus" }
+  if (availability === "in-stock") {
+    return { inStock: true, text: kusu && kusu > 0 ? `Skladem · ${kusu} ks` : "Skladem" }
+  }
+  if (availability === "made-to-order") {
+    return { inStock: false, text: "Není skladem — vyrobím na objednávku" }
+  }
+  return { inStock: false, text: "Není skladem" }
+}
+
+const StockBadge = ({ stock }: { stock: { inStock: boolean; text: string } }) => (
+  <p
+    className={`product__details__cta__stock ${
+      stock.inStock ? "product__details__cta__stock--in" : "product__details__cta__stock--out"
+    }`}
+    data-testid="product-stock-status"
+  >
+    <span aria-hidden className="product__details__cta__stockDot" />
+    {stock.text}
+  </p>
+)
 
 export default function CTA({
   inStock,
@@ -95,7 +129,9 @@ export default function CTA({
   buyNowEligible = false,
   pick,
   texts,
+  showStock = false,
 }: CTAProps) {
+  const stock = showStock && selectedVariant && !pick ? stockStatus(availability, selectedVariant) : null
   const text = (label: keyof typeof BUY_DEFAULTS) => itemText(texts, label, BUY_DEFAULTS[label])
   const frostResistant =
     product.metadata?.frost_resistant === true ||
@@ -127,8 +163,15 @@ export default function CTA({
 
   return (
     <div className="product__details__cta__buy">
+      {/* Bez stepperu (jediný kus k mání) stojí stav skladu sám. */}
+      {stock && !showStepper && (
+        <div className="product__details__cta__quantity">
+          <StockBadge stock={stock} />
+        </div>
+      )}
       {showStepper && (
         <div className="product__details__cta__quantity">
+          {stock && <StockBadge stock={stock} />}
           <span id="qty-label">Počet kusů</span>
           <div role="group" aria-labelledby="qty-label">
             <button
