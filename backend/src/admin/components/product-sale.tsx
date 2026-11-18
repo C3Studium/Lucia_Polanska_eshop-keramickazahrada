@@ -46,17 +46,17 @@ export const salePrice = (price: number, percent: number) =>
 
 const pad = (value: number) => String(value).padStart(2, "0");
 /** ISO → „RRRR-MM-DD" v místním čase (pole typu date). */
-const toInputDate = (iso: string | null) => {
+export const toInputDate = (iso: string | null) => {
   if (!iso) return "";
   const date = new Date(iso);
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 };
-const today = () => toInputDate(new Date().toISOString());
+export const today = () => toInputDate(new Date().toISOString());
 /* Začátek dne „od", konec dne „do" — sleva do 24. 12. platí celý 24. 12. */
-const startOfDay = (value: string) => (value ? new Date(`${value}T00:00:00`).toISOString() : null);
-const endOfDay = (value: string) => (value ? new Date(`${value}T23:59:59`).toISOString() : null);
+export const startOfDay = (value: string) => (value ? new Date(`${value}T00:00:00`).toISOString() : null);
+export const endOfDay = (value: string) => (value ? new Date(`${value}T23:59:59`).toISOString() : null);
 
-const QUICK = [10, 20, 30, 50];
+export const QUICK = [10, 20, 30, 50];
 
 export const productSaleKey = (productId: string) => ["product-sale", productId];
 
@@ -315,6 +315,30 @@ export const ProductSaleRow = ({
   });
   const { save } = useSaleWrites(productId);
   const sale = data?.sale ?? null;
+
+  /* Výprodej ruší vlastní slevu (lib/vyprodej.ts) — klíč a adresa jako
+     v components/vyprodej.tsx (useProductVyprodej), ať se sdílí mezipaměť. */
+  const vyprodejInfo = useQuery<{
+    vyprodej: { title: string; state: ProductSale["state"] } | null;
+  }>({
+    queryKey: ["product-vyprodej", productId],
+    queryFn: () => sdk.client.fetch(`/admin/workbench/products/${productId}/vyprodej`),
+  });
+  const vyprodej = vyprodejInfo.data?.vyprodej ?? null;
+  const vyprodejBlocks =
+    vyprodej && (vyprodej.state === "running" || vyprodej.state === "scheduled")
+      ? `Neplatí — výrobek je ve výprodeji „${vyprodej.title}“. Výprodej ruší vlastní slevu.`
+      : null;
+
+  if (vyprodejBlocks) {
+    return (
+      <InspectorRow
+        id="produkt-sleva"
+        label={sale ? `Sleva ${sale.percent} % — vypnutá` : "Sleva"}
+        hint={vyprodejBlocks}
+      />
+    );
+  }
 
   if (blockedReason && !sale) {
     return <InspectorRow id="produkt-sleva" label="Sleva" hint={blockedReason} />;
