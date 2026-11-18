@@ -1,6 +1,7 @@
 import { MedusaError } from "@medusajs/framework/utils"
 import { addToCartWorkflow } from "@medusajs/medusa/core-flows"
 import { voucherLineProblem } from "../../lib/voucher"
+import { claimClearanceHolds } from "../../lib/clearance-hold"
 
 // Medusa dovolí na `addToCartWorkflow.hooks.validate` jen JEDEN handler —
 // všechny kontroly přidání do košíku proto bydlí tady.
@@ -54,6 +55,22 @@ addToCartWorkflow.hooks.validate(
           "Zadejte prosím výšku a šířku v centimetrech (1–300)."
         )
       }
+    }
+
+    /*
+     * Poškozený kus: košík si ho rezervuje na 30 minut; když ho má jiný
+     * košík, přidání se odmítne (lib/clearance-hold.ts, 18. 11. 2026).
+     * Jako poslední — rezervace se zapíše až po všech ostatních kontrolách.
+     */
+    const cartId =
+      (hookInput as { cart?: { id?: string } }).cart?.id ??
+      (input as { cart_id?: string }).cart_id
+    if (cartId) {
+      await claimClearanceHolds(
+        container,
+        cartId,
+        input.items.map((item) => item.variant_id).filter(Boolean) as string[]
+      )
     }
   }
 )
