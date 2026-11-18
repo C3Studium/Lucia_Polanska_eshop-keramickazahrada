@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "@medusajs/icons";
 import { Badge, Button, FocusModal, Heading, Text } from "@medusajs/ui";
-import type { ReactNode } from "react";
+import { useState, type DragEvent, type ReactNode } from "react";
+import { movePhoto } from "./photo-strip-order";
 
 /**
  * Fotky jako pás malých náhledů + prohlížeč jedné fotky (17. 11. 2026).
@@ -13,10 +14,66 @@ import type { ReactNode } from "react";
  * `ProductLightbox` z product-thumb.tsx se sem nehodí: ukazuje všechny fotky
  * pod sebou, načítá je znovu a úkony nemá.
  */
+/**
+ * Přetahování náhledů myší (18. 11. 2026) — sdílené pro galerii výrobku
+ * i fotky variant. Bez `onReorder` nic nedělá. Vlastní typ dat, takže
+ * oddíl Fotky (ten bere jen soubory „Files" z počítače) se nesplete.
+ */
+export const usePhotoDrag = (
+  photos: string[],
+  onReorder?: (next: string[]) => void
+) => {
+  const [dragFrom, setDragFrom] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
+  const reset = () => {
+    setDragFrom(null);
+    setDragOver(null);
+  };
+  const itemProps = (index: number, className = "") => ({
+    className: `${className} transition-opacity ${dragFrom === index ? "opacity-40" : ""} ${
+      onReorder ? "cursor-grab active:cursor-grabbing" : ""
+    }`,
+    draggable: Boolean(onReorder),
+    onDragStart: (event: DragEvent) => {
+      if (!onReorder) return;
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("application/x-kz-photo", String(index));
+      setDragFrom(index);
+    },
+    onDragOver: (event: DragEvent) => {
+      if (!onReorder || dragFrom === null) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      if (dragOver !== index) setDragOver(index);
+    },
+    onDrop: (event: DragEvent) => {
+      if (!onReorder || dragFrom === null) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const next = movePhoto(photos, dragFrom, index);
+      reset();
+      if (next !== photos) onReorder(next);
+    },
+    onDragEnd: reset,
+  });
+  /** Svislá čárka, kam fotka po puštění dopadne. */
+  const marker = (index: number) =>
+    onReorder && dragFrom !== null && dragOver === index && dragFrom !== index ? (
+      <span
+        aria-hidden
+        className={`bg-ui-fg-interactive absolute inset-y-0 z-10 w-0.5 rounded-full ${
+          dragFrom > index ? "-left-1.5" : "-right-1.5"
+        }`}
+      />
+    ) : null;
+  return { itemProps, marker };
+};
+
 export const PhotoStrip = ({
   photos,
   mainUrl,
   onOpen,
+  onReorder,
   sizeClassName = "size-20",
   trailing,
   label = "Fotka",
@@ -25,16 +82,24 @@ export const PhotoStrip = ({
   /** Hlavní fotka dostane rámeček a štítek. */
   mainUrl?: string | null;
   onOpen: (index: number) => void;
+  /**
+   * Přetahování (18. 11. 2026): s tímhle jdou náhledy přetáhnout jinam,
+   * dostane se nové pořadí. První fotka je hlavní.
+   */
+  onReorder?: (next: string[]) => void;
   sizeClassName?: string;
   /** Např. dlaždice „Nahrát" na konci pásu. */
   trailing?: ReactNode;
   label?: string;
-}) => (
+}) => {
+  const drag = usePhotoDrag(photos, onReorder);
+  return (
   <ul className="flex flex-wrap gap-2">
     {photos.map((url, index) => {
       const isMain = mainUrl === url;
       return (
-        <li key={url} className="relative">
+        <li key={url} {...drag.itemProps(index, "relative")}>
+          {drag.marker(index)}
           <button
             type="button"
             title="Zvětšit"
@@ -44,7 +109,7 @@ export const PhotoStrip = ({
               isMain ? "ring-ui-border-interactive ring-2 ring-offset-1" : "shadow-borders-base"
             }`}
           >
-            <img src={url} alt="" loading="lazy" className="size-full object-cover" />
+            <img src={url} alt="" loading="lazy" draggable={false} className="size-full object-cover" />
           </button>
           {isMain && (
             <span className="pointer-events-none absolute bottom-1 left-1">
@@ -58,7 +123,8 @@ export const PhotoStrip = ({
     })}
     {trailing ? <li>{trailing}</li> : null}
   </ul>
-);
+  );
+};
 
 /**
  * Jedna fotka přes celou obrazovku, šipkami (i na klávesnici) na další.

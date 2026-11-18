@@ -30,7 +30,8 @@ import {
   InspectorSwitchRow,
 } from "../../../components/product-inspector";
 import { SaveIndicator } from "../../../components/save-indicator";
-import { PhotoStrip, PhotoViewer } from "../../../components/photo-strip";
+import { PhotoStrip, PhotoViewer, usePhotoDrag } from "../../../components/photo-strip";
+import { mainFirst } from "../../../components/photo-strip-order";
 import { ProductionProfileEditor } from "../../../components/production-profile-editor";
 import { ProductDetailMenu } from "../../../components/product-detail-menu";
 import { ProductStats } from "../../../components/product-stats";
@@ -636,6 +637,8 @@ const VariantRow = ({
     typeof variant.metadata?.note === "string" ? variant.metadata.note : "";
   const saveMeta = (patch: Record<string, unknown>) =>
     save.mutateAsync({ metadata: { ...(variant.metadata ?? {}), ...patch } });
+  /* Fotky varianty jdou přetahovat; pořadí = pořadí v obchodě, první hlavní. */
+  const photoDrag = usePhotoDrag(photos, (next) => void saveMeta({ images: next }));
 
   const uploadPhotos = useMutation({
     mutationFn: async (files: File[]) => {
@@ -893,11 +896,17 @@ const VariantRow = ({
     {(!solo || photos.length > 0 || note) && (
     <div className="bg-ui-bg-subtle mt-3 flex flex-col gap-2 rounded-lg px-3 py-2.5">
       <div className="flex flex-wrap items-center gap-2">
+        {/* Přetažením se mění pořadí, první je hlavní (18. 11. 2026). */}
         {photos.map((url, index) => (
-          <figure key={url} className="group relative m-0">
+          <figure key={url} {...photoDrag.itemProps(index, "group relative m-0")}>
+            {photoDrag.marker(index)}
             <button
               type="button"
-              title={index === 0 ? "Hlavní fotka varianty" : "Nastavit jako hlavní"}
+              title={
+                index === 0
+                  ? "Hlavní fotka varianty — pořadí změníte přetažením"
+                  : "Klikem nastavíte jako hlavní, přetažením změníte pořadí"
+              }
               onClick={() => {
                 if (index === 0) return;
                 void saveMeta({
@@ -908,7 +917,7 @@ const VariantRow = ({
                 index === 0 ? "shadow-borders-interactive-with-active" : "shadow-borders-base"
               }`}
             >
-              <img src={url} alt="" className="size-full object-cover" />
+              <img src={url} alt="" draggable={false} className="size-full object-cover" />
             </button>
             <button
               type="button"
@@ -1980,8 +1989,27 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
     });
   };
 
+  /*
+   * Pořadí fotek (18. 11. 2026): první = hlavní. Obchod ukazuje galerii
+   * v pořadí fotek, takže „hlavní" uprostřed pásu znamenala, že web začínal
+   * jinou fotkou. Přetažení i „Nastavit jako hlavní" proto ukládají pořadí
+   * a hlavní fotku zároveň (Medusa dá pořadí podle pole).
+   */
+  const saveImageOrder = (urls: string[]) => {
+    const byUrl = new Map((product.images ?? []).map((image) => [image.url, image]));
+    saveProduct.mutate({
+      images: urls.map((url) => ({ id: byUrl.get(url)?.id, url })),
+      thumbnail: urls[0] ?? null,
+    });
+  };
+
   /* Fotky galerie; bez nich aspoň hlavní fotka, ať jde zvětšit z hlavičky. */
-  const gallery = (product.images ?? []).map((image) => image.url);
+  /* Hlavní první — stejně jako ji teď ukazuje obchod (i u starších výrobků,
+     kde hlavní fotka v pořadí první nebyla). */
+  const gallery = mainFirst(
+    (product.images ?? []).map((image) => image.url),
+    product.thumbnail ?? ""
+  );
   const viewerPhotos = gallery.length
     ? gallery
     : product.thumbnail
@@ -2120,7 +2148,10 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                 <Button
                   variant="secondary"
                   isLoading={saveProduct.isPending}
-                  onClick={() => saveProduct.mutate({ thumbnail: url })}
+                  onClick={() => {
+                    saveImageOrder(mainFirst(gallery, url));
+                    setViewing(0);
+                  }}
                 >
                   Nastavit jako hlavní
                 </Button>
@@ -2412,6 +2443,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                       photos={gallery}
                       mainUrl={product.thumbnail}
                       onOpen={setViewing}
+                      onReorder={saveImageOrder}
                     />
                     <Text
                       size="xsmall"
@@ -2420,7 +2452,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                     >
                       {draggingPhotos
                         ? "Pusťte fotky sem — nahrají se na konec."
-                        : "Klikněte na fotku — zvětšíte ji, nastavíte jako hlavní nebo smažete. Nové fotky sem můžete i přetáhnout."}
+                        : "Pořadí změníte přetažením — první fotka je hlavní. Klikem fotku zvětšíte nebo smažete; nové sem můžete přetáhnout z počítače."}
                     </Text>
                   </>
                 )}

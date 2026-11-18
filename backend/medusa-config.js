@@ -136,6 +136,50 @@ const medusaConfig = {
   window.location.reload();
 });`,
               },
+              /*
+               * Hlídka verze (18. 11. 2026, přání majitele: „ať klientka dostane
+               * novou verzi hned, jako u obchodu"). Každou minutu a při návratu
+               * do záložky si přečte /app/ a porovná hlavní skript
+               * (assets/index-<otisk>.js). Když se po nasazení změnil, stránku
+               * obnoví — ale jen v bezpečnou chvíli: nic se nepíše do pole,
+               * není otevřený dialog a na stránce nesvítí „Neuložen…". Jinak
+               * počká a zkusí to znovu. Ve vývojovém adminu (bez otisku) nedělá nic.
+               */
+              {
+                tag: 'script',
+                injectTo: 'body',
+                children: `(function () {
+  var pattern = /assets\\/index-[\\w-]+\\.js/;
+  var own = document.querySelector('script[type="module"][src*="assets/index-"]');
+  var current = own ? (own.getAttribute('src').match(pattern) || [])[0] : null;
+  if (!current) return;
+  var pending = false;
+  function safe() {
+    var a = document.activeElement;
+    if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.isContentEditable)) return false;
+    if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return false;
+    if (/Neuložen/.test(document.body.innerText || '')) return false;
+    return true;
+  }
+  function tryReload() {
+    if (pending && safe()) window.location.reload();
+  }
+  function check() {
+    if (pending) return tryReload();
+    fetch(window.location.origin + '/app/', { cache: 'no-store', credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (html) {
+        var next = (html.match(pattern) || [])[0];
+        if (next && next !== current) { pending = true; tryReload(); }
+      })
+      .catch(function () {});
+  }
+  setInterval(check, 60000);
+  setInterval(tryReload, 10000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+  window.addEventListener('focus', check);
+})();`,
+              },
             ]
           },
         },

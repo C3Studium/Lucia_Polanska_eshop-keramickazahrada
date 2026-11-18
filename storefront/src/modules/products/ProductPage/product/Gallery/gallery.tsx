@@ -65,10 +65,14 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle, texts, selec
   const outroText =
     itemValue(texts, "galerie.dovetek")?.trim() || "Přesně podle toho poznáte ruční práci."
 
-  const images = useMemo(
-    () => (product.images ?? []).filter((image) => Boolean(image.url)),
-    [product.images]
-  )
+  /* Hlavní fotka (thumbnail) jde vždycky první (18. 11. 2026): majitelka si
+     v adminu nastavila „hlavní" a obchod přesto začínal jinou fotkou —
+     galerie brala jen pořadí fotek, ne volbu hlavní. */
+  const images = useMemo(() => {
+    const list = (product.images ?? []).filter((image) => Boolean(image.url))
+    const main = list.findIndex((image) => image.url === product.thumbnail)
+    return main > 0 ? [list[main], ...list.slice(0, main), ...list.slice(main + 1)] : list
+  }, [product.images, product.thumbnail])
   const bundleImages = useMemo(
     () =>
       (bundle?.items ?? [])
