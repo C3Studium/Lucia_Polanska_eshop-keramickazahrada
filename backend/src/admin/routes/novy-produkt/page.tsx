@@ -2,13 +2,14 @@ import { Button, Container, Heading, Input, Label, Text, toast } from "@medusajs
 import {
   QueryClientProvider,
   useMutation,
-  useQuery,
+
 } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import CreateBundledProduct from "../../components/create-bundled-product";
 import CreateDamagedProduct from "../../components/create-damaged-product";
 import { sdk } from "../../lib/sdk";
+import { ClassificationPicker } from "../../components/classification-picker";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
 
@@ -153,23 +154,6 @@ const NovyProduktInner = () => {
   const [collectionId, setCollectionId] = useState("");
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [price, setPrice] = useState("");
-  const collectionsQuery = useQuery<{ collections: { id: string; title: string }[] }>({
-    queryKey: ["produkt-collections"],
-    queryFn: () => sdk.client.fetch(`/admin/collections?limit=100&fields=id,title`),
-    staleTime: 5 * 60_000,
-  });
-  const categoriesQuery = useQuery<{
-    product_categories: { id: string; name: string; metadata?: Record<string, unknown> | null }[];
-  }>({
-    queryKey: ["produkt-categories"],
-    queryFn: () =>
-      sdk.client.fetch(`/admin/product-categories?limit=100&fields=id,name,is_active,metadata`),
-    staleTime: 5 * 60_000,
-  });
-  const collections = collectionsQuery.data?.collections ?? [];
-  const categoriesInCollection = (categoriesQuery.data?.product_categories ?? []).filter(
-    (category) => collectionId && (category.metadata ?? {})["collection_id"] === collectionId
-  );
   const priceNumber = Number(price.replace(/\s/g, "").replace(",", "."));
   const priceOk = price.trim() === "" || (Number.isFinite(priceNumber) && priceNumber > 0);
 
@@ -337,69 +321,14 @@ const NovyProduktInner = () => {
               placeholder="např. 580"
             />
           </div>
-          <div className="w-full">
-            <Label>Kolekce</Label>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {collections.map((collection) => (
-                <button
-                  key={collection.id}
-                  type="button"
-                  aria-pressed={collectionId === collection.id}
-                  onClick={() => {
-                    setCollectionId(collection.id);
-                    setCategoryIds([]);
-                  }}
-                  className={`min-h-[36px] rounded-full border px-3.5 py-1.5 ${
-                    collectionId === collection.id
-                      ? "border-ui-border-interactive bg-ui-bg-base-pressed text-ui-fg-base"
-                      : "border-ui-border-base bg-ui-bg-base text-ui-fg-subtle hover:bg-ui-bg-base-hover"
-                  }`}
-                >
-                  <Text size="small" weight={collectionId === collection.id ? "plus" : "regular"}>
-                    {collectionId === collection.id ? "✓ " : ""}
-                    {collection.title}
-                  </Text>
-                </button>
-              ))}
-            </div>
-          </div>
-          {collectionId && (
-            <div className="w-full">
-              <Label>Kategorie</Label>
-              <div className="mt-1 flex flex-wrap gap-2">
-                {categoriesInCollection.length === 0 && (
-                  <Text size="small" className="text-ui-fg-muted">
-                    Tahle kolekce zatím nemá kategorie — přidejte je v Kolekce a kategorie.
-                  </Text>
-                )}
-                {categoriesInCollection.map((category) => {
-                  const on = categoryIds.includes(category.id);
-                  return (
-                    <button
-                      key={category.id}
-                      type="button"
-                      aria-pressed={on}
-                      onClick={() =>
-                        setCategoryIds((current) =>
-                          on ? current.filter((id) => id !== category.id) : [...current, category.id]
-                        )
-                      }
-                      className={`min-h-[36px] rounded-full border px-3.5 py-1.5 ${
-                        on
-                          ? "border-ui-border-interactive bg-ui-bg-base-pressed text-ui-fg-base"
-                          : "border-ui-border-base bg-ui-bg-base text-ui-fg-subtle hover:bg-ui-bg-base-hover"
-                      }`}
-                    >
-                      <Text size="small" weight={on ? "plus" : "regular"}>
-                        {on ? "✓ " : ""}
-                        {category.name}
-                      </Text>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          <ClassificationPicker
+            collectionId={collectionId}
+            categoryIds={categoryIds}
+            onChange={(next) => {
+              setCollectionId(next.collectionId);
+              setCategoryIds(next.categoryIds);
+            }}
+          />
           <div className="flex w-full flex-wrap items-center gap-3">
             <Button
               onClick={submit}

@@ -8,6 +8,7 @@ import {
   createEmptyBundleProductDetails,
 } from "./bundle-product-details";
 import { sdk } from "../lib/sdk";
+import { ClassificationPicker, classificationPayload } from "./classification-picker";
 
 const CreateBundledProduct = ({
   trigger,
@@ -24,6 +25,11 @@ const CreateBundledProduct = ({
   );
   const [items, setItems] = useState<BundleEditorItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  /* Zařazení hned při založení (18. 11. 2026) — jako u Nového produktu. */
+  const [classification, setClassification] = useState<{
+    collectionId: string;
+    categoryIds: string[];
+  }>({ collectionId: "", categoryIds: [] });
   const queryClient = useQueryClient();
 
   const { mutateAsync: createBundle, isPending } = useMutation({
@@ -38,6 +44,7 @@ const CreateBundledProduct = ({
     setDetails(createEmptyBundleProductDetails());
     setItems([]);
     setIsUploading(false);
+    setClassification({ collectionId: "", categoryIds: [] });
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -49,6 +56,7 @@ const CreateBundledProduct = ({
     details.title.trim().length > 0 &&
     details.handle.trim().length > 0 &&
     items.length > 0 &&
+    classification.categoryIds.length > 0 &&
     !isUploading &&
     items.every(
       (item) =>
@@ -97,6 +105,7 @@ const CreateBundledProduct = ({
         discount_percentage: details.discount_percentage,
         product: {
           ...bundleDetailsToProductPayload(details),
+          ...classificationPayload(classification.collectionId, classification.categoryIds),
           options: [
             {
               title: "Default",
@@ -195,6 +204,19 @@ const CreateBundledProduct = ({
                     je tak, jak se mají zákazníkovi zobrazit.
                   </Text>
                 </FocusModal.Description>
+              </div>
+
+              <div className="mb-8">
+                <ClassificationPicker
+                  collectionId={classification.collectionId}
+                  categoryIds={classification.categoryIds}
+                  onChange={setClassification}
+                />
+                {classification.categoryIds.length === 0 && (
+                  <Text size="xsmall" className="text-ui-fg-subtle mt-2">
+                    Vyberte kolekci a aspoň jednu kategorii — podle nich balíček najdete v obchodě.
+                  </Text>
+                )}
               </div>
 
               <BundleComposer
