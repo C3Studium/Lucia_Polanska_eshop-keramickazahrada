@@ -173,7 +173,7 @@ const medusaConfig = {
   function newVersion() {
     if (fired) return;
     fired = true;
-    if (window.__kzReloadKeeper) window.__kzReloadKeeper.reload(2000);
+    if (window.__kzReloadKeeper) window.__kzReloadKeeper.reload(400);
     else window.location.reload();
   }
   function check() {
