@@ -1,7 +1,7 @@
 import ProductDetailsBand from "@modules/products/ProductPage/details"
 import { Metadata } from "next"
 import PlainShop from "@modules/common/components/plain-shop"
-import { notFound } from "next/navigation"
+import { notFound, permanentRedirect } from "next/navigation"
 import {
   // BundleProduct, // Re-enable with the static preview block below.
   getBundleProduct,
@@ -78,6 +78,16 @@ export async function generateStaticParams() {
  * a sjednotit na NFC — tak jsou handly uložené; macOS/iOS umí poslat
  * rozložené „é" (NFD). Osamělé „%" se rozbalit nedá, pak zůstane, jak je.
  */
+/** „modelovaný-květináč-…-vážkou-20" → „modelovany-kvetinac-…-vazkou-20". */
+function asciiHandle(handle: string) {
+  return handle
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}
+
 function productHandle(raw: string) {
   let handle = raw
   try {
@@ -102,8 +112,10 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     queryParams: { handle },
   }).then(({ response }) => response.products[0])
 
+  /* Nenalezený výrobek řeší stránka (přesměrování ze staré adresy
+     s diakritikou, jinak 404) — metadata by ji předběhla vlastním 404. */
   if (!product) {
-    notFound()
+    return {}
   }
 
   const description = summarize(
@@ -169,6 +181,22 @@ export default async function ProductPage(props: Props) {
 
   // Check before using
   if (!pricedProduct) {
+    /*
+     * Stará adresa s diakritikou (18. 11. 2026). Nové výrobky se zakládaly
+     * s adresou „modelovaný-květináč-…" a ta se opravila na ASCII
+     * („modelovany-kvetinac-…"). Kdo má starý odkaz nebo otevřenou záložku,
+     * nemá skončit na „Stránka nenalezena" — přesměruje se na novou adresu.
+     */
+    const ascii = asciiHandle(productHandle(params.handle))
+    if (ascii && ascii !== productHandle(params.handle)) {
+      const moved = await listProducts({
+        countryCode,
+        queryParams: { handle: ascii, fields: "id,handle" },
+      }).then(({ response }) => response.products[0])
+      if (moved?.handle) {
+        permanentRedirect(`/${countryCode}/products/${moved.handle}`)
+      }
+    }
     notFound()
   }
 
