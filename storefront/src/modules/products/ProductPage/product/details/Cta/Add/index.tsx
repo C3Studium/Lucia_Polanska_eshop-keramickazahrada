@@ -80,18 +80,19 @@ type CTAProps = {
   showStock?: boolean
 }
 
-/** „Skladem · 3 ks" / „Skladem · poslední kus" / „Není skladem — …". */
+/**
+ * Jen tři podoby (18. 11. 2026, přání majitele): „Skladem 3 ks",
+ * „Poslední kus", „Není skladem". Nic víc — čekání na výrobu říká věta
+ * pod tlačítkem.
+ */
 const stockStatus = (
   availability: Availability,
   variant?: HttpTypes.StoreProductVariant
 ): { inStock: boolean; text: string } => {
   const kusu = variant?.manage_inventory ? (variant.inventory_quantity ?? 0) : null
-  if (availability === "last-one") return { inStock: true, text: "Skladem · poslední kus" }
+  if (availability === "last-one") return { inStock: true, text: "Poslední kus" }
   if (availability === "in-stock") {
-    return { inStock: true, text: kusu && kusu > 0 ? `Skladem · ${kusu} ks` : "Skladem" }
-  }
-  if (availability === "made-to-order") {
-    return { inStock: false, text: "Není skladem — vyrobím na objednávku" }
+    return { inStock: true, text: kusu && kusu > 0 ? `Skladem ${kusu} ks` : "Skladem" }
   }
   return { inStock: false, text: "Není skladem" }
 }

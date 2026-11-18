@@ -23,6 +23,7 @@ import { useScrollMemory } from "../lib/scroll-memory";
 import { useUrlState } from "../lib/url-state";
 import { EmptyState, pieces } from "./empty-state";
 import { RowLink } from "./row-link";
+import { StockStepper } from "./stock-stepper";
 import { SubTabs, WorkTabs } from "./work-tabs";
 import { CopyId, ExpertToggle, useExpertMode } from "../lib/expert-mode";
 import { formatCount, formatCzk } from "../lib/workbench";
@@ -36,7 +37,7 @@ import {
   odpovidaHledani,
   pocetProduktu,
   precistPocet,
-  precistZmenu,
+
   seradit,
   uProduktu,
   type Razeni,
@@ -155,44 +156,12 @@ const useObnovitSklad = () => {
 };
 
 /**
- * Jeden výrobek: „+ ks" a tlačítko. Je to úkon, ne údaj — uložení „samo" při
- * opuštění pole by při každém kliknutí jinam přidalo další kusy.
+ * Jeden výrobek: − stav + (18. 11. 2026, přání majitele — jako „Počet kusů"
+ * v obchodě). Číslo uprostřed je aktuální stav k prodeji (i záporný) a jde
+ * přepsat; − a + mění po kusu. Viz components/stock-stepper.tsx.
  */
 const PridatKusy = ({ radek }: { radek: SkladRadek }) => {
   const obnovit = useObnovitSklad();
-  const [text, setText] = useState("");
-  // „3" přidá, „-2" odebere (18. 11. 2026) — viz precistZmenu.
-  const pocet = precistZmenu(text);
-  const odebira = pocet.druh === "ok" && pocet.kusy < 0;
-
-  const pridat = useMutation({
-    mutationFn: (kusy: number) =>
-      sdk.client.fetch(`/admin/workbench/inventory/add-stock`, {
-        method: "POST",
-        body: { inventory_item_id: radek.inventory_item_id, quantity: kusy },
-      }) as Promise<{ removed?: number; reserved?: number }>,
-    onSuccess: async (vysledek, kusy) => {
-      setText("");
-      await obnovit();
-      if (kusy < 0) {
-        const odebrano = vysledek?.removed ?? 0;
-        toast.success(
-          odebrano < Math.abs(kusy)
-            ? `Odebráno ${pieces(odebrano)} — ${radek.product_title ?? "produkt"}. Víc nešlo: ${pieces(vysledek?.reserved ?? 0)} drží otevřené objednávky.`
-            : `Odebráno ${pieces(odebrano)} — ${radek.product_title ?? "produkt"}.`
-        );
-        return;
-      }
-      toast.success(
-        `Přidáno ${pieces(kusy)} — ${radek.product_title ?? "produkt"}${
-          radek.waiting_customers > 0
-            ? ". Čekajícím zákazníkům odejde e-mail nejpozději do rána."
-            : ""
-        }`
-      );
-    },
-    onError: (error) => toast.error(ceskaChyba(error, "Zásoby se nepodařilo upravit")),
-  });
 
   if (!radek.inventory_item_id) {
     return (
@@ -203,36 +172,12 @@ const PridatKusy = ({ radek }: { radek: SkladRadek }) => {
   }
 
   return (
-    <form
-      className="flex items-center gap-2"
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (pocet.druh === "ok") pridat.mutate(pocet.kusy);
-      }}
-    >
-      {/* Text, ne number: kolečko myši nad číselným polem tiše mění číslo.
-          Bez inputMode="numeric" — číselná klávesnice iPhonu nemá mínus. */}
-      <Input
-        size="small"
-        type="text"
-        placeholder="± ks"
-        title="Kolik kusů přidat (3), nebo odebrat (-2)"
-        aria-label={`Přidat (3) nebo odebrat (-2) kusy — ${nazev(radek)}`}
-        aria-invalid={pocet.druh === "chyba"}
-        value={text}
-        onChange={(event) => setText(event.target.value)}
-        className="w-20"
-      />
-      <Button
-        size="small"
-        variant="secondary"
-        type="submit"
-        isLoading={pridat.isPending}
-        disabled={pocet.druh !== "ok"}
-      >
-        {odebira ? "Odebrat" : "Přidat"}
-      </Button>
-    </form>
+    <StockStepper
+      inventoryItemId={radek.inventory_item_id}
+      available={radek.available}
+      onDone={obnovit}
+      label={`Kusy k prodeji — ${nazev(radek)}`}
+    />
   );
 };
 
