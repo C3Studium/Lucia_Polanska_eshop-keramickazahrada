@@ -64,9 +64,9 @@ const UI_COPY: Localized<{
     complaints: "Reklamační řád",
     privacy: "Ochrana osobních údajů",
     docsLanguageNote: null,
-    workshop: "Dílna Lucie Polanské · Písek",
+    workshop: "Dílna Lucie Polanské · Putim",
     tagline:
-      "Keramika pro zahradu i domov. Každý kousek modeluji, glazuji a pálím sama ve své dílně v Písku.",
+      "Keramika pro zahradu i domov. Každý kousek modeluji, glazuji a pálím sama ve své dílně v Putimi.",
     needHelp: "Potřebujete poradit? Napište na",
     rights: "Všechna práva vyhrazena.",
   },
@@ -84,9 +84,9 @@ const UI_COPY: Localized<{
     complaints: "Reklamačný poriadok",
     privacy: "Ochrana osobných údajov",
     docsLanguageNote: null,
-    workshop: "Dielňa Lucie Polanskej · Písek",
+    workshop: "Dielňa Lucie Polanskej · Putim",
     tagline:
-      "Keramika do záhrady aj domov. Každý kúsok modelujem, glazujem a vypaľujem sama vo svojej dielni v Písku.",
+      "Keramika do záhrady aj domov. Každý kúsok modelujem, glazujem a vypaľujem sama vo svojej dielni v Putimi.",
     needHelp: "Potrebujete poradiť? Napíšte na",
     rights: "Všetky práva vyhradené.",
   },
@@ -104,9 +104,9 @@ const UI_COPY: Localized<{
     complaints: "Zasady reklamacji",
     privacy: "Ochrona danych osobowych",
     docsLanguageNote: "dokumenty w języku czeskim",
-    workshop: "Pracownia Lucie Polanskiej · Písek",
+    workshop: "Pracownia Lucie Polanskiej · Putim",
     tagline:
-      "Ceramika do ogrodu i domu. Każdy egzemplarz sama modeluję, szkliwię i wypalam w mojej pracowni w Písku.",
+      "Ceramika do ogrodu i domu. Każdy egzemplarz sama modeluję, szkliwię i wypalam w mojej pracowni w Putimiu.",
     needHelp: "Potrzebują Państwo porady? Proszę napisać na",
     rights: "Wszelkie prawa zastrzeżone.",
   },
@@ -124,9 +124,9 @@ const UI_COPY: Localized<{
     complaints: "Reklamationsordnung",
     privacy: "Datenschutz",
     docsLanguageNote: "Dokumente auf Tschechisch",
-    workshop: "Werkstatt von Lucie Polanská · Písek",
+    workshop: "Werkstatt von Lucie Polanská · Putim",
     tagline:
-      "Keramik für Garten und Zuhause. Jedes Stück modelliere, glasiere und brenne ich selbst in meiner Werkstatt in Písek.",
+      "Keramik für Garten und Zuhause. Jedes Stück modelliere, glasiere und brenne ich selbst in meiner Werkstatt in Putim.",
     needHelp: "Haben Sie Fragen? Schreiben Sie an",
     rights: "Alle Rechte vorbehalten.",
   },
@@ -144,9 +144,9 @@ const UI_COPY: Localized<{
     complaints: "Complaints Policy",
     privacy: "Privacy Policy",
     docsLanguageNote: "documents in Czech",
-    workshop: "Lucie Polanská's studio · Písek",
+    workshop: "Lucie Polanská's studio · Putim",
     tagline:
-      "Ceramics for the garden and the home. I model, glaze and fire every piece myself in my studio in Písek.",
+      "Ceramics for the garden and the home. I model, glaze and fire every piece myself in my studio in Putim.",
     needHelp: "Need any help? Write to",
     rights: "All rights reserved.",
   },
@@ -701,6 +701,8 @@ export const Note = ({
  */
 export const Signature = ({ closing }: { closing?: string }) => {
   const ui = useUiCopy()
+  /* Adresa ateliéru z backendu (Právní údaje v adminu), ne napevno (19. 11. 2026). */
+  const seller = useSellerFacts()
   return (
   <Section style={{ margin: "30px 0 0" }}>
     <Text
@@ -737,7 +739,7 @@ export const Signature = ({ closing }: { closing?: string }) => {
         margin: "6px 0 0",
       }}
     >
-      Keramická zahrada · Písek
+      Keramická zahrada · {seller.address || "Putim 229, 397 01 Putim"}
     </Text>
   </Section>
   )

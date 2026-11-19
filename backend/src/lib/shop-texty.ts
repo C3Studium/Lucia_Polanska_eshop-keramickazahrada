@@ -1354,7 +1354,7 @@ export const SHOP_TEXT_META: Record<ShopTextKey, ShopTextMeta> = {
     maxLength: 200,
   },
   "kurzy.rezervacemodal_2": {
-    label: "Kurzy probíhají v ateliéru v Písku a…",
+    label: "Kurzy probíhají v ateliéru v Putimi a…",
     help: "Kde se ukáže: kurzy: RezervaceModal.",
     group: "Kurzy — rezervační okno",
     multiline: true,
@@ -2287,7 +2287,7 @@ export const SHOP_TEXT_DEFAULTS: Readonly<ShopTextValues> = Object.freeze({
   "kurzy.accountkurzy_2":
     "Vypsané termíny kurzů najdete na stránce Kurzy — rezervace zabere minutu.",
   "kurzy.rezervacemodal_2":
-    "Kurzy probíhají v ateliéru v Písku a rezervují se v korunách, proto je jde rezervovat jen v české verzi obchodu. Přepněte si obchod na Česko — okno rezervace zůstane otevřené.",
+    "Kurzy probíhají v ateliéru v Putimi a rezervují se v korunách, proto je jde rezervovat jen v české verzi obchodu. Přepněte si obchod na Česko — okno rezervace zůstane otevřené.",
   "kurzy.rezervacemodal_3":
     "Ceny se u jednotlivých termínů liší — najdete je u každého termínu.",
   "kurzy.rezervacemodal_4":
@@ -2463,7 +2463,7 @@ export const SHOP_TEXT_DEFAULTS: Readonly<ShopTextValues> = Object.freeze({
   "poukaz.poukazdetail_17":
     "Po zaplacení poukaz vytisknu a pošlu poštou. Kód uvidíte i tady, hned jak platba dorazí.",
   "poukaz.poukazkarta_1":
-    "V obchodě zadejte kód do pole Slevový kód nebo dárkový poukaz v košíku, v dílně v Písku stačí poukaz ukázat. Platí na keramiku i na zakázky, na kurzy zatím ne. Co neutratíte, zůstane na poukazu.",
+    "V obchodě zadejte kód do pole Slevový kód nebo dárkový poukaz v košíku, v dílně v Putimi stačí poukaz ukázat. Platí na keramiku i na zakázky, na kurzy zatím ne. Co neutratíte, zůstane na poukazu.",
   "store.shophero_1":
     "Každý kus dělám rukama. Dva úplně stejné mi nevyjdou, ani kdybych chtěla.",
   "legal.downloads_1":

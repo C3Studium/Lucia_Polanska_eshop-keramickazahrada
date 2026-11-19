@@ -35,7 +35,7 @@ function CoursePaymentExpiredEmailComponent({
   customerName = "Vážený zákazníku",
   courseTitle = "Kurz točení pro dospělé",
   courseDate = "sobota 12. 9. 2026 10:00",
-  courseLocation = "Ateliér u Písku",
+  courseLocation = "Ateliér v Putimi",
   partySize = 1,
   totalAmount = "1 200 Kč",
 }: CoursePaymentExpiredEmailProps) {
@@ -94,7 +94,7 @@ const mockCoursePaymentExpired: CoursePaymentExpiredEmailProps = {
   customerName: "Jana Nováková",
   courseTitle: "Kurz točení pro dospělé",
   courseDate: "sobota 12. 9. 2026 10:00",
-  courseLocation: "Ateliér u Písku",
+  courseLocation: "Ateliér v Putimi",
   partySize: 2,
   totalAmount: "2 600 Kč",
 }

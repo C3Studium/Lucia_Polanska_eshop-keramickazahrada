@@ -8,6 +8,8 @@ import { isPayLaterPaymentProvider } from "../lib/ship-gate"
 import { isServiceLine } from "../lib/packaging-lines"
 import { checkAttachmentUrls, type EmailAttachmentRef } from "../lib/legal/order-legal"
 import { storeWorkshopSheet } from "../lib/workshop-sheet"
+import { ORDER_SUMMARY_FIELDS, buildMerchantOrderSummary } from "../lib/merchant-order-summary"
+import { ensureInternationalOrderMethodName } from "../lib/international-shipping"
 
 /**
  * Merchant awareness — the first five notifications of WorkflowPlan.md §15.
@@ -151,11 +153,14 @@ const onOrderPlaced = async ({
 }: SubscriberArgs<{ id: string }>) => {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
 
+  /* Doprava do zahraničí: název vybrané služby ČP dřív, než ho e-mail ukáže. */
+  await ensureInternationalOrderMethodName(container, data.id)
+
   // `items.*` is required for `total` to be computed at all — a projection
   // without it silently yields zero.
   const { data: orders } = await query.graph({
     entity: "order",
-    fields: ORDER_FIELDS,
+    fields: [...new Set([...ORDER_FIELDS, ...ORDER_SUMMARY_FIELDS])],
     filters: { id: data.id },
   })
   const order = orders[0]
@@ -239,6 +244,11 @@ const onOrderPlaced = async ({
       email: true,
       resource: { id: order.id, type: "order" },
       attachments: sheetAttachments,
+      /* Celá objednávka v e-mailu (19. 11. 2026, Matěj). */
+      order: buildMerchantOrderSummary(
+        order,
+        process.env.BACKEND_PUBLIC_URL || process.env.MEDUSA_BACKEND_URL || null
+      ),
     })
     sheetAttached = sheetAttachments.length > 0
   }

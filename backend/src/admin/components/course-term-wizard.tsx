@@ -63,7 +63,7 @@ type WizardDraft = {
 
 const emptyDraft: WizardDraft = {
   title: "",
-  location: "Ateliér u Písku",
+  location: "Ateliér v Putimi",
   days: [],
   time: "17:00",
   duration_minutes: "180",

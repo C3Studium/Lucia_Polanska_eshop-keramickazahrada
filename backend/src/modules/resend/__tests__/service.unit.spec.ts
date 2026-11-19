@@ -219,7 +219,7 @@ describe("e-mail attachments (data.__attachments)", () => {
       // Bez údajů se šablona neobaluje — dostane svá data přímo.
       expect(options.react.props.order).toBe(order)
       const html = renderToStaticMarkup(options.react)
-      expect(html).toContain("Prodávající: Lucie Polanská · Putim 229, 397 01 Písek · IČO 03441482")
+      expect(html).toContain("Prodávající: Lucie Polanská · Putim 229, 397 01 Putim · IČO 03441482")
       expect(html).toContain("+420 775 211 578")
     })
   })

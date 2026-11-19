@@ -41,7 +41,7 @@ function CourseReminderEmailComponent({
   customerName = "Vážený zákazníku",
   courseTitle = "Kurz točení pro dospělé",
   courseDate = "sobota 12. 9. 2026 10:00",
-  courseLocation = "Ateliér u Písku",
+  courseLocation = "Ateliér v Putimi",
   courseDuration = "",
   partySize = 1,
   courseNote = "",
@@ -114,7 +114,7 @@ const mockCourseReminder: CourseReminderEmailProps = {
   customerName: "Jana Nováková",
   courseTitle: "Kurz točení pro dospělé",
   courseDate: "sobota 12. 9. 2026 10:00",
-  courseLocation: "Ateliér u Písku",
+  courseLocation: "Ateliér v Putimi",
   courseDuration: "3 hodiny",
   partySize: 2,
   courseNote:
