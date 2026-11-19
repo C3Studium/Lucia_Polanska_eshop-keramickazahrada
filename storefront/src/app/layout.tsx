@@ -21,6 +21,16 @@ import StudioClient from "@c3studium/valecms/manage/appClient.jsx";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
+  /* Ikona v záložce: logo „Lu" s ptáčkem na krémovém čtverci (19. 11. 2026) —
+     černé logo samo by na tmavém panelu prohlížeče zmizelo. */
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+  },
   // Every page inherits the brand suffix; pages that are the brand itself opt out
   // with `title: { absolute: … }`.
   title: {
