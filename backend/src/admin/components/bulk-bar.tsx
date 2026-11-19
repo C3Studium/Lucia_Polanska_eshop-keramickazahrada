@@ -125,22 +125,42 @@ export const BulkBar = ({
    * dvě různé věci (zrušený výběr změny nechá v řádcích k potvrzení).
    */
   if (layout === "stacked") {
+    /*
+     * 19. 11. 2026 (Matěj: „lišta je hrozná, chce aspoň Uložit vše"):
+     * „Uložit vše" stojí vpravo nahoře VŽDY — bez změn je jen neaktivní,
+     * takže je pořád jasné, kde se ukládá. Pod ovladači jedna věta, co
+     * lišta dělá. Lišta sama se ukazuje až od 2 vybraných (Produkty+).
+     */
+    const kusu = count === 1 ? "výrobek" : count >= 2 && count <= 4 ? "výrobky" : "výrobků";
     return (
       <div role="region" aria-label={`Hromadná úprava, vybráno ${count}`} className={frame}>
+        {/* Jako dialog: vlevo co se upravuje, vpravo vždy Zrušit · Uložit vše.
+            Zrušit zahodí rozpracované změny a zavře lištu (zruší výběr). */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <Text size="small" weight="plus" className="shrink-0">
-            Vybráno: {count}
+            Hromadně: {count} {kusu}
           </Text>
-          <Button size="small" variant="transparent" disabled={isSaving} onClick={onClear}>
-            Zrušit výběr
-          </Button>
-          {hasPending && (
+          {onConfirm && (
             <div className="ml-auto flex shrink-0 items-center gap-2">
-              <Button size="small" variant="transparent" disabled={isSaving} onClick={onDiscard}>
-                Zahodit změny
+              <Button
+                size="small"
+                variant="secondary"
+                disabled={isSaving}
+                onClick={() => {
+                  if (hasPending) onDiscard?.();
+                  onClear();
+                }}
+              >
+                Zrušit
               </Button>
-              <Button size="small" isLoading={isSaving} onClick={onConfirm}>
-                Potvrdit ({pendingCount})
+              <Button
+                size="small"
+                variant={hasPending ? "primary" : "secondary"}
+                disabled={!hasPending}
+                isLoading={isSaving}
+                onClick={onConfirm}
+              >
+                {hasPending ? `Uložit vše (${pendingCount})` : "Uložit vše"}
               </Button>
             </div>
           )}
@@ -148,11 +168,11 @@ export const BulkBar = ({
         <div className="border-ui-border-base mt-2 flex flex-wrap items-center gap-x-5 gap-y-3 border-t pt-2.5">
           {children}
         </div>
-        {hasPending && (
-          <Text size="xsmall" className="text-ui-fg-muted mt-2">
-            Změny se uloží u všech vybraných kusů naráz, až dáte Potvrdit.
-          </Text>
-        )}
+        <Text size="xsmall" className="text-ui-fg-muted mt-2">
+          {hasPending
+            ? `Změněno u ${pendingCount} ${pendingCount === 1 ? "výrobku" : "výrobků"} — uloží se všechny najednou tlačítkem Uložit vše.`
+            : "Nastavte, co chcete změnit u všech vybraných, a dejte Uložit vše. Zobrazit / skrýt platí hned."}
+        </Text>
       </div>
     );
   }

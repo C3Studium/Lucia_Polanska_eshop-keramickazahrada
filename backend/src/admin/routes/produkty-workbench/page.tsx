@@ -1844,7 +1844,9 @@ const ProductsInner = () => {
         s „Vrátit zpět". Zobrazit / skrýt zapisuje hned a vrací se z hlášky.
         Vzácné kroky (slevové kódy, archiv, mazání) jsou pod „…".
       */}
-      {listTab && selected.size > 0 && (
+      {/* Až od 2 vybraných (19. 11. 2026) — jeden kus se upraví v řádku
+          (okénko Doprava, „…"). */}
+      {listTab && selected.size > 1 && (
         <BulkBar
           layout="stacked"
           count={selected.size}

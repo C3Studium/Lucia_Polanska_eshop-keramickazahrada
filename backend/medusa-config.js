@@ -54,6 +54,7 @@ import {
   IDOKLAD_TEST_MODE
 } from 'lib/constants';
 import { RELOAD_KEEPER_JS } from 'lib/reload-keeper-script';
+import { ADMIN_NAV_JS } from 'lib/admin-nav-script';
 console.log('[Medusa Config] Constants imported successfully')
 console.log('[Medusa Config] DATABASE_URL present:', !!DATABASE_URL)
 console.log('[Medusa Config] JWT_SECRET present:', !!JWT_SECRET)
@@ -156,6 +157,12 @@ const medusaConfig = {
                 tag: 'script',
                 injectTo: 'head',
                 children: RELOAD_KEEPER_JS,
+              },
+              /* Šipky Zpět / Vpřed v horní liště (lib/admin-nav-script). */
+              {
+                tag: 'script',
+                injectTo: 'body',
+                children: ADMIN_NAV_JS,
               },
               {
                 tag: 'script',
