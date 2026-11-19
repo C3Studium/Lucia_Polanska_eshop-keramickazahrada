@@ -18,7 +18,7 @@ if (telefon) {
 }
 const n = new Nahravka(p, { celeOkno: true });
 if (process.env.KOSIK) await p.S('Network.setCookie', { name: '_medusa_cart_id', value: process.env.KOSIK, domain: 'localhost', path: '/' });
-await n.jdi('http://localhost:8100' + cesta, { pauza: 7000 });
+await n.jdi((process.env.OBCHOD_URL ?? 'http://localhost:8100') + cesta, { pauza: 9000 });
 await n.ev(`[...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Odmítnout vše')?.click()`);
 await sleep(1200);
 const bod = await n.ev(`(() => { const b = [...document.querySelectorAll('button[aria-label^="Nápověda: "]')].find(x => x.getAttribute('aria-label').includes(${JSON.stringify(tip)})); if (!b) return null; b.scrollIntoView({ block: 'center' }); const r = b.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
