@@ -55,6 +55,7 @@ import {
 } from 'lib/constants';
 import { RELOAD_KEEPER_JS } from 'lib/reload-keeper-script';
 import { ADMIN_NAV_JS } from 'lib/admin-nav-script';
+import { ADMIN_FAVICON_HREF, ADMIN_TITLE, ADMIN_TITLE_JS } from 'lib/admin-branding';
 console.log('[Medusa Config] Constants imported successfully')
 console.log('[Medusa Config] DATABASE_URL present:', !!DATABASE_URL)
 console.log('[Medusa Config] JWT_SECRET present:', !!JWT_SECRET)
@@ -123,8 +124,20 @@ const medusaConfig = {
       plugins: [
         {
           name: 'kz-reload-on-stale-chunk',
-          transformIndexHtml() {
-            return [
+          /*
+           * Záložka prohlížeče (19. 11. 2026, lib/admin-branding): ikona s logem
+           * místo prázdného zástupce Medusy a titulek „Admin – Keramická zahrada".
+           */
+          transformIndexHtml(html) {
+            const brandedHtml = String(html)
+              .replace(/<link rel="icon"[^>]*data-placeholder-favicon[^>]*>/, `<link rel="icon" type="image/png" href="${ADMIN_FAVICON_HREF}" />`)
+              .replace(/<title>[^<]*<\/title>/, `<title>${ADMIN_TITLE}</title>`);
+            const tags = [
+              {
+                tag: 'script',
+                injectTo: 'head',
+                children: ADMIN_TITLE_JS,
+              },
               {
                 tag: 'script',
                 injectTo: 'head',
@@ -206,6 +219,11 @@ const medusaConfig = {
 })();`,
               },
             ]
+            /* Bez <link rel=icon> v šabloně (jiná verze Medusy) přidat ikonu tagem. */
+            if (!/rel="icon"/.test(brandedHtml)) {
+              tags.push({ tag: 'link', injectTo: 'head', attrs: { rel: 'icon', type: 'image/png', href: ADMIN_FAVICON_HREF } });
+            }
+            return { html: brandedHtml, tags };
           },
         },
       ],
