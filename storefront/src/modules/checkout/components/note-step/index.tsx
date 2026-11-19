@@ -62,10 +62,17 @@ export default function CheckoutNoteStep({ cart }: { cart: any }) {
     casovac.current = setTimeout(() => void uloz(hodnota), 800)
   }
 
-  const jdi = async (krok: string) => {
+  /*
+   * Nejdřív přejít, ukládat souběžně. Obráceně (await uložení → push) to
+   * nešlo: serverová akce s revalidací po dokončení obnoví AKTUÁLNÍ adresu
+   * a ta `router.push` přebila — změřeno, „Uloženo." a krok zůstal stát.
+   * Komponenta je připojená i na dalším kroku, takže uložení doběhne;
+   * objednávka se odesílá až o dva kroky dál.
+   */
+  const jdi = (krok: string) => {
     if (casovac.current) clearTimeout(casovac.current)
-    if (!(await uloz(text))) return
     router.push(`${pathname}?step=${krok}`, { scroll: false })
+    void uloz(text)
   }
 
   return (
@@ -108,14 +115,13 @@ export default function CheckoutNoteStep({ cart }: { cart: any }) {
       </label>
 
       <div className={brief.actions}>
-        <button type="button" className={brief.back} onClick={() => void jdi("delivery")}>
+        <button type="button" className={brief.back} onClick={() => jdi("delivery")}>
           ← Zpět na doručení
         </button>
         <button
           type="button"
           className={brief.next}
-          disabled={stav === "uklada"}
-          onClick={() => void jdi("payment")}
+          onClick={() => jdi("payment")}
           data-testid="checkout-note-continue"
         >
           Pokračovat na platbu →
