@@ -47,6 +47,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTexty } from "@lib/context/texty"
 
 import styles from "./style.module.scss"
+import NavodTip from "@modules/common/components/navod-tip"
 
 /** Pokladna nic nevybírá za zákazníka (13. 11. 2026). */
 const AUTOMATICKY_VYBER_VYPNUT = true
@@ -377,6 +378,7 @@ const Payment = ({
           })}
         >
           Platba
+          <NavodTip tema="obchod.platba" />
           {!isOpen && paymentReady && <CheckCircleSolid />}
         </h2>
         {!isOpen && paymentReady && (

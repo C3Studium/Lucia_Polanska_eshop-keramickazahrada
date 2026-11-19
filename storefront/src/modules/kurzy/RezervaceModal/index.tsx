@@ -54,6 +54,7 @@ const ONLINE_PARTY_MAX = 30
 
 import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 import { useTexty } from "@lib/context/texty"
+import NavodTip from "@modules/common/components/navod-tip"
 /**
  * The reservation modal — „Vybrat termín" opens it over the kurzy page.
  *
@@ -811,7 +812,8 @@ function RezervaceModalPanel({
                 píše celé pole a zvýrazněný konec je pole jiné. */}
             <h2 id="kurzy-modal-title">
               <span {...editable(heading, "title")}>{titleLead}</span>
-              <em {...editable(heading, "headline")}>{titleAccent}</em>
+              <em {...editable(heading, "headline")}>{titleAccent}</em>{" "}
+              <NavodTip tema="obchod.kurz" />
             </h2>
           </div>
           <button

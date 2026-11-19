@@ -13,6 +13,7 @@ import { HttpTypes } from "@medusajs/types"
 import { addCustomerAddress } from "@lib/data/customer"
 import s from "./add-address.module.scss"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
+import NavodTip from "@modules/common/components/navod-tip"
 
 const AddAddress = ({
   region,
@@ -75,7 +76,7 @@ const AddAddress = ({
       <Modal isOpen={state} close={close} data-testid="add-address-modal">
         <Modal.Title>
           <div className={s.modalTitleContent}>
-            <h2 className={s.modalTitle}>Přidat adresu</h2>
+            <h2 className={s.modalTitle}>Přidat adresu <NavodTip tema="obchod.adresy" /></h2>
             <Divider />
           </div>
         </Modal.Title>

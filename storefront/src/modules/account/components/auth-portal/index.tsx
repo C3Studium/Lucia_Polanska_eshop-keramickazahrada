@@ -9,6 +9,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import { editable } from "@c3studium/valecms/edit"
 import type { CopyBlock } from "@lib/util/site-copy"
 import s from "./style.module.scss"
+import NavodTip from "@modules/common/components/navod-tip"
 
 type AuthPortalProps = {
   mode: "login" | "register" | "recovery" | "verification"
@@ -178,7 +179,10 @@ export default function AuthPortal({ mode, children, block }: AuthPortalProps) {
           <div className={s.formSlot}>{children}</div>
           <div className={s.ledgerFoot}>
             <p {...edit("note")}>{content.note}</p>
-            <LocalizedClientLink href="/dotazy">Potřebujete pomoc? ↗︎</LocalizedClientLink>
+            <span className="inline-flex items-center gap-1">
+              <NavodTip tema={mode === "recovery" ? "obchod.heslo" : "obchod.ucet"} />
+              <LocalizedClientLink href="/dotazy">Potřebujete pomoc? ↗︎</LocalizedClientLink>
+            </span>
           </div>
         </motion.aside>
 

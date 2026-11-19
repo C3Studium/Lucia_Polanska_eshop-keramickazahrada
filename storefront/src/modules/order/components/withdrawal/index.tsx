@@ -19,6 +19,7 @@ import Thumbnail from "@modules/products/components/thumbnail"
 
 import WithdrawalEntry from "./entry"
 import styles from "./style.module.scss"
+import NavodTip from "@modules/common/components/navod-tip"
 
 /**
  * Odstoupení od smlouvy online — dvoustupňové (§ 1830a OZ, NV 29/2023 Sb.
@@ -210,7 +211,7 @@ export default function WithdrawalFlow({
         </p>
 
         <article className={styles.statement} aria-label="Odstoupení od smlouvy — obsah">
-          <h2 className={styles.statementTitle}>Odstoupení od smlouvy</h2>
+          <h2 className={styles.statementTitle}>Odstoupení od smlouvy <NavodTip tema="obchod.odstoupeni" /></h2>
           <dl className={styles.facts}>
             <div>
               <dt>Adresát</dt>

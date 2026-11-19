@@ -24,6 +24,7 @@ import VoucherAmountField from "@modules/products/components/voucher-amount"
 import type { HttpTypes } from "@medusajs/types"
 
 import s from "./style.module.scss"
+import NavodTip from "@modules/common/components/navod-tip"
 
 /**
  * Nastavení JEDNOHO dárkového poukazu, přímo pod jeho řádkem v košíku.
@@ -205,6 +206,7 @@ function VoucherCard({
       )}
 
       <div className={s.actions}>
+        <NavodTip tema="obchod.poukaz" />
         <button
           type="button"
           className={s.save}

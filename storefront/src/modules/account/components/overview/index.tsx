@@ -18,6 +18,7 @@ import {
   accountListVariants,
 } from "../../motion"
 import s from "./style.module.scss"
+import NavodTip from "@modules/common/components/navod-tip"
 
 type OverviewProps = {
   customer: HttpTypes.StoreCustomer | null
@@ -137,7 +138,7 @@ const Overview = ({ customer, orders, copy }: OverviewProps) => {
       <AccountSectionReveal className={s.accountOverviewOrders}>
         <div className={s.accountOverviewSectionHead}>
           <div>
-            <span className={s.accountOverviewIndex}>03 · poslední objednávky</span>
+            <span className={s.accountOverviewIndex}>03 · poslední objednávky <NavodTip tema="obchod.objednavky" /></span>
             <h2 {...edit("objednavky.nadpis")}>{text("objednavky.nadpis")}</h2>
           </div>
           <span>{String(orders?.length || 0).padStart(2, "0")} celkem</span>
