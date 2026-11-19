@@ -25,6 +25,7 @@ import { reloadOrderPageSoon } from "../lib/reload-order-page";
 import { PanelError } from "../components/panel-error";
 import { OrderCommissionCustomerPanel } from "./order-commission-customer";
 import { maZakazkovouPolozku } from "../lib/order-commission";
+import { NavodTip } from "../components/navod-tip";
 import {
   productionStageMeta as stageMeta,
   productionStep as actionForStage,
@@ -316,7 +317,10 @@ const CommissionCard = ({
       <div className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <Heading level="h2" className="whitespace-nowrap">Výroba na zakázku</Heading>
+            <span className="flex items-center gap-1">
+              <Heading level="h2" className="whitespace-nowrap">Výroba na zakázku</Heading>
+              <NavodTip tema="zakazky.postup" />
+            </span>
             <Badge color={stageMeta[commission.stage].color} className="whitespace-nowrap">
               {stageMeta[commission.stage].label}
             </Badge>

@@ -54,6 +54,7 @@ import {
 } from "../../../lib/return-requests";
 import { sdk } from "../../../lib/sdk";
 import { formatCzk } from "../../../lib/workbench";
+import { NavodTip } from "../../../components/navod-tip";
 import { ceskaChyba } from "../../../lib/ceska-chyba";
 
 /**
@@ -82,15 +83,19 @@ type Panel = null | "approve" | "reject" | "received" | "resolve" | "cancel";
 const Card = ({
   title,
   hint,
+  tip,
   children,
 }: {
   title: string;
   hint?: ReactNode;
+  /** Klíč návodu — „?" s GIFem vedle nadpisu karty. */
+  tip?: string;
   children: ReactNode;
 }) => (
   <section className="border-ui-border-base rounded-lg border p-4">
-    <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
+    <Text size="xsmall" weight="plus" className="text-ui-fg-muted flex items-center gap-1 uppercase">
       {title}
+      {tip && <NavodTip tema={tip} className="-my-1.5 normal-case" />}
     </Text>
     {hint && (
       <Text size="xsmall" className="text-ui-fg-subtle mt-1">
@@ -602,7 +607,7 @@ const ClaimPageInner = () => {
 
         {/* ----------------------------------------------------- pravý sloupec */}
         <div className="flex flex-col gap-y-6">
-          <Card title="Akce">
+          <Card title="Akce" tip="reklamace.vyrizeni">
             <ActionsCard
               request={request}
               actions={actions}

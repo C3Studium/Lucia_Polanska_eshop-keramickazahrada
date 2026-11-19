@@ -2,6 +2,7 @@ import { InformationCircle } from "@medusajs/icons";
 import { Input, Popover, Switch, Text, toast } from "@medusajs/ui";
 import { useEffect, useId, useState } from "react";
 import type { ReactNode } from "react";
+import { NavodTip } from "./navod-tip";
 
 /**
  * Pravý sloupec detailu výrobku jako Nastavení na iPhonu (17. 11. 2026).
@@ -18,9 +19,12 @@ export const InspectorGroup = ({
   title,
   id,
   note,
+  tip,
   children,
 }: {
   title: string;
+  /** Klíč návodu (lib/navod-katalog.ts) — „?" s GIFem vedle nadpisu. */
+  tip?: string;
   /** Kotva pro skok z karty „Připraveno k prodeji". */
   id?: string;
   /** Drobná věta pod rámečkem. */
@@ -28,8 +32,9 @@ export const InspectorGroup = ({
   children: ReactNode;
 }) => (
   <section id={id} className="scroll-mt-24 px-5 py-4">
-    <Text size="small" weight="plus" className="text-ui-fg-subtle mb-2 px-1">
+    <Text size="small" weight="plus" className="text-ui-fg-subtle mb-2 flex items-center gap-1 px-1">
       {title}
+      {tip && <NavodTip tema={tip} className="-my-1.5" />}
     </Text>
     <div className="bg-ui-bg-base shadow-borders-base divide-y rounded-lg">
       {children}
@@ -73,6 +78,7 @@ export const InspectorRow = ({
   label,
   hint,
   info,
+  tip,
   control,
   htmlFor,
   id,
@@ -81,6 +87,8 @@ export const InspectorRow = ({
   label: string;
   hint?: ReactNode;
   info?: string;
+  /** Klíč návodu — „?" s GIFem místo „i" (text „i" je i v návodu). */
+  tip?: string;
   control?: ReactNode;
   /** Kliknutí na popisek ovládá prvek s tímhle id (přepínač). */
   htmlFor?: string;
@@ -103,7 +111,7 @@ export const InspectorRow = ({
               {label}
             </Text>
           )}
-          {info ? <InfoTip text={info} label={label} /> : null}
+          {tip ? <NavodTip tema={tip} className="-my-1" /> : info ? <InfoTip text={info} label={label} /> : null}
         </div>
         {hint ? (
           <Text size="xsmall" className="text-ui-fg-subtle">
@@ -123,6 +131,7 @@ export const InspectorSwitchRow = ({
   label,
   hint,
   info,
+  tip,
   checked,
   onChange,
   disabled,
@@ -132,6 +141,7 @@ export const InspectorSwitchRow = ({
   label: string;
   hint?: ReactNode;
   info?: string;
+  tip?: string;
   checked: boolean;
   onChange: (next: boolean) => void;
   disabled?: boolean;
@@ -144,6 +154,7 @@ export const InspectorSwitchRow = ({
       label={label}
       hint={hint}
       info={info}
+      tip={tip}
       htmlFor={switchId}
       id={id}
       control={

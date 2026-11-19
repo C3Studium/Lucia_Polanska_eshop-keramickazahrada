@@ -282,6 +282,12 @@ export default defineMiddlewares({
       methods: ["POST"],
       bodyParser: { sizeLimit: "12mb" },
     },
+    // Návod: GIF klipu jako base64 v JSON (tools/navod) — klip má do ~6 MB.
+    {
+      matcher: "/admin/navod/klipy",
+      methods: ["POST"],
+      bodyParser: { sizeLimit: "12mb" },
+    },
     // Žádost o reklamaci/vrácení nese fotky vady jako base64 v JSON (jako fotky
     // zakázky výš) — výchozí limit těla by je shodil na 413.
     {

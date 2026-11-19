@@ -334,6 +334,7 @@ export const ProductSaleRow = ({
     return (
       <InspectorRow
         id="produkt-sleva"
+        tip="produkt.sleva"
         label={sale ? `Sleva ${sale.percent} % — vypnutá` : "Sleva"}
         hint={vyprodejBlocks}
       />
@@ -341,7 +342,7 @@ export const ProductSaleRow = ({
   }
 
   if (blockedReason && !sale) {
-    return <InspectorRow id="produkt-sleva" label="Sleva" hint={blockedReason} />;
+    return <InspectorRow id="produkt-sleva" label="Sleva" tip="produkt.sleva" hint={blockedReason} />;
   }
 
   if (!sale) {
@@ -350,6 +351,7 @@ export const ProductSaleRow = ({
         <InspectorRow
           id="produkt-sleva"
           label="Sleva"
+          tip="produkt.sleva"
           hint="Prodává se za plnou cenu."
           control={
             <Button
@@ -380,6 +382,7 @@ export const ProductSaleRow = ({
     <>
       <InspectorRow
         id="produkt-sleva"
+        tip="produkt.sleva"
         label={`Sleva ${sale.percent} %`}
         htmlFor={switchId}
         hint={

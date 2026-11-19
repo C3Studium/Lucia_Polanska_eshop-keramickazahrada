@@ -106,6 +106,7 @@ export const OrderDelayPanel = ({ order }: { order: AdminOrder }) => {
   return (
     <OrderSection
       title="Zpoždění"
+      tip="objednavky.zpozdeni"
       badge={
         last ? <Badge color="orange">Nový termín {czDate(last.new_date)}</Badge> : undefined
       }

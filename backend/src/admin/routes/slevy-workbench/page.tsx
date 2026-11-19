@@ -50,6 +50,7 @@ import {
 } from "../../components/vyprodej";
 import { useExpertMode } from "../../lib/expert-mode";
 import { DiscountOrder } from "../../components/sketches";
+import { NavodTip } from "../../components/navod-tip";
 import {
   ProductSaleDialog,
   SALE_STATE,
@@ -841,7 +842,10 @@ const SlevyInner = () => {
     <Container className="divide-y p-0">
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
         <div>
-          <Heading>Slevy</Heading>
+          <span className="inline-flex items-center gap-1">
+            <Heading>Slevy</Heading>
+            <NavodTip tema="slevy.vyprodej" />
+          </span>
           <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
             Zlevněné výrobky, výprodeje, slevové kódy a akční ceníky na jednom
             místě. Slevu na jeden výrobek nastavíte u jeho ceny, výprodej celé

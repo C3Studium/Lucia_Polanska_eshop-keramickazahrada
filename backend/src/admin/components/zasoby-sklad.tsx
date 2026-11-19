@@ -32,6 +32,7 @@ import { ViewSwitcher, useViewMode } from "../lib/view-mode";
 import { adminQueryClient } from "../lib/query-client";
 import { ceskaChyba } from "../lib/ceska-chyba";
 import { pushUndo, undoById, useUndoHotkey } from "../lib/undo";
+import { NavodTip } from "./navod-tip";
 import {
   noveIdDavky,
   odpovidaHledani,
@@ -698,7 +699,10 @@ const ZasobyInner = () => {
         <WorkTabs active="zasoby" />
         <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
           <div className="min-w-0">
-            <Heading>Naskladnit po výpalu</Heading>
+            <span className="inline-flex items-center gap-1">
+              <Heading>Naskladnit po výpalu</Heading>
+              <NavodTip tema="sklad.naskladnit" />
+            </span>
             <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
               U každého výrobku, který vyšel z pece, napište, kolik kusů přibylo. Uložíte
               všechno najednou tlačítkem dole. Výrobek rychle najdete hledáním.
@@ -810,7 +814,10 @@ const ZasobyInner = () => {
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-2">
-            <Heading>Zásoby</Heading>
+            <span className="inline-flex items-center gap-1">
+              <Heading>Zásoby</Heading>
+              <NavodTip tema="sklad.prehled" />
+            </span>
             {data && data.waiting_total > 0 && (
               <Badge size="2xsmall" color="orange">
                 {formatCount(data.waiting_total, "zákazník čeká", "zákazníci čekají", "zákazníků čeká")}

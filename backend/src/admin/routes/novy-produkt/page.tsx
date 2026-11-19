@@ -10,6 +10,7 @@ import CreateBundledProduct from "../../components/create-bundled-product";
 import CreateDamagedProduct from "../../components/create-damaged-product";
 import { sdk } from "../../lib/sdk";
 import { ClassificationPicker } from "../../components/classification-picker";
+import { NavodTip } from "../../components/navod-tip";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
 
@@ -256,7 +257,10 @@ const NovyProduktInner = () => {
   return (
     <Container className="divide-y p-0">
       <header className="px-6 pb-4 pt-6">
-        <Heading>Nový produkt</Heading>
+        <div className="flex items-center gap-1">
+          <Heading>Nový produkt</Heading>
+          <NavodTip tema="produkty.novy" />
+        </div>
         <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
           Vyberte, co zakládáte, a pojmenujte to. Nastavení, které se u toho
           typu skoro nikdy nemění, vyplníme za vás.

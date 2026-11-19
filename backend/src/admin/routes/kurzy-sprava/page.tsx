@@ -56,6 +56,7 @@ import { adminQueryClient } from "../../lib/query-client"
 import { useScrollMemory } from "../../lib/scroll-memory"
 import { useUrlState } from "../../lib/url-state"
 import { useElementWidth } from "../../components/order-section"
+import { NavodTip } from "../../components/navod-tip"
 
 /**
  * Kurzy — terms and reservations in one place (docs/kurzy-system.md).
@@ -1716,7 +1717,10 @@ const KurzySpravaInner = () => {
     <Container className="divide-y p-0">
       <header className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-end md:justify-between">
         <div>
-          <Heading>Kurzy</Heading>
+          <span className="inline-flex items-center gap-1">
+            <Heading>Kurzy</Heading>
+            <NavodTip tema="kurzy.novy-termin" />
+          </span>
           <Text size="small" className="text-ui-fg-subtle mt-1 max-w-2xl">
             Termíny kurzů a rezervace míst — kdo přijde, kolik zaplatí a kolik
             míst ještě zbývá. Vypsaný termín se hned ukáže na webu v sekci

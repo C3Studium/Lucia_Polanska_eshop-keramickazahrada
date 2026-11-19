@@ -43,6 +43,7 @@ import { sdk } from "../../lib/sdk";
 import { formatCzk } from "../../lib/workbench";
 import { ceskaChyba } from "../../lib/ceska-chyba";
 import { useScrollMemory } from "../../lib/scroll-memory";
+import { NavodTip } from "../../components/navod-tip";
 import { useUrlState } from "../../lib/url-state";
 
 /**
@@ -161,7 +162,10 @@ const ReklamaceInner = () => {
     <Container className="divide-y p-0">
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
         <div>
-          <Heading>Reklamace a vrácení</Heading>
+          <div className="flex items-center gap-1">
+            <Heading>Reklamace a vrácení</Heading>
+            <NavodTip tema="reklamace.vyrizeni" />
+          </div>
           <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
             Reklamace, vrácení zboží a odstoupení od smlouvy na jednom místě.
             Každá žádost jde cestou rozhodnutí → zboží zpět → vrácení peněz →

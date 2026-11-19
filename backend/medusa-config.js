@@ -366,6 +366,10 @@ const medusaConfig = {
       resolve: "./src/modules/email-optout",
     },
     {
+      // Návod — GIFy k otazníkům v adminu a v obchodě (klíč → soubor).
+      resolve: "./src/modules/navod",
+    },
+    {
       resolve: "./src/modules/bundled-product",
     },
     {

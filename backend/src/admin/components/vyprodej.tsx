@@ -16,7 +16,7 @@ import { sdk } from "../lib/sdk";
 import { formatCzk } from "../lib/workbench";
 import { ConfirmDialog } from "./confirm-dialog";
 import { InspectorRow } from "./product-inspector";
-import { SketchTimed, SketchUntilSold } from "./sketches";
+import { NavodTip } from "./navod-tip";
 import {
   endOfDay,
   QUICK,
@@ -76,11 +76,6 @@ export const VYPRODEJ_TYPE: Record<VyprodejType, { label: string; hint: string }
   },
 };
 
-/** Náčrtek k typu výprodeje (průvodce, krok 1). */
-export const VYPRODEJ_SKETCH: Record<VyprodejType, typeof SketchTimed> = {
-  time: SketchTimed,
-  stock: SketchUntilSold,
-};
 
 export const vyprodejScope = (row: Pick<VyprodejRowData, "collections" | "categories" | "products">) =>
   [
@@ -375,7 +370,11 @@ export const VyprodejWizard = ({
     <Prompt variant="confirmation" open={open} onOpenChange={onOpenChange}>
       <Prompt.Content className="w-[calc(100%-2rem)] max-w-[560px]">
         <Prompt.Header>
-          <Prompt.Title>{editing ? `Upravit výprodej` : "Nový výprodej"}</Prompt.Title>
+          <Prompt.Title className="flex items-center gap-1">
+            {editing ? `Upravit výprodej` : "Nový výprodej"}
+            {/* GIF místo náčrtků (19. 11. 2026, Matěj) */}
+            <NavodTip tema="slevy.vyprodej" />
+          </Prompt.Title>
           <Prompt.Description>
             {/* Kroky — kde jsem a kam se dá vrátit. */}
             <span className="mt-1 flex flex-wrap items-center gap-1.5">
@@ -404,7 +403,6 @@ export const VyprodejWizard = ({
           {step === 0 && (
             <div className="flex flex-col gap-2">
               {(Object.keys(VYPRODEJ_TYPE) as VyprodejType[]).map((key) => {
-                const Sketch = VYPRODEJ_SKETCH[key];
                 return (
                   <button
                     key={key}
@@ -426,7 +424,6 @@ export const VyprodejWizard = ({
                         {VYPRODEJ_TYPE[key].hint}
                       </Text>
                     </span>
-                    <Sketch className="hidden shrink-0 sm:block" />
                   </button>
                 );
               })}
@@ -877,7 +874,10 @@ const OwnVyprodejDialog = ({
     <Prompt variant="confirmation" open={open} onOpenChange={onOpenChange}>
       <Prompt.Content className="w-[calc(100%-2rem)]">
         <Prompt.Header>
-          <Prompt.Title>{existing ? "Upravit výprodej" : "Výprodej tohoto produktu"}</Prompt.Title>
+          <Prompt.Title className="flex items-center gap-1">
+            {existing ? "Upravit výprodej" : "Výprodej tohoto produktu"}
+            <NavodTip tema="produkt.vyprodej-vlastni" />
+          </Prompt.Title>
           <Prompt.Description>{productTitle}</Prompt.Description>
         </Prompt.Header>
 
@@ -888,7 +888,6 @@ const OwnVyprodejDialog = ({
             </Text>
             <div className="grid grid-cols-2 gap-2">
               {(["stock", "time"] as VyprodejType[]).map((key) => {
-                const Sketch = VYPRODEJ_SKETCH[key];
                 return (
                   <button
                     key={key}
@@ -901,7 +900,6 @@ const OwnVyprodejDialog = ({
                         : "border-ui-border-base hover:bg-ui-bg-base-hover"
                     }`}
                   >
-                    <Sketch className="mb-1 h-10 max-w-full" />
                     <Text size="small" weight="plus">
                       {type === key ? "✓ " : ""}
                       {VYPRODEJ_TYPE[key].label}
@@ -1065,6 +1063,7 @@ export const ProductOwnVyprodejRow = ({
         <InspectorRow
           id="produkt-vyprodej-vlastni"
           label="Výprodej tohoto produktu"
+          tip="produkt.vyprodej-vlastni"
           hint={hint}
           control={
             blocked || current ? undefined : (
@@ -1084,6 +1083,7 @@ export const ProductOwnVyprodejRow = ({
     <>
       <InspectorRow
         id="produkt-vyprodej-vlastni"
+        tip="produkt.vyprodej-vlastni"
         label={`Výprodej tohoto produktu −${own.percent} %`}
         hint={
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-0.5">
@@ -1155,6 +1155,7 @@ export const ProductVyprodejRow = ({
       <>
         <InspectorRow
           id="produkt-vyprodej"
+          tip="produkt.vyprodej-pridat"
           label="Výprodej"
           hint={blocked ?? "Není v žádném výprodeji."}
           control={
@@ -1176,6 +1177,7 @@ export const ProductVyprodejRow = ({
       <>
         <InspectorRow
           id="produkt-vyprodej"
+          tip="produkt.vyprodej-pridat"
           label="Výprodej"
           hint="Má vlastní výprodej (výš). Do výprodeje kolekce nebo kategorie půjde, až ten vlastní smažete."
         />
@@ -1191,6 +1193,7 @@ export const ProductVyprodejRow = ({
     <>
       <InspectorRow
         id="produkt-vyprodej"
+        tip="produkt.vyprodej-pridat"
         label={`Výprodej −${current.percent} %`}
         hint={
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-0.5">

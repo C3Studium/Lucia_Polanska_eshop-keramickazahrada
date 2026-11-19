@@ -22,6 +22,7 @@ import { useScrollMemory } from "../../lib/scroll-memory";
 import { useUrlState } from "../../lib/url-state";
 import { ceskaChyba } from "../../lib/ceska-chyba";
 import { formatCzk } from "../../lib/workbench";
+import { NavodTip } from "../../components/navod-tip";
 import { SaveBar } from "../../components/save-bar";
 
 /**
@@ -244,7 +245,10 @@ const PoukazyInner = () => {
     <Container className="divide-y p-0">
       <header className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-end md:justify-between">
         <div>
-          <Heading>Poukazy</Heading>
+          <span className="inline-flex items-center gap-1">
+            <Heading>Poukazy</Heading>
+            <NavodTip tema="poukazy.novy" />
+          </span>
           <Text size="small" className="text-ui-fg-subtle mt-1 max-w-2xl">
             Dárkové poukazy — vytištěné i elektronické. Tady je vystavíte,
             zapíšete platbu, pošlete e-mailem a odečtete, když je někdo

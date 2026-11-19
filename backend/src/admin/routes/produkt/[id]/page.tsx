@@ -46,6 +46,7 @@ import { ProductSaleRow } from "../../../components/product-sale";
 import { classificationToast, ProductClassification } from "../../../components/product-classification";
 import { ProductOwnVyprodejRow, ProductVyprodejRow } from "../../../components/vyprodej";
 import { DiscountOrder } from "../../../components/sketches";
+import { NavodTip } from "../../../components/navod-tip";
 import { adminQueryClient } from "../../../lib/query-client"
 import { ceskaChyba } from "../../../lib/ceska-chyba";
 
@@ -246,8 +247,11 @@ const Section = ({
   children,
   action,
   id,
+  tip,
 }: {
   title: string;
+  /** Klíč návodu — „?" s GIFem vedle nadpisu. */
+  tip?: string;
   hint?: string;
   /** Kotva pro skok z kroků „Před prodejem". */
   id?: string;
@@ -257,7 +261,10 @@ const Section = ({
 }) => (
   <section id={id} className="scroll-mt-24 px-6 py-5">
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <Heading level="h2">{title}</Heading>
+      <div className="flex items-center gap-1">
+        <Heading level="h2">{title}</Heading>
+        {tip && <NavodTip tema={tip} />}
+      </div>
       {action}
     </div>
     {hint && (
@@ -2227,9 +2234,12 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               {/* Stav, cena, sklad — co si u kusu kontroluje nejdřív. Jeden
                   štítek; zakázka, balíček a poškození v tiché řádce níž. */}
               <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                <Badge size="small" color={statusBadge.color} title={statusBadge.title}>
-                  {statusBadge.label}
-                </Badge>
+                <span className="inline-flex items-center">
+                  <Badge size="small" color={statusBadge.color} title={statusBadge.title}>
+                    {statusBadge.label}
+                  </Badge>
+                  <NavodTip tema="produkt.zverejnit" />
+                </span>
                 <Text size="base" weight="plus" className="tabular-nums">
                   {priceOnRequest ? "Cena po domluvě" : priceLabel ?? "Bez ceny"}
                 </Text>
@@ -2356,8 +2366,9 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               onDrop={dropPhotos}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-baseline gap-2">
+                <div className="flex items-center gap-2">
                   <Heading level="h2">Fotky</Heading>
+                  <NavodTip tema="produkt.fotky" className="-mx-1" />
                   {gallery.length > 0 && (
                     <Text size="small" className="text-ui-fg-subtle tabular-nums">
                       {gallery.length}
@@ -2473,7 +2484,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               </div>
             </section>
 
-            <Section title="Popis" id="produkt-popis">
+            <Section title="Popis" id="produkt-popis" tip="produkt.popis">
               <div className="flex flex-col gap-1">
                 <InlineTextarea
                   value={product.description}
@@ -2533,7 +2544,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                 celou šířku; jeden obal, ať mezi nimi nejsou čáry. */}
             <div className="py-1">
             {/* Doprava — všechno, z čeho se počítá poštovné a balné. */}
-            <InspectorGroup title="Doprava">
+            <InspectorGroup title="Doprava" tip="produkt.doprava">
               {/* Velikost zásilky i tady, ne jen v „…" v Produkty+
                   (16. 11. 2026, Matěj) — podle ní se počítá poštovné. */}
               <InspectorRow
@@ -2628,6 +2639,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
             <InspectorGroup
               title={variants.length === 1 ? "Cena a sklad" : "Provedení a ceny"}
               id="produkt-cena"
+              tip="produkt.cena"
               note={
                 variants.length > 1
                   ? "Každé provedení má vlastní název, cenu a sklad."
@@ -2707,6 +2719,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
             <InspectorGroup
               title="Zařazení"
               id="produkt-zarazeni"
+              tip="produkt.zarazeni"
               note="Kategorie se nabízejí jen z kolekce v řádku. Výrobek se v obchodě ukáže v každé kolekci, kde je."
             >
               <ProductClassification
@@ -2851,7 +2864,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
           <div className="bg-ui-bg-subtle order-2 border-t pb-2 xl:border-t-0">
             {/* Prodej — jak se kus prodává. Vypnutí podmínky zakázky nemaže,
                 uložená zpráva pro zákazníka po vypnutí zůstává. */}
-            <InspectorGroup title="Prodej">
+            <InspectorGroup title="Prodej" tip="produkt.prodej">
               {/*
                 Jedno kliknutí = zakázka. Podrobné podmínky zůstávají
                 v oddílu Zakázková výroba dole; tenhle přepínač je jen zapne
@@ -2860,6 +2873,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               */}
               <InspectorSwitchRow
                 label="Na zakázku"
+                tip="produkt.na-zakazku"
                 hint={
                   priceOnRequest
                     ? "Zapnuto cenou po domluvě."
@@ -2883,6 +2897,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                   domluvě cena chybět smí (0 Kč nevadí). */}
               <InspectorSwitchRow
                 label="Cena po domluvě"
+                tip="produkt.cena-po-domluve"
                 hint={
                   priceOnRequest
                     ? "Cenu pošlete zákazníkovi z objednávky."
@@ -2901,6 +2916,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                   Uložená zpráva se vypnutím nemaže — po zapnutí je zpátky. */}
               <InspectorSwitchRow
                 label="Objednání bez kusů na skladu"
+                tip="produkt.bez-skladu"
                 hint="Zákazník koupí i vyprodaný kus."
                 info="Zákazník může koupit produkt, který není na skladu, ale uvidí zprávu, že to bude trvat déle. Sklad pak jde do mínusu — uvidíte, kolik kusů dlužíte."
                 checked={backorderAll}
@@ -2939,6 +2955,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                   „výprodej" (Matěj, 3. 11. 2026). */}
               <InspectorSwitchRow
                 label="Poškozený kus"
+                tip="produkt.poskozeny"
                 hint="Levněji; po prodeji se skryje."
                 info="Kus s vadou, prodává se levněji. Po prodeji se sám skryje z obchodu. Popis vady vyplníte u Popisu."
                 checked={clearance}
