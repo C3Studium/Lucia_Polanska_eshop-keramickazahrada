@@ -235,6 +235,8 @@ const Inner = () => {
   const [pending, setPending] = useState<
     Record<string, { collection_id: string | null; category_id: string | null }>
   >({});
+  /* Řádek, kde se změna udělala — u něj stojí Potvrdit (vše) / Zrušit (vše). */
+  const [lastEdited, setLastEdited] = useState<string | null>(null);
   /* Tři styly pravého sloupce: řádky (plná práce s přeřazením), mřížka
      (fotky — vizuální kontrola katalogu) a kompaktní (rychlé skenování,
      nejlepší na telefonu). Sdílená komponenta, volba se pamatuje. */
@@ -419,7 +421,33 @@ const Inner = () => {
       category_id: savedCategoryFor(product, product.collection_id ?? null),
     };
 
+  /*
+   * Hromadné přeřazení (19. 11. 2026, Matěj): když je měněný řádek mezi
+   * několika označenými, stejná kolekce a kategorie se propíše do všech
+   * označených — a u řádku se pak ukáže „Potvrdit vše / Zrušit vše" místo
+   * lišty nahoře. Kategorie jde i s kolekcí řádku, ať všechny skončí na
+   * stejném místě (jinak by kategorie jiné kolekce u části výběru propadla).
+   */
   const setDraft = (
+    product: any,
+    patch: Partial<{ collection_id: string | null; category_id: string | null }>
+  ) => {
+    setLastEdited(product.id);
+    const bulk = selected.size > 1 && selected.has(product.id);
+    if (!bulk) {
+      setDraftOne(product, patch);
+      return;
+    }
+    const full =
+      "category_id" in patch && !("collection_id" in patch)
+        ? { collection_id: draftFor(product).collection_id, ...patch }
+        : patch;
+    for (const other of products.filter((item) => selected.has(item.id))) {
+      setDraftOne(other, full);
+    }
+  };
+
+  const setDraftOne = (
     product: any,
     patch: Partial<{ collection_id: string | null; category_id: string | null }>
   ) => {
@@ -718,11 +746,33 @@ const Inner = () => {
       for (const id of ids) {
         const draft = pending[id];
         if (!draft) continue;
+        /* Jen „to" místo, které řádek spravuje: kategorie z ostatních kolekcí
+           zůstávají (výrobek může být ve víc kolekcích — Zařazení na detailu).
+           Dřív se přepsal celý seznam a výrobek tiše vypadl odjinud. Při
+           změně kolekce odejdou i kategorie staré kolekce. */
+        const product = products.find((item) => item.id === id);
+        const oldCollection = (product?.collection_id ?? null) as string | null;
+        const managed = product ? savedCategoryFor(product, oldCollection) : null;
+        const collectionOfCategory = (categoryId: string) =>
+          ((allCategories.find((category: any) => category.id === categoryId)?.metadata as any)
+            ?.collection_id ?? null) as string | null;
+        const keep = (product?.category_refs ?? [])
+          .map((category: any) => category.id as string)
+          .filter(
+            (categoryId: string) =>
+              categoryId !== managed &&
+              categoryId !== draft.category_id &&
+              (draft.collection_id === oldCollection ||
+                !oldCollection ||
+                collectionOfCategory(categoryId) !== oldCollection)
+          );
         await sdk.client.fetch(`/admin/products/${id}`, {
           method: "POST",
           body: {
             collection_id: draft.collection_id,
-            categories: draft.category_id ? [{ id: draft.category_id }] : [],
+            categories: [...keep, ...(draft.category_id ? [draft.category_id] : [])].map(
+              (categoryId) => ({ id: categoryId })
+            ),
           },
         });
       }
@@ -741,7 +791,6 @@ const Inner = () => {
     onError: (e) =>
       toast.error(ceskaChyba(e, "Uložení se nepodařilo.")),
   });
-  const pendingCount = Object.keys(pending).length;
 
   const selectedCollection = collections.find((c) => c.id === collectionId);
 
@@ -1186,23 +1235,6 @@ const Inner = () => {
                   dělo a vypadalo to, že tam přepínač není. */}
               <ViewSwitcher value={view} onChange={changeView} className="ml-auto" />
             </div>
-            {pendingCount > 0 && (
-              <div className="bg-ui-bg-subtle flex flex-wrap items-center gap-2 rounded-lg px-3 py-2">
-                <Text size="small" className="text-ui-fg-subtle mr-auto">
-                  Neuložené přeřazení: {pendingCount}
-                </Text>
-                <Button size="small"
-                  isLoading={applyPending.isPending}
-                  onClick={() => applyPending.mutate(Object.keys(pending))}>
-                  Potvrdit vše ({pendingCount})
-                </Button>
-                <Button size="small" variant="secondary"
-                  disabled={applyPending.isPending}
-                  onClick={() => setPending({})}>
-                  Zrušit vše
-                </Button>
-              </div>
-            )}
             {selected.size > 0 && (
               <div className="flex flex-wrap items-center gap-2">
                 <Text size="xsmall" className="text-ui-fg-subtle">
@@ -1543,24 +1575,63 @@ const Inner = () => {
                   ))}
                 </select>
               )}
-              {dirty && (
-                <>
-                  <Button size="small" isLoading={applyingThis}
-                    onClick={() => applyPending.mutate([product.id])}>
-                    Potvrdit
-                  </Button>
-                  <Button size="small" variant="transparent"
-                    disabled={applyingThis}
-                    onClick={() =>
-                      setPending((prev) => {
-                        const { [product.id]: _dropped, ...rest } = prev;
-                        return rest;
-                      })
-                    }>
-                    Zrušit
-                  </Button>
-                </>
-              )}
+              {/* Potvrzení u řádku (19. 11. 2026): jeden řádek → Potvrdit /
+                  Zrušit; změna ve výběru víc kusů → u řádku, kde se změnila,
+                  Potvrdit vše / Zrušit vše, ostatní změněné jen „změněno". */}
+              {dirty &&
+                (() => {
+                  const inBulk = selected.size > 1 && selected.has(product.id);
+                  if (!inBulk) {
+                    return (
+                      <>
+                        <Button size="small" isLoading={applyingThis}
+                          onClick={() => applyPending.mutate([product.id])}>
+                          Potvrdit
+                        </Button>
+                        <Button size="small" variant="transparent"
+                          disabled={applyingThis}
+                          onClick={() =>
+                            setPending((prev) => {
+                              const { [product.id]: _dropped, ...rest } = prev;
+                              return rest;
+                            })
+                          }>
+                          Zrušit
+                        </Button>
+                      </>
+                    );
+                  }
+                  const bulkIds = Object.keys(pending).filter((id) => selected.has(id));
+                  const owner =
+                    lastEdited && bulkIds.includes(lastEdited) ? lastEdited : bulkIds[0];
+                  if (product.id !== owner) {
+                    return (
+                      <Badge size="2xsmall" color="orange">
+                        změněno
+                      </Badge>
+                    );
+                  }
+                  return (
+                    <>
+                      <Button size="small"
+                        isLoading={applyPending.isPending}
+                        onClick={() => applyPending.mutate(bulkIds)}>
+                        Potvrdit vše ({bulkIds.length})
+                      </Button>
+                      <Button size="small" variant="transparent"
+                        disabled={applyPending.isPending}
+                        onClick={() =>
+                          setPending((prev) => {
+                            const rest = { ...prev };
+                            for (const id of bulkIds) delete rest[id];
+                            return rest;
+                          })
+                        }>
+                        Zrušit vše
+                      </Button>
+                    </>
+                  );
+                })()}
               <VisibilityEye
                 visible={product.status === "published"}
                 label={`produkt ${product.title}`}
