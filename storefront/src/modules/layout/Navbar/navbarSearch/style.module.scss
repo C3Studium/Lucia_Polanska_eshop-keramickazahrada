@@ -242,8 +242,15 @@
   padding-bottom: 1.125rem;
   /* The rail is draggable; grabbing it should look possible. */
   cursor: grab;
-  /* Wheel and drag are handled in JS, so the browser must not claim the gesture first. */
-  touch-action: pan-y;
+  /*
+   * Prst posouvá řadu NATIVNĚ do stran i stránku nahoru a dolů (19. 11. 2026).
+   * Bylo tu `pan-y` — „kolečko a tažení řeší JS" platí jen pro myš (useDragScroll
+   * dotyk vědomě ignoruje), takže na telefonu prohlížeč vodorovný tah zahodil
+   * a řada výsledků se nedala posunout vůbec. Myši se touch-action netýká.
+   */
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
   scrollbar-color: rgb(var(--olive-15-rgb) / .55) rgb(var(--ink-09-rgb) / .09);
   scrollbar-width: thin;
 
@@ -278,7 +285,7 @@
   width: max-content;
   gap: 1.125rem;
   padding-inline: var(--search-gutter);
-  touch-action: pan-y;
+  touch-action: pan-x pan-y;
 }
 
 /* Live band 1209–1565px, i.e. the card is still growing across every laptop and desktop width,
