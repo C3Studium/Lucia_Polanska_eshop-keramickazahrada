@@ -213,7 +213,8 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
           address_2: str(a.address_2),
           city,
           postal_code,
-          country_code: str(a.country_code) || home.country_code || "cz",
+          // Země zůstává: doprava (i do zahraničí podle ceníku) je zaplacená pro ni.
+          country_code: home.country_code || str(a.country_code) || "cz",
           phone: str(a.phone) || home.phone || "",
         },
       },

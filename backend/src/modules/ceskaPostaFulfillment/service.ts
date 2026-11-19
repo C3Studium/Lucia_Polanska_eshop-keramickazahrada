@@ -12,6 +12,11 @@ import type {
 } from "@medusajs/framework/types"
 import { callCeskaPosta } from "./client"
 import { DEFAULT_RATES, rateGroupOf, shipmentPrice, type ShippingRates } from "../../lib/shipping-rates"
+import {
+  INTERNATIONAL_SERVICE_CODE,
+  internationalPriceFor,
+  isInternationalOptionData,
+} from "../../lib/international-shipping-price"
 import { rozhodniDobirku } from "./dobirka"
 import {
   chybaZOdpovedi,
@@ -159,6 +164,8 @@ type InjectedDependencies = {
 export const CP_SERVICE_CODES = {
   balikovna: "NB",
   address: "DR",
+  /** Náš kód, ne číselník ČP: balík do zahraničí, podává se ručně na poště. */
+  international: INTERNATIONAL_SERVICE_CODE,
 } as const
 
 export type FulfillmentMode = "manual" | "api"
@@ -227,6 +234,14 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
         fragile: true,
       },
       {
+        // Ceník po zemích je v datech volby (lib/international-shipping.ts);
+        // volbu zakládá administrace Doprava a platba, ne ruka v nativním adminu.
+        id: "cp-international",
+        name: "Česká pošta – do zahraničí",
+        service_code: CP_SERVICE_CODES.international,
+        international: true,
+      },
+      {
         // Returns come back through the same carrier. Ceramics being returned
         // are, if anything, more fragile than when they went out.
         id: "cp-return-fragile",
@@ -264,6 +279,7 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
       ...data,
       service_code: optionData?.service_code,
       ...(optionData?.fragile || cartFragile ? { fragile: true } : {}),
+      ...(isInternationalOptionData(optionData) ? { international: true } : {}),
     }
   }
 
@@ -313,6 +329,25 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
     _data: Record<string, unknown>,
     context: Record<string, any>
   ): Promise<{ calculated_amount: number; is_calculated_price_tax_inclusive: boolean }> {
+    /*
+     * Do zahraničí (19. 11. 2026): hmotnost košíku (sečtená z výrobků, když
+     * ji mají všechny, jinak průměr z Nastavení obchodu) → ceník České pošty
+     * (lib/cp-kalkulacka) → měna regionu země kurzem ČNB z dat volby (Medusa
+     * sem měnu košíku nepředává). Bez ceny (země se nevozí, balík je na ČP
+     * moc těžký) výjimka volbu v pokladně vypne — lepší než špatná částka.
+     */
+    if (isInternationalOptionData(optionData)) {
+      const country = context?.shipping_address?.country_code
+      const items: any[] = Array.isArray(context?.items) ? context.items : []
+      const price = internationalPriceFor(optionData, country, items)
+      if (!price) {
+        throw new Error(
+          `Do země ${String(country ?? "?").toUpperCase()} Česká pošta takový balík z obchodu nevozí (chybí cena nebo je moc těžký).`
+        )
+      }
+      return { calculated_amount: price.amount, is_calculated_price_tax_inclusive: true }
+    }
+
     /*
      * Cena dopravy (16. 11. 2026): velikost zásilky + příplatek za křehké
      * podle cen z Nastavení obchodu › Doprava a platba (`data.rates` volby).
@@ -368,6 +403,36 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
           mode: "manual" satisfies FulfillmentMode,
           no_shipping: true,
           service_code: serviceCode,
+          recorded_at: new Date().toISOString(),
+        },
+        labels: [],
+      }
+    }
+
+    /*
+     * Balík do zahraničí se přes nAPI nepodává — podání (DR/NB) je jen
+     * tuzemské a mezinárodní služby mají jiné číselníky i celní údaje. Zásilka
+     * se zaznamená ručně: majitelka ji podá na poště a odeslání potvrdí sama.
+     */
+    const destination = String(
+      (order as any)?.shipping_address?.country_code ?? "cz"
+    ).toLowerCase()
+    if (
+      serviceCode === CP_SERVICE_CODES.international ||
+      data?.international === true ||
+      destination !== "cz"
+    ) {
+      this.logger_.info(
+        `[ceska-posta] Objednávka ${
+          order?.display_id ?? order?.id ?? "?"
+        } jde do zahraničí — zaznamenáno bez podání přes API, podává se ručně na poště.`
+      )
+      return {
+        data: {
+          mode: "manual" satisfies FulfillmentMode,
+          service_code: CP_SERVICE_CODES.international,
+          international: true,
+          weight_kg: this.parcelWeight(items),
           recorded_at: new Date().toISOString(),
         },
         labels: [],
@@ -609,7 +674,15 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
   ): number {
     const summed = (items || []).reduce((total, item) => {
       const quantity = Number((item as any)?.quantity ?? 0) || 0
-      const weightGrams = Number((item as any)?.variant?.weight ?? 0) || 0
+      /* Hmotnost výrobku z Produkty+ (`product.weight`) jde na řádek jako
+         razítko `ship_weight_g` (lib/packaging) — varianta jen jako záloha. */
+      const weightGrams =
+        Number(
+          (item as any)?.line_item?.metadata?.ship_weight_g ??
+            (item as any)?.metadata?.ship_weight_g ??
+            (item as any)?.variant?.weight ??
+            0
+        ) || 0
       return total + (weightGrams / 1000) * quantity
     }, 0)
 

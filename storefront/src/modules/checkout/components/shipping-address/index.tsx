@@ -310,7 +310,7 @@ const ShippingAddress = ({
           label="PSČ"
           name="shipping_address.postal_code"
           autoComplete="postal-code"
-          inputMode="numeric"
+          inputMode={routeCountry === "cz" ? "numeric" : undefined}
           value={formData["shipping_address.postal_code"]}
           onChange={handleChange}
           required
@@ -468,7 +468,7 @@ const ShippingAddress = ({
                   name="shipping_address.ico"
                   value={formData["shipping_address.ico"]}
                   onChange={handleChange}
-                  inputMode="numeric"
+                  inputMode={routeCountry === "cz" ? "numeric" : undefined}
                   autoComplete="off"
                   required
                   title="Osm číslic, například 27074358."

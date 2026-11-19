@@ -1,3 +1,4 @@
+import { isInternationalShippingOption } from "@lib/util/international-shipping"
 /**
  * When dobírka may be offered.
  *
@@ -114,10 +115,12 @@ const fold = (value: string) =>
  * peníze vybere doručovatel u dveří. Backend to hlídá taky (validate-dobirka).
  */
 export const deliveryCollectsDobirka = (
-  option: { name?: string | null } | null | undefined,
+  option: { name?: string | null; data?: Record<string, unknown> | null } | null | undefined,
   isPickup: boolean
 ) => {
   if (isPickup) return false
+  // Do zahraničí dobírka není nikdy (nehledě na zemi košíku).
+  if (isInternationalShippingOption(option)) return false
   const name = fold(option?.name ?? "")
   // Dopis s poukazem dobírku nemá (17. 11. 2026).
   if (name.includes("dopis")) return false

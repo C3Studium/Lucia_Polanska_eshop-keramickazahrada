@@ -105,7 +105,7 @@ export const deliveryRestrictionFor = (
  * takže si zákazník může dopravu vybrat a zaplatí ji až s domluvenou cenou.
  */
 export const deliveryAllowedUnder = (
-  option: { name?: string | null } | null | undefined,
+  option: { name?: string | null; data?: Record<string, unknown> | null } | null | undefined,
   isPickup: boolean,
   restriction: DeliveryRestriction = null
 ) => (restriction === null ? true : deliveryAllowsCommission(option, isPickup))

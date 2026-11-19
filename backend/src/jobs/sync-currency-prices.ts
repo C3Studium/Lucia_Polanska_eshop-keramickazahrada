@@ -8,6 +8,7 @@ import {
 } from "../lib/cnb-rates"
 import { jeMenaObchodu, vypisMen } from "../lib/currencies"
 import { sUlohou } from "../lib/provozni-hlidka/uloha"
+import { refreshInternationalShippingRates } from "../lib/international-shipping"
 
 /**
  * Foreign-currency prices from the ČNB fixing (2026-08-16).
@@ -189,8 +190,32 @@ export const syncCurrencyPrices = async (
   )
 }
 
+/**
+ * Doprava do zahraničí: ceník je v Kč, zákazník platí v měně regionu —
+ * přepočte se týmž lístkem ČNB (viz lib/international-shipping.ts).
+ */
+const refreshInternationalShipping = async (container: MedusaContainer) => {
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+  try {
+    const sheet = await fetchCnbRates()
+    const countries = await refreshInternationalShippingRates(container, sheet)
+    if (countries) {
+      logger.info(
+        `[cnb] Doprava do zahraničí přepočtena kurzem z ${sheet.date} (${countries} zemí).`
+      )
+    }
+  } catch (error) {
+    logger.error(
+      `[cnb] Přepočet dopravy do zahraničí selhal: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    )
+  }
+}
+
 async function syncCurrencyPricesJob(container: MedusaContainer) {
   await syncCurrencyPrices(container)
+  await refreshInternationalShipping(container)
 }
 
 /* Běh i pád úlohy jde do provozního deníku; pád navíc do souhrnu chyb (e-mail nejvýš po 4 h). */

@@ -121,7 +121,7 @@ const BillingAddress = ({ cart, countryCode }: { cart: HttpTypes.StoreCart | nul
           label="PSČ"
           name="billing_address.postal_code"
           autoComplete="postal-code"
-          inputMode="numeric"
+          inputMode={routeCountry === "cz" ? "numeric" : undefined}
           value={formData["billing_address.postal_code"]}
           onChange={handleChange}
           required

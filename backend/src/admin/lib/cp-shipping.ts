@@ -54,8 +54,16 @@ export const isPersonalPickup = (order: OrderWithShipping): boolean =>
     );
   });
 
-/** Zásilka České pošty (Balíkovna NB nebo Balík Do ruky DR). */
+/** Balík do zahraničí — podává se ručně na poště, štítek ani sledování z API nejsou. */
+export const isInternationalShipment = (order: OrderWithShipping): boolean =>
+  methodsOf(order).some((method) => {
+    const data = method?.data || {};
+    return data.international === true || data.service_code === "INT";
+  });
+
+/** Zásilka České pošty (Balíkovna NB nebo Balík Do ruky DR) — tuzemská. */
 export const isCeskaPosta = (order: OrderWithShipping): boolean =>
+  !isInternationalShipment(order) &&
   methodsOf(order).some((method) => {
     const data = method?.data || {};
     const provider = String(method?.shipping_option?.provider_id ?? "");
