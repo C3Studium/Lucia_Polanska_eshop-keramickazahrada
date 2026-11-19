@@ -2,7 +2,7 @@ import { XMark } from "@medusajs/icons";
 import { Badge, Select, Text, toast } from "@medusajs/ui";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { SketchAdd, SketchMove } from "./sketches";
+import { NavodTip } from "./navod-tip";
 
 /**
  * Zařazení výrobku — kolekce a kategorie (19. 11. 2026, Matěj: „přidat do
@@ -578,12 +578,13 @@ export const BulkSortPanel = ({
     emit(mode, target, next);
   };
 
-  const step = (n: number, title: string) => (
+  const step = (n: number, title: string, tip?: string) => (
     <Text size="small" weight="plus" className="text-ui-fg-subtle mb-2 flex items-center gap-2 px-1">
       <span className="bg-ui-bg-base-pressed text-ui-fg-base txt-compact-xsmall-plus flex size-5 items-center justify-center rounded-full">
         {n}
       </span>
       {title}
+      {tip && <NavodTip tema={tip} className="-my-1" />}
     </Text>
   );
 
@@ -616,9 +617,9 @@ export const BulkSortPanel = ({
       </section>
 
       <section>
-        {step(2, "Co udělat")}
-        {/* Náčrtek nad každou volbou (19. 11. 2026, Matěj): z textu samotného
-            nebylo jasné, jestli výrobek z dosavadního místa zmizí. */}
+        {step(2, "Co udělat", "zarazeni.co-udelat")}
+        {/* Rozdíl ukazuje GIF pod otazníkem u „Co udělat“ (19. 11. 2026,
+            Matěj: „radši GIF, jak to funguje, než ikonky“). */}
         <div className="grid grid-cols-2 gap-2">
           {(
             [
@@ -626,16 +627,14 @@ export const BulkSortPanel = ({
                 "move",
                 "Přesunout sem",
                 "Z dosavadních kolekcí a kategorií zmizí. V obchodě budou jen tam, kam teď vyberete.",
-                SketchMove,
               ],
               [
                 "add",
                 "Přidat i sem",
                 "Kde jsou teď, tam zůstanou — a navíc se ukážou i tady. V obchodě budou na obou místech.",
-                SketchAdd,
               ],
             ] as const
-          ).map(([key, label, hint, Sketch]) => (
+          ).map(([key, label, hint]) => (
             <button
               key={key}
               type="button"
@@ -647,7 +646,6 @@ export const BulkSortPanel = ({
                   : "border-ui-border-base hover:bg-ui-bg-base-hover"
               }`}
             >
-              <Sketch className="mb-1 max-w-full" />
               <Text size="small" weight="plus">
                 {mode === key ? "✓ " : ""}
                 {label}
