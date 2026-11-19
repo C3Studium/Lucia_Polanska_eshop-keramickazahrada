@@ -1,5 +1,5 @@
 import { withPackagingUnderProducts } from "../../lib/packaging-lines"
-import { emailLocaleOf } from "../../lib/email-locale"
+import { orderLanguageOf } from "../../lib/email-locale"
 import { toAmount } from "../../lib/ship-gate"
 import {
   ITEM_TYPE_NORMAL,
@@ -493,7 +493,8 @@ type InvoicePayloadInput = {
 export const invoiceFlavourFor = (
   order: Pick<InvoiceOrderInput, "metadata" | "billing_address" | "shipping_address" | "currency_code">
 ): { european: boolean; reportLanguage: number } => {
-  const locale = emailLocaleOf(order as any)
+  /* Faktura v jazyce ZEMĚ (slovensky, německy…), ne e-mailu — lib/email-locale. */
+  const locale = orderLanguageOf(order as any)
   const foreignCurrency = String(order.currency_code ?? "czk").toLowerCase() !== "czk"
   const european = locale !== "cs" || foreignCurrency
   const reportLanguage = !european

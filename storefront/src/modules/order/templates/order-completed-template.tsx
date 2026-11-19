@@ -30,6 +30,7 @@ import PremiumActionLink from "@modules/common/components/premium-action-link"
 import CmsText from "@modules/common/components/cms-text"
 import type { CopyBlocks } from "@lib/util/site-copy"
 import Thumbnail from "@modules/products/components/thumbnail"
+import type { OrderDocument } from "@lib/data/order-documents"
 import s from "./styles/oder-complete.module.scss"
 import { commissionsOf } from "@lib/util/made-to-order"
 import { pickupPointLabel } from "@lib/util/pickup-point"
@@ -73,6 +74,11 @@ type OrderCompletedTemplateProps = {
    */
   claims?: OrderClaims | null
   /**
+   * Dokumenty ke stažení (potvrzení, faktura, dobropisy, podmínky, poučení,
+   * protokol glazury) — totéž co v e-mailech. `null`/prázdné → bez bloku.
+   */
+  documents?: OrderDocument[] | null
+  /**
    * Bloky stránky `kosik`: `kosik.objednavka-hotova` (poděkování nahoře)
    * a `kosik.objednavka-pomoc` (nadpis okénka s kontaktem). Jen tyhle dva
    * kusy — věta o potvrzení e-mailem nese adresu zákazníka, kontakty jsou
@@ -100,8 +106,12 @@ export default async function OrderCompletedTemplate({
   commissionNotesById = null,
   selfServiceToken = null,
   claims = null,
+  documents = null,
   copy,
 }: OrderCompletedTemplateProps) {
+  /* Dokumenty jsou karta 03 — sekce za nimi se posunou (položky, souhrn). */
+  const maDokumenty = Boolean(documents && documents.length > 0)
+  const cislo = (n: number) => String(n + (maDokumenty ? 1 : 0)).padStart(2, "0")
   const thanks = copy?.["kosik.objednavka-hotova"]
   const help = copy?.["kosik.objednavka-pomoc"]
   /* Provozní věty z administrace. Poděkování nahoře je dál ze Studia
@@ -538,13 +548,51 @@ export default async function OrderCompletedTemplate({
                   </div>
                 </div>
               </article>
+
+              {/* Dokumenty ke stažení (19. 11. 2026, Matěj) — jako v e-mailu:
+                  potvrzení objednávky, faktura, podmínky, poučení… Faktura se
+                  objeví, až ji účetnictví vystaví. */}
+              {documents && documents.length > 0 && (
+                <article className={s.detailCard} data-testid="order-documents">
+                  <div className={s.detailHeading}>
+                    <span>03</span>
+                    <div>
+                      <p>Dokumenty</p>
+                      <h2>Ke stažení</h2>
+                    </div>
+                  </div>
+                  <ul className={s.documentList}>
+                    {documents.map((doc) => (
+                      <li key={doc.key}>
+                        <a
+                          href={doc.url}
+                          download={doc.filename}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={s.documentLink}
+                        >
+                          <span aria-hidden="true" className={s.documentIcon}>PDF</span>
+                          <span className={s.documentText}>
+                            <strong>{doc.title}</strong>
+                            {doc.note ? <small>{doc.note}</small> : null}
+                          </span>
+                          <span aria-hidden="true" className={s.documentArrow}>↓</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                  {!documents.some((doc) => doc.key.startsWith("faktura")) && (
+                    <p className={s.documentHint}>Fakturu sem přidáme, jakmile ji vystavíme.</p>
+                  )}
+                </article>
+              )}
             </section>
 
             {/* BACKEND-HOOKED: Products, quantities, prices, discounts and totals come from StoreOrder. */}
             <section className={s.objects}>
               <div className={s.sectionHead}>
                 <div>
-                  <p>03 · Vaše položky</p>
+                  <p>{cislo(3)} · Vaše položky</p>
                   <h2>Co jste objednali</h2>
                 </div>
                 <span>
@@ -645,7 +693,7 @@ export default async function OrderCompletedTemplate({
                 <p className={s.receiptNote}>
                   Bezpečná platba · pečlivé balení
                 </p>
-                <span className={s.receiptEyebrow}>04 · Souhrn</span>
+                <span className={s.receiptEyebrow}>{cislo(4)} · Souhrn</span>
                 <h2>Souhrn</h2>
 
                 <div className={s.totalRows}>

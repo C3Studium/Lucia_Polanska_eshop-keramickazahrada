@@ -14,12 +14,18 @@
  * Země ≠ region: region „Europe" sdružuje Slovensko, Německo, Francii…
  * (všechny v eurech), takže jazyk z regionu poznat nejde — jen ze země.
  *
- * ## Angličtina pro ostatní země, čeština bez země
+ * ## Jen čeština a angličtina (Matěj 19. 11. 2026)
  *
- * Země bez vlastního jazyka (fr, it, es, se, dk, gb, si…) dostanou
- * angličtinu (rozhodl Matěj 3. 11. 2026). Kde zemi neznáme vůbec (prázdný
- * kód), zůstává čeština. Starší objednávky bez `metadata.locale` si jazyk
- * odvodí z doručovací země.
+ * Česko a Slovensko dostávají ČEŠTINU, všechny ostatní země ANGLIČTINU.
+ * Slovenština, polština a němčina se už neposílají — ani u starších
+ * objednávek, které mají v `metadata.locale` uložené `sk`/`pl`/`de`:
+ * čtení jazyka je sbalí (`collapseLocale`). Kde zemi neznáme vůbec
+ * (prázdný kód), zůstává čeština. Texty v ostatních jazycích v šablonách
+ * zůstávají (typ `Localized`), jen se nevybírají.
+ *
+ * Faktura iDoklad si dál bere jazyk ZEMĚ (`orderLanguageOf` — slovensky,
+ * německy, jinak anglicky); Matěj měnil jen e-maily. Brána ComGate jde
+ * s e-mailem (česky / anglicky).
  *
  * Soubor je čistý TypeScript bez frameworku, aby ho mohly importovat
  * i šablony (React Email) a storefront-like testy.
@@ -32,8 +38,8 @@ export const DEFAULT_EMAIL_LOCALE: EmailLocale = "cs"
 /** Texty ve všech jazycích — povinně všechny, ať žádný nechybí potichu. */
 export type Localized<T> = Record<EmailLocale, T>
 
-/** Země → jazyk. Jiná známá země dostane angličtinu (viz hlavička souboru). */
-const COUNTRY_LOCALE: Record<string, EmailLocale> = {
+/** Země → jazyk země (pro fakturu). Jiná známá země dostane angličtinu. */
+const COUNTRY_LANGUAGE: Record<string, EmailLocale> = {
   cz: "cs",
   sk: "sk",
   pl: "pl",
@@ -41,30 +47,47 @@ const COUNTRY_LOCALE: Record<string, EmailLocale> = {
   at: "de",
 }
 
+/**
+ * Sbalí jakýkoli jazyk na ty dva, které se posílají: čeština/slovenština →
+ * čeština, cokoli jiného → angličtina (19. 11. 2026).
+ */
+export const collapseLocale = (locale: EmailLocale): EmailLocale =>
+  locale === "cs" || locale === "sk" ? "cs" : "en"
+
 export const isEmailLocale = (value: unknown): value is EmailLocale =>
   typeof value === "string" && (EMAIL_LOCALES as readonly string[]).includes(value)
 
-/** Jazyk pro zemi (`sk`, `SK`, `fr`…); jiná země → angličtina, prázdná → čeština. */
-export const localeForCountry = (countryCode: unknown): EmailLocale => {
+/** Jazyk ZEMĚ (`sk` → slovenština…) — jen pro fakturu; jiná země → angličtina, prázdná → čeština. */
+export const languageForCountry = (countryCode: unknown): EmailLocale => {
   const code = typeof countryCode === "string" ? countryCode.trim().toLowerCase() : ""
   if (!/^[a-z]{2}$/.test(code)) return DEFAULT_EMAIL_LOCALE
-  return COUNTRY_LOCALE[code] ?? "en"
+  return COUNTRY_LANGUAGE[code] ?? "en"
 }
+
+/** Jazyk E-MAILU pro zemi: Česko a Slovensko česky, jiná země anglicky, prázdná česky. */
+export const localeForCountry = (countryCode: unknown): EmailLocale =>
+  collapseLocale(languageForCountry(countryCode))
 
 /** Cokoli (i `"sk-SK"`, `"DE"`) na podporovaný jazyk; jinak čeština. */
 export const normalizeEmailLocale = (value: unknown): EmailLocale => {
   if (typeof value !== "string") return DEFAULT_EMAIL_LOCALE
   const base = value.trim().toLowerCase().split(/[-_]/)[0]
   if (base === "cz") return "cs"
-  return isEmailLocale(base) ? base : DEFAULT_EMAIL_LOCALE
+  return isEmailLocale(base) ? collapseLocale(base) : DEFAULT_EMAIL_LOCALE
 }
 
-/** Platný jazyk, nebo `null` — pro rozlišení „nevím" od „čeština". */
-export const parseEmailLocale = (value: unknown): EmailLocale | null => {
+/** Platný jazyk (bez sbalení), nebo `null`. */
+const parseLanguage = (value: unknown): EmailLocale | null => {
   if (typeof value !== "string" || !value.trim()) return null
   const base = value.trim().toLowerCase().split(/[-_]/)[0]
   if (base === "cz") return "cs"
   return isEmailLocale(base) ? base : null
+}
+
+/** Platný jazyk e-mailu (sbalený na cs/en), nebo `null` — pro rozlišení „nevím" od „čeština". */
+export const parseEmailLocale = (value: unknown): EmailLocale | null => {
+  const language = parseLanguage(value)
+  return language ? collapseLocale(language) : null
 }
 
 type LocaleSource = {
@@ -79,15 +102,18 @@ type LocaleSource = {
  * je druhá schválně — u Balíkovny je doručovací adresa výdejna v Česku
  * a domácí adresa zákazníka leží ve fakturační.
  */
-export const emailLocaleOf = (source: LocaleSource): EmailLocale => {
-  const stored = parseEmailLocale(source?.metadata?.locale)
+export const orderLanguageOf = (source: LocaleSource): EmailLocale => {
+  const stored = parseLanguage(source?.metadata?.locale)
   if (stored) return stored
   const shipping = source?.shipping_address?.country_code
-  if (shipping && localeForCountry(shipping) !== DEFAULT_EMAIL_LOCALE) {
-    return localeForCountry(shipping)
+  if (shipping && languageForCountry(shipping) !== DEFAULT_EMAIL_LOCALE) {
+    return languageForCountry(shipping)
   }
-  return localeForCountry(source?.billing_address?.country_code ?? shipping)
+  return languageForCountry(source?.billing_address?.country_code ?? shipping)
 }
+
+/** Jazyk e-mailu k objednávce/košíku: česky (CZ, SK), jinak anglicky. */
+export const emailLocaleOf = (source: LocaleSource): EmailLocale => collapseLocale(orderLanguageOf(source))
 
 /** Text v daném jazyce; chybějící jazyk (nemělo by nastat) → čeština. */
 export const pick = <T>(locale: EmailLocale | null | undefined, texts: Localized<T>): T =>

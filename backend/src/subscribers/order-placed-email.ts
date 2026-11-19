@@ -7,6 +7,7 @@ import { isCommissionCheckoutOrder } from "../lib/potvrzeni-zakazky/fields"
 import { buildOrderConfirmation } from "../lib/potvrzeni-zakazky"
 import { sendOrderConfirmationWorkflow } from "../workflows/send-order-confirmation"
 import { ensureInternationalOrderMethodName } from "../lib/international-shipping"
+import { saveOrderConfirmationPdf } from "../lib/order-documents"
 
 /**
  * Potvrzení objednávky. Objednávka se zakázkou (kolekce z pokladny nese
@@ -62,6 +63,9 @@ export default async function orderPlacedEmailHandler({
   try {
     const built = await buildOrderConfirmation(container, data.id)
     confirmation = built.attachment
+    /* Adresa PDF do objednávky — stránka potvrzené objednávky ho nabídne ke
+       stažení (lib/order-documents) a příště se nevytváří znovu. */
+    await saveOrderConfirmationPdf(container, data.id, built).catch(() => undefined)
   } catch (error) {
     container
       .resolve(ContainerRegistrationKeys.LOGGER)
