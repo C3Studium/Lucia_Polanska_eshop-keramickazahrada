@@ -1,4 +1,4 @@
-import { ArchiveBox, ArrowUpRightOnBox, CheckMini, ChevronDown, DotsSix, EyeSlash, Photo, Plus, Trash } from "@medusajs/icons";
+import { ArchiveBox, ArrowDownTray, ArrowUpRightOnBox, CheckMini, ChevronDown, DotsSix, EyeSlash, Photo, Plus, Trash } from "@medusajs/icons";
 import {
   Badge,
   Button,
@@ -1930,6 +1930,23 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
   /* Fotky galerie; bez nich aspoň hlavní fotka, ať jde zvětšit z hlavičky. */
   /* Hlavní první — stejně jako ji teď ukazuje obchod (i u starších výrobků,
      kde hlavní fotka v pořadí první nebyla). */
+  /*
+   * Stáhnout fotku do počítače (19. 11. 2026, Matěj — např. při slučování
+   * dvou výrobků: stáhnout, nahrát k druhému, starý archivovat). Přes
+   * /admin/workbench/stahnout, protože fotka z R2 je jiná doména a
+   * <a download> by ji jen otevřel.
+   */
+  const odkazKeStazeni = (url: string, index: number) =>
+    `/admin/workbench/stahnout?url=${encodeURIComponent(url)}&nazev=${encodeURIComponent(`${product.handle ?? product.title}-${index + 1}`)}`;
+  const stahnout = (url: string, index: number) => {
+    const a = document.createElement("a");
+    a.href = odkazKeStazeni(url, index);
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
   const gallery = mainFirst(
     (product.images ?? []).map((image) => image.url),
     product.thumbnail ?? ""
@@ -2101,8 +2118,13 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
         }
         actions={(index) => {
           const url = viewerPhotos[index];
-          // Jen hlavní fotka bez galerie — není co nastavovat ani mazat.
-          if (!gallery.includes(url)) return null;
+          const stahnoutTl = (
+            <Button variant="secondary" onClick={() => stahnout(url, index)}>
+              <ArrowDownTray /> Stáhnout
+            </Button>
+          );
+          // Jen hlavní fotka bez galerie — není co nastavovat ani mazat, jen stáhnout.
+          if (!gallery.includes(url)) return stahnoutTl;
           if (confirmDeleteUrl === url) {
             return (
               <>
@@ -2127,6 +2149,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
           }
           return (
             <>
+              {stahnoutTl}
               {url !== product.thumbnail && (
                 <Button
                   variant="secondary"
@@ -2419,6 +2442,19 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                   </div>
                 ) : gallery.length > 0 ? (
                   <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      size="small"
+                      variant="secondary"
+                      className="min-h-[36px]"
+                      title="Uloží všechny fotky výrobku do počítače (složka Stažené soubory)"
+                      onClick={() => {
+                        /* Po jedné s malou pauzou — prohlížeč jinak víc stažení naráz zahodí. */
+                        gallery.forEach((url, index) => window.setTimeout(() => stahnout(url, index), index * 450));
+                        toast.info(gallery.length === 1 ? "Stahuji fotku…" : `Stahuji ${gallery.length} fotek… Prohlížeč se může zeptat, jestli povolit víc souborů.`);
+                      }}
+                    >
+                      <ArrowDownTray /> {gallery.length === 1 ? "Stáhnout" : "Stáhnout všechny"}
+                    </Button>
                     {gallery.length > 1 && (
                       <Button
                         size="small"
