@@ -2,6 +2,7 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { MedusaError } from "@medusajs/framework/utils"
 import { sendCustomerEmail } from "../../../../../lib/customer-email"
 import { getMerchantSettings } from "../../../../../lib/merchant-settings"
+import { withdrawalReturnAddress } from "../../../../../lib/claims/withdrawal"
 import {
   claimEmailBase,
   claimService,
@@ -183,8 +184,8 @@ export const POST = async (
         // odstoupení před odesláním, kde nikdy neodešlo.
         goodsReturnRequired: effective !== "discount" && !nothingToReturn,
         nothingToReturn,
-        returnAddress:
-          settings?.return_address || "Keramická zahrada\nPutim 229\n397 01 Putim",
+        /* Stará uložená výchozí adresa („…397 01 Písek") → aktuální Putim (19. 11. 2026). */
+        returnAddress: withdrawalReturnAddress(settings?.return_address),
         ...(settings?.return_instructions?.trim()
           ? { returnInstructions: settings.return_instructions.trim() }
           : {}),

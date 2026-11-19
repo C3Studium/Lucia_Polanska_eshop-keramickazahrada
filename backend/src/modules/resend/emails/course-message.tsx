@@ -40,7 +40,7 @@ function CourseMessageEmailComponent({
   customerName = "Vážený zákazníku",
   courseTitle = "Kurz točení pro dospělé",
   courseDate = "sobota 12. 9. 2026 10:00",
-  courseLocation = "Ateliér u Písku",
+  courseLocation = "Ateliér v Putimi",
   message = "",
   reservationLink = "",
   canReply = false,
@@ -85,7 +85,7 @@ const mockCourseMessage: CourseMessageEmailProps = {
   customerName: "Jana Nováková",
   courseTitle: "Kurz točení pro dospělé",
   courseDate: "sobota 12. 9. 2026 10:00",
-  courseLocation: "Ateliér u Písku",
+  courseLocation: "Ateliér v Putimi",
   message:
     "Omlouvám se — zdržím se asi o 30 minut. Začneme tedy v 10:30.\nPokud můžete, přineste si prosím vlastní zástěru.",
   reservationLink:

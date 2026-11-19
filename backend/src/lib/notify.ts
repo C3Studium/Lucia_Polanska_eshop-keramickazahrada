@@ -74,6 +74,12 @@ export type MerchantNotificationInput = {
   /** Links the notification to an order/review/… in the notification table. */
   resource?: { id: string; type: string }
   /**
+   * Celá objednávka do e-mailu (19. 11. 2026, „Nová objednávka") — položky,
+   * doprava, adresa, platba, součty (lib/merchant-order-summary). Zvonek ho
+   * nenese, jen e-mail.
+   */
+  order?: Record<string, unknown> | null
+  /**
    * Jen pro samotné souhrny (4. 11. 2026). Vývojářské e-maily (`audience:
    * "dev"`) se jinak neposílají hned, ale řadí do fronty a chodí jedním
    * souhrnem za 4 hodiny (`lib/provozni-hlidka/fronta.ts`) — jednotlivé
@@ -178,6 +184,7 @@ export const buildEmailNotification = (
     ...(input.replyTo ? { reply_to: input.replyTo } : {}),
     ...(input.images?.length ? { images: input.images } : {}),
     ...(input.attachments?.length ? { __attachments: input.attachments } : {}),
+    ...(input.order ? { order: input.order } : {}),
     urgent: Boolean(input.urgent),
   },
   trigger_type: input.key.split(":")[1] ?? input.key,

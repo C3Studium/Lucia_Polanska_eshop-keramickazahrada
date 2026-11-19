@@ -76,7 +76,7 @@ describe("customer e-mail templates after the audit", () => {
       )
 
       expect(html).toContain("Putim 229")
-      expect(html).toContain("397 01 Písek")
+      expect(html).toContain("397 01 Putim")
       expect(html).toContain("Dobírka — zaplatíte při převzetí")
       expect(html).toContain(
         "https://keramickazahrada.cz/cz/order/order_01TEST/confirmed"
@@ -279,7 +279,7 @@ describe("customer e-mail templates after the audit", () => {
   describe("shared footer", () => {
     it("carries the seller identity and links to the legal documents", () => {
       const html = renderToStaticMarkup(orderPlacedEmail({ order: { id: "o", display_id: 1, currency_code: "czk", items: [] } as any }) as React.ReactElement)
-      expect(html).toContain("Prodávající: Lucie Polanská · Putim 229, 397 01 Písek · IČO 03441482")
+      expect(html).toContain("Prodávající: Lucie Polanská · Putim 229, 397 01 Putim · IČO 03441482")
       expect(html).toContain('href="https://keramickazahrada.cz/cz/smluvni-podminky"')
       expect(html).toContain('href="https://keramickazahrada.cz/cz/reklamacni-rad"')
       expect(html).toContain('href="https://keramickazahrada.cz/cz/ochrana-osobnich-udaju"')

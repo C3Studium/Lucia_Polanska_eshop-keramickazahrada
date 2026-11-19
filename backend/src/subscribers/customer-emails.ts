@@ -165,11 +165,11 @@ const TEXTS = {
     en: "Parcel sent to the studio address",
   },
   pickupLocation: {
-    cs: "Dílna Keramická zahrada, Písek",
-    sk: "Dielňa Keramická zahrada, Písek",
-    pl: "Pracownia Keramická zahrada, Písek",
-    de: "Werkstatt Keramická zahrada, Písek",
-    en: "Keramická zahrada studio, Písek",
+    cs: "Dílna Keramická zahrada, Putim",
+    sk: "Dielňa Keramická zahrada, Putim",
+    pl: "Pracownia Keramická zahrada, Putim",
+    de: "Werkstatt Keramická zahrada, Putim",
+    en: "Keramická zahrada studio, Putim",
   },
 } satisfies Record<string, Record<EmailLocale, string>>
 

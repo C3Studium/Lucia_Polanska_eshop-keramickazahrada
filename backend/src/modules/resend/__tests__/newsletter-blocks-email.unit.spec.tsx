@@ -86,7 +86,7 @@ describe("block-composed newsletter e-mail", () => {
   it("identifies the sender with name, sídlo and IČO", () => {
     const html = renderBlocksEmail()
     expect(html).toContain("Lucie Polanská")
-    expect(html).toContain("Putim 229, 397 01 Písek")
+    expect(html).toContain("Putim 229, 397 01 Putim")
     expect(html).toContain("IČO 03441482")
   })
 
@@ -187,7 +187,7 @@ describe("block-composed newsletter e-mail", () => {
 
     expect(html).toContain(UNSUBSCRIBE.replace("&", "&amp;"))
     expect(html).toContain("Lucie Polanská")
-    expect(html).toContain("Putim 229, 397 01 Písek")
+    expect(html).toContain("Putim 229, 397 01 Putim")
     expect(html).toContain("IČO 03441482")
   })
 })
@@ -457,7 +457,7 @@ describe("bundle announcement e-mail as a campaign", () => {
       "Tento e-mail dostáváte, protože jste se přihlásili k odběru novinek"
     )
     expect(html).toContain("Lucie Polanská")
-    expect(html).toContain("Putim 229, 397 01 Písek")
+    expect(html).toContain("Putim 229, 397 01 Putim")
     expect(html).toContain("IČO 03441482")
   })
 })

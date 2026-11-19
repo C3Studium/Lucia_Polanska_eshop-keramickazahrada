@@ -66,7 +66,7 @@ export const COPY: Localized<{
     arrange:
       "Termín vyzvednutí si prosím domluvíme — napište mi na info@keramickazahrada.cz nebo mi zavolejte. ",
     canWait: "Kdyby se vám to teď nehodilo, napište mi; objednávka u mě počká.",
-    defaultLocation: "Dílna Keramická zahrada, Písek",
+    defaultLocation: "Dílna Keramická zahrada, Putim",
   },
   sk: {
     preview: (n) => `Objednávka ${n} je zabalená a čaká na vás v dielni.`,
@@ -94,7 +94,7 @@ export const COPY: Localized<{
     arrange:
       "Termín vyzdvihnutia si, prosím, dohodneme — napíšte mi na info@keramickazahrada.cz alebo mi zavolajte. ",
     canWait: "Keby sa vám to teraz nehodilo, napíšte mi; objednávka u mňa počká.",
-    defaultLocation: "Dielňa Keramická zahrada, Písek",
+    defaultLocation: "Dielňa Keramická zahrada, Putim",
   },
   pl: {
     preview: (n) => `Zamówienie ${n} jest zapakowane i czeka na Państwa w pracowni.`,
@@ -122,7 +122,7 @@ export const COPY: Localized<{
     arrange:
       "Termin odbioru ustalimy indywidualnie — proszę napisać na info@keramickazahrada.cz albo zadzwonić. ",
     canWait: "Jeśli teraz Państwu nie pasuje, proszę dać znać; zamówienie u mnie poczeka.",
-    defaultLocation: "Pracownia Keramická zahrada, Písek",
+    defaultLocation: "Pracownia Keramická zahrada, Putim",
   },
   de: {
     preview: (n) => `Bestellung ${n} ist verpackt und wartet in der Werkstatt auf Sie.`,
@@ -150,7 +150,7 @@ export const COPY: Localized<{
     arrange:
       "Den Abholtermin vereinbaren wir gern individuell – schreiben Sie mir an info@keramickazahrada.cz oder rufen Sie mich an. ",
     canWait: "Wenn es Ihnen gerade nicht passt, sagen Sie mir Bescheid; die Bestellung wartet bei mir.",
-    defaultLocation: "Werkstatt Keramická zahrada, Písek",
+    defaultLocation: "Werkstatt Keramická zahrada, Putim",
   },
   en: {
     preview: (n) => `Order ${n} is packed and waiting for you at the studio.`,
@@ -178,7 +178,7 @@ export const COPY: Localized<{
     arrange:
       "Let's arrange a time for you to collect it — write to me at info@keramickazahrada.cz or give me a call. ",
     canWait: "If now isn't a good time, just let me know; your order can wait for you here.",
-    defaultLocation: "Keramická zahrada studio, Písek",
+    defaultLocation: "Keramická zahrada studio, Putim",
   },
 }
 
