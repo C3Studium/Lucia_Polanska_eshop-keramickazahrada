@@ -57,6 +57,19 @@ export const platneDic = (hodnota: string): boolean => {
   return /^CZ\d{8,10}$/.test(dic)
 }
 
+/**
+ * Firma ze zahraničí: registrační číslo má každá země jiné (SK IČO, DE
+ * Handelsregister…), takže jen „vyplněno a rozumně dlouhé". DIČ = evropské
+ * DIČ (VAT ID): dvě písmena země a 2–13 znaků.
+ */
+export const platneZahranicniIco = (hodnota: string): boolean =>
+  /^[0-9A-Z-]{2,20}$/i.test(jenCislice(hodnota))
+
+export const platneZahranicniDic = (hodnota: string): boolean => {
+  const dic = jenCislice(hodnota).toUpperCase()
+  return !dic || /^[A-Z]{2}[0-9A-Z]{2,13}$/.test(dic)
+}
+
 /** Tvar, ve kterém se obojí ukládá — bez mezer, DIČ velkými písmeny. */
 export const normalizujIco = (hodnota: string) => jenCislice(hodnota)
 export const normalizujDic = (hodnota: string) =>
@@ -73,6 +86,8 @@ export const zkontrolujFirmu = (vstup: {
   nazev?: string | null
   ico?: string | null
   dic?: string | null
+  /** Země doručení (kód ISO 2). Česká pravidla IČO/DIČ platí jen pro cz. */
+  zeme?: string | null
 }): string | null => {
   if (!vstup.nazev?.trim()) {
     return "Vyplňte prosím název firmy."
@@ -80,6 +95,17 @@ export const zkontrolujFirmu = (vstup: {
 
   if (!vstup.ico?.trim()) {
     return "Vyplňte prosím IČO."
+  }
+
+  const zeme = String(vstup.zeme ?? "cz").trim().toLowerCase() || "cz"
+  if (zeme !== "cz") {
+    if (!platneZahranicniIco(vstup.ico)) {
+      return "Registrační číslo firmy (IČO) vypadá neplatně — zkontrolujte prosím překlep."
+    }
+    if (!platneZahranicniDic(vstup.dic ?? "")) {
+      return "DIČ (VAT ID) začíná kódem země, například SK2020123456 nebo DE123456789."
+    }
+    return null
   }
 
   if (!platneIco(vstup.ico)) {

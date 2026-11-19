@@ -1456,7 +1456,12 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
     ).trim()
 
     if (naFirmu) {
-      const chyba = zkontrolujFirmu({ nazev: nazevFirmy, ico, dic })
+      const chyba = zkontrolujFirmu({
+        nazev: nazevFirmy,
+        ico,
+        dic,
+        zeme: (formData.get("shipping_address.country_code") as string) || null,
+      })
       if (chyba) {
         return chyba
       }

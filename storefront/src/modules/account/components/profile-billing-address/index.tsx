@@ -9,6 +9,7 @@ import AccountInfo from "../account-info"
 import { HttpTypes } from "@medusajs/types"
 import { addCustomerAddress, updateCustomerAddress } from "@lib/data/customer"
 import s from "./style.module.scss"
+import { countryEndonym } from "@lib/util/country-endonym"
 
 type MyInformationProps = {
   customer: HttpTypes.StoreCustomer
@@ -25,7 +26,7 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
         ?.map((region) => {
           return region.countries?.map((country) => ({
             value: country.iso_2,
-            label: country.display_name,
+            label: countryEndonym(country.iso_2, country.display_name),
           }))
         })
         .flat() || []

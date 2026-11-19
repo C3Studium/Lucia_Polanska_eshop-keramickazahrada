@@ -1,0 +1,320 @@
+import { Badge, Button, Text, toast } from "@medusajs/ui";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { sdk } from "../lib/sdk";
+import { ceskaChyba } from "../lib/ceska-chyba";
+
+/**
+ * Česká pošta – na adresu zahraničí (19. 11. 2026, docs/cp-kalkulacka/PLAN.md §9).
+ *
+ * Cena se počítá v pokladně z ceníku České pošty (kalkulačka postaonline.cz,
+ * stažená tabulka) podle země, služby a hmotnosti balíku:
+ * - mají-li hmotnost všechny výrobky v košíku, sečte se (+ obal),
+ * - jinak se vezme průměrná váha balíku odsud.
+ * Zákazník platí v eurech, převod kurzem ČNB každý den sám. Dobírka ani
+ * Balíkovna do zahraničí nejsou; balík se podává ručně na poště.
+ */
+
+type Quote = {
+  price_czk: number;
+  service: string | null;
+  up_to_kg: number | null;
+  fallback: boolean;
+  manual: boolean;
+  currency_code: string;
+  amount: number;
+};
+
+type Country = {
+  country_code: string;
+  currency_code: string;
+  region: string;
+  display_name: string;
+  enabled: boolean;
+  cp_ships: boolean;
+  override_czk: number | null;
+  quote: Quote | null;
+};
+
+type State = {
+  option_id: string | null;
+  rates_date: string | null;
+  fetched_at: string;
+  services: string[];
+  service: string;
+  parcel_weight_kg: number;
+  packaging_kg: number;
+  countries: Country[];
+};
+
+type CalcRow = { service: string; price_czk: number | null; up_to_kg: number | null; max_kg: number };
+
+const kc = (value: number) => `${new Intl.NumberFormat("cs-CZ").format(value)} Kč`;
+const money = (amount: number, currency: string) => {
+  try {
+    return new Intl.NumberFormat("cs-CZ", { style: "currency", currency: currency.toUpperCase() }).format(amount);
+  } catch {
+    return `${amount} ${currency.toUpperCase()}`;
+  }
+};
+const kg = (value: number) => `${String(value).replace(".", ",")} kg`;
+const cislo = (text: string) => Number(text.trim().replace(/\s/g, "").replace(",", "."));
+const kratce = (service: string) => service.replace(" do zahraničí", "").replace("Standardní balík - ", "Std. ");
+const datum = (iso: string) => {
+  try {
+    return new Date(iso).toLocaleDateString("cs-CZ");
+  } catch {
+    return iso;
+  }
+};
+
+const pole =
+  "bg-ui-bg-field txt-compact-small min-h-[32px] rounded-md border px-2 text-right tabular-nums";
+
+export const DopravaZahranici = () => {
+  const queryClient = useQueryClient();
+  const { data, isLoading } = useQuery<State>({
+    queryKey: ["international-shipping"],
+    queryFn: () => sdk.client.fetch("/admin/international-shipping"),
+  });
+
+  const [vaha, setVaha] = useState("");
+  const [obal, setObal] = useState("");
+  const [sluzba, setSluzba] = useState("");
+  const [zapnuto, setZapnuto] = useState<Record<string, boolean>>({});
+  const [vlastni, setVlastni] = useState<Record<string, string>>({});
+  const reset = (state: State) => {
+    setVaha(String(state.parcel_weight_kg).replace(".", ","));
+    setObal(String(state.packaging_kg).replace(".", ","));
+    setSluzba(state.service);
+    setZapnuto(Object.fromEntries(state.countries.map((c) => [c.country_code, c.enabled])));
+    setVlastni(Object.fromEntries(state.countries.map((c) => [c.country_code, c.override_czk ? String(c.override_czk) : ""])));
+  };
+  useEffect(() => {
+    if (data) reset(data);
+  }, [data]);
+
+  const vahaSpatne = !(cislo(vaha) > 0 && cislo(vaha) <= 30);
+  const obalSpatne = obal.trim() !== "" && !(cislo(obal) >= 0 && cislo(obal) <= 10);
+  const vlastniSpatne = Object.values(vlastni).some((v) => v.trim() !== "" && !(cislo(v) > 0 && cislo(v) <= 20000));
+  const zmeneno =
+    !!data &&
+    (cislo(vaha) !== data.parcel_weight_kg ||
+      (cislo(obal) || 0) !== data.packaging_kg ||
+      sluzba !== data.service ||
+      !data.option_id ||
+      data.countries.some(
+        (c) =>
+          Boolean(zapnuto[c.country_code]) !== c.enabled ||
+          (vlastni[c.country_code] ?? "").trim() !== (c.override_czk ? String(c.override_czk) : "")
+      ));
+
+  const ulozit = useMutation({
+    mutationFn: () =>
+      sdk.client.fetch<State>("/admin/international-shipping", {
+        method: "POST",
+        body: {
+          service: sluzba,
+          parcel_weight_kg: cislo(vaha),
+          packaging_kg: cislo(obal) || 0,
+          countries: Object.entries(zapnuto).filter(([, on]) => on).map(([code]) => code),
+          overrides_czk: Object.fromEntries(
+            Object.entries(vlastni).filter(([, v]) => v.trim() !== "").map(([code, v]) => [code, cislo(v)])
+          ),
+        },
+      }),
+    onSuccess: (next) => {
+      queryClient.setQueryData(["international-shipping"], next);
+      toast.success("Doprava do zahraničí uložena.");
+    },
+    onError: (error) => toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
+  });
+
+  /* Malá kalkulačka — jako na postaonline.cz, z téhož ceníku. */
+  const [kZeme, setKZeme] = useState("de");
+  const [kVaha, setKVaha] = useState("2");
+  const kVahaOk = cislo(kVaha) > 0 && cislo(kVaha) <= 30;
+  const kalkulacka = useQuery<{ name: string; kg: number; quotes: CalcRow[] }>({
+    queryKey: ["international-calc", kZeme, kVaha],
+    queryFn: () => sdk.client.fetch(`/admin/international-shipping?zeme=${kZeme}&kg=${cislo(kVaha)}`),
+    enabled: kVahaOk && /^[a-z]{2}$/.test(kZeme),
+  });
+
+  if (isLoading || !data) {
+    return (
+      <section className="px-6 py-5">
+        <Text size="small" className="text-ui-fg-subtle">Načítám dopravu do zahraničí…</Text>
+      </section>
+    );
+  }
+
+  return (
+    <section className="flex flex-col gap-y-4 px-6 py-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="max-w-2xl">
+          <div className="flex items-center gap-2">
+            <Text size="small" weight="plus">Česká pošta – na adresu zahraničí</Text>
+            {data.option_id ? (
+              <Badge size="2xsmall" color="green">Zapnuto</Badge>
+            ) : (
+              <Badge size="2xsmall" color="orange">Ještě neuloženo — zákazníci ze zahraničí zatím nemají dopravu</Badge>
+            )}
+          </div>
+          <Text size="xsmall" className="text-ui-fg-subtle mt-0.5">
+            Cenu počítá pokladna z ceníku České pošty podle země a hmotnosti balíku. Mají-li hmotnost všechny
+            výrobky v košíku, sečte se (+ obal). Jinak se použije průměrná váha balíku níž. Zákazník platí
+            v eurech podle kurzu ČNB. Dobírka ani Balíkovna do zahraničí nejsou, balík se podává na poště.
+          </Text>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className="flex flex-col gap-1">
+          <Text size="xsmall" weight="plus">Průměrná váha balíku</Text>
+          <span className="flex items-center gap-1">
+            <input aria-label="Průměrná váha balíku v kg" inputMode="decimal" value={vaha} onChange={(e) => setVaha(e.target.value)}
+              className={`${pole} w-20 ${vahaSpatne ? "border-ui-border-error" : "border-ui-border-base"}`} />
+            <Text size="small" className="text-ui-fg-muted">kg</Text>
+          </span>
+          <Text size="xsmall" className="text-ui-fg-subtle">Když některý výrobek v košíku nemá vyplněnou hmotnost.</Text>
+        </label>
+        <label className="flex flex-col gap-1">
+          <Text size="xsmall" weight="plus">Obal (krabice a výplň)</Text>
+          <span className="flex items-center gap-1">
+            <input aria-label="Obal v kg" inputMode="decimal" value={obal} onChange={(e) => setObal(e.target.value)}
+              className={`${pole} w-20 ${obalSpatne ? "border-ui-border-error" : "border-ui-border-base"}`} />
+            <Text size="small" className="text-ui-fg-muted">kg</Text>
+          </span>
+          <Text size="xsmall" className="text-ui-fg-subtle">Přičte se k sečteným výrobkům. 0 = jen výrobky.</Text>
+        </label>
+        <label className="flex flex-col gap-1">
+          <Text size="xsmall" weight="plus">Služba České pošty</Text>
+          <select aria-label="Služba České pošty" value={sluzba} onChange={(e) => setSluzba(e.target.value)}
+            className="bg-ui-bg-field txt-compact-small min-h-[32px] rounded-md border border-ui-border-base px-2">
+            {data.services.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          <Text size="xsmall" className="text-ui-fg-subtle">Kam zvolená nejede, použije se náhradní (vidět u země).</Text>
+        </label>
+      </div>
+
+      <div className="overflow-x-auto rounded-lg shadow-borders-base">
+        <table className="w-full min-w-[640px] text-left">
+          <thead className="bg-ui-bg-subtle">
+            <tr className="txt-compact-xsmall-plus text-ui-fg-subtle">
+              <th className="px-3 py-2">Posílat</th>
+              <th className="px-3 py-2">Země</th>
+              <th className="px-3 py-2">Ceník ČP pro {kg(data.parcel_weight_kg)}</th>
+              <th className="px-3 py-2">Vlastní cena</th>
+              <th className="px-3 py-2 text-right">Zákazník platí</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {data.countries.map((c) => {
+              const q = c.quote;
+              return (
+                <tr key={c.country_code} className="txt-compact-small">
+                  <td className="px-3 py-2">
+                    <input type="checkbox" aria-label={`Posílat do ${c.display_name}`} checked={Boolean(zapnuto[c.country_code])}
+                      disabled={!c.cp_ships && !(vlastni[c.country_code] ?? "").trim()}
+                      onChange={(e) => setZapnuto((prev) => ({ ...prev, [c.country_code]: e.target.checked }))} />
+                  </td>
+                  <td className="px-3 py-2">
+                    {c.display_name} <span className="text-ui-fg-muted">{c.country_code.toUpperCase()}</span>
+                    {c.country_code === "gb" && (
+                      <Text size="xsmall" className="text-ui-fg-subtle">Mimo EU — potřebuje celní prohlášení.</Text>
+                    )}
+                  </td>
+                  <td className="px-3 py-2">
+                    {!c.cp_ships ? (
+                      <span className="text-ui-fg-muted">ČP sem balík nevozí</span>
+                    ) : q && !q.manual ? (
+                      <span>
+                        {kc(q.price_czk)}{" "}
+                        <span className="text-ui-fg-muted">
+                          · do {kg(q.up_to_kg ?? 0)}
+                          {q.fallback && q.service ? ` · ${kratce(q.service)}` : ""}
+                        </span>
+                      </span>
+                    ) : q?.manual ? (
+                      <span className="text-ui-fg-muted">— vlastní cena —</span>
+                    ) : (
+                      <span className="text-ui-fg-muted">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="flex items-center gap-1">
+                      <input aria-label={`Vlastní cena — ${c.display_name}`} inputMode="numeric" placeholder="z ceníku"
+                        value={vlastni[c.country_code] ?? ""} onChange={(e) => setVlastni((prev) => ({ ...prev, [c.country_code]: e.target.value }))}
+                        className={`${pole} w-24 border-ui-border-base`} />
+                      <Text size="small" className="text-ui-fg-muted">Kč</Text>
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {q && c.enabled ? money(q.amount, q.currency_code) : <span className="text-ui-fg-muted">—</span>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Text size="xsmall" className="text-ui-fg-subtle">
+          Ceník ČP ze dne {datum(data.fetched_at)} (obnovuje se skriptem po změně ceníku, typicky k 1. 1.)
+          {data.rates_date ? ` · kurz ČNB z ${data.rates_date}` : ""}
+        </Text>
+        <div className="flex items-center gap-2">
+          {zmeneno && data.option_id && (
+            <Button size="small" variant="secondary" disabled={ulozit.isPending} onClick={() => reset(data)}>
+              Zrušit vše
+            </Button>
+          )}
+          <Button size="small" disabled={!zmeneno || vahaSpatne || obalSpatne || vlastniSpatne} isLoading={ulozit.isPending} onClick={() => ulozit.mutate()}>
+            {data.option_id ? "Uložit vše" : "Uložit a zapnout dopravu do zahraničí"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Malá kalkulačka */}
+      <div className="bg-ui-bg-subtle flex flex-col gap-3 rounded-lg p-3">
+        <Text size="small" weight="plus">Kalkulačka České pošty</Text>
+        <div className="flex flex-wrap items-center gap-2">
+          <select aria-label="Země pro kalkulačku" value={kZeme} onChange={(e) => setKZeme(e.target.value)}
+            className="bg-ui-bg-field txt-compact-small min-h-[32px] rounded-md border border-ui-border-base px-2">
+            {data.countries.map((c) => (
+              <option key={c.country_code} value={c.country_code}>{c.display_name}</option>
+            ))}
+          </select>
+          <span className="flex items-center gap-1">
+            <input aria-label="Váha pro kalkulačku v kg" inputMode="decimal" value={kVaha} onChange={(e) => setKVaha(e.target.value)}
+              className={`${pole} w-20 ${kVahaOk ? "border-ui-border-base" : "border-ui-border-error"}`} />
+            <Text size="small" className="text-ui-fg-muted">kg</Text>
+          </span>
+        </div>
+        {kalkulacka.data && (
+          <div className="flex flex-col divide-y rounded-md bg-ui-bg-base shadow-borders-base">
+            {kalkulacka.data.quotes.map((row) => (
+              <div key={row.service} className="flex items-center justify-between gap-3 px-3 py-2">
+                <Text size="small" className={row.service === sluzba ? "font-medium" : ""}>{row.service}</Text>
+                <Text size="small" className="tabular-nums">
+                  {row.price_czk !== null ? (
+                    <>
+                      {kc(row.price_czk)} <span className="text-ui-fg-muted">· do {kg(row.up_to_kg ?? 0)}</span>
+                    </>
+                  ) : row.max_kg ? (
+                    <span className="text-ui-fg-muted">jen do {kg(row.max_kg)}</span>
+                  ) : (
+                    <span className="text-ui-fg-muted">nejede</span>
+                  )}
+                </Text>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};

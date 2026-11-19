@@ -1,5 +1,6 @@
 "use client"
 
+import { useParams } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { useEffect, useRef, useState } from "react"
 import type { ShopCategory, ShopFilters } from "../../types"
@@ -32,8 +33,23 @@ type FilterPanelProps = {
 /* Cena jako rozsah: slider i dvojice inputů píší do téhož `min`/`max` stavu,
    takže se hýbou spolu. Do filtrů odchází string, který umí žít v URL:
    "min-max", "min+" (bez horní meze), "" (bez filtru). */
-const PRICE_CEIL = 5000
-const PRICE_STEP = 50
+/* Strop a krok podle měny obchodu: filtr porovnává cenu v měně regionu
+   (euro, zlotý), takže korunových 5 000 po 50 by v eurech nedávalo smysl. */
+const PRICE_SCALE: Record<string, { ceil: number; step: number; unit: string }> = {
+  czk: { ceil: 5000, step: 50, unit: "Kč" },
+  eur: { ceil: 200, step: 5, unit: "€" },
+  pln: { ceil: 1000, step: 20, unit: "zł" },
+}
+/* Měna podle země v adrese — stejné rozdělení jako regiony obchodu. */
+export const priceScaleFor = (countryCode?: string | null) =>
+  PRICE_SCALE[currencyForCountry(countryCode)] ?? PRICE_SCALE.czk
+
+const currencyForCountry = (countryCode?: string | null) => {
+  const code = String(countryCode ?? "cz").toLowerCase()
+  if (code === "cz") return "czk"
+  if (code === "pl") return "pln"
+  return "eur"
+}
 
 const parsePriceValue = (value: string): { min: number; max: number | null } => {
   const open = value.match(/^(\d+)\+$/)
@@ -283,6 +299,9 @@ function FilterButton({ active, label, onClick }: { active: boolean; label: stri
  * s krátkým odstupem, aby tažení palce nespouštělo dotaz na každý pixel.
  */
 function PriceFilter({ value, onChange }: { value: string; onChange: (next: string) => void }) {
+  const { countryCode } = useParams<{ countryCode?: string }>() ?? {}
+  const { ceil: PRICE_CEIL, step: PRICE_STEP, unit: priceUnit } =
+    PRICE_SCALE[currencyForCountry(countryCode)] ?? PRICE_SCALE.czk
   const parsed = parsePriceValue(value)
   const [min, setMin] = useState(parsed.min)
   const [max, setMax] = useState<number | null>(parsed.max)
@@ -365,7 +384,7 @@ function PriceFilter({ value, onChange }: { value: string; onChange: (next: stri
             }}
           />
         </label>
-        <span className={styles.priceUnit}>Kč</span>
+        <span className={styles.priceUnit}>{priceUnit}</span>
       </div>
     </div>
   )

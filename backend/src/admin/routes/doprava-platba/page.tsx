@@ -15,6 +15,7 @@ import { ceskaChyba } from "../../lib/ceska-chyba";
 import { SaveBar } from "../../components/save-bar";
 import { movedTo } from "../../components/section-tabs";
 import { NavodTip } from "../../components/navod-tip";
+import { DopravaZahranici } from "../../components/doprava-zahranici";
 
 /**
  * Doprava a platba — ceny dopravy a doběrečné na jednom místě (Matěj,
@@ -52,6 +53,7 @@ type ShippingOption = {
   id: string;
   name: string;
   price_type: "flat" | "calculated";
+  data?: Record<string, unknown> | null;
   prices?: ShippingPrice[];
 };
 
@@ -183,7 +185,7 @@ const Inner = () => {
     queryKey: ["shipping-prices"],
     queryFn: () =>
       sdk.client.fetch(
-        "/admin/shipping-options?fields=id,name,price_type,*prices,*prices.price_rules&limit=50"
+        "/admin/shipping-options?fields=id,name,price_type,data,*prices,*prices.price_rules&limit=50"
       ),
   });
   const { data: ratesData } = useQuery<{ rates: RatesTable; setup_done?: boolean }>({
@@ -396,6 +398,8 @@ const Inner = () => {
           <Text size="small" className="text-ui-fg-muted">Žádné volby dopravy.</Text>
         )}
       </section>
+
+      <DopravaZahranici />
 
       <section className="flex flex-col gap-y-4 px-6 py-5">
         <div className="flex flex-wrap items-center justify-between gap-3">

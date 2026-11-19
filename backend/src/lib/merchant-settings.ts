@@ -145,6 +145,17 @@ const KEY_SCHEMAS = {
   low_stock_default_threshold: z.number().int().min(0).max(10_000),
   /** Used when a product has no weight of its own (D2). */
   default_parcel_weight_kg: z.number().positive().max(50),
+  /**
+   * Doprava do zahraničí (19. 11. 2026): průměrná hmotnost odeslaného balíku
+   * i s krabicí (kg). Použije se, když některý výrobek v košíku nemá
+   * hmotnost; jinak se hmotnost sečte z výrobků (lib/international-shipping-price).
+   * Strop 30 kg = nejvyšší váha, kterou ČP do zahraničí bere.
+   */
+  international_parcel_weight_kg: z.number().positive().max(30),
+  /** Krabice a výplň (kg) — přičte se k hmotnosti sečtené z výrobků. 0 = nepřičítat. */
+  international_packaging_kg: z.number().min(0).max(10),
+  /** Služba ČP do zahraničí — název produktu, jak ho vrací kalkulačka ČP. */
+  international_cp_service: z.string().min(1).max(80),
   /** Days after the parcel was received before the review request is sent (§12, sledovani-zasilek.md §6). */
   review_request_days: z.number().int().min(1).max(365),
   /** „Výroba začala" customer e-mail — default off on purpose (§16 #7). */
@@ -363,6 +374,11 @@ export const MERCHANT_SETTINGS_DEFAULTS: MerchantSettings = {
   dobirka_fee_czk: 39,
   low_stock_default_threshold: 3,
   default_parcel_weight_kg: 2.5,
+  /* Než majitelka změří své balíky: keramika s výplní a krabicí váží 2–3 kg. */
+  international_parcel_weight_kg: 3,
+  international_cp_service: "Standardní balík do zahraničí - prioritní",
+  /* Matěj 19. 11.: při vyplněných hmotnostech platí součet výrobků — obal 0, dá se nastavit. */
+  international_packaging_kg: 0,
   /* Týden od PŘEVZETÍ (sledování zásilek ČP zná den doručení), ne od
      odeslání — proto 7, dřív 10 „ať balík stihne dojít". Viz
      docs/sledovani-zasilek.md §6. */

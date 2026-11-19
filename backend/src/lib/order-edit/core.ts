@@ -872,7 +872,9 @@ export const runCustomerEdit = async (
           data: {
             method: "ALL",
             email: order.email,
-            country_code: "CZ",
+            country_code: String(
+              (order as any).shipping_address?.country_code ?? "cz"
+            ).toUpperCase(),
             label: `Obj. ${order.display_id}`.slice(0, 16),
             name: `Doplatek úpravy objednávky ${order.display_id}`,
             // Brána v jazyce objednávky (lib/email-locale) — prohlížeč ji nepřeloží.

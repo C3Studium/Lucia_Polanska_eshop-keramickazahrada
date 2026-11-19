@@ -1,3 +1,4 @@
+import { isInternationalShippingOption } from "@lib/util/international-shipping"
 /**
  * Zakázková výroba — commissioned pieces, and the rules that follow them through checkout.
  *
@@ -162,10 +163,13 @@ export const isFragileCarriage = (option: { name?: string | null } | null | unde
  * Česká pošta, Balíkovna na adresu a osobní odběr.
  */
 export const deliveryAllowsCommission = (
-  option: { name?: string | null } | null | undefined,
+  option: { name?: string | null; data?: Record<string, unknown> | null } | null | undefined,
   isPickup: boolean
 ) => {
   if (isPickup) return true
+  // Do zahraničí je jen tahle jedna volba — křehké kusy i zakázky jdou s ní
+  // (balí je majitelka sama, cena je z ceníku ČP po zemích).
+  if (isInternationalShippingOption(option)) return true
   const name = fold(option?.name ?? "")
   if (name.includes("krehke")) return true
   return !(name.includes("balikovna") && !name.includes("adres"))

@@ -1,6 +1,7 @@
 "use client"
 
 import { editable } from "@c3studium/valecms/edit"
+import { useParams } from "next/navigation"
 import { listStoreCatalogue } from "@lib/data/products"
 import { jeObnoveniStranky, prisliJsmeZpet } from "@lib/helpers/navigace-zpet"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
@@ -13,7 +14,7 @@ import {
   peekShopSnapshot,
   saveShopSnapshot,
 } from "./restore"
-import FilterPanel from "./components/FilterPanel"
+import FilterPanel, { priceScaleFor } from "./components/FilterPanel"
 import ProductGrid from "./components/ProductGrid"
 // import ShopHero from "./components/ShopHero"
 import ShopToolbar from "./components/ShopToolbar"
@@ -109,11 +110,15 @@ const kindLabels: Record<string, string> = {
   madeToOrder: "Zakázky",
 }
 
-const priceLabels: Record<string, string> = {
-  "0-500": "Do 500 Kč",
-  "500-1000": "500–1 000 Kč",
-  "1000-2500": "1 000–2 500 Kč",
-  "2500+": "Nad 2 500 Kč",
+/** Štítek aktivního cenového filtru („100–300 €", „Nad 2 500 Kč") v měně obchodu. */
+const priceChipLabel = (range: string, countryCode?: string | null) => {
+  const { unit } = priceScaleFor(countryCode)
+  const n = (value: string) => Number(value).toLocaleString("cs-CZ")
+  const open = range.match(/^(\d+)\+$/)
+  if (open) return `Nad ${n(open[1])} ${unit}`
+  const pair = range.match(/^(\d+)-(\d+)$/)
+  if (pair) return Number(pair[1]) <= 0 ? `Do ${n(pair[2])} ${unit}` : `${n(pair[1])}–${n(pair[2])} ${unit}`
+  return "Cena"
 }
 
 /**
@@ -142,6 +147,7 @@ export default function ECom({
   block,
   texts,
 }: EComProps) {
+  const routeParams = useParams<{ countryCode?: string }>()
   /* Úvod katalogu se po zapnutí editace sám nepřekreslí, dokud se nic
      nenačítá — bez tohohle by anotace zůstaly prázdné. Viz hook. */
   useEditRerender()
@@ -585,7 +591,7 @@ export default function ECom({
     if (filters.priceRange)
       chips.push({
         id: "price",
-        label: priceLabels[filters.priceRange],
+        label: priceChipLabel(filters.priceRange, routeParams?.countryCode),
         onRemove: () => updateFilters({ priceRange: "" }),
       })
     if (filters.isNew)
@@ -616,6 +622,7 @@ export default function ECom({
     filters.kind,
     filters.priceRange,
     initialFilterLabel,
+    routeParams?.countryCode,
     updateFilters,
   ])
 

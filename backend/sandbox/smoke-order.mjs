@@ -3,7 +3,9 @@
 // pak výpis order.metadata a zachycených e-mailů.
 //
 //   node smoke-order.mjs [--product=regular|made_to_order|voucher_fixed|voucher_custom]
-//                        [--shipping=pickup|cz_address|cz_fragile|cz_balikovna|sk_address|sk_fragile]
+//                        [--shipping=pickup|cz_address|cz_fragile|cz_balikovna|sk_address|sk_fragile|international]
+//                        (international = Česká pošta na adresu zahraničí; nastavení uloží přes admin,
+//                         cena z ceníku ČP podle hmotnosti, --intl-weight-kg=3 = průměrná váha)
 //                        [--provider=pickup|system|comgate|dobirka] [--country=cz|sk]
 //                        [--email=zakaznik@sandbox.test] [--voucher-amount=1500]
 //                        [--voucher-kind=electronic|physical]  (poukaz z obchodu; electronic = bez dopravy)
@@ -137,11 +139,31 @@ async function main() {
 
   // 4) Doprava
   if (shippingKey !== "none") {
+  if (shippingKey === "international") {
+    // Ceník do zahraničí jako z administrace (Doprava a platba) — založí volbu i zónu.
+    const admin = await adminApi()
+    const saved = await admin.post("/admin/international-shipping", {
+      countries: [country],
+      service: "Standardní balík do zahraničí - prioritní",
+      parcel_weight_kg: Number(arg("intl-weight-kg", "3")),
+      packaging_kg: 0,
+      overrides_czk: {},
+    })
+    const row = saved.countries.find((c) => c.country_code === country)
+    log(`doprava do zahraničí: ${country} průměr ${saved.parcel_weight_kg} kg → ${row?.quote?.price_czk} Kč = ${row?.quote?.amount} ${row?.quote?.currency_code} (kurz ${saved.rates_date})`)
+  }
   const { shipping_options } = await store.get(
     `/store/shipping-options?cart_id=${cartId}&fields=+service_zone.fulfillment_set.type`
   )
   const wantedId = state.shipping_options[shippingKey]
-  const option = shipping_options.find((o) => o.id === wantedId)
+  const option =
+    shippingKey === "international"
+      ? shipping_options.find((o) => o.data?.international === true)
+      : shipping_options.find((o) => o.id === wantedId)
+  if (option && option.price_type === "calculated") {
+    const { shipping_option: priced } = await store.post(`/store/shipping-options/${option.id}/calculate`, { cart_id: cartId, data: {} })
+    log(`vypočtená cena dopravy: ${priced.calculated_price?.calculated_amount ?? priced.amount}`)
+  }
   if (!option) {
     throw new Error(
       `Doprava ${shippingKey} (${wantedId}) není pro košík k dispozici. Nabídka: ${shipping_options.map((o) => o.name).join(", ")}`

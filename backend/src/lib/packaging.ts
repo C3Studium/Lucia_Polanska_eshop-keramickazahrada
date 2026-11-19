@@ -332,6 +332,9 @@ const CART_FIELDS = [
   "items.product.title",
   "items.product.metadata",
   "items.product.id",
+  // Hmotnost pro dopravu do zahraničí (razítko ship_weight_g, 19. 11. 2026).
+  "items.product.weight",
+  "items.variant.weight",
   // Poukaz v košíku rozhoduje o tom, jestli smí akce na balné — viz
   // `cartHasVoucherPromotion`.
   "promotions.code",
@@ -382,7 +385,9 @@ const noPromoFlipsFor = (
 
 /**
  * Razítka zásilky na řádcích výrobků (16. 11. 2026): `ship_class`
- * (male/velke/poukaz) a `ship_fragile`. Cenu dopravy počítá poskytovatel,
+ * (male/velke/poukaz) a `ship_fragile`; od 19. 11. i `ship_weight_g` —
+ * hmotnost kusu v gramech (`product.weight` z Produkty+, jinak varianta,
+ * `null` = neznámá) pro cenu České pošty do zahraničí. Cenu dopravy počítá poskytovatel,
  * který do produktů nevidí — čte jen řádky košíku (lib/shipping-rates).
  * Vrací jen řádky, kde razítko chybí nebo nesedí; metadata celá (sloučená),
  * ať se nic jiného na řádku neztratí.
@@ -395,8 +400,18 @@ const shipStampsFor = (items: any[]): { id: string; metadata: Record<string, unk
       const shipClass = shippingClassOf(productMeta)
       const fragile = productMeta.fragile === true || productMeta.fragile === "true"
       const meta = (item.metadata ?? {}) as Record<string, unknown>
-      if (meta.ship_class === shipClass && meta.ship_fragile === fragile) return null
-      return { id: String(item.id), metadata: { ...meta, ship_class: shipClass, ship_fragile: fragile } }
+      const grams = Number(item.product?.weight ?? item.variant?.weight ?? 0)
+      const weight = Number.isFinite(grams) && grams > 0 ? Math.round(grams) : null
+      if (
+        meta.ship_class === shipClass &&
+        meta.ship_fragile === fragile &&
+        (meta.ship_weight_g ?? null) === weight
+      )
+        return null
+      return {
+        id: String(item.id),
+        metadata: { ...meta, ship_class: shipClass, ship_fragile: fragile, ship_weight_g: weight },
+      }
     })
     .filter((entry) => entry !== null) as { id: string; metadata: Record<string, unknown> }[]
 

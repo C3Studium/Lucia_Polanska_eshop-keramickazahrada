@@ -389,6 +389,17 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     )
   }
 
+  const international = (order.shipping_methods ?? []).some((method: any) => {
+    const data = method?.data ?? {}
+    return data.international === true || data.service_code === "INT"
+  })
+  if (international) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "Balík do zahraničí se podává ručně na poště — štítek se odsud nevytváří. Po podání potvrďte předání dopravci."
+    )
+  }
+
   // Jen zásilky České pošty (Balíkovna / Do ruky). Jiní dopravci sem nepatří —
   // štítek by se tím stejně nevygeneroval.
   const viaCp = (order.shipping_methods ?? []).some((method: any) => {
