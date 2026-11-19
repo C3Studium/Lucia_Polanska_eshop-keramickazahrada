@@ -2,6 +2,7 @@ import { XMark } from "@medusajs/icons";
 import { Badge, Select, Text, toast } from "@medusajs/ui";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { SketchAdd, SketchMove } from "./sketches";
 
 /**
  * Zařazení výrobku — kolekce a kategorie (19. 11. 2026, Matěj: „přidat do
@@ -616,25 +617,39 @@ export const BulkSortPanel = ({
 
       <section>
         {step(2, "Co udělat")}
+        {/* Náčrtek nad každou volbou (19. 11. 2026, Matěj): z textu samotného
+            nebylo jasné, jestli výrobek z dosavadního místa zmizí. */}
         <div className="grid grid-cols-2 gap-2">
           {(
             [
-              ["move", "Přesunout sem", "Budou jen v kolekci a kategoriích, které vyberete."],
-              ["add", "Přidat i sem", "Zůstanou, kde jsou, a přibudou i sem."],
+              [
+                "move",
+                "Přesunout sem",
+                "Z dosavadních kolekcí a kategorií zmizí. V obchodě budou jen tam, kam teď vyberete.",
+                SketchMove,
+              ],
+              [
+                "add",
+                "Přidat i sem",
+                "Kde jsou teď, tam zůstanou — a navíc se ukážou i tady. V obchodě budou na obou místech.",
+                SketchAdd,
+              ],
             ] as const
-          ).map(([key, label, hint]) => (
+          ).map(([key, label, hint, Sketch]) => (
             <button
               key={key}
               type="button"
               aria-pressed={mode === key}
               onClick={() => pickMode(key)}
-              className={`flex min-h-[64px] flex-col items-start rounded-lg border px-3 py-2 text-left ${
+              className={`flex min-h-[64px] flex-col items-start gap-1 rounded-lg border px-3 py-2.5 text-left ${
                 mode === key
                   ? "border-ui-border-interactive bg-ui-bg-base-pressed"
                   : "border-ui-border-base hover:bg-ui-bg-base-hover"
               }`}
             >
+              <Sketch className="mb-1 max-w-full" />
               <Text size="small" weight="plus">
+                {mode === key ? "✓ " : ""}
                 {label}
               </Text>
               <Text size="xsmall" className="text-ui-fg-subtle">

@@ -207,7 +207,8 @@ const StavBadge = ({
       V obchodě
     </Badge>
   ) : (
-    <Badge size={size} color="grey" title="Zákazníci ho v obchodě nevidí. Zobrazíte ho pod „…“.">
+    /* Oranžově (19. 11. 2026) — šedé „Skryto" splývalo s archivem. */
+    <Badge size={size} color="orange" title="Zákazníci ho v obchodě nevidí. Zobrazíte ho pod „…“.">
       Skryto
     </Badge>
   );

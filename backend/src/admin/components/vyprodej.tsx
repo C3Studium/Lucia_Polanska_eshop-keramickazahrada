@@ -16,6 +16,7 @@ import { sdk } from "../lib/sdk";
 import { formatCzk } from "../lib/workbench";
 import { ConfirmDialog } from "./confirm-dialog";
 import { InspectorRow } from "./product-inspector";
+import { SketchTimed, SketchUntilSold } from "./sketches";
 import {
   endOfDay,
   QUICK,
@@ -65,11 +66,20 @@ export type VyprodejRowData = {
 };
 
 export const VYPRODEJ_TYPE: Record<VyprodejType, { label: string; hint: string }> = {
-  time: { label: "Na čas", hint: "Platí od–do, pak se ceny vrátí." },
+  time: {
+    label: "Na čas",
+    hint: "Sleva platí od jednoho dne do druhého. Potom se ceny samy vrátí na původní.",
+  },
   stock: {
     label: "Do vyprodání zásob",
-    hint: "Jen kusy skladem. Prodaný kus ze slevy vypadne, po vyprodání výprodej skončí.",
+    hint: "Zlevní se jen kusy, které jsou skladem. Prodaný kus ze slevy vypadne; když se prodá poslední, výprodej sám skončí.",
   },
+};
+
+/** Náčrtek k typu výprodeje (průvodce, krok 1). */
+export const VYPRODEJ_SKETCH: Record<VyprodejType, typeof SketchTimed> = {
+  time: SketchTimed,
+  stock: SketchUntilSold,
 };
 
 export const vyprodejScope = (row: Pick<VyprodejRowData, "collections" | "categories" | "products">) =>
@@ -393,26 +403,33 @@ export const VyprodejWizard = ({
         <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto px-6 py-4">
           {step === 0 && (
             <div className="flex flex-col gap-2">
-              {(Object.keys(VYPRODEJ_TYPE) as VyprodejType[]).map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  aria-pressed={type === key}
-                  onClick={() => setType(key)}
-                  className={`flex min-h-[64px] flex-col items-start rounded-lg border px-4 py-3 text-left ${
-                    type === key
-                      ? "border-ui-border-interactive bg-ui-bg-base-pressed"
-                      : "border-ui-border-base hover:bg-ui-bg-base-hover"
-                  }`}
-                >
-                  <Text size="small" weight="plus">
-                    {VYPRODEJ_TYPE[key].label}
-                  </Text>
-                  <Text size="xsmall" className="text-ui-fg-subtle">
-                    {VYPRODEJ_TYPE[key].hint}
-                  </Text>
-                </button>
-              ))}
+              {(Object.keys(VYPRODEJ_TYPE) as VyprodejType[]).map((key) => {
+                const Sketch = VYPRODEJ_SKETCH[key];
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={type === key}
+                    onClick={() => setType(key)}
+                    className={`flex min-h-[64px] items-center gap-4 rounded-lg border px-4 py-3 text-left ${
+                      type === key
+                        ? "border-ui-border-interactive bg-ui-bg-base-pressed"
+                        : "border-ui-border-base hover:bg-ui-bg-base-hover"
+                    }`}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <Text size="small" weight="plus">
+                        {type === key ? "✓ " : ""}
+                        {VYPRODEJ_TYPE[key].label}
+                      </Text>
+                      <Text size="xsmall" className="text-ui-fg-subtle">
+                        {VYPRODEJ_TYPE[key].hint}
+                      </Text>
+                    </span>
+                    <Sketch className="hidden shrink-0 sm:block" />
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -870,26 +887,33 @@ const OwnVyprodejDialog = ({
               Jak dlouho
             </Text>
             <div className="grid grid-cols-2 gap-2">
-              {(["stock", "time"] as VyprodejType[]).map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  aria-pressed={type === key}
-                  onClick={() => setType(key)}
-                  className={`flex min-h-[56px] flex-col items-start rounded-lg border px-3 py-2 text-left ${
-                    type === key
-                      ? "border-ui-border-interactive bg-ui-bg-base-pressed"
-                      : "border-ui-border-base hover:bg-ui-bg-base-hover"
-                  }`}
-                >
-                  <Text size="small" weight="plus">
-                    {VYPRODEJ_TYPE[key].label}
-                  </Text>
-                  <Text size="xsmall" className="text-ui-fg-subtle">
-                    {key === "stock" ? "Skončí, až se kusy prodají." : "Od–do, pak plná cena."}
-                  </Text>
-                </button>
-              ))}
+              {(["stock", "time"] as VyprodejType[]).map((key) => {
+                const Sketch = VYPRODEJ_SKETCH[key];
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={type === key}
+                    onClick={() => setType(key)}
+                    className={`flex min-h-[56px] flex-col items-start gap-1 rounded-lg border px-3 py-2.5 text-left ${
+                      type === key
+                        ? "border-ui-border-interactive bg-ui-bg-base-pressed"
+                        : "border-ui-border-base hover:bg-ui-bg-base-hover"
+                    }`}
+                  >
+                    <Sketch className="mb-1 h-10 max-w-full" />
+                    <Text size="small" weight="plus">
+                      {type === key ? "✓ " : ""}
+                      {VYPRODEJ_TYPE[key].label}
+                    </Text>
+                    <Text size="xsmall" className="text-ui-fg-subtle">
+                      {key === "stock"
+                        ? "Skončí sám, až se poslední kus prodá."
+                        : "Platí od–do, potom zase plná cena."}
+                    </Text>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
