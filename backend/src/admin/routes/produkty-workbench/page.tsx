@@ -130,6 +130,7 @@ type WorkbenchProduct = {
   collection: string | null;
   collection_id?: string | null;
   category_refs?: { id: string; name: string }[];
+  frost_resistant?: boolean;
   /** Všechny kolekce — vlastní + kolekce kategorií (filtr ho ukáže pod každou). */
   collections?: string[];
   /** Kategorie → kolekce, ke které patří. */
@@ -1841,6 +1842,17 @@ const ProductsInner = () => {
           <Button size="small" onClick={() => setBulkOpen(true)}>
             Hromadné změny
           </Button>
+          {/* Rychlé a vratné rovnou z lišty (19. 11. 2026) — vrácení nabídne hláška. */}
+          {anyHidden && (
+            <Button size="small" variant="secondary" isLoading={bulkShow.isPending} onClick={() => bulkShow.mutate()}>
+              Zobrazit v obchodě
+            </Button>
+          )}
+          {anyVisible && (
+            <Button size="small" variant="secondary" isLoading={bulkHide.isPending} onClick={() => bulkHide.mutate()}>
+              Skrýt z obchodu
+            </Button>
+          )}
           <RowOptionsMenu label="Další hromadné akce" items={bulkMoreItems} />
         </BulkBar>
       )}
@@ -1854,6 +1866,7 @@ const ProductsInner = () => {
           packaging_price: row.packaging_price ?? null,
           clearance: row.clearance,
           no_promo: row.no_promo,
+          frost_resistant: Boolean(row.frost_resistant),
           shipping_class: row.shipping_class,
           collection_id: row.collection_id ?? null,
           category_refs: row.category_refs ?? [],

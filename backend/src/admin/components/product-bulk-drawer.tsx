@@ -1,4 +1,4 @@
-import { Badge, Button, Drawer, Text, clx, toast } from "@medusajs/ui";
+import { Badge, Button, Drawer, Input, Select, Text, clx, toast } from "@medusajs/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { ceskaChyba } from "../lib/ceska-chyba";
@@ -7,10 +7,13 @@ import {
   applyBulkClassification,
   BulkClassification,
   bulkClassificationDirty,
+  BulkSortPanel,
   emptyBulkClassification,
   type BulkClassificationDraft,
 } from "./product-classification";
 import { InspectorGroup, InspectorRow } from "./product-inspector";
+import { endOfDay, QUICK, startOfDay, today } from "./product-sale";
+import { useVyprodeje } from "./vyprodej";
 
 /**
  * Hromadné změny — pravý panel (19. 11. 2026, Matěj: „lišta dole je
@@ -38,6 +41,7 @@ export type BulkProduct = {
   packaging_price: number | null;
   clearance: boolean;
   no_promo: boolean;
+  frost_resistant?: boolean;
   shipping_class: "male" | "velke" | "poukaz";
   collection_id: string | null;
   category_refs?: { id: string; name: string }[];
@@ -48,6 +52,7 @@ type FlagDraft = {
   fragile?: boolean;
   clearance?: boolean;
   no_promo?: boolean;
+  frost_resistant?: boolean;
   shipping_class?: "male" | "velke" | "poukaz";
   /** Viditelnost v obchodě — stav výrobku. */
   status?: "published" | "draft";
@@ -116,7 +121,13 @@ export const ProductBulkDrawer = ({
   open,
   onOpenChange,
   onSaved,
+  mode = "vse",
 }: {
+  /**
+   * „vse" = Produkty+ (doprava, prodej, slevy, zařazení);
+   * „zarazeni" = Kolekce a kategorie — jen přeřazení (BulkSortPanel).
+   */
+  mode?: "vse" | "zarazeni";
   /** Vybrané výrobky (řádky ze seznamu). */
   products: BulkProduct[];
   open: boolean;
@@ -129,12 +140,25 @@ export const ProductBulkDrawer = ({
   const [classification, setClassification] = useState<BulkClassificationDraft>(emptyBulkClassification());
   const [balneText, setBalneText] = useState("");
   const [balneStart, setBalneStart] = useState("");
+  /* Kolekce a kategorie: věta „Po uložení budou…" z panelu přeřazení. */
+  const [sortSummary, setSortSummary] = useState<string | null>(null);
+  /* Slevy: přidat do výprodeje, nastavit / zrušit slevu výrobku všem. */
+  const [vyprodejTarget, setVyprodejTarget] = useState<string | null>(null);
+  const [saleKind, setSaleKind] = useState<"none" | "set" | "remove">("none");
+  const [salePercent, setSalePercent] = useState("20");
+  const [saleTo, setSaleTo] = useState("");
+  const vyprodeje = useVyprodeje();
 
   /* Při každém otevření načisto. */
   useEffect(() => {
     if (!open) return;
     setFlags({});
     setClassification(emptyBulkClassification());
+    setSortSummary(null);
+    setVyprodejTarget(null);
+    setSaleKind("none");
+    setSalePercent("20");
+    setSaleTo("");
     const sharedPackaging = shared(products, (product) => product.packaging_price ?? null);
     const start = sharedPackaging === null ? "" : String(sharedPackaging);
     setBalneText(start);
@@ -160,9 +184,9 @@ export const ProductBulkDrawer = ({
 
   const total = products.length;
   /* Hodnota, kterou panel ukazuje: rozpracovaná, jinak shodná uložená. */
-  const flagValue = (key: "cod_allowed" | "fragile" | "clearance" | "no_promo") => {
+  const flagValue = (key: "cod_allowed" | "fragile" | "clearance" | "no_promo" | "frost_resistant") => {
     if (flags[key] !== undefined) return flags[key] ? "on" : "off";
-    const value = shared(products, (product) => product[key]);
+    const value = shared(products, (product) => Boolean(product[key]));
     return value === null ? null : value ? "on" : "off";
   };
   const shippingValue = flags.shipping_class ?? shared(products, (product) => product.shipping_class);
@@ -183,9 +207,20 @@ export const ProductBulkDrawer = ({
     balneTrim !== balneStart.trim() && balneValid && !(balneTrim === "" && packagingMixed);
   const balneValue = balneParsed === null ? null : Math.round(balneParsed * 100) / 100;
 
+  const salePercentValue = Number(salePercent);
+  const saleValid =
+    saleKind !== "set" || (Number.isInteger(salePercentValue) && salePercentValue >= 1 && salePercentValue <= 90);
+  const usableVyprodeje = (vyprodeje.data?.vyprodeje ?? []).filter(
+    (item) => item.state === "running" || item.state === "scheduled" || item.state === "off"
+  );
+
   const flagKeys = Object.keys(flags) as (keyof FlagDraft)[];
   const changeCount =
-    flagKeys.length + (balneChanged ? 1 : 0) + (bulkClassificationDirty(classification) ? 1 : 0);
+    flagKeys.length +
+    (balneChanged ? 1 : 0) +
+    (bulkClassificationDirty(classification) ? 1 : 0) +
+    (vyprodejTarget ? 1 : 0) +
+    (saleKind !== "none" && saleValid ? 1 : 0);
   const dirty = changeCount > 0;
   const hint = (mixed: boolean) => (mixed ? "U vybraných se liší — klikem nastavíte všem." : undefined);
 
@@ -219,15 +254,54 @@ export const ProductBulkDrawer = ({
           await sdk.client.fetch(`/admin/products/${product.id}`, { method: "POST", body });
         }
       }
+      /* Slevy: sleva výrobku každému zvlášť (výrobek ve výprodeji ji
+         odmítne — spočítá se a řekne), výprodej jedním voláním. */
+      let saleRefused = 0;
+      if (saleKind === "set" && saleValid) {
+        for (const product of products) {
+          try {
+            await sdk.client.fetch(`/admin/workbench/products/${product.id}/sale`, {
+              method: "POST",
+              body: {
+                percent: salePercentValue,
+                starts_at: startOfDay(today()),
+                ends_at: endOfDay(saleTo),
+                enabled: true,
+              },
+            });
+          } catch {
+            saleRefused += 1;
+          }
+        }
+      }
+      if (saleKind === "remove") {
+        for (const product of products) {
+          await sdk.client.fetch(`/admin/workbench/products/${product.id}/sale`, { method: "DELETE" });
+        }
+      }
+      if (vyprodejTarget) {
+        await sdk.client.fetch(`/admin/workbench/vyprodeje/${vyprodejTarget}`, {
+          method: "POST",
+          body: { add_product_ids: products.map((product) => product.id) },
+        });
+      }
+      return { saleRefused };
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["product-sale"] }),
+        queryClient.invalidateQueries({ queryKey: ["product-sales"] }),
+        queryClient.invalidateQueries({ queryKey: ["vyprodeje"] }),
+        queryClient.invalidateQueries({ queryKey: ["product-vyprodej"] }),
         queryClient.invalidateQueries({ queryKey: ["workbench-products"] }),
         queryClient.invalidateQueries({ queryKey: ["workbench-products-all"] }),
         queryClient.invalidateQueries({ queryKey: ["operations-products"] }),
         queryClient.invalidateQueries({ queryKey: ["rozdeleni-collections"] }),
       ]);
       toast.success(`Uloženo u ${total} ${total === 1 ? "výrobku" : "výrobků"}.`);
+      if (result?.saleRefused) {
+        toast.warning(`Slevu nešlo nastavit u ${result.saleRefused} — jsou ve výprodeji (výprodej ruší vlastní slevu).`);
+      }
       onOpenChange(false);
       onSaved?.();
     },
@@ -240,7 +314,9 @@ export const ProductBulkDrawer = ({
           prosvítaly přes panel. */}
       <Drawer.Content className="z-50" overlayProps={{ className: "z-50" }}>
         <Drawer.Header>
-          <Drawer.Title>{`Hromadné změny — ${total} ${pocet(total)}`}</Drawer.Title>
+          <Drawer.Title>
+            {mode === "zarazeni" ? `Zařadit ${total} ${pocet(total)}` : `Hromadné změny — ${total} ${pocet(total)}`}
+          </Drawer.Title>
         </Drawer.Header>
         <Drawer.Body className="flex flex-col overflow-y-auto p-0">
           <Text size="xsmall" className="text-ui-fg-subtle px-6 pt-4">
@@ -248,6 +324,22 @@ export const ProductBulkDrawer = ({
             {total > 4 ? ` a dalších ${total - 4}` : ""}
           </Text>
 
+          {mode === "zarazeni" ? (
+            <BulkSortPanel
+              products={products.map((product) => ({
+                id: product.id,
+                collection_id: product.collection_id,
+                category_ids: (product.category_refs ?? []).map((category) => category.id),
+              }))}
+              collections={collectionsQuery.data?.collections ?? []}
+              categories={categories}
+              onChange={(draft, summary) => {
+                setClassification(draft);
+                setSortSummary(summary);
+              }}
+            />
+          ) : (
+          <>
           <InspectorGroup title="Doprava">
             <InspectorRow
               label="Balné"
@@ -350,28 +442,135 @@ export const ProductBulkDrawer = ({
                 />
               }
             />
-          </InspectorGroup>
-
-          <InspectorGroup
-            title="Zařazení"
-            note="× odebere kategorii všem vybraným, + Kategorie ji přidá všem. Číslo 2/3 = kolika vybraných se týká."
-          >
-            <BulkClassification
-              products={products.map((product) => ({
-                id: product.id,
-                collection_id: product.collection_id,
-                category_ids: (product.category_refs ?? []).map((category) => category.id),
-              }))}
-              collections={collectionsQuery.data?.collections ?? []}
-              categories={categories}
-              draft={classification}
-              onChange={setClassification}
+            <InspectorRow
+              label="Mrazuvzdorné"
+              hint={hint(flagValue("frost_resistant") === null) ?? "Vydrží mráz — štítek u výrobku."}
+              control={
+                <Seg label="Mrazuvzdorné" options={ANO_NE} value={flagValue("frost_resistant")} dirty={flags.frost_resistant !== undefined}
+                  onSet={(next) => setFlags((prev) => ({ ...prev, frost_resistant: next === "on" }))} />
+              }
             />
           </InspectorGroup>
+
+          <InspectorGroup title="Slevy" note="Výprodej ruší vlastní slevu výrobku a na zlevněné kusy slevové kódy neplatí.">
+            <InspectorRow
+              label="Výprodej"
+              hint={vyprodejTarget ? "Vybrané se přidají do výprodeje." : "Přidat vybrané do existujícího výprodeje."}
+              control={
+                <div className="w-48">
+                  <Select
+                    value={vyprodejTarget ?? "__none__"}
+                    onValueChange={(value) => setVyprodejTarget(value === "__none__" ? null : value)}
+                  >
+                    <Select.Trigger>
+                      <Select.Value placeholder="Beze změny" />
+                    </Select.Trigger>
+                    <Select.Content className="z-[60]">
+                      <Select.Item value="__none__">Beze změny</Select.Item>
+                      {usableVyprodeje.map((item) => (
+                        <Select.Item key={item.id} value={item.id}>
+                          {`${item.title} · −${item.percent} %${item.state === "off" ? " (vypnutý)" : ""}`}
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select>
+                </div>
+              }
+            />
+            <InspectorRow
+              label="Sleva"
+              hint={
+                saleKind === "set"
+                  ? "Stejná sleva všem vybraným, od dneška."
+                  : saleKind === "remove"
+                    ? "Vlastní slevu vybraným zruší."
+                    : "Vlastní sleva výrobku (ne výprodej)."
+              }
+              control={
+                <Seg
+                  label="Sleva"
+                  options={[
+                    { value: "none" as const, label: "Beze změny" },
+                    { value: "set" as const, label: "Nastavit" },
+                    { value: "remove" as const, label: "Zrušit" },
+                  ]}
+                  value={saleKind}
+                  dirty={saleKind !== "none"}
+                  onSet={(next) => setSaleKind(next as "none" | "set" | "remove")}
+                />
+              }
+            >
+              {saleKind === "set" && (
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative w-24">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={90}
+                        size="small"
+                        aria-label="Sleva v procentech"
+                        value={salePercent}
+                        className="pr-7 tabular-nums"
+                        onChange={(event) => setSalePercent(event.target.value)}
+                      />
+                      <span className="text-ui-fg-muted txt-compact-small pointer-events-none absolute inset-y-0 right-2.5 flex items-center">%</span>
+                    </div>
+                    {QUICK.map((quick) => (
+                      <button
+                        key={quick}
+                        type="button"
+                        aria-pressed={salePercentValue === quick}
+                        onClick={() => setSalePercent(String(quick))}
+                        className={clx(
+                          "min-h-[30px] rounded-full border px-3",
+                          salePercentValue === quick ? "border-ui-border-interactive bg-ui-bg-base-pressed" : "border-ui-border-base hover:bg-ui-bg-base-hover"
+                        )}
+                      >
+                        <Text size="small">{quick} %</Text>
+                      </button>
+                    ))}
+                  </div>
+                  <label className="flex items-center gap-2">
+                    <Text size="xsmall" className="text-ui-fg-subtle">Do (nepovinné)</Text>
+                    <Input type="date" size="small" className="w-40" value={saleTo} min={today()} onChange={(event) => setSaleTo(event.target.value)} />
+                  </label>
+                  {!saleValid && (
+                    <Text size="xsmall" className="text-ui-fg-error">Zadejte celé číslo od 1 do 90.</Text>
+                  )}
+                </div>
+              )}
+            </InspectorRow>
+          </InspectorGroup>
+
+          {/* Zařazení dole — stejné tři kroky jako v Kolekce a kategorie
+              (jedna komponenta BulkSortPanel, 19. 11. 2026). */}
+          <section className="px-5 pt-4">
+            <Text size="small" weight="plus" className="text-ui-fg-subtle px-1">
+              Zařazení
+            </Text>
+          </section>
+          <BulkSortPanel
+            products={products.map((product) => ({
+              id: product.id,
+              collection_id: product.collection_id,
+              category_ids: (product.category_refs ?? []).map((category) => category.id),
+            }))}
+            collections={collectionsQuery.data?.collections ?? []}
+            categories={categories}
+            onChange={(draft, summary) => {
+              setClassification(draft);
+              setSortSummary(summary);
+            }}
+          />
+          </>
+          )}
         </Drawer.Body>
         <Drawer.Footer className="flex items-center justify-between gap-2">
-          <Text size="xsmall" className="text-ui-fg-subtle">
-            {dirty ? (
+          <Text size="xsmall" className="text-ui-fg-subtle min-w-0 flex-1">
+            {mode === "zarazeni" ? (
+              sortSummary ?? "Vyberte, kam je dát."
+            ) : dirty ? (
               <Badge size="2xsmall" color="orange">
                 {changeCount === 1 ? "1 změna" : changeCount <= 4 ? `${changeCount} změny` : `${changeCount} změn`}
               </Badge>
@@ -386,7 +585,7 @@ export const ProductBulkDrawer = ({
               </Button>
             </Drawer.Close>
             <Button size="small" disabled={!dirty} isLoading={save.isPending} onClick={() => save.mutate()}>
-              {`Uložit vše (${total})`}
+              {mode === "zarazeni" ? "Uložit" : `Uložit vše (${total})`}
             </Button>
           </div>
         </Drawer.Footer>

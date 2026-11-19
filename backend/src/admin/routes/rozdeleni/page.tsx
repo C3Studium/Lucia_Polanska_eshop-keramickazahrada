@@ -219,6 +219,9 @@ const Inner = () => {
      like Shirts/Pants) that belong to no collection and were otherwise
      unreachable, so she can rename or delete them. */
   const [allCats, setAllCats] = useUrlFlag("vsekategorie");
+  /* Nezařazené (19. 11. 2026, Matěj): výrobky bez kolekce i bez kategorie —
+     v obchodě je v nabídce nikdo nenajde. Tlačítko s počtem v levém sloupci. */
+  const [unsortedFlag, setUnsorted] = useUrlFlag("nezarazene");
   /* Icon tabs of the all-categories view: everything · with a collection ·
      without one (the misclick she'll want to fix) · archived. */
   const [catTab, setCatTab] = useUrlState<"vse" | "skolekci" | "bez" | "archiv">(
@@ -484,11 +487,16 @@ const Inner = () => {
       return { ...prev, [product.id]: next };
     });
   };
+  const unsortedProducts = products.filter(
+    (product) => !product.collection_id && !(product.category_refs ?? []).length
+  );
+  const showUnsorted = unsortedFlag && collectionId === null;
   const uncategorised = inCollection.filter(
     (product) => !(product.category_refs ?? []).length
   );
-  const visibleProducts =
-    categoryId === null
+  const visibleProducts = showUnsorted
+    ? unsortedProducts
+    : categoryId === null
       ? inCollection
       : categoryId === "none"
         ? uncategorised
@@ -799,6 +807,7 @@ const Inner = () => {
   /* Back to the first-open view: no selection, every product listed. Pending
      row edits deliberately survive — a view reset must not discard her work. */
   const resetView = () => {
+    setUnsorted(false);
     setCollectionId(null);
     setCategoryId(null);
     setAllCats(false);
@@ -856,7 +865,9 @@ const Inner = () => {
               ? ` › ${fullCategory(categoryId)?.name ?? "kategorie"}`
               : ""
         }`
-      : "Celý obchod";
+      : showUnsorted
+        ? "Nezařazené výrobky"
+        : "Celý obchod";
   const pickerTargetLabel =
     categoryId && categoryId !== "none" ? "kategorie" : "kolekce";
 
@@ -910,7 +921,7 @@ const Inner = () => {
               }>
                 <button type="button"
                   aria-current={active ? "true" : undefined}
-                  onClick={() => { setCollectionId(collection.id); setCategoryId(null); setAllCats(false); setRenamingCollection(null); }}
+                  onClick={() => { setUnsorted(false); setCollectionId(collection.id); setCategoryId(null); setAllCats(false); setRenamingCollection(null); }}
                   className="min-w-0 flex-1 py-2 pl-3 pr-1 text-left">
                   <span className="flex items-center gap-1.5">
                     <Text size="base" weight={active ? "plus" : "regular"} className="truncate">
@@ -975,6 +986,30 @@ const Inner = () => {
               if (file && id) setCollectionImage.mutate({ id, file });
               e.currentTarget.value = "";
             }} />
+          {/* Nezařazené: výrobky bez kolekce i kategorie (19. 11. 2026). Číslo
+              v závorce je vždy vidět; když něco čeká, je oranžové. */}
+          <button
+            type="button"
+            aria-pressed={showUnsorted}
+            onClick={() => {
+              setCollectionId(null);
+              setCategoryId(null);
+              setAllCats(false);
+              setUnsorted(true);
+            }}
+            className={`mt-2 flex min-h-[44px] w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left transition-colors ${
+              showUnsorted ? "bg-ui-bg-base-pressed" : "hover:bg-ui-bg-base-hover"
+            }`}
+          >
+            <span className="min-w-0">
+              <Text size="small" weight="plus" className={unsortedProducts.length ? "text-ui-tag-orange-text" : undefined}>
+                Nezařazené ({unsortedProducts.length})
+              </Text>
+              <Text size="xsmall" className="text-ui-fg-subtle">
+                {unsortedProducts.length ? "Bez kolekce i kategorie — v obchodě v nabídce nejsou" : "Všechny výrobky jsou zařazené"}
+              </Text>
+            </span>
+          </button>
           <div className="mt-2 flex gap-2">
             <Input size="small" placeholder="Nová kolekce…" value={newCollection}
               onChange={(e) => setNewCollection(e.target.value)} />
@@ -1246,7 +1281,7 @@ const Inner = () => {
                     s Produkty+ — zařazení do kolekcí a kategorií i doprava.
                     Otevře se až na klik, ať nepřekryje seznam. */}
                 <Button size="small" onClick={() => setBulkOpen(true)}>
-                  Hromadné změny
+                  Zařadit vybrané
                 </Button>
                 <Button size="small" variant="secondary"
                   isLoading={bulkArchive.isPending}
@@ -1678,6 +1713,7 @@ const Inner = () => {
             open={bulkOpen}
             onOpenChange={setBulkOpen}
             onSaved={() => setSelected(new Set())}
+            mode="zarazeni"
           />
           <div className="bg-ui-bg-base sticky bottom-0 mt-auto p-2">
             <Button size="small" variant="secondary" className="w-full"

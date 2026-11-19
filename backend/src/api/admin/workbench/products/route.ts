@@ -253,6 +253,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         /* Ručně vyloučené ze slevových kódů (přepínač „Bez slev. kódů").
            Čte ho discountable engine; u balíčků se promítá i na komponenty. */
         no_promo: Boolean((product.metadata as any)?.no_promo),
+        /* Mrazuvzdorné — sdílené nastavení pro Hromadné změny (19. 11. 2026). */
+        frost_resistant: Boolean((product.metadata as any)?.frost_resistant),
         /* Velikost zásilky — podle ní se počítá poštovné (male | velke | poukaz). */
         shipping_class: shippingClassOf(product.metadata as Record<string, unknown> | null),
         // The handshake: what she edits, seen as the customer sees it.
