@@ -11,6 +11,8 @@ import {
   CreateEmailOptions, 
   Resend
 } from "resend";
+import { vykresliEmail } from "./neorezavat"
+import { hlavickyNeorezavat, neorezavatHtml, novyToken } from "./neorezavat"
 import { orderPlacedEmail } from "./emails/order-placed";
 import { userInvitedEmail } from "./emails/user-invited"
 import { passwordResetEmail } from "./emails/password-reset";
@@ -706,6 +708,33 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
    * Cena za to je, že varování není vidět v Přehled → Odeslané e-maily;
    * v Resendu a v logu ano.
    */
+  /**
+   * Odeslat e-mail tak, aby ho Gmail ani jiný klient neschoval do „•••"
+   * (viz ./neorezavat). Šablonu vykreslí sem — uvnitř téhož volání, ve kterém
+   * běží `withStorefrontCountry` — a pošle hotové HTML.
+   */
+  private async posliCele(options: CreateEmailOptions) {
+    const token = novyToken()
+    const { react, ...zbytek } = options as CreateEmailOptions & { react?: React.ReactElement }
+    const html = react
+      ? await vykresliEmail(react)
+      : typeof (options as { html?: unknown }).html === "string"
+        ? ((options as { html: string }).html)
+        : null
+    const hlavicky = {
+      ...(((options as { headers?: Record<string, string> }).headers) ?? {}),
+      ...hlavickyNeorezavat(token),
+    }
+    if (html === null) {
+      return this.resendClient.emails.send({ ...options, headers: hlavicky } as CreateEmailOptions)
+    }
+    return this.resendClient.emails.send({
+      ...zbytek,
+      html: neorezavatHtml(html, token),
+      headers: hlavicky,
+    } as CreateEmailOptions)
+  }
+
   private async posliVarovaniOKvote(kvota: number): Promise<boolean> {
     const prijemce = (process.env.OWNER_NOTIFICATION_EMAIL ?? "").trim()
     const text = textVarovani(kvota, this.kvotaStav.den)
@@ -955,7 +984,7 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       // země jazyka e-mailu — lib/storefront-url `withStorefrontCountry`.
       const response = await withStorefrontCountry(
         emailLocale,
-        () => this.resendClient.emails.send(emailOptions),
+        () => this.posliCele(emailOptions),
         linkCountry
       )
       data = response.data
@@ -986,7 +1015,7 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       try {
         const response = await withStorefrontCountry(
           emailLocale,
-          () => this.resendClient.emails.send(buildEmailOptions(retryData, false)),
+          () => this.posliCele(buildEmailOptions(retryData, false)),
           linkCountry
         )
         data = response.data

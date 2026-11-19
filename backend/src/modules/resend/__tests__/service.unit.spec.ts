@@ -1,4 +1,10 @@
-import { renderToStaticMarkup } from "react-dom/server"
+import * as neorezavat from "../neorezavat"
+
+jest.mock("../neorezavat", () => {
+  const actual = jest.requireActual("../neorezavat")
+  return { ...actual, vykresliEmail: jest.fn(actual.vykresliEmail) }
+})
+
 import ResendNotificationProviderService, {
   attachmentsFromData,
   describeResendError,
@@ -124,6 +130,11 @@ describe("e-mail attachments (data.__attachments)", () => {
 
     const order = { id: "order_1", display_id: 42, currency_code: "czk", items: [] }
 
+    /* Šablonu vykresluje služba sama (e-mail bez tří teček, ../neorezavat) —
+       vykreslený prvek se čte z téhle funkce, do Resendu jde hotové HTML. */
+    const vykresleni = neorezavat.vykresliEmail as unknown as jest.Mock
+    const prvek = (n: number) => vykresleni.mock.calls[n][0] as any
+
     beforeEach(() => {
       jest.clearAllMocks()
     })
@@ -143,8 +154,12 @@ describe("e-mail attachments (data.__attachments)", () => {
           path: "https://img.example.cz/legal/obchodni-podminky-2026-10-15.pdf",
         },
       ])
-      expect(options.react.props.__attachments).toBeUndefined()
-      expect(options.react.props.order).toBe(order)
+      expect(prvek(0).props.__attachments).toBeUndefined()
+      expect(prvek(0).props.order).toBe(order)
+      // Do Resendu jde hotové HTML se skrytými značkami a jedinečnou hlavičkou.
+      expect(options).not.toHaveProperty("react")
+      expect(options.html).toContain("display:none!important")
+      expect(options.headers["X-Entity-Ref-ID"]).toBeTruthy()
     })
 
     it("sends without an attachments field when there are none", async () => {
@@ -171,7 +186,7 @@ describe("e-mail attachments (data.__attachments)", () => {
       const retry = send.mock.calls[1][0]
       expect(retry).not.toHaveProperty("attachments")
       // Šablona se dozví, že „v příloze" už neplatí.
-      expect(retry.react.props.attachments_failed).toBe(true)
+      expect(prvek(1).props.attachments_failed).toBe(true)
       expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("bez příloh"))
     })
 
@@ -200,7 +215,7 @@ describe("e-mail attachments (data.__attachments)", () => {
 
       await service.send(notification({ order }))
 
-      const html = renderToStaticMarkup(send.mock.calls[0][0].react)
+      const html = send.mock.calls[0][0].html
       expect(html).toContain("Prodávající: Lucie Polanská · Nová 1, 397 01 Putim · IČO 03441482")
       expect(html).toContain("mailto:dilna@keramickazahrada.cz")
       // Telefon výslovně nevyplněný → v patičce není (ani záložní).
@@ -217,8 +232,8 @@ describe("e-mail attachments (data.__attachments)", () => {
 
       const options = send.mock.calls[0][0]
       // Bez údajů se šablona neobaluje — dostane svá data přímo.
-      expect(options.react.props.order).toBe(order)
-      const html = renderToStaticMarkup(options.react)
+      expect(prvek(0).props.order).toBe(order)
+      const html = options.html
       expect(html).toContain("Prodávající: Lucie Polanská · Putim 229, 397 01 Putim · IČO 03441482")
       expect(html).toContain("+420 775 211 578")
     })
