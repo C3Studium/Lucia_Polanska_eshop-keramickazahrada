@@ -692,6 +692,40 @@ export default function NavbarSearch({
    * Ve Studiu (`studioOpen`) zůstává otevřené — tam ho drží rám.
    */
   const panelRef = useRef<HTMLDivElement>(null)
+
+  /*
+   * Stránka pod otevřeným hledáním stojí (19. 11. 2026, Matěj: „ať to
+   * nescrolluje pod tím na stránce"). Tah ve výsledcích nebo na podkladu
+   * propadal na stránku za nimi.
+   *
+   * Univerzální zámek pro iOS: `overflow: hidden` na body starší Safari
+   * (do iOS 16) ignoruje a `overscroll-behavior` neznají vůbec — spolehlivě
+   * funguje jen body s `position: fixed` posunuté o aktuální polohu. Poloha
+   * se uloží a po zavření vrátí, takže stránka neposkočí. Při odchodu na
+   * výrobek pak odroluje nahoru `ScrollResetOnRoute` jako vždy.
+   */
+  useEffect(() => {
+    if (!openedByVisitor) return
+    const body = document.body
+    const y = window.scrollY
+    const predtim = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+    }
+    body.style.position = "fixed"
+    body.style.top = `-${y}px`
+    body.style.left = "0"
+    body.style.right = "0"
+    body.style.width = "100%"
+    return () => {
+      Object.assign(body.style, predtim)
+      window.scrollTo(0, y)
+    }
+  }, [openedByVisitor])
+
   useEffect(() => {
     if (!openedByVisitor) return
     const onOutside = (event: Event) => {
