@@ -24,7 +24,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     if (!/^[a-z]{2}$/i.test(zeme) || !(kg > 0 && kg <= 30)) {
       throw new MedusaError(MedusaError.Types.INVALID_DATA, "Zadejte zemi a váhu od 0,1 do 30 kg.")
     }
-    res.json(internationalCalculator(zeme, kg))
+    res.json(await internationalCalculator(req.scope, zeme, kg))
     return
   }
   const kg = Number(String(req.query.kg ?? "").replace(",", "."))

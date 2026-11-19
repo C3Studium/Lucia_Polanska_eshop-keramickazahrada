@@ -4,10 +4,14 @@ import { createShippingOptionsWorkflow } from "@medusajs/medusa/core-flows"
 import { fetchCnbRates, type CnbRateSheet } from "./cnb-rates"
 import { getMerchantSettings, setMerchantSettings } from "./merchant-settings"
 import { LINE_QUANTITY_FIELDS, lineQuantityOf } from "./order-quantity"
+import { rozdilCeniku, stahniCenikCp } from "./cp-kalkulacka/zive"
+import { notifyMerchant } from "./notify"
 import {
   cpAllQuotes,
   cpCheapest,
+  cpTiers,
   type CpQuote,
+  type CpZiveTabulka,
   cpCountryName,
   cpFetchedAt,
   cpServices,
@@ -202,6 +206,9 @@ export type InternationalShippingState = {
   option_id: string | null
   rates_date: string | null
   fetched_at: string
+  /** `zive` = stažený z kalkulačky ČP, `tabulka` = záloha z 19. 11. 2026. */
+  cenik_zdroj: "zive" | "tabulka"
+  cenik_stav: InternationalOptionData["cenik_stav"]
   /** Všechny služby v ceníku ČP. */
   all_services: string[]
   /** Povolené služby — vybírá se z nich nejlevnější. */
@@ -221,6 +228,8 @@ const buildData = (input: {
   rows: CountryRow[]
   rates: Record<string, { amount: number; rate: number }>
   rates_date: string | null
+  cenik_zive?: InternationalOptionData["cenik_zive"]
+  cenik_stav?: InternationalOptionData["cenik_stav"]
 }): InternationalOptionData => ({
   id: INTERNATIONAL_OPTION_ID,
   service_code: INTERNATIONAL_SERVICE_CODE,
@@ -234,6 +243,8 @@ const buildData = (input: {
   rates: input.rates,
   rates_date: input.rates_date,
   markup_percent: markupPercent(),
+  cenik_zive: input.cenik_zive ?? null,
+  cenik_stav: input.cenik_stav ?? null,
 })
 
 /**
@@ -282,11 +293,15 @@ export const getInternationalShipping = async (
     rows,
     rates,
     rates_date: ratesDate,
+    cenik_zive: stored?.cenik_zive ?? null,
   })
   return {
     option_id: option?.id ?? null,
     rates_date: ratesDate,
-    fetched_at: cpFetchedAt(),
+    /* Ceník: živě stažený (každou noc v 1:00), jinak tabulka z 19. 11. 2026. */
+    fetched_at: stored?.cenik_zive?.fetched_at ?? cpFetchedAt(),
+    cenik_zdroj: stored?.cenik_zive ? "zive" : "tabulka",
+    cenik_stav: stored?.cenik_stav ?? null,
     all_services: cpServices(),
     services,
     parcel_weight_kg: parcelWeight,
@@ -294,11 +309,13 @@ export const getInternationalShipping = async (
     countries: rows.map((row) => ({
       ...row,
       enabled: enabled.has(row.country_code),
-      cp_ships: cpShipsTo(row.country_code),
+      cp_ships: cpShipsTo(row.country_code, stored?.cenik_zive?.countries),
       override_czk: stored?.overrides_czk?.[row.country_code] ?? null,
       quote: internationalQuoteFor(preview, row.country_code, parcelWeight),
       /* Cena z ceníku ČP v Kč i bez kurzu a bez ruční ceny — pro sloupec „Ceník ČP". */
-      cp: cpShipsTo(row.country_code) ? cpCheapest(row.country_code, parcelWeight, services) : null,
+      cp: cpShipsTo(row.country_code, stored?.cenik_zive?.countries)
+        ? cpCheapest(row.country_code, parcelWeight, services, stored?.cenik_zive?.countries)
+        : null,
     })),
   }
 }
@@ -357,6 +374,9 @@ export const saveInternationalShipping = async (
     rates: ratesFor(currencies, sheet),
     rates_date: sheet?.date ?? null,
   })
+  const existing = (await findInternationalOption(container))?.data as InternationalOptionData | null | undefined
+  data.cenik_zive = existing?.cenik_zive ?? null
+  data.cenik_stav = existing?.cenik_stav ?? null
   const option = await ensureInternationalOption(container, data)
   await writeOptionData(container, option.id, data)
   await syncGeoZones(container, option.service_zone_id, countries)
@@ -386,18 +406,127 @@ export const refreshInternationalShippingRates = async (
       rows,
       rates: ratesFor(currencies, sheet),
       rates_date: sheet.date,
+      cenik_zive: data.cenik_zive ?? null,
+      cenik_stav: data.cenik_stav ?? null,
     })
   )
   return countries.length
 }
 
 /** Malá kalkulačka pro administraci: všechny služby ČP pro zemi a váhu. */
-export const internationalCalculator = (country: string, kg: number) => ({
-  country: String(country).toLowerCase(),
-  name: cpCountryName(country),
-  kg,
-  quotes: cpAllQuotes(country, kg),
-})
+export const internationalCalculator = async (container: MedusaContainer, country: string, kg: number) => {
+  const option = await findInternationalOption(container)
+  const zive = (option?.data as InternationalOptionData | null | undefined)?.cenik_zive?.countries
+  return {
+    country: String(country).toLowerCase(),
+    name: cpCountryName(country),
+    kg,
+    quotes: cpAllQuotes(country, kg, zive),
+  }
+}
+
+/** Tabulka zálohy (z 19. 11. 2026) pro zemi — srovnání se staženými cenami. */
+const zalohaZeme = (country: string): Record<string, Array<[number, number]>> =>
+  Object.fromEntries(
+    cpServices()
+      .map((service) => [service, cpTiers(country, service)] as const)
+      .filter(([, tiers]) => tiers.length > 0)
+  )
+
+let beziObnova: Promise<ObnovaCenikuVysledek> | null = null
+
+export type ObnovaCenikuVysledek = {
+  stav: "ok" | "chyby" | "bez-volby" | "bezi"
+  stazeno: string[]
+  chyby: Array<{ country: string; chyba: string }>
+  zmen: number
+}
+
+/**
+ * Noční obnova ceníku ČP (19. 11. 2026, Matěj): stáhne ceny všech služeb a vah
+ * pro země obchodu z kalkulačky postaonline.cz a uloží je k volbě dopravy.
+ *
+ * - Země stažená celá se přepíše; země s chybou si NECHÁ poslední data
+ *   (nebo tabulku z 19. 11.) — pokladna počítá dál.
+ * - Když se cokoli nepodaří, přijde vývojáři e-mail hned (ne souhrnem).
+ * - Když se ceny změnily, přijde vývojáři e-mail se seznamem změn.
+ * - Běží jen jednou naráz (ruční spuštění během nočního běhu nic nezdvojí).
+ */
+export const obnovCenikCp = async (container: MedusaContainer): Promise<ObnovaCenikuVysledek> => {
+  if (beziObnova) return { stav: "bezi", stazeno: [], chyby: [], zmen: 0 }
+  beziObnova = (async (): Promise<ObnovaCenikuVysledek> => {
+    const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+    const option = await findInternationalOption(container)
+    if (!option) {
+      logger.info("[cp-cenik] Doprava do zahraničí ještě není uložená — ceník se nestahuje.")
+      return { stav: "bez-volby", stazeno: [], chyby: [], zmen: 0 }
+    }
+    const rows = await listForeignCountries(container)
+    const countries = [...new Set(rows.map((row) => row.country_code))]
+    const start = Date.now()
+    const vysledek = await stahniCenikCp(countries, { log: (zprava) => logger.info(zprava) })
+
+    /* Znovu načíst data volby — během ~12 min mohla majitelka uložit nastavení. */
+    const aktualni = ((await findInternationalOption(container))?.data ?? option.data) as InternationalOptionData
+    const predtim: CpZiveTabulka = aktualni.cenik_zive?.countries ?? {}
+    const srovnani: CpZiveTabulka = Object.fromEntries(
+      Object.keys(vysledek.zeme).map((country) => [country, predtim[country] ?? zalohaZeme(country)])
+    )
+    const rozdil = rozdilCeniku(srovnani, vysledek.zeme)
+    const ted = new Date().toISOString()
+    const stazeno = Object.keys(vysledek.zeme)
+    const data: InternationalOptionData = {
+      ...aktualni,
+      cenik_zive: stazeno.length
+        ? { fetched_at: ted, countries: { ...predtim, ...vysledek.zeme } }
+        : aktualni.cenik_zive ?? null,
+      cenik_stav: { checked_at: ted, ok: vysledek.chyby.length === 0, chyby: vysledek.chyby },
+    }
+    await writeOptionData(container, option.id, data)
+    logger.info(
+      `[cp-cenik] Hotovo za ${Math.round((Date.now() - start) / 1000)} s: staženo ${stazeno.length}/${countries.length} zemí, chyb ${vysledek.chyby.length}, změněných cen ${rozdil.pocet}.`
+    )
+
+    const den = ted.slice(0, 10)
+    if (vysledek.chyby.length) {
+      const posledni = aktualni.cenik_zive?.fetched_at
+        ? new Date(aktualni.cenik_zive.fetched_at).toLocaleString("cs-CZ", { timeZone: "Europe/Prague" })
+        : "tabulky z 19. 11. 2026"
+      await notifyMerchant(container, {
+        key: `cp-cenik-chyba:${den}`,
+        title: `Ceník České pošty do zahraničí se nepodařilo stáhnout (${vysledek.chyby.length} z ${countries.length} zemí)`,
+        description:
+          vysledek.chyby.map((item) => `${item.country.toUpperCase()}: ${item.chyba}`).join("\n") +
+          `\n\nPokladna dál počítá dopravu do těchto zemí z posledních dat (${posledni}). ` +
+          `Další pokus proběhne příští noc v 1:00, nebo ručně v Nastavení obchodu › Doprava a platba › „Stáhnout ceník teď“.`,
+        audience: "dev",
+        urgent: true,
+        email: true,
+        souhrn: true,
+      }).catch(() => undefined)
+    }
+    if (rozdil.pocet) {
+      await notifyMerchant(container, {
+        key: `cp-cenik-zmena:${den}`,
+        title: `Česká pošta změnila ceník do zahraničí (${rozdil.pocet} cen)`,
+        description: rozdil.ukazka.join("\n") + (rozdil.pocet > rozdil.ukazka.length ? "\n…" : "") +
+          "\n\nPokladna už počítá s novými cenami.",
+        audience: "dev",
+        email: true,
+        souhrn: true,
+      }).catch(() => undefined)
+    }
+    return { stav: vysledek.chyby.length ? "chyby" : "ok", stazeno, chyby: vysledek.chyby, zmen: rozdil.pocet }
+  })()
+  try {
+    return await beziObnova
+  } finally {
+    beziObnova = null
+  }
+}
+
+/** Běží zrovna stahování ceníku? (administrace ukáže „stahuje se…") */
+export const cenikSeStahuje = (): boolean => beziObnova !== null
 
 /**
  * Název dopravy OBJEDNÁVKY podle vybrané služby ČP (19. 11. 2026, Matěj:

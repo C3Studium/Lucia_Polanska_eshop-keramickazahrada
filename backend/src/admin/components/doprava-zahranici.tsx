@@ -1,6 +1,6 @@
 import { Badge, Button, Text, toast } from "@medusajs/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba } from "../lib/ceska-chyba";
 
@@ -42,6 +42,9 @@ type State = {
   option_id: string | null;
   rates_date: string | null;
   fetched_at: string;
+  /** `zive` = stažený z kalkulačky ČP (každou noc v 1:00), `tabulka` = záloha z 19. 11. 2026. */
+  cenik_zdroj: "zive" | "tabulka";
+  cenik_stav: { checked_at: string; ok: boolean; chyby: Array<{ country: string; chyba: string }> } | null;
   /** Všechny služby v ceníku ČP. */
   all_services: string[];
   /** Povolené služby — pokladna z nich vybírá nejlevnější. */
@@ -67,6 +70,13 @@ const kratce = (service: string) => service.replace(" do zahraničí", "").repla
 const datum = (iso: string) => {
   try {
     return new Date(iso).toLocaleDateString("cs-CZ");
+  } catch {
+    return iso;
+  }
+};
+const casDatum = (iso: string) => {
+  try {
+    return new Date(iso).toLocaleString("cs-CZ", { timeZone: "Europe/Prague", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
   } catch {
     return iso;
   }
@@ -145,6 +155,30 @@ export const DopravaZahranici = () => {
       toast.success("Doprava do zahraničí uložena.");
     },
     onError: (error) => toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
+  });
+
+  /* Ceník ČP: stahuje se každou noc v 1:00; tady jde stáhnout hned. */
+  const stahovani = useQuery<{ bezi: boolean }>({
+    queryKey: ["international-cenik-bezi"],
+    queryFn: () => sdk.client.fetch("/admin/international-shipping/cenik"),
+    refetchInterval: (query) => (query.state.data?.bezi ? 5000 : false),
+  });
+  const bezi = Boolean(stahovani.data?.bezi);
+  const byloBezi = useRef(false);
+  useEffect(() => {
+    if (byloBezi.current && !bezi) {
+      queryClient.invalidateQueries({ queryKey: ["international-shipping"] });
+      toast.success("Ceník České pošty je stažený.");
+    }
+    byloBezi.current = bezi;
+  }, [bezi, queryClient]);
+  const stahnout = useMutation({
+    mutationFn: () => sdk.client.fetch<{ bezi: boolean; zprava: string }>("/admin/international-shipping/cenik", { method: "POST" }),
+    onSuccess: (odpoved) => {
+      toast.info(odpoved.zprava);
+      queryClient.setQueryData(["international-cenik-bezi"], { bezi: true });
+    },
+    onError: (error) => toast.error(ceskaChyba(error, "Stažení se nepodařilo spustit.")),
   });
 
   /* Malá kalkulačka — jako na postaonline.cz, z téhož ceníku. */
@@ -296,10 +330,25 @@ export const DopravaZahranici = () => {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Text size="xsmall" className="text-ui-fg-subtle">
-          Ceník ČP ze dne {datum(data.fetched_at)} (obnovuje se skriptem po změně ceníku, typicky k 1. 1.)
-          {data.rates_date ? ` · kurz ČNB z ${data.rates_date}` : ""}
-        </Text>
+        <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Text size="xsmall" className="text-ui-fg-subtle">
+              {data.cenik_zdroj === "zive"
+                ? `Ceník České pošty stažený ${casDatum(data.fetched_at)} — stahuje se znovu každou noc v 1:00`
+                : `Ceník České pošty z ${datum(data.fetched_at)} (záloha) — každou noc v 1:00 se stáhne aktuální`}
+              {data.rates_date ? ` · kurz ČNB z ${data.rates_date}` : ""}
+            </Text>
+            <Button size="small" variant="transparent" disabled={bezi || !data.option_id} isLoading={stahnout.isPending} onClick={() => stahnout.mutate()}>
+              {bezi ? "Stahuje se… (pár minut)" : "Stáhnout ceník teď"}
+            </Button>
+          </div>
+          {data.cenik_stav && !data.cenik_stav.ok && (
+            <Text size="xsmall" className="text-ui-fg-error">
+              Poslední stažení {casDatum(data.cenik_stav.checked_at)} se nepovedlo u{" "}
+              {data.cenik_stav.chyby.map((c) => c.country.toUpperCase()).join(", ")} — počítá se z posledních dat.
+            </Text>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           {zmeneno && data.option_id && (
             <Button size="small" variant="secondary" disabled={ulozit.isPending} onClick={() => reset(data)}>

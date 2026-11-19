@@ -1,6 +1,6 @@
 import { convertFromCzk } from "./cnb-rates"
 import { isServiceLine } from "./packaging-lines"
-import { cpCheapest } from "./cp-kalkulacka"
+import { cpCheapest, type CpZiveTabulka } from "./cp-kalkulacka"
 
 /**
  * Čistá (bez Medusy) část dopravy „Česká pošta – na adresu zahraničí" —
@@ -53,6 +53,17 @@ export type InternationalOptionData = {
   /** Den kurzu ČNB („19.11.2026"). */
   rates_date: string | null
   markup_percent?: number
+  /**
+   * Ceník stažený každou noc z kalkulačky ČP (lib/cp-kalkulacka/zive.ts).
+   * Země, které tu jsou, se počítají z něj; jinak tabulka z 19. 11. 2026.
+   */
+  cenik_zive?: { fetched_at: string; countries: CpZiveTabulka } | null
+  /** Poslední pokus o stažení — pro administraci (stav, chyby). */
+  cenik_stav?: {
+    checked_at: string
+    ok: boolean
+    chyby: Array<{ country: string; chyba: string }>
+  } | null
 }
 
 export const isInternationalOptionData = (data: unknown): boolean =>
@@ -144,7 +155,7 @@ export const internationalQuoteFor = (
   if (!country || !(option.countries ?? []).includes(country)) return null
 
   const manual = option.overrides_czk?.[country]
-  const quote = manual ? null : cpCheapest(country, kg, option.services ?? [])
+  const quote = manual ? null : cpCheapest(country, kg, option.services ?? [], option.cenik_zive?.countries)
   const priceCzk = manual ?? quote?.price_czk
   if (!priceCzk || !(priceCzk > 0)) return null
 

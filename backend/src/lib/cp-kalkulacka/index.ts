@@ -12,7 +12,16 @@ import { CP_COUNTRIES, CP_FETCHED_AT, CP_SERVICES } from "./data"
  *
  * Cena = první stupeň, jehož „do kg" hmotnost pokryje (2,6 kg → „do 3 kg"),
  * stejně jako na postaonline.cz.
+ *
+ * ŽIVÁ DATA (19. 11. 2026, Matěj): každou noc v 1:00 se ceník zemí obchodu
+ * stáhne znovu (`zive.ts`, úloha `jobs/cp-cenik-zive`) a uloží k volbě
+ * dopravy. Funkce níž proto berou nepovinnou tabulku `zive` (země → služba
+ * → stupně): země, kterou obsahuje, se počítá z ní; jinak z tabulky v
+ * `data.ts` (záloha, ceník z 19. 11. 2026).
  */
+
+/** Stažený ceník: země (ISO 2, malými) → název služby → [[do kg, cena s DPH v Kč], …]. */
+export type CpZiveTabulka = Record<string, Record<string, Array<[number, number]>>>
 
 export const CP_SERVICE_DEFAULT = "Standardní balík do zahraničí - prioritní"
 
@@ -33,16 +42,25 @@ export const cpServices = (): string[] => [...CP_SERVICES]
 export const cpCountryName = (country: string): string =>
   CP_COUNTRIES[String(country).toLowerCase()]?.n ?? String(country).toUpperCase()
 
-/** Stupně služby pro zemi: [[do kg, cena s DPH v Kč], …] vzestupně. */
-export const cpTiers = (country: string, service: string): Array<[number, number]> => {
+/** Stupně služby pro zemi: [[do kg, cena s DPH v Kč], …] vzestupně. Živá data mají přednost. */
+export const cpTiers = (country: string, service: string, zive?: CpZiveTabulka | null): Array<[number, number]> => {
+  const code = String(country).toLowerCase()
+  const live = zive?.[code]
+  if (live) return live[service] ?? []
   const index = CP_SERVICES.indexOf(service)
   if (index < 0) return []
-  return CP_COUNTRIES[String(country).toLowerCase()]?.s?.[String(index)] ?? []
+  return CP_COUNTRIES[code]?.s?.[String(index)] ?? []
+}
+
+/** Služby, které do země jezdí (živě, jinak podle zálohy). */
+const servicesFor = (country: string, zive?: CpZiveTabulka | null): string[] => {
+  const live = zive?.[String(country).toLowerCase()]
+  return live ? Object.keys(live) : CP_SERVICES
 }
 
 /** Jezdí ČP do země s balíkem vůbec (jakoukoli službou)? */
-export const cpShipsTo = (country: string): boolean =>
-  Object.keys(CP_COUNTRIES[String(country).toLowerCase()]?.s ?? {}).length > 0
+export const cpShipsTo = (country: string, zive?: CpZiveTabulka | null): boolean =>
+  servicesFor(country, zive).some((service) => cpTiers(country, service, zive).length > 0)
 
 /** Nejvyšší váha služby do země (kg), 0 = nejede. */
 export const cpMaxKg = (country: string, service: string): number => {
@@ -87,13 +105,19 @@ export const cpQuote = (country: string, service: string, weightKg: number): CpQ
  * CP_FALLBACK_ORDER (prioritní před ekonomickým). `null` = nic tam takový
  * balík nevozí.
  */
-export const cpCheapest = (country: string, weightKg: number, services: string[] = []): CpQuote | null => {
+export const cpCheapest = (
+  country: string,
+  weightKg: number,
+  services: string[] = [],
+  zive?: CpZiveTabulka | null
+): CpQuote | null => {
   if (!validKg(weightKg)) return null
-  const pool = (services.length ? services : CP_SERVICES).filter((name) => CP_SERVICES.includes(name))
+  const known = [...new Set([...CP_SERVICES, ...servicesFor(country, zive)])]
+  const pool = (services.length ? services : known).filter((name) => known.includes(name))
   const order = [...CP_FALLBACK_ORDER.filter((name) => pool.includes(name)), ...pool.filter((name) => !CP_FALLBACK_ORDER.includes(name))]
   let best: CpQuote | null = null
   for (const name of order) {
-    const tier = cpTiers(country, name).find(([upTo]) => upTo + 1e-9 >= weightKg)
+    const tier = cpTiers(country, name, zive).find(([upTo]) => upTo + 1e-9 >= weightKg)
     if (tier && (!best || tier[1] < best.price_czk)) {
       best = { price_czk: tier[1], service: name, up_to_kg: tier[0], fallback: false }
     }
@@ -104,16 +128,16 @@ export const cpCheapest = (country: string, weightKg: number, services: string[]
 /** Všechny služby do země pro jednu váhu — „malá kalkulačka" v administraci. */
 export const cpAllQuotes = (
   country: string,
-  weightKg: number
+  weightKg: number,
+  zive?: CpZiveTabulka | null
 ): Array<{ service: string; price_czk: number | null; up_to_kg: number | null; max_kg: number }> =>
   CP_SERVICES.map((service) => {
-    const tier = validKg(weightKg)
-      ? cpTiers(country, service).find(([upTo]) => upTo + 1e-9 >= weightKg)
-      : undefined
+    const tiers = cpTiers(country, service, zive)
+    const tier = validKg(weightKg) ? tiers.find(([upTo]) => upTo + 1e-9 >= weightKg) : undefined
     return {
       service,
       price_czk: tier ? tier[1] : null,
       up_to_kg: tier ? tier[0] : null,
-      max_kg: cpMaxKg(country, service),
+      max_kg: tiers.length ? tiers[tiers.length - 1][0] : 0,
     }
   })
