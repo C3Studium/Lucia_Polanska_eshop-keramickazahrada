@@ -25,6 +25,7 @@ import {
 import { reloadOrderPageSoon } from "../lib/reload-order-page";
 import { sdk } from "../lib/sdk";
 import { stageLabel } from "../lib/stage-words";
+import { NavodTip } from "../components/navod-tip";
 import { WorkshopSheetButton } from "../components/workshop-sheet-button";
 
 /**
@@ -536,7 +537,10 @@ export const OrderStepsPanel = ({
       <div
         className={`flex flex-wrap items-center justify-between gap-x-2 gap-y-2 px-6 ${layout === "row" ? "py-3" : "py-4"}`}
       >
-        <Heading level="h2">Postup objednávky</Heading>
+        <div className="flex items-center gap-1">
+          <Heading level="h2">Postup objednávky</Heading>
+          <NavodTip tema="objednavky.postup" />
+        </div>
         {/* Vodorovně stav říkají kroky a „Teď:" — místo odznaku tu je
             list pro dílnu, ať karta nemá řádek navíc (17. 11. 2026). */}
         {layout === "row" ? (

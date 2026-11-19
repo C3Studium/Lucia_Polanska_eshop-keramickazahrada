@@ -124,6 +124,9 @@ export class Nahravka {
 
   async drz(ms = 1200) { await this.snimek(ms); }
 
+  /** Počká (bez snímku) — např. na 5 s „Vrátit zpět", ať GIF nemá mrtvé místo. */
+  async pockej(ms) { await sleep(ms); }
+
   async jdi(url, { cekej = null, pauza = 1500 } = {}) {
     await this.S('Page.navigate', { url });
     await sleep(pauza);

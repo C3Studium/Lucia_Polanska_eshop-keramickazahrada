@@ -1,5 +1,6 @@
 import { ChevronDown } from "@medusajs/icons";
 import { Container, Heading, Text } from "@medusajs/ui";
+import { NavodTip } from "./navod-tip";
 import {
   useEffect,
   useRef,
@@ -23,9 +24,12 @@ export const OrderSection = ({
   summary,
   attention = false,
   defaultOpen = false,
+  tip,
   children,
 }: {
   title: string;
+  /** Klíč návodu — „?" s GIFem vedle nadpisu (klik na něj kartu nepřepne). */
+  tip?: string;
   /** Stav vpravo v záhlaví — vidět i u zavřené karty. */
   badge?: ReactNode;
   /** Jedna věta pod nadpisem, jen když je karta zavřená. */
@@ -40,14 +44,26 @@ export const OrderSection = ({
 
   return (
     <Container className="divide-y p-0">
-      <button
-        type="button"
+      {/* div s rolí tlačítka (ne <button>) — uvnitř smí být otazník návodu. */}
+      <div
+        role="button"
+        tabIndex={0}
         aria-expanded={open}
         onClick={() => setChoice(!open)}
-        className="hover:bg-ui-bg-base-hover flex w-full items-center justify-between gap-x-3 rounded-t-lg px-6 py-4 text-left transition-colors"
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget) return;
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setChoice(!open);
+          }
+        }}
+        className="hover:bg-ui-bg-base-hover focus-visible:shadow-borders-focus flex w-full cursor-pointer items-center justify-between gap-x-3 rounded-t-lg px-6 py-4 text-left outline-none transition-colors"
       >
         <div className="min-w-0">
-          <Heading level="h2">{title}</Heading>
+          <div className="flex items-center gap-1">
+            <Heading level="h2">{title}</Heading>
+            {tip && <NavodTip tema={tip} className="-my-1" />}
+          </div>
           {!open && summary ? (
             <Text size="small" className="text-ui-fg-subtle mt-0.5">
               {summary}
@@ -60,7 +76,7 @@ export const OrderSection = ({
             className={`text-ui-fg-muted transition-transform ${open ? "rotate-180" : ""}`}
           />
         </div>
-      </button>
+      </div>
       {open ? children : null}
     </Container>
   );

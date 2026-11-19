@@ -56,6 +56,100 @@ export const SEKCE: { id: NavodSekceId; nazev: string; popis: string }[] = [
 ];
 
 export const NAVOD: NavodTema[] = [
+  /* ————————————————— Objednávky ————————————————— */
+  {
+    klic: "objednavky.seznam",
+    sekce: "objednavky",
+    nazev: "Kde najdu objednávky",
+    proc:
+      "Záložky nahoře třídí objednávky podle toho, kde jsou: Nové (nikdo je ještě nezačal), Připravujeme, K odeslání, Na poštu, Problém s platbou, Čeká na doplatek. Klik na číslo otevře detail.",
+    klipy: [{ klic: "objednavky.seznam", popis: "Záložky a otevření objednávky" }],
+    kroky: [
+      "V menu klikněte na „Objednávky“.",
+      "Začněte záložkou „Nové“ — to jsou objednávky, které čekají na vás.",
+      "Klik na řádek (číslo #) otevře detail objednávky.",
+      "Přepínač „Vše · Výrobky · Zakázky | Poptávky“ odfiltruje druh objednávky.",
+    ],
+    kde: "/objednavky",
+  },
+  {
+    klic: "objednavky.postup",
+    sekce: "objednavky",
+    nazev: "Vyřídit objednávku krok za krokem",
+    proc:
+      "V detailu objednávky je nahoře „Postup objednávky“ — kolečka ukazují, kde objednávka je, a velké tlačítko říká, co udělat dál. Každý krok pošle zákazníkovi e-mail (napsáno pod tlačítkem). 5 vteřin po kliknutí jde krok ještě vrátit.",
+    klipy: [
+      { klic: "objednavky.postup", popis: "Na adresu — připravit, zabalit, odeslat" },
+      { klic: "objednavky.odber", popis: "Osobní odběr — připraveno, vyzvednuto" },
+    ],
+    kroky: [
+      "Otevřete objednávku a klikněte na „Začít připravovat“.",
+      "Zabalíte → „Zabaleno, připraveno k odeslání“.",
+      "Vytiskněte štítek v oddílu „Štítek České pošty“ a balík odneste na poštu.",
+      "„Označit jako odeslané“ — zákazník dostane e-mail s číslem zásilky. Když balík pošta převezme, zapíše se to i samo.",
+      "Osobní odběr: „Připraveno k vyzvednutí“ → po předání „Vyzvednuto a zaplaceno“.",
+    ],
+    pozor: "Spletete se? Hned po kliknutí je dole „Vrátit zpět“ (5 vteřin).",
+  },
+  {
+    klic: "objednavky.zpozdeni",
+    sekce: "objednavky",
+    nazev: "Objednávka se zdrží",
+    proc:
+      "Když nestihnete odeslat, pošlete zákazníkovi omluvu s novým termínem. U objednávky pak svítí štítek „Nový termín“.",
+    klipy: [{ klic: "objednavky.zpozdeni", popis: "Oznámit zpoždění" }],
+    kroky: [
+      "V detailu objednávky vpravo otevřete „Zpoždění“ → „Oznámit zpoždění“.",
+      "Zaškrtněte výrobky, které se zdrží, a vyberte nový termín.",
+      "Napište důvod (nepovinné — zákazník ho uvidí).",
+      "Klikněte na „Poslat zákazníkovi omluvu“.",
+    ],
+  },
+  /* ————————————————— Zakázky ————————————————— */
+  {
+    klic: "zakazky.postup",
+    sekce: "zakazky",
+    nazev: "Vyřídit zakázku",
+    proc:
+      "Zakázka jde jinou cestou než běžná objednávka: zákazník zaplatil zálohu a napsal zadání. Vy zadání potvrdíte, vyrobíte, pošlete výzvu k doplacení a po zaplacení odešlete. Vše je v detailu objednávky — vlevo „Postup objednávky“, vpravo „Výroba na zakázku“ (zadání, platby, poznámky).",
+    klipy: [
+      { klic: "zakazky.postup", popis: "Potvrdit zadání → výroba → hotovo" },
+      { klic: "zakazky.priplatek", popis: "Příplatek k zakázce" },
+      { klic: "zakazky.konverzace", popis: "Napsat zákazníkovi" },
+      { klic: "zakazky.poznamka", popis: "Interní poznámka" },
+    ],
+    kroky: [
+      "Přečtěte si zadání vpravo („Zadání od zákazníka“). Nejasnosti doptejte přes „Konverzace se zákazníkem“.",
+      "„Potvrdit zadání“ → zákazník dostane e-mail, že je zakázka přijatá.",
+      "„Začít výrobu“, a když je hotovo, „Výroba dokončena“.",
+      "„Poslat výzvu k doplacení“ — zákazník dostane odkaz k zaplacení zbytku. Odeslání se odemkne až po zaplacení.",
+      "Pak jako běžná objednávka: zabalit, štítek, odeslat.",
+    ],
+    pozor: "Vyjde zakázka dráž? „Přidat příplatek“ — přičte se k doplatku. Interní poznámku vidíte jen vy.",
+    kde: "/objednavky?zalozka=zakazky",
+  },
+  /* ————————————————— Reklamace a vrácení ————————————————— */
+  {
+    klic: "reklamace.vyrizeni",
+    sekce: "reklamace",
+    nazev: "Vyřídit reklamaci nebo vrácení",
+    proc:
+      "Každá žádost jde stejnou cestou: rozhodnout (schválit / zamítnout) → zboží zpět → vrátit peníze → vyřízeno. Peníze se NIKDY nevrací samy — jen tlačítkem „Vrátit … Kč“ v košíku vrácení. Každý krok pošle zákazníkovi e-mail. Lhůta na vyřízení je 30 dní (svítí u žádosti).",
+    klipy: [
+      { klic: "reklamace.vyrizeni", popis: "Schválit, přijmout zboží, vrátit peníze" },
+      { klic: "reklamace.zamitnout", popis: "Zamítnout s odůvodněním" },
+    ],
+    kroky: [
+      "Reklamace a vrácení → záložka „Nové“ → klik na žádost.",
+      "Přečtěte důvod a fotky. Oprávněná: „Schválit“, vyberte způsob (vrácení peněz / výměna) → „Schválit a poslat e-mail“.",
+      "Až zboží dorazí: „Zboží přijato“ → potvrdit.",
+      "V košíku vrácení zaškrtněte, co vracíte (poštovné se u reklamace nevrací) → „Vrátit … Kč“. Kartou odejdou peníze hned, u dobírky převedete na účet z karty „Vrácení převodem“.",
+      "Nakonec „Vyřízeno“ → „Vyřízeno a poslat potvrzení“.",
+      "Neoprávněná: „Zamítnout“, napište odůvodnění (povinné) → „Zamítnout a poslat e-mail“.",
+    ],
+    pozor: "Hlídejte lhůtu — červený štítek „Po lhůtě“ znamená, že 30 dní uplynulo.",
+    kde: "/reklamace",
+  },
   /* ————————————————— Produkty — seznam ————————————————— */
   {
     klic: "produkty.novy",

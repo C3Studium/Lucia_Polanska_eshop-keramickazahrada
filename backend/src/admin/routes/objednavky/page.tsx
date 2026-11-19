@@ -63,6 +63,7 @@ import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
 import { SelectCheckbox } from "../../components/select-checkbox";
 import { ceskaChyba } from "../../lib/ceska-chyba";
+import { NavodTip } from "../../components/navod-tip";
 import { useScrollMemory } from "../../lib/scroll-memory"
 
 /**
@@ -1645,7 +1646,10 @@ const OrdersInner = () => {
           řádku, popis jedna věta. */}
       <header className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
         <div className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-2">
-          <Heading>Objednávky</Heading>
+          <div className="flex items-center gap-1">
+            <Heading>Objednávky</Heading>
+            <NavodTip tema="objednavky.seznam" />
+          </div>
           <SubTabs
             bare
             tabs={[

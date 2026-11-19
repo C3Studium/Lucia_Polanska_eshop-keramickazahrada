@@ -14,7 +14,7 @@ import { api, jenSandbox } from './lib/api.mjs';
 import { Nahravka, otevritProhlizec } from './lib/rekorder.mjs';
 
 jenSandbox();
-const ADMIN = process.env.CIL ?? 'http://localhost:9100';
+const ADMIN = process.env.ADMIN_UI ?? 'http://localhost:9100';
 const OBCHOD = process.env.OBCHOD ?? 'http://localhost:8100';
 const VYSTUP = path.resolve(import.meta.dirname, '.vystup');
 const filtr = process.argv.slice(2).filter((a) => !a.startsWith('--'));
