@@ -6,6 +6,8 @@ import { getMerchantSettings, setMerchantSettings } from "./merchant-settings"
 import {
   CP_SERVICE_DEFAULT,
   cpAllQuotes,
+  cpQuote,
+  type CpQuote,
   cpCountryName,
   cpFetchedAt,
   cpServices,
@@ -190,6 +192,8 @@ export type InternationalCountryState = CountryRow & {
   override_czk: number | null
   /** Cena pro průměrnou váhu (jak by ji viděl zákazník bez vyplněných hmotností). */
   quote: InternationalQuote | null
+  /** Ceník ČP v Kč pro průměrnou váhu (i před uložením a bez kurzu). */
+  cp: CpQuote | null
 }
 
 export type InternationalShippingState = {
@@ -228,8 +232,13 @@ const buildData = (input: {
   markup_percent: markupPercent(),
 })
 
+/**
+ * Stav pro administraci. `nahled` = co majitelka právě píše (váha, služba)
+ * — ceny v tabulce se tak mění hned, ne až po uložení (19. 11. 2026).
+ */
 export const getInternationalShipping = async (
-  container: MedusaContainer
+  container: MedusaContainer,
+  nahled: { kg?: number | null; service?: string | null } = {}
 ): Promise<InternationalShippingState> => {
   const [rows, option, settings] = await Promise.all([
     listForeignCountries(container),
@@ -237,8 +246,12 @@ export const getInternationalShipping = async (
     getMerchantSettings(container),
   ])
   const stored = (option?.data ?? null) as InternationalOptionData | null
-  const service = settings.international_cp_service || CP_SERVICE_DEFAULT
-  const parcelWeight = settings.international_parcel_weight_kg
+  const service =
+    nahled.service && cpServices().includes(nahled.service)
+      ? nahled.service
+      : settings.international_cp_service || CP_SERVICE_DEFAULT
+  const parcelWeight =
+    nahled.kg && nahled.kg > 0 && nahled.kg <= 30 ? nahled.kg : settings.international_parcel_weight_kg
   const packaging = settings.international_packaging_kg ?? 0
   // Před prvním uložením: všechny země, kam ČP vozí, kromě GB (celní prohlášení).
   const enabled = new Set(
@@ -247,6 +260,16 @@ export const getInternationalShipping = async (
         .filter((row) => cpShipsTo(row.country_code) && !INTERNATIONAL_DEFAULT_OFF.includes(row.country_code))
         .map((row) => row.country_code)
   )
+  /* Před prvním uložením kurz ještě v datech volby není — vezme se dnešní
+     z ČNB, ať tabulka ukáže i eura (bez kurzu aspoň koruny). */
+  let rates = stored?.rates ?? {}
+  let ratesDate = stored?.rates_date ?? null
+  if (!Object.keys(rates).length) {
+    const currencies = [...new Set(rows.map((row) => row.currency_code))]
+    const sheet = await fetchCnbRates().catch(() => null)
+    rates = ratesFor(currencies, sheet)
+    ratesDate = sheet?.date ?? null
+  }
   const preview = buildData({
     countries: rows.map((row) => row.country_code),
     overrides_czk: stored?.overrides_czk ?? {},
@@ -254,12 +277,12 @@ export const getInternationalShipping = async (
     parcel_weight_kg: parcelWeight,
     packaging_kg: packaging,
     rows,
-    rates: stored?.rates ?? {},
-    rates_date: stored?.rates_date ?? null,
+    rates,
+    rates_date: ratesDate,
   })
   return {
     option_id: option?.id ?? null,
-    rates_date: stored?.rates_date ?? null,
+    rates_date: ratesDate,
     fetched_at: cpFetchedAt(),
     services: cpServices(),
     service,
@@ -271,6 +294,8 @@ export const getInternationalShipping = async (
       cp_ships: cpShipsTo(row.country_code),
       override_czk: stored?.overrides_czk?.[row.country_code] ?? null,
       quote: internationalQuoteFor(preview, row.country_code, parcelWeight),
+      /* Cena z ceníku ČP v Kč i bez kurzu a bez ruční ceny — pro sloupec „Ceník ČP". */
+      cp: cpShipsTo(row.country_code) ? cpQuote(row.country_code, service, parcelWeight) : null,
     })),
   }
 }
