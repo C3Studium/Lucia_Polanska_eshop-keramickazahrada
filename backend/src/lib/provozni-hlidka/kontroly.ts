@@ -9,6 +9,7 @@ import type ActivityLogModuleService from "../../modules/activity-log/service"
 import { jeMenaObchodu, MENA_ZAKLADNI, vypisMen } from "../currencies"
 import { isPersonalPickupOrder } from "../personal-pickup"
 import type { Kontrola, NalezKontroly } from "./typy"
+import { najdiChybyZarazeni, nactiZarazeni } from "../zarazeni-hlidka"
 
 /**
  * Jednotlivé kontroly (3. 11. 2026).
@@ -832,6 +833,33 @@ const parovani: Kontrola = {
   },
 }
 
+/**
+ * Zařazení výrobků (19. 11. 2026): publikovaný výrobek, který obchod nikde
+ * neukáže — mimo kolekce, v kategorii bez kolekce nebo ve vypnuté, bez
+ * prodejního kanálu. Podrobnosti v `lib/zarazeni-hlidka.ts`; bezpečné
+ * opravy dělá hodinová úloha `srovnani-zarazeni`, tady se jen hlásí.
+ */
+const zarazeni: Kontrola = {
+  klic: "zarazeni",
+  nazev: "Zařazení výrobků",
+  spust: async (c) => {
+    const data = await nactiZarazeni(c as MedusaContainer)
+    const chyby = najdiChybyZarazeni(data)
+    const publikovanych = data.vyrobky.filter((v) => v.status === "published").length
+    if (!chyby.length) {
+      return {
+        stav: "ok",
+        zprava: `všech ${publikovanych} publikovaných výrobků je v kolekci a obchod je ukáže`,
+      }
+    }
+    return {
+      stav: "chyba",
+      zprava: `${chyby.length} problémů se zařazením — výrobky, které obchod neukáže tam, kde je majitelka čeká`,
+      detail: podrobnosti(chyby),
+    }
+  },
+}
+
 export const KONTROLY: Kontrola[] = [
   databaze,
   obchod,
@@ -841,6 +869,7 @@ export const KONTROLY: Kontrola[] = [
   limitEmailu,
   zasilky,
   sklad,
+  zarazeni,
   meny,
   obnovaKatalogu,
   parovani,

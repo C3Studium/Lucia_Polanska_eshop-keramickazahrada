@@ -15,7 +15,15 @@ import {
 } from "@medusajs/icons";
 import { toast } from "@medusajs/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState, type RefObject } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type MutableRefObject,
+  type RefObject,
+} from "react";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba } from "../lib/ceska-chyba";
 import { toastWithUndo } from "../lib/undo";
@@ -92,19 +100,30 @@ export const shippingClassLabel = (value: ShippingClass) =>
   SHIPPING_CLASS_OPTIONS.find((option) => option.value === value)?.label ?? value;
 
 /** Skryté spouštěcí tlačítko panelu — klikne na něj nabídka. */
-const HiddenTrigger = ({
-  buttonRef,
-}: {
-  buttonRef: RefObject<HTMLButtonElement>;
-}) => (
+/*
+ * Skrytý spouštěč panelu. MUSÍ předat dál vlastnosti a odkaz, které mu dá
+ * `Drawer.Trigger asChild` (Radix Slot) — hlavně `onClick`, kterým se panel
+ * otevírá. Dřív je zahazoval: klik „…" → Profil dopravy / Varianty a ceny /
+ * Nastavit jako zakázku tak nedělal nic (19. 11. 2026, hlášeno z produkce).
+ */
+const HiddenTrigger = forwardRef<
+  HTMLButtonElement,
+  { buttonRef: RefObject<HTMLButtonElement> } & ButtonHTMLAttributes<HTMLButtonElement>
+>(({ buttonRef, ...props }, forwarded) => (
   <button
-    ref={buttonRef}
+    {...props}
+    ref={(node) => {
+      (buttonRef as MutableRefObject<HTMLButtonElement | null>).current = node;
+      if (typeof forwarded === "function") forwarded(node);
+      else if (forwarded) forwarded.current = node;
+    }}
     type="button"
     tabIndex={-1}
     aria-hidden="true"
     className="sr-only"
   />
-);
+));
+HiddenTrigger.displayName = "HiddenTrigger";
 
 export const ProductRowMore = ({
   product,
