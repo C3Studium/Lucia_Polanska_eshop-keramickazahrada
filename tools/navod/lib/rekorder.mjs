@@ -124,6 +124,14 @@ export class Nahravka {
 
   async drz(ms = 1200) { await this.snimek(ms); }
 
+  /** Nastaví hodnotu pole (čas, datum, select) jako uživatel — pro pole, kam nejde psát. */
+  async nastavit(cil, hodnota, { popisek, po = 700 } = {}) {
+    await this.mys(cil);
+    if (popisek !== undefined) await this.popisek(popisek);
+    await this.ev(`(() => { const i = (${cil}); const proto = i instanceof HTMLSelectElement ? HTMLSelectElement.prototype : i instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(proto, 'value').set.call(i, ${JSON.stringify(hodnota)}); i.dispatchEvent(new Event('input', { bubbles: true })); i.dispatchEvent(new Event('change', { bubbles: true })); })()`);
+    await this.snimek(po);
+  }
+
   /** Počká (bez snímku) — např. na 5 s „Vrátit zpět", ať GIF nemá mrtvé místo. */
   async pockej(ms) { await sleep(ms); }
 
@@ -148,7 +156,7 @@ export class Nahravka {
 
   async stred(cil) {
     /* Položka rozbalovacího seznamu/nabídky: odrolovat jen uvnitř seznamu. */
-    const vSeznamu = await this.ev(`(() => { const el = (${cil}); if (!el || !el.closest('[role=listbox],[role=menu],[data-radix-popper-content-wrapper]')) return false; el.scrollIntoView({ block: 'nearest' }); return true; })()`);
+    const vSeznamu = await this.ev(`(() => { const el = (${cil}); if (!el || !el.closest('[role=listbox],[role=menu],[data-radix-popper-content-wrapper],[role=dialog],[role=alertdialog]')) return false; el.scrollIntoView({ block: 'nearest' }); return true; })()`);
     if (vSeznamu) await this.snimek(250);
     const mimo = await this.ev(`(() => { const el = (${cil}); if (!el) return null; const r = el.getBoundingClientRect(); return r.top < 70 || r.bottom > innerHeight - 90; })()`);
     if (mimo === null) throw new Error('prvek nenalezen: ' + cil.slice(0, 60) + ' … ' + cil.slice(-140));

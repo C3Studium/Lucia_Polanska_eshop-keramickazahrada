@@ -150,6 +150,96 @@ export const NAVOD: NavodTema[] = [
     pozor: "Hlídejte lhůtu — červený štítek „Po lhůtě“ znamená, že 30 dní uplynulo.",
     kde: "/reklamace",
   },
+  /* ————————————————— Sklad ————————————————— */
+  {
+    klic: "sklad.naskladnit",
+    sekce: "sklad",
+    nazev: "Naskladnit po výpalu",
+    proc:
+      "Když vyjde várka z pece, zapíšete přírůstky u všech výrobků najednou a uložíte jedním tlačítkem.",
+    klipy: [{ klic: "sklad.naskladnit", popis: "Přidat kusy víc výrobkům najednou" }],
+    kroky: [
+      "Sklad → „Naskladnit po výpalu“.",
+      "Výrobek najdete hledáním; do pole „+ ks“ napište, kolik kusů přibylo.",
+      "Dole klikněte na „Naskladnit (…)“ — uloží se všechno najednou.",
+    ],
+    kde: "/sklad-workbench",
+  },
+  {
+    klic: "sklad.prehled",
+    sekce: "sklad",
+    nazev: "Co dochází a co je vyprodané",
+    proc:
+      "Zásoby ukazují, kolik kusů máte. Nahoře je to, o co je zájem (v košících, v oblíbených). Záložky „Dochází“ a „Vyprodáno“ hlídají, co dodělat.",
+    klipy: [{ klic: "sklad.prehled", popis: "Záložky a rychlá úprava počtu" }],
+    kroky: [
+      "Sklad → záložka „Dochází“ nebo „Vyprodáno“.",
+      "+ / − u řádku změní počet hned.",
+    ],
+    kde: "/sklad-workbench",
+  },
+  /* ————————————————— Kurzy ————————————————— */
+  {
+    klic: "kurzy.novy-termin",
+    sekce: "kurzy",
+    nazev: "Vypsat nový termín kurzu",
+    proc:
+      "Termín se hned ukáže na webu v Kurzech a lidé se můžou přihlásit. Vybrat jde víc dní najednou — z každého vznikne samostatný termín.",
+    klipy: [{ klic: "kurzy.novy-termin", popis: "Nový termín ve dvou krocích" }],
+    kroky: [
+      "Kurzy → „Nový termín“.",
+      "Napište název a místo, v kalendáři klikněte na dny, vyplňte čas, délku a kapacitu.",
+      "„Dál — ceny“: cena za dospělého, případně za dítě a skupinu.",
+      "„Vytvořit termín“.",
+    ],
+    kde: "/kurzy-sprava",
+  },
+  /* ————————————————— Poukazy ————————————————— */
+  {
+    klic: "poukazy.novy",
+    sekce: "poukazy",
+    nazev: "Vystavit dárkový poukaz ručně",
+    proc:
+      "Když zákazník poukaz koupí v dílně, po telefonu nebo převodem. Kód se vytvoří sám; vytištěný poukaz si stáhnete jako PDF, elektronický odejde e-mailem. Poukazy koupené na webu se tu objeví samy.",
+    klipy: [{ klic: "poukazy.novy", popis: "Nový poukaz" }],
+    kroky: [
+      "Poukazy → „Nový poukaz“.",
+      "Vyberte vytištěný / elektronický a hodnotu.",
+      "Jméno obdarovaného a věnování jsou nepovinné.",
+      "Vyplňte kupujícího a platbu → „Vystavit poukaz“.",
+    ],
+    kde: "/poukazy",
+  },
+  /* ————————————————— Slevy ————————————————— */
+  {
+    klic: "slevy.vyprodej",
+    sekce: "slevy",
+    nazev: "Výprodej pro víc výrobků",
+    proc:
+      "Zlevní celou kolekci, kategorii nebo vybrané kusy. „Na čas“ platí od–do, „Do vyprodání zásob“ zlevní jen kusy skladem a skončí sám, až se prodá poslední. Výprodej má přednost před slevou výrobku i před slevovými kódy.",
+    klipy: [{ klic: "slevy.vyprodej-novy", popis: "Nový výprodej ve třech krocích" }],
+    kroky: [
+      "Slevy → záložka „Výprodeje“ → „Nový výprodej“.",
+      "1. Typ: „Na čas“, nebo „Do vyprodání zásob“ → „Další“.",
+      "2. Výrobky: zaškrtněte kolekci, kategorii nebo jednotlivé výrobky → „Další“.",
+      "3. Sleva: procenta; dole vidíte, kolik výrobků se zlevní → „Spustit výprodej“.",
+    ],
+    kde: "/slevy-workbench",
+  },
+  {
+    klic: "slevy.kod",
+    sekce: "slevy",
+    nazev: "Slevový kód",
+    proc:
+      "Kód, který zákazník napíše v pokladně (např. JARO10). Platí na celou objednávku nebo dává dopravu zdarma; na zlevněné výrobky a výprodeje neplatí.",
+    klipy: [{ klic: "slevy.kod", popis: "Nový slevový kód" }],
+    kroky: [
+      "Slevy → záložka „Akce a kódy“ → „Nová sleva“.",
+      "Napište kód, vyberte, co sleva dělá, a kolik.",
+      "Uložte — kód platí hned.",
+    ],
+    kde: "/slevy-workbench",
+  },
   /* ————————————————— Produkty — seznam ————————————————— */
   {
     klic: "produkty.novy",
