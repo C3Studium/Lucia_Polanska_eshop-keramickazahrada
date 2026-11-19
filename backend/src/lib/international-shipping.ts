@@ -3,10 +3,10 @@ import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/frame
 import { createShippingOptionsWorkflow } from "@medusajs/medusa/core-flows"
 import { fetchCnbRates, type CnbRateSheet } from "./cnb-rates"
 import { getMerchantSettings, setMerchantSettings } from "./merchant-settings"
+import { LINE_QUANTITY_FIELDS, lineQuantityOf } from "./order-quantity"
 import {
-  CP_SERVICE_DEFAULT,
   cpAllQuotes,
-  cpQuote,
+  cpCheapest,
   type CpQuote,
   cpCountryName,
   cpFetchedAt,
@@ -19,7 +19,9 @@ import {
   INTERNATIONAL_OPTION_NAME,
   INTERNATIONAL_SERVICE_CODE,
   INTERNATIONAL_ZONE_NAME,
+  internationalMethodName,
   internationalQuoteFor,
+  internationalQuoteForItems,
   isInternationalOptionData,
   normalizePricesCzk,
   type InternationalOptionData,
@@ -200,8 +202,10 @@ export type InternationalShippingState = {
   option_id: string | null
   rates_date: string | null
   fetched_at: string
+  /** Všechny služby v ceníku ČP. */
+  all_services: string[]
+  /** Povolené služby — vybírá se z nich nejlevnější. */
   services: string[]
-  service: string
   parcel_weight_kg: number
   packaging_kg: number
   countries: InternationalCountryState[]
@@ -211,7 +215,7 @@ export type InternationalShippingState = {
 const buildData = (input: {
   countries: string[]
   overrides_czk: Record<string, number>
-  service: string
+  services: string[]
   parcel_weight_kg: number
   packaging_kg: number
   rows: CountryRow[]
@@ -223,7 +227,7 @@ const buildData = (input: {
   international: true,
   countries: input.countries,
   overrides_czk: input.overrides_czk,
-  service: input.service,
+  services: input.services,
   parcel_weight_kg: input.parcel_weight_kg,
   packaging_kg: input.packaging_kg,
   currency_by_country: Object.fromEntries(input.rows.map((row) => [row.country_code, row.currency_code])),
@@ -238,7 +242,7 @@ const buildData = (input: {
  */
 export const getInternationalShipping = async (
   container: MedusaContainer,
-  nahled: { kg?: number | null; service?: string | null } = {}
+  nahled: { kg?: number | null; services?: string[] | null } = {}
 ): Promise<InternationalShippingState> => {
   const [rows, option, settings] = await Promise.all([
     listForeignCountries(container),
@@ -246,10 +250,9 @@ export const getInternationalShipping = async (
     getMerchantSettings(container),
   ])
   const stored = (option?.data ?? null) as InternationalOptionData | null
-  const service =
-    nahled.service && cpServices().includes(nahled.service)
-      ? nahled.service
-      : settings.international_cp_service || CP_SERVICE_DEFAULT
+  const services = (
+    nahled.services?.length ? nahled.services : settings.international_cp_services ?? []
+  ).filter((name) => cpServices().includes(name))
   const parcelWeight =
     nahled.kg && nahled.kg > 0 && nahled.kg <= 30 ? nahled.kg : settings.international_parcel_weight_kg
   const packaging = settings.international_packaging_kg ?? 0
@@ -273,7 +276,7 @@ export const getInternationalShipping = async (
   const preview = buildData({
     countries: rows.map((row) => row.country_code),
     overrides_czk: stored?.overrides_czk ?? {},
-    service,
+    services,
     parcel_weight_kg: parcelWeight,
     packaging_kg: packaging,
     rows,
@@ -284,8 +287,8 @@ export const getInternationalShipping = async (
     option_id: option?.id ?? null,
     rates_date: ratesDate,
     fetched_at: cpFetchedAt(),
-    services: cpServices(),
-    service,
+    all_services: cpServices(),
+    services,
     parcel_weight_kg: parcelWeight,
     packaging_kg: packaging,
     countries: rows.map((row) => ({
@@ -295,7 +298,7 @@ export const getInternationalShipping = async (
       override_czk: stored?.overrides_czk?.[row.country_code] ?? null,
       quote: internationalQuoteFor(preview, row.country_code, parcelWeight),
       /* Cena z ceníku ČP v Kč i bez kurzu a bez ruční ceny — pro sloupec „Ceník ČP". */
-      cp: cpShipsTo(row.country_code) ? cpQuote(row.country_code, service, parcelWeight) : null,
+      cp: cpShipsTo(row.country_code) ? cpCheapest(row.country_code, parcelWeight, services) : null,
     })),
   }
 }
@@ -303,7 +306,7 @@ export const getInternationalShipping = async (
 export type SaveInternationalInput = {
   countries?: unknown
   overrides_czk?: unknown
-  service?: unknown
+  services?: unknown
   parcel_weight_kg?: unknown
   packaging_kg?: unknown
 }
@@ -318,8 +321,10 @@ export const saveInternationalShipping = async (
   const rows = await listForeignCountries(container)
   const known = new Set(rows.map((row) => row.country_code))
 
-  const service = String(input.service ?? CP_SERVICE_DEFAULT)
-  if (!cpServices().includes(service)) throw invalid("Neznámá služba České pošty.")
+  const services = Array.isArray(input.services)
+    ? [...new Set((input.services as unknown[]).map(String))].filter((name) => cpServices().includes(name))
+    : cpServices()
+  if (!services.length) throw invalid("Vyberte aspoň jednu službu České pošty.")
   const parcelWeight = Number(String(input.parcel_weight_kg ?? "").replace(",", "."))
   if (!(parcelWeight > 0 && parcelWeight <= 30)) throw invalid("Průměrná váha balíku musí být od 0,1 do 30 kg.")
   const packaging = Number(String(input.packaging_kg ?? 0).replace(",", ".")) || 0
@@ -335,7 +340,7 @@ export const saveInternationalShipping = async (
   const countries = requested.filter((code) => known.has(code) && (cpShipsTo(code) || overrides[code]))
 
   await setMerchantSettings(container, {
-    international_cp_service: service,
+    international_cp_services: services,
     international_parcel_weight_kg: Math.round(parcelWeight * 10) / 10,
     international_packaging_kg: Math.round(packaging * 10) / 10,
   } as never)
@@ -345,7 +350,7 @@ export const saveInternationalShipping = async (
   const data = buildData({
     countries,
     overrides_czk: overrides,
-    service,
+    services,
     parcel_weight_kg: Math.round(parcelWeight * 10) / 10,
     packaging_kg: Math.round(packaging * 10) / 10,
     rows,
@@ -375,7 +380,7 @@ export const refreshInternationalShippingRates = async (
     buildData({
       countries,
       overrides_czk: data.overrides_czk ?? {},
-      service: data.service || CP_SERVICE_DEFAULT,
+      services: data.services ?? [],
       parcel_weight_kg: data.parcel_weight_kg || 3,
       packaging_kg: data.packaging_kg ?? 0,
       rows,
@@ -393,3 +398,67 @@ export const internationalCalculator = (country: string, kg: number) => ({
   kg,
   quotes: cpAllQuotes(country, kg),
 })
+
+/**
+ * Název dopravy OBJEDNÁVKY podle vybrané služby ČP (19. 11. 2026, Matěj:
+ * „ukázat název služby v obchodě, objednávce i PDF, ať to zákazník i admin ví").
+ *
+ * Košík název nese jen dočasně — Medusa při každé úpravě košíku vrátí dopravě
+ * název volby (refreshCartShippingMethods), a objednávku po ComGate dokončí
+ * notifikace bez dalšího čtení košíku. Proto se název srovná na objednávce:
+ * při jejím založení a ještě před skládáním potvrzovacího e-mailu s PDF a
+ * faktury (na pořadí odběratelů tak nezáleží). Idempotentní; nic nevyhazuje.
+ * Výpočet je týž jako cena v pokladně (razítka hmotnosti na řádcích).
+ */
+export const ensureInternationalOrderMethodName = async (
+  container: MedusaContainer,
+  orderId: string
+): Promise<string | null> => {
+  try {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const { data } = await query.graph({
+      entity: "order",
+      fields: [
+        "id",
+        "shipping_address.country_code",
+        "items.id",
+        "items.product_id",
+        "items.variant_id",
+        "items.metadata",
+        ...LINE_QUANTITY_FIELDS,
+        "shipping_methods.id",
+        "shipping_methods.name",
+        "shipping_methods.shipping_option_id",
+      ],
+      filters: { id: orderId },
+    })
+    const order = (data as any[])[0]
+    const methods = ((order?.shipping_methods ?? []) as any[]).filter((method) => method?.shipping_option_id)
+    if (!methods.length) return null
+    const { data: options } = await query.graph({
+      entity: "shipping_option",
+      fields: ["id", "data"],
+      filters: { id: [...new Set(methods.map((method) => method.shipping_option_id))] },
+    })
+    const dataById = new Map((options as any[]).map((option) => [option.id, option.data]))
+    const items = ((order.items ?? []) as any[]).map((item) => ({ ...item, quantity: lineQuantityOf(item) }))
+    for (const method of methods) {
+      const optionData = dataById.get(method.shipping_option_id)
+      if (!isInternationalOptionData(optionData)) continue
+      const name = internationalMethodName(
+        internationalQuoteForItems(optionData, order.shipping_address?.country_code, items)
+      )
+      if (name !== method.name) {
+        const orderModule: any = container.resolve(Modules.ORDER)
+        await orderModule.updateOrderShippingMethods([{ id: method.id, name }])
+      }
+      return name
+    }
+    return null
+  } catch (error) {
+    container
+      .resolve(ContainerRegistrationKeys.LOGGER)
+      .warn(`[zahraničí] Název dopravy objednávky ${orderId} se nepodařilo srovnat: ${error instanceof Error ? error.message : error}`)
+    return null
+  }
+}

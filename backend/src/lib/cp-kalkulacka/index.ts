@@ -80,6 +80,27 @@ export const cpQuote = (country: string, service: string, weightKg: number): CpQ
   return null
 }
 
+/**
+ * NEJLEVNĚJŠÍ služba do země pro hmotnost (Matěj 19. 11. 2026: „vždy vybrat
+ * nejlevnější dopravu podle hmotnosti a země"). Vybírá se z `services`
+ * (prázdné = ze všech v ceníku); při shodné ceně rozhoduje pořadí
+ * CP_FALLBACK_ORDER (prioritní před ekonomickým). `null` = nic tam takový
+ * balík nevozí.
+ */
+export const cpCheapest = (country: string, weightKg: number, services: string[] = []): CpQuote | null => {
+  if (!validKg(weightKg)) return null
+  const pool = (services.length ? services : CP_SERVICES).filter((name) => CP_SERVICES.includes(name))
+  const order = [...CP_FALLBACK_ORDER.filter((name) => pool.includes(name)), ...pool.filter((name) => !CP_FALLBACK_ORDER.includes(name))]
+  let best: CpQuote | null = null
+  for (const name of order) {
+    const tier = cpTiers(country, name).find(([upTo]) => upTo + 1e-9 >= weightKg)
+    if (tier && (!best || tier[1] < best.price_czk)) {
+      best = { price_czk: tier[1], service: name, up_to_kg: tier[0], fallback: false }
+    }
+  }
+  return best
+}
+
 /** Všechny služby do země pro jednu váhu — „malá kalkulačka" v administraci. */
 export const cpAllQuotes = (
   country: string,

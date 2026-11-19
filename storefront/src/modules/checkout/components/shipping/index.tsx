@@ -42,6 +42,7 @@ import { cartHasFragile } from "@lib/util/fragile"
 import { useTexty } from "@lib/context/texty"
 import { DOPRAVA_TEXT_KEY } from "@lib/util/fragile"
 import NavodTip from "@modules/common/components/navod-tip"
+import { isInternationalShippingOption } from "@lib/util/international-shipping"
 
 type ShippingProps = {
   cart: HttpTypes.StoreCart
@@ -724,6 +725,21 @@ const Shipping: React.FC<ShippingProps> = ({
                             {/* Osobní odběr: kdy a jak (Texty obchodu) a mapa
                                 (14. 11. 2026). Odkaz na mapu otevře nové okno
                                 a volbu dopravy nemění. */}
+                            {/* Do zahraničí (19. 11. 2026): backend vybere nejlevnější
+                                službu ČP podle hmotnosti a země a dá jí jméno do
+                                zvolené dopravy — tady se ukáže, která to je. */}
+                            {isInternationalShippingOption(option as any) && (
+                              <span className={styles.methodText}>
+                                {(() => {
+                                  const zvolena = cart?.shipping_methods?.find(
+                                    (method: any) => method?.shipping_option_id === option.id
+                                  )
+                                  return zvolena?.name && zvolena.name !== option.name
+                                    ? zvolena.name
+                                    : "Vybereme nejlevnější službu České pošty podle hmotnosti zásilky a země."
+                                })()}
+                              </span>
+                            )}
                             {isPickup && texty["pokladna.odber_info"] && (
                               <span className={styles.methodText}>
                                 {texty["pokladna.odber_info"]}

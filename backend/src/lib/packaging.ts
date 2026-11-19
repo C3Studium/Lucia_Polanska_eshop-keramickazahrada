@@ -58,6 +58,7 @@ import { shippingClassOf } from "./shipping-rates"
 import { isClearanceProduct } from "./clearance"
 import { isCustomAmountVoucher } from "./voucher"
 import { looksLikeVoucherCode } from "../modules/gift-voucher/code"
+import { internationalMethodName, internationalQuoteForItems, isInternationalOptionData } from "./international-shipping-price"
 import { GIFT_VOUCHER_MODULE } from "../modules/gift-voucher"
 import {
   isPackagingLine,
@@ -335,6 +336,11 @@ const CART_FIELDS = [
   // Hmotnost pro dopravu do zahraničí (razítko ship_weight_g, 19. 11. 2026).
   "items.product.weight",
   "items.variant.weight",
+  // Doprava do zahraničí: název podle vybrané (nejlevnější) služby ČP.
+  "shipping_methods.id",
+  "shipping_methods.name",
+  "shipping_methods.shipping_option_id",
+  "shipping_address.country_code",
   // Poukaz v košíku rozhoduje o tom, jestli smí akce na balné — viz
   // `cartHasVoucherPromotion`.
   "promotions.code",
@@ -416,6 +422,42 @@ const shipStampsFor = (items: any[]): { id: string; metadata: Record<string, unk
     .filter((entry) => entry !== null) as { id: string; metadata: Record<string, unknown> }[]
 
 /** Plán pro košík (bez zápisu) — sdílí ho synchronizace i kontrola dokončení. */
+/**
+ * Doprava do zahraničí (19. 11. 2026, Matěj): pokladna vybírá nejlevnější
+ * službu ČP podle hmotnosti a země — a zákazník i majitelka musí vidět,
+ * KTERÁ to je. Název zvolené dopravy v košíku se proto přepíše na službu
+ * („Česká pošta – Obchodní balík do zahraničí (do 3 kg)"); objednávka ho
+ * zdědí, takže ho ukáže pokladna, detail objednávky, e-maily, PDF i faktura.
+ * Počítá se z řádků i s právě otiskovanými razítky hmotnosti.
+ */
+const internationalRenameFor = async (
+  container: MedusaContainer,
+  cart: any,
+  stamps: { id: string; metadata: Record<string, unknown> }[]
+): Promise<{ id: string; name: string } | null> => {
+  const methods = ((cart?.shipping_methods ?? []) as any[]).filter((method) => method?.shipping_option_id)
+  if (!methods.length) return null
+  const query = container.resolve(ContainerRegistrationKeys.QUERY)
+  const { data: options } = await query.graph({
+    entity: "shipping_option",
+    fields: ["id", "data"],
+    filters: { id: [...new Set(methods.map((method) => method.shipping_option_id))] },
+  })
+  const dataById = new Map((options as any[]).map((option) => [option.id, option.data]))
+  const stampById = new Map(stamps.map((stamp) => [stamp.id, stamp.metadata]))
+  const items = ((cart.items ?? []) as any[]).map((item) =>
+    stampById.has(item.id) ? { ...item, metadata: stampById.get(item.id) } : item
+  )
+  for (const method of methods) {
+    const data = dataById.get(method.shipping_option_id)
+    if (!isInternationalOptionData(data)) continue
+    const quote = internationalQuoteForItems(data, cart.shipping_address?.country_code, items)
+    const name = internationalMethodName(quote)
+    if (name !== method.name) return { id: String(method.id), name }
+  }
+  return null
+}
+
 export const planPackagingForCart = async (
   container: MedusaContainer,
   cartId: string
@@ -424,6 +466,7 @@ export const planPackagingForCart = async (
   plan: PackagingPlan
   noPromoFlips: { id: string; is_discountable: boolean }[]
   shipStamps: { id: string; metadata: Record<string, unknown> }[]
+  shipRename: { id: string; name: string } | null
 } | null> => {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const { data } = await query.graph({
@@ -446,11 +489,14 @@ export const planPackagingForCart = async (
       packagingUnitPrice(packagingPriceCzkOf(item.product?.metadata), currency, sheet),
     discountable: voucher,
   })
+  const shipStamps = shipStampsFor(cart.items ?? [])
+  const shipRename = await internationalRenameFor(container, cart, shipStamps).catch(() => null)
   return {
     cart,
     plan,
     noPromoFlips: noPromoFlipsFor(cart.items ?? [], voucher),
-    shipStamps: shipStampsFor(cart.items ?? []),
+    shipStamps,
+    shipRename,
   }
 }
 
@@ -467,13 +513,29 @@ export const syncPackagingForCart = async (
     const planned = await planPackagingForCart(container, cartId)
     if (
       !planned ||
-      (isEmptyPlan(planned.plan) && !planned.noPromoFlips.length && !planned.shipStamps.length)
+      (isEmptyPlan(planned.plan) &&
+        !planned.noPromoFlips.length &&
+        !planned.shipStamps.length &&
+        !planned.shipRename)
     ) {
       return { changed: false }
     }
     const { plan } = planned
 
     const cartModule = container.resolve<ICartModuleService>(Modules.CART)
+    /* Název dopravy až po přepočtech (ty mohou volbu dopravy přecenit). */
+    const prejmenovat = async () => {
+      if (!planned.shipRename) return
+      await cartModule.updateShippingMethods([planned.shipRename]).catch(() => undefined)
+    }
+    if (
+      isEmptyPlan(plan) &&
+      !planned.noPromoFlips.length &&
+      !planned.shipStamps.length
+    ) {
+      await prejmenovat()
+      return { changed: true }
+    }
     for (const stamp of planned.shipStamps) {
       await cartModule.updateLineItems(stamp.id, { metadata: stamp.metadata })
     }
@@ -528,12 +590,14 @@ export const syncPackagingForCart = async (
       await refreshCartItemsWorkflow(container)
         .run({ input: { cart_id: cartId, force_refresh: true } })
         .catch(() => undefined)
+      await prejmenovat()
       return { changed: true }
     }
 
     await refreshPaymentCollectionForCartWorkflow(container)
       .run({ input: { cart_id: cartId } })
       .catch(() => undefined)
+    await prejmenovat()
     return { changed: true }
   })
 

@@ -325,7 +325,10 @@ export default defineMiddlewares({
     {
       matcher: "/store/carts/:id/complete",
       methods: ["POST"],
-      middlewares: [requireStockableCart()],
+      /* Srovnání košíku i těsně před dokončením (19. 11. 2026): úprava košíku
+         (souhlasy, adresa) vrátí dopravě název volby — doprava do zahraničí
+         musí do objednávky odejít s názvem vybrané služby ČP. */
+      middlewares: [syncPackagingOnCartRead(), requireStockableCart()],
     },
     /*
      * Doběrečné. Výběr platby je jediné hrdlo, kterým si KAŽDÁ pokladna

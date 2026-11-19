@@ -42,6 +42,7 @@ import {
 import { emailLocaleOf } from "./email-locale"
 import { notifyMerchant } from "./notify"
 import { jeZkusebniRezim } from "./test-mode"
+import { ensureInternationalOrderMethodName } from "./international-shipping"
 import { isDepositRequest } from "./made-to-order/payment-kind"
 import { voucherNoteForOrder } from "./gift-voucher-orders"
 import { epsilonFor, toAmount } from "./ship-gate"
@@ -418,6 +419,9 @@ export const ensureInvoiceForOrder = async (
    * tlačítko v administraci) mají faktury jako vedlejší efekt a nesmí je
    * shodit to, že se zrovna zkouší.
    */
+  /* Doprava do zahraničí: na faktuře „Poštovné — Česká pošta – <služba>". */
+  await ensureInternationalOrderMethodName(container, orderId)
+
   if (await jeZkusebniRezim(container)) {
     logger.info(
       `[idoklad] Přeskakuji fakturu pro objednávku ${orderId} — je zapnutý zkušební režim.`
