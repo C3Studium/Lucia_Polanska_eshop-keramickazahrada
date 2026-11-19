@@ -101,3 +101,11 @@ describe("widgety adminu", () => {
     expect((text.match(/return null;/g) ?? []).length).toBe(1)
   })
 })
+
+/* Poznámka od zákazníka (19. 11. 2026): krok „Poznámka" v pokladně → karta v adminu. */
+describe("poznámka od zákazníka", () => {
+  it("visí na detailu objednávky pod zákazníkem", () => {
+    expect(vykreslene().has("order-customer-note")).toBe(true)
+    expect(obsah.get("order-workspace-main")).toContain("<OrderCustomerNotePanel order={order} />")
+  })
+})

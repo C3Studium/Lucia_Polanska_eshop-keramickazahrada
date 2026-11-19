@@ -20,6 +20,7 @@ import Shipping from "@modules/checkout/components/shipping"
 import CheckoutStepBubbles from "@modules/checkout/components/step-bubbles"
 import CheckoutSteps from "@modules/checkout/components/stepper"
 import CheckoutBriefStep from "@modules/checkout/components/brief-step"
+import CheckoutNoteStep from "@modules/checkout/components/note-step"
 import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 import { getShopStatus } from "@lib/data/shop-status"
 import { vacationSentence } from "@lib/util/vacation"
@@ -181,7 +182,8 @@ export default async function CheckoutForm({
         restriction={deliveryRestriction}
       />
         }
-        brief={maZakazku ? <CheckoutBriefStep cart={cart} /> : undefined}
+        /* Bez zakázky je na místě zadání nepovinná poznámka (19. 11. 2026). */
+        brief={maZakazku ? <CheckoutBriefStep cart={cart} /> : <CheckoutNoteStep cart={cart} />}
         payment={
       <Payment
         cart={cart}

@@ -107,12 +107,20 @@ export default function MobileBar({
        ResizeObserver to nevidí. Hlídač okna o tom pošle událost. Před
        kontrolou ResizeObserveru: Safari do 13.1 ho nemá a i tam musí
        lišta svou vůli přepočítat. */
-    window.addEventListener("kz:viewport", publish)
+    /* Lišta se k nové výšce posouvá přechodem 0,25 s — změřit i po něm. */
+    let poPrechodu = 0
+    const publishAfterLift = () => {
+      publish()
+      window.clearTimeout(poPrechodu)
+      poPrechodu = window.setTimeout(publish, 320)
+    }
+    window.addEventListener("kz:viewport", publishAfterLift)
     window.addEventListener("resize", publish)
 
     if (typeof ResizeObserver === "undefined") {
       return () => {
-        window.removeEventListener("kz:viewport", publish)
+        window.clearTimeout(poPrechodu)
+        window.removeEventListener("kz:viewport", publishAfterLift)
         window.removeEventListener("resize", publish)
         withdraw()
       }
@@ -122,7 +130,8 @@ export default function MobileBar({
     observer.observe(el)
     return () => {
       observer.disconnect()
-      window.removeEventListener("kz:viewport", publish)
+      window.clearTimeout(poPrechodu)
+      window.removeEventListener("kz:viewport", publishAfterLift)
       window.removeEventListener("resize", publish)
       withdraw()
     }

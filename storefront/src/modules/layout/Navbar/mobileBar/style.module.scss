@@ -42,6 +42,7 @@
    * okna (lib/util/viewport-guard) ji o tu výšku zvedne; jinde je to 0.
    */
   bottom: calc(var(--nav-bottom-inset) + var(--kz-ios-bottom, 0px));
+  transition: bottom 0.25s ease;
   left: calc(var(--page-inset, 0px) + var(--nav-bottom-inset));
 
   /*

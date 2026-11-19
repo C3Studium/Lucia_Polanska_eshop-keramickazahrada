@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import s from "./style.module.scss"
-import { POPIS_KROKU } from "../step-list"
+import { popisKroku } from "../step-list"
 
 /**
  * Kde v pokladně jste — čtyři bublinky, jen na svislém telefonu.
@@ -38,18 +38,20 @@ import { POPIS_KROKU } from "../step-list"
  * Roluje se jen při ZMĚNĚ kroku, ne při prvním vykreslení: příchod
  * z e-mailu rovnou na `?step=payment` nemá čím hýbat.
  */
-const ZAKLADNI = [
-  { key: "address", label: "Adresa" },
-  { key: "delivery", label: "Doručení" },
-  { key: "payment", label: "Platba" },
-  { key: "review", label: "Přehled" },
-] as const
-
 /* Zadání zakázky stojí PŘED platbou: bez něj se k ní stejně nedá projít. */
 const SE_ZAKAZKOU = [
   { key: "address", label: "Adresa" },
   { key: "delivery", label: "Doručení" },
   { key: "brief", label: "Zadání" },
+  { key: "payment", label: "Platba" },
+  { key: "review", label: "Přehled" },
+] as const
+
+/* Bez zakázky: místo zadání nepovinná poznámka (19. 11. 2026). */
+const SE_POZNAMKOU = [
+  { key: "address", label: "Adresa" },
+  { key: "delivery", label: "Doručení" },
+  { key: "brief", label: "Poznámka" },
   { key: "payment", label: "Platba" },
   { key: "review", label: "Přehled" },
 ] as const
@@ -60,7 +62,7 @@ export default function CheckoutStepBubbles({
   /** Je v košíku zakázka? Pak je kroků pět, ne čtyři. */
   hasBrief?: boolean
 }) {
-  const STEPS = hasBrief ? SE_ZAKAZKOU : ZAKLADNI
+  const STEPS = hasBrief ? SE_ZAKAZKOU : SE_POZNAMKOU
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -145,8 +147,8 @@ export default function CheckoutStepBubbles({
           </span>
           {active.label}
         </p>
-        {POPIS_KROKU[active.key] && (
-          <p className={s.desc}>{POPIS_KROKU[active.key]}</p>
+        {popisKroku(active.key, hasBrief) && (
+          <p className={s.desc}>{popisKroku(active.key, hasBrief)}</p>
         )}
       </div>
     </nav>

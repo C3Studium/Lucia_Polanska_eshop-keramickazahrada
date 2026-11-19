@@ -1,4 +1,4 @@
-import CheckoutBar from "./checkout-bar"
+// import CheckoutBar from "./checkout-bar" — pruh vypnut 19. 11. 2026, viz níž
 import ItemsTemplate from "./items"
 import Summary from "./summary"
 import EmptyCartMessage from "../components/empty-cart-message"
@@ -137,9 +137,18 @@ const CartTemplate = async ({
       * a při odrolování dolů zmizel — tedy přesně tam, kde ho je potřeba
       * nejvíc.
       */}
-    {cart?.items?.length ? (
-      <CheckoutBar cart={cart as any} shippingFrom={shippingFrom} />
-    ) : null}
+    {/*
+      * VYPNUTO 19. 11. 2026 (Lucie z telefonu: „bylo by pro mě přehlednější,
+      * kdyby na mě nevyskočila ta lišta s celkovou cenou a nepřekryla položku
+      * v košíku, ale kdyby byla prostě až dole pod objednanými výrobky").
+      * Souhrn s částkou a tlačítkem k pokladně je na konci stránky pod výpisem
+      * na všech zařízeních (index.module.scss: tablet ho už neskrývá).
+      * Komponenta zůstává — vrátit jde odkomentováním.
+      *
+      * {cart?.items?.length ? (
+      *   <CheckoutBar cart={cart as any} shippingFrom={shippingFrom} />
+      * ) : null}
+      */}
     </>
   )
 }

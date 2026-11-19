@@ -269,9 +269,8 @@ const Shipping: React.FC<ShippingProps> = ({
      * jen pořadí kroků: bez zadání pokladna k platbě stejně nepustí, takže
      * poslat člověka rovnou na platbu znamená poslat ho do zdi.
      */
-    const dalsi = (cart?.items ?? []).some(isMadeToOrderLine)
-      ? "brief"
-      : "payment"
+    /* Bez zakázky je na tomtéž místě nepovinná poznámka (19. 11. 2026). */
+    const dalsi = "brief"
     router.push(`${pathname}?step=${dalsi}`, { scroll: false })
   }
 
@@ -954,7 +953,7 @@ const Shipping: React.FC<ShippingProps> = ({
               data-testid="delivery-option-error-message"
             />
             <PremiumActionButton
-              text={maZakazku ? "Pokračovat k zadání" : "Pokračovat k platbě"}
+              text={maZakazku ? "Pokračovat k zadání" : "Pokračovat k poznámce"}
               onClickAction={handleSubmit}
               className={styles.divider}
               disabled={

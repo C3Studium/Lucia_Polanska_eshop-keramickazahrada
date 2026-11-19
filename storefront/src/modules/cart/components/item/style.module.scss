@@ -829,3 +829,35 @@
   text-overflow: clip;
   overflow-wrap: anywhere;
 }
+
+/*
+ * Balné pod cenou výrobku (19. 11. 2026, Lucie z telefonu). Menší a tlumené —
+ * je to příplatek k ceně nad ním, ne další položka. Na telefonu stojí pod
+ * cenou v řádku ovládání, na širokém okně pod „Celkem" ve sloupci ceny.
+ */
+.cellPriceStack {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.mobilePrice {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.balneUnderPrice {
+  display: block;
+  font-size: max(var(--text-min, 0px), calc(.75rem * var(--read, 1)));
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: .62;
+  font-variant-numeric: tabular-nums;
+}
+
+.mobilePrice .balneUnderPrice,
+.cellPrice .balneUnderPrice {
+  color: var(--cream-06) !important;
+}

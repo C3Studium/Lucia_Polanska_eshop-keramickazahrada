@@ -6,6 +6,7 @@
 // prázdný řetězec), takže dotenv / @next/env ho nepřepíše, ani kdyby se
 // k souboru dostaly. Že se k němu nedostanou, hlídá ještě `env-guard.cjs`.
 import fs from "node:fs"
+import os from "node:os"
 import path from "node:path"
 
 import {
@@ -23,6 +24,15 @@ import {
   STOREFRONT_URL,
 } from "./config.mjs"
 import { SANDBOX_MANIFEST } from "./legal-manifest.mjs"
+
+// Telefonní sestavení sandboxu (port 4700, viz telefon.mjs) jde na iPhone přes
+// místní síť — backend musí jeho původ pustit přes CORS.
+const LAN_ORIGINS = Object.values(os.networkInterfaces())
+  .flat()
+  .filter((i) => i && i.family === "IPv4" && !i.internal)
+  .map((i) => `http://${i.address}:4700`)
+  .join(",")
+
 
 /** Jen jména klíčů z env souboru — hodnoty se zahazují hned při čtení. */
 export function envFileKeys(file) {
@@ -107,9 +117,9 @@ export function backendEnv(opts = {}) {
     COOKIE_SECRET: "sandbox-cookie-secret-not-for-production",
     JWT_EXPIRES_IN: "",
 
-    STORE_CORS: `${STOREFRONT_URL},http://127.0.0.1:${PORTS.storefront}`,
+    STORE_CORS: `${STOREFRONT_URL},http://127.0.0.1:${PORTS.storefront},${LAN_ORIGINS}`,
     ADMIN_CORS: `${BACKEND_URL},http://127.0.0.1:${PORTS.backend},http://localhost:7001`,
-    AUTH_CORS: `${STOREFRONT_URL},${BACKEND_URL},http://127.0.0.1:${PORTS.storefront},http://localhost:7001`,
+    AUTH_CORS: `${STOREFRONT_URL},${BACKEND_URL},http://127.0.0.1:${PORTS.storefront},http://localhost:7001,${LAN_ORIGINS}`,
 
     BACKEND_PUBLIC_URL: BACKEND_URL,
     BACKEND_URL: BACKEND_URL,

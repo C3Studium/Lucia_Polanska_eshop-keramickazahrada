@@ -1,0 +1,40 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+/* Krok „Poznámka" — stejný rám jako zadání zakázky (brief-step), jen pole. */
+.field {
+  display: grid;
+  gap: .5rem;
+}
+
+.label {
+  color: rgb(var(--ink-05-rgb) / .72);
+  font: 400 max(var(--text-min, 0px), calc(.8125rem * var(--read, 1))) / 1.3 "Sansation-Regular", sans-serif;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.textarea {
+  width: 100%;
+  min-height: clamp(8rem, 20vh, 12rem);
+  padding: .9rem 1rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / .25);
+  border-radius: .75rem;
+  background: rgb(var(--white-rgb) / .6);
+  color: var(--ink-05);
+  /* 16 px a víc: iOS by pole s menším písmem při psaní přiblížil. */
+  font: 400 max(16px, calc(1rem * var(--read, 1))) / 1.5 "Sansation-Regular", sans-serif;
+  resize: vertical;
+
+  &:focus-visible {
+    outline: var(--focus-ring-width, 2px) solid var(--focus-ring, var(--ink-05));
+    outline-offset: 2px;
+  }
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  gap: .75rem;
+  color: rgb(var(--ink-05-rgb) / .55);
+  font: 400 max(var(--text-min, 0px), calc(.8125rem * var(--read, 1))) / 1.3 "Sansation-Regular", sans-serif;
+}

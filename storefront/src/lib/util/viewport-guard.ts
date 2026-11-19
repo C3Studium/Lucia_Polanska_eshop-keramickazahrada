@@ -66,6 +66,29 @@ export const VIEWPORT_GUARD_JS = `(function () {
       if (el.tagName !== 'INPUT') return false;
       return !/^(button|submit|reset|checkbox|radio|range|file|color|image|hidden)$/i.test(el.type || '');
     };
+    /*
+     * Safari 26+ (plovoucí ovládání) pevný obsah pod svou lištu vůbec
+     * nevykreslí, takže zvedat není co — a jeho lišta se animuje ~30 snímků
+     * a v každém mění innerHeight (AGENTS.md). Zvedání jen pro starší iOS.
+     */
+    var safariMajor = (function () { var m = /Version\\/(\\d+)/.exec(ua); return m ? +m[1] : 0; })();
+    var liftable = iPhone && !standalone && !(safariMajor >= 26);
+    var lastWidth = -1, settleTimer = 0, keyboard = false;
+    var computePad = function () {
+      settleTimer = 0;
+      var ih = w.innerHeight, portrait = ih >= w.innerWidth;
+      var pad = 0;
+      if (liftable && portrait && !keyboard) {
+        var sw = Math.min(screen.width, screen.height), sh = Math.max(screen.width, screen.height);
+        var collapsed = (sh - ih) < 90 || (minH < Infinity && ih > minH + 40);
+        if (collapsed) pad = sh / sw > 2 ? 46 : 32;
+      }
+      root.style.setProperty('--kz-ios-bottom', pad + 'px');
+      if (pad !== lastPad) {
+        lastPad = pad;
+        try { w.dispatchEvent(new Event('kz:viewport')); } catch (e) {}
+      }
+    };
     var update = function () {
       frame = 0;
       ensureMeta();
@@ -76,21 +99,21 @@ export const VIEWPORT_GUARD_JS = `(function () {
       var focused = isText(d.activeElement);
       if (!focused) { if (ih < minH) minH = ih; if (ih > maxH) maxH = ih; }
       var vh = vv ? vv.height : ih;
-      root.style.setProperty('--kz-vh', (ih / 100) + 'px');
+      /* --kz-vh (záloha za svh/dvh na Safari < 15.4) jen při změně šířky
+         nebo otočení — ne při každém pohybu lišty prohlížeče, jinak by se
+         výšky panelů měnily pod prstem během scrollu. */
+      if (iw !== lastWidth || !root.style.getPropertyValue('--kz-vh')) {
+        lastWidth = iw;
+        root.style.setProperty('--kz-vh', (ih / 100) + 'px');
+      }
       root.style.setProperty('--kz-vvh', Math.round(vh) + 'px');
-      var keyboard = focused && (vh < ih - 120 || (maxH > 0 && ih < maxH - 150));
-      root.classList.toggle('kz-klavesnice', !!keyboard);
-      var pad = 0;
-      if (iPhone && !standalone && portrait && !keyboard) {
-        var sw = Math.min(screen.width, screen.height), sh = Math.max(screen.width, screen.height);
-        var collapsed = (sh - ih) < 90 || (minH < Infinity && ih > minH + 40);
-        if (collapsed) pad = sh / sw > 2 ? 46 : 32;
-      }
-      root.style.setProperty('--kz-ios-bottom', pad + 'px');
-      if (pad !== lastPad) {
-        lastPad = pad;
-        try { w.dispatchEvent(new Event('kz:viewport')); } catch (e) {}
-      }
+      keyboard = !!(focused && (vh < ih - 120 || (maxH > 0 && ih < maxH - 150)));
+      root.classList.toggle('kz-klavesnice', keyboard);
+      /* Zvednutí až po ustálení (300 ms bez změny) — za animace lišty
+         Safari by lišta poskakovala snímek po snímku. */
+      if (lastPad < 0) computePad();
+      else { if (settleTimer) clearTimeout(settleTimer); settleTimer = setTimeout(computePad, 300); }
+      if (!root.style.getPropertyValue('--kz-ios-bottom')) root.style.setProperty('--kz-ios-bottom', Math.max(lastPad, 0) + 'px');
     };
     var schedule = function () {
       if (frame) return;
