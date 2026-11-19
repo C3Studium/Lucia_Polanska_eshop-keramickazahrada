@@ -140,12 +140,25 @@ const kindBadge: Record<string, { label: string; color: "green" | "orange" | "bl
 const pocetProduktu = (count: number) =>
   `${count} ${count === 1 ? "produkt" : count >= 2 && count <= 4 ? "produkty" : "produktů"}`;
 
-/* Stav v řádku jen jako tichá značka; přepíná se v nabídce „…". */
+/* Stav v řádku; přepíná se v nabídce „…". Skrytý kus oranžovým štítkem
+   se slovem (19. 11. 2026) — samotné šedé očko se přehlédlo a výrobek
+   „v kategorii, ale ne v obchodě" vypadal jako chyba zařazení. */
 const StateMark = ({ kind }: { kind: "hidden" | "archived" }) => {
   const text = kind === "hidden" ? "Skryto z obchodu" : "V archivu";
+  if (kind === "hidden") {
+    return (
+      <span
+        title={text}
+        className="bg-ui-tag-orange-bg text-ui-tag-orange-text border-ui-tag-orange-border txt-compact-xsmall-plus inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5"
+      >
+        <EyeSlash />
+        Skryto
+      </span>
+    );
+  }
   return (
     <span role="img" aria-label={text} title={text} className="text-ui-fg-muted shrink-0">
-      {kind === "hidden" ? <EyeSlash /> : <ArchiveBox />}
+      <ArchiveBox />
     </span>
   );
 };
@@ -1492,12 +1505,15 @@ const Inner = () => {
                       </Text>
                     </Link>
                     <div className="flex items-center justify-between gap-1">
-                      <Badge
-                        size="2xsmall"
-                        color={kindBadge[product.kind]?.color ?? "grey"}
-                      >
-                        {kindBadge[product.kind]?.label ?? product.kind}
-                      </Badge>
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <Badge
+                          size="2xsmall"
+                          color={kindBadge[product.kind]?.color ?? "grey"}
+                        >
+                          {kindBadge[product.kind]?.label ?? product.kind}
+                        </Badge>
+                        {product.status !== "published" && <StateMark kind="hidden" />}
+                      </span>
                       <VisibilityEye
                         visible={product.status === "published"}
                         label={`produkt ${product.title}`}
@@ -1563,6 +1579,7 @@ const Inner = () => {
                     >
                       {kindBadge[product.kind]?.label ?? product.kind}
                     </Badge>
+                    {product.status !== "published" && <StateMark kind="hidden" />}
                   </div>
                 );
               }
@@ -1589,9 +1606,12 @@ const Inner = () => {
                 >
                   <Text size="small" weight="plus" className="truncate">{product.title}</Text>
                 </Link>
-                <Badge size="2xsmall" color={kindBadge[product.kind]?.color ?? "grey"}>
-                  {kindBadge[product.kind]?.label ?? product.kind}
-                </Badge>
+                <span className="flex items-center gap-1.5">
+                  <Badge size="2xsmall" color={kindBadge[product.kind]?.color ?? "grey"}>
+                    {kindBadge[product.kind]?.label ?? product.kind}
+                  </Badge>
+                  {product.status !== "published" && <StateMark kind="hidden" />}
+                </span>
               </div>
               <select
                 className="bg-ui-bg-field border-ui-border-base txt-small rounded-md border px-2 py-1"

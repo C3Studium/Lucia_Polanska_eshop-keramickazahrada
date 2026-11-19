@@ -1,4 +1,4 @@
-import { ArrowUpRightOnBox, CheckMini, ChevronDown, DotsSix, Photo, Plus, Trash } from "@medusajs/icons";
+import { ArchiveBox, ArrowUpRightOnBox, CheckMini, ChevronDown, DotsSix, EyeSlash, Photo, Plus, Trash } from "@medusajs/icons";
 import {
   Badge,
   Button,
@@ -45,6 +45,7 @@ import { formatCzk } from "../../../lib/workbench";
 import { ProductSaleRow } from "../../../components/product-sale";
 import { classificationToast, ProductClassification } from "../../../components/product-classification";
 import { ProductOwnVyprodejRow, ProductVyprodejRow } from "../../../components/vyprodej";
+import { DiscountOrder } from "../../../components/sketches";
 import { adminQueryClient } from "../../../lib/query-client"
 import { ceskaChyba } from "../../../lib/ceska-chyba";
 
@@ -1998,7 +1999,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
     ? { label: "V archivu", color: "red" as const, title: "Je v archivu — v obchodě ani v seznamech není." }
     : isPublished
       ? { label: "Publikováno", color: "green" as const, title: "Zákazníci ho v obchodě vidí a můžou koupit." }
-      : { label: "Koncept — zákazník ho nevidí", color: "grey" as const, title: "Zákazníci ho v obchodě nevidí, dokud ho nepublikujete." };
+      : { label: "Skryto — zákazník ho nevidí", color: "orange" as const, title: "Zákazníci ho v obchodě nevidí, dokud ho nepublikujete." };
   const quietFacts = [
     categoryPath,
     production?.enabled ? "na zakázku" : null,
@@ -2008,8 +2009,67 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
     .filter(Boolean)
     .join(" · ");
 
+  /*
+   * Skrytý kus musí být vidět na první pohled (19. 11. 2026): šedý štítek
+   * „Koncept" přehlédla Lucie i Matěj a hledali chybu v zařazení. Teď má
+   * celá stránka barevný rámeček a nahoře pruh s jedním tlačítkem.
+   */
+  const hiddenTone = archived ? "red" : !isPublished ? "orange" : null;
+
   return (
-    <Container className="divide-y overflow-hidden p-0">
+    <Container
+      className="divide-y overflow-hidden p-0"
+      style={
+        hiddenTone
+          ? { outline: `2px solid var(--tag-${hiddenTone}-icon)`, outlineOffset: "2px" }
+          : undefined
+      }
+    >
+      {hiddenTone && (
+        <div
+          role="status"
+          className={`flex flex-wrap items-center gap-x-4 gap-y-2 px-6 py-3 ${
+            hiddenTone === "red"
+              ? "bg-ui-tag-red-bg text-ui-tag-red-text"
+              : "bg-ui-tag-orange-bg text-ui-tag-orange-text"
+          }`}
+        >
+          <span className="shrink-0">{archived ? <ArchiveBox /> : <EyeSlash />}</span>
+          <div className="min-w-0 flex-1">
+            <Text size="small" weight="plus" className="text-inherit">
+              {archived
+                ? "V archivu — v obchodě ani v seznamech není."
+                : "Skryto — zákazníci tento výrobek v obchodě nevidí."}
+            </Text>
+            <Text size="xsmall" className="text-inherit opacity-90">
+              {archived
+                ? "Nejde koupit ani najít. Historie objednávek zůstává."
+                : "Není v kolekcích, v kategoriích ani ve vyhledávání a nejde koupit. Zařazení se projeví, až ho zveřejníte."}
+            </Text>
+          </div>
+          {archived ? (
+            <Button
+              size="small"
+              variant="secondary"
+              className="min-h-[36px]"
+              isLoading={archive.isPending}
+              onClick={() => archive.mutate(false)}
+            >
+              Vrátit z archivu
+            </Button>
+          ) : (
+            <Button
+              size="small"
+              variant="primary"
+              className="min-h-[36px]"
+              isLoading={saveProduct.isPending}
+              onClick={() => saveProduct.mutate({ status: "published" })}
+            >
+              Zveřejnit v obchodě
+            </Button>
+          )}
+        </div>
+      )}
       {/* Zvětšená fotka galerie — úkony (hlavní, smazat) jsou tady, ne pod
           každým náhledem. Esc a šipky obstará FocusModal (photo-strip.tsx). */}
       <PhotoViewer
@@ -2224,22 +2284,13 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
             z obchodu, sleva, archiv i smazání jsou pod „…".
           */}
           <div className="flex items-center gap-2">
-            {isPublished ? (
-              detail?.store_url && (
-                <Button variant="primary" className="min-h-[40px]" asChild>
-                  <a href={detail.store_url} target="_blank" rel="noreferrer">
-                    Zobrazit v obchodě <ArrowUpRightOnBox />
-                  </a>
-                </Button>
-              )
-            ) : (
-              <Button
-                variant="primary"
-                className="min-h-[40px]"
-                isLoading={saveProduct.isPending}
-                onClick={() => saveProduct.mutate({ status: "published" })}
-              >
-                Publikovat
+            {/* U skrytého kusu je „Zveřejnit v obchodě" v oranžovém pruhu
+                nahoře — druhé stejné tlačítko by tu jen mátlo. */}
+            {isPublished && detail?.store_url && (
+              <Button variant="primary" className="min-h-[40px]" asChild>
+                <a href={detail.store_url} target="_blank" rel="noreferrer">
+                  Zobrazit v obchodě <ArrowUpRightOnBox />
+                </a>
               </Button>
             )}
             <ProductDetailMenu
@@ -2637,6 +2688,17 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                 productTitle={product.title}
                 price={priceMin}
               />
+              {/* Tři řádky slev nad sebou — která z nich platí? Sbalené,
+                  ať nepřekáží; rozbalí se jedním klikem (19. 11. 2026). */}
+              <details className="group px-3 py-2">
+                <summary className="text-ui-fg-muted hover:text-ui-fg-subtle txt-compact-xsmall flex min-h-[32px] cursor-pointer list-none items-center gap-1">
+                  <span className="transition-transform group-open:rotate-90">›</span>
+                  Která sleva platí, když jich je víc?
+                </summary>
+                <div className="pb-1 pt-2">
+                  <DiscountOrder compact />
+                </div>
+              </details>
             </InspectorGroup>
 
             {/* Zařazení (19. 11. 2026, Matěj): řádek = kolekce, vpravo její

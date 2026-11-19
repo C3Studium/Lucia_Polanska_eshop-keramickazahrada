@@ -49,6 +49,7 @@ import {
   type VyprodejRowData,
 } from "../../components/vyprodej";
 import { useExpertMode } from "../../lib/expert-mode";
+import { DiscountOrder } from "../../components/sketches";
 import {
   ProductSaleDialog,
   SALE_STATE,
@@ -845,12 +846,19 @@ const SlevyInner = () => {
             Zlevněné výrobky, výprodeje, slevové kódy a akční ceníky na jednom
             místě. Slevu na jeden výrobek nastavíte u jeho ceny, výprodej celé
             kolekce, kategorie nebo vybraných kusů tady nebo z detailu výrobku.
-            Přednost: výprodej, pak sleva výrobku — na zlevněné kusy slevové
-            kódy neplatí. Výběry s vlastní stránkou v obchodě:{" "}
+            Výběry s vlastní stránkou v obchodě:{" "}
             <Link to="/prehled/slevy" className="text-ui-fg-interactive hover:underline">
               Sezónní akce →
             </Link>
           </Text>
+          {/* Pořadí jako schody místo věty (19. 11. 2026) — na jeden kus
+              platí vždy jen jedna sleva, ta nejvýš. */}
+          <div className="bg-ui-bg-subtle mt-3 inline-flex flex-col gap-2 rounded-lg px-3 py-2.5">
+            <Text size="xsmall" weight="plus" className="text-ui-fg-subtle">
+              Když se na kus hodí víc slev, platí jen ta nejvýš:
+            </Text>
+            <DiscountOrder />
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <ExpertToggle />
