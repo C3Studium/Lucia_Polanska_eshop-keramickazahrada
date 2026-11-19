@@ -1497,8 +1497,13 @@ const ProductsInner = () => {
           {/*
             6) Jediná akce vpravo: „…" (úpravy, viditelnost, vzácná
             nastavení). Na užším displeji sedí v pravém horním rohu řádku.
+            „…" je nastavení JEDNOHO kusu — při výběru více kusů zmizí
+            a slouží lišta dole „Hromadné změny" (19. 11. 2026, Matěj).
           */}
-          <div className="absolute right-3 top-2 z-10 min-[1200px]:relative min-[1200px]:right-auto min-[1200px]:top-auto min-[1200px]:flex min-[1200px]:justify-end">
+          <div
+            aria-hidden={listTab && selected.size > 1 ? true : undefined}
+            className={`absolute right-3 top-2 z-10 min-[1200px]:relative min-[1200px]:right-auto min-[1200px]:top-auto min-[1200px]:flex min-[1200px]:justify-end ${listTab && selected.size > 1 ? "invisible" : ""}`}
+          >
             <ProductRowMore
               product={product}
               flags={
