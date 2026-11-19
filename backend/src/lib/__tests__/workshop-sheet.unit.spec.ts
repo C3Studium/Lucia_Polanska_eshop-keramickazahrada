@@ -283,3 +283,21 @@ describe("generateWorkshopSheetPdf", () => {
     }
   })
 })
+
+/* Poznámka pro dílnu z adminu (19. 11. 2026) — do listu, zákazníkovi nikam. */
+describe("workshopSheetData — poznámka pro dílnu", () => {
+  it("reads order.metadata.admin_note and renders it into the PDF", async () => {
+    const sheet = workshopSheetData({
+      order: baseOrder({ metadata: { admin_note: "  Glazura modrá — zabalit dvakrát.  " } }),
+    })
+    expect(sheet.admin_note).toBe("Glazura modrá — zabalit dvakrát.")
+    const bytes = await generateWorkshopSheetPdf(sheet)
+    expect(Buffer.from(bytes.slice(0, 5)).toString("latin1")).toBe("%PDF-")
+    const out = process.env.WORKSHOP_SHEET_RENDER_OUT
+    if (out) writeFileSync(out.replace(/\.pdf$/i, "-poznamka.pdf"), bytes)
+  })
+
+  it("is null without a note", () => {
+    expect(workshopSheetData({ order: baseOrder() }).admin_note).toBeNull()
+  })
+})

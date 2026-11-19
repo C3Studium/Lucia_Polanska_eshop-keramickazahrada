@@ -109,9 +109,30 @@ export const CpLabelPanel = ({ order }: { order: AdminOrder }) => {
     enabled: ceskaPosta && !personalPickup,
   });
 
-  // Osobní odběr ani cizí dopravce tu nemají co dělat.
+  /*
+   * Osobní odběr ani cizí dopravce štítek netisknou — karta ale ZŮSTÁVÁ
+   * (19. 11. 2026, Matěj): bez ní nebylo poznat, jestli se na štítek
+   * zapomnělo, nebo žádný není potřeba. Jen věta proč, žádná tlačítka.
+   */
   if (!ceskaPosta || personalPickup) {
-    return null;
+    return (
+      <Container className="divide-y p-0" data-testid="cp-label-none">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-6 py-4 [&>span]:whitespace-nowrap">
+          <Heading level="h2" className="min-w-0">Štítek České pošty</Heading>
+          <Badge color="grey">Netiskne se</Badge>
+        </div>
+        <div className="px-6 py-4">
+          <Text size="small" className="text-ui-fg-subtle">
+            {personalPickup
+              ? "Bylo zvoleno: osobní odběr."
+              : `Bylo zvoleno: ${
+                  ((order as any)?.shipping_methods?.[0]?.name as string | undefined)?.trim() ||
+                  "jiná doprava"
+                } — štítek se tu netiskne.`}
+          </Text>
+        </div>
+      </Container>
+    );
   }
 
   const data = labelQuery.data;

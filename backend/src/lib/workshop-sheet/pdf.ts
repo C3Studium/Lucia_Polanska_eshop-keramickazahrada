@@ -405,10 +405,16 @@ export const generateWorkshopSheetPdf = async (
     const checksHeight = 36
     const sectionHead = 14 + 18 + 6
     const fits = (room: number) => Math.floor((room - sectionHead - 10 - 16 - checksHeight) / lineGap)
+    /* Poznámka pro dílnu z adminu (19. 11. 2026) — vytištěná nahoře
+       v sekci, linky na ruční psaní pokračují pod ní. */
+    if (sheet.admin_note) {
+      section("Poznámky dílny")
+      table([{ width: CONTENT_W }], null, [{ cells: [[{ text: sheet.admin_note }]] }])
+    }
     if (fits(y - BOTTOM) < 3) newPage()
     const ruled = Math.min(8, fits(y - BOTTOM))
     const boxHeight = ruled * lineGap + 10
-    section("Poznámky dílny", 0)
+    section(sheet.admin_note ? "Další poznámky" : "Poznámky dílny", 0)
     page.drawRectangle({ x: MARGIN, y: y - boxHeight, width: CONTENT_W, height: boxHeight, borderColor: INK, borderWidth: 0.8 })
     for (let index = 1; index <= ruled; index += 1) {
       const ly = y - index * lineGap
