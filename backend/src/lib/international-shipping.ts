@@ -489,21 +489,12 @@ export const obnovCenikCp = async (container: MedusaContainer): Promise<ObnovaCe
 
     const den = ted.slice(0, 10)
     if (vysledek.chyby.length) {
-      const posledni = aktualni.cenik_zive?.fetched_at
-        ? new Date(aktualni.cenik_zive.fetched_at).toLocaleString("cs-CZ", { timeZone: "Europe/Prague" })
-        : "tabulky z 19. 11. 2026"
-      await notifyMerchant(container, {
-        key: `cp-cenik-chyba:${den}`,
-        title: `Ceník České pošty do zahraničí se nepodařilo stáhnout (${vysledek.chyby.length} z ${countries.length} zemí)`,
-        description:
-          vysledek.chyby.map((item) => `${item.country.toUpperCase()}: ${item.chyba}`).join("\n") +
-          `\n\nPokladna dál počítá dopravu do těchto zemí z posledních dat (${posledni}). ` +
-          `Další pokus proběhne příští noc v 1:00, nebo ručně v Nastavení obchodu › Doprava a platba › „Stáhnout ceník teď“.`,
-        audience: "dev",
-        urgent: true,
-        email: true,
-        souhrn: true,
-      }).catch(() => undefined)
+      await posliChybuCeniku(container, {
+        klic: `cp-cenik-chyba:${den}`,
+        chyby: vysledek.chyby,
+        zemi: countries.length,
+        posledniStazeni: aktualni.cenik_zive?.fetched_at ?? null,
+      })
     }
     if (rozdil.pocet) {
       await notifyMerchant(container, {
@@ -523,6 +514,42 @@ export const obnovCenikCp = async (container: MedusaContainer): Promise<ObnovaCe
   } finally {
     beziObnova = null
   }
+}
+
+/**
+ * E-mail vývojáři, když se ceník nepodařilo stáhnout — hned, ne souhrnem.
+ * Sdílí ho noční běh i zkušební odeslání z administrace (`zkouska`).
+ */
+export const posliChybuCeniku = async (
+  container: MedusaContainer,
+  input: {
+    klic: string
+    chyby: Array<{ country: string; chyba: string }>
+    zemi: number
+    posledniStazeni: string | null
+    zkouska?: boolean
+  }
+) => {
+  const posledni = input.posledniStazeni
+    ? new Date(input.posledniStazeni).toLocaleString("cs-CZ", { timeZone: "Europe/Prague" })
+    : "tabulky z 19. 11. 2026"
+  return notifyMerchant(container, {
+    key: input.klic,
+    title:
+      (input.zkouska ? "[ZKOUŠKA] " : "") +
+      `Ceník České pošty do zahraničí se nepodařilo stáhnout (${input.chyby.length} z ${input.zemi} zemí)`,
+    description:
+      (input.zkouska
+        ? "Tohle je zkušební e-mail — takhle bude vypadat upozornění, když noční stažení ceníku selže. Nic se nestalo.\n\n"
+        : "") +
+      input.chyby.map((item) => `${item.country.toUpperCase()}: ${item.chyba}`).join("\n") +
+      `\n\nPokladna dál počítá dopravu do těchto zemí z posledních dat (${posledni}). ` +
+      `Další pokus proběhne příští noc v 1:00, nebo ručně v Nastavení obchodu › Doprava a platba › „Stáhnout ceník teď“.`,
+    audience: "dev",
+    urgent: true,
+    email: true,
+    souhrn: true,
+  }).catch(() => undefined)
 }
 
 /** Běží zrovna stahování ceníku? (administrace ukáže „stahuje se…") */
