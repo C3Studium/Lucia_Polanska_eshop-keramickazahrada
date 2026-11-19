@@ -6,6 +6,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { isCommissionCheckoutOrder } from "../lib/potvrzeni-zakazky/fields"
 import { buildOrderConfirmation } from "../lib/potvrzeni-zakazky"
 import { sendOrderConfirmationWorkflow } from "../workflows/send-order-confirmation"
+import { ensureInternationalOrderMethodName } from "../lib/international-shipping"
 
 /**
  * Potvrzení objednávky. Objednávka se zakázkou (kolekce z pokladny nese
@@ -54,6 +55,9 @@ export default async function orderPlacedEmailHandler({
    * Selhání PDF potvrzení NEZASTAVÍ: zákazník nesmí zůstat bez e-mailu
    * kvůli příloze. Chyba se zaloguje a potvrzení odejde bez ní.
    */
+  /* Doprava do zahraničí: název vybrané služby ČP dřív, než vznikne PDF a e-mail. */
+  await ensureInternationalOrderMethodName(container, data.id)
+
   let confirmation: { filename: string; url: string } | null = null
   try {
     const built = await buildOrderConfirmation(container, data.id)

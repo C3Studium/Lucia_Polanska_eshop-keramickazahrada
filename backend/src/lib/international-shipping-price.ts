@@ -1,6 +1,6 @@
 import { convertFromCzk } from "./cnb-rates"
 import { isServiceLine } from "./packaging-lines"
-import { CP_SERVICE_DEFAULT, cpQuote } from "./cp-kalkulacka"
+import { cpCheapest } from "./cp-kalkulacka"
 
 /**
  * Čistá (bez Medusy) část dopravy „Česká pošta – na adresu zahraničí" —
@@ -11,8 +11,10 @@ import { CP_SERVICE_DEFAULT, cpQuote } from "./cp-kalkulacka"
  * 1. hmotnost — mají-li hmotnost VŠECHNY výrobky v košíku, sečte se
  *    (gramy z Produkty+, razítko `ship_weight_g` na řádku košíku) + obal;
  *    jinak průměrná váha balíku z Nastavení obchodu. Vše v kg.
- * 2. cena — ceník ČP pro zemi, službu a tu hmotnost (kalkulačka ČP), nebo
- *    ruční cena, kterou majitelka zemi zadala.
+ * 2. cena — NEJLEVNĚJŠÍ služba ČP pro zemi a tu hmotnost (kalkulačka ČP,
+ *    z povolených služeb), nebo ruční cena, kterou majitelka zemi zadala.
+ *    Vybraná služba se propíše do názvu dopravy košíku → objednávka, e-maily,
+ *    PDF i faktura ukážou, čím balík jede (`internationalMethodName`).
  * 3. převod do měny regionu země kurzem ČNB (Medusa měnu košíku do výpočtu
  *    nepředává, země ale patří právě do jednoho regionu).
  */
@@ -36,8 +38,10 @@ export type InternationalOptionData = {
   countries: string[]
   /** Ruční cena v Kč podle země — přepíše ceník ČP. */
   overrides_czk: Record<string, number>
-  /** Služba ČP (název z kalkulačky). */
-  service: string
+  /** Starší nastavení jedné služby — od 19. 11. se vybírá nejlevnější z `services`. */
+  service?: string
+  /** Služby ČP, ze kterých se vybírá nejlevnější (prázdné = všechny z ceníku). */
+  services?: string[]
   /** Průměrná váha balíku (kg) — když některý výrobek nemá hmotnost. */
   parcel_weight_kg: number
   /** Krabice a výplň (kg) — přičte se k sečteným výrobkům. */
@@ -140,7 +144,7 @@ export const internationalQuoteFor = (
   if (!country || !(option.countries ?? []).includes(country)) return null
 
   const manual = option.overrides_czk?.[country]
-  const quote = manual ? null : cpQuote(country, option.service || CP_SERVICE_DEFAULT, kg)
+  const quote = manual ? null : cpCheapest(country, kg, option.services ?? [])
   const priceCzk = manual ?? quote?.price_czk
   if (!priceCzk || !(priceCzk > 0)) return null
 
@@ -167,6 +171,30 @@ export const internationalQuoteFor = (
     currency_code: currency,
     amount,
   }
+}
+
+const kgText = (value: number) => String(Math.round(value * 10) / 10).replace(".", ",")
+
+/**
+ * Název dopravy pro zákazníka i majitelku: „Česká pošta – Obchodní balík do
+ * zahraničí (do 3 kg)". Bez služby (ruční cena země) zůstane obecný název.
+ */
+export const internationalMethodName = (quote: InternationalQuote | null | undefined): string =>
+  quote?.service
+    ? `Česká pošta – ${quote.service}${quote.up_to_kg ? ` (do ${kgText(quote.up_to_kg)} kg)` : ""}`
+    : INTERNATIONAL_OPTION_NAME
+
+/** Celý výpočet pro košík: hmotnost → nejlevnější služba → cena. */
+export const internationalQuoteForItems = (
+  optionData: unknown,
+  countryCode: unknown,
+  items: any[] = []
+): (InternationalQuote & { weight: ParcelWeight }) | null => {
+  if (!isInternationalOptionData(optionData)) return null
+  const option = optionData as InternationalOptionData
+  const weight = parcelWeightOf(items, option)
+  const quote = internationalQuoteFor(option, countryCode, weight.kg)
+  return quote ? { ...quote, weight } : null
 }
 
 /** Cena v pokladně: hmotnost košíku → cena pro zemi doručení. */

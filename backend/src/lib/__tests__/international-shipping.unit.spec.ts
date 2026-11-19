@@ -1,14 +1,18 @@
 import {
+  INTERNATIONAL_OPTION_NAME,
+  internationalMethodName,
   internationalPriceFor,
   internationalQuoteFor,
+  internationalQuoteForItems,
   normalizePricesCzk,
   parcelWeightOf,
 } from "../international-shipping-price"
-import { cpAllQuotes, cpPriceCzk, cpQuote, cpShipsTo } from "../cp-kalkulacka"
+import { cpAllQuotes, cpCheapest, cpPriceCzk, cpQuote, cpShipsTo } from "../cp-kalkulacka"
 import CeskaPostaFulfillmentService from "../../modules/ceskaPostaFulfillment/service"
 
 const PRIO = "Standardní balík do zahraničí - prioritní"
 const EKO = "Standardní balík do zahraničí - ekonomický"
+const OBCH = "Obchodní balík do zahraničí"
 
 /* Data volby, jak je uloží administrace (kurz EUR 24,34 Kč). */
 const option = (over: Record<string, unknown> = {}) => ({
@@ -17,7 +21,8 @@ const option = (over: Record<string, unknown> = {}) => ({
   international: true,
   countries: ["de", "sk", "fr"],
   overrides_czk: {},
-  service: PRIO,
+  /* Starší testy počítají s jedinou službou; nejlevnější z více viz níž. */
+  services: [PRIO],
   parcel_weight_kg: 3,
   packaging_kg: 0,
   currency_by_country: { de: "eur", sk: "eur", fr: "eur", gb: "eur" },
@@ -60,6 +65,33 @@ describe("kalkulačka ČP do zahraničí (ceník 19. 11. 2026)", () => {
     expect(cpShipsTo("de")).toBe(true)
     expect(cpShipsTo("xx")).toBe(false)
     expect(cpAllQuotes("de", 5).find((row) => row.service === PRIO)?.price_czk).toBe(589)
+  })
+})
+
+describe("nejlevnější služba (Matěj 19. 11. 2026)", () => {
+  it("vybere nejlevnější službu pro zemi a hmotnost", () => {
+    expect(cpCheapest("de", 5)).toMatchObject({ service: EKO, price_czk: 544, up_to_kg: 5 })
+    expect(cpCheapest("sk", 2)).toMatchObject({ service: OBCH, price_czk: 315 })
+    // jen z povolených služeb
+    expect(cpCheapest("sk", 2, [PRIO, EKO])).toMatchObject({ service: PRIO, price_czk: 416 })
+    expect(cpCheapest("de", 31)).toBeNull()
+    expect(cpCheapest("xx", 2)).toBeNull()
+  })
+
+  it("cena i název dopravy podle vybrané služby", () => {
+    const q = internationalQuoteForItems(option({ services: [] }), "sk", [line(1800)])
+    expect(q).toMatchObject({ service: OBCH, price_czk: 315, up_to_kg: 2, weight: { kg: 1.8, source: "vyrobky" } })
+    expect(internationalMethodName(q)).toBe("Česká pošta – Obchodní balík do zahraničí (do 2 kg)")
+    expect(internationalMethodName(internationalQuoteFor(option({ services: [] }), "de", 0.4))).toBe(
+      "Česká pošta – Standardní balík do zahraničí - ekonomický (do 0,5 kg)"
+    )
+  })
+
+  it("ruční cena země nebo žádná cena = obecný název", () => {
+    expect(internationalMethodName(internationalQuoteFor(option({ overrides_czk: { de: 500 } }), "de", 2))).toBe(
+      INTERNATIONAL_OPTION_NAME
+    )
+    expect(internationalMethodName(null)).toBe(INTERNATIONAL_OPTION_NAME)
   })
 })
 

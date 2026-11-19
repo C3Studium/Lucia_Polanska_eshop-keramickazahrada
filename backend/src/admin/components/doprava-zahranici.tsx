@@ -42,8 +42,10 @@ type State = {
   option_id: string | null;
   rates_date: string | null;
   fetched_at: string;
+  /** Všechny služby v ceníku ČP. */
+  all_services: string[];
+  /** Povolené služby — pokladna z nich vybírá nejlevnější. */
   services: string[];
-  service: string;
   parcel_weight_kg: number;
   packaging_kg: number;
   countries: Country[];
@@ -82,13 +84,13 @@ export const DopravaZahranici = () => {
 
   const [vaha, setVaha] = useState("");
   const [obal, setObal] = useState("");
-  const [sluzba, setSluzba] = useState("");
+  const [sluzby, setSluzby] = useState<string[]>([]);
   const [zapnuto, setZapnuto] = useState<Record<string, boolean>>({});
   const [vlastni, setVlastni] = useState<Record<string, string>>({});
   const reset = (state: State) => {
     setVaha(String(state.parcel_weight_kg).replace(".", ","));
     setObal(String(state.packaging_kg).replace(".", ","));
-    setSluzba(state.service);
+    setSluzby(state.services.length ? state.services : state.all_services);
     setZapnuto(Object.fromEntries(state.countries.map((c) => [c.country_code, c.enabled])));
     setVlastni(Object.fromEntries(state.countries.map((c) => [c.country_code, c.override_czk ? String(c.override_czk) : ""])));
   };
@@ -100,12 +102,12 @@ export const DopravaZahranici = () => {
   /* Ceny v tabulce podle toho, co je právě napsané (ne až po uložení). */
   const nahledKg = vahaSpatne ? null : cislo(vaha);
   const nahled = useQuery<State>({
-    queryKey: ["international-shipping", "nahled", nahledKg, sluzba],
+    queryKey: ["international-shipping", "nahled", nahledKg, sluzby.join("|")],
     queryFn: () =>
       sdk.client.fetch(
-        `/admin/international-shipping?kg=${nahledKg}&sluzba=${encodeURIComponent(sluzba)}`
+        `/admin/international-shipping?kg=${nahledKg}&sluzby=${encodeURIComponent(sluzby.join("|"))}`
       ),
-    enabled: Boolean(data) && nahledKg !== null && Boolean(sluzba),
+    enabled: Boolean(data) && nahledKg !== null && sluzby.length > 0,
     placeholderData: (previous) => previous,
   });
   const radky = (nahled.data ?? data)?.countries ?? [];
@@ -116,7 +118,7 @@ export const DopravaZahranici = () => {
     !!data &&
     (cislo(vaha) !== data.parcel_weight_kg ||
       (cislo(obal) || 0) !== data.packaging_kg ||
-      sluzba !== data.service ||
+      [...sluzby].sort().join("|") !== [...(data.services.length ? data.services : data.all_services)].sort().join("|") ||
       !data.option_id ||
       data.countries.some(
         (c) =>
@@ -129,7 +131,7 @@ export const DopravaZahranici = () => {
       sdk.client.fetch<State>("/admin/international-shipping", {
         method: "POST",
         body: {
-          service: sluzba,
+          services: sluzby,
           parcel_weight_kg: cislo(vaha),
           packaging_kg: cislo(obal) || 0,
           countries: Object.entries(zapnuto).filter(([, on]) => on).map(([code]) => code),
@@ -176,9 +178,10 @@ export const DopravaZahranici = () => {
             )}
           </div>
           <Text size="xsmall" className="text-ui-fg-subtle mt-0.5">
-            Cenu počítá pokladna z ceníku České pošty podle země a hmotnosti balíku. Mají-li hmotnost všechny
-            výrobky v košíku, sečte se (+ obal). Jinak se použije průměrná váha balíku níž. Zákazník platí
-            v eurech podle kurzu ČNB. Dobírka ani Balíkovna do zahraničí nejsou, balík se podává na poště.
+            Pokladna vybere nejlevnější službu České pošty podle země a hmotnosti balíku. Mají-li hmotnost
+            všechny výrobky v košíku, sečte se (+ obal). Jinak se použije průměrná váha balíku níž. Název
+            služby uvidí zákazník v pokladně a vy v objednávce, e-mailu i na faktuře. Zákazník platí v eurech
+            podle kurzu ČNB. Dobírka ani Balíkovna do zahraničí nejsou, balík se podává na poště.
           </Text>
         </div>
       </div>
@@ -202,16 +205,28 @@ export const DopravaZahranici = () => {
           </span>
           <Text size="xsmall" className="text-ui-fg-subtle">Přičte se k sečteným výrobkům. 0 = jen výrobky.</Text>
         </label>
-        <label className="flex flex-col gap-1">
-          <Text size="xsmall" weight="plus">Služba České pošty</Text>
-          <select aria-label="Služba České pošty" value={sluzba} onChange={(e) => setSluzba(e.target.value)}
-            className="bg-ui-bg-field txt-compact-small min-h-[32px] rounded-md border border-ui-border-base px-2">
-            {data.services.map((s) => (
-              <option key={s} value={s}>{s}</option>
+        <div className="flex flex-col gap-1">
+          <Text size="xsmall" weight="plus">Služby České pošty</Text>
+          <div className="flex flex-col gap-1">
+            {data.all_services.map((nazev) => (
+              <label key={nazev} className="txt-compact-small flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={sluzby.includes(nazev)}
+                  onChange={(e) =>
+                    setSluzby((prev) => (e.target.checked ? [...prev, nazev] : prev.filter((x) => x !== nazev)))
+                  }
+                />
+                {kratce(nazev)}
+              </label>
             ))}
-          </select>
-          <Text size="xsmall" className="text-ui-fg-subtle">Kam zvolená nejede, použije se náhradní (vidět u země).</Text>
-        </label>
+          </div>
+          <Text size="xsmall" className={sluzby.length ? "text-ui-fg-subtle" : "text-ui-fg-error"}>
+            {sluzby.length
+              ? "Pokladna pro každou zemi a hmotnost vybere nejlevnější z nich a zákazník uvidí její název."
+              : "Zaškrtněte aspoň jednu službu."}
+          </Text>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-lg shadow-borders-base">
@@ -220,7 +235,7 @@ export const DopravaZahranici = () => {
             <tr className="txt-compact-xsmall-plus text-ui-fg-subtle">
               <th className="px-3 py-2">Posílat</th>
               <th className="px-3 py-2">Země</th>
-              <th className="px-3 py-2">Ceník ČP pro {kg(tabulkaKg)}</th>
+              <th className="px-3 py-2">Nejlevnější ČP pro {kg(tabulkaKg)}</th>
               <th className="px-3 py-2">Vlastní cena</th>
               <th className="px-3 py-2 text-right">Zákazník platí</th>
             </tr>
@@ -249,8 +264,7 @@ export const DopravaZahranici = () => {
                       <span className={vlastniCena ? "text-ui-fg-muted line-through" : ""}>
                         {kc(c.cp.price_czk)}{" "}
                         <span className="text-ui-fg-muted">
-                          · do {kg(c.cp.up_to_kg)}
-                          {c.cp.fallback ? ` · ${kratce(c.cp.service)}` : ""}
+                          · do {kg(c.cp.up_to_kg)} · {kratce(c.cp.service)}
                         </span>
                       </span>
                     ) : (
@@ -292,7 +306,7 @@ export const DopravaZahranici = () => {
               Zrušit vše
             </Button>
           )}
-          <Button size="small" disabled={!zmeneno || vahaSpatne || obalSpatne || vlastniSpatne} isLoading={ulozit.isPending} onClick={() => ulozit.mutate()}>
+          <Button size="small" disabled={!zmeneno || vahaSpatne || obalSpatne || vlastniSpatne || !sluzby.length} isLoading={ulozit.isPending} onClick={() => ulozit.mutate()}>
             {data.option_id ? "Uložit vše" : "Uložit a zapnout dopravu do zahraničí"}
           </Button>
         </div>
@@ -318,7 +332,7 @@ export const DopravaZahranici = () => {
           <div className="flex flex-col divide-y rounded-md bg-ui-bg-base shadow-borders-base">
             {kalkulacka.data.quotes.map((row) => (
               <div key={row.service} className="flex items-center justify-between gap-3 px-3 py-2">
-                <Text size="small" className={row.service === sluzba ? "font-medium" : ""}>{row.service}</Text>
+                <Text size="small" className={sluzby.includes(row.service) ? "" : "text-ui-fg-muted"}>{row.service}</Text>
                 <Text size="small" className="tabular-nums">
                   {row.price_czk !== null ? (
                     <>

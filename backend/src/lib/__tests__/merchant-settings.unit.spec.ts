@@ -24,6 +24,7 @@ describe("merchant settings allowlist", () => {
       "dobirka_fee_czk",
       "email_texts",
       "international_cp_service",
+      "international_cp_services",
       "international_packaging_kg",
       "international_parcel_weight_kg",
       "legal_facts",

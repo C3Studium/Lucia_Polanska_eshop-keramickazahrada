@@ -154,8 +154,10 @@ const KEY_SCHEMAS = {
   international_parcel_weight_kg: z.number().positive().max(30),
   /** Krabice a výplň (kg) — přičte se k hmotnosti sečtené z výrobků. 0 = nepřičítat. */
   international_packaging_kg: z.number().min(0).max(10),
-  /** Služba ČP do zahraničí — název produktu, jak ho vrací kalkulačka ČP. */
+  /** Starší: jedna služba ČP do zahraničí (od 19. 11. nahrazeno `international_cp_services`). */
   international_cp_service: z.string().min(1).max(80),
+  /** Služby ČP do zahraničí, ze kterých pokladna vybírá NEJLEVNĚJŠÍ pro zemi a hmotnost. */
+  international_cp_services: z.array(z.string().min(1).max(80)).max(10),
   /** Days after the parcel was received before the review request is sent (§12, sledovani-zasilek.md §6). */
   review_request_days: z.number().int().min(1).max(365),
   /** „Výroba začala" customer e-mail — default off on purpose (§16 #7). */
@@ -377,6 +379,13 @@ export const MERCHANT_SETTINGS_DEFAULTS: MerchantSettings = {
   /* Než majitelka změří své balíky: keramika s výplní a krabicí váží 2–3 kg. */
   international_parcel_weight_kg: 3,
   international_cp_service: "Standardní balík do zahraničí - prioritní",
+  /* Všechny čtyři služby ceníku — vybere se nejlevnější (Matěj 19. 11. 2026). */
+  international_cp_services: [
+    "Standardní balík do zahraničí - prioritní",
+    "Standardní balík do zahraničí - ekonomický",
+    "Obchodní balík do zahraničí",
+    "EMS do zahraničí",
+  ],
   /* Matěj 19. 11.: při vyplněných hmotnostech platí součet výrobků — obal 0, dá se nastavit. */
   international_packaging_kg: 0,
   /* Týden od PŘEVZETÍ (sledování zásilek ČP zná den doručení), ne od

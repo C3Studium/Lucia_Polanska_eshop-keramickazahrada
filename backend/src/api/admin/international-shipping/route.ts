@@ -12,7 +12,8 @@ import {
  *
  * GET — nastavení, země z regionů mimo Česko s cenou pro průměrnou váhu.
  *       `?zeme=de&kg=2.5` = malá kalkulačka: všechny služby ČP pro zemi a váhu.
- * POST `{ countries, overrides_czk, service, parcel_weight_kg, packaging_kg }`
+ * POST `{ countries, overrides_czk, services, parcel_weight_kg, packaging_kg }` — services = povolené
+ *       služby ČP, vybírá se z nich nejlevnější
  *       — první uložení založí zónu „Zahraničí" i volbu dopravy
  *       (lib/international-shipping.ts).
  */
@@ -27,8 +28,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
   const kg = Number(String(req.query.kg ?? "").replace(",", "."))
-  const sluzba = typeof req.query.sluzba === "string" ? req.query.sluzba : null
-  res.json(await getInternationalShipping(req.scope, { kg: kg > 0 ? kg : null, service: sluzba }))
+  const sluzby = typeof req.query.sluzby === "string" && req.query.sluzby ? req.query.sluzby.split("|") : null
+  res.json(await getInternationalShipping(req.scope, { kg: kg > 0 ? kg : null, services: sluzby }))
 }
 
 export const POST = async (req: MedusaRequest<SaveInternationalInput>, res: MedusaResponse) => {
