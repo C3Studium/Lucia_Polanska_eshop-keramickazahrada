@@ -8,6 +8,7 @@ import {
   commissionPiecesOf,
 } from "@lib/util/made-to-order"
 import CheckoutCommissionBriefs from "@modules/checkout/components/commission-briefs"
+import { nextCheckoutStep } from "@lib/util/checkout-steps"
 
 import s from "./style.module.scss"
 import { useTexty } from "@lib/context/texty"
@@ -39,6 +40,8 @@ export default function CheckoutBriefStep({ cart }: { cart: any }) {
   const searchParams = useSearchParams()
 
   const isOpen = (searchParams.get("step") ?? "address") === "brief"
+  /* Se zakázkou A běžným zbožím jde po zadání ještě nepovinná poznámka. */
+  const dalsi = nextCheckoutStep(cart?.items, "brief")
   if (!isOpen) return null
 
   /*
@@ -79,10 +82,10 @@ export default function CheckoutBriefStep({ cart }: { cart: any }) {
           className={s.next}
           disabled={!hotovo}
           onClick={() =>
-            router.push(pathname + "?step=payment", { scroll: false })
+            router.push(pathname + "?step=" + dalsi, { scroll: false })
           }
         >
-          Pokračovat na platbu →
+          {dalsi === "note" ? "Pokračovat k poznámce →" : "Pokračovat na platbu →"}
         </button>
       </div>
 

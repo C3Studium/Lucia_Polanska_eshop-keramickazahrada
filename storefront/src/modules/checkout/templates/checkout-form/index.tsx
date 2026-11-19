@@ -1,6 +1,7 @@
 import { listCartShippingMethods } from "@lib/data/fulfillment"
 import { listProductionLeadTimes } from "@lib/data/cart"
 import { isMadeToOrderLine } from "@lib/util/commission"
+import { maBezneZbozi } from "@lib/util/checkout-steps"
 import {
   listCartPaymentMethods,
   listComgatePaymentMethods,
@@ -158,7 +159,7 @@ export default async function CheckoutForm({
       {/* Kde v pokladně jste — očíslovaná cesta nahoře, na všech šířkách.
           Od 8. 11. 2026 nese pořadí sama, protože kroky už pod sebou
           nestojí: vidět je vždycky jen ten, který je na řadě. */}
-      <CheckoutStepBubbles hasBrief={maZakazku} />
+      <CheckoutStepBubbles items={cart?.items} />
       <CheckoutStatus customerEmail={customer?.email ?? null} vacationNotice={vacationNotice} />
       <CheckoutSteps
         address={
@@ -182,8 +183,10 @@ export default async function CheckoutForm({
         restriction={deliveryRestriction}
       />
         }
-        /* Bez zakázky je na místě zadání nepovinná poznámka (19. 11. 2026). */
-        brief={maZakazku ? <CheckoutBriefStep cart={cart} /> : <CheckoutNoteStep cart={cart} />}
+        /* Zadání zakázky (povinné) a nepovinná poznámka k běžnému zboží —
+           obojí, je-li v košíku obojí (lib/util/checkout-steps, 19. 11. 2026). */
+        brief={maZakazku ? <CheckoutBriefStep cart={cart} /> : undefined}
+        note={maBezneZbozi(cart?.items) || !maZakazku ? <CheckoutNoteStep cart={cart} /> : undefined}
         payment={
       <Payment
         cart={cart}

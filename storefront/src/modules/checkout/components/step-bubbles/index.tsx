@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import s from "./style.module.scss"
-import { popisKroku } from "../step-list"
+import { checkoutSteps } from "@lib/util/checkout-steps"
 
 /**
  * Kde v pokladně jste — čtyři bublinky, jen na svislém telefonu.
@@ -38,31 +38,10 @@ import { popisKroku } from "../step-list"
  * Roluje se jen při ZMĚNĚ kroku, ne při prvním vykreslení: příchod
  * z e-mailu rovnou na `?step=payment` nemá čím hýbat.
  */
-/* Zadání zakázky stojí PŘED platbou: bez něj se k ní stejně nedá projít. */
-const SE_ZAKAZKOU = [
-  { key: "address", label: "Adresa" },
-  { key: "delivery", label: "Doručení" },
-  { key: "brief", label: "Zadání" },
-  { key: "payment", label: "Platba" },
-  { key: "review", label: "Přehled" },
-] as const
-
-/* Bez zakázky: místo zadání nepovinná poznámka (19. 11. 2026). */
-const SE_POZNAMKOU = [
-  { key: "address", label: "Adresa" },
-  { key: "delivery", label: "Doručení" },
-  { key: "brief", label: "Poznámka" },
-  { key: "payment", label: "Platba" },
-  { key: "review", label: "Přehled" },
-] as const
-
-export default function CheckoutStepBubbles({
-  hasBrief = false,
-}: {
-  /** Je v košíku zakázka? Pak je kroků pět, ne čtyři. */
-  hasBrief?: boolean
-}) {
-  const STEPS = hasBrief ? SE_ZAKAZKOU : SE_POZNAMKOU
+/* Kroky podle košíku — zadání zakázky, poznámka k běžnému zboží, nebo obojí
+   (lib/util/checkout-steps, 19. 11. 2026). */
+export default function CheckoutStepBubbles({ items }: { items?: readonly unknown[] | null }) {
+  const STEPS = checkoutSteps(items)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -147,8 +126,8 @@ export default function CheckoutStepBubbles({
           </span>
           {active.label}
         </p>
-        {popisKroku(active.key, hasBrief) && (
-          <p className={s.desc}>{popisKroku(active.key, hasBrief)}</p>
+        {active?.text && (
+          <p className={s.desc}>{active.text}</p>
         )}
       </div>
     </nav>
