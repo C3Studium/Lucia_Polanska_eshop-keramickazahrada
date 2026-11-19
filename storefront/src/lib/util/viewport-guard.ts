@@ -154,3 +154,35 @@ export const VIEWPORT_GUARD_JS = `(function () {
     d.addEventListener('touchend', function () { setTimeout(afterClick, 400); }, { passive: true, capture: true });
   } catch (e) {}
 })();`
+
+/**
+ * Doplňky funkcí pro starší prohlížeče (20. 11. 2026) — jen to, co web
+ * opravdu používá a co Next.js nepřeloží (překládá zápis, ne funkce).
+ * Sken produkčních souborů a zdroje našel `.at(-1)` (Next.js při přesměrování
+ * a naše `shipping_methods.at(-1)`): Safari < 15.4 tam spadne s TypeError.
+ * Na novém prohlížeči se nic nedefinuje — funkce už existuje.
+ */
+export const POLYFILLS_JS = `(function () {
+  try {
+    var at = function (n) {
+      n = Math.trunc ? Math.trunc(n) || 0 : (n < 0 ? Math.ceil(n) : Math.floor(n)) || 0;
+      if (n < 0) n += this.length;
+      if (n < 0 || n >= this.length) return undefined;
+      return this[n];
+    };
+    [Array.prototype, String.prototype].forEach(function (proto) {
+      if (!proto.at) Object.defineProperty(proto, 'at', { value: at, writable: true, configurable: true });
+    });
+    if (typeof Int8Array !== 'undefined') {
+      var Typed = Object.getPrototypeOf(Int8Array.prototype);
+      if (Typed && !Typed.at) Object.defineProperty(Typed, 'at', { value: at, writable: true, configurable: true });
+    }
+    /* matchMedia(...).addEventListener('change') — Safari < 14 zná jen
+       addListener a jinak spadne (9 míst v kódu, i globální háky). */
+    var MQL = window.MediaQueryList;
+    if (MQL && MQL.prototype && !MQL.prototype.addEventListener && MQL.prototype.addListener) {
+      MQL.prototype.addEventListener = function (type, fn) { if (type === 'change') this.addListener(fn); };
+      MQL.prototype.removeEventListener = function (type, fn) { if (type === 'change') this.removeListener(fn); };
+    }
+  } catch (e) {}
+})();`
