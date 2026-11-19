@@ -7,7 +7,7 @@
   --line: rgb(var(--ink-05-rgb) / .2);
   position: relative;
   isolation: isolate;
-  min-height: 100dvh;
+  min-height: 100svh;
   padding: clamp(6rem, 11vh, 8.5rem) clamp(1rem, 3.5vw, 4.5rem) 4rem;
   overflow: clip;
   color: var(--ink);

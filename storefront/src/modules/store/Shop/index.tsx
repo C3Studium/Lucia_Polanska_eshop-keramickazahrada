@@ -217,6 +217,41 @@ export default function ECom({
   productsRef.current = products
   const resultCountRef = useRef(resultCount)
   resultCountRef.current = resultCount
+  const filtersRef = useRef(filters)
+  filtersRef.current = filters
+  /**
+   * Nový výpis od začátku: kdo je pod začátkem katalogu, vrátí se na něj.
+   * Až PO vykreslení (dva snímky) — dřív je na stránce ještě starý, dlouhý
+   * výpis a zkrácení stránky (a Safari, které posun usekne na konec) přijde
+   * až potom. Lenis si napřed přeměří hranici.
+   */
+  const naZacatekKatalogu = useCallback(() => {
+    window.requestAnimationFrame(() =>
+      window.requestAnimationFrame(() => {
+        const katalog = catalogueRef.current
+        if (!katalog || katalog.getBoundingClientRect().top >= 0) return
+        window.lenis?.resize()
+        scrollWithLenis(katalog, { immediate: true })
+      })
+    )
+  }, [])
+  /*
+   * Příchod do obchodu s jinou kategorií, kolekcí nebo hledáním PŘÍMO
+   * z obchodu (nabídka E-shop v liště). Stránka má na komponentě `key` podle
+   * těchto filtrů, takže se obchod připojí znovu — a protože se cesta
+   * (/store) nemění, `ScrollResetOnRoute` neodroluje. Krátký nový výpis pak
+   * nechal Safari useknout posun na konec: změřeno na iPhonu 19. 11. 2026
+   * y 1072, začátek katalogu 1064 px nad obrazovkou, vidět jen patička.
+   * Zpět a obnovení stránky si polohu vracejí samy (efekt obnovy níž).
+   */
+  useEffect(() => {
+    if (pick || prisliJsmeZpet() || jeObnoveniStranky()) return
+    naZacatekKatalogu()
+    // Jen při připojení.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  /** Filtry, pro které server vykreslil minulý výpis (viz efekt níž). */
+  const filtryServeru = useRef(JSON.stringify({ ...emptyFilters, ...initialFilters }))
 
   useEffect(() => {
     /*
@@ -249,11 +284,58 @@ export default function ECom({
     if (podpis === podpisServeru.current) return
     podpisServeru.current = podpis
 
+    /*
+     * …a ani když server poslal přesně ZAČÁTEK toho, co už je na obrazovce
+     * (19. 11. 2026, „náhodné odrolování" v obchodě na telefonech).
+     *
+     * Filtry jdou do adresy tiše (`replaceState`), takže první serverové
+     * překreslení po změně filtru — přidání do košíku, živé obnovení po zápisu
+     * v adminu, `router.refresh` — přišlo s jiným podpisem než minule a výpis
+     * se zkrátil na prvních 16 kusů. Kdo měl načteno víc, tomu se stránka
+     * zkrátila pod prstem a Safari posun usekl: obsah „náhodně" uskočil.
+     * Rozhoduje tedy, jestli se serverový výpis shoduje se začátkem toho
+     * zobrazeného — pak je zobrazený (delší) správně a zůstává.
+     */
+    const zobrazenyZacatek = podpisVypisu(
+      productsRef.current.slice(0, initialProducts.length),
+      resultCountRef.current
+    )
+    if (podpis === zobrazenyZacatek) return
+
+    /*
+     * Server vykreslil jiné filtry, než má člověk nastavené. Dvě různé věci:
+     * - filtry od serveru se od minula NEZMĚNILY → je to překreslení se
+     *   zastaralou adresou routeru (za `replaceState`), výpis k obrazovce
+     *   nepatří a zůstává ten zobrazený;
+     * - ZMĚNILY se → opravdový přechod (odkaz na jinou kolekci, když už
+     *   v obchodě jsem) — převzít výpis i filtry, ať panel ukazuje pravdu.
+     */
+    const serverove = { ...emptyFilters, ...initialFilters }
+    const klicServeru = JSON.stringify(serverove)
+    const novyPrechod = klicServeru !== filtryServeru.current
+    filtryServeru.current = klicServeru
+    const ted = filtersRef.current
+    const jine = (Object.keys(serverove) as (keyof ShopFilters)[]).some(
+      (key) => serverove[key] !== ted[key]
+    )
+    if (jine && !novyPrechod) return
+    if (jine) setFilters(serverove)
+
     setProducts(initialProducts)
     setResultCount(totalCount ?? initialProducts.length)
     setAllLoaded(
       initialProducts.length >= (totalCount ?? initialProducts.length)
     )
+
+    /*
+     * Výběr kategorie z nabídky E-shop PŘÍMO v obchodě (19. 11. 2026, Lucie:
+     * „při výběru kategorie se otevře zase dole"). Cesta zůstává /store, mění
+     * se jen dotaz, takže `ScrollResetOnRoute` neodroluje — a krátký nový
+     * výpis nechal Safari useknout posun na konec: naměřeno na iPhonu y 1072,
+     * začátek katalogu 1064 px nad obrazovkou, vidět jen patička.
+     */
+    if (novyPrechod) naZacatekKatalogu()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialProducts, totalCount])
 
   /*
@@ -387,14 +469,13 @@ export default function ECom({
 
     /* Průběžně (po snímcích) a při odchodu ze stránky — obnovení stránky
        nedá vědět předem, takže snímek musí být hotový pořád. */
-    let ceka = false
+    /* Až když se posun zastaví (200 ms), ne v každém snímku: zápis do
+       sessionStorage je synchronní a na slabších telefonech ho bylo cítit
+       přímo v plynulosti posunu (19. 11. 2026). */
+    let casovac = 0
     const priScrollu = () => {
-      if (ceka) return
-      ceka = true
-      window.requestAnimationFrame(() => {
-        ceka = false
-        uloz()
-      })
+      window.clearTimeout(casovac)
+      casovac = window.setTimeout(uloz, 200)
     }
 
     root.addEventListener("click", handleClick, true)
@@ -403,6 +484,7 @@ export default function ECom({
     return () => {
       root.removeEventListener("click", handleClick, true)
       window.removeEventListener("scroll", priScrollu)
+      window.clearTimeout(casovac)
       window.removeEventListener("pagehide", uloz)
     }
   }, [filters, products.length, pick])
@@ -551,13 +633,12 @@ export default function ECom({
            zkrátila (kategorie s dvěma kusy) a scroll zůstal, kde byl — tedy
            u dna, pod výsledky, s patičkou přes půl obrazovky. Kdo je pod
            začátkem katalogu, vrátí se na něj; Lenis si napřed přeměří hranici. */
-        const katalog = catalogueRef.current
-        if (katalog && katalog.getBoundingClientRect().top < 0) {
-          window.requestAnimationFrame(() => {
-            window.lenis?.resize()
-            scrollWithLenis(katalog, { immediate: true })
-          })
-        }
+        /* Až PO vykreslení nového výpisu (dva snímky), ne hned po
+           `setProducts` — tehdy je na stránce ještě starý, dlouhý výpis, top
+           katalogu vypadá v pořádku a zkrácení stránky přijde až potom:
+           Safari pak posun usekne na konec a člověk kouká na patičku
+           („při výběru kategorie se otevře dole", 19. 11. 2026). */
+        naZacatekKatalogu()
       } catch (error) {
         if (requestId !== requestSequence.current) return
         console.error("Store catalogue query failed", error)

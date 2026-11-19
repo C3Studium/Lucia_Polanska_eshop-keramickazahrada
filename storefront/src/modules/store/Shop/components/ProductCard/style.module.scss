@@ -371,3 +371,37 @@
     min-height: 0 !important;
   }
 }
+
+/*
+ * ─── Plynulost na telefonech, i starších (19. 11. 2026) ─────────────────────
+ *
+ * Měřeno na iPhonu v obchodě: 31 prvků s `backdrop-filter` (štítky a tlačítko
+ * „Objevit" v každé kartě) a 14 karet s druhou fotkou pod `filter: blur(4px)`.
+ * Rozmazání pod pohyblivým obsahem prohlížeč přepočítává v KAŽDÉM snímku
+ * posunu — nový iPhone to utáhne, starší (a prohlížeče nad WebKitem jako
+ * Seznam) pak posun sekají. Na dotyku:
+ * - štítky a „Objevit" bez rozmazání: jejich podklad je už z 90–92 %
+ *   neprůhledný, rozdíl se nedá vidět;
+ * - druhá fotka vůbec: ukazuje se jen při najetí myší, na dotyku nikdy —
+ *   jen zabírala paměť GPU a počítala rozmazání.
+ */
+@media (hover: none), (pointer: coarse) {
+  .badges span,
+  .discoverBackground {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .secondary {
+    display: none !important;
+  }
+}
+
+/* Safari < 15 nezná `aspect-ratio` — karta by měla nulovou výšku (fotky
+   v ní jsou absolutně umístěné). Klasická záloha výškou z šířky. */
+@supports not (aspect-ratio: 1 / 1) {
+  .visual {
+    height: 0;
+    padding-bottom: 118.75%;
+  }
+}
