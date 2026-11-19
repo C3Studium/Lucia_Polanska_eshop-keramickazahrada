@@ -189,7 +189,7 @@ const ProduktyInner = () => {
     queryKey: ["catalog-products", active.key, search],
     queryFn: () =>
       sdk.client.fetch("/admin/operations/products", {
-        query: { kind: active.key, q: search, limit: 200 },
+        query: { kind: active.key, q: search, limit: 5000 },
       }),
   });
 

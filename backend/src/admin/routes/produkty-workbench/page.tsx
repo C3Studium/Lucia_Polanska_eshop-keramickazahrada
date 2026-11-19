@@ -737,7 +737,9 @@ const ProductsInner = () => {
     queryFn: () =>
       sdk.client.fetch(
         `/admin/workbench/products?${new URLSearchParams({
-          limit: "200",
+          /* Celý katalog — seznam nemá stránkování (19. 11. 2026: při 200
+             chybělo 57 výrobků). Server to i tak ohlásí v `truncated`. */
+          limit: "5000",
           ...(active === "archivovane" ? { archived: "1" } : {}),
           ...(kindForTab[active] ? { kind: kindForTab[active] as string } : {}),
           ...(search.trim() ? { q: search.trim() } : {}),
