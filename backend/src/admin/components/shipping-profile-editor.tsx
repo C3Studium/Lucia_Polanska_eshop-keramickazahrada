@@ -1,7 +1,6 @@
 import {
   Badge,
   Button,
-  Drawer,
   Input,
   Label,
   Select,
@@ -9,6 +8,7 @@ import {
   Text,
   toast,
 } from "@medusajs/ui";
+import { PanelDrawer as Drawer } from "./panel-shell";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { sdk } from "../lib/sdk";
@@ -43,14 +43,19 @@ export const ShippingProfileEditor = ({
   fragile,
   packagingPrice,
   trigger,
+  inline = false,
+  onClose,
 }: {
   productId: string;
   productTitle: string;
   fragile: boolean;
   packagingPrice: number | null;
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
+  /** Vykreslit vedle nabídky „…" (components/panel-shell). */
+  inline?: boolean;
+  onClose?: () => void;
 }) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(inline);
   const [isFragile, setIsFragile] = useState(fragile);
   const [profil, setProfil] = useState("");
   const [price, setPrice] = useState(
@@ -130,7 +135,7 @@ export const ShippingProfileEditor = ({
   });
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
+    <Drawer open={open} onOpenChange={setOpen} inline={inline} onClose={onClose}>
       <Drawer.Trigger asChild>{trigger}</Drawer.Trigger>
       <Drawer.Content>
         <Drawer.Header>
@@ -143,8 +148,9 @@ export const ShippingProfileEditor = ({
                 Křehké
               </Label>
               <Text size="xsmall" className="text-ui-fg-subtle mt-1">
-                Pokud je v košíku cokoli křehkého, zákazník uvidí jen Českou
-                poštu – křehké a osobní odběr. Jinou dopravu zvolit nepůjde.
+                Pokud je v košíku cokoli křehkého, pojede celá zásilka jako
+                křehká (příplatek) — poštou nebo Balíkovnou na adresu, případně
+                osobní odběr. Do výdejního místa ani boxu to nepůjde.
               </Text>
             </div>
             <Switch

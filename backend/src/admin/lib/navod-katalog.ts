@@ -413,7 +413,7 @@ export const NAVOD: NavodTema[] = [
       "Do pole „Hledat název…“ napište část názvu.",
       "Filtry „Kolekce“, „Kategorie“, „Stav“, „Doprava“ zúží seznam; pamatují si to i po návratu z detailu.",
       "Klik na štítky ve sloupci Doprava (balné, Malé/Velké, dobírka) je změní bez otevírání výrobku.",
-      "„…“ na konci řádku: skrýt / zobrazit v obchodě, profil dopravy, provedení a ceny, archiv.",
+      "„…“ na konci řádku: nabídka zůstane otevřená a vybrané nastavení (Ceny a provedení, Povolené dopravy…) se otevře vedle ní. Přepínače (Poškozený kus, Bez slevových kódů) se přepnou rovnou v nabídce.",
     ],
     kde: "/produkty-workbench",
   },
