@@ -2,6 +2,7 @@ import RefreshWhilePaying from "@modules/common/components/refresh-while-paying"
 import { commissionsOf } from "@lib/util/made-to-order"
 import { retrieveOrder, getOrderAccessToken } from "@lib/data/orders"
 import { getOrderClaims } from "@lib/data/claims"
+import { getOrderDocuments } from "@lib/data/order-documents"
 import { fallbackStageLabel, getOrderProgress } from "@lib/data/order-progress"
 import {
   getCommissionBalance,
@@ -105,7 +106,7 @@ export default async function OrderConfirmedPage(props: Props) {
   // Stav doplatku zakázky (zaplaceno zálohou / zbývá / odkaz na doplacení) —
   // Souhrn z toho pozná „jen záloha" a nabídne tlačítko doplatit. Napřed,
   // protože počká, až backend zálohu zapíše (viz `settledCommissionBalance`).
-  const [progress, commissionBalance, commissionNotes, claims] = await Promise.all([
+  const [progress, commissionBalance, commissionNotes, claims, documents] = await Promise.all([
     // Stav objednávky (reklamace, odesláno, výroba…). Null jen když selže.
     order ? getOrderProgress(params.id, selfServiceToken) : null,
     order ? settledCommissionBalance(params.id, order) : null,
@@ -114,6 +115,8 @@ export default async function OrderConfirmedPage(props: Props) {
     // tokenem. `null` = nepovedlo se načíst → sekce se nevykreslí a tlačítka
     // zůstanou jako dřív (pravidla pohlídá stránka formuláře).
     selfServiceToken ? getOrderClaims(params.id, selfServiceToken) : null,
+    // Dokumenty ke stažení (potvrzení, faktura, podmínky…) — stejným tokenem.
+    order ? getOrderDocuments(params.id, selfServiceToken) : null,
   ])
   const [commissionCancellation, commissionNotesById] = await Promise.all([
     // Zrušení zakázky (audit § 0, Z4/Z5) — jen u zakázky, tokenem hosta.
@@ -169,6 +172,7 @@ export default async function OrderConfirmedPage(props: Props) {
         commissionNotesById={commissionNotesById}
         selfServiceToken={selfServiceToken}
         claims={claims}
+        documents={documents}
       />
     </>
   )

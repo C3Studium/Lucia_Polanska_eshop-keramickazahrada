@@ -745,6 +745,75 @@
   border-block: 1px solid var(--line);
 }
 
+/* Dokumenty ke stažení (19. 11. 2026) — řádky jako doklad: dva sloupce,
+   na telefonu jeden. Celý řádek je odkaz. */
+.documentList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.documentList li { min-width: 0; border-bottom: 1px solid var(--line); }
+.documentList li:nth-child(odd) { border-right: 1px solid var(--line); }
+
+.documentLink {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .9rem;
+  min-height: 4.25rem;
+  padding: 1rem 1.25rem 1rem 0;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color .2s ease;
+}
+
+.documentList li:nth-child(even) .documentLink { padding-left: 1.25rem; }
+.documentLink:hover { background: rgb(var(--ink-05-rgb) / .035); }
+.documentLink:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+
+.documentIcon {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.9rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / .35);
+  font: 600 max(var(--text-min, 0px), calc(.58rem * var(--read, 1))) / 1 "Sansation-Regular", sans-serif;
+  letter-spacing: .12em;
+}
+
+.documentText { min-width: 0; }
+
+.documentText strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font: 400 max(var(--text-min, 0px), calc(1.02rem * var(--read, 1))) / 1.4 "Sansation-Regular", sans-serif;
+}
+
+.documentText small {
+  display: block;
+  margin-top: .2rem;
+  color: rgb(var(--ink-05-rgb) / .62);
+  font: 300 max(var(--text-min, 0px), calc(.9rem * var(--read, 1))) / 1.45 "Sansation-Light", sans-serif;
+}
+
+.documentArrow { font-size: 1.15rem; opacity: .6; }
+
+.documentHint {
+  margin: 1rem 0 0;
+  color: rgb(var(--ink-05-rgb) / .62);
+  font: 300 max(var(--text-min, 0px), calc(.95rem * var(--read, 1))) / 1.6 "Sansation-Light", sans-serif;
+}
+
+@media (max-width: 720px) {
+  .documentList { grid-template-columns: 1fr; }
+  .documentList li:nth-child(odd) { border-right: 0; }
+  .documentList li:nth-child(even) .documentLink { padding-left: 0; }
+}
+
 .support {
   display: grid;
   grid-template-columns: 1fr minmax(18rem, .75fr) auto;

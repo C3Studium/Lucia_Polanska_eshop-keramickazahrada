@@ -699,6 +699,17 @@ export default defineMiddlewares({
         }),
       ],
     },
+    // Dokumenty objednávky ke stažení (19. 11. 2026) — stejný přístup jako
+    // stav: přihlášený majitel, nebo host s podepsaným tokenem (handler).
+    {
+      matcher: "/store/orders/:id/documents",
+      methods: ["GET"],
+      middlewares: [
+        authenticate("customer", ["bearer", "session"], {
+          allowUnauthenticated: true,
+        }),
+      ],
+    },
     // Hostovská self-service objednávky z e-mailu (editace, reklamace/vrácení):
     // podepsaný token v query/body je důkaz sám o sobě, přihlášený zákazník
     // dorazí i bez něj. Volitelná auth pustí HOSTA bez session k handleru

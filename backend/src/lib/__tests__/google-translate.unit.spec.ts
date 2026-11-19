@@ -1,5 +1,12 @@
 import { translateTitles } from "../google-translate"
-import { localizedLineTitle, localizedProductName, localeForCountry } from "../email-locale"
+import {
+  emailLocaleOf,
+  languageForCountry,
+  localizedLineTitle,
+  localizedProductName,
+  localeForCountry,
+  parseEmailLocale,
+} from "../email-locale"
 import { invoiceFlavourFor, buildInvoicePayload } from "../../modules/idoklad/utils"
 
 const okResponse = (texts: string[]) =>
@@ -67,13 +74,35 @@ describe("translateTitles (Google)", () => {
 })
 
 describe("jazyk podle země", () => {
-  it("ostatní země dostanou angličtinu, bez země čeština", () => {
+  it("e-maily: Česko a Slovensko česky, ostatní anglicky, bez země česky (19. 11. 2026)", () => {
     expect(localeForCountry("cz")).toBe("cs")
-    expect(localeForCountry("at")).toBe("de")
+    expect(localeForCountry("SK")).toBe("cs")
+    expect(localeForCountry("at")).toBe("en")
+    expect(localeForCountry("de")).toBe("en")
+    expect(localeForCountry("pl")).toBe("en")
     expect(localeForCountry("fr")).toBe("en")
     expect(localeForCountry("GB")).toBe("en")
     expect(localeForCountry("")).toBe("cs")
     expect(localeForCountry(null)).toBe("cs")
+  })
+
+  it("e-maily: uložený jazyk starší objednávky se sbalí na češtinu nebo angličtinu", () => {
+    expect(parseEmailLocale("sk")).toBe("cs")
+    expect(parseEmailLocale("de")).toBe("en")
+    expect(parseEmailLocale("pl")).toBe("en")
+    expect(parseEmailLocale("en")).toBe("en")
+    expect(parseEmailLocale("cs-CZ")).toBe("cs")
+    expect(parseEmailLocale("")).toBeNull()
+    expect(emailLocaleOf({ metadata: { locale: "sk" } })).toBe("cs")
+    expect(emailLocaleOf({ metadata: { locale: "de" } })).toBe("en")
+    expect(emailLocaleOf({ shipping_address: { country_code: "it" } })).toBe("en")
+    expect(emailLocaleOf({ shipping_address: { country_code: "sk" } })).toBe("cs")
+  })
+
+  it("faktura si jazyk země nechává (slovensky, německy)", () => {
+    expect(languageForCountry("sk")).toBe("sk")
+    expect(languageForCountry("at")).toBe("de")
+    expect(languageForCountry("fr")).toBe("en")
   })
 })
 
