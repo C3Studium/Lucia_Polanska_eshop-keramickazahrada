@@ -407,14 +407,35 @@ export const NAVOD: NavodTema[] = [
     klipy: [
       { klic: "produkty.hledat", popis: "Hledání a filtr" },
       { klic: "produkty.doprava-radek", popis: "Doprava rovnou v řádku" },
-      { klic: "produkty.skryt", popis: "Skrýt a zase zobrazit" },
     ],
     kroky: [
       "Do pole „Hledat název…“ napište část názvu.",
       "Filtry „Kolekce“, „Kategorie“, „Stav“, „Doprava“ zúží seznam; pamatují si to i po návratu z detailu.",
       "Klik na štítky ve sloupci Doprava (balné, Malé/Velké, dobírka) je změní bez otevírání výrobku.",
-      "„…“ na konci řádku otevře nastavení výrobku jako na detailu: nahoře Skrýt/Zobrazit v obchodě, pak Cena a sklad, Doprava, Prodej (typ výrobku, slevové kódy), Materiál a rozměry; dole Archivovat a Smazat. Ceny a provedení nebo Povolené dopravy se otevřou vedle nabídky.",
+      "„…“ na konci řádku otevře nastavení jednoho výrobku — viz „Nastavení jednoho výrobku (…)“.",
     ],
+    kde: "/produkty-workbench",
+  },
+  {
+    klic: "produkty.nastaveni",
+    sekce: "produkty",
+    nazev: "Nastavení jednoho výrobku („…“)",
+    proc:
+      "„…“ na konci řádku je nastavení JEDNOHO výrobku bez otevírání detailu — rozdělené jako detail: Cena a sklad, Doprava, Prodej, Materiál a rozměry. Změny se jen připraví (označí se tečkou „•“) a zapíšou se až tlačítkem „Uložit vše“ dole.",
+    klipy: [
+      { klic: "produkty.nastaveni", popis: "Balné a Křehké → Uložit vše" },
+      { klic: "produkty.nastaveni-okno", popis: "Ceny a provedení vedle nabídky" },
+      { klic: "produkty.skryt", popis: "Skrýt a zase zobrazit" },
+    ],
+    kroky: [
+      "Na konci řádku klikněte na „…“ — otevře se nabídka s nastavením výrobku.",
+      "Změňte, co potřebujete: velikost zásilky, křehké, dobírku, balné, typ výrobku (běžný / poškozený kus / na zakázku), slevové kódy, materiál, rozměry, mrazuvzdornost.",
+      "Změněné položky mají tečku „•“ a tlačítko dole ukazuje počet: „Uložit vše (3)“.",
+      "Klikněte na „Uložit vše“. „Zrušit vše“ všechno vrátí, jak bylo.",
+      "„Ceny a provedení“, „Povolené dopravy“ nebo „Podmínky zakázky“ se otevřou vlevo vedle nabídky (na telefonu místo ní, zpět tlačítkem „← Zpět do nabídky“) a ukládají se svým vlastním tlačítkem.",
+    ],
+    pozor:
+      "„Skrýt z obchodu / Zobrazit v obchodě“ nahoře a „Archivovat“ / „Smazat…“ dole platí hned. S neuloženými změnami nabídka nejde zavřít — nejdřív Uložit vše, nebo Zrušit vše. Jakmile zaškrtnete dva a víc výrobků, „…“ zmizí a slouží lišta dole „Hromadné změny“.",
     kde: "/produkty-workbench",
   },
   {
@@ -422,15 +443,19 @@ export const NAVOD: NavodTema[] = [
     sekce: "produkty",
     nazev: "Hromadné změny (víc výrobků najednou)",
     proc:
-      "Když chcete víc výrobkům nastavit totéž — křehké, dobírku, balné, slevu, výprodej, kolekci… Zaškrtnete je a v panelu vpravo změníte jen to, co mají mít stejné. Nic se neuloží, dokud nekliknete na „Uložit vše“.",
-    klipy: [{ klic: "produkty.hromadne", popis: "Dvěma výrobkům zapnout Křehké" }],
-    kroky: [
-      "Zaškrtněte aspoň dva výrobky (políčko vlevo u řádku).",
-      "Dole se objeví lišta — klikněte na „Hromadné změny“.",
-      "V panelu změňte, co potřebujete (Doprava, Prodej, Slevy, Zařazení). „Beze změny“ = nechat, jak je.",
-      "Klikněte na „Uložit vše“.",
+      "Když chcete víc výrobkům nastavit totéž — ceny, křehké, dobírku, balné, objednání bez skladu, slevu, výprodej, kolekci… Zaškrtnete je a v panelu vpravo změníte jen to, co potřebujete. Nic se neuloží, dokud nekliknete na „Uložit vše“.",
+    klipy: [
+      { klic: "produkty.hromadne", popis: "Dvěma výrobkům zapnout Křehké" },
+      { klic: "produkty.hromadne-ceny", popis: "Ceny a objednání bez skladu" },
     ],
-    pozor: "Rychlé „Skrýt z obchodu / Zobrazit v obchodě“ je přímo v liště dole a platí hned.",
+    kroky: [
+      "Zaškrtněte aspoň dva výrobky (políčko vlevo u řádku). „…“ v řádcích zmizí — teď se mění všechny vybrané naráz.",
+      "Dole se objeví lišta — klikněte na „Hromadné změny“.",
+      "Ceny: přepište cenu v Kč u výrobku (u výrobku s více provedeními u každého provedení). Euro se dopočítá podle kurzu.",
+      "Dál změňte, co potřebujete (Doprava, Prodej — i Objednání bez kusů na skladu se zprávou pro zákazníka, Materiál a rozměry, Slevy, Zařazení). Políčko, na které nesáhnete, zůstane, jak je.",
+      "Klikněte na „Uložit vše (počet změn)“. „Zrušit vše“ panel zavře a nic nezmění.",
+    ],
+    pozor: "Rychlé „Skrýt z obchodu / Zobrazit v obchodě“ je přímo v liště dole a platí hned. Pro jeden výrobek použijte „…“ na konci řádku.",
     kde: "/produkty-workbench",
   },
   /* ————————————————— Detail výrobku ————————————————— */
