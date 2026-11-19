@@ -6,13 +6,17 @@
  * Anything a single workbench needs alone stays in that workbench.
  */
 
-export const formatCzk = (value: number | null | undefined): string => {
+/**
+ * Částka v měně — výchozí koruny. Objednávky ze zahraničí jsou v eurech
+ * (19. 11. 2026): kdo zná měnu objednávky, předá ji (`currency_code`).
+ */
+export const formatCzk = (value: number | null | undefined, currency?: string | null): string => {
   if (value === null || value === undefined || !Number.isFinite(value)) {
     return "—";
   }
   return new Intl.NumberFormat("cs-CZ", {
     style: "currency",
-    currency: "CZK",
+    currency: (currency || "CZK").toUpperCase(),
     maximumFractionDigits: value % 1 === 0 ? 0 : 2,
   }).format(value);
 };

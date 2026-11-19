@@ -711,7 +711,7 @@ const OrderExpansion = ({ orderId, madeToOrder }: { orderId: string; madeToOrder
                   {item.quantity}× {item.title}
                   {item.variant_title ? ` — ${item.variant_title}` : ""}{" "}
                   <span className="text-ui-fg-muted">
-                    {formatCzk(item.total)}
+                    {formatCzk(item.total, (data as any).currency_code)}
                   </span>
                 </Text>
                 {item.specification && (
@@ -766,12 +766,12 @@ const OrderExpansion = ({ orderId, madeToOrder }: { orderId: string; madeToOrder
         )}
         {data.ledger.map((payment) => (
           <Text key={payment.id} size="xsmall" className="mt-1">
-            {formatCzk(payment.amount)} ·{" "}
+            {formatCzk(payment.amount, (data as any).currency_code)} ·{" "}
             {payment.captured_at
               ? "přijato"
               : "přislíbeno"}
             {payment.refunded > 0
-              ? ` · vráceno ${formatCzk(payment.refunded)}`
+              ? ` · vráceno ${formatCzk(payment.refunded, (data as any).currency_code)}`
               : ""}{" "}
             <span className="text-ui-fg-muted">
               {formatDateTime(payment.captured_at ?? payment.created_at)}
@@ -1027,14 +1027,14 @@ const PaymentLine = ({ order }: { order: WorkbenchOrder }) => {
     text = "Čeká na zálohu";
     className = tone("text-ui-tag-orange-text");
   } else if (order.outstanding > 0 && order.paid > 0) {
-    text = `${order.made_to_order ? "Záloha" : "Zaplaceno"} ${formatCzk(order.paid)} · zbývá ${formatCzk(order.outstanding)}`;
+    text = `${order.made_to_order ? "Záloha" : "Zaplaceno"} ${formatCzk(order.paid, order.currency_code)} · zbývá ${formatCzk(order.outstanding, order.currency_code)}`;
     className = tone("text-ui-tag-orange-text");
   } else if (order.outstanding > 0 || unpaid) {
     if (order.is_personal_pickup && order.paid <= 0) {
       text = "Platí při vyzvednutí";
       className = tone("text-ui-fg-subtle");
     } else if (order.paid > 0) {
-      text = `Zaplaceno ${formatCzk(order.paid)} · zbývá ${formatCzk(Math.max(0, order.total - order.paid))}`;
+      text = `Zaplaceno ${formatCzk(order.paid, order.currency_code)} · zbývá ${formatCzk(Math.max(0, order.total - order.paid), order.currency_code)}`;
       className = tone("text-ui-tag-orange-text");
     } else {
       text = "Nezaplaceno";
@@ -1053,7 +1053,7 @@ const PaymentLine = ({ order }: { order: WorkbenchOrder }) => {
       </Text>
       {order.refunded > 0 && (
         <Text size="xsmall" className="text-ui-fg-subtle mt-0.5">
-          vráceno {formatCzk(order.refunded)}
+          vráceno {formatCzk(order.refunded, order.currency_code)}
         </Text>
       )}
     </>
@@ -1183,7 +1183,8 @@ const OrderListRow = ({
           {formatCzk(
             order.made_to_order && order.total < 0.01
               ? (order.commission_total ?? 0)
-              : order.total
+              : order.total,
+            order.currency_code
           )}
         </Text>
         <PaymentLine order={order} />
