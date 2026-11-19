@@ -152,6 +152,34 @@ export const ProductBulkDrawer = ({
   /* Materiál a rozměry (19. 11. 2026): "__beze" = nesahat, "__none" = bez materiálu. */
   const [material, setMaterial] = useState<string>("__beze");
   const [rozmery, setRozmery] = useState("");
+  /* Objednání bez skladu (19. 11. 2026): "__beze" = nesahat. */
+  const [bezSkladu, setBezSkladu] = useState<"__beze" | "on" | "off">("__beze");
+  const [zprava, setZprava] = useState("");
+  /* Ceny: id provedení → nová cena v Kč (text z pole). */
+  const [ceny, setCeny] = useState<Record<string, string>>({});
+  type VarRow = { id: string; title: string; allow_backorder?: boolean; prices?: { amount: number; currency_code: string }[] };
+  const variantyQuery = useQuery<{ products: { id: string; title: string; variants: VarRow[] }[] }>({
+    queryKey: ["bulk-varianty", products.map((p) => p.id).join(",")],
+    queryFn: () =>
+      sdk.client.fetch(
+        `/admin/products?${products.map((p) => `id[]=${p.id}`).join("&")}&limit=${products.length}&fields=id,title,variants.id,variants.title,variants.allow_backorder,variants.prices.amount,variants.prices.currency_code`
+      ),
+    enabled: open && mode === "vse" && products.length > 0,
+  });
+  const varianty = variantyQuery.data?.products ?? [];
+  const czkOf = (v: VarRow) => v.prices?.find((p) => String(p.currency_code).toLowerCase() === "czk")?.amount ?? null;
+  const zmenenaCena = (v: VarRow) => {
+    const t = (ceny[v.id] ?? "").trim();
+    if (t === "") return null;
+    const n = Number(t.replace(",", "."));
+    return Number.isFinite(n) && n > 0 && n !== czkOf(v) ? Math.round(n * 100) / 100 : null;
+  };
+  const zmenenychCen = varianty.flatMap((p) => p.variants).filter((v) => zmenenaCena(v) !== null).length;
+  const bezSkladuSdilene: "on" | "off" | null = (() => {
+    if (!varianty.length) return null;
+    const vse = varianty.flatMap((p) => p.variants.map((v) => Boolean(v.allow_backorder)));
+    return vse.every(Boolean) ? "on" : vse.every((x) => !x) ? "off" : null;
+  })();
   const materialsQuery = useQuery<{ materials: string[] }>({
     queryKey: ["produkt-materials"],
     queryFn: () => sdk.client.fetch(`/admin/workbench/materials`),
@@ -165,6 +193,9 @@ export const ProductBulkDrawer = ({
     setFlags({});
     setMaterial("__beze");
     setRozmery("");
+    setBezSkladu("__beze");
+    setZprava("");
+    setCeny({});
     setClassification(emptyBulkClassification());
     setSortSummary(null);
     setVyprodejTarget(null);
@@ -234,7 +265,10 @@ export const ProductBulkDrawer = ({
     (vyprodejTarget ? 1 : 0) +
     (saleKind !== "none" && saleValid ? 1 : 0) +
     (material !== "__beze" ? 1 : 0) +
-    (rozmery.trim() ? 1 : 0);
+    (rozmery.trim() ? 1 : 0) +
+    (bezSkladu !== "__beze" ? 1 : 0) +
+    (zprava.trim() ? 1 : 0) +
+    zmenenychCen;
   const dirty = changeCount > 0;
   const hint = (mixed: boolean) => (mixed ? "U vybraných se liší — klikem nastavíte všem." : undefined);
 
@@ -245,6 +279,7 @@ export const ProductBulkDrawer = ({
         ...rest,
         ...(balneChanged ? { packaging_price: balneValue } : {}),
         ...(rozmery.trim() ? { dimensions: rozmery.trim() } : {}),
+        ...(zprava.trim() ? { backorder_note: zprava.trim() } : {}),
       };
       const classDirty = bulkClassificationDirty(classification);
       for (const product of products) {
@@ -271,6 +306,29 @@ export const ProductBulkDrawer = ({
         }
         if (Object.keys(body).length) {
           await sdk.client.fetch(`/admin/products/${product.id}`, { method: "POST", body });
+        }
+      }
+      /* Objednání bez skladu a ceny — po provedeních, jako na detailu výrobku. */
+      for (const p of varianty) {
+        if (bezSkladu !== "__beze") {
+          await sdk.client.fetch(`/admin/products/${p.id}/variants/batch`, {
+            method: "POST",
+            body: { update: p.variants.map((v) => ({ id: v.id, allow_backorder: bezSkladu === "on" })) },
+          });
+        }
+        for (const v of p.variants) {
+          const nova = zmenenaCena(v);
+          if (nova === null) continue;
+          await sdk.client.fetch(`/admin/products/${p.id}/variants/${v.id}`, {
+            method: "POST",
+            /* Ostatní měny se pošlou s sebou, jinak by je ceník smazal do příštího kurzu ČNB. */
+            body: {
+              prices: [
+                { currency_code: "czk", amount: nova },
+                ...(v.prices ?? []).filter((x) => String(x.currency_code).toLowerCase() !== "czk").map((x) => ({ currency_code: x.currency_code, amount: x.amount })),
+              ],
+            },
+          });
         }
       }
       /* Slevy: sleva výrobku každému zvlášť (výrobek ve výprodeji ji
@@ -309,6 +367,8 @@ export const ProductBulkDrawer = ({
     onSuccess: async (result) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["product-sale"] }),
+        queryClient.invalidateQueries({ queryKey: ["bulk-varianty"] }),
+        queryClient.invalidateQueries({ queryKey: ["workbench-product"] }),
         queryClient.invalidateQueries({ queryKey: ["product-sales"] }),
         queryClient.invalidateQueries({ queryKey: ["vyprodeje"] }),
         queryClient.invalidateQueries({ queryKey: ["product-vyprodej"] }),
@@ -359,6 +419,45 @@ export const ProductBulkDrawer = ({
             />
           ) : (
           <>
+          <InspectorGroup
+            title="Ceny"
+            note="Přepište cenu v Kč u kusu nebo provedení. Euro se dopočítá podle kurzu. Prázdné nebo stejné = beze změny."
+          >
+            {variantyQuery.isLoading && (
+              <div className="px-3 py-3"><Text size="small" className="text-ui-fg-subtle">Načítám ceny…</Text></div>
+            )}
+            {varianty.map((p) => (
+              <div key={p.id} className="px-3 py-2">
+                {p.variants.length > 1 && (
+                  <Text size="small" weight="plus" className="mb-1 truncate" title={p.title}>{p.title}</Text>
+                )}
+                <div className="flex flex-col gap-1.5">
+                  {p.variants.map((v) => {
+                    const zmena = zmenenaCena(v) !== null;
+                    return (
+                      <div key={v.id} className="flex items-center justify-between gap-3">
+                        <Text size="small" className={`min-w-0 truncate ${p.variants.length > 1 ? "text-ui-fg-subtle pl-3" : ""}`} title={p.variants.length > 1 ? v.title : p.title}>
+                          {p.variants.length > 1 ? v.title : p.title}
+                        </Text>
+                        <span className="flex shrink-0 items-center gap-1">
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            aria-label={`Cena — ${p.title}${p.variants.length > 1 ? ` (${v.title})` : ""}`}
+                            value={ceny[v.id] ?? (czkOf(v) === null ? "" : String(czkOf(v)))}
+                            onChange={(event) => setCeny((prev) => ({ ...prev, [v.id]: event.target.value }))}
+                            className={`bg-ui-bg-field txt-compact-small min-h-[32px] w-24 rounded-md border px-2 text-right ${zmena ? "border-ui-border-interactive" : "border-ui-border-base"}`}
+                          />
+                          <Text size="small" className="text-ui-fg-muted">Kč</Text>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </InspectorGroup>
+
           <InspectorGroup title="Doprava">
             <InspectorRow
               label="Balné"
@@ -421,6 +520,36 @@ export const ProductBulkDrawer = ({
           </InspectorGroup>
 
           <InspectorGroup title="Prodej">
+            <InspectorRow
+              label="Objednání bez kusů na skladu"
+              hint={
+                bezSkladu === "__beze" && bezSkladuSdilene === null
+                  ? "U vybraných se liší — klikem nastavíte všem."
+                  : "Zákazník koupí i vyprodaný kus a uvidí zprávu níž."
+              }
+              control={
+                <Seg
+                  label="Objednání bez kusů na skladu"
+                  options={ANO_NE}
+                  value={bezSkladu === "__beze" ? bezSkladuSdilene : bezSkladu}
+                  dirty={bezSkladu !== "__beze"}
+                  onSet={(next) => setBezSkladu(next)}
+                />
+              }
+            >
+              {(bezSkladu === "on" || (bezSkladu === "__beze" && bezSkladuSdilene !== "off")) && (
+                <div className="mt-2 flex flex-col gap-1">
+                  <Text size="xsmall" weight="plus">Zpráva pro zákazníka</Text>
+                  <Input
+                    size="small"
+                    value={zprava}
+                    onChange={(event) => setZprava(event.target.value)}
+                    placeholder="např. Vyrobíme pro vás do 3 týdnů. (prázdné = beze změny)"
+                    className={zprava.trim() ? "shadow-borders-interactive-with-active" : undefined}
+                  />
+                </div>
+              )}
+            </InspectorRow>
             <InspectorRow
               label="V obchodě"
               hint={hint(statusValue === null) ?? "Skryté zákazník nevidí."}
@@ -638,11 +767,11 @@ export const ProductBulkDrawer = ({
           <div className="flex items-center gap-2">
             <Drawer.Close asChild>
               <Button size="small" variant="secondary" disabled={save.isPending}>
-                Zrušit
+                {mode === "zarazeni" ? "Zrušit" : "Zrušit vše"}
               </Button>
             </Drawer.Close>
             <Button size="small" disabled={!dirty} isLoading={save.isPending} onClick={() => save.mutate()}>
-              {mode === "zarazeni" ? "Uložit" : `Uložit vše (${total})`}
+              {mode === "zarazeni" ? "Uložit" : dirty ? `Uložit vše (${changeCount})` : "Uložit vše"}
             </Button>
           </div>
         </Drawer.Footer>

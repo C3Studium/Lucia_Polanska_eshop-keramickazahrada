@@ -9,7 +9,7 @@ import {
 } from "@medusajs/icons";
 import { Button, IconButton, Popover, Switch, Text, toast } from "@medusajs/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba } from "../lib/ceska-chyba";
 import { toastWithUndo } from "../lib/undo";
@@ -53,23 +53,6 @@ import type { ShippingClass } from "../../lib/shipping-rates";
 
 type FlagKey = "clearance" | "no_promo";
 
-const FLAG_TEXT: Record<
-  FlagKey,
-  { onLabel: string; offLabel: string; on: string; off: string }
-> = {
-  clearance: {
-    onLabel: "Označit jako poškozený kus",
-    offLabel: "Už to není poškozený kus",
-    on: "Označeno jako poškozený kus — najdete ho v záložce Poškozené.",
-    off: "Už to není poškozený kus — vrátil se mezi běžné produkty.",
-  },
-  no_promo: {
-    onLabel: "Vyloučit ze slevových kódů",
-    offLabel: "Povolit slevové kódy",
-    on: "Na produkt už slevové kódy neplatí.",
-    off: "Na produkt zase platí slevové kódy.",
-  },
-};
 
 /**
  * Velikost zásilky (16. 11. 2026) — podle ní pokladna počítá poštovné.
@@ -154,6 +137,7 @@ export const ProductRowMore = ({
   showVisibility,
   expanded,
   onToggleExpand,
+  otevritZvenku,
 }: {
   product: {
     id: string;
@@ -185,6 +169,8 @@ export const ProductRowMore = ({
   expanded?: boolean;
   /** Rozbalí / sbalí podrobnosti pod řádkem; bez něj se položka neukáže. */
   onToggleExpand?: () => void;
+  /** Změna čísla = otevřít nabídku (lišta dole „Nastavení výrobku" při jednom vybraném). */
+  otevritZvenku?: number;
 }) => {
   const queryClient = useQueryClient();
   const [ptaSeNaSmazani, setPtaSeNaSmazani] = useState(false);
@@ -193,11 +179,6 @@ export const ProductRowMore = ({
   type PanelKey = "variants" | "commission" | "bundle" | "profile";
   const [menuOpen, setMenuOpen] = useState(false);
   const [panel, setPanel] = useState<PanelKey | null>(null);
-  const zavritVse = () => {
-    setPanel(null);
-    setMenuOpen(false);
-  };
-
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
     await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
@@ -209,24 +190,6 @@ export const ProductRowMore = ({
       method: "POST",
       body,
     });
-
-  const saveFlag = useMutation({
-    mutationFn: ({ key, value }: { key: FlagKey; value: boolean }) =>
-      writeFlags({ [key]: value }),
-    onSuccess: async (_result, { key, value }) => {
-      onFlagSaved?.(key);
-      await refresh();
-      toastWithUndo(
-        value ? FLAG_TEXT[key].on : FLAG_TEXT[key].off,
-        `${value ? FLAG_TEXT[key].onLabel : FLAG_TEXT[key].offLabel} — ${product.title}`,
-        async () => {
-          await writeFlags({ [key]: !value });
-          await refresh();
-        }
-      );
-    },
-    onError: (error) => toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
-  });
 
   /* Viditelnost v obchodě = stav produktu (zveřejněný / koncept). Vrácení
      vrátí přesně ten stav, který kus měl předtím. */
@@ -321,22 +284,55 @@ export const ProductRowMore = ({
     enabled: menuOpen,
   });
   const meta = detail.data?.product.metadata ?? {};
-  const trida = (["male", "velke", "poukaz"] as const).includes(meta.shipping_class as never)
-    ? (meta.shipping_class as "male" | "velke" | "poukaz")
-    : "male";
-  const krehke = meta.fragile === true || meta.fragile === "true";
-  const dobirka = meta.cod_allowed !== false;
-  const mraz = meta.frost_resistant === true;
-  const poskozeny = Boolean(flags.clearance ?? meta.clearance === true);
-  const bezKodu = Boolean(flags.no_promo ?? meta.no_promo === true);
-  const [balne, setBalne] = useState("");
-  const [rozmery, setRozmery] = useState("");
+  const ulozeno = {
+    shipping_class: (["male", "velke", "poukaz"] as const).includes(meta.shipping_class as never) ? (meta.shipping_class as string) : "male",
+    fragile: meta.fragile === true || meta.fragile === "true",
+    cod_allowed: meta.cod_allowed !== false,
+    frost_resistant: meta.frost_resistant === true,
+    clearance: Boolean(flags.clearance ?? meta.clearance === true),
+    no_promo: Boolean(flags.no_promo ?? meta.no_promo === true),
+    packaging_price: (meta.packaging_price ?? null) as number | null,
+    dimensions: typeof meta.dimensions === "string" ? meta.dimensions : "",
+    material: detail.data?.product.material ?? "",
+  };
+
+  /*
+   * Rozpracované změny (19. 11. 2026, Matěj: „ať je v nabídce Uložit
+   * vše / Zrušit vše"). Nic se nezapíše, dokud se neklikne na Uložit vše; Zrušit
+   * vrátí vše. Zavřít nabídku s neuloženým nejde — ozve se hláška.
+   */
+  const [navrh, setNavrh] = useState<Partial<Record<keyof typeof ulozeno, unknown>>>({});
+  const [balneText, setBalneText] = useState<string | null>(null);
+  const [rozmeryText, setRozmeryText] = useState<string | null>(null);
+  const hodnota = <K extends keyof typeof ulozeno>(k: K) => (k in navrh ? (navrh[k] as (typeof ulozeno)[K]) : ulozeno[k]);
+  const zmenit = (k: keyof typeof ulozeno, v: unknown) =>
+    setNavrh((prev) => {
+      const dalsi = { ...prev };
+      if (v === ulozeno[k]) delete dalsi[k];
+      else dalsi[k] = v;
+      return dalsi;
+    });
+  const zahodit = () => {
+    setNavrh({});
+    setBalneText(null);
+    setRozmeryText(null);
+  };
+  /* Balné a rozměry se do návrhu propíšou z pole hned při psaní. */
   useEffect(() => {
-    if (!detail.data) return;
-    setBalne(meta.packaging_price === null || meta.packaging_price === undefined ? "" : String(meta.packaging_price));
-    setRozmery(typeof meta.dimensions === "string" ? meta.dimensions : "");
+    if (balneText === null) return;
+    const t = balneText.trim();
+    const n = t === "" ? null : Number(t.replace(",", "."));
+    if (n !== null && (!Number.isFinite(n) || n < 0)) return;
+    zmenit("packaging_price", n === null ? null : Math.round(n * 100) / 100);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [detail.data]);
+  }, [balneText]);
+  useEffect(() => {
+    if (rozmeryText === null) return;
+    zmenit("dimensions", rozmeryText.trim());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rozmeryText]);
+  const pocetZmen = Object.keys(navrh).length;
+  const balneSpatne = balneText !== null && balneText.trim() !== "" && !(Number(balneText.trim().replace(",", ".")) >= 0);
 
   /* Telefon: okno nastavení MÍSTO nabídky (s „← Zpět do nabídky"). */
   const [uzky, setUzky] = useState(false);
@@ -349,23 +345,37 @@ export const ProductRowMore = ({
     return () => mq.removeEventListener("change", nastav);
   }, [menuOpen]);
 
-  /* Uložení nastavení přímo v nabídce — hned, jako na detailu výrobku. */
+  /* Otevření z lišty dole („Nastavení výrobku" při jednom vybraném). */
+  const spoustec = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (otevritZvenku === undefined) return;
+    spoustec.current?.scrollIntoView({ block: "center" });
+    const t = window.setTimeout(() => setMenuOpen(true), 150);
+    return () => window.clearTimeout(t);
+  }, [otevritZvenku]);
+
   const ulozit = useMutation({
-    mutationFn: async (zmena: { flags?: Record<string, unknown>; material?: string | null; hlaska: string }) => {
-      if (zmena.flags) await writeFlags(zmena.flags);
-      if (zmena.material !== undefined) {
-        await sdk.client.fetch(`/admin/products/${product.id}`, { method: "POST", body: { material: zmena.material } });
+    mutationFn: async () => {
+      const { material, ...ostatni } = navrh;
+      const telo: Record<string, unknown> = { ...ostatni };
+      if ("dimensions" in telo) telo.dimensions = (telo.dimensions as string) || null;
+      if (Object.keys(telo).length) await writeFlags(telo);
+      if (material !== undefined) {
+        await sdk.client.fetch(`/admin/products/${product.id}`, { method: "POST", body: { material: (material as string) || null } });
       }
     },
-    onSuccess: async (_r, zmena) => {
+    onSuccess: async () => {
+      for (const k of ["clearance", "no_promo"] as const) if (k in navrh) onFlagSaved?.(k);
+      const presun = "clearance" in navrh;
+      zahodit();
       await queryClient.invalidateQueries({ queryKey: ["row-menu", product.id] });
       await refresh();
-      toast.success(zmena.hlaska);
+      toast.success(presun ? "Uloženo. Poškozené kusy najdete v záložce Poškozené." : "Změny uloženy.");
     },
     onError: (error) => toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
   });
 
-  const typ: "bezny" | "poskozeny" | "zakazka" = commission === "terms" ? "zakazka" : poskozeny ? "poskozeny" : "bezny";
+  const typ: "bezny" | "poskozeny" | "zakazka" = commission === "terms" ? "zakazka" : hodnota("clearance") ? "poskozeny" : "bezny";
   const nastavTyp = (dalsi: "bezny" | "poskozeny" | "zakazka") => {
     if (dalsi === typ) return;
     if (typ === "zakazka" || dalsi === "zakazka") {
@@ -374,7 +384,7 @@ export const ProductRowMore = ({
       if (typ === "zakazka") toast.info("Zakázku vypnete v okně Podmínky zakázky vlevo.");
       return;
     }
-    saveFlag.mutate({ key: "clearance", value: dalsi === "poskozeny" });
+    zmenit("clearance", dalsi === "poskozeny");
   };
 
   const panelEl =
@@ -390,12 +400,14 @@ export const ProductRowMore = ({
         onClose={() => setPanel(null)}
         productId={product.id}
         productTitle={product.title}
-        fragile={krehke}
+        fragile={ulozeno.fragile}
         packagingPrice={product.packaging_price}
       />
     ) : null;
 
   const nacita = !detail.data;
+  const zmeneno = (k: keyof typeof ulozeno) => k in navrh;
+  const ram = (k: keyof typeof ulozeno) => (zmeneno(k) ? "border-ui-border-interactive" : "border-ui-border-base");
 
   const nabidka = (
     <div className="flex max-h-[min(82vh,760px)] w-[min(680px,calc(100vw-24px))] flex-col" role="menu" aria-label={`Možnosti produktu ${product.title}`}>
@@ -420,7 +432,7 @@ export const ProductRowMore = ({
               <ArrowUpRightOnBox />
             </IconButton>
           )}
-          <IconButton size="small" variant="transparent" aria-label="Zavřít nabídku" onClick={zavritVse}>
+          <IconButton size="small" variant="transparent" aria-label="Zavřít nabídku" onClick={() => zkusitZavrit()}>
             ×
           </IconButton>
         </div>
@@ -442,44 +454,33 @@ export const ProductRowMore = ({
             <Skupina nazev="Doprava">
               <div className="flex flex-col gap-2 px-3 py-2.5">
                 <span>
-                  <span className="txt-compact-small-plus text-ui-fg-base block">Velikost zásilky</span>
+                  <span className="txt-compact-small-plus text-ui-fg-base block">Velikost zásilky{zmeneno("shipping_class") ? " •" : ""}</span>
                   <span className="txt-compact-xsmall text-ui-fg-subtle block">Podle ní se počítá poštovné</span>
                 </span>
                 <Volby
                   popisek="Velikost zásilky"
-                  hodnota={trida}
-                  vypnuto={nacita || ulozit.isPending}
+                  hodnota={hodnota("shipping_class") as "male" | "velke" | "poukaz"}
+                  vypnuto={nacita}
                   moznosti={[{ value: "male", label: "Malé" }, { value: "velke", label: "Velké" }, { value: "poukaz", label: "Poukaz" }]}
-                  onVyber={(v) => ulozit.mutate({ flags: { shipping_class: v }, hlaska: `Velikost zásilky: ${v === "male" ? "Malé" : v === "velke" ? "Velké" : "Poukaz"}.` })}
+                  onVyber={(v) => zmenit("shipping_class", v)}
                 />
               </div>
-              <Radek nazev="Křehké" popis="Celá zásilka pojede jako křehká">
-                <Switch size="small" checked={krehke} disabled={nacita || ulozit.isPending} aria-label="Křehké"
-                  onCheckedChange={(v) => ulozit.mutate({ flags: { fragile: v }, hlaska: v ? "Křehké zapnuto." : "Křehké vypnuto." })} />
+              <Radek nazev={`Křehké${zmeneno("fragile") ? " •" : ""}`} popis="Celá zásilka pojede jako křehká">
+                <Switch size="small" checked={hodnota("fragile")} disabled={nacita} aria-label="Křehké" onCheckedChange={(v) => zmenit("fragile", v)} />
               </Radek>
-              <Radek nazev="Dobírka" popis="Vypnuto = jen platba předem">
-                <Switch size="small" checked={dobirka} disabled={nacita || ulozit.isPending} aria-label="Dobírka"
-                  onCheckedChange={(v) => ulozit.mutate({ flags: { cod_allowed: v }, hlaska: v ? "Dobírka povolena." : "Dobírka vypnuta — jen platba předem." })} />
+              <Radek nazev={`Dobírka${zmeneno("cod_allowed") ? " •" : ""}`} popis="Vypnuto = jen platba předem">
+                <Switch size="small" checked={hodnota("cod_allowed")} disabled={nacita} aria-label="Dobírka" onCheckedChange={(v) => zmenit("cod_allowed", v)} />
               </Radek>
-              <Radek nazev="Balné" popis="Za kus; prázdné = 0 Kč">
+              <Radek nazev="Balné" popis={balneSpatne ? "Napište číslo, třeba 20" : "Za kus; prázdné = 0 Kč"}>
                 <span className="flex items-center gap-1">
                   <input
                     type="text"
                     inputMode="decimal"
                     aria-label="Balné v Kč"
-                    value={balne}
+                    value={balneText ?? (ulozeno.packaging_price === null ? "" : String(ulozeno.packaging_price))}
                     disabled={nacita}
-                    onChange={(e) => setBalne(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-                    onBlur={() => {
-                      const t = balne.trim();
-                      const cislo = t === "" ? null : Number(t.replace(",", "."));
-                      const puvodni = meta.packaging_price ?? null;
-                      if (cislo !== null && (!Number.isFinite(cislo) || cislo < 0)) return toast.error("Balné musí být číslo, třeba 20.");
-                      if (cislo === puvodni) return;
-                      ulozit.mutate({ flags: { packaging_price: cislo }, hlaska: cislo === null ? "Balné 0 Kč." : `Balné ${cislo} Kč.` });
-                    }}
-                    className="bg-ui-bg-field border-ui-border-base txt-compact-small min-h-[32px] w-20 rounded-md border px-2 text-right"
+                    onChange={(e) => setBalneText(e.target.value)}
+                    className={`bg-ui-bg-field txt-compact-small min-h-[32px] w-20 rounded-md border px-2 text-right ${balneSpatne ? "border-ui-border-error" : ram("packaging_price")}`}
                   />
                   <span className="txt-compact-small text-ui-fg-muted">Kč</span>
                 </span>
@@ -494,7 +495,7 @@ export const ProductRowMore = ({
             {(flags.clearance !== undefined || commission) && (
               <div className="flex flex-col gap-2 px-3 py-2.5">
                 <span>
-                  <span className="txt-compact-small-plus text-ui-fg-base block">Typ výrobku</span>
+                  <span className="txt-compact-small-plus text-ui-fg-base block">Typ výrobku{zmeneno("clearance") ? " •" : ""}</span>
                   <span className="txt-compact-xsmall text-ui-fg-subtle block">
                     {typ === "zakazka" ? "Vyrábí se po objednání, se zálohou" : typ === "poskozeny" ? "Levněji; po prodeji se skryje" : "Běžný kus ze skladu"}
                   </span>
@@ -502,7 +503,6 @@ export const ProductRowMore = ({
                 <Volby
                   popisek="Typ výrobku"
                   hodnota={typ}
-                  vypnuto={saveFlag.isPending}
                   moznosti={[
                     { value: "bezny" as const, label: "Běžný" },
                     ...(flags.clearance !== undefined ? [{ value: "poskozeny" as const, label: "Poškozený kus" }] : []),
@@ -514,23 +514,22 @@ export const ProductRowMore = ({
             )}
             {commission === "terms" && <Otevrit aktivni={panel === "commission"} onToggle={() => setPanel(panel === "commission" ? null : "commission")} nazev="Podmínky zakázky" popis="Záloha a doba výroby" />}
             {flags.no_promo !== undefined && (
-              <Radek nazev="Bez slevových kódů" popis="Kódy z pokladny na něj neplatí">
-                <Switch size="small" checked={bezKodu} disabled={saveFlag.isPending} aria-label="Bez slevových kódů"
-                  onCheckedChange={(v) => saveFlag.mutate({ key: "no_promo", value: v })} />
+              <Radek nazev={`Bez slevových kódů${zmeneno("no_promo") ? " •" : ""}`} popis="Kódy z pokladny na něj neplatí">
+                <Switch size="small" checked={hodnota("no_promo")} aria-label="Bez slevových kódů" onCheckedChange={(v) => zmenit("no_promo", v)} />
               </Radek>
             )}
           </Skupina>
           <Skupina nazev="Materiál a rozměry">
-            <Radek nazev="Materiál">
+            <Radek nazev={`Materiál${zmeneno("material") ? " •" : ""}`}>
               <select
                 aria-label="Materiál"
-                value={detail.data?.product.material ?? ""}
-                disabled={nacita || ulozit.isPending}
-                onChange={(e) => ulozit.mutate({ material: e.target.value || null, hlaska: e.target.value ? `Materiál: ${e.target.value}.` : "Materiál smazán." })}
-                className="bg-ui-bg-field border-ui-border-base txt-compact-small min-h-[32px] max-w-[170px] rounded-md border px-2"
+                value={hodnota("material")}
+                disabled={nacita}
+                onChange={(e) => zmenit("material", e.target.value)}
+                className={`bg-ui-bg-field txt-compact-small min-h-[32px] max-w-[170px] rounded-md border px-2 ${ram("material")}`}
               >
                 <option value="">Bez materiálu</option>
-                {[...new Set([...(materialy.data?.materials ?? []), ...(detail.data?.product.material ? [detail.data.product.material] : [])])].map((m) => (
+                {[...new Set([...(materialy.data?.materials ?? []), ...(ulozeno.material ? [ulozeno.material] : [])])].map((m) => (
                   <option key={m} value={m}>{m}</option>
                 ))}
               </select>
@@ -540,58 +539,70 @@ export const ProductRowMore = ({
                 type="text"
                 aria-label="Rozměry"
                 placeholder="např. výška 12 cm, ø 9 cm"
-                value={rozmery}
+                value={rozmeryText ?? ulozeno.dimensions}
                 disabled={nacita}
-                onChange={(e) => setRozmery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-                onBlur={() => {
-                  const t = rozmery.trim();
-                  if (t === (typeof meta.dimensions === "string" ? meta.dimensions : "")) return;
-                  ulozit.mutate({ flags: { dimensions: t || null }, hlaska: t ? `Rozměry: ${t}.` : "Rozměry smazány." });
-                }}
-                className="bg-ui-bg-field border-ui-border-base txt-compact-small min-h-[32px] w-[170px] rounded-md border px-2"
+                onChange={(e) => setRozmeryText(e.target.value)}
+                className={`bg-ui-bg-field txt-compact-small min-h-[32px] w-[170px] rounded-md border px-2 ${ram("dimensions")}`}
               />
             </Radek>
-            <Radek nazev="Mrazuvzdorné" popis="Vydrží mráz — štítek u výrobku">
-              <Switch size="small" checked={mraz} disabled={nacita || ulozit.isPending} aria-label="Mrazuvzdorné"
-                onCheckedChange={(v) => ulozit.mutate({ flags: { frost_resistant: v }, hlaska: v ? "Mrazuvzdorné." : "Už není mrazuvzdorné." })} />
+            <Radek nazev={`Mrazuvzdorné${zmeneno("frost_resistant") ? " •" : ""}`} popis="Vydrží mráz — štítek u výrobku">
+              <Switch size="small" checked={hodnota("frost_resistant")} disabled={nacita} aria-label="Mrazuvzdorné" onCheckedChange={(v) => zmenit("frost_resistant", v)} />
             </Radek>
           </Skupina>
         </div>
       </div>
 
-      {/* Spodní lišta: archiv a mazání */}
-      {(showArchive || showDelete !== false) && (
-        <div className="border-ui-border-base flex flex-wrap items-center justify-between gap-2 border-t px-4 py-2.5">
-          <Text size="xsmall" className="text-ui-fg-muted">Změny se ukládají hned.</Text>
-          <div className="flex items-center gap-2">
-            {showArchive && (
-              <Button size="small" variant="secondary" isLoading={archive.isPending} onClick={() => { zavritVse(); archive.mutate(); }}>
-                {archiving ? <ArchiveBox /> : <ArrowUturnLeft />} {archiving ? "Archivovat" : "Obnovit z archivu"}
-              </Button>
-            )}
-            {showDelete !== false && (
-              <Button size="small" variant="secondary" className="text-ui-fg-error" onClick={() => { zavritVse(); window.setTimeout(() => setPtaSeNaSmazani(true), 0); }}>
-                <Trash /> Smazat…
-              </Button>
-            )}
-          </div>
+      {/* Spodní lišta: archiv a mazání vlevo, uložení vpravo */}
+      <div className="border-ui-border-base flex flex-wrap items-center justify-between gap-2 border-t px-4 py-2.5">
+        <div className="flex items-center gap-2">
+          {showArchive && (
+            <Button size="small" variant="transparent" isLoading={archive.isPending} onClick={() => { zahodit(); setPanel(null); setMenuOpen(false); archive.mutate(); }}>
+              {archiving ? <ArchiveBox /> : <ArrowUturnLeft />} {archiving ? "Archivovat" : "Obnovit z archivu"}
+            </Button>
+          )}
+          {showDelete !== false && (
+            <Button size="small" variant="transparent" className="text-ui-fg-error" onClick={() => { zahodit(); setPanel(null); setMenuOpen(false); window.setTimeout(() => setPtaSeNaSmazani(true), 0); }}>
+              <Trash /> Smazat…
+            </Button>
+          )}
         </div>
-      )}
+        <div className="flex items-center gap-2">
+          {pocetZmen > 0 && (
+            <Button size="small" variant="secondary" disabled={ulozit.isPending} onClick={zahodit}>
+              Zrušit vše
+            </Button>
+          )}
+          <Button size="small" disabled={pocetZmen === 0 || balneSpatne} isLoading={ulozit.isPending} onClick={() => ulozit.mutate()}>
+            {pocetZmen > 0 ? `Uložit vše (${pocetZmen})` : "Uložit vše"}
+          </Button>
+        </div>
+      </div>
     </div>
   );
+
+  /* Zavřít jde, jen když nic nečeká na uložení. */
+  function zkusitZavrit() {
+    if (pocetZmen > 0) {
+      toast.warning("Máte neuložené změny — klikněte na Uložit vše, nebo Zrušit vše.");
+      return false;
+    }
+    setPanel(null);
+    setMenuOpen(false);
+    return true;
+  }
 
   return (
     <>
       <Popover
         open={menuOpen}
         onOpenChange={(next) => {
-          if (!next) setPanel(null);
-          setMenuOpen(next);
+          if (next) setMenuOpen(true);
+          else zkusitZavrit();
         }}
       >
         <Popover.Trigger asChild>
           <IconButton
+            ref={spoustec}
             type="button"
             variant="transparent"
             size="large"
@@ -607,7 +618,7 @@ export const ProductRowMore = ({
           side={uzky ? "bottom" : "left"}
           sideOffset={6}
           collisionPadding={12}
-          className="z-50 flex max-w-[calc(100vw-24px)] items-stretch overflow-hidden p-0"
+          className="z-[60] flex max-w-[calc(100vw-24px)] items-stretch overflow-hidden p-0"
           onOpenAutoFocus={(event) => event.preventDefault()}
           onInteractOutside={(event) => {
             /* Výběry, potvrzení a hlášky okna vlevo se kreslí mimo nabídku
