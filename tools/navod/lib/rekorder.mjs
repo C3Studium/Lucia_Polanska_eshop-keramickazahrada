@@ -101,7 +101,7 @@ export class Nahravka {
     return r.result?.result?.value;
   }
 
-  async prekryv() { await this.ev(PREKRYV); }
+  async prekryv() { await this.ev(PREKRYV).catch(() => undefined); /* přísná CSP (Trusted Types) na produkci překryv nepustí */ }
 
   /** Výřez podle prvku (např. otevřený panel) — volat po otevření. */
   async vyrezPodle(cil, okraj = 0) {
@@ -145,7 +145,7 @@ export class Nahravka {
     if (cekej) await this.cekej(cekej);
     await this.prekryv();
     await this.umistitPopisek();
-    await this.ev(`(() => { const n = window.__navod; n.kurzor.style.transform = 'translate(' + n.x + 'px,' + n.y + 'px)'; })()`);
+    await this.ev(`(() => { const n = window.__navod; if (n) n.kurzor.style.transform = 'translate(' + n.x + 'px,' + n.y + 'px)'; })()`);
   }
 
   /** Počká, až výraz vrátí pravdivou hodnotu. */
