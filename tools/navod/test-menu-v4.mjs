@@ -69,7 +69,7 @@ try {
   await ev(`(() => { const i = ${cenaPole}; i.focus(); i.select(); })()`);
   await p.S('Input.insertText', { text: '777' }); await sleep(300);
   await ev(`[...document.querySelectorAll('[role=dialog] [aria-label="Objednání bez kusů na skladu"] button')].find(b => b.textContent.trim() === 'Ano').click()`); await sleep(400);
-  const zp = `[...document.querySelectorAll('[role=dialog] input')].find(i => (i.placeholder || '').startsWith('např. Vyrobíme'))`;
+  const zp = `document.querySelector('[role=dialog] [aria-label="Zpráva pro zákazníka"]')`;
   await ev(`${zp}.focus()`);
   await p.S('Input.insertText', { text: 'Vyrobíme do 3 týdnů.' }); await sleep(300);
   console.log('panel tlačítka:', await ev(`[...document.querySelectorAll('[role=dialog] button')].map(b => b.textContent.trim()).filter(t => /Uložit|Zrušit/.test(t)).join(' | ')`));

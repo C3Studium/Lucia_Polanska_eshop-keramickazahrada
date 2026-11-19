@@ -1,6 +1,7 @@
-import { Badge, Button, Drawer, Input, Select, Text, clx, toast } from "@medusajs/ui";
+import { Badge, Button, IconButton, Input, Select, Text, clx, toast } from "@medusajs/ui";
+import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ceskaChyba } from "../lib/ceska-chyba";
 import { sdk } from "../lib/sdk";
 import {
@@ -11,7 +12,8 @@ import {
   emptyBulkClassification,
   type BulkClassificationDraft,
 } from "./product-classification";
-import { InspectorGroup, InspectorRow } from "./product-inspector";
+import { Radek, Skupina, poleTrida } from "./nastaveni-kousky";
+import { NavodTip } from "./navod-tip";
 import { endOfDay, QUICK, startOfDay, today } from "./product-sale";
 import { useVyprodeje } from "./vyprodej";
 
@@ -67,28 +69,23 @@ const shared = <T,>(items: BulkProduct[], read: (item: BulkProduct) => T): T | n
   return items.every((item) => read(item) === first) ? first : null;
 };
 
-/** Spojená tlačítka (Ano | Ne, Malé | Velké | Poukaz). */
+/**
+ * Spojená tlačítka (Ano | Ne, Malé | Velké | Poukaz) — vypadají jako volby
+ * v nabídce „…"; `null` = u vybraných různé, nic není stisknuté.
+ */
 const Seg = <V extends string>({
   label,
   options,
   value,
-  dirty,
   onSet,
 }: {
   label: string;
   options: { value: V; label: string }[];
   value: V | null;
-  dirty: boolean;
+  dirty?: boolean;
   onSet: (next: V) => void;
 }) => (
-  <div
-    role="group"
-    aria-label={label}
-    className={clx(
-      "bg-ui-bg-subtle flex rounded-md border p-0.5",
-      dirty ? "border-ui-tag-orange-border" : "border-ui-border-base"
-    )}
-  >
+  <div role="group" aria-label={label} className="bg-ui-bg-subtle flex shrink-0 flex-wrap rounded-md p-0.5">
     {options.map((option) => {
       const pressed = option.value === value;
       return (
@@ -98,10 +95,8 @@ const Seg = <V extends string>({
           aria-pressed={pressed}
           onClick={() => onSet(option.value)}
           className={clx(
-            "txt-compact-small min-h-[30px] rounded px-3 outline-none transition-fg focus-visible:shadow-borders-focus",
-            pressed
-              ? "bg-ui-bg-base text-ui-fg-base shadow-borders-base font-medium"
-              : "text-ui-fg-subtle hover:text-ui-fg-base"
+            "txt-compact-xsmall-plus min-h-[30px] rounded px-2.5 outline-none focus-visible:shadow-borders-focus",
+            pressed ? "bg-ui-bg-base shadow-borders-base text-ui-fg-base" : "text-ui-fg-subtle hover:text-ui-fg-base"
           )}
         >
           {option.label}
@@ -387,372 +382,354 @@ export const ProductBulkDrawer = ({
     onError: (error) => toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
   });
 
-  return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      {/* Portál Medusy nemá z-index — štítky a lišta seznamu (z-10/z-20) by
-          prosvítaly přes panel. */}
-      <Drawer.Content className="z-50" overlayProps={{ className: "z-50" }}>
-        <Drawer.Header>
-          <Drawer.Title>
-            {mode === "zarazeni" ? `Zařadit ${total} ${pocet(total)}` : `Hromadné změny — ${total} ${pocet(total)}`}
-          </Drawer.Title>
-        </Drawer.Header>
-        <Drawer.Body className="flex flex-col overflow-y-auto p-0">
-          <Text size="xsmall" className="text-ui-fg-subtle px-6 pt-4">
-            {products.slice(0, 4).map((product) => product.title).join(", ")}
-            {total > 4 ? ` a dalších ${total - 4}` : ""}
-          </Text>
+  /* Okno jako nabídka „…" (19. 11. 2026, Matěj): plovoucí, dva sloupce,
+     stejné skupiny a řádky; na telefonu jeden sloupec přes celou šířku. */
+  const okno = useRef<HTMLDivElement>(null);
+  const zkusitZavrit = () => {
+    if (save.isPending) return;
+    if (dirty) {
+      toast.warning("Máte neuložené změny — klikněte na Uložit vše, nebo Zrušit vše.");
+      return;
+    }
+    onOpenChange(false);
+  };
+  useEffect(() => {
+    if (open) okno.current?.focus();
+  }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const klavesa = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      /* Escape v rozbalovacím výběru zavře jen ten výběr. */
+      if (document.querySelector("[role=listbox], [data-navod-velky]")) return;
+      zkusitZavrit();
+    };
+    window.addEventListener("keydown", klavesa);
+    return () => window.removeEventListener("keydown", klavesa);
+  });
 
-          {mode === "zarazeni" ? (
-            <BulkSortPanel
-              products={products.map((product) => ({
-                id: product.id,
-                collection_id: product.collection_id,
-                category_ids: (product.category_refs ?? []).map((category) => category.id),
-              }))}
-              collections={collectionsQuery.data?.collections ?? []}
-              categories={categories}
-              onChange={(draft, summary) => {
-                setClassification(draft);
-                setSortSummary(summary);
-              }}
+  if (!open || typeof document === "undefined") return null;
+
+  const nazev = mode === "zarazeni" ? `Zařadit ${total} ${pocet(total)}` : `Hromadné změny — ${total} ${pocet(total)}`;
+  const nazvy = products.slice(0, 4).map((product) => product.title).join(", ") + (total > 4 ? ` a dalších ${total - 4}` : "");
+  const flagNazev = (key: keyof FlagDraft) => flags[key] !== undefined;
+
+  const zarazeni = (
+    <BulkSortPanel
+      products={products.map((product) => ({
+        id: product.id,
+        collection_id: product.collection_id,
+        category_ids: (product.category_refs ?? []).map((category) => category.id),
+      }))}
+      collections={collectionsQuery.data?.collections ?? []}
+      categories={categories}
+      onChange={(draft, summary) => {
+        setClassification(draft);
+        setSortSummary(summary);
+      }}
+    />
+  );
+
+  const ceník = (
+    <Skupina nazev="Cena a sklad" popis="Ceny v Kč — euro se dopočítá podle kurzu. Nepřepsaná cena zůstane.">
+      <div className="max-h-[260px] divide-y overflow-y-auto">
+        {variantyQuery.isLoading && (
+          <div className="px-3 py-2.5">
+            <Text size="small" className="text-ui-fg-subtle">Načítám ceny…</Text>
+          </div>
+        )}
+        {varianty.flatMap((p) =>
+          p.variants.map((v) => {
+            const vice = p.variants.length > 1;
+            const zmena = zmenenaCena(v) !== null;
+            return (
+              <Radek key={v.id} nazev={vice ? v.title : p.title} popis={vice ? p.title : undefined} zmeneno={zmena}>
+                <span className="flex shrink-0 items-center gap-1">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    aria-label={`Cena — ${p.title}${vice ? ` (${v.title})` : ""}`}
+                    value={ceny[v.id] ?? (czkOf(v) === null ? "" : String(czkOf(v)))}
+                    onChange={(event) => setCeny((prev) => ({ ...prev, [v.id]: event.target.value }))}
+                    className={`${poleTrida(zmena)} w-24 text-right tabular-nums`}
+                  />
+                  <Text size="small" className="text-ui-fg-muted">Kč</Text>
+                </span>
+              </Radek>
+            );
+          })
+        )}
+      </div>
+      <Radek
+        nazev="Objednání bez kusů na skladu"
+        zmeneno={bezSkladu !== "__beze" || Boolean(zprava.trim())}
+        popis={bezSkladu === "__beze" && bezSkladuSdilene === null ? "U vybraných se liší — klikem nastavíte všem." : "Zákazník koupí i vyprodaný kus"}
+        pod={
+          (bezSkladu === "on" || (bezSkladu === "__beze" && bezSkladuSdilene !== "off")) && (
+            <input
+              type="text"
+              aria-label="Zpráva pro zákazníka"
+              value={zprava}
+              onChange={(event) => setZprava(event.target.value)}
+              placeholder="Zpráva pro zákazníka, např. Vyrobíme do 3 týdnů. (prázdné = beze změny)"
+              className={`${poleTrida(Boolean(zprava.trim()))} w-full`}
             />
-          ) : (
-          <>
-          <InspectorGroup
-            title="Ceny"
-            note="Přepište cenu v Kč u kusu nebo provedení. Euro se dopočítá podle kurzu. Prázdné nebo stejné = beze změny."
-          >
-            {variantyQuery.isLoading && (
-              <div className="px-3 py-3"><Text size="small" className="text-ui-fg-subtle">Načítám ceny…</Text></div>
-            )}
-            {varianty.map((p) => (
-              <div key={p.id} className="px-3 py-2">
-                {p.variants.length > 1 && (
-                  <Text size="small" weight="plus" className="mb-1 truncate" title={p.title}>{p.title}</Text>
-                )}
-                <div className="flex flex-col gap-1.5">
-                  {p.variants.map((v) => {
-                    const zmena = zmenenaCena(v) !== null;
-                    return (
-                      <div key={v.id} className="flex items-center justify-between gap-3">
-                        <Text size="small" className={`min-w-0 truncate ${p.variants.length > 1 ? "text-ui-fg-subtle pl-3" : ""}`} title={p.variants.length > 1 ? v.title : p.title}>
-                          {p.variants.length > 1 ? v.title : p.title}
-                        </Text>
-                        <span className="flex shrink-0 items-center gap-1">
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            aria-label={`Cena — ${p.title}${p.variants.length > 1 ? ` (${v.title})` : ""}`}
-                            value={ceny[v.id] ?? (czkOf(v) === null ? "" : String(czkOf(v)))}
-                            onChange={(event) => setCeny((prev) => ({ ...prev, [v.id]: event.target.value }))}
-                            className={`bg-ui-bg-field txt-compact-small min-h-[32px] w-24 rounded-md border px-2 text-right ${zmena ? "border-ui-border-interactive" : "border-ui-border-base"}`}
-                          />
-                          <Text size="small" className="text-ui-fg-muted">Kč</Text>
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </InspectorGroup>
+          )
+        }
+      >
+        <Seg
+          label="Objednání bez kusů na skladu"
+          options={ANO_NE}
+          value={bezSkladu === "__beze" ? bezSkladuSdilene : bezSkladu}
+          onSet={(next) => setBezSkladu(next)}
+        />
+      </Radek>
+    </Skupina>
+  );
 
-          <InspectorGroup title="Doprava">
-            <InspectorRow
-              label="Balné"
-              hint={!balneValid ? "Zadejte kladné číslo." : packagingMixed && !balneChanged ? "U vybraných se liší." : "Za kus; prázdné = 0 Kč."}
-              control={
-                <div className="relative w-28">
+  const doprava = (
+    <Skupina nazev="Doprava">
+      <Radek nazev="Velikost zásilky" zmeneno={flagNazev("shipping_class")} popis={hint(shippingValue === null) ?? "Podle ní se počítá poštovné"}>
+        <Seg
+          label="Zásilka"
+          options={[
+            { value: "male" as const, label: "Malé" },
+            { value: "velke" as const, label: "Velké" },
+            { value: "poukaz" as const, label: "Poukaz" },
+          ]}
+          value={shippingValue}
+          onSet={(next) => setFlags((prev) => ({ ...prev, shipping_class: next }))}
+        />
+      </Radek>
+      <Radek nazev="Křehké" zmeneno={flagNazev("fragile")} popis={hint(flagValue("fragile") === null) ?? "Celá zásilka pojede jako křehká"}>
+        <Seg label="Křehké" options={ANO_NE} value={flagValue("fragile")} onSet={(next) => setFlags((prev) => ({ ...prev, fragile: next === "on" }))} />
+      </Radek>
+      <Radek nazev="Dobírka" zmeneno={flagNazev("cod_allowed")} popis={hint(flagValue("cod_allowed") === null) ?? "Ne = jen platba předem"}>
+        <Seg label="Dobírka" options={ANO_NE} value={flagValue("cod_allowed")} onSet={(next) => setFlags((prev) => ({ ...prev, cod_allowed: next === "on" }))} />
+      </Radek>
+      <Radek
+        nazev="Balné"
+        zmeneno={balneChanged}
+        popis={!balneValid ? "Napište číslo, třeba 20" : packagingMixed && !balneChanged ? "U vybraných se liší" : "Za kus; prázdné = 0 Kč"}
+      >
+        <span className="flex shrink-0 items-center gap-1">
+          <input
+            type="text"
+            inputMode="decimal"
+            aria-label="Balné u všech vybraných"
+            placeholder={packagingMixed ? "různé" : "0"}
+            value={balneText}
+            onChange={(event) => setBalneText(event.target.value)}
+            className={`${poleTrida(balneChanged, !balneValid)} w-20 text-right tabular-nums`}
+          />
+          <Text size="small" className="text-ui-fg-muted">Kč</Text>
+        </span>
+      </Radek>
+    </Skupina>
+  );
+
+  const prodej = (
+    <Skupina nazev="Prodej">
+      <Radek nazev="V obchodě" zmeneno={flags.status !== undefined} popis={hint(statusValue === null) ?? "Skryté zákazník nevidí"}>
+        <Seg
+          label="V obchodě"
+          options={[
+            { value: "published" as const, label: "Zobrazit" },
+            { value: "draft" as const, label: "Skrýt" },
+          ]}
+          value={statusValue}
+          onSet={(next) => setFlags((prev) => ({ ...prev, status: next }))}
+        />
+      </Radek>
+      <Radek nazev="Poškozený kus" zmeneno={flagNazev("clearance")} popis={hint(flagValue("clearance") === null) ?? "Levněji; po prodeji se skryje"}>
+        <Seg label="Poškozený kus" options={ANO_NE} value={flagValue("clearance")} onSet={(next) => setFlags((prev) => ({ ...prev, clearance: next === "on" }))} />
+      </Radek>
+      <Radek nazev="Slevové kódy" zmeneno={flagNazev("no_promo")} popis={hint(flagValue("no_promo") === null) ?? "Vyloučené kusy kód nesníží"}>
+        <Seg
+          label="Slevové kódy"
+          options={[
+            { value: "off" as const, label: "Platí" },
+            { value: "on" as const, label: "Vyloučit" },
+          ]}
+          value={flagValue("no_promo")}
+          onSet={(next) => setFlags((prev) => ({ ...prev, no_promo: next === "on" }))}
+        />
+      </Radek>
+    </Skupina>
+  );
+
+  const material_ = (
+    <Skupina nazev="Materiál a rozměry">
+      <Radek nazev="Materiál" zmeneno={material !== "__beze"} popis={material === "__none" ? "Všem se materiál smaže" : undefined}>
+        <select
+          aria-label="Materiál"
+          value={material}
+          onChange={(event) => setMaterial(event.target.value)}
+          className={`${poleTrida(material !== "__beze")} max-w-[170px]`}
+        >
+          <option value="__beze">Beze změny</option>
+          <option value="__none">Bez materiálu</option>
+          {(materialsQuery.data?.materials ?? []).map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </select>
+      </Radek>
+      <Radek nazev="Rozměry" zmeneno={Boolean(rozmery.trim())}>
+        <input
+          type="text"
+          aria-label="Rozměry"
+          placeholder="beze změny"
+          value={rozmery}
+          onChange={(event) => setRozmery(event.target.value)}
+          className={`${poleTrida(Boolean(rozmery.trim()))} w-[170px]`}
+        />
+      </Radek>
+      <Radek nazev="Mrazuvzdorné" zmeneno={flagNazev("frost_resistant")} popis={hint(flagValue("frost_resistant") === null) ?? "Vydrží mráz — štítek u výrobku"}>
+        <Seg label="Mrazuvzdorné" options={ANO_NE} value={flagValue("frost_resistant")} onSet={(next) => setFlags((prev) => ({ ...prev, frost_resistant: next === "on" }))} />
+      </Radek>
+    </Skupina>
+  );
+
+  const slevy = (
+    <Skupina nazev="Slevy" poznamka="Výprodej ruší vlastní slevu výrobku a na zlevněné kusy slevové kódy neplatí.">
+      <Radek nazev="Výprodej" zmeneno={Boolean(vyprodejTarget)} popis={vyprodejTarget ? "Vybrané se přidají do výprodeje" : "Přidat do existujícího výprodeje"}>
+        <div className="w-44 shrink-0">
+          <Select value={vyprodejTarget ?? "__none__"} onValueChange={(value) => setVyprodejTarget(value === "__none__" ? null : value)}>
+            <Select.Trigger>
+              <Select.Value placeholder="Beze změny" />
+            </Select.Trigger>
+            <Select.Content className="z-[70]">
+              <Select.Item value="__none__">Beze změny</Select.Item>
+              {usableVyprodeje.map((item) => (
+                <Select.Item key={item.id} value={item.id}>
+                  {`${item.title} · −${item.percent} %${item.state === "off" ? " (vypnutý)" : ""}`}
+                </Select.Item>
+              ))}
+            </Select.Content>
+          </Select>
+        </div>
+      </Radek>
+      <Radek
+        nazev="Sleva výrobku"
+        zmeneno={saleKind !== "none"}
+        popis={saleKind === "set" ? "Stejná sleva všem, od dneška" : saleKind === "remove" ? "Vlastní slevu vybraným zruší" : "Vlastní sleva (ne výprodej)"}
+        pod={
+          saleKind === "set" && (
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-1">
                   <input
                     type="number"
-                    min={0}
-                    inputMode="decimal"
-                    aria-label="Balné u všech vybraných"
-                    placeholder={packagingMixed ? "různé" : "0"}
-                    value={balneText}
-                    onChange={(event) => setBalneText(event.target.value)}
-
+                    min={1}
+                    max={90}
+                    aria-label="Sleva v procentech"
+                    value={salePercent}
+                    onChange={(event) => setSalePercent(event.target.value)}
+                    className={`${poleTrida(true, !saleValid)} w-16 text-right tabular-nums`}
+                  />
+                  <Text size="small" className="text-ui-fg-muted">%</Text>
+                </span>
+                {QUICK.map((quick) => (
+                  <button
+                    key={quick}
+                    type="button"
+                    aria-pressed={salePercentValue === quick}
+                    onClick={() => setSalePercent(String(quick))}
                     className={clx(
-                      "bg-ui-bg-field txt-compact-small h-8 w-full rounded-md border pl-2 pr-9 text-right tabular-nums",
-                      !balneValid ? "border-ui-border-error" : balneChanged ? "border-ui-tag-orange-border" : "border-ui-border-base"
+                      "txt-compact-xsmall-plus min-h-[28px] rounded-full border px-2.5",
+                      salePercentValue === quick ? "border-ui-border-interactive bg-ui-bg-base-pressed" : "border-ui-border-base hover:bg-ui-bg-base-hover"
                     )}
-                  />
-                  <span className="text-ui-fg-muted txt-compact-small pointer-events-none absolute inset-y-0 right-2.5 flex items-center">
-                    Kč
-                  </span>
-                </div>
-              }
-            />
-            <InspectorRow
-              label="Dobírka"
-              hint={hint(flagValue("cod_allowed") === null)}
-              control={
-                <Seg label="Dobírka" options={ANO_NE} value={flagValue("cod_allowed")} dirty={flags.cod_allowed !== undefined}
-                  onSet={(next) => setFlags((prev) => ({ ...prev, cod_allowed: next === "on" }))} />
-              }
-            />
-            <InspectorRow
-              label="Křehké"
-              hint={hint(flagValue("fragile") === null)}
-              control={
-                <Seg label="Křehké" options={ANO_NE} value={flagValue("fragile")} dirty={flags.fragile !== undefined}
-                  onSet={(next) => setFlags((prev) => ({ ...prev, fragile: next === "on" }))} />
-              }
-            />
-            <InspectorRow
-              label="Zásilka"
-              hint={hint(shippingValue === null) ?? "Podle ní se počítá poštovné."}
-              control={
-                <Seg
-                  label="Zásilka"
-                  options={[
-                    { value: "male" as const, label: "Malé" },
-                    { value: "velke" as const, label: "Velké" },
-                    { value: "poukaz" as const, label: "Poukaz" },
-                  ]}
-                  value={shippingValue}
-                  dirty={flags.shipping_class !== undefined}
-                  onSet={(next) => setFlags((prev) => ({ ...prev, shipping_class: next }))}
-                />
-              }
-            />
-          </InspectorGroup>
-
-          <InspectorGroup title="Prodej">
-            <InspectorRow
-              label="Objednání bez kusů na skladu"
-              hint={
-                bezSkladu === "__beze" && bezSkladuSdilene === null
-                  ? "U vybraných se liší — klikem nastavíte všem."
-                  : "Zákazník koupí i vyprodaný kus a uvidí zprávu níž."
-              }
-              control={
-                <Seg
-                  label="Objednání bez kusů na skladu"
-                  options={ANO_NE}
-                  value={bezSkladu === "__beze" ? bezSkladuSdilene : bezSkladu}
-                  dirty={bezSkladu !== "__beze"}
-                  onSet={(next) => setBezSkladu(next)}
-                />
-              }
-            >
-              {(bezSkladu === "on" || (bezSkladu === "__beze" && bezSkladuSdilene !== "off")) && (
-                <div className="mt-2 flex flex-col gap-1">
-                  <Text size="xsmall" weight="plus">Zpráva pro zákazníka</Text>
-                  <Input
-                    size="small"
-                    value={zprava}
-                    onChange={(event) => setZprava(event.target.value)}
-                    placeholder="např. Vyrobíme pro vás do 3 týdnů. (prázdné = beze změny)"
-                    className={zprava.trim() ? "shadow-borders-interactive-with-active" : undefined}
-                  />
-                </div>
-              )}
-            </InspectorRow>
-            <InspectorRow
-              label="V obchodě"
-              hint={hint(statusValue === null) ?? "Skryté zákazník nevidí."}
-              control={
-                <Seg
-                  label="V obchodě"
-                  options={[
-                    { value: "published" as const, label: "Zobrazit" },
-                    { value: "draft" as const, label: "Skrýt" },
-                  ]}
-                  value={statusValue}
-                  dirty={flags.status !== undefined}
-                  onSet={(next) => setFlags((prev) => ({ ...prev, status: next }))}
-                />
-              }
-            />
-            <InspectorRow
-              label="Poškozený kus"
-              hint={hint(flagValue("clearance") === null) ?? "Levněji; po prodeji se skryje."}
-              control={
-                <Seg label="Poškozený kus" options={ANO_NE} value={flagValue("clearance")} dirty={flags.clearance !== undefined}
-                  onSet={(next) => setFlags((prev) => ({ ...prev, clearance: next === "on" }))} />
-              }
-            />
-            <InspectorRow
-              label="Slevové kódy"
-              hint={hint(flagValue("no_promo") === null) ?? "Vyloučené kusy kód nesníží."}
-              control={
-                <Seg
-                  label="Slevové kódy"
-                  options={[
-                    { value: "off" as const, label: "Platí" },
-                    { value: "on" as const, label: "Vyloučit" },
-                  ]}
-                  value={flagValue("no_promo")}
-                  dirty={flags.no_promo !== undefined}
-                  onSet={(next) => setFlags((prev) => ({ ...prev, no_promo: next === "on" }))}
-                />
-              }
-            />
-          </InspectorGroup>
-
-          {/* Materiál a rozměry (19. 11. 2026, Matěj) — jako pravý sloupec detailu výrobku. */}
-          <InspectorGroup title="Materiál a rozměry">
-            <InspectorRow
-              label="Materiál"
-              hint={material === "__beze" ? "Beze změny — každý si nechá svůj." : material === "__none" ? "Všem se materiál smaže." : `Všem nastavím: ${material}`}
-              control={
-                <select
-                  aria-label="Materiál"
-                  value={material}
-                  onChange={(event) => setMaterial(event.target.value)}
-                  className={`bg-ui-bg-field txt-compact-small min-h-[36px] max-w-[200px] rounded-md border px-2 ${material !== "__beze" ? "border-ui-border-interactive" : "border-ui-border-base"}`}
-                >
-                  <option value="__beze">Beze změny</option>
-                  <option value="__none">Bez materiálu</option>
-                  {(materialsQuery.data?.materials ?? []).map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              }
-            />
-            <InspectorRow
-              label="Rozměry"
-              hint={rozmery.trim() ? "Stejné rozměry dostanou všechny vybrané." : "Prázdné = beze změny."}
-              control={
-                <input
-                  type="text"
-                  aria-label="Rozměry"
-                  placeholder="např. výška 12 cm, ø 9 cm"
-                  value={rozmery}
-                  onChange={(event) => setRozmery(event.target.value)}
-                  className={`bg-ui-bg-field txt-compact-small min-h-[36px] w-[200px] rounded-md border px-2 ${rozmery.trim() ? "border-ui-border-interactive" : "border-ui-border-base"}`}
-                />
-              }
-            />
-            <InspectorRow
-              label="Mrazuvzdorné"
-              hint={hint(flagValue("frost_resistant") === null) ?? "Vydrží mráz — štítek u výrobku."}
-              control={
-                <Seg label="Mrazuvzdorné" options={ANO_NE} value={flagValue("frost_resistant")} dirty={flags.frost_resistant !== undefined}
-                  onSet={(next) => setFlags((prev) => ({ ...prev, frost_resistant: next === "on" }))} />
-              }
-            />
-          </InspectorGroup>
-
-          <InspectorGroup title="Slevy" note="Výprodej ruší vlastní slevu výrobku a na zlevněné kusy slevové kódy neplatí.">
-            <InspectorRow
-              label="Výprodej"
-              hint={vyprodejTarget ? "Vybrané se přidají do výprodeje." : "Přidat vybrané do existujícího výprodeje."}
-              control={
-                <div className="w-48">
-                  <Select
-                    value={vyprodejTarget ?? "__none__"}
-                    onValueChange={(value) => setVyprodejTarget(value === "__none__" ? null : value)}
                   >
-                    <Select.Trigger>
-                      <Select.Value placeholder="Beze změny" />
-                    </Select.Trigger>
-                    <Select.Content className="z-[60]">
-                      <Select.Item value="__none__">Beze změny</Select.Item>
-                      {usableVyprodeje.map((item) => (
-                        <Select.Item key={item.id} value={item.id}>
-                          {`${item.title} · −${item.percent} %${item.state === "off" ? " (vypnutý)" : ""}`}
-                        </Select.Item>
-                      ))}
-                    </Select.Content>
-                  </Select>
-                </div>
-              }
-            />
-            <InspectorRow
-              label="Sleva"
-              hint={
-                saleKind === "set"
-                  ? "Stejná sleva všem vybraným, od dneška."
-                  : saleKind === "remove"
-                    ? "Vlastní slevu vybraným zruší."
-                    : "Vlastní sleva výrobku (ne výprodej)."
-              }
-              control={
-                <Seg
-                  label="Sleva"
-                  options={[
-                    { value: "none" as const, label: "Beze změny" },
-                    { value: "set" as const, label: "Nastavit" },
-                    { value: "remove" as const, label: "Zrušit" },
-                  ]}
-                  value={saleKind}
-                  dirty={saleKind !== "none"}
-                  onSet={(next) => setSaleKind(next as "none" | "set" | "remove")}
-                />
-              }
-            >
-              {saleKind === "set" && (
-                <div className="flex flex-col gap-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="relative w-24">
-                      <Input
-                        type="number"
-                        min={1}
-                        max={90}
-                        size="small"
-                        aria-label="Sleva v procentech"
-                        value={salePercent}
-                        className="pr-7 tabular-nums"
-                        onChange={(event) => setSalePercent(event.target.value)}
-                      />
-                      <span className="text-ui-fg-muted txt-compact-small pointer-events-none absolute inset-y-0 right-2.5 flex items-center">%</span>
-                    </div>
-                    {QUICK.map((quick) => (
-                      <button
-                        key={quick}
-                        type="button"
-                        aria-pressed={salePercentValue === quick}
-                        onClick={() => setSalePercent(String(quick))}
-                        className={clx(
-                          "min-h-[30px] rounded-full border px-3",
-                          salePercentValue === quick ? "border-ui-border-interactive bg-ui-bg-base-pressed" : "border-ui-border-base hover:bg-ui-bg-base-hover"
-                        )}
-                      >
-                        <Text size="small">{quick} %</Text>
-                      </button>
-                    ))}
-                  </div>
-                  <label className="flex items-center gap-2">
-                    <Text size="xsmall" className="text-ui-fg-subtle">Do (nepovinné)</Text>
-                    <Input type="date" size="small" className="w-40" value={saleTo} min={today()} onChange={(event) => setSaleTo(event.target.value)} />
-                  </label>
-                  {!saleValid && (
-                    <Text size="xsmall" className="text-ui-fg-error">Zadejte celé číslo od 1 do 90.</Text>
-                  )}
-                </div>
-              )}
-            </InspectorRow>
-          </InspectorGroup>
+                    {quick} %
+                  </button>
+                ))}
+              </div>
+              <label className="flex items-center gap-2">
+                <Text size="xsmall" className="text-ui-fg-subtle">Do (nepovinné)</Text>
+                <Input type="date" size="small" className="w-40" value={saleTo} min={today()} onChange={(event) => setSaleTo(event.target.value)} />
+              </label>
+              {!saleValid && <Text size="xsmall" className="text-ui-fg-error">Zadejte celé číslo od 1 do 90.</Text>}
+            </div>
+          )
+        }
+      >
+        <Seg
+          label="Sleva"
+          options={[
+            { value: "none" as const, label: "Beze změny" },
+            { value: "set" as const, label: "Nastavit" },
+            { value: "remove" as const, label: "Zrušit" },
+          ]}
+          value={saleKind}
+          onSet={(next) => setSaleKind(next as "none" | "set" | "remove")}
+        />
+      </Radek>
+    </Skupina>
+  );
 
-          {/* Zařazení dole — stejné tři kroky jako v Kolekce a kategorie
-              (jedna komponenta BulkSortPanel, 19. 11. 2026). */}
-          <section className="px-5 pt-4">
-            <Text size="small" weight="plus" className="text-ui-fg-subtle px-1">
-              Zařazení
-            </Text>
-          </section>
-          <BulkSortPanel
-            products={products.map((product) => ({
-              id: product.id,
-              collection_id: product.collection_id,
-              category_ids: (product.category_refs ?? []).map((category) => category.id),
-            }))}
-            collections={collectionsQuery.data?.collections ?? []}
-            categories={categories}
-            onChange={(draft, summary) => {
-              setClassification(draft);
-              setSortSummary(summary);
-            }}
-          />
-          </>
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
+      <div className="bg-ui-bg-overlay absolute inset-0" aria-hidden onClick={zkusitZavrit} />
+      <div
+        ref={okno}
+        role="dialog"
+        aria-modal="true"
+        aria-label={nazev}
+        tabIndex={-1}
+        className={clx(
+          "bg-ui-bg-base shadow-elevation-flyout relative flex max-h-[calc(100dvh-24px)] w-full flex-col overflow-hidden rounded-xl outline-none",
+          mode === "zarazeni" ? "max-w-[560px]" : "max-w-[920px]"
+        )}
+      >
+        {/* Hlavička jako u nabídky „…" */}
+        <div className="border-ui-border-base flex items-center justify-between gap-2 border-b px-4 py-3">
+          <span className="flex min-w-0 flex-1 items-center gap-1.5">
+            {mode !== "zarazeni" && <NavodTip tema="produkty.hromadne" />}
+            <span className="min-w-0">
+              <Text size="small" weight="plus" className="block truncate">
+                {nazev}
+              </Text>
+              <Text size="xsmall" className="text-ui-fg-subtle block truncate" title={nazvy}>
+                {nazvy}
+              </Text>
+            </span>
+          </span>
+          <IconButton size="small" variant="transparent" aria-label="Zavřít" onClick={zkusitZavrit}>
+            ×
+          </IconButton>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {mode === "zarazeni" ? (
+            zarazeni
+          ) : (
+            <div className="flex flex-col gap-4 p-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="flex min-w-0 flex-col gap-4">
+                  {ceník}
+                  {doprava}
+                </div>
+                <div className="flex min-w-0 flex-col gap-4">
+                  {prodej}
+                  {material_}
+                  {slevy}
+                </div>
+              </div>
+              {/* Zařazení přes celou šířku — stejné tři kroky jako v Kolekce a kategorie. */}
+              <section className="flex flex-col gap-1">
+                <Text size="xsmall" weight="plus" className="text-ui-fg-muted px-1 uppercase tracking-wide">
+                  Zařazení
+                </Text>
+                <div className="shadow-borders-base rounded-lg">{zarazeni}</div>
+              </section>
+            </div>
           )}
-        </Drawer.Body>
-        <Drawer.Footer className="flex items-center justify-between gap-2">
+        </div>
+
+        {/* Spodní lišta jako u nabídky „…" */}
+        <div className="border-ui-border-base flex flex-wrap items-center justify-between gap-2 border-t px-4 py-2.5">
           <Text size="xsmall" className="text-ui-fg-subtle min-w-0 flex-1">
             {mode === "zarazeni" ? (
               sortSummary ?? "Vyberte, kam je dát."
@@ -765,17 +742,16 @@ export const ProductBulkDrawer = ({
             )}
           </Text>
           <div className="flex items-center gap-2">
-            <Drawer.Close asChild>
-              <Button size="small" variant="secondary" disabled={save.isPending}>
-                {mode === "zarazeni" ? "Zrušit" : "Zrušit vše"}
-              </Button>
-            </Drawer.Close>
+            <Button size="small" variant="secondary" disabled={save.isPending} onClick={() => onOpenChange(false)}>
+              {mode === "zarazeni" ? "Zrušit" : "Zrušit vše"}
+            </Button>
             <Button size="small" disabled={!dirty} isLoading={save.isPending} onClick={() => save.mutate()}>
               {mode === "zarazeni" ? "Uložit" : dirty ? `Uložit vše (${changeCount})` : "Uložit vše"}
             </Button>
           </div>
-        </Drawer.Footer>
-      </Drawer.Content>
-    </Drawer>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 };
