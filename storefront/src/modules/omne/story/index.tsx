@@ -193,7 +193,7 @@ export function StoryImageVisual({
           {item.number} · {item.label}
         </span>
         <i />
-        <span>Ateliér · Písek</span>
+        <span>Ateliér · Putim</span>
       </motion.figcaption>
     </>
   )

@@ -206,7 +206,7 @@ export default function Collections({
   useEditRerender()
 
   const railLeft = block?.accent?.[0]?.trim() || "03 · Kolekce"
-  const railRight = block?.accent?.[1]?.trim() || "Ručně tvořeno v Písku"
+  const railRight = block?.accent?.[1]?.trim() || "Ručně tvořeno v Putimi"
   const headlineLead = block?.title?.trim() || "Stejný postup,"
   const headlineAccent = block?.headline?.trim() || "pokaždé jiný výsledek."
   const lede =

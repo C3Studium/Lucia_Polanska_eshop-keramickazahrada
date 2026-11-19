@@ -141,7 +141,7 @@ export default function LegalPrintDocument({
             <span className="lp-wordmark">
               Keramická <em>zahrada</em>
             </span>
-            <span className="lp-brand-sub">Ateliér Lucie Polanské · Písek</span>
+            <span className="lp-brand-sub">Ateliér Lucie Polanské · Putim</span>
           </p>
           <p className="lp-seller">
             <strong>Prodávající: {inline("{{seller.name}}")}</strong>

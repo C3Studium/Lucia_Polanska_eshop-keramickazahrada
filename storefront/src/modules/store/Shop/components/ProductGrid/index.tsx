@@ -24,7 +24,7 @@ const GRID_DEFAULTS = {
   "chyba.text":
     "Vaše nastavené filtry zůstávají. Zkuste stránku načíst znovu, nebo se vraťte na celou nabídku.",
   "karta.druh": "Autorská keramika",
-  "karta.popis": "Ručně vyrobený originál z píseckého ateliéru.",
+  "karta.popis": "Ručně vyrobený originál z ateliéru v Putimi.",
 } as const
 
 /* Stable references: these are re-read by framer-motion on every grid render, and the grid

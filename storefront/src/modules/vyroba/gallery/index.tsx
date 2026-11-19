@@ -131,7 +131,7 @@ export function ProcessImageVisual({
   imageStyle,
   edgeStyle,
   sizes = "(max-width: 760px) 100vw, 62vw",
-  stamp = "Ateliér · Písek",
+  stamp = "Ateliér · Putim",
   editStamp,
 }: {
   item: ProcessStep
@@ -392,7 +392,7 @@ export default function Gallery({
 
   const railLeft = texts?.accent?.[0]?.trim() || "Proces · Sedm kapitol"
   const railRight = texts?.accent?.[1]?.trim() || "Od nápadu k hotovému kusu"
-  const stamp = texts?.accent?.[2]?.trim() || "Ateliér · Písek"
+  const stamp = texts?.accent?.[2]?.trim() || "Ateliér · Putim"
   const outroEyebrow = texts?.accent?.[3]?.trim() || "Každý kus je jiný"
   const outroLead = texts?.accent?.[4]?.trim() || "Stejný postup,"
   const outroAccent = texts?.headline?.trim() || "pokaždé jiný výsledek."

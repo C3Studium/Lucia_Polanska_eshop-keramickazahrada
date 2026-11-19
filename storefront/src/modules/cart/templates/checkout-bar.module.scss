@@ -268,3 +268,32 @@
     margin-block: 0 !important;
   }
 }
+
+/*
+ * Telefon: pruh „Celkem bez dopravy" vyšší a méně kulatý (19. 11. 2026,
+ * Matěj). Pilulka 999px při výšce ~3,7rem vypadala jako tlačítko; teď je to
+ * deska se zaoblením 1rem a tlačítko v ní má o krok menší (0,75rem), aby
+ * oblouky seděly do sebe. Výška pruhu z ~47 px na ~70 px.
+ */
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .root {
+    min-height: 4.75rem;
+    padding: 0.75rem 0.75rem 0.75rem 1.25rem;
+    border-radius: 1rem;
+  }
+
+  .root .total {
+    gap: 0.3rem;
+  }
+
+  .root .cta,
+  .root .ctaBlocked {
+    min-height: 3.25rem !important;
+    padding-inline: 1.5rem !important;
+    border-radius: 0.75rem;
+  }
+
+  :global(body):has(.root) :global(.Mainfooter) {
+    padding-bottom: calc(var(--nav-bottom-clearance, 68px) + 10px + 2.5vh + 6rem) !important;
+  }
+}

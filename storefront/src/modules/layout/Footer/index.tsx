@@ -143,13 +143,13 @@ export default function Footer({
 
   const toplineLeft = footerCopy?.accent?.[0]?.trim() || "Keramická zahrada"
   const toplineRight =
-    footerCopy?.accent?.[1]?.trim() || "Ateliér Lucie Polanské · Písek"
+    footerCopy?.accent?.[1]?.trim() || "Ateliér Lucie Polanské · Putim"
   const footerEyebrow = footerCopy?.accent?.[2]?.trim() || "00 · PATIČKA"
   const wordmarkLead = footerCopy?.title?.trim() || "Keramická"
   const wordmarkAccent = footerCopy?.headline?.trim() || "zahrada."
   const statement =
     footerCopy?.bodyText?.trim() ||
-    "Keramika pro zahradu i domov. Všechno vzniká rukama v píseckém ateliéru."
+    "Keramika pro zahradu i domov. Všechno vzniká rukama v ateliéru v Putimi."
   /*
    * Názvy skupin odkazů, nadpis „Ke stažení" a řádek s copyrightem — vlastní
    * blok `global.paticka-odkazy`, položky klíčované popiskem.

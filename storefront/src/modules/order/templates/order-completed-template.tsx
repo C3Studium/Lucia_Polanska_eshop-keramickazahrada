@@ -835,7 +835,7 @@ export default async function OrderCompletedTemplate({
         <footer className={s.footer}>
           <span>Zabalíme pečlivě</span>
           <span>Ručně vyrobeno</span>
-          <span>Ateliér · Písek</span>
+          <span>Ateliér · Putim</span>
         </footer>
       </div>
     </main>

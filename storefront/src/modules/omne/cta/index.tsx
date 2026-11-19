@@ -151,7 +151,7 @@ export default function AboutCta({ copy }: { copy?: CopyBlocks }) {
      */
     const block = copy?.["o-mne.cta"]
     const metaLeft = itemValue(block, "lista.vlevo")?.trim() || "04 · Pokračování"
-    const metaRight = itemValue(block, "lista.vpravo")?.trim() || "Ručně, v píseckém ateliéru"
+    const metaRight = itemValue(block, "lista.vpravo")?.trim() || "Ručně, v ateliéru v Putimi"
     const eyebrow = itemValue(block, "oboci")?.trim() || "Z ateliéru k vám domů"
     const title = block?.title?.trim() || "Teď je řada"
     const titleAccent = block?.headline?.trim() || "na vás."

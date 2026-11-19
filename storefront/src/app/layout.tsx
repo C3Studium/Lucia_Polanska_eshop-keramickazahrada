@@ -5,6 +5,7 @@ import ScrollResetOnRoute from "@lib/helpers/scrollResetOnRoute"
 import SessionVersionWatch from "@modules/layout/components/session-version"
 import { bootResetScript } from "@lib/util/session-version"
 import { RELOAD_KEEPER_JS } from "@lib/util/reload-keeper"
+import { VIEWPORT_GUARD_JS } from "@lib/util/viewport-guard"
 import { StateProvider } from "@lib/context/StateContext"
 import { getBaseURL } from "@lib/util/env"
 import CookieNotice from "@modules/layout/CookieNotice"
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
     template: "%s | Keramická zahrada",
   },
   description:
-    "Ručně tvořená keramika pro zahradu i domov z píseckého ateliéru Lucie Polanské. Hotové kusy, zakázková výroba i keramické kurzy.",
+    "Ručně tvořená keramika pro zahradu i domov z ateliéru Lucie Polanské v Putimi. Hotové kusy, zakázková výroba i keramické kurzy.",
 }
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
@@ -66,6 +67,10 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         {/* Strážce obnovení po nové verzi: uloží rozepsaná pole, obnoví
             stránku a pole vrátí (lib/util/reload-keeper, 18. 11. 2026). */}
         <script dangerouslySetInnerHTML={{ __html: RELOAD_KEEPER_JS }} />
+        {/* Telefony, hlavně iPhone a starší Safari: bez přiblížení při psaní,
+            spodní lišta nad sbalenou lištou Safari, klávesnice se zavře
+            ťuknutím mimo pole (lib/util/viewport-guard, 19. 11. 2026). */}
+        <script dangerouslySetInnerHTML={{ __html: VIEWPORT_GUARD_JS }} />
         {vychoziSouhlas ? (
           <script
             id="kz-consent-default"

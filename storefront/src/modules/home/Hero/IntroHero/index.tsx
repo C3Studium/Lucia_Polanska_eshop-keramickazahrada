@@ -138,9 +138,9 @@ export default function IntroHero({
      * vrací CMS prázdno a hero by mělo tři díry. S nimi vypadá stránka stejně
      * jako předtím a naplnění CMS je pak změna, ne oprava.
      */
-    const eyebrow = block?.accent?.[0]?.trim() || "Keramika z píseckého ateliéru";
+    const eyebrow = block?.accent?.[0]?.trim() || "Keramika z putimského ateliéru";
     const topLeft = block?.accent?.[1]?.trim() || "Autorská keramika";
-    const topRight = block?.accent?.[2]?.trim() || "Písek · od roku 2014";
+    const topRight = block?.accent?.[2]?.trim() || "Putim · od roku 2014";
     const countIndex = block?.items?.[0]?.lead?.trim() || "01";
     const countLabel =
         block?.items?.[0]?.label?.trim() || "Ručně · pomalu · v malém počtu";

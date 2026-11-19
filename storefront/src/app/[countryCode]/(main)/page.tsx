@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: "Keramická zahrada | Autorská keramika Lucie Polanské",
     absolute: true,
     description:
-      "Ručně tvořená keramika pro zahradu i domov z píseckého ateliéru Lucie Polanské. Hotové kusy, zakázková výroba i keramické kurzy.",
+      "Ručně tvořená keramika pro zahradu i domov z ateliéru Lucie Polanské v Putimi. Hotové kusy, zakázková výroba i keramické kurzy.",
   })
 }
 

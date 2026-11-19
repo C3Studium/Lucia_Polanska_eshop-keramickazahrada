@@ -70,7 +70,7 @@ export default function ShopHero({ productCount, onExplore }: ShopHeroProps) {
       <div className={styles.veil} />
       <motion.div className={styles.copy} style={{ y: copyY }}>
         <motion.p custom={0.05} variants={reveal} initial="hidden" animate="show" className={styles.eyebrow}>
-          Keramická zahrada · Písek
+          Keramická zahrada · Putim
         </motion.p>
         <motion.h1 id="shop-title" custom={0.12} variants={reveal} initial="hidden" animate="show">
           Keramika, která<br />vydrží roky.

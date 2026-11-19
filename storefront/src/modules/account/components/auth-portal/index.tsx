@@ -120,7 +120,7 @@ export default function AuthPortal({ mode, children, block }: AuthPortalProps) {
           animate={animate2}
           transition={transition2}
         />
-        <span>Keramická zahrada · Písek</span>
+        <span>Keramická zahrada · Putim</span>
       </header>
 
       <div className={s.composition}>
@@ -144,7 +144,7 @@ export default function AuthPortal({ mode, children, block }: AuthPortalProps) {
           />
           <div className={s.imageShade} />
           <div className={s.visualFoot}>
-            <span>Ateliér · Písek</span>
+            <span>Ateliér · Putim</span>
             <span className={s.footLine} />
             <span>Od roku 2014</span>
           </div>

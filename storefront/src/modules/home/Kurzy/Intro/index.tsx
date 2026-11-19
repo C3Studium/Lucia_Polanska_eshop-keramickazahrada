@@ -36,7 +36,7 @@ export type KurzyIntroData = CopyBlock | undefined
  * dialog; the third walks you down to the terms and the booking form.
  */
 const fallbackLede =
-  "V ateliéru u Písku vedu keramické kurzy pro děti i dospělé. Malé skupiny, klidné tempo a výrobek, který si odnesete domů."
+  "V ateliéru v Putimi u Písku vedu keramické kurzy pro děti i dospělé. Malé skupiny, klidné tempo a výrobek, který si odnesete domů."
 
 const fallbackAbout =
   "Na kurzu si hlínu osaháte pomalu a bez spěchu. Provedu vás celým procesem — od výběru hlíny přes modelování až po glazování a výpal. Každý si najde svůj vlastní způsob a odnese si kousek, který nikde jinde neseženete."
@@ -122,7 +122,7 @@ export default function Intro({
   useEditRerender()
 
   const railLeft = block?.accent?.[0]?.trim() || "Kurzy · Keramická zahrada"
-  const railRight = block?.accent?.[1]?.trim() || "Písek · Malé skupiny"
+  const railRight = block?.accent?.[1]?.trim() || "Putim · Malé skupiny"
   const heroEyebrow = block?.accent?.[2]?.trim() || "Keramické kurzy · 01"
   const scrollCue = block?.accent?.[3]?.trim() || "Pojďte dál"
   const progressFirst = block?.accent?.[4]?.trim() || "01 · Kurzy"

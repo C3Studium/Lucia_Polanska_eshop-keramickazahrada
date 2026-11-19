@@ -38,6 +38,7 @@ const MIRROR_FILES = [
   "tsconfig.json",
   "tailwind.config.js",
   "postcss.config.js",
+  "postcss-stare-safari.js",
   "check-env-variables.js",
   "next-sitemap.js",
   "valecms-env.d.ts",

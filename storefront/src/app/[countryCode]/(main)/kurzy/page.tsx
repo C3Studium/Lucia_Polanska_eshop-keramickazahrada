@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return getPageSeo("kurzy", {
     title: "Keramické kurzy",
     description:
-      "Keramické kurzy pro děti a chystané kurzy pro dospělé v ateliéru u Písku.",
+      "Keramické kurzy pro děti a chystané kurzy pro dospělé v ateliéru v Putimi u Písku.",
   })
 }
 

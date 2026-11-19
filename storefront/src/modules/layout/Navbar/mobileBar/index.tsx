@@ -103,12 +103,27 @@ export default function MobileBar({
 
     publish()
 
-    if (typeof ResizeObserver === "undefined") return withdraw
+    /* Zvednutí nad sbalenou lištou Safari mění `bottom`, ne velikost —
+       ResizeObserver to nevidí. Hlídač okna o tom pošle událost. Před
+       kontrolou ResizeObserveru: Safari do 13.1 ho nemá a i tam musí
+       lišta svou vůli přepočítat. */
+    window.addEventListener("kz:viewport", publish)
+    window.addEventListener("resize", publish)
+
+    if (typeof ResizeObserver === "undefined") {
+      return () => {
+        window.removeEventListener("kz:viewport", publish)
+        window.removeEventListener("resize", publish)
+        withdraw()
+      }
+    }
 
     const observer = new ResizeObserver(publish)
     observer.observe(el)
     return () => {
       observer.disconnect()
+      window.removeEventListener("kz:viewport", publish)
+      window.removeEventListener("resize", publish)
       withdraw()
     }
   }, [])

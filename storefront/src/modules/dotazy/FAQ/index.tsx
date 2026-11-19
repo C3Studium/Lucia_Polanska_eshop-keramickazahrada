@@ -57,7 +57,7 @@ const faq = [
         id: "rucni-vyroba",
         category: "produkty" as Category,
         title: "Jsou všechny produkty ručně vyráběné?",
-        desc: "Ano, všechno. Každý kus dělám ručně v ateliéru v Písku. Drobné rozdíly v kresbě, odstínu nebo rozměru nejsou vada — podle nich poznáte ruční práci.",
+        desc: "Ano, všechno. Každý kus dělám ručně v ateliéru v Putimi. Drobné rozdíly v kresbě, odstínu nebo rozměru nejsou vada — podle nich poznáte ruční práci.",
     },
     {
         id: "baleni",
