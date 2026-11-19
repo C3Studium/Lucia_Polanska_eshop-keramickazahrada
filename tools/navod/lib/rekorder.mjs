@@ -27,7 +27,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* ——————————————————————— CDP ——————————————————————— */
 
-export async function otevritProhlizec({ port = Number(process.env.NAVOD_CDP ?? 9333), width = 1440, height = 900, dark = false } = {}) {
+export async function otevritProhlizec({ port = Number(process.env.NAVOD_CDP ?? 9333), width = 1440, height = 900, dark = false, izolovane = false } = {}) {
   const version = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json();
   const ws = new WebSocket(version.webSocketDebuggerUrl);
   await new Promise((r, j) => { ws.addEventListener('open', r, { once: true }); ws.addEventListener('error', j, { once: true }); });
@@ -38,7 +38,7 @@ export async function otevritProhlizec({ port = Number(process.env.NAVOD_CDP ?? 
   ws.addEventListener('message', (e) => {
     const m = JSON.parse(e.data);
     if (m.id && waiters.has(m.id)) { waiters.get(m.id)(m); waiters.delete(m.id); }
-    if (m.method === 'Runtime.exceptionThrown') chyby.push((m.params.exceptionDetails.exception?.description ?? m.params.exceptionDetails.text ?? '').slice(0, 300));
+    if (m.method === 'Runtime.exceptionThrown') chyby.push((m.params.exceptionDetails.exception?.description ?? m.params.exceptionDetails.text ?? '').slice(0, 3000));
     for (const l of listeners) l(m);
   });
   const send = (method, params = {}, sessionId) => new Promise((res) => {
@@ -47,7 +47,9 @@ export async function otevritProhlizec({ port = Number(process.env.NAVOD_CDP ?? 
     ws.send(JSON.stringify({ id: i, method, params, sessionId }));
     setTimeout(() => { if (waiters.has(i)) { waiters.delete(i); res({ error: { message: 'timeout ' + method } }); } }, 45000);
   });
-  const { result: { targetId } } = await send('Target.createTarget', { url: 'about:blank', background: true, newWindow: true });
+  /* Izolovaný profil = vlastní cookies (zákazník začíná nepřihlášený). */
+  const kontext = izolovane ? (await send('Target.createBrowserContext', { disposeOnDetach: true })).result?.browserContextId : undefined;
+  const { result: { targetId } } = await send('Target.createTarget', { url: 'about:blank', background: true, newWindow: true, ...(kontext ? { browserContextId: kontext } : {}) });
   const { result: { sessionId } } = await send('Target.attachToTarget', { targetId, flatten: true });
   const S = (m, p) => send(m, p, sessionId);
   await S('Page.enable');
@@ -58,7 +60,7 @@ export async function otevritProhlizec({ port = Number(process.env.NAVOD_CDP ?? 
   return {
     S, chyby, width, height,
     onEvent: (fn) => { listeners.add(fn); return () => listeners.delete(fn); },
-    async zavrit() { await send('Target.closeTarget', { targetId }); ws.close(); },
+    async zavrit() { await send('Target.closeTarget', { targetId }); if (kontext) await send('Target.disposeBrowserContext', { browserContextId: kontext }); ws.close(); },
   };
 }
 
@@ -88,6 +90,8 @@ export class Nahravka {
     this.vyrez = o.vyrez !== undefined ? o.vyrez : o.celeOkno ? null : { x: 240, y: 0, width: p.width - 240, height: p.height };
     this.sirka = o.sirka ?? 1100;
     this.snimky = [];
+    /* Obchod má vlastní plynulé rolování — tam se skáče rovnou (bez bílých snímků). */
+    this.skok = o.rolovani === 'skok';
     this.krok = 0;
   }
 
@@ -160,7 +164,8 @@ export class Nahravka {
     if (vSeznamu) await this.snimek(250);
     const mimo = await this.ev(`(() => { const el = (${cil}); if (!el) return null; const r = el.getBoundingClientRect(); return r.top < 70 || r.bottom > innerHeight - 90; })()`);
     if (mimo === null) throw new Error('prvek nenalezen: ' + cil.slice(0, 60) + ' … ' + cil.slice(-140));
-    if (mimo) await this.rolovat(cil);
+    if (mimo && this.skok) { await this.ev(`(${cil}).scrollIntoView({ block: 'center' })`); await sleep(900); await this.snimek(300); }
+    else if (mimo) await this.rolovat(cil);
     const p = await this.ev(`(() => { const el = (${cil}); if (!el) return null; const r = el.getBoundingClientRect(); return { x: r.x + Math.min(r.width / 2, 60), y: r.y + r.height / 2 }; })()`);
     if (!p) throw new Error('prvek nenalezen: ' + cil.slice(0, 60) + ' … ' + cil.slice(-140));
     return p;

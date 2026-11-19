@@ -30,7 +30,9 @@ if (!vybrane.length) { console.log('Žádný scénář neodpovídá.'); process.
 const manifestCesta = path.join(VYSTUP, 'manifest.json');
 const manifest = fs.existsSync(manifestCesta) ? JSON.parse(fs.readFileSync(manifestCesta, 'utf8')) : {};
 
-const p = await otevritProhlizec();
+/* Obchod (oblast store) v izolovaném profilu — zákazník začíná nepřihlášený. */
+const jenObchod = vybrane.every((s) => s.oblast === 'store');
+const p = await otevritProhlizec({ izolovane: jenObchod, ...(jenObchod ? { width: 1280, height: 800 } : {}) });
 const prihlasenyAdmin = { hotovo: false };
 const ctx = {
   ADMIN, OBCHOD, api, p,
@@ -55,7 +57,7 @@ process.on('SIGINT', async () => { await vratitNazvy(); process.exit(130); });
 let ok = 0, chyba = 0;
 await p.S('Network.clearBrowserCache');
 for (const s of vybrane) {
-  const n = new Nahravka(p, { sirka: s.sirka, celeOkno: s.celeOkno, vyrez: s.vyrez });
+  const n = new Nahravka(p, { sirka: s.sirka, celeOkno: s.celeOkno, vyrez: s.vyrez, rolovani: s.oblast === 'store' ? 'skok' : 'plynule' });
   const t0 = Date.now();
   let uklid = null;
   try {

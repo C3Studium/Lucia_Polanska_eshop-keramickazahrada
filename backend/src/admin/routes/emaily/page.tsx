@@ -12,6 +12,7 @@ import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client";
 import { ceskaChyba } from "../../lib/ceska-chyba";
 import { SaveBar } from "../../components/save-bar";
+import { NavodTip } from "../../components/navod-tip";
 
 /**
  * Emaily — texty e-mailů, které obchod posílá (15. 11. 2026, přání klientky).
@@ -125,7 +126,10 @@ const Inner = () => {
   return (
     <div className="flex flex-col gap-y-3">
       <Container className="px-6 py-4">
-        <Heading level="h1">Emaily</Heading>
+        <span className="inline-flex items-center gap-1">
+          <Heading level="h1">Emaily</Heading>
+          <NavodTip tema="emaily.prehled" />
+        </span>
         <Text size="small" className="text-ui-fg-subtle mt-1">
           Vyberte e-mail, přepište text a vpravo hned uvidíte, jak přijde. Prázdné pole = výchozí znění.
           Enter v textu udělá nový řádek i v e-mailu.

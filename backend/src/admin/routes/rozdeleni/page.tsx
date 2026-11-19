@@ -48,6 +48,7 @@ import { useUrlFlag, useUrlState } from "../../lib/url-state"
 import { ceskaChyba } from "../../lib/ceska-chyba";
 import { useScrollMemory } from "../../lib/scroll-memory"
 import { ulozSeznam } from "../../lib/seznam-kontext"
+import { NavodTip } from "../../components/navod-tip";
 
 /**
  * Rozdělení — kolekce → kategorie → produkty as three columns
@@ -887,7 +888,10 @@ const Inner = () => {
   return (
     <Container className="p-0">
       <header className="border-ui-border-base border-b px-6 pb-4 pt-6">
-        <Heading>Kolekce a kategorie</Heading>
+        <span className="inline-flex items-center gap-1">
+          <Heading>Kolekce a kategorie</Heading>
+          <NavodTip tema="kategorie.nova" />
+        </span>
         <Text size="small" className="text-ui-fg-subtle mt-1 max-w-2xl">
           Kolekce, jejich kategorie a produkty vedle sebe. Klik vlevo otevře
           prostředek, klik uprostřed pravý sloupec.

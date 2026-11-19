@@ -30,6 +30,7 @@ import Thumbnail from "@modules/products/components/thumbnail"
 
 import styles from "./style.module.scss"
 import { useTexty } from "@lib/context/texty"
+import NavodTip from "@modules/common/components/navod-tip"
 
 const MAX_PHOTOS = 6
 /* Horní mez VSTUPNÍHO souboru — komprese ho pak stlačí na pár set kB. */
@@ -498,7 +499,7 @@ export default function RefundRequest({
   return (
     <div className={styles.root}>
       <fieldset className={styles.kinds}>
-        <legend className={styles.legend}>Co chcete řešit?</legend>
+        <legend className={styles.legend}>Co chcete řešit? <NavodTip tema="obchod.reklamace" /></legend>
         {kinds.map((k) => {
           const disabled = isLocked(k.value)
           const help = disabled

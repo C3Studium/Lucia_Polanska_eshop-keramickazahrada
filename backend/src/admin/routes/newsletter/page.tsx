@@ -54,6 +54,7 @@ import { useScrollMemory } from "../../lib/scroll-memory";
 import { useUrlState } from "../../lib/url-state";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
+import { NavodTip } from "../../components/navod-tip";
 
 /**
  * Newsletter — odběratelé, psaní kampaní a historie na jednom místě.
@@ -2549,7 +2550,10 @@ const NewsletterInner = () => {
     <Container className="divide-y p-0">
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
         <div>
-          <Heading>Newsletter</Heading>
+          <span className="inline-flex items-center gap-1">
+            <Heading>Newsletter</Heading>
+            <NavodTip tema="newsletter.napsat" />
+          </span>
           <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
             Napište zprávu z bloků, pošlete si zkušební e-mail a potom kampaň
             všem potvrzeným odběratelům. Odběratelé se hlásí formulářem

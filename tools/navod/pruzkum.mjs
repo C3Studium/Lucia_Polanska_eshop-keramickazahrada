@@ -10,7 +10,7 @@ const [out, ...cesty] = process.argv.slice(2);
 fs.mkdirSync(out, { recursive: true });
 const ADMIN = process.env.CIL ?? 'http://localhost:9100';
 const OBCHOD = process.env.OBCHOD ?? 'http://localhost:8100';
-const p = await otevritProhlizec();
+const p = await otevritProhlizec({ izolovane: process.env.IZOL === '1', ...(process.env.IZOL === '1' ? { width: 1280, height: 800 } : {}) });
 const n = new Nahravka(p);
 await n.jdi(`${ADMIN}/app/login`, { pauza: 3000 });
 await n.ev(`(async () => { const r = await fetch('/auth/user/emailpass', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: 'admin@sandbox.test', password: 'sandbox-admin-123' }) }); const { token } = await r.json(); await fetch('/auth/session', { method: 'POST', headers: { authorization: 'Bearer ' + token } }); return 1; })()`);

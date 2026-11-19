@@ -11,6 +11,7 @@ import CheckoutCommissionBriefs from "@modules/checkout/components/commission-br
 
 import s from "./style.module.scss"
 import { useTexty } from "@lib/context/texty"
+import NavodTip from "@modules/common/components/navod-tip"
 
 /**
  * Zadání zakázky jako vlastní krok pokladny.
@@ -56,7 +57,7 @@ export default function CheckoutBriefStep({ cart }: { cart: any }) {
   return (
     <div className={s.root}>
       <header className={s.head}>
-        <h2>Zadání zakázky</h2>
+        <h2>Zadání zakázky <NavodTip tema="obchod.zakazka" /></h2>
         <p>
           {texty["zakazka.brief_uvod"]}</p>
       </header>

@@ -22,6 +22,7 @@ import { formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
 import { useUrlState } from "../../lib/url-state"
+import { NavodTip } from "../../components/navod-tip";
 
 type EndingSoon = {
   type: "price_list" | "seasonal_selection";
@@ -459,7 +460,10 @@ const CekaRadek = ({ tiles }: { tiles: Tile[] }) => {
   }
   return (
     <section className="flex flex-col gap-y-3 px-6 py-5">
-      <Heading level="h2">Čeká na vás</Heading>
+      <span className="inline-flex items-center gap-1">
+        <Heading level="h2">Čeká na vás</Heading>
+        <NavodTip tema="zacatek.prehled" />
+      </span>
       <div className="flex flex-wrap items-center gap-2">
         {tiles.map((tile) => (
           <Link
@@ -771,6 +775,8 @@ const PrehledInner = () => {
               {celkem === 0
                 ? "Dnes nic nehoří."
                 : `Dnes vás čeká ${veci(celkem)}.`}
+              {/* Jak se v adminu pohybovat — první, co nová paní uvidí. */}
+              <NavodTip tema="zacatek.orientace" className="ml-1" />
             </Heading>
             {attention.length > 0 ? (
               <div className="mt-2 flex flex-wrap items-center gap-1.5">

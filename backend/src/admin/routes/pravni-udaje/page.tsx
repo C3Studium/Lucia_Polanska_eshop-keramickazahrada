@@ -32,6 +32,7 @@ import {
   type LegalFactKey,
   type LegalFactValues,
 } from "../../../lib/legal-facts";
+import { NavodTip } from "../../components/navod-tip";
 
 /**
  * Právní údaje — fakta, která se dosazují do obchodních podmínek, poučení,
@@ -236,7 +237,10 @@ const Inner = () => {
   return (
     <Container className="divide-y p-0">
       <header className="px-6 pb-4 pt-6">
-        <Heading>Právní údaje</Heading>
+        <span className="inline-flex items-center gap-1">
+          <Heading>Právní údaje</Heading>
+          <NavodTip tema="nastaveni.pravni" />
+        </span>
         <Text size="small" className="text-ui-fg-subtle mt-2 max-w-3xl">
           Údaje o vás a o pravidlech obchodu, které se samy dosazují do
           obchodních podmínek, poučení o odstoupení, reklamačního řádu, zásad

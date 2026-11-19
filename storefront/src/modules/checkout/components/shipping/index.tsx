@@ -41,6 +41,7 @@ import { shippingKindAllowed } from "@lib/util/shipping-kinds"
 import { cartHasFragile } from "@lib/util/fragile"
 import { useTexty } from "@lib/context/texty"
 import { DOPRAVA_TEXT_KEY } from "@lib/util/fragile"
+import NavodTip from "@modules/common/components/navod-tip"
 
 type ShippingProps = {
   cart: HttpTypes.StoreCart
@@ -570,6 +571,7 @@ const Shipping: React.FC<ShippingProps> = ({
           })}
         >
           Doručení
+          <NavodTip tema="obchod.doprava" />
           {!isOpen && (cart.shipping_methods?.length ?? 0) > 0 && (
             <CheckCircleSolid />
           )}

@@ -12,6 +12,7 @@ import OrderDeliverySection from "./delivery-section"
 import { refundPath } from "./shared"
 import s from "./style.module.scss"
 import { useTexty } from "@lib/context/texty"
+import NavodTip from "@modules/common/components/navod-tip"
 
 /**
  * Stránka „Upravit objednávku" od 12. 10. 2026 (Matěj): zákazník si sám mění
@@ -113,7 +114,7 @@ export default function OrderChangeOptions({
       <section className={s.section} aria-labelledby={`${headingId}-change`}>
         <header className={s.sectionHead}>
           <h2 id={`${headingId}-change`} className={s.sectionTitle}>
-            Změna zboží
+            Změna zboží <NavodTip tema="obchod.uprava" />
           </h2>
         </header>
         <p className={s.sectionLead}>

@@ -22,6 +22,7 @@ import {
   prazskyDnes,
   upravenyOdkaz,
 } from "../../lib/dovolena-oznameni";
+import { NavodTip } from "../../components/navod-tip";
 
 const savedForm = (s: any) => ({
   vacation: Boolean(s.vacation_enabled),
@@ -142,7 +143,10 @@ const Inner = () => {
   return (
     <Container className="divide-y p-0">
       <header className="px-6 pb-4 pt-6">
-        <Heading>Dovolená a oznámení</Heading>
+        <span className="inline-flex items-center gap-1">
+          <Heading>Dovolená a oznámení</Heading>
+          <NavodTip tema="nastaveni.dovolena" />
+        </span>
         <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
           Co sem napíšete, uvidí zákazníci nahoře na každé stránce obchodu
           i v pokladně. Nakupovat jde dál — dovolená nic neblokuje.
