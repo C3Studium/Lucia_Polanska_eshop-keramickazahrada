@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { updateCart } from "@lib/data/cart"
 import { CUSTOMER_NOTE_KEY, CUSTOMER_NOTE_MAX } from "@lib/util/customer-note"
+import { previousCheckoutStep } from "@lib/util/checkout-steps"
 
 import brief from "../brief-step/style.module.scss"
 import s from "./style.module.scss"
@@ -24,7 +25,8 @@ export default function CheckoutNoteStep({ cart }: { cart: any }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const isOpen = (searchParams.get("step") ?? "address") === "brief"
+  const isOpen = (searchParams.get("step") ?? "address") === "note"
+  const zpet = previousCheckoutStep(cart?.items, "note")
 
   const ulozena = typeof cart?.metadata?.[CUSTOMER_NOTE_KEY] === "string" ? (cart.metadata[CUSTOMER_NOTE_KEY] as string) : ""
   const [text, setText] = useState(ulozena)
@@ -115,8 +117,8 @@ export default function CheckoutNoteStep({ cart }: { cart: any }) {
       </label>
 
       <div className={brief.actions}>
-        <button type="button" className={brief.back} onClick={() => jdi("delivery")}>
-          ← Zpět na doručení
+        <button type="button" className={brief.back} onClick={() => jdi(zpet)}>
+          ← Zpět na {zpet === "brief" ? "zadání" : "doručení"}
         </button>
         <button
           type="button"

@@ -37,6 +37,7 @@ import { itemText } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
 import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
 import { isMadeToOrderLine } from "@lib/util/commission"
+import { nextCheckoutStep, stepLabel } from "@lib/util/checkout-steps"
 import { shippingKindAllowed } from "@lib/util/shipping-kinds"
 import { cartHasFragile } from "@lib/util/fragile"
 import { useTexty } from "@lib/context/texty"
@@ -269,8 +270,9 @@ const Shipping: React.FC<ShippingProps> = ({
      * jen pořadí kroků: bez zadání pokladna k platbě stejně nepustí, takže
      * poslat člověka rovnou na platbu znamená poslat ho do zdi.
      */
-    /* Bez zakázky je na tomtéž místě nepovinná poznámka (19. 11. 2026). */
-    const dalsi = "brief"
+    /* Další krok podle košíku: zadání zakázky, nebo nepovinná poznámka
+       (lib/util/checkout-steps, 19. 11. 2026). */
+    const dalsi = nextCheckoutStep(cart?.items, "delivery")
     router.push(`${pathname}?step=${dalsi}`, { scroll: false })
   }
 
@@ -953,7 +955,7 @@ const Shipping: React.FC<ShippingProps> = ({
               data-testid="delivery-option-error-message"
             />
             <PremiumActionButton
-              text={maZakazku ? "Pokračovat k zadání" : "Pokračovat k poznámce"}
+              text={`Pokračovat k ${stepLabel(nextCheckoutStep(cart?.items, "delivery"))}`}
               onClickAction={handleSubmit}
               className={styles.divider}
               disabled={

@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import s from "./style.module.scss"
+import { checkoutSteps } from "@lib/util/checkout-steps"
 
 /**
  * Kroky pokladny jako seznam s popisem — vlevo vedle formuláře, jen na
@@ -17,44 +18,9 @@ import s from "./style.module.scss"
  * seznam schovaný a pořadí nesou ony. Krok se čte z adresy (`?step=`) jako
  * všude v pokladně; hotové kroky jsou tlačítka zpět, stejně jako bublinky.
  */
-type Krok = { key: string; label: string; text: string }
-
-const ZAKLADNI: Krok[] = [
-  { key: "address", label: "Adresa", text: "Kam a komu to máme poslat." },
-  { key: "delivery", label: "Doručení", text: "Česká pošta, Balíkovna nebo osobní odběr v ateliéru." },
-  { key: "payment", label: "Platba", text: "Kartou, bankou, nebo při převzetí." },
-  { key: "review", label: "Přehled", text: "Poslední kontrola a odeslání objednávky." },
-]
-
-const SE_ZAKAZKOU: Krok[] = [
-  ZAKLADNI[0],
-  ZAKLADNI[1],
-  { key: "brief", label: "Zadání", text: "Co si představujete — popis a případně fotky." },
-  { key: "payment", label: "Platba", text: "Záloha kartou nebo bankou; zbytek po dokončení." },
-  ZAKLADNI[3],
-]
-
-/*
- * Poznámka k běžné objednávce (19. 11. 2026, Matěj): tentýž krok jako zadání
- * zakázky, jen nepovinný a bez fotek — „Poznámka od zákazníka" v adminu.
- */
-const SE_POZNAMKOU: Krok[] = [
-  ZAKLADNI[0],
-  ZAKLADNI[1],
-  { key: "brief", label: "Poznámka", text: "Chcete nám něco vzkázat? Nepovinné." },
-  ZAKLADNI[2],
-  ZAKLADNI[3],
-]
-
-/** Věta pod názvem kroku — čte ji i hlavička formuláře (`step-bubbles`). */
-export const POPIS_KROKU: Record<string, string> = Object.fromEntries(
-  [...ZAKLADNI, ...SE_ZAKAZKOU].map((krok) => [krok.key, krok.text])
-)
-export const popisKroku = (key: string, hasBrief: boolean): string | undefined =>
-  (hasBrief ? SE_ZAKAZKOU : SE_POZNAMKOU).find((krok) => krok.key === key)?.text
-
-export default function CheckoutStepList({ hasBrief = false }: { hasBrief?: boolean }) {
-  const STEPS = hasBrief ? SE_ZAKAZKOU : SE_POZNAMKOU
+/* Kroky podle košíku — jedno pravidlo s bublinkami (lib/util/checkout-steps). */
+export default function CheckoutStepList({ items }: { items?: readonly unknown[] | null }) {
+  const STEPS = checkoutSteps(items)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
