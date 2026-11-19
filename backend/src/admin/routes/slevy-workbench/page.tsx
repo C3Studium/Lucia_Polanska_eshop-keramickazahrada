@@ -885,13 +885,16 @@ const SlevyInner = () => {
           {/* Na Zlevněných výrobcích ne — sleva výrobku se zakládá u jeho
               ceny, „Nová sleva" tady je kód do košíku. */}
           {!vlastniData && (
-            <DiscountEditor
-              trigger={
-                <Button size="small" variant="primary">
-                  Nová sleva
-                </Button>
-              }
-            />
+            <span className="inline-flex items-center gap-1">
+              <NavodTip tema="slevy.kod" />
+              <DiscountEditor
+                trigger={
+                  <Button size="small" variant="primary">
+                    Nová sleva
+                  </Button>
+                }
+              />
+            </span>
           )}
         </div>
       </header>

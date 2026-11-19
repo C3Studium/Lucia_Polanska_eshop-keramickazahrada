@@ -56,6 +56,147 @@ export const SEKCE: { id: NavodSekceId; nazev: string; popis: string }[] = [
 ];
 
 export const NAVOD: NavodTema[] = [
+  /* ————————————————— Začínáme ————————————————— */
+  {
+    klic: "zacatek.prehled",
+    sekce: "zacatek",
+    nazev: "Přehled — co mě dnes čeká",
+    proc:
+      "První stránka po přihlášení. Nahoře červeně, co brání nákupu; „Čeká na vás“ ukazuje, co je potřeba vyřídit (nové objednávky, zakázky, reklamace). Níž tržby a objednávky.",
+    klipy: [{ klic: "zacatek.prehled", popis: "Přehled a kartičky „Čeká na vás“" }],
+    kroky: [
+      "Po přihlášení se otevře Přehled (v menu úplně nahoře).",
+      "Klik na kartičku v „Čeká na vás“ vás vezme rovnou k věci.",
+      "„Jak se obchodu daří“ přepnete na 7 dní, 30 dní, 3 měsíce nebo rok.",
+    ],
+    kde: "/prehled",
+  },
+  {
+    klic: "zacatek.orientace",
+    sekce: "zacatek",
+    nazev: "Jak se v adminu pohybovat",
+    proc:
+      "Vlevo je menu, nahoře vlevo šipky Zpět a Vpřed (jako v prohlížeči). „Hledat“ (Ctrl+K) najde výrobek, objednávku i zákazníka podle kousku názvu nebo čísla.",
+    klipy: [{ klic: "zacatek.orientace", popis: "Menu, šipka Zpět a hledání" }],
+    kroky: [
+      "V menu vlevo klikněte, kam chcete.",
+      "Šipkou ↶ nahoře vlevo se vrátíte o krok zpět, ↷ vpřed.",
+      "„Hledat“ nahoře v menu (nebo Ctrl+K) — napište kus názvu a vyberte.",
+    ],
+  },
+  {
+    klic: "zacatek.navod",
+    sekce: "zacatek",
+    nazev: "Jak používat Návod",
+    proc:
+      "U nadpisů a nastavení je otazník „?“. Najeďte na něj myší (nebo klikněte) — otevře se okénko s krátkým videem, jak se to dělá. Klik na video ho zvětší. Všechny návody najdete v menu „Návod“ úplně dole.",
+    klipy: [{ klic: "zacatek.navod", popis: "Otazník a stránka Návod" }],
+    kroky: [
+      "Najeďte myší na „?“ — okénko se otevře samo; kliknutím ho připnete.",
+      "„Celý návod s kroky →“ otevře stránku Návod.",
+      "Na stránce Návod jde hledat — např. „sleva“, „štítek“, „poukaz“.",
+    ],
+    kde: "/navod",
+  },
+  /* ————————————————— Kolekce a kategorie: zakládání ————————————————— */
+  {
+    klic: "kategorie.nova",
+    sekce: "zarazeni",
+    nazev: "Nová kolekce a kategorie",
+    proc:
+      "Kolekce je velká skupina v menu obchodu (např. Do zahrady a na fasádu), kategorie je její podskupina (např. Pítka a krmítka). V obchodě se ukážou, jakmile v nich bude zveřejněný výrobek.",
+    klipy: [{ klic: "kategorie.nova", popis: "Založit kolekci a kategorii" }],
+    kroky: [
+      "Kolekce a kategorie → vlevo dole „Nová kolekce…“ → název → +.",
+      "Uprostřed „Nová kategorie…“ → název, vyberte, pod kterou kolekci patří → „Založit kategorii“.",
+      "Pořadí v menu obchodu změníte přetažením za ⠿.",
+      "Přejmenovat, skrýt nebo smazat jde přes „…“ u kolekce či kategorie.",
+    ],
+    kde: "/rozdeleni",
+  },
+  /* ————————————————— Zákazníci a statistiky ————————————————— */
+  {
+    klic: "zakaznici.prehled",
+    sekce: "zakaznici",
+    nazev: "Zákazníci",
+    proc:
+      "Kdo u vás nakupuje: s účtem i bez registrace, kdo dluží doplatek, kdo vrací a kdo odebírá novinky. Klik na zákazníka ukáže jeho objednávky.",
+    klipy: [{ klic: "zakaznici.prehled", popis: "Záložky zákazníků" }],
+    kroky: [
+      "Zákazníci → záložky nahoře (Uživatelé, Neregistrovaní, Čeká na doplatek, Vrací se, Newsletter).",
+      "„Kód pro stálé zákazníky“ připraví slevový kód, který jim pošlete.",
+    ],
+    kde: "/zakaznici-workbench",
+  },
+  {
+    klic: "statistiky.prehled",
+    sekce: "zakaznici",
+    nazev: "Statistiky",
+    proc: "Tržby, objednávky, nejprodávanější výrobky, zákazníci, sklad a slevy — každé ve své záložce.",
+    klipy: [{ klic: "statistiky.prehled", popis: "Záložky statistik" }],
+    kroky: ["Statistiky → přepínejte záložky nahoře."],
+    kde: "/statistiky-workbench",
+  },
+  /* ————————————————— E-maily a newsletter ————————————————— */
+  {
+    klic: "newsletter.napsat",
+    sekce: "komunikace",
+    nazev: "Poslat newsletter",
+    proc:
+      "Zprávu poskládáte z bloků (nadpis, odstavec, obrázek, výrobek, sleva…) a vpravo hned vidíte, jak dorazí. Nejdřív si pošlete test na svůj e-mail, pak odešlete všem potvrzeným odběratelům. Rozepsaná zpráva se ukládá sama.",
+    klipy: [{ klic: "newsletter.napsat", popis: "Napsat zprávu z bloků" }],
+    kroky: [
+      "Newsletter → „Napsat“: vyplňte předmět.",
+      "Bloky pod sebou upravte; další přidáte tlačítky „+ Nadpis“, „+ Odstavec“, „+ Produkt“…",
+      "„Poslat test na můj e-mail“ — zkontrolujte ve své schránce.",
+      "„Odeslat kampaň“ — odejde všem, kdo odběr potvrdili.",
+    ],
+    kde: "/newsletter",
+  },
+  {
+    klic: "emaily.prehled",
+    sekce: "komunikace",
+    nazev: "Co zákazníkům chodí e-mailem",
+    proc:
+      "Všechny e-maily, které obchod posílá sám (potvrzení objednávky, odeslání, faktura, poukaz, kurzy…). Vlevo seznam, vpravo náhled, jak e-mail vypadá.",
+    klipy: [{ klic: "emaily.prehled", popis: "Seznam a náhled e-mailů" }],
+    kroky: ["Emaily → klikněte na e-mail vlevo, vpravo uvidíte náhled."],
+    kde: "/emaily",
+  },
+  /* ————————————————— Nastavení obchodu ————————————————— */
+  {
+    klic: "nastaveni.dovolena",
+    sekce: "nastaveni",
+    nazev: "Dovolená a oznámení",
+    proc:
+      "Když jedete pryč, zapněte „Mám dovolenou“ — nakupovat jde dál, ale zákazníci nahoře na webu uvidí, kdy se vrátíte. Ode dne návratu se upozornění samo skryje. „Oznámení“ je pro trhy, výstavy, nový výpal.",
+    klipy: [{ klic: "nastaveni.dovolena", popis: "Zapnout dovolenou" }],
+    kroky: [
+      "Nastavení obchodu → „Dovolená a oznámení“.",
+      "Zapněte „Mám dovolenou“, vyplňte datum návratu a vzkaz.",
+      "„Uložit“.",
+    ],
+    kde: "/dovolena-oznameni",
+  },
+  {
+    klic: "nastaveni.doprava",
+    sekce: "nastaveni",
+    nazev: "Ceny dopravy a dobírky",
+    proc: "Kolik stojí poštovné (malé / velké / křehké, ČR / Slovensko) a příplatek za dobírku.",
+    klipy: [{ klic: "nastaveni.doprava", popis: "Doprava a platba" }],
+    kroky: ["Nastavení obchodu → „Doprava a platba“ → přepište cenu → „Uložit“."],
+    kde: "/doprava-platba",
+  },
+  {
+    klic: "nastaveni.pravni",
+    sekce: "nastaveni",
+    nazev: "Právní údaje",
+    proc:
+      "Sídlo, IČO, DPH, lhůty a další údaje, které se samy propisují do obchodních podmínek, faktur a e-mailů. Texty obchodních podmínek jsou ve Studiu (menu Web).",
+    klipy: [{ klic: "nastaveni.pravni", popis: "Právní věci a texty" }],
+    kroky: ["Právní věci a texty → „Právní údaje“ → upravte → „Uložit“."],
+    kde: "/pravni-udaje",
+  },
   /* ————————————————— Objednávky ————————————————— */
   {
     klic: "objednavky.seznam",

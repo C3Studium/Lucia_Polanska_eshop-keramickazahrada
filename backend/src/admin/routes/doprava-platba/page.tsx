@@ -14,6 +14,7 @@ import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
 import { SaveBar } from "../../components/save-bar";
 import { movedTo } from "../../components/section-tabs";
+import { NavodTip } from "../../components/navod-tip";
 
 /**
  * Doprava a platba — ceny dopravy a doběrečné na jednom místě (Matěj,
@@ -302,7 +303,10 @@ const Inner = () => {
   return (
     <Container className="divide-y p-0">
       <header className="px-6 pb-4 pt-6">
-        <Heading>Doprava a platba</Heading>
+        <span className="inline-flex items-center gap-1">
+          <Heading>Doprava a platba</Heading>
+          <NavodTip tema="nastaveni.doprava" />
+        </span>
         <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
           Ceny dopravy a příplatek za dobírku. Platí hned pro nové objednávky —
           už vytvořené objednávky se nemění. Balné se nastavuje u každého

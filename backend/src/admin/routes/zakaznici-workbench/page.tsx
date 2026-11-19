@@ -35,6 +35,7 @@ import {
 } from "../../components/loyalty-code-panel";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
+import { NavodTip } from "../../components/navod-tip";
 
 /**
  * Zákazníci — the advanced customer workbench (admin-advanced-plan.md).
@@ -336,7 +337,10 @@ const ZakazniciInner = () => {
     <Container className="divide-y p-0">
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
         <div>
-          <Heading>Zákazníci</Heading>
+          <span className="inline-flex items-center gap-1">
+            <Heading>Zákazníci</Heading>
+            <NavodTip tema="zakaznici.prehled" />
+          </span>
           <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
             Nákupy, doplatky, oblíbené i newsletter u každého zákazníka.
             Seřazeno podle toho, kolik u vás kdo utratil.

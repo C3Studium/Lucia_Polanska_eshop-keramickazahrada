@@ -70,11 +70,13 @@ export const NavodGif = ({ klic, popis, klipy }: { klic: string; popis: string; 
   }
   return (
     <figure className="flex flex-col gap-1.5">
+      {/* Tlačítko je pod náhledem, ne přes něj — v GIFu nic nezakrývá (Matěj, 19. 11.). */}
       <button
         type="button"
         onClick={() => setVelky(true)}
         title="Zvětšit"
-        className="shadow-borders-base group relative block cursor-zoom-in overflow-hidden rounded-lg bg-white"
+        aria-label={`Zvětšit: ${popis}`}
+        className="shadow-borders-base block cursor-zoom-in overflow-hidden rounded-lg bg-white"
       >
         <img
           src={klip.url}
@@ -84,11 +86,17 @@ export const NavodGif = ({ klic, popis, klipy }: { klic: string; popis: string; 
           height={klip.height ?? undefined}
           className="block h-auto w-full"
         />
-        <span className="txt-compact-xsmall-plus absolute bottom-2 right-2 rounded-md bg-black/65 px-2 py-1 text-white opacity-90 group-hover:opacity-100">
-          Zvětšit
-        </span>
       </button>
-      <figcaption className="txt-compact-small text-ui-fg-subtle">{popis}</figcaption>
+      <figcaption className="flex items-start justify-between gap-3">
+        <span className="txt-compact-small text-ui-fg-subtle">{popis}</span>
+        <button
+          type="button"
+          onClick={() => setVelky(true)}
+          className="txt-compact-xsmall-plus text-ui-fg-subtle hover:text-ui-fg-base hover:bg-ui-bg-base-hover shadow-borders-base min-h-[28px] shrink-0 rounded-md px-2.5"
+        >
+          Zvětšit
+        </button>
+      </figcaption>
       {velky && <VelkyGif klip={klip} popis={popis} onClose={() => setVelky(false)} />}
     </figure>
   );

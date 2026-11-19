@@ -12,6 +12,7 @@ import { vetaMesice } from "../../lib/veta-mesice";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
+import { NavodTip } from "../../components/navod-tip";
 
 /**
  * Statistiky — every measurement in one room (Matěj, 2026-08-06).
@@ -92,7 +93,10 @@ const Inner = () => {
     <Container className="divide-y p-0">
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
         <div>
-          <Heading>Statistiky — celý obchod</Heading>
+          <span className="inline-flex items-center gap-1">
+            <Heading>Statistiky — celý obchod</Heading>
+            <NavodTip tema="statistiky.prehled" />
+          </span>
           <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
             Stejná čísla jako na pracovních stránkách, pohromadě a v grafech.
           </Text>
