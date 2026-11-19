@@ -1211,3 +1211,26 @@
     backdrop-filter: none !important;
   }
 }
+
+/*
+ * Bublina s počtem v horní liště (19. 11. 2026, Matěj: „oprav podklad
+ * u čísla"). Bublina měla pevných 13 px, ale číslo si písmo bralo z košíku
+ * (podlaha čitelnosti a na velkých obrazovkách 1,3rem) — vyšší než podklad,
+ * takže z něj přetékalo a horní okraj navíc ořízla pilulka lišty. Teď se
+ * bublina měří od svého čísla (em): podklad je vždycky kolem celé číslice,
+ * na každé šířce a v každém prohlížeči. A visí na pravém horním rohu ikony
+ * uvnitř pilulky — přes košík, nic ji neořízne.
+ */
+.navbar .navbar__right [data-testid="nav-cart-link"] p,
+.navbar .navbar__right .navbar__utility-count {
+  top: 0 !important;
+  right: -0.55em !important;
+  z-index: 1;
+  box-sizing: border-box;
+  min-width: 1.7em !important;
+  height: 1.7em !important;
+  padding: 0 0.35em !important;
+  font-size: max(10px, var(--nav-badge-font)) !important;
+  line-height: 1 !important;
+  font-variant-numeric: tabular-nums;
+}
