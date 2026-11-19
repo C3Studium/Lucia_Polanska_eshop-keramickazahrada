@@ -16,6 +16,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { defineRouteConfig } from "@medusajs/admin-sdk";
+import { ProductBulkDrawer } from "../../components/product-bulk-drawer";
 import {
   ArchiveBox, ArrowUturnLeft, DotsSix, ExclamationCircle, Eye, EyeSlash, Folder,
   ListBullet, ListTree, PencilSquare, Photo, SidebarRight, Trash,
@@ -225,6 +226,7 @@ const Inner = () => {
     "vse"
   );
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [renamingCategory, setRenamingCategory] = useState<{ id: string; name: string } | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
@@ -1240,6 +1242,12 @@ const Inner = () => {
                 <Text size="xsmall" className="text-ui-fg-subtle">
                   Vybráno: {selected.size}
                 </Text>
+                {/* Hromadné změny (19. 11. 2026): pravý panel společný
+                    s Produkty+ — zařazení do kolekcí a kategorií i doprava.
+                    Otevře se až na klik, ať nepřekryje seznam. */}
+                <Button size="small" onClick={() => setBulkOpen(true)}>
+                  Hromadné změny
+                </Button>
                 <Button size="small" variant="secondary"
                   isLoading={bulkArchive.isPending}
                   onClick={() => bulkArchive.mutate()}>
@@ -1651,6 +1659,26 @@ const Inner = () => {
             </div>
               );
             })}
+          <ProductBulkDrawer
+            products={products
+              .filter((product) => selected.has(product.id))
+              .map((product) => ({
+                id: product.id,
+                title: product.title,
+                status: product.status,
+                cod_allowed: Boolean(product.cod_allowed),
+                fragile: Boolean(product.fragile),
+                packaging_price: product.packaging_price ?? null,
+                clearance: Boolean(product.clearance),
+                no_promo: Boolean(product.no_promo),
+                shipping_class: product.shipping_class ?? "male",
+                collection_id: product.collection_id ?? null,
+                category_refs: product.category_refs ?? [],
+              }))}
+            open={bulkOpen}
+            onOpenChange={setBulkOpen}
+            onSaved={() => setSelected(new Set())}
+          />
           <div className="bg-ui-bg-base sticky bottom-0 mt-auto p-2">
             <Button size="small" variant="secondary" className="w-full"
               onClick={resetView}>
