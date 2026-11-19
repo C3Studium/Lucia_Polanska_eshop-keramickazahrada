@@ -72,6 +72,7 @@ import { ceskaChyba } from "../../lib/ceska-chyba";
 import { useScrollMemory } from "../../lib/scroll-memory"
 import { ulozSeznam } from "../../lib/seznam-kontext"
 import { useUrlPatch, useUrlState } from "../../lib/url-state"
+import { NavodTip } from "../../components/navod-tip"
 
 /**
  * Produkty+ — the catalog workbench, one tab per kind of thing she sells
@@ -1604,7 +1605,10 @@ const ProductsInner = () => {
       <header className="flex flex-col gap-4 px-6 pb-4 pt-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <Heading>Produkty — pracovní přehled</Heading>
+            <div className="flex items-center gap-1">
+              <Heading>Produkty — pracovní přehled</Heading>
+              <NavodTip tema="produkty.seznam" />
+            </div>
             <Text size="small" className="text-ui-fg-subtle mt-1 max-w-2xl">
               Klik na řádek otevře produkt. Balné a dopravu změníte klikem na
               štítky ve sloupci Doprava, ostatní pod „…“.
@@ -1843,6 +1847,7 @@ const ProductsInner = () => {
           <Button size="small" onClick={() => setBulkOpen(true)}>
             Hromadné změny
           </Button>
+          <NavodTip tema="produkty.hromadne" />
           {/* Rychlé a vratné rovnou z lišty (19. 11. 2026) — vrácení nabídne hláška. */}
           {anyHidden && (
             <Button size="small" variant="secondary" isLoading={bulkShow.isPending} onClick={() => bulkShow.mutate()}>

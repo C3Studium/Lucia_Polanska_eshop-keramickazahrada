@@ -1,4 +1,4 @@
-import { Button, Drawer, Text } from "@medusajs/ui";
+import { Popover, Text } from "@medusajs/ui";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -42,6 +42,7 @@ const VelkyGif = ({ klip, popis, onClose }: { klip: NavodKlip; popis: string; on
   return createPortal(
     <div
       role="dialog"
+      data-navod-velky=""
       aria-label={`Návod: ${popis}`}
       className="fixed inset-0 flex cursor-zoom-out items-center justify-center bg-black/80 p-4"
       style={{ zIndex: 2147483000, pointerEvents: "auto" }}
@@ -127,51 +128,89 @@ export const NavodObsah = ({ tema, klipy }: { tema: NavodTema; klipy?: Record<st
 /**
  * „?" v kroužku. `tema` = klíč z lib/navod-katalog.ts.
  * Do textu vedle nadpisu: <NavodTip tema="produkt.sleva" />.
+ *
+ * Otevře MALÉ okénko u otazníku (Matěj, 19. 11.: „na stránce v okénku,
+ * velký formát jen v Návodu"): GIF (klik zvětší), jedna-dvě věty a odkaz
+ * na celý návod s kroky. Víc klipů = přepínač nad GIFem.
  */
 export const NavodTip = ({ tema: klic, className = "" }: { tema: string; className?: string }) => {
   const [open, setOpen] = useState(false);
+  const [vybrany, setVybrany] = useState(0);
   const tema = temaPodleKlice(klic);
   const { data } = useNavodKlipy();
   if (!tema) return null;
+  const klip = tema.klipy[Math.min(vybrany, tema.klipy.length - 1)];
   return (
-    <>
-      <button
-        type="button"
-        aria-label={`Návod: ${tema.nazev}`}
-        title={`Jak na to: ${tema.nazev}`}
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          setOpen(true);
+    <Popover open={open} onOpenChange={setOpen}>
+      <Popover.Trigger asChild>
+        <button
+          type="button"
+          aria-label={`Návod: ${tema.nazev}`}
+          title={`Jak na to: ${tema.nazev}`}
+          onClick={(event) => event.stopPropagation()}
+          className={`text-ui-fg-muted hover:text-ui-fg-interactive data-[state=open]:text-ui-fg-interactive focus-visible:shadow-borders-focus inline-flex size-7 shrink-0 items-center justify-center rounded-full align-middle transition-colors ${className}`}
+        >
+          <span className="border-current txt-compact-xsmall-plus inline-flex size-[18px] items-center justify-center rounded-full border-[1.5px] leading-none">
+            ?
+          </span>
+        </button>
+      </Popover.Trigger>
+      <Popover.Content
+        align="start"
+        sideOffset={6}
+        collisionPadding={16}
+        className="z-[60] flex w-[520px] max-w-[calc(100vw-32px)] flex-col gap-3 p-3"
+        onClick={(event) => event.stopPropagation()}
+        onPointerDownOutside={(event) => {
+          /* Zvětšený GIF je mimo okénko — klik do něj okénko nezavírá. */
+          if ((event.target as HTMLElement | null)?.closest?.("[data-navod-velky]")) event.preventDefault();
         }}
-        className={`text-ui-fg-muted hover:text-ui-fg-interactive focus-visible:shadow-borders-focus inline-flex size-7 shrink-0 items-center justify-center rounded-full align-middle transition-colors ${className}`}
       >
-        <span className="border-current txt-compact-xsmall-plus inline-flex size-[18px] items-center justify-center rounded-full border-[1.5px] leading-none">
-          ?
-        </span>
-      </button>
-      <Drawer open={open} onOpenChange={setOpen}>
-        <Drawer.Content className="z-[60] max-w-[640px] sm:max-w-[640px]" overlayProps={{ className: "z-[60]" }}>
-          <Drawer.Header>
-            <Drawer.Title>{tema.nazev}</Drawer.Title>
-          </Drawer.Header>
-          <Drawer.Body className="overflow-y-auto">
-            <NavodObsah tema={tema} klipy={data?.klipy} />
-          </Drawer.Body>
-          <Drawer.Footer>
-            <Link
-              to={`/navod#${tema.klic}`}
-              onClick={() => setOpen(false)}
-              className="text-ui-fg-interactive txt-compact-small hover:underline mr-auto"
-            >
-              Všechny návody →
-            </Link>
-            <Button variant="secondary" onClick={() => setOpen(false)}>
-              Zavřít
-            </Button>
-          </Drawer.Footer>
-        </Drawer.Content>
-      </Drawer>
-    </>
+        <div className="flex items-start justify-between gap-3">
+          <Text size="small" weight="plus">
+            {tema.nazev}
+          </Text>
+          <button
+            type="button"
+            aria-label="Zavřít návod"
+            onClick={() => setOpen(false)}
+            className="text-ui-fg-muted hover:text-ui-fg-subtle -m-1 inline-flex size-7 shrink-0 items-center justify-center rounded-md"
+          >
+            ×
+          </button>
+        </div>
+        {tema.klipy.length > 1 && (
+          <div className="bg-ui-bg-subtle flex rounded-lg p-0.5" role="tablist">
+            {tema.klipy.map((k, index) => (
+              <button
+                key={k.klic}
+                type="button"
+                role="tab"
+                aria-selected={index === vybrany}
+                onClick={() => setVybrany(index)}
+                className={`txt-compact-xsmall-plus min-h-[30px] flex-1 rounded-md px-2 ${
+                  index === vybrany ? "bg-ui-bg-base shadow-borders-base text-ui-fg-base" : "text-ui-fg-subtle"
+                }`}
+              >
+                {k.popis.split(" — ")[0]}
+              </button>
+            ))}
+          </div>
+        )}
+        {klip && <NavodGif key={klip.klic} klic={klip.klic} popis={klip.popis} klipy={data?.klipy} />}
+        {tema.proc && (
+          <Text size="xsmall" className="text-ui-fg-subtle">
+            {tema.proc}
+          </Text>
+        )}
+        <Link
+          to={`/navod#${tema.klic}`}
+          onClick={() => setOpen(false)}
+          className="text-ui-fg-interactive txt-compact-small hover:underline self-start"
+        >
+          Celý návod s kroky →
+        </Link>
+      </Popover.Content>
+    </Popover>
   );
 };

@@ -84,7 +84,8 @@ export class Nahravka {
   constructor(p, o = {}) {
     this.p = p;
     this.S = p.S;
-    this.vyrez = o.vyrez ?? null;
+    /* Bez levého menu adminu (240 px) — v okénku otazníku je záběr čitelnější. */
+    this.vyrez = o.vyrez !== undefined ? o.vyrez : o.celeOkno ? null : { x: 240, y: 0, width: p.width - 240, height: p.height };
     this.sirka = o.sirka ?? 1100;
     this.snimky = [];
     this.krok = 0;
@@ -143,11 +144,14 @@ export class Nahravka {
   }
 
   async stred(cil) {
+    /* Položka rozbalovacího seznamu/nabídky: odrolovat jen uvnitř seznamu. */
+    const vSeznamu = await this.ev(`(() => { const el = (${cil}); if (!el || !el.closest('[role=listbox],[role=menu],[data-radix-popper-content-wrapper]')) return false; el.scrollIntoView({ block: 'nearest' }); return true; })()`);
+    if (vSeznamu) await this.snimek(250);
     const mimo = await this.ev(`(() => { const el = (${cil}); if (!el) return null; const r = el.getBoundingClientRect(); return r.top < 70 || r.bottom > innerHeight - 90; })()`);
-    if (mimo === null) throw new Error('prvek nenalezen: ' + cil.slice(0, 160));
+    if (mimo === null) throw new Error('prvek nenalezen: ' + cil.slice(0, 60) + ' … ' + cil.slice(-140));
     if (mimo) await this.rolovat(cil);
     const p = await this.ev(`(() => { const el = (${cil}); if (!el) return null; const r = el.getBoundingClientRect(); return { x: r.x + Math.min(r.width / 2, 60), y: r.y + r.height / 2 }; })()`);
-    if (!p) throw new Error('prvek nenalezen: ' + cil.slice(0, 160));
+    if (!p) throw new Error('prvek nenalezen: ' + cil.slice(0, 60) + ' … ' + cil.slice(-140));
     return p;
   }
 
@@ -265,6 +269,12 @@ export const txt = (text, scope = 'document') =>
 export const obs = (text, scope = 'document') =>
   `[...(${scope}).querySelectorAll('body *')].filter(e => e.textContent.includes(${q(text)}) && e.getClientRects().length && ![...e.children].some(c => c.textContent.includes(${q(text)})))[0]`;
 export const css = (sel, scope = 'document') => `(${scope}).querySelector(${q(sel)})`;
-export const dialog = `[...document.querySelectorAll('[role=dialog]')].filter(d => d.getClientRects().length).pop()`;
+export const dialog = `[...document.querySelectorAll('[role=dialog],[role=alertdialog]')].filter(d => d.getClientRects().length).pop()`;
 export const pole = (label, scope = 'document') =>
   `(() => { const l = [...(${scope}).querySelectorAll('label')].find(l => l.textContent.trim().startsWith(${q(label)})); if (l?.htmlFor) return document.getElementById(l.htmlFor); return l?.querySelector('input,textarea,select') ?? (${scope}).querySelector('[placeholder^=' + JSON.stringify(${q(label)}) + ']'); })()`;
+/** Přepínač podle textu popisku (InspectorSwitchRow: label htmlFor → switch). */
+export const prepinac = (label, scope = 'document') =>
+  `(() => { const l = [...(${scope}).querySelectorAll('label')].find(l => l.textContent.replace(/\\s+/g, ' ').trim() === ${q(label)}); return l ? (l.htmlFor ? document.getElementById(l.htmlFor) : l.querySelector('button,[role=switch]')) : null; })()`;
+/** Prvek podle aria-label (začátek). */
+export const aria = (label, scope = 'document') =>
+  `[...(${scope}).querySelectorAll('[aria-label]')].filter(e => e.getClientRects().length).find(e => e.getAttribute('aria-label').startsWith(${q(label)}))`;

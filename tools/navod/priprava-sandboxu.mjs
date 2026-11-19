@@ -66,7 +66,7 @@ for (const k of zdrojKategorie) {
 // ——— výběr výrobků: z každé kolekce pár s fotkou, se skladem i bez
 const vybrane = [];
 for (const k of zdrojKolekce) {
-  const z = vsechny.filter((p) => p.thumbnail && !p.metadata?.gift_voucher && (p.collection_id === k.id || (p.categories ?? []).some((c) => zdrojKategorie.find((x) => x.id === c.id)?.metadata?.collection_id === k.id)));
+  const z = vsechny.filter((p) => p.thumbnail && !p.metadata?.gift_voucher && !p.title.startsWith('Dárkový poukaz') && (p.collection_id === k.id || (p.categories ?? []).some((c) => zdrojKategorie.find((x) => x.id === c.id)?.metadata?.collection_id === k.id)));
   for (const p of z.slice(0, NA_KOLEKCI)) if (!vybrane.includes(p)) vybrane.push(p);
 }
 

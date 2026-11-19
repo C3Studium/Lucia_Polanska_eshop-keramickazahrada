@@ -9,6 +9,7 @@
 //                        [--voucher-kind=electronic|physical]  (poukaz z obchodu; electronic = bez dopravy)
 //                        [--shipping=none]                     (košík bez zboží k odeslání)
 //                        [--redeem=<hodnota Kč>]               (založí poukaz v adminu a uplatní jeho kód)
+//                        [--variant=<variant_id>]              (jiná varianta místo seedové — např. pro GIFy návodu)
 //
 // Výchozí: běžný výrobek, osobní odběr, „Zaplatím při vyzvednutí“ (pp_osobni-odber_pickup), CZ.
 // Výsledek: .artifacts/smoke-<order>.json + výpis do konzole.
@@ -38,6 +39,7 @@ const email = arg("email", `zakaznik+${Date.now()}@sandbox.test`)
 const voucherAmount = Number(arg("voucher-amount", "1500"))
 const voucherKind = arg("voucher-kind", "")
 const redeemValue = Number(arg("redeem", "0"))
+const variantOverride = arg("variant", "")
 // Verze právních dokumentů, jak je zapisuje storefront (recordCheckoutConsent).
 const termsVersion = arg("terms-version", "2026-11-03")
 
@@ -74,7 +76,7 @@ async function main() {
       : {}),
   }
   await store.post(`/store/carts/${cartId}/line-items-custom`, {
-    variant_id: product.variant_id,
+    variant_id: variantOverride || product.variant_id,
     quantity: 1,
     metadata: itemMetadata,
   })

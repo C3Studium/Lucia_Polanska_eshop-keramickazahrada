@@ -1065,6 +1065,7 @@ export const ProductOwnVyprodejRow = ({
         <InspectorRow
           id="produkt-vyprodej-vlastni"
           label="Výprodej tohoto produktu"
+          tip="produkt.vyprodej-vlastni"
           hint={hint}
           control={
             blocked || current ? undefined : (
@@ -1084,6 +1085,7 @@ export const ProductOwnVyprodejRow = ({
     <>
       <InspectorRow
         id="produkt-vyprodej-vlastni"
+        tip="produkt.vyprodej-vlastni"
         label={`Výprodej tohoto produktu −${own.percent} %`}
         hint={
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-0.5">
@@ -1155,6 +1157,7 @@ export const ProductVyprodejRow = ({
       <>
         <InspectorRow
           id="produkt-vyprodej"
+          tip="produkt.vyprodej-pridat"
           label="Výprodej"
           hint={blocked ?? "Není v žádném výprodeji."}
           control={
@@ -1176,6 +1179,7 @@ export const ProductVyprodejRow = ({
       <>
         <InspectorRow
           id="produkt-vyprodej"
+          tip="produkt.vyprodej-pridat"
           label="Výprodej"
           hint="Má vlastní výprodej (výš). Do výprodeje kolekce nebo kategorie půjde, až ten vlastní smažete."
         />
@@ -1191,6 +1195,7 @@ export const ProductVyprodejRow = ({
     <>
       <InspectorRow
         id="produkt-vyprodej"
+        tip="produkt.vyprodej-pridat"
         label={`Výprodej −${current.percent} %`}
         hint={
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-0.5">

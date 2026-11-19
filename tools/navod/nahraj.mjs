@@ -20,7 +20,7 @@ const VYSTUP = path.resolve(import.meta.dirname, '.vystup');
 const filtr = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 
 const scenare = [];
-for (const f of fs.readdirSync(path.resolve(import.meta.dirname, 'scenare')).filter((f) => f.endsWith('.mjs')).sort()) {
+for (const f of fs.readdirSync(path.resolve(import.meta.dirname, 'scenare')).filter((f) => f.endsWith('.mjs') && !f.startsWith('_')).sort()) {
   const mod = await import(pathToFileURL(path.resolve(import.meta.dirname, 'scenare', f)).href);
   for (const s of mod.default) scenare.push(s);
 }
@@ -55,7 +55,7 @@ process.on('SIGINT', async () => { await vratitNazvy(); process.exit(130); });
 let ok = 0, chyba = 0;
 await p.S('Network.clearBrowserCache');
 for (const s of vybrane) {
-  const n = new Nahravka(p, { sirka: s.sirka });
+  const n = new Nahravka(p, { sirka: s.sirka, celeOkno: s.celeOkno, vyrez: s.vyrez });
   const t0 = Date.now();
   let uklid = null;
   try {

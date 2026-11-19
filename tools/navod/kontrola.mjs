@@ -26,7 +26,7 @@ for (const c of cesty) {
   const r = await p.S('Page.captureScreenshot', { format: 'png' });
   fs.writeFileSync(path.join(out, `k${++i}.png`), Buffer.from(r.result.data, 'base64'));
   if (tipy.length) {
-    await n.ev(`document.querySelector('button[aria-label^="Návod: "]').click()`);
+    await n.ev(`(() => { const all = [...document.querySelectorAll('button[aria-label^="Návod: "]')]; const b = all.find(x => x.getAttribute('aria-label').includes(${JSON.stringify(process.env.TIP ?? '')})) ?? all[0]; b.scrollIntoView({ block: 'center' }); b.click(); })()`);
     await new Promise((r) => setTimeout(r, 2500));
     const r2 = await p.S('Page.captureScreenshot', { format: 'png' });
     fs.writeFileSync(path.join(out, `k${i}-tip.png`), Buffer.from(r2.result.data, 'base64'));
