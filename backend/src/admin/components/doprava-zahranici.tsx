@@ -34,6 +34,8 @@ type Country = {
   cp_ships: boolean;
   override_czk: number | null;
   quote: Quote | null;
+  /** Ceník ČP v Kč pro průměrnou váhu (i před uložením a bez kurzu). */
+  cp: { price_czk: number; service: string; up_to_kg: number; fallback: boolean } | null;
 };
 
 type State = {
@@ -95,6 +97,19 @@ export const DopravaZahranici = () => {
   }, [data]);
 
   const vahaSpatne = !(cislo(vaha) > 0 && cislo(vaha) <= 30);
+  /* Ceny v tabulce podle toho, co je právě napsané (ne až po uložení). */
+  const nahledKg = vahaSpatne ? null : cislo(vaha);
+  const nahled = useQuery<State>({
+    queryKey: ["international-shipping", "nahled", nahledKg, sluzba],
+    queryFn: () =>
+      sdk.client.fetch(
+        `/admin/international-shipping?kg=${nahledKg}&sluzba=${encodeURIComponent(sluzba)}`
+      ),
+    enabled: Boolean(data) && nahledKg !== null && Boolean(sluzba),
+    placeholderData: (previous) => previous,
+  });
+  const radky = (nahled.data ?? data)?.countries ?? [];
+  const tabulkaKg = nahled.data?.parcel_weight_kg ?? data?.parcel_weight_kg ?? 0;
   const obalSpatne = obal.trim() !== "" && !(cislo(obal) >= 0 && cislo(obal) <= 10);
   const vlastniSpatne = Object.values(vlastni).some((v) => v.trim() !== "" && !(cislo(v) > 0 && cislo(v) <= 20000));
   const zmeneno =
@@ -205,14 +220,15 @@ export const DopravaZahranici = () => {
             <tr className="txt-compact-xsmall-plus text-ui-fg-subtle">
               <th className="px-3 py-2">Posílat</th>
               <th className="px-3 py-2">Země</th>
-              <th className="px-3 py-2">Ceník ČP pro {kg(data.parcel_weight_kg)}</th>
+              <th className="px-3 py-2">Ceník ČP pro {kg(tabulkaKg)}</th>
               <th className="px-3 py-2">Vlastní cena</th>
               <th className="px-3 py-2 text-right">Zákazník platí</th>
             </tr>
           </thead>
           <tbody className="divide-y">
-            {data.countries.map((c) => {
+            {radky.map((c) => {
               const q = c.quote;
+              const vlastniCena = (vlastni[c.country_code] ?? "").trim();
               return (
                 <tr key={c.country_code} className="txt-compact-small">
                   <td className="px-3 py-2">
@@ -229,18 +245,16 @@ export const DopravaZahranici = () => {
                   <td className="px-3 py-2">
                     {!c.cp_ships ? (
                       <span className="text-ui-fg-muted">ČP sem balík nevozí</span>
-                    ) : q && !q.manual ? (
-                      <span>
-                        {kc(q.price_czk)}{" "}
+                    ) : c.cp ? (
+                      <span className={vlastniCena ? "text-ui-fg-muted line-through" : ""}>
+                        {kc(c.cp.price_czk)}{" "}
                         <span className="text-ui-fg-muted">
-                          · do {kg(q.up_to_kg ?? 0)}
-                          {q.fallback && q.service ? ` · ${kratce(q.service)}` : ""}
+                          · do {kg(c.cp.up_to_kg)}
+                          {c.cp.fallback ? ` · ${kratce(c.cp.service)}` : ""}
                         </span>
                       </span>
-                    ) : q?.manual ? (
-                      <span className="text-ui-fg-muted">— vlastní cena —</span>
                     ) : (
-                      <span className="text-ui-fg-muted">—</span>
+                      <span className="text-ui-fg-muted">takhle těžký nevozí</span>
                     )}
                   </td>
                   <td className="px-3 py-2">
@@ -252,7 +266,13 @@ export const DopravaZahranici = () => {
                     </span>
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">
-                    {q && c.enabled ? money(q.amount, q.currency_code) : <span className="text-ui-fg-muted">—</span>}
+                    {!zapnuto[c.country_code] ? (
+                      <span className="text-ui-fg-muted">neposílá se</span>
+                    ) : q && !vlastniCena ? (
+                      money(q.amount, q.currency_code)
+                    ) : (
+                      <span className="text-ui-fg-muted">po uložení</span>
+                    )}
                   </td>
                 </tr>
               );

@@ -26,7 +26,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     res.json(internationalCalculator(zeme, kg))
     return
   }
-  res.json(await getInternationalShipping(req.scope))
+  const kg = Number(String(req.query.kg ?? "").replace(",", "."))
+  const sluzba = typeof req.query.sluzba === "string" ? req.query.sluzba : null
+  res.json(await getInternationalShipping(req.scope, { kg: kg > 0 ? kg : null, service: sluzba }))
 }
 
 export const POST = async (req: MedusaRequest<SaveInternationalInput>, res: MedusaResponse) => {
