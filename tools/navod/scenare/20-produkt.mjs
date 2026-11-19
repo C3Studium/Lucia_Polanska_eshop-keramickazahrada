@@ -38,7 +38,7 @@ export default [
       await n.ev(`(() => { const t = ${pole}; t.focus(); t.setSelectionRange(t.value.length, t.value.length); t.scrollTop = t.scrollHeight; })()`);
       await n.S('Input.insertText', { text: '\n\n' });
       for (const kus of ['Vhodné ', 'i jako ', 'dárek ', 'pro zahrádkáře.']) { await n.S('Input.insertText', { text: kus }); await n.snimek(110); }
-      await n.klik(obs('Podtitulek'), { popisek: 'Klikněte jinam — popis se uloží sám', po: 400 });
+      await n.klik(`document.querySelector('#produkt-popis h2')`, { popisek: 'Klikněte jinam — popis se uloží sám', po: 400 });
       await n.mys(obs('Uloženo')).catch(() => undefined);
       await n.drz(1800);
     },
