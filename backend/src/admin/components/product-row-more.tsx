@@ -220,9 +220,9 @@ export const ProductRowMore = ({
 
 
   /* ————— Údaje, které řádek nemá (načtou se při otevření nabídky) ————— */
-  const detail = useQuery<{ product: { handle?: string; material: string | null; metadata: Record<string, unknown> | null } }>({
+  const detail = useQuery<{ product: { handle?: string; material: string | null; weight: number | null; metadata: Record<string, unknown> | null } }>({
     queryKey: ["row-menu", product.id],
-    queryFn: () => sdk.client.fetch(`/admin/products/${product.id}?fields=handle,material,metadata`),
+    queryFn: () => sdk.client.fetch(`/admin/products/${product.id}?fields=handle,material,weight,metadata`),
     enabled: menuOpen,
   });
   const materialy = useQuery<{ materials: string[] }>({
@@ -242,6 +242,8 @@ export const ProductRowMore = ({
     packaging_price: (meta.packaging_price ?? null) as number | null,
     dimensions: typeof meta.dimensions === "string" ? meta.dimensions : "",
     material: detail.data?.product.material ?? "",
+    /* Hmotnost v gramech (product.weight) — 19. 11. 2026, Matěj. */
+    weight: (detail.data?.product.weight ?? null) as number | null,
   };
 
   /*
@@ -252,6 +254,7 @@ export const ProductRowMore = ({
   const [navrh, setNavrh] = useState<Partial<Record<keyof typeof ulozeno, unknown>>>({});
   const [balneText, setBalneText] = useState<string | null>(null);
   const [rozmeryText, setRozmeryText] = useState<string | null>(null);
+  const [hmotnostText, setHmotnostText] = useState<string | null>(null);
   const hodnota = <K extends keyof typeof ulozeno>(k: K) => (k in navrh ? (navrh[k] as (typeof ulozeno)[K]) : ulozeno[k]);
   const zmenit = (k: keyof typeof ulozeno, v: unknown) =>
     setNavrh((prev) => {
@@ -264,6 +267,7 @@ export const ProductRowMore = ({
     setNavrh({});
     setBalneText(null);
     setRozmeryText(null);
+    setHmotnostText(null);
   };
   /* Balné a rozměry se do návrhu propíšou z pole hned při psaní. */
   useEffect(() => {
@@ -279,7 +283,17 @@ export const ProductRowMore = ({
     zmenit("dimensions", rozmeryText.trim());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rozmeryText]);
+  useEffect(() => {
+    if (hmotnostText === null) return;
+    const t = hmotnostText.trim().replace(/\s/g, "");
+    const n = t === "" ? null : Number(t.replace(",", "."));
+    if (n !== null && (!Number.isFinite(n) || n < 0)) return;
+    zmenit("weight", n === null ? null : Math.round(n));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hmotnostText]);
   const pocetZmen = Object.keys(navrh).length;
+  const hmotnostSpatne =
+    hmotnostText !== null && hmotnostText.trim() !== "" && !(Number(hmotnostText.trim().replace(/\s/g, "").replace(",", ".")) >= 0);
   const balneSpatne = balneText !== null && balneText.trim() !== "" && !(Number(balneText.trim().replace(",", ".")) >= 0);
 
   /* Telefon: okno nastavení MÍSTO nabídky (s „← Zpět do nabídky"). */
@@ -304,12 +318,18 @@ export const ProductRowMore = ({
 
   const ulozit = useMutation({
     mutationFn: async () => {
-      const { material, ...ostatni } = navrh;
+      const { material, weight, ...ostatni } = navrh;
       const telo: Record<string, unknown> = { ...ostatni };
       if ("dimensions" in telo) telo.dimensions = (telo.dimensions as string) || null;
       if (Object.keys(telo).length) await writeFlags(telo);
-      if (material !== undefined) {
-        await sdk.client.fetch(`/admin/products/${product.id}`, { method: "POST", body: { material: (material as string) || null } });
+      if (material !== undefined || weight !== undefined) {
+        await sdk.client.fetch(`/admin/products/${product.id}`, {
+          method: "POST",
+          body: {
+            ...(material !== undefined ? { material: (material as string) || null } : {}),
+            ...(weight !== undefined ? { weight: weight as number | null } : {}),
+          },
+        });
       }
     },
     onSuccess: async () => {
@@ -436,6 +456,21 @@ export const ProductRowMore = ({
                   <span className="txt-compact-small text-ui-fg-muted">Kč</span>
                 </span>
               </Radek>
+              <Radek nazev="Hmotnost" popis={hmotnostSpatne ? "Napište číslo v gramech, třeba 450" : "V gramech; z ní se počítá doprava"}>
+                <span className="flex items-center gap-1">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    aria-label="Hmotnost v gramech"
+                    placeholder="—"
+                    value={hmotnostText ?? (ulozeno.weight === null ? "" : String(ulozeno.weight))}
+                    disabled={nacita}
+                    onChange={(e) => setHmotnostText(e.target.value)}
+                    className={`bg-ui-bg-field txt-compact-small min-h-[32px] w-20 rounded-md border px-2 text-right ${hmotnostSpatne ? "border-ui-border-error" : ram("weight")}`}
+                  />
+                  <span className="txt-compact-small text-ui-fg-muted">g</span>
+                </span>
+              </Radek>
               <Otevrit aktivni={panel === "profile"} onToggle={() => setPanel(panel === "profile" ? null : "profile")} nazev="Povolené dopravy" popis="Profil dopravy — pokročilé, mění se zřídka" />
             </Skupina>
           )}
@@ -523,7 +558,7 @@ export const ProductRowMore = ({
               Zrušit vše
             </Button>
           )}
-          <Button size="small" disabled={pocetZmen === 0 || balneSpatne} isLoading={ulozit.isPending} onClick={() => ulozit.mutate()}>
+          <Button size="small" disabled={pocetZmen === 0 || balneSpatne || hmotnostSpatne} isLoading={ulozit.isPending} onClick={() => ulozit.mutate()}>
             {pocetZmen > 0 ? `Uložit vše (${pocetZmen})` : "Uložit vše"}
           </Button>
         </div>

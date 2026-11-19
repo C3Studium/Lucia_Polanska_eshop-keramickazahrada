@@ -147,6 +147,8 @@ export const ProductBulkDrawer = ({
   /* Materiál a rozměry (19. 11. 2026): "__beze" = nesahat, "__none" = bez materiálu. */
   const [material, setMaterial] = useState<string>("__beze");
   const [rozmery, setRozmery] = useState("");
+  /* Hmotnost v gramech (product.weight), prázdné = beze změny — 19. 11. 2026. */
+  const [hmotnost, setHmotnost] = useState("");
   /* Objednání bez skladu (19. 11. 2026): "__beze" = nesahat. */
   const [bezSkladu, setBezSkladu] = useState<"__beze" | "on" | "off">("__beze");
   const [zprava, setZprava] = useState("");
@@ -188,6 +190,7 @@ export const ProductBulkDrawer = ({
     setFlags({});
     setMaterial("__beze");
     setRozmery("");
+    setHmotnost("");
     setBezSkladu("__beze");
     setZprava("");
     setCeny({});
@@ -252,6 +255,9 @@ export const ProductBulkDrawer = ({
     (item) => item.state === "running" || item.state === "scheduled" || item.state === "off"
   );
 
+  const hmotnostCislo = Number(hmotnost.trim().replace(/\s/g, "").replace(",", "."));
+  const hmotnostZadana = hmotnost.trim() !== "" && Number.isFinite(hmotnostCislo) && hmotnostCislo >= 0;
+  const hmotnostSpatna = hmotnost.trim() !== "" && !hmotnostZadana;
   const flagKeys = Object.keys(flags) as (keyof FlagDraft)[];
   const changeCount =
     flagKeys.length +
@@ -261,6 +267,7 @@ export const ProductBulkDrawer = ({
     (saleKind !== "none" && saleValid ? 1 : 0) +
     (material !== "__beze" ? 1 : 0) +
     (rozmery.trim() ? 1 : 0) +
+    (hmotnostZadana ? 1 : 0) +
     (bezSkladu !== "__beze" ? 1 : 0) +
     (zprava.trim() ? 1 : 0) +
     zmenenychCen;
@@ -287,6 +294,7 @@ export const ProductBulkDrawer = ({
         const body: Record<string, unknown> = {};
         if (status && status !== product.status) body.status = status;
         if (material !== "__beze") body.material = material === "__none" ? null : material;
+        if (hmotnostZadana) body.weight = Math.round(hmotnostCislo);
         if (classDirty) {
           const next = applyBulkClassification(
             {
@@ -525,6 +533,20 @@ export const ProductBulkDrawer = ({
           <Text size="small" className="text-ui-fg-muted">Kč</Text>
         </span>
       </Radek>
+      <Radek nazev="Hmotnost" zmeneno={hmotnostZadana} popis={hmotnostSpatna ? "Napište číslo v gramech, třeba 450" : "V gramech všem stejná; prázdné = beze změny"}>
+        <span className="flex shrink-0 items-center gap-1">
+          <input
+            type="text"
+            inputMode="numeric"
+            aria-label="Hmotnost u všech vybraných"
+            placeholder="beze změny"
+            value={hmotnost}
+            onChange={(event) => setHmotnost(event.target.value)}
+            className={`${poleTrida(hmotnostZadana, hmotnostSpatna)} w-24 text-right tabular-nums`}
+          />
+          <Text size="small" className="text-ui-fg-muted">g</Text>
+        </span>
+      </Radek>
     </Skupina>
   );
 
@@ -745,7 +767,7 @@ export const ProductBulkDrawer = ({
             <Button size="small" variant="secondary" disabled={save.isPending} onClick={() => onOpenChange(false)}>
               {mode === "zarazeni" ? "Zrušit" : "Zrušit vše"}
             </Button>
-            <Button size="small" disabled={!dirty} isLoading={save.isPending} onClick={() => save.mutate()}>
+            <Button size="small" disabled={!dirty || hmotnostSpatna} isLoading={save.isPending} onClick={() => save.mutate()}>
               {mode === "zarazeni" ? "Uložit" : dirty ? `Uložit vše (${changeCount})` : "Uložit vše"}
             </Button>
           </div>
