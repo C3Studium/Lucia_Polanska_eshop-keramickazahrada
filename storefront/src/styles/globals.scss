@@ -230,7 +230,8 @@ body {
   height: fit-content;
   width: 100%;
   position: relative;
-  max-width: 100dvw;
+  /* `100dvw` starý Safari (do 15.4) neznal a pravidlo zahodil — `100%` zná každý. */
+  max-width: 100%;
 
   * {
     box-sizing: border-box;
@@ -247,6 +248,30 @@ body {
 html,
 body {
   scrollbar-width: none;
+}
+
+/*
+ * Nic nesmí přetéct doprava (19. 11. 2026, Matěj ze starého iPhonu).
+ *
+ * Jen na `html`: odtud se `overflow` přenese na celé okno a lepkavé prvky
+ * (sticky) dál fungují. Na `body` by z něj udělal vlastní posuvník a všechny
+ * `position: sticky` na webu (souhrn košíku, filtry, galerie…) by přestaly
+ * držet.
+ */
+html {
+  overflow-x: hidden;
+}
+
+/*
+ * Klávesnice na telefonu otevřená (`ViewportGuard` razí `kz-klavesnice`):
+ * spodní lišta a pruh „K pokladně" by visely nad klávesnicí přes pole, do
+ * kterého se píše. Schovají se a po zavření klávesnice se vrátí — ne ale
+ * ten, ve kterém se zrovna píše (slevový kód v pruhu na tabletu).
+ */
+html.kz-klavesnice .navbar__bottomBar:not(:focus-within),
+html.kz-klavesnice [data-kz-nad-klavesnici="skryt"]:not(:focus-within) {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 html::-webkit-scrollbar,

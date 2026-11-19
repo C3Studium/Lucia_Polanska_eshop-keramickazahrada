@@ -151,9 +151,9 @@ export default function AboutMe ({
         itemValue(texts, label)?.trim() || fallback
     const eyebrow = text("oboci", "O mně · keramická zahrada")
     const metaLeft = text("lista.vlevo", "Ručně tvořeno")
-    const metaRight = text("lista.vpravo", "Písek · od roku 2014")
+    const metaRight = text("lista.vpravo", "Putim · od roku 2014")
     const greeting = text("pozdrav", "Těší mě")
-    const portraitCaption = text("portret", "Ateliér · Písek")
+    const portraitCaption = text("portret", "Ateliér · Putim")
     const chapterName = text("kapitola", "Můj příběh")
     const nameLead = texts?.title?.trim() || "Jmenuji se"
     const nameSignature = texts?.headline?.trim() || "Lucie Polanská"
@@ -321,7 +321,7 @@ export default function AboutMe ({
         ease: growEase,
     })
     /* Popisek desky přichází až s růstem — během výměny fotky by se překrýval
-       s popiskem karty portrétu („Ateliér · Písek" na tomtéž rohu). */
+       s popiskem karty portrétu („Ateliér · Putim" na tomtéž rohu). */
     const proxyCaptionOpacity = useTransform(
         scrollYProgress,
         [0.3, 0.46],

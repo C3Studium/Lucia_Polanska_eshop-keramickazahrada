@@ -34,13 +34,27 @@ const SE_ZAKAZKOU: Krok[] = [
   ZAKLADNI[3],
 ]
 
+/*
+ * Poznámka k běžné objednávce (19. 11. 2026, Matěj): tentýž krok jako zadání
+ * zakázky, jen nepovinný a bez fotek — „Poznámka od zákazníka" v adminu.
+ */
+const SE_POZNAMKOU: Krok[] = [
+  ZAKLADNI[0],
+  ZAKLADNI[1],
+  { key: "brief", label: "Poznámka", text: "Chcete nám něco vzkázat? Nepovinné." },
+  ZAKLADNI[2],
+  ZAKLADNI[3],
+]
+
 /** Věta pod názvem kroku — čte ji i hlavička formuláře (`step-bubbles`). */
 export const POPIS_KROKU: Record<string, string> = Object.fromEntries(
   [...ZAKLADNI, ...SE_ZAKAZKOU].map((krok) => [krok.key, krok.text])
 )
+export const popisKroku = (key: string, hasBrief: boolean): string | undefined =>
+  (hasBrief ? SE_ZAKAZKOU : SE_POZNAMKOU).find((krok) => krok.key === key)?.text
 
 export default function CheckoutStepList({ hasBrief = false }: { hasBrief?: boolean }) {
-  const STEPS = hasBrief ? SE_ZAKAZKOU : ZAKLADNI
+  const STEPS = hasBrief ? SE_ZAKAZKOU : SE_POZNAMKOU
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()

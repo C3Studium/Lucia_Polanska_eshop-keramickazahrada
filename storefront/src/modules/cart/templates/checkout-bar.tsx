@@ -47,7 +47,7 @@ export default function CheckoutBar({
   const shippingChosen =
     (cart.shipping_methods?.length ?? 0) > 0 || !cartNeedsShipping(cart)
   return (
-    <div className={s.root}>
+    <div className={s.root} data-kz-nad-klavesnici="skryt">
       {/* Souhrn, který na svislém tabletu stojí místo panelu pod výpisem.
           Řádky jsou popisek vlevo a částka vpravo, jako v tom panelu — jen bez
           slevového kódu, ten se zadává tam a rozbaluje si vlastní pole.

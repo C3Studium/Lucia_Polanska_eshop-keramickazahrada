@@ -99,7 +99,7 @@ export default function VyrobaCta({ copy }: { copy?: CopyBlocks }) {
 
     const block = copy?.["vyroba.cta"]
     const railLeft = block?.accent?.[0]?.trim() || "08 · Výsledek"
-    const railRight = block?.accent?.[1]?.trim() || "Ručně vytvořeno v Písku"
+    const railRight = block?.accent?.[1]?.trim() || "Ručně vytvořeno v Putimi"
     const eyebrow = block?.accent?.[2]?.trim() || "Z mých rukou k vám domů"
     const captionLeft = block?.accent?.[3]?.trim() || "Hotový kus"
     const captionRight = block?.accent?.[4]?.trim() || "Keramická zahrada"

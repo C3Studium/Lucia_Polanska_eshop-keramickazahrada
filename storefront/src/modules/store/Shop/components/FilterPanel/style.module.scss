@@ -501,3 +501,29 @@
   .priceInputs { font-size: .9375rem; }
   .priceInputs input { font-size: 1rem; }
 }
+
+/*
+ * Aktivní filtr na první pohled (19. 11. 2026, Matěj: „aktivní filtry
+ * nejsou moc vidět"). Dřív ho od ostatních dělil jen o kus světlejší text
+ * a 1,75rem čárka — na tmavém panelu, zvlášť na telefonu venku, splýval.
+ * Teď světlý podklad přes celý řádek, proužek vlevo a tučné písmo.
+ * Barvy přes rgb() s průhledností, žádné color-mix — i pro starší Safari.
+ */
+.categoryList .activeCategory {
+  margin-inline: -.625rem;
+  padding-inline: .625rem !important;
+  border-radius: .5rem;
+  background: rgb(var(--cream-06-rgb) / .16) !important;
+  box-shadow: inset 3px 0 0 var(--cream-06);
+  color: var(--cream-06) !important;
+  font-weight: 600;
+}
+
+.toggle[aria-pressed="true"] {
+  font-weight: 600;
+}
+
+.toggle[aria-pressed="true"] > span {
+  border-color: var(--cream-06);
+  background: rgb(var(--cream-06-rgb) / .18);
+}

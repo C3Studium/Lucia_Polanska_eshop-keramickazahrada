@@ -683,6 +683,33 @@ export default function NavbarSearch({
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [isOpen, onClose])
 
+  /*
+   * Ťuknutí MIMO hledání ho zavře (19. 11. 2026, Matěj: „on phones, when you
+   * click outside the component close it"). Podklad za panelem to uměl jen
+   * kliknutím — a s otevřenou klávesnicí na iPhonu klik na podklad často
+   * nedošel. `touchstart` přijde vždycky, i když se prst hned rozjede.
+   * Mimo = ani panel výsledků, ani pole hledání v liště (to se přepíná samo).
+   * Ve Studiu (`studioOpen`) zůstává otevřené — tam ho drží rám.
+   */
+  const panelRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!openedByVisitor) return
+    const onOutside = (event: Event) => {
+      const target = event.target as Element | null
+      const el = target && target.nodeType === 1 ? target : target?.parentElement
+      if (!el) return
+      if (panelRef.current?.contains(el)) return
+      if (el.closest("[data-search-control]")) return
+      onClose()
+    }
+    document.addEventListener("touchstart", onOutside, { capture: true, passive: true })
+    document.addEventListener("mousedown", onOutside, true)
+    return () => {
+      document.removeEventListener("touchstart", onOutside, true)
+      document.removeEventListener("mousedown", onOutside, true)
+    }
+  }, [openedByVisitor, onClose])
+
   useEffect(() => {
     if (!isOpen) {
       setEntranceComplete(false)
@@ -717,6 +744,7 @@ export default function NavbarSearch({
             onClick={onClose}
           />
           <motion.div
+            ref={panelRef}
             className={styles.panel}
             initial={{
               opacity: 0.72,

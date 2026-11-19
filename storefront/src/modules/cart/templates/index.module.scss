@@ -221,11 +221,16 @@
  * (má tam sotva 366 px vnitřní šířky), takže tam panel musí zůstat — jinak by
  * se souhrn ztratil úplně.
  */
-@media (orientation: portrait) and (min-width: 600px) and (max-width: 1179.98px) {
-  .right {
-    display: none;
-  }
-}
+/*
+ * VYPNUTO 19. 11. 2026 spolu s plovoucím pruhem (viz templates/index.tsx):
+ * souhrn stojí na konci košíku pod výrobky na všech zařízeních.
+ *
+ * @media (orientation: portrait) and (min-width: 600px) and (max-width: 1179.98px) {
+ *   .right {
+ *     display: none;
+ *   }
+ * }
+ */
 
 /*
  * ─── Notebook naležato: víc místa výpisu, míň souhrnu ───────────────────────

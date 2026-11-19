@@ -38,11 +38,11 @@ export default function MainVyroba({
   useEditRerender()
 
   const railLeft = block?.accent?.[0]?.trim() || "Výroba · Keramická zahrada"
-  const railRight = block?.accent?.[1]?.trim() || "Písek · Ručně od roku 2014"
+  const railRight = block?.accent?.[1]?.trim() || "Putim · Ručně od roku 2014"
   const eyebrow = block?.accent?.[2]?.trim() || "Sedm kroků a dva výpaly."
   const footerLabel = block?.accent?.[3]?.trim() || "Materiál · Ruce · Oheň"
   const scrollCta = block?.accent?.[4]?.trim() || "Objevovat proces"
-  const stamp = block?.accent?.[5]?.trim() || "Ateliér · Písek"
+  const stamp = block?.accent?.[5]?.trim() || "Ateliér · Putim"
   const titleLead = block?.title?.trim() || "Než vznikne"
   const titleAccent = block?.headline?.trim() || "jediný kus."
   const footerText = block?.bodyText?.trim() || ""

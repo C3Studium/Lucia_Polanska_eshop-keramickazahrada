@@ -382,7 +382,7 @@ export default function AboutInfo () {
                         </motion.div>
                     </motion.div>
                     <span className="image__note">
-                        <small>Ateliér · Písek</small>
+                        <small>Ateliér · Putim</small>
                         Ručně, pomalu,<br/>s respektem k materiálu
                     </span>
                     <motion.div

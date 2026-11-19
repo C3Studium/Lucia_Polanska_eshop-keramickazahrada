@@ -333,7 +333,7 @@ export default function LegalDocument({
 
         <div className={styles.heroGrid}>
           <div className={styles.heroTitle}>
-            <p>Keramická zahrada · Písek</p>
+            <p>Keramická zahrada · Putim</p>
             <h1 id="legal-document-title">{doc.title}</h1>
             <em>{presentation.accent}</em>
           </div>

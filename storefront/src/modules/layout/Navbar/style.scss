@@ -1186,3 +1186,28 @@
   -webkit-overflow-scrolling: touch;
 }
 
+
+/*
+ * Plynulost posunu na telefonech, i starších (19. 11. 2026).
+ *
+ * Pilulky lišty nahoře i dole jsou pevně umístěné nad pohyblivou stránkou
+ * a `backdrop-filter: blur(18px)` pod nimi prohlížeč přepočítává v každém
+ * snímku posunu. Nové iPhony to zvládnou, starší a prohlížeče nad WebKitem
+ * (Seznam) pak posun sekají. Na dotyku bez rozmazání, podklad o kus
+ * neprůhlednější (88 → 96 %) — na oko stejná krémová pilulka.
+ * Vysouvací panel zemí (`.countryOptions`) i ostatní panely zůstávají.
+ */
+@media (hover: none), (pointer: coarse) {
+  .navbar {
+    --nav-surface: rgb(var(--cream-10-rgb) / .96);
+  }
+
+  .navbar .navbar__left,
+  .navbar .navbar__center,
+  .navbar .navbar__menu,
+  .navbar .navbar__right,
+  .navbar .navbar__bottomBar::before {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}

@@ -381,7 +381,8 @@
         top: auto;
         right: 12px;
         bottom: calc(
-          var(--nav-bottom-height, 56px) + var(--nav-bottom-inset, 12px) + 10px
+          var(--nav-bottom-height, 56px) + var(--nav-bottom-inset, 12px) + 10px +
+            var(--kz-ios-bottom, 0px)
         );
         left: 12px;
 
@@ -396,7 +397,8 @@
            screen is 800px+ and a sheet that wide stops reading as a panel. */
         max-width: 460px;
         max-height: calc(
-          100svh - var(--nav-bottom-height, 56px) - var(--nav-bottom-inset, 12px) - 34px
+          100svh - var(--nav-bottom-height, 56px) - var(--nav-bottom-inset, 12px) - 34px -
+            var(--kz-ios-bottom, 0px)
         );
         margin-inline: auto;
         transform-origin: bottom center;
@@ -788,11 +790,73 @@
   padding-block: 0 !important;
 }
 
-/* Telefon: tlačítka jen výška obsahu + 2,5 px nahoře a dole, bez okrajů
-   (13. 11. 2026, Matěj: „tlačítka jsou na telefonu moc velká"). */
+/*
+ * Ořez na dva řádky patří NÁZVU, ne celému obalu (19. 11. 2026).
+ *
+ * `.itemTitle` drží název, variantu i „Balné · 50,-". S ořezem na obalu
+ * se dva řádky vyčerpaly názvem a variantou a balné skončilo za hranou
+ * („Bal…" — Matěj z telefonu), přes něj pak leželo množství. Naměřeno:
+ * obal 37 px, obsah 58 px.
+ */
+.cartItem .itemDetails .itemInfo .itemHeader .itemTitle {
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  line-clamp: none !important;
+  overflow: visible !important;
+}
+
+.cartItem .itemTitle h3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.cartItem .itemTitle [data-testid="packaging-note"] {
+  width: 100%;
+}
+
+.cartItem .itemTitle [data-testid="packaging-note"] > span {
+  white-space: nowrap;
+}
+
+/*
+ * Telefon: tlačítka panelu dvojnásobně vysoká (19. 11. 2026, Matěj:
+ * „on phones double the height of the buttons") — 24–26 px → 48 px.
+ *
+ * Pevná výška, NIKDY `height: auto`. „Přejít do košíku" je posuvník se
+ * dvěma barevnými vrstvami po 100 % výšky tlačítka, z nichž je vidět jen
+ * jedna. Dřívější `height: auto` tu stálo na tlačítku samém: 100 % z „auto"
+ * je výška obsahu, obě vrstvy se postavily pod sebe a na telefonu bylo
+ * vidět olivové i černé „Přejít do košíku" najednou.
+ */
 @media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
-  .goToCartBtn,
-  .goToCartBtn > *,
+  .ClickButton.goToCartBtn {
+    width: 100% !important;
+    height: auto !important;
+    margin-block: 0 !important;
+    padding: 0 !important;
+  }
+
+  .ClickButton.goToCartBtn .button {
+    width: 100% !important;
+    min-height: 0 !important;
+    height: 3.75rem !important;
+    padding: 0 !important;
+    border-radius: 999px;
+  }
+
+  .ClickButton.goToCartBtn .button .slider,
+  .ClickButton.goToCartBtn .button .el {
+    height: 100% !important;
+  }
+
+  .ClickButton.goToCartBtn .el p {
+    font-size: max(var(--text-min, 0px), calc(1.0625rem * var(--read, 1)));
+    white-space: nowrap;
+  }
+
   .emptyStoreButton,
   .emptyStoreButton > * {
     min-height: 0 !important;
@@ -800,7 +864,26 @@
     margin-block: 0 !important;
     padding-block: 2.5px !important;
   }
+
   .cartItem {
-    --qty-stepper-height: 1.875rem;
+    --qty-stepper-height: 3.75rem;
+    --qty-stepper-side: 3.25rem;
+    --qty-stepper-mid: 2.75rem;
+    --qty-stepper-glyph: 1.25rem;
+  }
+
+  .cartItem .itemDetails .itemActions {
+    margin-top: 0.625rem;
+  }
+
+  .cartItem .removeBtn {
+    font-size: max(var(--text-min, 0px), calc(.9375rem * var(--read, 1))) !important;
+  }
+
+  .cartItem :global([data-testid="product-delete-button"]),
+  .cartItem .removeBtn button {
+    min-height: 3.75rem !important;
+    height: 3.75rem !important;
+    padding-inline: 1.125rem !important;
   }
 }

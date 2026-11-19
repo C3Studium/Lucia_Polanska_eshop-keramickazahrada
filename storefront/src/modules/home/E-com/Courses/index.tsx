@@ -48,7 +48,7 @@ export default function Courses({ copy }: { copy?: CopyBlocks }) {
 
   const block = copy?.["index.ecom-courses"]
   const railLeft = block?.accent?.[0]?.trim() || "04 · Kurzy"
-  const railRight = block?.accent?.[1]?.trim() || "Malé skupiny · Písek"
+  const railRight = block?.accent?.[1]?.trim() || "Malé skupiny · Putim"
   const headlineLead = block?.title?.trim() || "U hlíny se nedá spěchat."
   const headlineAccent = block?.headline?.trim() || "A to je na tom to nejlepší."
   const lede =

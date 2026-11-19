@@ -50,6 +50,8 @@ export type MerchantOrderSummary = {
   discount: string | null
   shipping: string
   total: string
+  /** Poznámka zákazníka z kroku „Poznámka" v pokladně (19. 11. 2026). */
+  customer_note: string | null
   admin_url: string | null
 }
 
@@ -150,6 +152,7 @@ export const buildMerchantOrderSummary = (order: any, adminUrl?: string | null):
     discount: discount > 0.005 ? `− ${money(discount)}` : null,
     shipping: money(shipping),
     total: money(order?.total),
+    customer_note: text(meta.customer_note) || null,
     admin_url: adminUrl && order?.id ? `${adminUrl.replace(/\/+$/, "")}/app/orders/${order.id}` : null,
   }
 }

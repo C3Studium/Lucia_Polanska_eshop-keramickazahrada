@@ -47,6 +47,10 @@ const ObjednavkaBlok = ({ order }: { order: MerchantOrderSummary }) => (
     <LedgerRow label="Číslo" value={order.number} />
     {order.created ? <LedgerRow label="Přijato" value={order.created} /> : null}
     <LedgerRow label="Zákazník" value={<MultiLine value={[order.customer, order.contact].filter(Boolean).join("\n")} />} />
+    {/* Poznámka z kroku „Poznámka" v pokladně (19. 11. 2026). */}
+    {order.customer_note ? (
+      <LedgerRow label="Poznámka od zákazníka" value={<MultiLine value={order.customer_note} />} />
+    ) : null}
     <LedgerRow label="Doprava" value={<MultiLine value={`${order.shipping_method}\n${order.shipping_price}`} />} />
     {order.shipping_address ? (
       <LedgerRow label="Doručit na" value={<MultiLine value={order.shipping_address} />} />

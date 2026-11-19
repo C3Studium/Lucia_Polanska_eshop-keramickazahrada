@@ -123,7 +123,16 @@ export default function SearchButton({
   }, [])
 
   useEffect(() => {
-    if (!isActive) return
+    /*
+     * Zavřené hledání = zavřená klávesnice (19. 11. 2026). Pole zůstává
+     * v DOM (kvůli fokusu v ťuknutí, viz onClick níž), takže po zavření
+     * křížkem nebo ťuknutím mimo drželo fokus dál — neviditelné pole
+     * a klávesnice přes půl obrazovky, která nešla ničím zavřít.
+     */
+    if (!isActive) {
+      if (document.activeElement === inputRef.current) inputRef.current?.blur()
+      return
+    }
 
     const focusTimer = window.setTimeout(() => inputRef.current?.focus(), 250)
     return () => window.clearTimeout(focusTimer)
@@ -136,6 +145,8 @@ export default function SearchButton({
   return (
     <motion.div
       className={`${styles.searchControl} ${isActive ? styles.active : ""}`}
+      /* Část hledání: ťuknutí sem hledání nezavírá (NavbarSearch). */
+      data-search-control=""
       initial={false}
       animate={{ width: isActive ? openWidth : closedWidth }}
       transition={transition}

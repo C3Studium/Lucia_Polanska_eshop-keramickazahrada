@@ -51,7 +51,7 @@
      for none that is not there. */
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  min-height: 100svh;
   /* The 6rem floor is the PORTRAIT one and it stays. 12vh of a 568px-tall phone is 68px, which
      is under the fixed navbar's 66px bottom edge; 6rem holds the eyebrow rule 30px clear of it.
      The short laptop needs the opposite and gets it on its own axis, in the h(xs) block below. */

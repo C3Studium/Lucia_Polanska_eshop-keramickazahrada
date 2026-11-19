@@ -35,7 +35,14 @@
   position: fixed;
   z-index: 2;
   right: calc(var(--page-inset, 0px) + var(--nav-bottom-inset));
-  bottom: var(--nav-bottom-inset);
+  /*
+   * `--kz-ios-bottom` (19. 11. 2026): když iPhone Safari sbalí svou spodní
+   * lištu, leží sbalená adresa / domovský pruh PŘES spodní okraj stránky —
+   * naše lišta za nimi byla schovaná a ťuknutí na ni si vzal Safari. Hlídač
+   * okna (lib/util/viewport-guard) ji o tu výšku zvedne; jinde je to 0.
+   */
+  bottom: calc(var(--nav-bottom-inset) + var(--kz-ios-bottom, 0px));
+  transition: bottom 0.25s ease;
   left: calc(var(--page-inset, 0px) + var(--nav-bottom-inset));
 
   /*

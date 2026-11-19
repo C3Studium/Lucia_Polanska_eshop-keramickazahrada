@@ -14,7 +14,7 @@ import { GiftVoucherLineSetup } from "../gift-voucher-setup"
 import { voucherLineSummary } from "@lib/util/gift-voucher-code"
 import { isGiftVoucherProductLine } from "@lib/util/gift-voucher-setup"
 import { LEGAL_LINKS } from "@modules/checkout/components/legal-consent/labels"
-import PackagingLine, { PackagingNote } from "@modules/common/components/packaging-line"
+import PackagingLine from "@modules/common/components/packaging-line"
 import CartQuantityStepper from "@modules/cart/components/cart-quantity-stepper"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import DeleteButton from "@modules/common/components/delete-button"
@@ -140,6 +140,19 @@ const Item = ({
     )
   }
 
+  const balneUnderPrice = packaging ? (
+    <span className={s.balneUnderPrice} data-testid="packaging-note">
+      Balné{Number(packaging.quantity ?? 0) > 1 ? ` ${Number(packaging.quantity)}×` : ""}{" "}
+      {convertToLocale({
+        amount:
+          typeof packaging.total === "number"
+            ? packaging.total
+            : Number(packaging.unit_price ?? 0) * Number(packaging.quantity ?? 0),
+        currency_code: currencyCode,
+      })}
+    </span>
+  ) : null
+
   return (
     <article
       className={clx(s.row, type === "preview" && s.previewRow)}
@@ -202,9 +215,9 @@ const Item = ({
           {!!item.metadata?.width && <span>Šířka · {item.metadata.width as number} cm</span>}
           {!!item.metadata?.height && <span>Výška · {item.metadata.height as number} cm</span>}
         </div>
-        {/* Balné patří k výrobku — v košíku přímo pod názvem a variantou;
-            v souhrnu pokladny (náhled) je v ceníku vpravo. */}
-        {type === "full" && <PackagingNote item={packaging} currencyCode={currencyCode} />}
+        {/* Balné je v košíku PŘÍMO POD CENOU výrobku, menším písmem (19. 11. 2026,
+            Lucie z telefonu: „Balné by mohlo být menším písmem spíš přímo pod
+            cenou za výrobek. Ne takto bokem."). Viz `balneUnderPrice` níž. */}
 
         {type === "full" && (
           <div className={s.mobileControls}>
@@ -218,6 +231,7 @@ const Item = ({
             {/* Obal jen kvůli barvě — proč, viz `.mobilePrice` v sešitu. */}
             <span className={s.mobilePrice}>
               <LineItemPrice item={item} style="tight" currencyCode={currencyCode} />
+              {balneUnderPrice}
             </span>
             <DeleteButton
               id={item.id}
@@ -269,7 +283,7 @@ const Item = ({
         </div>
       )}
 
-      <div className={s.cellPrice}>
+      <div className={clx(s.cellPrice, type === "full" && packaging && s.cellPriceStack)}>
         <span className={s.priceWrap}>
           {type === "preview" && (
             <>
@@ -308,6 +322,7 @@ const Item = ({
             <LineItemPrice item={item} style="tight" currencyCode={currencyCode} />
           )}
         </span>
+        {type === "full" && balneUnderPrice}
       </div>
 
       {/* Nastavení poukazu pod celým řádkem (31. 10. 2026): hodnota, podoba,

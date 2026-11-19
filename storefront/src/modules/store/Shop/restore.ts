@@ -29,57 +29,79 @@ export type ShopSnapshot = {
   scrollY: number
 }
 
-const KEY = "shop:snapshot"
+const KEY = "shop:snapshots"
+/** Kolik posledních adres obchodu si pamatovat (kvóta sessionStorage). */
+const MAX_ADRES = 20
+
+/*
+ * Snímek PATŘÍ ADRESE (19. 11. 2026). Dřív byl jeden na celý obchod: kdo
+ * z výpisu na 3000 px vybral kategorii v nabídce E-shop a dal Zpět, dostal
+ * obnovený snímek té kategorie (posunu v ní se ukládal pořád) — v adrese
+ * zůstala kategorie a stránka skončila dole. Změřeno na iPhonu. Klíč je cesta
+ * i s dotazem, tedy přesně záznam historie, na který se Zpět vrací (filtry
+ * do něj zapisuje `replaceState`, takže sedí i po přefiltrování v panelu).
+ */
+const adresa = () => window.location.pathname + window.location.search
+
+type Ulozene = Record<string, ShopSnapshot & { at: number }>
+
+const nacti = (): Ulozene => {
+  try {
+    const raw = window.sessionStorage.getItem(KEY)
+    const parsed = raw ? (JSON.parse(raw) as Ulozene) : {}
+    return parsed && typeof parsed === "object" ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+const zapis = (vse: Ulozene) => {
+  try {
+    window.sessionStorage.setItem(KEY, JSON.stringify(vse))
+  } catch {
+    /* Soukromé okno nebo plná kvóta — bez paměti se jen ztratí pohodlí. */
+  }
+}
 
 /**
- * Přečte snímek, ale NEZAHODÍ ho — o to se stará `clearShopSnapshot` po
- * dokončení obnovy.
+ * Přečte snímek TÉHLE adresy, ale NEZAHODÍ ho — o to se stará
+ * `clearShopSnapshot` po dokončení obnovy.
  *
  * Čtení a zahození byly nejdřív jeden krok, jenže React ve vývoji efekt
  * schválně spouští dvakrát: první běh snímek snědl, druhý už našel prázdno
  * a výsledek toho prvního patřil odpojené kopii komponenty, takže se zahodil.
- * Výpis se pak vrátil na prvních šestnáct kusů — naměřeno 16 místo 27.
  * Rozdělené je čtení bez následků a dvojí běh nanejvýš pošle dotaz dvakrát.
  */
 export const peekShopSnapshot = (): ShopSnapshot | null => {
   if (typeof window === "undefined") return null
-
-  try {
-    const raw = window.sessionStorage.getItem(KEY)
-    if (!raw) return null
-
-    const parsed = JSON.parse(raw) as Partial<ShopSnapshot>
-    if (!parsed || typeof parsed !== "object" || !parsed.filters) return null
-
-    return {
-      filters: parsed.filters as ShopFilters,
-      loaded: Number(parsed.loaded) || 0,
-      scrollY: Number(parsed.scrollY) || 0,
-    }
-  } catch {
-    /* Soukromé okno, plná kvóta, cizí data pod klíčem — obchod se prostě
-       otevře od začátku. Za to nemá nic spadnout. */
-    return null
+  const zaznam = nacti()[adresa()]
+  if (!zaznam || typeof zaznam !== "object" || !zaznam.filters) return null
+  return {
+    filters: zaznam.filters as ShopFilters,
+    loaded: Number(zaznam.loaded) || 0,
+    scrollY: Number(zaznam.scrollY) || 0,
   }
 }
 
-/** Snímek platí pro jeden návrat — po obnově (i po jejím selhání) zmizí. */
+/** Snímek téhle adresy platí pro jeden návrat — po obnově (i po jejím selhání) zmizí. */
 export const clearShopSnapshot = () => {
   if (typeof window === "undefined") return
-
-  try {
-    window.sessionStorage.removeItem(KEY)
-  } catch {
-    /* Viz níž. */
-  }
+  const vse = nacti()
+  if (!(adresa() in vse)) return
+  delete vse[adresa()]
+  zapis(vse)
 }
 
 export const saveShopSnapshot = (snapshot: ShopSnapshot) => {
   if (typeof window === "undefined") return
-
-  try {
-    window.sessionStorage.setItem(KEY, JSON.stringify(snapshot))
-  } catch {
-    /* Viz výš — bez paměti se jen ztratí pohodlí, ne funkce. */
+  const vse = nacti()
+  vse[adresa()] = { ...snapshot, at: Date.now() }
+  const klice = Object.keys(vse)
+  if (klice.length > MAX_ADRES) {
+    klice
+      .sort((a, b) => (vse[a].at ?? 0) - (vse[b].at ?? 0))
+      .slice(0, klice.length - MAX_ADRES)
+      .forEach((klic) => delete vse[klic])
   }
+  zapis(vse)
 }

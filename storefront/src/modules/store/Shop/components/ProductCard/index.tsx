@@ -192,7 +192,7 @@ function ProductCard({
   href,
   hideActions = false,
   fallbackType = "Autorská keramika",
-  fallbackDescription = "Ručně vyrobený originál z píseckého ateliéru.",
+  fallbackDescription = "Ručně vyrobený originál z ateliéru v Putimi.",
 }: ProductCardProps) {
   const [isInteracting, setIsInteracting] = useState(false)
   const [addState, setAddState] = useState<

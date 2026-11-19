@@ -192,7 +192,7 @@ export default function OrderTransferTemplate({
         <footer className={s.footer}>
           <span>Odkaz jen pro vás</span>
           <span>Nic se nestane bez potvrzení</span>
-          <span>Ateliér · Písek</span>
+          <span>Ateliér · Putim</span>
         </footer>
       </div>
     </main>

@@ -126,7 +126,7 @@ export default function Intro ({
      * co stojí na stránce.
      */
     const railLeft = block?.accent?.[0]?.trim() || "01 · Keramická zahrada";
-    const railRight = block?.accent?.[1]?.trim() || "Ručně, v píseckém ateliéru";
+    const railRight = block?.accent?.[1]?.trim() || "Ručně, v ateliéru v Putimi";
 
     /*
      * Poznámka vpravo — vlastní pole, ne druhý odstavec `body`.

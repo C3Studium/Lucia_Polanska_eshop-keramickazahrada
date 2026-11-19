@@ -131,7 +131,7 @@ export default function OrderStateShell({
       <div className={s.footer}>
         <span>Bezpečná platba</span>
         <span>Ozveme se osobně</span>
-        <span>Ateliér · Písek</span>
+        <span>Ateliér · Putim</span>
       </div>
     </main>
   )
