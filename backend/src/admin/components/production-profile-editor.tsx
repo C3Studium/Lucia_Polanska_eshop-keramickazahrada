@@ -1,12 +1,12 @@
 import {
   Button,
-  Drawer,
   Input,
   Label,
   Switch,
   Text,
   toast,
 } from "@medusajs/ui";
+import { PanelDrawer as Drawer } from "./panel-shell";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { sdk } from "../lib/sdk";
@@ -55,14 +55,19 @@ export const ProductionProfileEditor = ({
   productId,
   productTitle,
   trigger,
+  inline = false,
+  onClose,
   onSaved,
 }: {
   productId: string;
   productTitle: string;
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
+  /** Vykreslit vedle nabídky „…" (components/panel-shell). */
+  inline?: boolean;
+  onClose?: () => void;
   onSaved?: () => void;
 }) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(inline);
   const [form, setForm] = useState<ProfileForm | null>(null);
   const queryClient = useQueryClient();
 
@@ -142,7 +147,7 @@ export const ProductionProfileEditor = ({
   });
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
+    <Drawer open={open} onOpenChange={setOpen} inline={inline} onClose={onClose}>
       <Drawer.Trigger asChild>{trigger}</Drawer.Trigger>
       <Drawer.Content>
         <Drawer.Header>

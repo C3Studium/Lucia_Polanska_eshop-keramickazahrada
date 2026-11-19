@@ -1,6 +1,7 @@
 import {
-  Badge, Button, Drawer, Input, Skeleton, Switch, Text, toast,
+  Badge, Button, Input, Skeleton, Switch, Text, toast,
 } from "@medusajs/ui";
+import { PanelDrawer as Drawer } from "./panel-shell";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { sdk } from "../lib/sdk";
@@ -629,10 +630,12 @@ const VariantForm = ({
   );
 };
 
-export const VariantsEditor = ({ productId, productTitle, trigger }: {
-  productId: string; productTitle: string; trigger: React.ReactNode;
+export const VariantsEditor = ({ productId, productTitle, trigger, inline = false, onClose }: {
+  productId: string; productTitle: string; trigger?: React.ReactNode;
+  /** Vykreslit vedle nabídky „…" (components/panel-shell). */
+  inline?: boolean; onClose?: () => void;
 }) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(inline);
   /* Otevřený je nejvýš jeden formulář: id upravované varianty, „new", nebo nic. */
   const [form, setForm] = useState<string | null>(null);
   const queryClient = useQueryClient();
@@ -659,8 +662,10 @@ export const VariantsEditor = ({ productId, productTitle, trigger }: {
 
   return (
     <Drawer
+      inline={inline}
+      onClose={onClose}
       open={open}
-      onOpenChange={(next) => {
+      onOpenChange={(next: boolean) => {
         setOpen(next);
         if (!next) setForm(null);
       }}

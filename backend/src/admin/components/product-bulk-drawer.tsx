@@ -149,10 +149,22 @@ export const ProductBulkDrawer = ({
   const [saleTo, setSaleTo] = useState("");
   const vyprodeje = useVyprodeje();
 
+  /* Materiál a rozměry (19. 11. 2026): "__beze" = nesahat, "__none" = bez materiálu. */
+  const [material, setMaterial] = useState<string>("__beze");
+  const [rozmery, setRozmery] = useState("");
+  const materialsQuery = useQuery<{ materials: string[] }>({
+    queryKey: ["produkt-materials"],
+    queryFn: () => sdk.client.fetch(`/admin/workbench/materials`),
+    staleTime: 5 * 60_000,
+    enabled: open,
+  });
+
   /* Při každém otevření načisto. */
   useEffect(() => {
     if (!open) return;
     setFlags({});
+    setMaterial("__beze");
+    setRozmery("");
     setClassification(emptyBulkClassification());
     setSortSummary(null);
     setVyprodejTarget(null);
@@ -220,14 +232,20 @@ export const ProductBulkDrawer = ({
     (balneChanged ? 1 : 0) +
     (bulkClassificationDirty(classification) ? 1 : 0) +
     (vyprodejTarget ? 1 : 0) +
-    (saleKind !== "none" && saleValid ? 1 : 0);
+    (saleKind !== "none" && saleValid ? 1 : 0) +
+    (material !== "__beze" ? 1 : 0) +
+    (rozmery.trim() ? 1 : 0);
   const dirty = changeCount > 0;
   const hint = (mixed: boolean) => (mixed ? "U vybraných se liší — klikem nastavíte všem." : undefined);
 
   const save = useMutation({
     mutationFn: async () => {
       const { status, ...rest } = flags;
-      const flagBody: Record<string, unknown> = { ...rest, ...(balneChanged ? { packaging_price: balneValue } : {}) };
+      const flagBody: Record<string, unknown> = {
+        ...rest,
+        ...(balneChanged ? { packaging_price: balneValue } : {}),
+        ...(rozmery.trim() ? { dimensions: rozmery.trim() } : {}),
+      };
       const classDirty = bulkClassificationDirty(classification);
       for (const product of products) {
         if (Object.keys(flagBody).length) {
@@ -238,6 +256,7 @@ export const ProductBulkDrawer = ({
         }
         const body: Record<string, unknown> = {};
         if (status && status !== product.status) body.status = status;
+        if (material !== "__beze") body.material = material === "__none" ? null : material;
         if (classDirty) {
           const next = applyBulkClassification(
             {
@@ -439,6 +458,44 @@ export const ProductBulkDrawer = ({
                   value={flagValue("no_promo")}
                   dirty={flags.no_promo !== undefined}
                   onSet={(next) => setFlags((prev) => ({ ...prev, no_promo: next === "on" }))}
+                />
+              }
+            />
+          </InspectorGroup>
+
+          {/* Materiál a rozměry (19. 11. 2026, Matěj) — jako pravý sloupec detailu výrobku. */}
+          <InspectorGroup title="Materiál a rozměry">
+            <InspectorRow
+              label="Materiál"
+              hint={material === "__beze" ? "Beze změny — každý si nechá svůj." : material === "__none" ? "Všem se materiál smaže." : `Všem nastavím: ${material}`}
+              control={
+                <select
+                  aria-label="Materiál"
+                  value={material}
+                  onChange={(event) => setMaterial(event.target.value)}
+                  className={`bg-ui-bg-field txt-compact-small min-h-[36px] max-w-[200px] rounded-md border px-2 ${material !== "__beze" ? "border-ui-border-interactive" : "border-ui-border-base"}`}
+                >
+                  <option value="__beze">Beze změny</option>
+                  <option value="__none">Bez materiálu</option>
+                  {(materialsQuery.data?.materials ?? []).map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              }
+            />
+            <InspectorRow
+              label="Rozměry"
+              hint={rozmery.trim() ? "Stejné rozměry dostanou všechny vybrané." : "Prázdné = beze změny."}
+              control={
+                <input
+                  type="text"
+                  aria-label="Rozměry"
+                  placeholder="např. výška 12 cm, ø 9 cm"
+                  value={rozmery}
+                  onChange={(event) => setRozmery(event.target.value)}
+                  className={`bg-ui-bg-field txt-compact-small min-h-[36px] w-[200px] rounded-md border px-2 ${rozmery.trim() ? "border-ui-border-interactive" : "border-ui-border-base"}`}
                 />
               }
             />

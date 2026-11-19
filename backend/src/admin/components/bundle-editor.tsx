@@ -1,12 +1,12 @@
 import {
   Button,
-  Drawer,
   Input,
   Label,
   Select,
   Text,
   toast,
 } from "@medusajs/ui";
+import { PanelDrawer as Drawer } from "./panel-shell";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { sdk } from "../lib/sdk";
@@ -44,6 +44,8 @@ type BundleDetail = {
 export const BundleEditor = ({
   bundleId,
   trigger,
+  inline = false,
+  onClose,
   onSaved,
 }: {
   /*
@@ -53,10 +55,13 @@ export const BundleEditor = ({
    * mode here could only ever 400.
    */
   bundleId: string;
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
+  /** Vykreslit vedle nabídky „…" (components/panel-shell). */
+  inline?: boolean;
+  onClose?: () => void;
   onSaved?: () => void;
 }) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(inline);
   const [title, setTitle] = useState("");
   const [pricingMode, setPricingMode] = useState<string>("component_sum");
   const [discount, setDiscount] = useState("");
@@ -150,7 +155,7 @@ export const BundleEditor = ({
   });
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
+    <Drawer open={open} onOpenChange={setOpen} inline={inline} onClose={onClose}>
       <Drawer.Trigger asChild>{trigger}</Drawer.Trigger>
       <Drawer.Content>
         <Drawer.Header>

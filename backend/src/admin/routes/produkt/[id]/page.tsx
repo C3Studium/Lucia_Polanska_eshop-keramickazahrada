@@ -47,6 +47,7 @@ import { classificationToast, ProductClassification } from "../../../components/
 import { ProductOwnVyprodejRow, ProductVyprodejRow } from "../../../components/vyprodej";
 import { DiscountOrder } from "../../../components/sketches";
 import { NavodTip } from "../../../components/navod-tip";
+import { DopravaPrehled } from "../../../components/doprava-prehled";
 import { adminQueryClient } from "../../../lib/query-client"
 import { ceskaChyba } from "../../../lib/ceska-chyba";
 
@@ -2631,6 +2632,16 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                   />
                 }
               />
+              {/* Jak se dá poslat — jen přehled ikonami (19. 11. 2026, Matěj). */}
+              <InspectorRow label="Jak se dá poslat" hint="Přehled podle nastavení výš — nedá se na něj klikat.">
+                <DopravaPrehled
+                  trida={currentShippingClass === "velke" || currentShippingClass === "poukaz" ? currentShippingClass : "male"}
+                  krehke={product.metadata?.fragile === true || product.metadata?.fragile === "true"}
+                  dobirka={product.metadata?.cod_allowed !== false}
+                  zakazka={Boolean(production?.enabled)}
+                  cenaPoDomluve={priceOnRequest}
+                />
+              </InspectorRow>
             </InspectorGroup>
 
             {/* Cena a sklad — rámeček jako ostatní skupiny (Matěj,
