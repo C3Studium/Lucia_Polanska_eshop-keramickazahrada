@@ -29,8 +29,11 @@ import {
  * vedle.
  */
 
-type Ctx = { inline: boolean; zavrit: () => void };
+type Ctx = { inline: boolean; zavrit: () => void; zpet?: () => void };
 const PanelCtx = createContext<Ctx>({ inline: false, zavrit: () => undefined });
+
+/** Nabídka „…" na telefonu: okno je místo ní → „← Zpět do nabídky". */
+export const PanelZpet = createContext<(() => void) | undefined>(undefined);
 
 type RootProps = {
   open?: boolean;
@@ -39,10 +42,13 @@ type RootProps = {
   inline?: boolean;
   /** Okno vedle nabídky se zavřelo (Uložit, Zrušit, ×). */
   onClose?: () => void;
+  /** Telefon: okno je místo nabídky — „← Zpět do nabídky" v hlavičce. */
+  onBack?: () => void;
   children: ReactNode;
 };
 
-const Root = ({ open, onOpenChange, inline = false, onClose, children }: RootProps) => {
+const Root = ({ open, onOpenChange, inline = false, onClose, onBack, children }: RootProps) => {
+  const zpetZNabidky = useContext(PanelZpet);
   const bylo = useRef(Boolean(open));
   useEffect(() => {
     /* Okno samo nastaví open=false (po uložení) → dát vědět nabídce. */
@@ -60,7 +66,7 @@ const Root = ({ open, onOpenChange, inline = false, onClose, children }: RootPro
     onOpenChange?.(false);
     onClose?.();
   };
-  return <PanelCtx.Provider value={{ inline: true, zavrit }}>{children}</PanelCtx.Provider>;
+  return <PanelCtx.Provider value={{ inline: true, zavrit, zpet: onBack ?? zpetZNabidky }}>{children}</PanelCtx.Provider>;
 };
 
 const Trigger = ({ children, ...props }: { children: ReactNode; asChild?: boolean }) => {
@@ -80,11 +86,22 @@ const Content = ({ children, className, ...props }: { children: ReactNode; class
 };
 
 const Header = ({ children }: { children: ReactNode }) => {
-  const { inline, zavrit } = useContext(PanelCtx);
+  const { inline, zavrit, zpet } = useContext(PanelCtx);
   if (!inline) return <Drawer.Header>{children}</Drawer.Header>;
   return (
     <div className="border-ui-border-base flex items-start justify-between gap-3 border-b px-4 py-3">
-      <div className="min-w-0">{children}</div>
+      <div className="min-w-0">
+        {zpet && (
+          <button
+            type="button"
+            onClick={zpet}
+            className="text-ui-fg-interactive txt-compact-small-plus -ml-1 mb-1 inline-flex min-h-[32px] items-center gap-1 rounded-md px-1 hover:underline"
+          >
+            ← Zpět do nabídky
+          </button>
+        )}
+        {children}
+      </div>
       <button
         type="button"
         aria-label="Zavřít"

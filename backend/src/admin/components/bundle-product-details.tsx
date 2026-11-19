@@ -336,18 +336,7 @@ export const BundleProductDetailsFields = ({
           />
         </div>
 
-        <div className="flex flex-col gap-y-2">
-          <Label htmlFor="bundle-subtitle" size="small" weight="plus">
-            Podtitulek
-          </Label>
-          <Input
-            id="bundle-subtitle"
-            value={details.subtitle}
-            onChange={(event) => onChange({ subtitle: event.target.value })}
-            placeholder="Krátké doplnění názvu"
-            autoComplete="off"
-          />
-        </div>
+        {/* Podtitulek pryč (19. 11. 2026, Matěj) — obchod ho neukazuje. */}
 
         <div className="flex flex-col gap-y-2">
           <Label htmlFor="bundle-description" size="small" weight="plus">

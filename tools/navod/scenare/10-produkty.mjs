@@ -91,13 +91,11 @@ export default [
     po: ({ api }, z) => obnovitVyrobek(api, z),
     async hrat(n, ctx) {
       await naSeznam(n, ctx, 'Souhvězdí');
-      await n.klik(aria(`Možnosti produktu ${ZVONEK}`), { popisek: 'U řádku klikněte na „…"', po: 900 });
-      await n.klik(tl('Skrýt z obchodu'), { popisek: '„Skrýt z obchodu" — zákazníci ho neuvidí', po: 1800 });
-      await n.popisek('Oranžový štítek „Skryto"');
-      await n.mys(txt('Skryto'));
-      await n.drz(1500);
-      await n.klik(aria(`Možnosti produktu ${ZVONEK}`), { popisek: 'Zpátky: „…" → „Zobrazit v obchodě"', po: 900 });
-      await n.klik(tl('Zobrazit v obchodě'), { po: 1800 });
+      await n.klik(aria(`Možnosti produktu ${ZVONEK}`), { popisek: 'U řádku klikněte na „…" — otevře se nastavení výrobku', po: 1400 });
+      await n.klik(tl('Skrýt z obchodu'), { popisek: 'Nahoře „Skrýt z obchodu" — zákazníci ho neuvidí', po: 1800 });
+      await n.popisek('Nabídka zůstane otevřená, tlačítko se změní na „Zobrazit v obchodě"');
+      await n.drz(1600);
+      await n.klik(tl('Zobrazit v obchodě'), { popisek: 'Zpátky jedním klikem', po: 1800 });
     },
   },
 ];
