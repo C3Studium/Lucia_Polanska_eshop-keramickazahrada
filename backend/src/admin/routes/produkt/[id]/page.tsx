@@ -2495,16 +2495,8 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                     saveProduct.mutateAsync({ description: next || null })
                   }
                 />
+                {/* Podtitulek pryč (19. 11. 2026, Matěj) — obchod ho neukazuje. */}
                 <div className="mt-2 divide-y">
-                  <FieldRow label="Podtitulek">
-                    <InlineText
-                      value={product.subtitle}
-                      placeholder="např. ručně točená kamenina"
-                      onSave={(next) =>
-                        saveProduct.mutateAsync({ subtitle: next || null })
-                      }
-                    />
-                  </FieldRow>
                   {clearance && (
                     <FieldRow
                       label="Popis poškození"

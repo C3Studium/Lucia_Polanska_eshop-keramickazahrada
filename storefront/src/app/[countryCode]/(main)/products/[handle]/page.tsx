@@ -118,8 +118,10 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     return {}
   }
 
+  /* Popis přednostně (19. 11. 2026): podtitulek už se v adminu nevyplňuje
+     a z importu u něj zbylo jen „modelovaná šamotka" — to do Googlu nepatří. */
   const description = summarize(
-    product.subtitle || product.description,
+    product.description || product.subtitle,
     `${product.title} — ručně vyrobená keramika z ateliéru Lucie Polanské.`
   )
 
