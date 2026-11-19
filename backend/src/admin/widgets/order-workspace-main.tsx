@@ -7,7 +7,6 @@ import { OWN, useHideNativeCards, useRaiseNativeCard } from "../lib/native-cards
 import { adminQueryClient } from "../lib/query-client";
 import { MadeToOrderPanel } from "./made-to-order-order";
 import { OrderCustomerPanel } from "./order-customer";
-import { OrderCustomerNotePanel } from "./order-customer-note";
 import { OrderEmailsPanel } from "./order-emails";
 import { OrderGiftVouchersPanel } from "./order-gift-vouchers";
 import { OrderHistoryPanel } from "./order-history";
@@ -85,7 +84,6 @@ const OrderWorkspaceMain = ({ order }: { order: AdminOrder }) => {
           </div>
         </div>
         <OrderCustomerPanel order={order} />
-        <OrderCustomerNotePanel order={order} />
       </div>
       <div ref={bottom} {...OWN} className="flex flex-col gap-y-3" style={{ order: 0 }}>
         <OrderInvoicePanel order={order} />

@@ -98,14 +98,18 @@ describe("widgety adminu", () => {
    */
   it("štítek se neschová podle fáze objednávky", () => {
     const text = obsah.get("cp-label") as string
-    expect((text.match(/return null;/g) ?? []).length).toBe(1)
+    /* Od 19. 11. 2026 se neschová vůbec — ani u osobního odběru, kde jen
+       řekne „Bylo zvoleno: osobní odběr." (Matěj: ať je vidět, že nic nechybí). */
+    expect((text.match(/return null;/g) ?? []).length).toBe(0)
+    expect(text).toContain("Bylo zvoleno: osobní odběr.")
   })
 })
 
 /* Poznámka od zákazníka (19. 11. 2026): krok „Poznámka" v pokladně → karta v adminu. */
 describe("poznámka od zákazníka", () => {
-  it("visí na detailu objednávky pod zákazníkem", () => {
+  it("visí v pravém sloupci detailu objednávky, i s poznámkou pro dílnu", () => {
     expect(vykreslene().has("order-customer-note")).toBe(true)
-    expect(obsah.get("order-workspace-main")).toContain("<OrderCustomerNotePanel order={order} />")
+    expect(obsah.get("order-workspace")).toContain("<OrderCustomerNotePanel order={order} />")
+    expect(obsah.get("order-workspace")).toContain("<OrderAdminNotePanel order={order} />")
   })
 })

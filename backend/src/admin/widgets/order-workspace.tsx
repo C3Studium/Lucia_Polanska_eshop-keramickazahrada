@@ -8,6 +8,7 @@ import { adminQueryClient } from "../lib/query-client";
 import { CpTrackingPanel } from "./cp-tracking";
 import { MadeToOrderPanel } from "./made-to-order-order";
 import { OrderConsentPanel } from "./order-consent";
+import { OrderAdminNotePanel, OrderCustomerNotePanel } from "./order-customer-note";
 import { OrderDelayPanel } from "./order-delay";
 import { OrderReturnsPanel } from "./order-returns";
 
@@ -35,6 +36,10 @@ const OrderWorkspaceSide = ({ order }: { order: AdminOrder }) => {
     <div ref={ref} {...OWN} className="flex flex-col gap-y-3">
       {/* Široký displej (17. 11. 2026, přání majitelky): Postup a vedle
           něj štítek jsou vlevo pod číslem objednávky, vpravo nahoře zakázka. */}
+      {/* Poznámky nahoře vpravo (19. 11. 2026): zákazníkova vždy — i „žádná" —,
+          pod ní interní pro dílnu (tiskne se v listu pro dílnu). */}
+      <OrderCustomerNotePanel order={order} />
+      <OrderAdminNotePanel order={order} />
       {wide && <MadeToOrderPanel order={order} />}
       <OrderReturnsPanel orderId={order.id} />
       <CpTrackingPanel order={order} />

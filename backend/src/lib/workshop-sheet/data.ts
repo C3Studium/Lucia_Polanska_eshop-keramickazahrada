@@ -69,6 +69,8 @@ export type WorkshopSheet = {
   commissions: SheetCommission[]
   payment: SheetRow[]
   customer_note: string | null
+  /** Poznámka pro dílnu z adminu (`order.metadata.admin_note`, 19. 11. 2026). */
+  admin_note: string | null
 }
 
 export type WorkshopSheetSource = {
@@ -534,6 +536,7 @@ export const workshopSheetData = (source: WorkshopSheetSource): WorkshopSheet =>
     commissions: sheetCommissions(order, commissions, commissionIds),
     payment: paymentRows(order, commissions, source.voucher_note),
     customer_note: customerNoteOf(order),
+    admin_note: text((order?.metadata ?? {}).admin_note) || null,
   }
 }
 
