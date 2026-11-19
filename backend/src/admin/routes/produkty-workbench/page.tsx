@@ -40,6 +40,7 @@ import {
   triStateOf,
 } from "../../components/bulk-bar";
 import { ConfirmDialog } from "../../components/confirm-dialog";
+import { ProductBulkDrawer } from "../../components/product-bulk-drawer";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
 import {
   toastWithUndo,
@@ -127,6 +128,8 @@ type WorkbenchProduct = {
   shipping_class: ShippingClass;
   thumbnail: string | null;
   collection: string | null;
+  collection_id?: string | null;
+  category_refs?: { id: string; name: string }[];
   /** Všechny kolekce — vlastní + kolekce kategorií (filtr ho ukáže pod každou). */
   collections?: string[];
   /** Kategorie → kolekce, ke které patří. */
@@ -1134,6 +1137,8 @@ const ProductsInner = () => {
   /* Archivace a mazání z „…" v liště — dialogy řízené odsud, protože
      nabídka se po kliknutí zavře i se svým obsahem. */
   const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
+  /* Pravý panel Hromadné změny (components/product-bulk-drawer). */
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const applyFlags = useMutation({
@@ -1567,25 +1572,6 @@ const ProductsInner = () => {
   /* Bulk „…": slevové kódy a vzácné kroky s potvrzením. */
   const noPromoState = triStateOf(selectedRows, (row) => effectiveFlag(row, "no_promo"));
   const bulkMoreItems: RowOption[] = [
-    ...(settingsTab && noPromoState !== "on"
-      ? [
-          {
-            label: "Vyloučit ze slevových kódů",
-            icon: <ReceiptPercent />,
-            onSelect: () => stageFlagForSelection("no_promo", true),
-          },
-        ]
-      : []),
-    ...(settingsTab && noPromoState !== "off"
-      ? [
-          {
-            label: "Povolit slevové kódy",
-            icon: <ReceiptPercent />,
-            onSelect: () => stageFlagForSelection("no_promo", false),
-          },
-        ]
-      : []),
-    ...(settingsTab ? (["separator"] as RowOption[]) : []),
     ...(active !== "archivovane"
       ? [
           {
@@ -1844,87 +1830,38 @@ const ProductsInner = () => {
         s „Vrátit zpět". Zobrazit / skrýt zapisuje hned a vrací se z hlášky.
         Vzácné kroky (slevové kódy, archiv, mazání) jsou pod „…".
       */}
-      {/* Až od 2 vybraných (19. 11. 2026) — jeden kus se upraví v řádku
-          (okénko Doprava, „…"). */}
+      {/*
+        Výběr (19. 11. 2026, Matěj): od 2 vybraných jen úzký řádek s tlačítkem
+        „Hromadné změny" — panel zprava (components/product-bulk-drawer) se
+        otevře až na klik, takže nepřekryje názvy ani zaškrtávátka. Archivace
+        a mazání zůstávají pod „…".
+      */}
       {listTab && selected.size > 1 && (
-        <BulkBar
-          layout="stacked"
-          count={selected.size}
-          onClear={() => setSelected(new Set())}
-          pendingCount={selectedPendingIds.length}
-          onConfirm={() => applyFlags.mutate(selectedPendingIds)}
-          onDiscard={discardSelectedPending}
-          isSaving={applyFlags.isPending}
-        >
-          {settingsTab && (
-            <BulkGroup label="Doprava">
-              <BulkNumber
-                label="Balné"
-                unit="Kč"
-                applyLabel="Použít"
-                value={bulkPackaging.kind === "same" ? bulkPackaging.value : null}
-                mixed={bulkPackaging.kind === "mixed"}
-                dirty={bulkPackagingDirty}
-                onSet={stagePackagingForSelection}
-              />
-              <BulkSegmented
-                label="Dobírka"
-                title="Zákazník smí platit při převzetí — jen ČR a Česká pošta na adresu."
-                options={[
-                  { value: "on", label: "Ano" },
-                  { value: "off", label: "Ne" },
-                ]}
-                value={codState === "mixed" ? null : codState}
-                dirty={bulkDirty("cod_allowed")}
-                onSet={(next) => stageFlagForSelection("cod_allowed", next === "on")}
-              />
-              <BulkSegmented
-                label="Křehké"
-                title="Celá zásilka s tímto kouskem pojede v křehkém režimu."
-                options={[
-                  { value: "on", label: "Ano" },
-                  { value: "off", label: "Ne" },
-                ]}
-                value={fragileState === "mixed" ? null : fragileState}
-                dirty={bulkDirty("fragile")}
-                onSet={(next) => stageFlagForSelection("fragile", next === "on")}
-              />
-              <BulkSegmented
-                label="Zásilka"
-                title="Podle velikosti zásilky se v pokladně počítá poštovné."
-                /* Poukaz jen když už ve výběru je — hromadně se mění malé
-                   a velké, tištěný poukaz je výjimka. */
-                options={SHIPPING_CLASS_OPTIONS.filter(
-                  (option) => option.value !== "poukaz" || anyVoucher
-                )}
-                value={bulkShippingClass.kind === "same" ? bulkShippingClass.value : null}
-                dirty={bulkShippingClassDirty}
-                onSet={stageShippingClassForSelection}
-              />
-            </BulkGroup>
-          )}
-          {active !== "archivovane" && (
-            <BulkGroup label="Obchod">
-              {/* Skrytí i zobrazení jsou vratné a vrácení se nabídne hned
-                  v hlášce — dialog by tu jen překážel. Nabízí se jen to,
-                  co u výběru něco změní. */}
-              {anyHidden && (
-                <BulkAction onClick={() => bulkShow.mutate()} isLoading={bulkShow.isPending}>
-                  Zobrazit v obchodě
-                </BulkAction>
-              )}
-              {anyVisible && (
-                <BulkAction onClick={() => bulkHide.mutate()} isLoading={bulkHide.isPending}>
-                  Skrýt z obchodu
-                </BulkAction>
-              )}
-            </BulkGroup>
-          )}
-          <div className="ml-auto">
-            <RowOptionsMenu label="Další hromadné akce" items={bulkMoreItems} />
-          </div>
+        <BulkBar count={selected.size} onClear={() => setSelected(new Set())}>
+          <Button size="small" onClick={() => setBulkOpen(true)}>
+            Hromadné změny
+          </Button>
+          <RowOptionsMenu label="Další hromadné akce" items={bulkMoreItems} />
         </BulkBar>
       )}
+      <ProductBulkDrawer
+        products={selectedRows.map((row) => ({
+          id: row.id,
+          title: row.title,
+          status: row.status,
+          cod_allowed: row.cod_allowed,
+          fragile: row.fragile,
+          packaging_price: row.packaging_price ?? null,
+          clearance: row.clearance,
+          no_promo: row.no_promo,
+          shipping_class: row.shipping_class,
+          collection_id: row.collection_id ?? null,
+          category_refs: row.category_refs ?? [],
+        }))}
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        onSaved={() => setSelected(new Set())}
+      />
 
       {/* Archivace sáhne na celý výběr a kus pak zmizí ze všech seznamů —
           na to se ptáme jmény (§12). */}
