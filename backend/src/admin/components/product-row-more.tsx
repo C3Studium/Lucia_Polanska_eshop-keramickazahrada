@@ -9,11 +9,12 @@ import {
 } from "@medusajs/icons";
 import { Button, IconButton, Popover, Switch, Text, toast } from "@medusajs/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba } from "../lib/ceska-chyba";
 import { toastWithUndo } from "../lib/undo";
 import { NavodTip } from "./navod-tip";
+import { Otevrit, Radek, Skupina, Volby } from "./nastaveni-kousky";
 import { BundleEditor } from "./bundle-editor";
 import { ConfirmDialog } from "./confirm-dialog";
 import { PanelZpet } from "./panel-shell";
@@ -69,60 +70,6 @@ export const SHIPPING_CLASS_OPTIONS: { value: ShippingClass; label: string; hint
 export const shippingClassLabel = (value: ShippingClass) =>
   SHIPPING_CLASS_OPTIONS.find((option) => option.value === value)?.label ?? value;
 
-
-/* ————— Stavební kousky nabídky „…" (mimo komponentu — jinak by je React
-   při každém psaní vyměnil a pole Balné / Rozměry by ztrácela fokus) ————— */
-const Skupina = ({ nazev, children }: { nazev: string; children: ReactNode }) => (
-  <section className="flex flex-col gap-1">
-    <Text size="xsmall" weight="plus" className="text-ui-fg-muted px-1 uppercase tracking-wide">
-      {nazev}
-    </Text>
-    <div className="bg-ui-bg-base shadow-borders-base divide-y rounded-lg">{children}</div>
-  </section>
-);
-const Radek = ({ nazev, popis, children }: { nazev: string; popis?: string; children?: ReactNode }) => (
-  <div className="flex min-h-[44px] items-center justify-between gap-3 px-3 py-2">
-    <span className="min-w-0">
-      <span className="txt-compact-small-plus text-ui-fg-base block">{nazev}</span>
-      {popis && <span className="txt-compact-xsmall text-ui-fg-subtle block">{popis}</span>}
-    </span>
-    {children}
-  </div>
-);
-const Otevrit = ({ aktivni, onToggle, nazev, popis }: { aktivni: boolean; onToggle: () => void; nazev: string; popis: string }) => (
-  <button
-    type="button"
-    role="menuitem"
-    aria-expanded={aktivni}
-    onClick={onToggle}
-    className={`flex min-h-[44px] w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors ${aktivni ? "bg-ui-bg-base-pressed" : "hover:bg-ui-bg-base-hover"}`}
-  >
-    <span className="min-w-0">
-      <span className="txt-compact-small-plus text-ui-fg-base block">{nazev}</span>
-      <span className="txt-compact-xsmall text-ui-fg-subtle block">{popis}</span>
-    </span>
-    <span className="text-ui-fg-muted shrink-0">{aktivni ? "‹" : "›"}</span>
-  </button>
-);
-const Volby = <T extends string>({ popisek, hodnota, moznosti, onVyber, vypnuto }: {
-  popisek: string; hodnota: T; moznosti: { value: T; label: string }[]; onVyber: (v: T) => void; vypnuto?: boolean;
-}) => (
-  <div role="radiogroup" aria-label={popisek} className="bg-ui-bg-subtle flex shrink-0 flex-wrap rounded-md p-0.5">
-    {moznosti.map((m) => (
-      <button
-        key={m.value}
-        type="button"
-        role="radio"
-        aria-checked={hodnota === m.value}
-        disabled={vypnuto}
-        onClick={() => onVyber(m.value)}
-        className={`txt-compact-xsmall-plus min-h-[30px] rounded px-2.5 disabled:opacity-60 ${hodnota === m.value ? "bg-ui-bg-base shadow-borders-base text-ui-fg-base" : "text-ui-fg-subtle hover:text-ui-fg-base"}`}
-      >
-        {m.label}
-      </button>
-    ))}
-  </div>
-);
 
 export const ProductRowMore = ({
   product,

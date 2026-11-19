@@ -97,7 +97,7 @@ export default [
       await n.psat(aria(`Cena — ${KYTKA}`, dialog), '79', { popisek: 'Ceny: přepište cenu v Kč' });
       await n.psat(aria('Cena — Keramická kytka bílá, kopretina', dialog), '82', { vymazat: true });
       await n.klik(`[...${dialog}.querySelectorAll('[aria-label="Objednání bez kusů na skladu"] button')].find(b => b.textContent.trim() === 'Ano')`, { popisek: 'Objednání bez kusů na skladu: Ano…', po: 900 });
-      await n.psat(`[...${dialog}.querySelectorAll('input')].find(i => (i.placeholder || '').startsWith('např. Vyrobíme'))`, 'Vyrobíme do 3 týdnů.', { popisek: '…a zpráva pro zákazníka' });
+      await n.psat(`${dialog}.querySelector('[aria-label="Zpráva pro zákazníka"]')`, 'Vyrobíme do 3 týdnů.', { popisek: '…a zpráva pro zákazníka' });
       await n.mys(tl('Uložit vše', dialog));
       await n.popisek('„Uložit vše (4)" — počet změn; „Zrušit vše" nic nezmění');
       await n.drz(1500);
