@@ -5,7 +5,7 @@ import ScrollResetOnRoute from "@lib/helpers/scrollResetOnRoute"
 import SessionVersionWatch from "@modules/layout/components/session-version"
 import { bootResetScript } from "@lib/util/session-version"
 import { RELOAD_KEEPER_JS } from "@lib/util/reload-keeper"
-import { VIEWPORT_GUARD_JS } from "@lib/util/viewport-guard"
+import { POLYFILLS_JS, VIEWPORT_GUARD_JS } from "@lib/util/viewport-guard"
 import { StateProvider } from "@lib/context/StateContext"
 import { getBaseURL } from "@lib/util/env"
 import CookieNotice from "@modules/layout/CookieNotice"
@@ -57,6 +57,9 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="cs" data-mode="light">
       <body>
+        {/* Doplňky funkcí pro starší prohlížeče — jako ÚPLNĚ první, ještě
+            před kódem Next.js (lib/util/viewport-guard, 20. 11. 2026). */}
+        <script dangerouslySetInnerHTML={{ __html: POLYFILLS_JS }} />
         {/* Úklid po předchozí verzi obchodu. Musí běžet dřív než cokoli
             jiného na stránce, proto je to vložený skript a ne komponenta:
             aplikace se tak nikdy nedostane ke stavu po verzi, která už

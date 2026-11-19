@@ -105,8 +105,70 @@ const vloz = (decl, prop, value) => {
   decl.cloneBefore({ prop, value })
 }
 
+/*
+ * 5. Skupina selektorů s novým pseudo-selektorem (20. 11. 2026).
+ *
+ * Neumí-li prohlížeč jediný selektor ve skupině, zahodí CELÉ pravidlo —
+ * i se sousedy. Safari < 15.4 nezná `:focus-visible` ani `:has()`, < 14
+ * `:is()`/`:where()`; na produkci tak padalo 39 pravidel jako
+ * `.skupina:focus-visible, .skupina[data-active=true] { … }` — aktivní
+ * filtr, :hover tlačítek, aktivní stav. Riskantní selektory dostanou
+ * vlastní kopii pravidla; ostatní zůstanou v původním, které teď projde.
+ * Nový prohlížeč dostane tytéž deklarace pro tytéž prvky jako dřív.
+ */
+const RISKANTNI = /:focus-visible|:has\(|:is\(|:where\(|:focus-within|::backdrop|:modal/
+
+const rozdelSkupinu = (rule) => {
+  if (!rule.selector || !rule.selector.includes(',')) return
+  if (rule.parent && rule.parent.type === 'atrule' && /keyframes$/i.test(rule.parent.name)) return
+  let selektory
+  try {
+    selektory = rule.selectors
+  } catch {
+    return
+  }
+  if (selektory.length < 2) return
+  const riskantni = selektory.filter((s) => RISKANTNI.test(s))
+  if (!riskantni.length || riskantni.length === selektory.length) return
+  const bezne = selektory.filter((s) => !RISKANTNI.test(s))
+  let za = rule
+  for (const s of riskantni) {
+    const kopie = rule.clone({ selectors: [s] })
+    za.after(kopie)
+    za = kopie
+  }
+  rule.selectors = bezne
+}
+
+/*
+ * 6. `@container` → záloha přes `@media` (20. 11. 2026). Safari < 16 dotazy
+ * na kontejner ignoruje; řádek objednávky v účtu je psaný „od velkého
+ * k malému", takže na starém telefonu zůstal ve čtyřech sloupcích. Záloha
+ * měří okno místo kontejneru (na telefonu je karta skoro celá šířka) a je
+ * v `@supports not (container-type: inline-size)` — nový prohlížeč ji
+ * přeskočí. Jen šířka; výšku kontejneru na okno převést nejde.
+ */
+/* PostCSS po úpravě vnořených pravidel navštíví @container znovu — zálohu jen jednou. */
+const hotoveKontejnery = new WeakSet()
+
+const zalohaKontejneru = (atRule, { AtRule }) => {
+  if (atRule.name !== 'container') return
+  if (hotoveKontejnery.has(atRule)) return
+  hotoveKontejnery.add(atRule)
+  if (atRule.parent && atRule.parent.type === 'atrule' && atRule.parent.name === 'supports') return
+  const podminka = atRule.params.replace(/^[a-zA-Z_][\w-]*\s+(?=\()/, '').trim()
+  if (!/^\((min|max)-width\s*:/.test(podminka) || /height|aspect|orientation|style\(/.test(podminka)) return
+  const media = new AtRule({ name: 'media', params: podminka })
+  atRule.each((node) => media.append(node.clone()))
+  const supports = new AtRule({ name: 'supports', params: 'not (container-type: inline-size)' })
+  supports.append(media)
+  atRule.after(supports)
+}
+
 module.exports = () => ({
   postcssPlugin: 'postcss-stare-safari',
+  Rule: rozdelSkupinu,
+  AtRule: { container: zalohaKontejneru },
   Declaration(decl, { AtRule, Rule }) {
     /*
      * Vlastní proměnná (`--hero-h: 62svh`) zálohu „řádkem před" mít nemůže —
