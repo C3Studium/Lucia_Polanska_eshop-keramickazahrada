@@ -25,17 +25,28 @@ import { Link } from "react-router-dom";
  * - kolekce bez kategorií může být jen hlavní („Nastavit jako hlavní").
  */
 
-type Collection = { id: string; title: string };
-type Category = { id: string; name: string; metadata?: Record<string, unknown> | null };
+import {
+  applyBulkClassification,
+  collectionOf,
+  emptyBulkClassification,
+  sortDraft,
+  type BulkClassificationDraft,
+  type Category,
+  type Collection,
+  type SortMode,
+} from "./classification-draft";
+export {
+  applyBulkClassification,
+  bulkClassificationDirty,
+  emptyBulkClassification,
+  sortDraft,
+  type BulkClassificationDraft,
+  type SortMode,
+} from "./classification-draft";
 
 export type ClassificationChange = {
   collection_id?: string | null;
   categories?: { id: string }[];
-};
-
-const collectionOf = (category: Category): string | null => {
-  const value = (category.metadata ?? {})["collection_id"];
-  return typeof value === "string" && value ? value : null;
 };
 
 const NONE = "__none__";
@@ -313,40 +324,6 @@ export const ProductClassification = ({
 
 /* ———————————————— Hromadně (pravý panel Produkty+) ———————————————— */
 
-export type BulkClassificationDraft = {
-  /** Kategorie přidat všem vybraným. */
-  add: string[];
-  /** Kategorie odebrat všem vybraným. */
-  remove: string[];
-  /** Hlavní kolekce všem vybraným; `undefined` = beze změny. */
-  collection?: string | null;
-  /** Kolekce přidané, ale zatím bez kategorie (jen zobrazení). */
-  draftRows?: string[];
-};
-
-export const emptyBulkClassification = (): BulkClassificationDraft => ({ add: [], remove: [] });
-
-export const bulkClassificationDirty = (draft: BulkClassificationDraft) =>
-  draft.add.length > 0 || draft.remove.length > 0 || draft.collection !== undefined;
-
-/** Výsledek pro jeden výrobek po použití hromadné změny. */
-export const applyBulkClassification = (
-  product: { collection_id: string | null; category_ids: string[] },
-  draft: BulkClassificationDraft,
-  categories: Category[]
-): { collection_id: string | null; category_ids: string[] } => {
-  const ids = [...new Set([...product.category_ids, ...draft.add])].filter(
-    (id) => !draft.remove.includes(id)
-  );
-  let collection = draft.collection !== undefined ? draft.collection : product.collection_id;
-  if (!collection) {
-    /* Bez hlavní kolekce → první kolekce z přidaných kategorií. */
-    const first = draft.add.map((id) => categories.find((c) => c.id === id)).find(Boolean);
-    collection = first ? collectionOf(first) : null;
-  }
-  return { collection_id: collection ?? null, category_ids: ids };
-};
-
 /**
  * Zařazení pro víc výrobků najednou — stejné řádky jako na detailu výrobku
  * (kolekce vlevo, její kategorie vpravo), jen u štítku je, kolika
@@ -515,6 +492,230 @@ export const BulkClassification = ({
         </div>
       )}
     </>
+  );
+};
+
+/* ———————————————— Přeřazení (Kolekce a kategorie) ———————————————— */
+
+/**
+ * Panel „Zařadit N výrobků" v Kolekce a kategorie (19. 11. 2026, Matěj:
+ * „jen zařazení a ať to dává smysl"). Tři kroky shora dolů jako
+ * v Nastavení: Teď (kde výrobky jsou) → Co udělat (Přesunout / Přidat
+ * i sem) → Kam (kolekce, pak její kategorie). Dole věta, co se stane.
+ */
+export const BulkSortPanel = ({
+  products,
+  collections,
+  categories,
+  onChange,
+}: {
+  products: { id: string; collection_id: string | null; category_ids: string[] }[];
+  collections: Collection[];
+  categories: Category[];
+  onChange: (draft: BulkClassificationDraft, summary: string | null) => void;
+}) => {
+  const [mode, setMode] = useState<SortMode>("move");
+  const [target, setTarget] = useState<string | null>(null);
+  const [chosen, setChosen] = useState<string[]>([]);
+  const total = products.length;
+  const titleOf = (id: string | null) => collections.find((item) => item.id === id)?.title ?? "—";
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
+  const categoriesIn = (id: string) => categories.filter((category) => collectionOf(category) === id);
+  const anyMain = products.some((product) => product.collection_id);
+
+  /* Teď: kolekce → kategorie s počty. */
+  const now = new Map<string, { main: number; cats: Map<string, number> }>();
+  let nowhere = 0;
+  for (const product of products) {
+    const owners = new Set<string>();
+    if (product.collection_id) {
+      owners.add(product.collection_id);
+      const entry = now.get(product.collection_id) ?? { main: 0, cats: new Map() };
+      entry.main += 1;
+      now.set(product.collection_id, entry);
+    }
+    for (const id of product.category_ids) {
+      const owner = categoryById.get(id) ? collectionOf(categoryById.get(id)!) : null;
+      if (!owner) continue;
+      owners.add(owner);
+      const entry = now.get(owner) ?? { main: 0, cats: new Map() };
+      entry.cats.set(id, (entry.cats.get(id) ?? 0) + 1);
+      now.set(owner, entry);
+    }
+    if (!owners.size) nowhere += 1;
+  }
+
+  const emit = (nextMode: SortMode, nextTarget: string | null, nextChosen: string[]) => {
+    const draft = sortDraft(nextMode, nextTarget, nextChosen, products);
+    const names = nextChosen.map((id) => categoryById.get(id)?.name).filter(Boolean).join(", ");
+    const kam = nextTarget ? `${titleOf(nextTarget)}${names ? ` › ${names}` : ""}` : null;
+    onChange(
+      draft,
+      kam
+        ? nextMode === "move"
+          ? `Po uložení budou jen v: ${kam}`
+          : `Po uložení budou navíc i v: ${kam}`
+        : null
+    );
+  };
+  const pickMode = (next: SortMode) => {
+    setMode(next);
+    /* „Přidat i sem" neumí kolekci bez kategorií, když už mají hlavní. */
+    const keep = next === "add" && target && anyMain && categoriesIn(target).length === 0 ? null : target;
+    setTarget(keep);
+    if (!keep) setChosen([]);
+    emit(next, keep, keep ? chosen : []);
+  };
+  const pickTarget = (id: string) => {
+    setTarget(id);
+    setChosen([]);
+    emit(mode, id, []);
+  };
+  const toggleCategory = (id: string) => {
+    const next = chosen.includes(id) ? chosen.filter((other) => other !== id) : [...chosen, id];
+    setChosen(next);
+    emit(mode, target, next);
+  };
+
+  const step = (n: number, title: string) => (
+    <Text size="small" weight="plus" className="text-ui-fg-subtle mb-2 flex items-center gap-2 px-1">
+      <span className="bg-ui-bg-base-pressed text-ui-fg-base txt-compact-xsmall-plus flex size-5 items-center justify-center rounded-full">
+        {n}
+      </span>
+      {title}
+    </Text>
+  );
+
+  return (
+    <div className="flex flex-col gap-5 px-5 py-4">
+      <section>
+        {step(1, "Teď jsou")}
+        <div className="bg-ui-bg-subtle flex flex-col gap-1.5 rounded-lg px-3 py-2.5">
+          {[...now.entries()].map(([id, entry]) => (
+            <Text key={id} size="small">
+              <span className="font-medium">{titleOf(id)}</span>
+              {entry.cats.size ? (
+                <span className="text-ui-fg-subtle">
+                  {" › "}
+                  {[...entry.cats.entries()]
+                    .map(([cat, n]) => `${categoryById.get(cat)?.name ?? "?"}${n < total ? ` (${n})` : ""}`)
+                    .join(", ")}
+                </span>
+              ) : (
+                <span className="text-ui-fg-muted"> · bez kategorie</span>
+              )}
+            </Text>
+          ))}
+          {nowhere > 0 && (
+            <Text size="small" className="text-ui-tag-orange-text">
+              Nezařazené: {nowhere} — v obchodě je v nabídce nikdo nenajde
+            </Text>
+          )}
+        </div>
+      </section>
+
+      <section>
+        {step(2, "Co udělat")}
+        <div className="grid grid-cols-2 gap-2">
+          {(
+            [
+              ["move", "Přesunout sem", "Budou jen v kolekci a kategoriích, které vyberete."],
+              ["add", "Přidat i sem", "Zůstanou, kde jsou, a přibudou i sem."],
+            ] as const
+          ).map(([key, label, hint]) => (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={mode === key}
+              onClick={() => pickMode(key)}
+              className={`flex min-h-[64px] flex-col items-start rounded-lg border px-3 py-2 text-left ${
+                mode === key
+                  ? "border-ui-border-interactive bg-ui-bg-base-pressed"
+                  : "border-ui-border-base hover:bg-ui-bg-base-hover"
+              }`}
+            >
+              <Text size="small" weight="plus">
+                {label}
+              </Text>
+              <Text size="xsmall" className="text-ui-fg-subtle">
+                {hint}
+              </Text>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        {step(3, "Kam")}
+        <div className="bg-ui-bg-base shadow-borders-base divide-y rounded-lg">
+          {collections.map((collection) => {
+            const own = categoriesIn(collection.id);
+            const blocked = mode === "add" && anyMain && own.length === 0;
+            const selected = target === collection.id;
+            return (
+              <div key={collection.id}>
+                <button
+                  type="button"
+                  disabled={blocked}
+                  aria-pressed={selected}
+                  onClick={() => pickTarget(collection.id)}
+                  className={`flex min-h-[44px] w-full items-center justify-between gap-3 px-3 py-2 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
+                    selected ? "bg-ui-bg-base-pressed" : "hover:bg-ui-bg-base-hover"
+                  }`}
+                >
+                  <span>
+                    <Text size="small" weight={selected ? "plus" : "regular"}>
+                      {collection.title}
+                    </Text>
+                    <Text size="xsmall" className="text-ui-fg-muted">
+                      {blocked
+                        ? "Bez kategorií — jde jen přesunout"
+                        : own.length
+                          ? `${own.length} ${own.length === 1 ? "kategorie" : own.length <= 4 ? "kategorie" : "kategorií"}`
+                          : "bez kategorií"}
+                    </Text>
+                  </span>
+                  {selected ? <span className="text-ui-fg-interactive txt-compact-small-plus">✓</span> : null}
+                </button>
+                {selected && own.length > 0 && (
+                  <div className="bg-ui-bg-subtle flex flex-wrap gap-1.5 px-3 pb-3 pt-2">
+                    <Text size="xsmall" className="text-ui-fg-subtle w-full">
+                      Do kterých kategorií? (můžete víc)
+                    </Text>
+                    {own.map((category) => {
+                      const on = chosen.includes(category.id);
+                      return (
+                        <button
+                          key={category.id}
+                          type="button"
+                          aria-pressed={on}
+                          onClick={() => toggleCategory(category.id)}
+                          className={`min-h-[32px] rounded-full border px-3 ${
+                            on
+                              ? "border-ui-border-interactive bg-ui-bg-base text-ui-fg-base"
+                              : "border-ui-border-base bg-ui-bg-base text-ui-fg-subtle hover:bg-ui-bg-base-hover"
+                          }`}
+                        >
+                          <Text size="small" weight={on ? "plus" : "regular"}>
+                            {on ? "✓ " : ""}
+                            {category.name}
+                          </Text>
+                        </button>
+                      );
+                    })}
+                    {chosen.length === 0 && (
+                      <Text size="xsmall" className="text-ui-fg-muted w-full">
+                        Bez kategorie budou jen pod „Vše" této kolekce.
+                      </Text>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    </div>
   );
 };
 
