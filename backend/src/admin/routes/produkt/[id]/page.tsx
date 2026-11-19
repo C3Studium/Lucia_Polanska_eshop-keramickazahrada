@@ -43,6 +43,7 @@ import { formatDate, formatDateTime } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
 import { formatCzk } from "../../../lib/workbench";
 import { ProductSaleRow } from "../../../components/product-sale";
+import { classificationToast, ProductClassification } from "../../../components/product-classification";
 import { ProductOwnVyprodejRow, ProductVyprodejRow } from "../../../components/vyprodej";
 import { adminQueryClient } from "../../../lib/query-client"
 import { ceskaChyba } from "../../../lib/ceska-chyba";
@@ -1889,15 +1890,6 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
     0
   );
   const categories = categoriesQuery.data?.product_categories ?? [];
-  const selectedCategories = new Set((product.categories ?? []).map((c) => c.id));
-
-  const toggleCategory = (categoryId: string) => {
-    const current = (product.categories ?? []).map((c) => ({ id: c.id }));
-    const next = selectedCategories.has(categoryId)
-      ? current.filter((c) => c.id !== categoryId)
-      : [...current, { id: categoryId }];
-    saveProduct.mutate({ categories: next });
-  };
 
   const removeImage = (url: string) => {
     const remaining = (product.images ?? []).filter((image) => image.url !== url);
@@ -2647,190 +2639,26 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               />
             </InspectorGroup>
 
-            {/* Zařazení — v hlavním sloupci pod Cenou a skladem (Matěj,
-                17. 11. 2026). */}
+            {/* Zařazení (19. 11. 2026, Matěj): řádek = kolekce, vpravo její
+                kategorie a „+ Kategorie", dole „+ Přidat do kolekce".
+                Logika v components/product-classification.tsx. */}
             <InspectorGroup
               title="Zařazení"
               id="produkt-zarazeni"
-              note="Nejdřív kolekce — kategorie se pak nabídnou podle ní."
+              note="Kategorie se nabízejí jen z kolekce v řádku. Výrobek se v obchodě ukáže v každé kolekci, kde je."
             >
-              {(() => {
-                /* Kaskáda: kategorie patří kolekci přes metadata.collection_id
-                   (nastavuje se v Kolekce a kategorie; stejnou vazbu čte menu obchodu).
-                   Plochý mrak všech 20 kategorií nutil Lucii pamatovat si,
-                   co kam patří — teď jí stránka nabídne jen ty správné. */
-                const collectionId = product.collection_id ?? null;
-                const inCollection = collectionId
-                  ? categories.filter(
-                      (category) =>
-                        (category.metadata ?? {})["collection_id"] === collectionId
-                    )
-                  : [];
-                const inCollectionIds = new Set(
-                  inCollection.map((category) => category.id)
-                );
-                /* Už zařazené kategorie z JINÝCH kolekcí nikdy neschovávat —
-                   jinak by nešly odebrat a produkt by v obchodě strašil tam,
-                   kam nepatří. */
-                const assignedElsewhere = categories.filter(
-                  (category) =>
-                    selectedCategories.has(category.id) &&
-                    !inCollectionIds.has(category.id)
-                );
-                const collectionTitle =
-                  (collectionsQuery.data?.collections ?? []).find(
-                    (collection) => collection.id === collectionId
-                  )?.title ?? "";
-
-                const chip = (category: { id: string; name: string }) => {
-                  const selected = selectedCategories.has(category.id);
-                  return (
-                    <button
-                      key={category.id}
-                      type="button"
-                      aria-pressed={selected}
-                      disabled={saveProduct.isPending}
-                      onClick={() => toggleCategory(category.id)}
-                      className={`transition-fg min-h-[36px] rounded-full border px-3.5 py-1.5 ${
-                        selected
-                          ? "border-ui-border-interactive bg-ui-bg-base-pressed text-ui-fg-base"
-                          : "border-ui-border-base bg-ui-bg-base text-ui-fg-subtle hover:bg-ui-bg-base-hover"
-                      }`}
-                    >
-                      <Text size="small" weight={selected ? "plus" : "regular"}>
-                        {selected ? "✓ " : ""}
-                        {category.name}
-                      </Text>
-                    </button>
-                  );
-                };
-
-                return (
-                  <>
-                    <InspectorRow
-                      label="Kolekce"
-                      control={
-                        <div className="w-48">
-                          <Select
-                            value={product.collection_id ?? "none"}
-                            onValueChange={(next) =>
-                              saveProduct.mutate({
-                                collection_id: next === "none" ? null : next,
-                              })
-                            }
-                          >
-                            <Select.Trigger>
-                              <Select.Value placeholder="Bez kolekce" />
-                            </Select.Trigger>
-                            <Select.Content className="z-50">
-                              <Select.Item value="none">Bez kolekce</Select.Item>
-                              {(collectionsQuery.data?.collections ?? []).map(
-                                (collection) => (
-                                  <Select.Item
-                                    key={collection.id}
-                                    value={collection.id}
-                                  >
-                                    {collection.title}
-                                  </Select.Item>
-                                )
-                              )}
-                            </Select.Content>
-                          </Select>
-                        </div>
-                      }
-                    />
-                    <InspectorRow label="Kategorie">
-                      <div className="flex flex-wrap gap-2">
-                        {categories.length === 0 && (
-                          <Text size="small" className="text-ui-fg-subtle">
-                            Zatím žádné kategorie — založíte je v{" "}
-                            <Link
-                              to="/rozdeleni"
-                              className="text-ui-fg-interactive hover:underline"
-                            >
-                              Kolekce a kategorie
-                            </Link>
-                            .
-                          </Text>
-                        )}
-                        {categories.length > 0 && !collectionId && (
-                          <Text size="small" className="text-ui-fg-subtle">
-                            Nejdřív vyberte kolekci — kategorie se nabídnou podle
-                            ní.
-                          </Text>
-                        )}
-                        {categories.length > 0 &&
-                          collectionId &&
-                          inCollection.length === 0 && (
-                            <Text size="small" className="text-ui-fg-subtle">
-                              Kolekce „{collectionTitle}" nemá vlastní kategorie —
-                              stačí samotné zařazení do kolekce.
-                            </Text>
-                          )}
-                        {inCollection.map(chip)}
-                      </div>
-                    </InspectorRow>
-
-                    {/* Kategorie z JINÝCH kolekcí (Matěj 12. 10. 2026): kousek
-                        může patřit do víc kolekcí — třeba zápich do „Zápichy"
-                        (Do zahrady) i „Drobnosti pro radost" (Do bytu). Obchod
-                        i Produkty+ ho pak ukážou v každé kolekci, ze které má
-                        kategorii; kolekce nahoře zůstává hlavní. */}
-                    {categories.length > 0 && (
-                      <details
-                        open={assignedElsewhere.length > 0}
-                        className="px-3 py-2.5"
-                      >
-                        <summary className="min-h-[32px] cursor-pointer pt-1">
-                          <Text size="small" weight="plus" className="inline">
-                            Zařadit i do jiné kolekce
-                          </Text>
-                          {assignedElsewhere.length > 0 && (
-                            <Text size="xsmall" className="text-ui-fg-subtle ml-2 inline">
-                              ({assignedElsewhere.map((category) => category.name).join(", ")})
-                            </Text>
-                          )}
-                        </summary>
-                        <Text size="xsmall" className="text-ui-fg-muted mt-1">
-                          Kliknutím kousek přidáte i do kategorie jiné kolekce
-                          (nebo ho z ní odeberete). V obchodě se pak ukáže
-                          v obou kolekcích.
-                        </Text>
-                        <div className="mt-2 flex flex-col gap-3">
-                          {[
-                            ...(collectionsQuery.data?.collections ?? [])
-                              .filter((collection) => collection.id !== collectionId)
-                              .map((collection) => ({
-                                title: collection.title,
-                                items: categories.filter(
-                                  (category) =>
-                                    (category.metadata ?? {})["collection_id"] === collection.id
-                                ),
-                              })),
-                            {
-                              title: "Bez kolekce",
-                              items: categories.filter(
-                                (category) => !(category.metadata ?? {})["collection_id"]
-                              ),
-                            },
-                          ]
-                            .filter((group) => group.items.length > 0)
-                            .map((group) => (
-                              <div key={group.title}>
-                                <Text size="xsmall" className="text-ui-fg-subtle">
-                                  {group.title}
-                                </Text>
-                                <div className="mt-1 flex flex-wrap gap-2">
-                                  {group.items.map(chip)}
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      </details>
-                    )}
-                  </>
-                );
-              })()}
+              <ProductClassification
+                collectionId={product.collection_id ?? null}
+                categoryIds={(product.categories ?? []).map((category) => category.id)}
+                collections={collectionsQuery.data?.collections ?? []}
+                categories={categories}
+                pending={saveProduct.isPending}
+                onSave={(change, message) =>
+                  saveProduct.mutate(change as never, {
+                    onSuccess: () => classificationToast(message),
+                  })
+                }
+              />
             </InspectorGroup>
             </div>
           </div>
