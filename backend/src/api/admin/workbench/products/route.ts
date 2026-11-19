@@ -58,7 +58,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   // Strop 1000, ne 200: Rozdělení si bere celý katalog naráz (nemá stránkování)
   // a při 266 produktech mu 200 uřízlo konec — kus z konce (třeba poškozený)
   // tam pak „nešel najít". Interní čtení je stejně take: 1000.
-  const limit = Math.min(Number(req.query.limit) || 200, 1000)
+  // 19. 11. 2026: produkce má 257 běžných kusů a Produkty+ si bralo 200 —
+  // 57 výrobků (Květiny, Zvonková tlačítka…) v seznamu chybělo. Strop 5000.
+  const limit = Math.min(Number(req.query.limit) || 200, 5000)
   const offset = Math.max(Number(req.query.offset) || 0, 0)
   const search =
     typeof req.query.q === "string" ? req.query.q.trim().toLowerCase() : null
@@ -102,7 +104,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           "variants.prices.amount",
           "variants.prices.currency_code",
         ],
-        pagination: { take: 1000, skip: 0 },
+        pagination: { take: 5000, skip: 0 },
       }),
       getInventoryAlerts(req.scope),
       madeToOrder.listProductProductionProfiles({} as never) as Promise<any[]>,

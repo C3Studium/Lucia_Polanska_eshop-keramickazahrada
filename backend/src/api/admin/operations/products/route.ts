@@ -27,7 +27,7 @@ export type ProductKind = "standard" | "made-to-order" | "bundle" | "clearance"
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
 
-  const limit = Math.min(asPositiveInt(req.query.limit, 100), 200)
+  const limit = Math.min(asPositiveInt(req.query.limit, 100), 5000)
   const search = String(req.query.q ?? "").trim().toLowerCase()
   const kind = String(req.query.kind ?? "standard") as ProductKind
 

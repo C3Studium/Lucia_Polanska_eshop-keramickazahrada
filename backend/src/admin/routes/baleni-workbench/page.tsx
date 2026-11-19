@@ -295,7 +295,7 @@ const BaleniInner = () => {
       // No `archived` param, so the route excludes archived by default — there is no
       // point pricing the wrapping for a piece she has retired.
       sdk.client.fetch(
-        `/admin/workbench/products?limit=200&kind=${encodeURIComponent(active)}`
+        `/admin/workbench/products?limit=5000&kind=${encodeURIComponent(active)}`
       ),
   });
 
