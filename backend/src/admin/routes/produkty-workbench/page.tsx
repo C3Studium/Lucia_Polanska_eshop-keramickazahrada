@@ -423,11 +423,15 @@ const RowHeader = ({
         Produkt
       </Text>
     </div>
-    {["Stav", "Cena", "Prodeje 30 dní", settings ? "Doprava" : "", ""].map((label, index) => (
+    {["Stav", "Cena", "Prodeje 30 dní", settings ? "Doprava" : ""].map((label, index) => (
       <Text key={index} size="xsmall" weight="plus">
         {label}
       </Text>
     ))}
+    {/* „?“ přímo nad „…“ — co je v nastavení jednoho výrobku (19. 11. 2026). */}
+    <div className="flex justify-center">
+      <NavodTip tema="produkty.nastaveni" />
+    </div>
   </div>
 );
 

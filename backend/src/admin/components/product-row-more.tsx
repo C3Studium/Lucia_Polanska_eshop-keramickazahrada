@@ -13,6 +13,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba } from "../lib/ceska-chyba";
 import { toastWithUndo } from "../lib/undo";
+import { NavodTip } from "./navod-tip";
 import { BundleEditor } from "./bundle-editor";
 import { ConfirmDialog } from "./confirm-dialog";
 import { PanelZpet } from "./panel-shell";
@@ -413,9 +414,12 @@ export const ProductRowMore = ({
     <div className="flex max-h-[min(82vh,760px)] w-[min(680px,calc(100vw-24px))] flex-col" role="menu" aria-label={`Možnosti produktu ${product.title}`}>
       {/* Hlavička: název + viditelnost jako tlačítko */}
       <div className="border-ui-border-base flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
-        <Text size="small" weight="plus" className="min-w-0 flex-1 truncate" title={product.title}>
-          {product.title}
-        </Text>
+        <span className="flex min-w-0 flex-1 items-center gap-1.5">
+          <NavodTip tema="produkty.nastaveni" />
+          <Text size="small" weight="plus" className="min-w-0 truncate" title={product.title}>
+            {product.title}
+          </Text>
+        </span>
         <div className="flex items-center gap-2">
           {showVisibility && (
             <Button
