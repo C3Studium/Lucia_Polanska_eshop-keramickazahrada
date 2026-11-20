@@ -269,6 +269,12 @@ function ProductCard({
     : null
   const referenceComplete =
     reference.status === "ready" && reference.reference.complete
+  /* Název výprodeje jako na stránce výrobku („Výprodej", u slevy přímo
+     u výrobku „Sleva") — 20. 11. 2026, Lucie: ať karta vypadá stejně. */
+  const saleName =
+    reference.status === "ready"
+      ? (reference.reference as { sale_name?: string | null }).sale_name?.trim() || null
+      : null
 
   /*
    * Rychlé přidání do košíku.
@@ -465,7 +471,11 @@ function ProductCard({
               </span>
             )}
             {isNew && <span>Novinka</span>}
-            {salePercent != null && <span>−{salePercent} %</span>}
+            {salePercent != null && (
+              <span className={styles.badgeSale}>
+                {saleName ?? "Sleva"} −{salePercent} %
+              </span>
+            )}
           </div>
           <motion.span
             className={styles.discover}
@@ -535,7 +545,18 @@ function ProductCard({
         </div>
 
         <div className={styles.price}>
-          <strong>
+          {/* Sleva jako na stránce výrobku: přeškrtnutá nejnižší cena za 30 dní
+              před slevou (§ 12a ZOS) a vedle nová cena zeleně. */}
+          <span className={styles.priceRow}>
+          {salePercent != null && lowest30d != null && (
+            <del className={styles.priceWas} data-testid="card-price-was">
+              {convertToLocale({
+                amount: lowest30d,
+                currency_code: cheapestPrice?.currency_code ?? "czk",
+              })}
+            </del>
+          )}
+          <strong className={salePercent != null && lowest30d != null ? styles.priceSale : undefined}>
             {customVoucher
               ? voucherFromLabel(
                   voucherConfig(
@@ -546,6 +567,7 @@ function ProductCard({
                 ? "Cena po domluvě"
                 : cheapestPrice?.calculated_price || "Cena na dotaz"}
           </strong>
+          </span>
           {salePercent != null && lowest30d != null && (
             <small
               className={styles.priceNote}
@@ -556,14 +578,8 @@ function ProductCard({
               }
             >
               {referenceComplete
-                ? "Nejnižší cena za 30 dní před slevou: "
-                : "Nejnižší cena před slevou: "}
-              <span>
-                {convertToLocale({
-                  amount: lowest30d,
-                  currency_code: cheapestPrice?.currency_code ?? "czk",
-                })}
-              </span>
+                ? "Přeškrtnutá cena je nejnižší za 30 dní před slevou."
+                : "Přeškrtnutá cena je nejnižší cena před slevou."}
             </small>
           )}
           {clearance && cheapestPrice?.calculated_price && (

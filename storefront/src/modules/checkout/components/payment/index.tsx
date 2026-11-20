@@ -408,6 +408,7 @@ const Payment = ({
             <div className={styles.buttonRow}>
               <PremiumActionButton
                 text="Pokračovat k přehledu"
+                tone="dark"
                 onClickAction={continueWithoutPayment}
                 className={styles.submitBtn}
                 data-testid="submit-payment-button"
@@ -528,6 +529,7 @@ const Payment = ({
             <div className={styles.buttonRow}>
               <PremiumActionButton
                 text="Pokračovat k přehledu"
+                tone="dark"
                 onClickAction={handleSubmit}
                 className={styles.submitBtn}
                 data-testid="submit-payment-button"

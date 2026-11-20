@@ -23,6 +23,8 @@ type PremiumActionButtonProps = {
   disabled?: boolean
   active?: boolean
   compact?: boolean
+  /** Tmavé tlačítko s bílým textem, olivové při stisku (pokladna, 20. 11. 2026). */
+  tone?: "dark"
   type?: "button" | "submit"
   className?: string
   "data-testid"?: string
@@ -35,6 +37,7 @@ const PremiumActionButton = ({
   disabled = false,
   active = false,
   compact = false,
+  tone,
   type = "button",
   className,
   "data-testid": dataTestId,
@@ -68,7 +71,7 @@ const PremiumActionButton = ({
   if (plain || coarse) {
     return (
       <div
-        className={`${styles.root} ${styles.plain} ${compact ? styles.compact : ""} ${isVisuallyActive ? styles.active : ""} ${isVisuallyActive && !active ? styles.busy : ""} ${className ?? ""}`}
+        className={`${styles.root} ${styles.plain} ${compact ? styles.compact : ""} ${tone === "dark" ? styles.dark : ""} ${isVisuallyActive ? styles.active : ""} ${isVisuallyActive && !active ? styles.busy : ""} ${className ?? ""}`}
       >
         <button
           type={type}
@@ -98,7 +101,7 @@ const PremiumActionButton = ({
     : PREMIUM_BUTTON_REST
 
   return (
-    <div className={`${styles.root} ${compact ? styles.compact : ""} ${isVisuallyActive ? styles.active : ""} ${coarse && isVisuallyActive && !active ? styles.busy : ""} ${className ?? ""}`}>
+    <div className={`${styles.root} ${compact ? styles.compact : ""} ${tone === "dark" ? styles.dark : ""} ${isVisuallyActive ? styles.active : ""} ${coarse && isVisuallyActive && !active ? styles.busy : ""} ${className ?? ""}`}>
       <motion.button
         type={type}
         className={styles.button}

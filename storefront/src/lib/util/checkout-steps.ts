@@ -45,7 +45,7 @@ export const checkoutSteps = (items: readonly unknown[] | null | undefined): Che
       ? [{ key: "brief" as const, label: "Zadání", text: "Co si představujete — popis a případně fotky." }]
       : []),
     ...(bezne
-      ? [{ key: "note" as const, label: "Poznámka", text: "Chcete nám něco vzkázat? Nepovinné." }]
+      ? [{ key: "note" as const, label: "Poznámka", text: "Doplňující informace k objednávce — velikost, barva… Nepovinné." }]
       : []),
     {
       key: "payment",

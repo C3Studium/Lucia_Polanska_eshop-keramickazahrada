@@ -955,7 +955,14 @@ const Shipping: React.FC<ShippingProps> = ({
               data-testid="delivery-option-error-message"
             />
             <PremiumActionButton
-              text={`Pokračovat k ${stepLabel(nextCheckoutStep(cart?.items, "delivery"))}`}
+              /* „…k poznámce a platbě" (20. 11. 2026, Lucie): ať je vidět, že
+                 poznámka je jen zastávka před platbou, ne další povinnost. */
+              text={
+                nextCheckoutStep(cart?.items, "delivery") === "note"
+                  ? "Pokračovat k poznámce a platbě"
+                  : `Pokračovat k ${stepLabel(nextCheckoutStep(cart?.items, "delivery"))}`
+              }
+              tone="dark"
               onClickAction={handleSubmit}
               className={styles.divider}
               disabled={

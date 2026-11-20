@@ -405,3 +405,26 @@
     padding-bottom: 118.75%;
   }
 }
+
+/* Sleva na kartě jako na stránce výrobku (20. 11. 2026): štítek s názvem
+   výprodeje, přeškrtnutá předchozí cena a nová zeleně. Zelená tmavší než
+   na tmavé stránce výrobku, ať je na krémové kartě čitelná. */
+.badges span.badgeSale {
+  background: #2f6b26;
+  color: var(--white, #fff);
+}
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+.price del.priceWas {
+  color: var(--clay-22);
+  font-size: clamp(.875rem, 1.05vw, 1rem);
+  text-decoration-thickness: 1px;
+}
+.price strong.priceSale {
+  color: #2f6b26;
+}

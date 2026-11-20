@@ -170,6 +170,7 @@ const Addresses = ({
               className={s.submitBtn}
               data-testid="submit-address-button"
               text={"Pokračovat k doručení"}
+              tone="dark"
             />
             <ErrorMessage error={message} data-testid="address-error-message" />
           </div>

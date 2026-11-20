@@ -150,6 +150,9 @@ const filterTabs = [
   /* Zabalené balíky, které čekají na fyzické předání — to, co dělá u přepážky
      s telefonem v ruce. Velká tlačítka, hromadné potvrzení. */
   { key: "naposta", label: "Na poštu" },
+  /* Odeslané a vyzvednuté — „vyřízené objednávky pokupě" (20. 11. 2026,
+     Lucie). Fáze `shipped` ze stejné tabulky stavů jako ostatní záložky. */
+  { key: "shipped", label: "Vyřízené" },
   { key: "payment_problem", label: "Problém s platbou" },
   { key: "dluzi", label: "Čeká na doplatek" },
   /* §11.4 — kategorie z modulu Reklamace a vrácení: zrušené objednávky,
@@ -1165,7 +1168,8 @@ const OrderListRow = ({
             mimo dílnu
           </Text>
         )}
-        {order.shipped && !order.delivered && (
+        {/* „Na cestě" jen u zásilky — osobní odběr nikam nejede. */}
+        {order.shipped && !order.delivered && !order.is_personal_pickup && (
           <Text size="xsmall" className="text-ui-fg-subtle mt-0.5">
             na cestě
           </Text>

@@ -201,3 +201,8 @@
     clip: rect(0 0 0 0);
   }
 }
+
+/* Telefon: dotykový cíl aspoň ~44 px (Apple HIG), 20. 11. 2026 — naměřeno pod 40 px. */
+@media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  .bubble { width: 3.25rem; height: 3.25rem; min-width: 3.25rem; min-height: 3.25rem; }
+}
