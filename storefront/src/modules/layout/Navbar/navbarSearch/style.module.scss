@@ -1019,49 +1019,6 @@
     font-size: .6875rem;
   }
 }
-/* Kolekce a kategorie ve dvou sloupcích, jakmile je lišta dost široká. */
-.filterSub {
-  margin: .625rem 0 .25rem;
-  color: var(--grey-04);
-  font-size: .625rem;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  &:first-of-type { margin-top: 0; }
-}
-.filterList {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 7.25rem), 1fr));
-  column-gap: .75rem;
-
-  button {
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-    min-height: 2.125rem !important;
-    padding: .2rem .5rem;
-    margin-inline: -.5rem;
-    border: 0;
-    border-radius: .5rem;
-    background: transparent;
-    color: var(--grey-05);
-    font-size: .875rem;
-    text-align: left;
-    cursor: pointer;
-    transition: color .25s ease, background-color .25s ease;
-
-    /* Čárka před aktivní položkou — jako kategorie v obchodě. */
-    i { flex: 0 0 auto; width: 0; height: 1px; background: var(--cream-06); transition: width .35s cubic-bezier(.76, 0, .24, 1); }
-    span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    small { margin-left: auto; color: var(--grey-04); font-size: .625rem; letter-spacing: .1em; text-transform: uppercase; }
-    &:hover { color: var(--white); }
-  }
-  button.filterActive {
-    background: rgb(var(--cream-06-rgb) / .14);
-    color: var(--cream-06);
-    font-weight: 600;
-    i { width: 1.25rem; }
-  }
-}
 .filterToggles {
   display: flex;
   flex-direction: column;
@@ -1184,7 +1141,6 @@
 @media (min-width: 900px) and (pointer: fine) {
   .filterGroup { padding-block: clamp(.5rem, 1.2vh, .875rem); }
   .shopFiltersHead { padding-block: clamp(.625rem, 1.4vh, 1rem) clamp(.5rem, 1.2vh, .875rem); }
-  .filterList button { min-height: clamp(1.5rem, 3vh, 2.125rem) !important; }
   .filterToggles button { padding-block: clamp(.2rem, .55vh, .5rem); }
 }
 /* Nižší obrazovka: nad „Filtry" bez nadpisku „Upřesnit". */
@@ -1244,12 +1200,6 @@
 }
 .railBar:hover .railThumb { background: rgb(var(--ink-05-rgb) / .7); }
 .railBar[data-taha] .railThumb { background: var(--ink-05); cursor: grabbing; }
-
-/* Užší lišta filtrů: dlouhý název kolekce se zalomí, neusekne. */
-.filterList button span {
-  white-space: normal;
-  line-height: 1.2;
-}
 
 /* Telefon: filtry jsou posuvné a je to na nich vidět (20. 11. 2026, Matěj:
    „na iPhonu Air nejsou celé, ať jde posunout a dojet na konec"). Svislý

@@ -10,10 +10,12 @@ import { useDragScroll } from "./useDragScroll"
 import { RailScrollbar } from "./RailScrollbar"
 import ProductCard from "@modules/store/Shop/components/ProductCard"
 import {
+  CollectionTree,
   PriceFilter,
   Toggle,
   priceScaleFor,
 } from "@modules/store/Shop/components/FilterPanel"
+import type { NavigationCollection } from "../productsButton"
 import { parsePriceRange } from "@lib/util/catalogue-filter"
 import { useParams } from "next/navigation"
 import { normalizeSearch, rankBySearch } from "@lib/util/search-rank"
@@ -58,6 +60,8 @@ export type NavbarProductHit = {
 
 type NavbarSearchProps = {
   countryCode: string
+  /** Kolekce s kategoriemi z menu — filtr „Kategorie" jako v obchodě. */
+  collections?: NavigationCollection[]
   isOpen: boolean
   onClose: () => void
   onQueryChange: (query: string) => void
@@ -330,6 +334,7 @@ type SearchContentProps = Pick<
   isLoading: boolean
   loadError: boolean
   products: NavbarProductHit[]
+  collections: NavigationCollection[]
   onRetry: () => void
   entranceComplete: boolean
 }
@@ -442,6 +447,7 @@ function SearchContent({
   onQueryChange,
   onRetry,
   products: catalogueProducts,
+  collections,
   query,
 }: SearchContentProps) {
   const copy = useCopyBlock("global.hledani")
@@ -451,7 +457,14 @@ function SearchContent({
   const grid = useRailGrid(railRef)
   const now = useNow()
   const [activeFacets, setActiveFacets] = useState<string[]>([])
-  const [activeTaxonomy, setActiveTaxonomy] = useState<string[]>([])
+  /* Kolekce / kategorie jako v obchodě: jedna vybraná, kolekce rozbalí své
+     kategorie (CollectionTree z FilterPanelu). */
+  const [collectionId, setCollectionId] = useState("")
+  const [categoryId, setCategoryId] = useState("")
+  const changeTree = (next: { collectionId?: string; categoryId?: string }) => {
+    if (next.collectionId !== undefined) setCollectionId(next.collectionId)
+    if (next.categoryId !== undefined) setCategoryId(next.categoryId)
+  }
   const [priceRange, setPriceRange] = useState("")
   const { countryCode } = useParams<{ countryCode?: string }>() ?? {}
   const priceLabel = priceRangeLabel(priceRange, priceScaleFor(countryCode).unit)
@@ -469,8 +482,6 @@ function SearchContent({
     return () => window.removeEventListener("kz:hledat", hledat)
   }, [railRef])
 
-  const toggle = (list: string[], value: string) =>
-    list.includes(value) ? list.filter((item) => item !== value) : [...list, value]
   /* Druh kusu (Poškozené / Balíčky / Zakázky) jen jeden naráz, jako v obchodě. */
   const toggleFacet = (id: string) =>
     setActiveFacets((list) =>
@@ -481,46 +492,63 @@ function SearchContent({
 
   const clearAll = () => {
     setActiveFacets([])
-    setActiveTaxonomy([])
+    setCollectionId("")
+    setCategoryId("")
     setPriceRange("")
     onQueryChange("")
   }
 
   const trimmedQuery = query.trim()
-  const filterCount = activeFacets.length + activeTaxonomy.length + (priceRange ? 1 : 0)
+  const filterCount =
+    activeFacets.length + (collectionId || categoryId ? 1 : 0) + (priceRange ? 1 : 0)
   const hasFilters = filterCount > 0 || Boolean(trimmedQuery)
 
   const products = useMemo(() => {
     const ranked = rankBySearch(catalogueProducts, query, searchFieldsOfHit)
-    const byTaxonomy = activeTaxonomy.length
-      ? ranked.filter((hit) => {
-          const names = [...getCategoryNames(hit), getCollectionName(hit)].filter(Boolean)
-          return names.some((name) => activeTaxonomy.includes(name as string))
-        })
-      : ranked
+    /* Stejné pravidlo jako obchod (catalogue-filter): vybraná kategorie
+       rozhoduje sama; kolekce = vlastní collection_id NEBO kterákoli
+       kategorie té kolekce (výrobek je ve všech kolekcích svých kategorií). */
+    const collection = collections.find((item) => item.id === collectionId)
+    const collectionCategoryIds = new Set(collection?.categories.map((item) => item.id) ?? [])
+    const byTree =
+      categoryId || collectionId
+        ? ranked.filter((hit) => {
+            const ids = (((hit as any).categories ?? []) as { id?: string }[]).map((item) => item?.id)
+            if (categoryId) return ids.includes(categoryId)
+            return (
+              (hit as any).collection_id === collectionId ||
+              ids.some((id) => id && collectionCategoryIds.has(id))
+            )
+          })
+        : ranked
     return activeFacets.length || priceRange
-      ? byTaxonomy.filter((product) => matchesFacets(product, activeFacets, priceRange))
-      : byTaxonomy
-  }, [catalogueProducts, query, activeFacets, activeTaxonomy, priceRange])
+      ? byTree.filter((product) => matchesFacets(product, activeFacets, priceRange))
+      : byTree
+  }, [catalogueProducts, query, activeFacets, collections, collectionId, categoryId, priceRange])
 
-  /* Kategorie a kolekce z katalogu, nejčastější nahoře. */
-  const taxonomy = useMemo(() => {
-    const counts = new Map<string, { label: string; type: "Kategorie" | "Kolekce"; n: number }>()
+  /* Bez kolekcí v menu: plochý seznam kategorií z katalogu (záloha jako v obchodě). */
+  const flatCategories = useMemo(() => {
+    if (collections.length) return []
+    const seen = new Map<string, { id: string; name: string }>()
     for (const hit of catalogueProducts) {
-      for (const name of getCategoryNames(hit)) {
-        const entry = counts.get(name) ?? { label: name, type: "Kategorie" as const, n: 0 }
-        entry.n += 1
-        counts.set(name, entry)
-      }
-      const collection = getCollectionName(hit)
-      if (collection) {
-        const entry = counts.get(collection) ?? { label: collection, type: "Kolekce" as const, n: 0 }
-        entry.n += 1
-        counts.set(collection, entry)
+      for (const item of ((hit as any).categories ?? []) as { id?: string; name?: string }[]) {
+        if (item?.id && item.name && !seen.has(item.id)) seen.set(item.id, { id: item.id, name: item.name })
       }
     }
-    return Array.from(counts.values()).sort((a, b) => b.n - a.n).slice(0, 14)
-  }, [catalogueProducts])
+    return Array.from(seen.values()).sort((a, b) => a.name.localeCompare(b.name, "cs"))
+  }, [catalogueProducts, collections.length])
+
+  /* Štítek vybrané kolekce / kategorie v hlavičce. */
+  const treeLabel = useMemo(() => {
+    if (categoryId) {
+      for (const item of collections) {
+        const found = item.categories.find((category) => category.id === categoryId)
+        if (found) return found.name
+      }
+      return flatCategories.find((category) => category.id === categoryId)?.name ?? ""
+    }
+    return collections.find((item) => item.id === collectionId)?.title ?? ""
+  }, [collections, flatCategories, collectionId, categoryId])
 
   const resultLabel = trimmedQuery || filterCount
     ? products.length > 0
@@ -554,12 +582,16 @@ function SearchContent({
               <i aria-hidden="true">×</i>
             </button>
           )}
-          {activeTaxonomy.map((label) => (
-            <button key={`t-${label}`} type="button" onClick={() => setActiveTaxonomy((list) => toggle(list, label))} aria-label={`Zrušit filtr ${label}`}>
-              <span>{label}</span>
+          {treeLabel && (
+            <button
+              type="button"
+              onClick={() => (categoryId ? setCategoryId("") : setCollectionId(""))}
+              aria-label={`Zrušit filtr ${treeLabel}`}
+            >
+              <span>{treeLabel}</span>
               <i aria-hidden="true">×</i>
             </button>
-          ))}
+          )}
           {activeFacets.map((id) => (
             <button key={`f-${id}`} type="button" onClick={() => toggleFacet(id)} aria-label={`Zrušit filtr ${facetLabel(id)}`}>
               <span>{facetLabel(id)}</span>
@@ -621,7 +653,7 @@ function SearchContent({
               </motion.div>
             ) : products.length > 0 ? (
               <motion.div
-                key={`${normalizeSearch(query) || "vse"}:${pulse}:${activeFacets.join()}:${activeTaxonomy.join()}:${priceRange}`}
+                key={`${normalizeSearch(query) || "vse"}:${pulse}:${activeFacets.join()}:${collectionId}:${categoryId}:${priceRange}`}
                 className={`${styles.shopTrack} ${fitsOneScreen ? styles.shopTrackRows : ""}`}
                 data-testid="navbar-search-results"
                 variants={listVariants}
@@ -651,7 +683,7 @@ function SearchContent({
         </div>
         <RailScrollbar
           railRef={railRef}
-          watch={`${isLoading}:${products.length}:${grid.cols}:${grid.rows}:${pulse}:${activeFacets.join()}:${activeTaxonomy.join()}:${priceRange}:${query}`}
+          watch={`${isLoading}:${products.length}:${grid.cols}:${grid.rows}:${pulse}:${activeFacets.join()}:${collectionId}:${categoryId}:${priceRange}:${query}`}
         />
         </div>
 
@@ -670,39 +702,19 @@ function SearchContent({
             </button>
           </div>
 
-          {taxonomy.length > 0 && (
+          {(collections.length > 0 || flatCategories.length > 0) && (
             <div className={styles.filterGroup}>
               <header>
                 <h3 {...editableItem(copy, "prochazet")}>{text("prochazet")}</h3>
-                {activeTaxonomy.length > 0 && <small>{activeTaxonomy.length}</small>}
+                {(collectionId || categoryId) && <small>1</small>}
               </header>
-              {(["Kolekce", "Kategorie"] as const).map((type) => {
-                const items = taxonomy.filter((item) => item.type === type)
-                if (!items.length) return null
-                return (
-                  <div key={type}>
-                    <p className={styles.filterSub}>{type}</p>
-                    <div className={styles.filterList}>
-                      {items.map((item) => {
-                        const active = activeTaxonomy.includes(item.label)
-                        return (
-                          <button
-                            key={`${item.type}-${item.label}`}
-                            type="button"
-                            className={active ? styles.filterActive : undefined}
-                            aria-pressed={active}
-                            title={item.label}
-                            onClick={() => setActiveTaxonomy((list) => toggle(list, item.label))}
-                          >
-                            <i aria-hidden="true" />
-                            <span>{item.label}</span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
-              })}
+              <CollectionTree
+                collections={collections}
+                categories={flatCategories}
+                collectionId={collectionId}
+                categoryId={categoryId}
+                onChange={changeTree}
+              />
             </div>
           )}
 
@@ -755,6 +767,7 @@ function SearchContent({
 }
 
 export default function NavbarSearch({
+  collections = [],
   countryCode,
   isOpen: openedByVisitor,
   onClose,
@@ -973,6 +986,7 @@ export default function NavbarSearch({
               onQueryChange={onQueryChange}
               onRetry={loadCatalogue}
               products={products}
+              collections={collections}
               query={query}
             />
           </motion.div>

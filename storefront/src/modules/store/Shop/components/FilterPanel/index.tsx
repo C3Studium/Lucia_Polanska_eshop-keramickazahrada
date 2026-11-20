@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { useEffect, useRef, useState } from "react"
-import type { ShopCategory, ShopFilters } from "../../types"
+import type { ShopCategory, ShopFilters, ShopNavCollection } from "../../types"
 import { itemText } from "@lib/util/site-copy"
 import type { CopyBlock } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
@@ -130,100 +130,17 @@ export default function FilterPanel({
           <button ref={closeRef} type="button" className={styles.close} onClick={onClose} aria-label="Zavřít filtry">×</button>
         </div>
 
-        {/* Jedna hierarchie místo dvou seznamů (Matěj, 2026-08-13): zákazník
-            zná „kategorie" z menu Eshop produktů, kde jsou nahoře kolekce.
-            Klik na kolekci ji vybere a rozbalí subkategorie; rozbalení řídí
-            přímo vybraná kolekce, žádný druhý stav. Plochý seznam kategorií
-            zůstává jen jako záloha pro obchod bez kolekcí. */}
-        {navCollections.length > 0 ? (
-          <FilterGroup index="00" title="Kategorie">
-            <div className={styles.categoryList}>
-              <FilterButton
-                active={!filters.categoryId && !filters.collectionId}
-                label="Všechno"
-                onClick={() => onChange({ collectionId: "", categoryId: "" })}
-              />
-              {navCollections.map((collection) => {
-                const isExpanded = filters.collectionId === collection.id
-                const isActive = isExpanded && !filters.categoryId
-                return (
-                  <div key={collection.id}>
-                    <button
-                      type="button"
-                      className={`${styles.collectionRow} ${isActive ? styles.activeCategory : ""}`}
-                      aria-pressed={isActive}
-                      aria-expanded={isExpanded}
-                      onClick={() =>
-                        onChange(
-                          isActive
-                            ? { collectionId: "", categoryId: "" }
-                            : { collectionId: collection.id, categoryId: "" }
-                        )
-                      }
-                    >
-                      <span>{collection.title}</span>
-                      {/* Dva proužky: svislý se otočí do vodorovného a + se
-                          stočí do −, stejným easingem jako vyjíždění níže. */}
-                      <span
-                        className={`${styles.plusIcon} ${isExpanded ? styles.plusIconOpen : ""}`}
-                        aria-hidden
-                      >
-                        <i />
-                        <i />
-                      </span>
-                    </button>
-                    <AnimatePresence initial={false}>
-                      {isExpanded && collection.categories.length > 0 && (
-                        <motion.div
-                          key="sub"
-                          className={styles.subList}
-                          initial={subClosed}
-                          animate={subOpen}
-                          exit={subClosed}
-                          transition={subTransition}
-                        >
-                          <div className={styles.subListInner}>
-                            {collection.categories.map((category) => (
-                              <FilterButton
-                                key={category.id}
-                                active={filters.categoryId === category.id}
-                                label={category.name}
-                                onClick={() =>
-                                  onChange(
-                                    filters.categoryId === category.id
-                                      ? { categoryId: "" }
-                                      : {
-                                          collectionId: collection.id,
-                                          categoryId: category.id,
-                                        }
-                                  )
-                                }
-                              />
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                )
-              })}
-            </div>
-          </FilterGroup>
-        ) : (
-          <FilterGroup index="00" title="Kategorie">
-            <div className={styles.categoryList}>
-              <FilterButton active={!filters.categoryId} label="Všechno" onClick={() => onChange({ categoryId: "" })} />
-              {categories.map((category) => (
-                <FilterButton
-                  key={category.id}
-                  active={filters.categoryId === category.id}
-                  label={category.name}
-                  onClick={() => onChange({ categoryId: filters.categoryId === category.id ? "" : category.id })}
-                />
-              ))}
-            </div>
-          </FilterGroup>
-        )}
+        {/* Kolekce → jejich kategorie: sdílený strom (CollectionTree), týž
+            i ve filtrech hledání v liště. */}
+        <FilterGroup index="00" title="Kategorie">
+          <CollectionTree
+            collections={navCollections}
+            categories={categories}
+            collectionId={filters.collectionId}
+            categoryId={filters.categoryId}
+            onChange={onChange}
+          />
+        </FilterGroup>
 
         {!categoriesOnly && (
           <>
@@ -272,6 +189,119 @@ export default function FilterPanel({
         </div>
       </motion.aside>
     </>
+  )
+}
+
+/**
+ * Kolekce s rozbalovacími kategoriemi — jedna hierarchie místo dvou seznamů
+ * (Matěj, 2026-08-13): zákazník zná „kategorie" z menu Eshop produktů, kde
+ * jsou nahoře kolekce. Klik na kolekci ji vybere a rozbalí subkategorie;
+ * rozbalení řídí přímo vybraná kolekce, žádný druhý stav. Plochý seznam
+ * kategorií zůstává jen jako záloha pro obchod bez kolekcí.
+ *
+ * Sdílí ho obchod (FilterPanel) i hledání v liště (20. 11. 2026, Matěj:
+ * „filtr má být stejný jako v obchodě, kolekce ukazují své kategorie").
+ */
+export function CollectionTree({
+  collections,
+  categories = [],
+  collectionId,
+  categoryId,
+  onChange,
+}: {
+  collections: ShopNavCollection[]
+  categories?: Pick<ShopCategory, "id" | "name">[]
+  collectionId: string
+  categoryId: string
+  onChange: (next: { collectionId?: string; categoryId?: string }) => void
+}) {
+  if (collections.length > 0) {
+    return (
+      <div className={styles.categoryList}>
+        <FilterButton
+          active={!categoryId && !collectionId}
+          label="Všechno"
+          onClick={() => onChange({ collectionId: "", categoryId: "" })}
+        />
+        {collections.map((collection) => {
+          const isExpanded = collectionId === collection.id
+          const isActive = isExpanded && !categoryId
+          return (
+            <div key={collection.id}>
+              <button
+                type="button"
+                className={`${styles.collectionRow} ${isActive ? styles.activeCategory : ""}`}
+                aria-pressed={isActive}
+                aria-expanded={isExpanded}
+                onClick={() =>
+                  onChange(
+                    isActive
+                      ? { collectionId: "", categoryId: "" }
+                      : { collectionId: collection.id, categoryId: "" }
+                  )
+                }
+              >
+                <span>{collection.title}</span>
+                {/* Dva proužky: svislý se otočí do vodorovného a + se
+                    stočí do −, stejným easingem jako vyjíždění níže. */}
+                <span
+                  className={`${styles.plusIcon} ${isExpanded ? styles.plusIconOpen : ""}`}
+                  aria-hidden
+                >
+                  <i />
+                  <i />
+                </span>
+              </button>
+              <AnimatePresence initial={false}>
+                {isExpanded && collection.categories.length > 0 && (
+                  <motion.div
+                    key="sub"
+                    className={styles.subList}
+                    initial={subClosed}
+                    animate={subOpen}
+                    exit={subClosed}
+                    transition={subTransition}
+                  >
+                    <div className={styles.subListInner}>
+                      {collection.categories.map((category) => (
+                        <FilterButton
+                          key={category.id}
+                          active={categoryId === category.id}
+                          label={category.name}
+                          onClick={() =>
+                            onChange(
+                              categoryId === category.id
+                                ? { categoryId: "" }
+                                : {
+                                    collectionId: collection.id,
+                                    categoryId: category.id,
+                                  }
+                            )
+                          }
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+  return (
+    <div className={styles.categoryList}>
+      <FilterButton active={!categoryId} label="Všechno" onClick={() => onChange({ categoryId: "" })} />
+      {categories.map((category) => (
+        <FilterButton
+          key={category.id}
+          active={categoryId === category.id}
+          label={category.name}
+          onClick={() => onChange({ categoryId: categoryId === category.id ? "" : category.id })}
+        />
+      ))}
+    </div>
   )
 }
 
