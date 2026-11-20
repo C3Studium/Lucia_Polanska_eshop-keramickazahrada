@@ -10,7 +10,6 @@ import {
   MADE_TO_ORDER_NO_RETURN_SHORT,
   madeToOrderBadgeText,
 } from "@lib/util/made-to-order"
-import { convertToLocale } from "@lib/util/money"
 import { isPriceOnRequest } from "@lib/util/price-on-request"
 import { usePriceReference } from "@modules/products/ProductPage/product/details/Cta/Price/use-price-reference"
 import type { HttpTypes } from "@medusajs/types"
@@ -94,6 +93,9 @@ type ProductCardProps = {
    */
   fallbackType?: string
   fallbackDescription?: string
+  /** Zmenšená karta pro hledání v liště: fotka bere zbylou výšku buňky,
+      popis jeden řádek, bez pilulky „Zobrazit detail". Jinak tatáž karta. */
+  compact?: boolean
 }
 
 /** A card is rendered once per product in the grid, so every object here is hoisted: an inline
@@ -193,6 +195,7 @@ function ProductCard({
   hideActions = false,
   fallbackType = "Autorská keramika",
   fallbackDescription = "Ručně vyrobený originál z ateliéru v Putimi.",
+  compact = false,
 }: ProductCardProps) {
   const [isInteracting, setIsInteracting] = useState(false)
   const [addState, setAddState] = useState<
@@ -267,14 +270,13 @@ function ProductCard({
   const salePercent = hasSale
     ? discountFromReference(cheapestPrice?.calculated_price_number, lowest30d)
     : null
-  const referenceComplete =
-    reference.status === "ready" && reference.reference.complete
-  /* Název výprodeje jako na stránce výrobku („Výprodej", u slevy přímo
-     u výrobku „Sleva") — 20. 11. 2026, Lucie: ať karta vypadá stejně. */
+  /* Štítek jen „Výprodej" nebo „Sleva" s procentem (20. 11. 2026, Matěj):
+     celý název výprodeje je na stránce výrobku, na kartě se nevešel. */
   const saleName =
     reference.status === "ready"
       ? (reference.reference as { sale_name?: string | null }).sale_name?.trim() || null
       : null
+  const saleWord = saleName && /v[ýy]prodej/i.test(saleName) ? "Výprodej" : "Sleva"
 
   /*
    * Rychlé přidání do košíku.
@@ -386,12 +388,13 @@ function ProductCard({
       className={styles.root}
       layout="position"
       data-interacting={isInteracting || undefined}
+      data-compact={compact || undefined}
       onMouseEnter={startInteracting}
       onMouseLeave={stopInteracting}
       onFocusCapture={startInteracting}
       onBlurCapture={handleBlurCapture}
-      initial={plain ? false : cardInitial}
-      whileInView={plain ? undefined : cardInView}
+      initial={plain || compact ? false : cardInitial}
+      whileInView={plain || compact ? undefined : cardInView}
       viewport={cardViewport}
       transition={cardTransition}
       exit={cardExit}
@@ -473,10 +476,11 @@ function ProductCard({
             {isNew && <span>Novinka</span>}
             {salePercent != null && (
               <span className={styles.badgeSale}>
-                {saleName ?? "Sleva"} −{salePercent} %
+                {saleWord} −{salePercent} %
               </span>
             )}
           </div>
+          {!compact && (
           <motion.span
             className={styles.discover}
             initial="initial"
@@ -489,6 +493,7 @@ function ProductCard({
             <span className={styles.discoverLabel}>Zobrazit detail</span>
             <i>→</i>
           </motion.span>
+          )}
         </div>
 
         <div className={styles.meta}>
@@ -545,17 +550,11 @@ function ProductCard({
         </div>
 
         <div className={styles.price}>
-          {/* Sleva jako na stránce výrobku: přeškrtnutá nejnižší cena za 30 dní
-              před slevou (§ 12a ZOS) a vedle nová cena zeleně. */}
+          {/* Sleva na kartě jen štítkem s procentem a zelenou cenou (20. 11.
+              2026, Matěj: přeškrtnutá cena a věta pod ní karty natahovaly).
+              Procento se dál počítá z nejnižší ceny za 30 dní před slevou
+              (§ 12a ZOS); přeškrtnutou cenu s vysvětlením má stránka výrobku. */}
           <span className={styles.priceRow}>
-          {salePercent != null && lowest30d != null && (
-            <del className={styles.priceWas} data-testid="card-price-was">
-              {convertToLocale({
-                amount: lowest30d,
-                currency_code: cheapestPrice?.currency_code ?? "czk",
-              })}
-            </del>
-          )}
           <strong className={salePercent != null && lowest30d != null ? styles.priceSale : undefined}>
             {customVoucher
               ? voucherFromLabel(
@@ -568,20 +567,6 @@ function ProductCard({
                 : cheapestPrice?.calculated_price || "Cena na dotaz"}
           </strong>
           </span>
-          {salePercent != null && lowest30d != null && (
-            <small
-              className={styles.priceNote}
-              title={
-                referenceComplete
-                  ? undefined
-                  : "Záznam cen za celých 30 dní před slevou nemáme."
-              }
-            >
-              {referenceComplete
-                ? "Přeškrtnutá cena je nejnižší za 30 dní před slevou."
-                : "Přeškrtnutá cena je nejnižší cena před slevou."}
-            </small>
-          )}
           {clearance && cheapestPrice?.calculated_price && (
             <small className={styles.priceNote}>
               {clearance.damage ? "Cena kusu s uvedenou vadou" : "Cena kusu s vadou"}

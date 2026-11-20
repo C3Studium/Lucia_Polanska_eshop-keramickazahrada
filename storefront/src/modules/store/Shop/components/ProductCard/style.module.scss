@@ -428,3 +428,75 @@
 .price strong.priceSale {
   color: #2f6b26;
 }
+
+/*
+ * Jednotná výška karet (20. 11. 2026, Matěj): v obchodě i v hledání stojí
+ * ikony a cena u všech karet v řadě na stejné lince. Karta je sloupec,
+ * popis drží vždy dva řádky (i když má jedno slovo) a řádek s akcemi jede
+ * dolů. Štítek se nikdy nevylije z fotky — dlouhý se zkrátí třemi tečkami.
+ */
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.description { min-height: calc(var(--card-desc-leading) * 2em); }
+.actions { margin-top: auto; }
+.badges span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
+ * Zmenšená karta v hledání (20. 11. 2026, Matěj: „jako v obchodě, jen
+ * menší"). Buňku dává mřížka hledání (2 řady), karta ji vyplní: fotka si
+ * vezme, co zbude po textu, a nikdy nepřeteče. Popis má jeden řádek.
+ */
+.root[data-compact] {
+  --card-inset: .5rem;
+  overflow: hidden;
+}
+.root[data-compact] .link {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+}
+.root[data-compact] .visual {
+  flex: 1 1 auto;
+  min-height: 4.5rem;
+  aspect-ratio: auto;
+  height: auto;
+  padding-bottom: 0;
+}
+.root[data-compact] .meta { padding-top: .5rem; }
+.root[data-compact] .heading { padding-bottom: .4rem; gap: .5rem; }
+.root[data-compact] .heading p { margin-bottom: .2rem; font-size: .6875rem; }
+.root[data-compact] .index { --index-size: 1.5rem; font-size: .6875rem; }
+.root[data-compact] .description {
+  -webkit-line-clamp: 1;
+  min-height: calc(var(--card-desc-leading) * 1em);
+}
+.root[data-compact] .actions { padding: .4rem .2rem .25rem; }
+.root[data-compact] .iconSlot,
+.root[data-compact] .quickAdd { width: 2.25rem; height: 2.25rem; }
+.root[data-compact] .price strong { font-size: clamp(1rem, 1.1vw, 1.2rem); }
+.root[data-compact] .badges { gap: .25rem; }
+.root[data-compact] .badges span { padding: .3rem .55rem; font-size: .6875rem; }
+@include touch {
+  .root[data-compact] .iconSlot,
+  .root[data-compact] .quickAdd { width: 40px; height: 40px; }
+}
+/* Telefon: dvě řady karet v okně hledání se vejdou jen bez druhu a popisu —
+   název, fotka, cena a tlačítka zůstávají (celý text je na stránce výrobku). */
+@media (max-width: 599.98px) {
+  .root[data-compact] .heading p,
+  .root[data-compact] .description,
+  .root[data-compact] .index { display: none; }
+  .root[data-compact] .heading { border-bottom: 0; padding-bottom: 0; }
+  .root[data-compact] .meta { padding-top: .375rem; }
+}
+/* Úzká karta: delší cena („Možnost od 500,-") se zalomí, neusekne. */
+.root[data-compact] .price { min-width: 0; white-space: normal; text-align: right; }
+.root[data-compact] .price strong { overflow-wrap: anywhere; }

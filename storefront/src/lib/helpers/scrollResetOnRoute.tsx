@@ -38,6 +38,11 @@ import {
  */
 const VYNECHAT = [/^\/studio(?:\/|$)/]
 
+/* Košík a pokladna začínají VŽDY nahoře (20. 11. 2026, Matěj) — i po Zpět
+   a po obnovení stránky: nahoře je souhrn a první krok. Změna kroku
+   pokladny mění jen dotaz v adrese, té se to netýká. */
+const VZDY_NAHORU = [/^\/[a-z]{2}\/(?:cart|checkout)(?:\/|$)/]
+
 /*
  * Odrolování se po příchodu ještě dvakrát zopakuje.
  *
@@ -72,7 +77,9 @@ export default function ScrollResetOnRoute() {
     /* Obnovená stránka zůstává, kde byla (13. 11. 2026) — obchod si polohu
        vrací sám (`Shop/index.tsx`), jinde ji vrací prohlížeč. Odrolování
        nahoru ji dřív při každém F5 zahodilo. */
-    if (drive === null && jeObnoveniStranky()) return
+    const vzdyNahoru = VZDY_NAHORU.some((cesta) => cesta.test(pathname))
+
+    if (drive === null && jeObnoveniStranky() && !vzdyNahoru) return
 
     // Kotva má přednost: odkaz na `#recenze` má skočit na recenze.
     if (window.location.hash) return
@@ -80,7 +87,7 @@ export default function ScrollResetOnRoute() {
     if (VYNECHAT.some((cesta) => cesta.test(pathname))) return
 
     /* Zpět vrací člověka tam, kde byl — ne na začátek stránky. */
-    if (prisliJsmeZpet()) return
+    if (prisliJsmeZpet() && !vzdyNahoru) return
 
     /*
      * Dvakrát hned: obnova scrollu z historie umí přijít až po připojení
