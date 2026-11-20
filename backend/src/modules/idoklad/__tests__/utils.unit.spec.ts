@@ -114,7 +114,8 @@ describe("iDoklad utils", () => {
       expect(sum).toBe(1550)
     })
 
-    it("puts each Balné line right under its product (lib/packaging.ts)", () => {
+    /* Od 20. 11. 2026 balné JEDNOU položkou dole (přání Lucie), ne pod výrobky. */
+    it("sums every Balné line into one line after the products", () => {
       const withPackaging = {
         ...order,
         total: 1550 + 70,
@@ -142,12 +143,11 @@ describe("iDoklad utils", () => {
       const lines = buildInvoiceItems(withPackaging as any, false)
       expect(lines.map((line) => line.Name)).toEqual([
         "Váza Modrá",
-        "Balné — Váza Modrá",
         "Miska",
-        "Balné — Miska",
+        "Balné",
         "Poštovné — Balíkovna",
       ])
-      expect(lines[1]).toMatchObject({ Amount: 2, UnitPrice: 25 })
+      expect(lines[2]).toMatchObject({ Amount: 1, UnitPrice: 70 })
       const sum = lines.reduce((acc, line) => acc + line.Amount * line.UnitPrice, 0)
       expect(sum).toBe(1620)
     })
@@ -268,6 +268,8 @@ describe("iDoklad utils", () => {
           Id: 77,
           Name: "Eurový účet",
           CurrencyId: 2,
+          BankId: 19,
+          AccountNumber: "2701281289",
           Iban: "CZ55 2010 0000 0027 0128 1289",
           Swift: "FIOBCZPP",
         },
@@ -282,7 +284,9 @@ describe("iDoklad utils", () => {
 
       expect(payload.ExchangeRate).toBe(24.31)
       expect(payload.ExchangeRateAmount).toBe(1)
-      expect(payload.BankId).toBe(77)
+      /* BankId = banka z číselníku iDokladu, NE id účtu (77) — 20. 11. 2026. */
+      expect(payload.BankId).toBe(19)
+      expect(payload.AccountNumber).toBe("2701281289")
       /* Mezery v IBANu chodí z iDokladu i z nastavení — na dokladu nesmí být. */
       expect(payload.Iban).toBe("CZ5520100000002701281289")
       expect(payload.Swift).toBe("FIOBCZPP")
@@ -379,5 +383,44 @@ describe("iDoklad utils", () => {
         requestIdokladJson("/IssuedInvoices", { token: "t" })
       ).rejects.toBeInstanceOf(IdokladApiError)
     })
+  })
+})
+
+/* Agenda s ANGLICKÝMI názvy způsobů úhrady (ostrý iDoklad, 20. 11. 2026). */
+describe("pickPaymentOptionId — anglická agenda", () => {
+  const options = [
+    { Id: 1, Name: "Bank transfer" },
+    { Id: 2, Name: "Credit card" },
+    { Id: 4, Name: "Cash on delivery" },
+  ] as any
+  it("online platba → Credit card, ne výchozí převod", () => {
+    expect(pickPaymentOptionId(options, { cod: false, defaultId: 1 })).toBe(2)
+  })
+  it("dobírka → Cash on delivery", () => {
+    expect(pickPaymentOptionId(options, { cod: true, defaultId: 1 })).toBe(4)
+  })
+})
+
+/* Balné jednou položkou dole (20. 11. 2026) — podle faktury k objednávce #88. */
+describe("buildInvoiceItems — balné sečtené", () => {
+  const balne = (id: string, product: string, total: number) => ({
+    id, title: `Balné — ${product}`, product_title: `Balné — ${product}`, quantity: 1, total,
+    variant_id: null, product_id: null, metadata: { packaging_fee: true, packaging_variant_id: 'v_' + id },
+  })
+  const zbozi = (id: string, title: string, total: number) => ({ id, title, product_title: title, quantity: 1, total, variant_id: 'v_' + id, product_id: 'p_' + id, metadata: {} })
+  const order = {
+    id: 'order_88', display_id: 88, currency_code: 'czk', total: 1710, shipping_total: 90,
+    shipping_methods: [{ name: 'Balíkovna' }],
+    items: [zbozi('a', 'Zvonkové tlačítko Klasik', 1000), balne('a', 'Zvonkové tlačítko Klasik', 0), zbozi('b', 'Montážní krabička', 15), balne('b', 'Montážní krabička', 0), zbozi('c', 'Bezdrátový zvonek', 600), balne('c', 'Bezdrátový zvonek', 5)],
+  }
+  it("výrobky, pak jedno Balné, pak poštovné — součet sedí", () => {
+    const lines = buildInvoiceItems(order as any, false)
+    expect(lines.map((l) => l.Name)).toEqual(['Zvonkové tlačítko Klasik', 'Montážní krabička', 'Bezdrátový zvonek', 'Balné', 'Poštovné — Balíkovna'])
+    expect(lines[3].UnitPrice).toBe(5)
+    expect(lines.reduce((s, l) => s + l.UnitPrice * l.Amount, 0)).toBe(1710)
+  })
+  it("nulové balné se nevypisuje", () => {
+    const bez = { ...order, total: 1705, items: order.items.map((i) => (i.metadata as any).packaging_fee ? { ...i, total: 0 } : i) }
+    expect(buildInvoiceItems(bez as any, false).map((l) => l.Name)).not.toContain('Balné')
   })
 })

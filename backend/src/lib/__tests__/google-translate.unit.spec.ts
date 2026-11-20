@@ -117,6 +117,8 @@ describe("evropská faktura iDoklad", () => {
     PaymentOptionId: 1,
     Iban: "CZ65 0800 0000 1920 0014 5399",
     Swift: "GIBACZPX",
+    AccountNumber: "192000145399",
+    BankId: 19,
   }
   const order = (country: string, currency = "czk", locale?: string) => ({
     id: "order_1",
@@ -134,11 +136,25 @@ describe("evropská faktura iDoklad", () => {
     delete process.env.IDOKLAD_EU_SWIFT
   })
 
-  it("česká objednávka: česká sestava, účet z agendy beze změny", () => {
+  /* 20. 11. 2026, první ostrá objednávka: „na faktuře chybí číslo účtu" —
+     korunová faktura dřív bankovní spojení neposílala vůbec. */
+  it("česká objednávka: česká sestava a VŽDY číslo účtu z agendy", () => {
     expect(invoiceFlavourFor(order("cz") as never)).toEqual({ european: false, reportLanguage: 1 })
     const payload = buildInvoicePayload({ order: order("cz") as never, defaults, partnerId: 1, vatPayer: false })
     expect(payload.ReportLanguage).toBe(1)
-    expect(payload.Iban).toBeUndefined()
+    expect(payload).toMatchObject({ AccountNumber: "192000145399", BankId: 19, Iban: "CZ6508000000192000145399", Swift: "GIBACZPX" })
+  })
+
+  it("korunová faktura nikdy nedostane eurový IBAN z prostředí", () => {
+    const predtim = process.env.IDOKLAD_EU_IBAN
+    process.env.IDOKLAD_EU_IBAN = "CZ00 1111 2222 3333"
+    try {
+      const payload = buildInvoicePayload({ order: order("cz") as never, defaults, partnerId: 1, vatPayer: false })
+      expect(payload.Iban).toBe("CZ6508000000192000145399")
+    } finally {
+      if (predtim === undefined) delete process.env.IDOKLAD_EU_IBAN
+      else process.env.IDOKLAD_EU_IBAN = predtim
+    }
   })
 
   it("Slovensko, Německo, Polsko a ostatní: sestava v jejich jazyce (polsky → anglicky) + IBAN", () => {

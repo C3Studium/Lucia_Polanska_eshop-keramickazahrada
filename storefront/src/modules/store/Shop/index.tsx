@@ -158,7 +158,9 @@ export default function ECom({
    * Vysvětlení řazení („Doporučené") a filtry zůstávají v kódu — popisují
    * logiku katalogu a musí s ní souhlasit slovo od slova.
    */
-  const introEyebrow = block?.accent?.[0]?.trim() || "Co je právě k mání"
+  /* „Právě hledáte v:" + rozsah filtru (20. 11. 2026, Matěj — „Co je právě
+     k mání" nad „VŠE" četlo divně). */
+  const introEyebrow = block?.accent?.[0]?.trim() || "Právě hledáte v:"
   const introTitle = block?.title?.trim() || "Vyberte si něco,"
   const introAccent = block?.headline?.trim() || "co vám zůstane."
   const introText =
