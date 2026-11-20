@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion"
 import { useParams, usePathname } from "next/navigation"
 import { useCallback, useEffect, useId } from "react"
+import { useScrollLock } from "@lib/hooks/use-scroll-lock"
 import { createPortal } from "react-dom"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -130,7 +131,11 @@ export default function MobileNav({
     [close]
   )
 
+  /* Stránka pod menu stojí a po zavření zůstane, kde byla (lib/hooks/use-scroll-lock). */
+  useScrollLock(isOpen)
+
   useEffect(() => {
+    /* zámek stránky: useScrollLock(isOpen) výš */
     if (!isOpen) {
       return
     }
@@ -141,12 +146,9 @@ export default function MobileNav({
       }
     }
 
-    const previous = document.body.style.overflow
-    document.body.style.overflow = "hidden"
     window.addEventListener("keydown", onKey)
 
     return () => {
-      document.body.style.overflow = previous
       window.removeEventListener("keydown", onKey)
     }
   }, [isOpen, close])

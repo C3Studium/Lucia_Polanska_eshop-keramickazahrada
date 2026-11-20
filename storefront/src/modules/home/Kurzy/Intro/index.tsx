@@ -14,7 +14,7 @@ import { heroBeat, heroReveal } from "@lib/motion-tokens"
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
 import { galleryUrl, type CopyBlock, type CopyImage } from "@lib/util/site-copy"
-import { editable } from "@c3studium/valecms/edit"
+import { editable, isEditMode } from "@c3studium/valecms/edit"
 import { useEditRerender } from "@lib/hooks/use-edit-rerender"
 import ContactTrigger from "@modules/layout/ContactDialog/trigger"
 import WebButton from "@modules/common/components/Buttons/webButton"
@@ -700,9 +700,26 @@ function AudienceBlock({
   /* vh for the same reason as the scene's own entrance above: 30/900 on the reference window. */
   const y = useTransform(progress, [start, settled, 1], ["3.33vh", "0vh", "0vh"])
 
+  /*
+   * Celá karta klikací (20. 11. 2026, Matěj): fotka, text i tlačítko dělají
+   * totéž — karta „zmáčkne" svoje vlastní tlačítko (kontakt, nebo rezervace),
+   * takže se logika otevírání nikde neopakuje. Klik přímo na tlačítko si
+   * tlačítko vyřídí samo. Ve Studiu vypnuto — tam klik vybírá text k úpravě.
+   */
+  const kartaRef = useRef<HTMLElement>(null)
+  const naKartu = (event: React.MouseEvent<HTMLElement>) => {
+    if (isEditMode()) return
+    if ((event.target as HTMLElement).closest("button, a")) return
+    kartaRef.current
+      ?.querySelector<HTMLElement>(".kurzyAudience__action button, .kurzyAudience__action a")
+      ?.click()
+  }
+
   return (
     <motion.article
-      className="kurzyAudience"
+      ref={kartaRef}
+      onClick={naKartu}
+      className="kurzyAudience kurzyAudience--card"
       style={
         staticFlow ? undefined : reduceMotion ? { opacity } : { opacity, y }
       }

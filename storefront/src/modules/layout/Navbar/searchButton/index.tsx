@@ -142,6 +142,26 @@ export default function SearchButton({
     onValueChange?.(event.currentTarget.value)
   }
 
+  /*
+   * Hledat (20. 11. 2026, Matěj): Enter, „Hledat" i lupa při otevřeném
+   * hledání pole opustí (zavře klávesnici) a výsledky krátce oživí —
+   * okno ZŮSTANE otevřené. Zavírá se ťuknutím mimo, křížkem nebo Esc
+   * mimo pole. Esc v poli jen pole opustí.
+   */
+  const hledat = () => {
+    inputRef.current?.blur()
+    window.dispatchEvent(new Event("kz:hledat"))
+  }
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault()
+      hledat()
+    } else if (event.key === "Escape") {
+      event.stopPropagation()
+      inputRef.current?.blur()
+    }
+  }
+
   return (
     <motion.div
       className={`${styles.searchControl} ${isActive ? styles.active : ""}`}
@@ -156,10 +176,14 @@ export default function SearchButton({
         ref={buttonRef}
         type="button"
         className={styles.button}
-        aria-label={isActive ? "Zavřít vyhledávání" : "Otevřít vyhledávání"}
+        aria-label={isActive ? "Hledat" : "Otevřít vyhledávání"}
         aria-expanded={isActive}
         aria-controls="navbar-search"
         onClick={() => {
+          if (isActive) {
+            hledat()
+            return
+          }
           onClick?.()
           /*
            * Fokus HNED v ťuknutí (16. 11. 2026, Matěj: „do vyhledávání se na
@@ -184,12 +208,19 @@ export default function SearchButton({
         aria-hidden={!isActive || undefined}
         tabIndex={isActive ? 0 : -1}
         autoComplete="off"
+        enterKeyHint="search"
         onChange={handleChange}
+        onKeyDown={handleKeyDown}
         initial={false}
         animate={isActive ? animate : initial}
         transition={transition2}
         style={isActive ? undefined : closedInputStyle}
       />
+      {isActive && (
+        <button type="button" className={styles.searchGo} onClick={hledat} data-testid="navbar-search-go">
+          Hledat
+        </button>
+      )}
     </motion.div>
   )
 }

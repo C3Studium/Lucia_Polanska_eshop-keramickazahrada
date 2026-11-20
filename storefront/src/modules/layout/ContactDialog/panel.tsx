@@ -1,6 +1,7 @@
 "use client"
 
 import { surfaceRoot } from "@c3studium/valecms/edit"
+import { useScrollLock } from "@lib/hooks/use-scroll-lock"
 import WebButton from "@modules/common/components/Buttons/webButton"
 import MouseAnim from "@modules/common/components/MouseAnim"
 import PhoneInput from "@modules/common/components/phone-input"
@@ -206,6 +207,8 @@ export default function ContactDialogPanel({
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: "idle" })
   const panelRef = useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
+  /* Stránka pod oknem stojí a po zavření zůstane, kde byla (lib/hooks/use-scroll-lock). */
+  useScrollLock(true)
   const statusRef = useRef<HTMLParagraphElement>(null)
   const formSloupecRef = useRef<HTMLDivElement>(null)
   const ukazNapovedu = usePreteklo(formSloupecRef)
@@ -252,15 +255,12 @@ export default function ContactDialogPanel({
       }
     }
 
-    const previousOverflow = document.body.style.overflow
-    const focusTimer = window.setTimeout(() => closeRef.current?.focus(), 180)
+    const focusTimer = window.setTimeout(() => closeRef.current?.focus({ preventScroll: true }), 180)
 
-    document.body.style.overflow = "hidden"
     window.addEventListener("keydown", handleKeyDown)
 
     return () => {
       window.clearTimeout(focusTimer)
-      document.body.style.overflow = previousOverflow
       window.removeEventListener("keydown", handleKeyDown)
     }
   }, [onClose])
