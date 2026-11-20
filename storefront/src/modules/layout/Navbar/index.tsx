@@ -383,6 +383,7 @@ export default function Navbar({
         />
       </nav>
       <NavbarSearch
+        collections={navigationCollections}
         countryCode={countryCode}
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
