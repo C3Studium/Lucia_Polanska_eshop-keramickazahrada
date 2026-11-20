@@ -250,3 +250,27 @@
         }
     }
 }
+
+/* „Hledat" vedle pole (20. 11. 2026) — malé, ale jasné: kdo do pole ťukne
+   znovu, nemá hledání omylem zavřít. Enter dělá totéž. */
+.searchControl { position: relative; }
+.searchGo {
+    position: absolute;
+    top: 50%;
+    right: .375rem;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    height: calc(100% - .5rem);
+    min-height: 0 !important;
+    padding: 0 .75rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--ink-05);
+    color: var(--white, #fff);
+    font: 400 .8125rem/1 "Sansation-Regular", sans-serif;
+    letter-spacing: .02em;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+.searchControl.active .input { padding-right: 5rem; }

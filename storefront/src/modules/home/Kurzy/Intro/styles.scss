@@ -1188,3 +1188,39 @@
   max-height: none;
   aspect-ratio: 16 / 9;
 }
+
+/*
+ * Karta (20. 11. 2026, Matěj: „udělej z toho celou kartu, ať je vidět, že je
+ * to karta"). Celý blok je klikací (index.tsx `naKartu`), tak to musí i
+ * vypadat: podklad, rámeček, stín, zaoblení a ruka. Najetí jen ztmaví
+ * rámeček a zvedne stín — žádný `transform`, ten patří animaci příchodu.
+ */
+.kurzyAudience.kurzyAudience--card {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(0.75rem, 1.2vw, 1.125rem) clamp(0.75rem, 1.2vw, 1.125rem) clamp(1rem, 1.6vw, 1.5rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .12);
+  border-radius: 1.25rem;
+  background: rgb(var(--white-rgb) / .5);
+  box-shadow: 0 18px 40px -32px rgb(var(--ink-02-rgb) / .55);
+  cursor: pointer;
+  transition: border-color .25s ease, box-shadow .25s ease, background-color .25s ease;
+}
+.kurzyAudience--card .kurzyAudience__figure {
+  margin-top: 0;
+  overflow: hidden;
+  border-radius: .875rem;
+}
+.kurzyAudience--card .kurzyAudience__action {
+  margin-top: auto;
+}
+@media (hover: hover) and (pointer: fine) {
+  .kurzyAudience--card:hover {
+    border-color: rgb(var(--ink-05-rgb) / .28);
+    background: rgb(var(--white-rgb) / .72);
+    box-shadow: 0 26px 50px -30px rgb(var(--ink-02-rgb) / .6);
+  }
+}
+.kurzyAudience--card:active {
+  background: rgb(var(--white-rgb) / .8);
+}

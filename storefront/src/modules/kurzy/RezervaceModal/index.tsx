@@ -1,5 +1,6 @@
 "use client"
 
+import { useScrollLock } from "@lib/hooks/use-scroll-lock"
 import {
   AnimatePresence,
   motion,
@@ -236,6 +237,8 @@ function RezervaceModalPanel({
   const reduceMotion = useSiteReducedMotion()
   const panelRef = useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
+  /* Stránka pod oknem stojí a po zavření zůstane, kde byla (lib/hooks/use-scroll-lock). */
+  useScrollLock(true)
 
   /*
    * Vlastní svislý ukazatel posunu panelu.
@@ -530,13 +533,10 @@ function RezervaceModalPanel({
       }
     }
 
-    const previousOverflow = document.body.style.overflow
-    const focusTimer = window.setTimeout(() => closeRef.current?.focus(), 180)
-    document.body.style.overflow = "hidden"
+    const focusTimer = window.setTimeout(() => closeRef.current?.focus({ preventScroll: true }), 180)
     window.addEventListener("keydown", handleKeyDown)
     return () => {
       window.clearTimeout(focusTimer)
-      document.body.style.overflow = previousOverflow
       window.removeEventListener("keydown", handleKeyDown)
     }
   }, [onClose])

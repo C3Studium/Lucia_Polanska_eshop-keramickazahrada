@@ -7,6 +7,9 @@ import Thumbnail from "@modules/products/components/thumbnail"
 import { AnimatePresence, motion, type Variants } from "framer-motion"
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDragScroll } from "./useDragScroll"
+import ProductCard from "@modules/store/Shop/components/ProductCard"
+import { normalizeSearch, rankBySearch } from "@lib/util/search-rank"
+import { useScrollLock } from "@lib/hooks/use-scroll-lock"
 import styles from "./style.module.scss"
 import { alpha, palette } from "styles/palette.generated"
 import { itemText } from "@lib/util/site-copy"
@@ -313,6 +316,24 @@ type SearchContentProps = Pick<
   entranceComplete: boolean
 }
 
+/* Texty výrobku pro hledání — tatáž pravidla jako obchod (lib/util/search-rank). */
+const searchFieldsOfHit = (hit: NavbarProductHit) => ({
+  title: hit.title,
+  taxonomy: [...getCategoryNames(hit), getCollectionName(hit), (hit as any).type?.value],
+  description: (hit as any).description as string | null | undefined,
+})
+
+/**
+ * Hledání jako malý obchod (20. 11. 2026, Matěj: „lidé chtějí hledání používat
+ * jako stránku obchodu — kompaktní, ale se vším").
+ *
+ * - výsledky podle relevance s tolerancí překlepů (lib/util/search-rank),
+ * - karty TYTÉŽ jako v obchodě (štítky, sleva, oblíbené, košík),
+ * - jedna řada, táhne se myší i prstem (useDragScroll),
+ * - filtry vpravo (na telefonu přes „Filtry" přes výsledky, okno zůstane),
+ * - dole „Přejít do obchodu" s hledaným výrazem,
+ * - Enter / „Hledat" výsledky krátce oživí (událost `kz:hledat`).
+ */
 function SearchContent({
   isLoading,
   loadError,
@@ -321,38 +342,51 @@ function SearchContent({
   onRetry,
   products: catalogueProducts,
   query,
-  entranceComplete,
 }: SearchContentProps) {
   const copy = useCopyBlock("global.hledani")
   const text = (label: keyof typeof SEARCH_DEFAULTS) =>
     itemText(copy, label, SEARCH_DEFAULTS[label])
-  const normalizedQuery = normalizeSearchValue(query)
   const railRef = useDragScroll<HTMLDivElement>()
   const [activeFacets, setActiveFacets] = useState<string[]>([])
+  const [activeTaxonomy, setActiveTaxonomy] = useState<string[]>([])
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [pulse, setPulse] = useState(0)
 
-  const toggleFacet = (id: string) =>
-    setActiveFacets((current) =>
-      current.includes(id) ? current.filter((facet) => facet !== id) : [...current, id]
-    )
+  /* Enter v poli i „Hledat" vedle něj — výsledky se krátce oživí a řada
+     se vrátí na začátek, ať je vidět, že se hledalo. */
+  useEffect(() => {
+    const hledat = () => {
+      setPulse((value) => value + 1)
+      railRef.current?.scrollTo({ left: 0 })
+    }
+    window.addEventListener("kz:hledat", hledat)
+    return () => window.removeEventListener("kz:hledat", hledat)
+  }, [railRef])
+
+  const toggle = (list: string[], value: string) =>
+    list.includes(value) ? list.filter((item) => item !== value) : [...list, value]
 
   const clearAll = () => {
     setActiveFacets([])
+    setActiveTaxonomy([])
     onQueryChange("")
   }
 
-  const hasFilters = activeFacets.length > 0 || Boolean(query)
+  const hasFilters = activeFacets.length > 0 || activeTaxonomy.length > 0 || Boolean(query)
+  const filterCount = activeFacets.length + activeTaxonomy.length
 
   const products = useMemo(() => {
-    const byQuery = !normalizedQuery
-      ? catalogueProducts
-      : catalogueProducts.filter((product) =>
-          getProductSearchValue(product).includes(normalizedQuery)
-        )
-
-    if (!activeFacets.length) return byQuery
-
-    return byQuery.filter((product) => matchesFacets(product, activeFacets))
-  }, [catalogueProducts, normalizedQuery, activeFacets])
+    const ranked = rankBySearch(catalogueProducts, query, searchFieldsOfHit)
+    const byTaxonomy = activeTaxonomy.length
+      ? ranked.filter((hit) => {
+          const names = [...getCategoryNames(hit), getCollectionName(hit)].filter(Boolean)
+          return names.some((name) => activeTaxonomy.includes(name as string))
+        })
+      : ranked
+    return activeFacets.length
+      ? byTaxonomy.filter((product) => matchesFacets(product, activeFacets))
+      : byTaxonomy
+  }, [catalogueProducts, query, activeFacets, activeTaxonomy])
 
   // The same facets the store page offers, so the overlay is not a weaker second search.
   const FACETS = [
@@ -364,221 +398,172 @@ function SearchContent({
     { id: "over-2500", label: "Nad 2 500 Kč" },
   ] as const
 
-  const helpers = useMemo(() => {
-    const suggestions = new Map<
-      string,
-      { label: string; type: "Kategorie" | "Kolekce" }
-    >()
-
-    catalogueProducts.forEach((hit) => {
-      getCategoryNames(hit).forEach((name) => {
-        suggestions.set(`category-${name.toLocaleLowerCase("cs")}`, {
-          label: name,
-          type: "Kategorie",
-        })
-      })
-
+  /* Kategorie a kolekce z katalogu, nejčastější nahoře. */
+  const taxonomy = useMemo(() => {
+    const counts = new Map<string, { label: string; type: "Kategorie" | "Kolekce"; n: number }>()
+    for (const hit of catalogueProducts) {
+      for (const name of getCategoryNames(hit)) {
+        const entry = counts.get(name) ?? { label: name, type: "Kategorie" as const, n: 0 }
+        entry.n += 1
+        counts.set(name, entry)
+      }
       const collection = getCollectionName(hit)
       if (collection) {
-        suggestions.set(`collection-${collection.toLocaleLowerCase("cs")}`, {
-          label: collection,
-          type: "Kolekce",
-        })
+        const entry = counts.get(collection) ?? { label: collection, type: "Kolekce" as const, n: 0 }
+        entry.n += 1
+        counts.set(collection, entry)
       }
-    })
-
-    return Array.from(suggestions.values()).slice(0, 6)
+    }
+    return Array.from(counts.values()).sort((a, b) => b.n - a.n).slice(0, 14)
   }, [catalogueProducts])
 
-  /* The stagger delay is the only per-chip value, and it depends on nothing that changes while
-     the customer types — so the table is built once per chip count instead of per render. */
-  const chipTransitions = useMemo(
-    () =>
-      helpers.map((_, index) => {
-        const delay = entranceComplete ? index * 0.035 : index * 0.06
-
-        return {
-          opacity: { duration: 0.48, delay, ease },
-          x: { duration: 0.48, delay, ease },
-          color: { duration: 0.22, delay: 0.16, ease },
-        }
-      }),
-    [helpers, entranceComplete]
-  )
-
-  const resultLabel = normalizedQuery
+  const resultLabel = query.trim() || filterCount
     ? products.length > 0
-      ? `${products.length} ${
-          products.length === 1 ? "nalezený výrobek" : "nalezených výrobků"
-        }`
+      ? `${products.length} ${products.length === 1 ? "nalezený výrobek" : products.length < 5 ? "nalezené výrobky" : "nalezených výrobků"}`
       : text("nic")
-    : `${catalogueProducts.length} ${
-        catalogueProducts.length === 1
-          ? "výrobek v nabídce"
-          : "výrobků v nabídce"
-      }`
+    : `${catalogueProducts.length} výrobků v nabídce`
 
+  const storeHref = query.trim() ? `/store?search=${encodeURIComponent(query.trim())}` : "/store"
 
   return (
-    <motion.div
-      className={styles.content}
-      variants={contentVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      <motion.div
-        className={styles.helper}
-        variants={sectionVariants}
-        aria-live="polite"
+    <div className={styles.shop}>
+      <div className={styles.shopMain}>
+        <div className={styles.shopHead}>
+          <p aria-live="polite">{isLoading ? "Načítám…" : resultLabel}</p>
+          <button
+            type="button"
+            className={styles.filtersToggle}
+            onClick={() => setFiltersOpen(true)}
+            aria-expanded={filtersOpen}
+          >
+            Filtry{filterCount ? ` (${filterCount})` : ""}
+          </button>
+          <button
+            type="button"
+            className={styles.closeX}
+            onClick={onClose}
+            aria-label="Zavřít vyhledávání"
+          >
+            <span aria-hidden="true">×</span>
+            <span className={styles.closeXLabel}>Zavřít</span>
+          </button>
+        </div>
+
+        <div ref={railRef} className={styles.quarryViewport} data-testid="navbar-search-rail">
+          <AnimatePresence mode="wait" initial={false}>
+            {isLoading ? (
+              <motion.div key="loading" className={styles.skeletonTrack} initial={fadeOnly} animate={fadeIn} exit={fadeOnly}>
+                {Array.from({ length: 5 }, (_, index) => (
+                  <div className={styles.skeleton} key={index}>
+                    <i />
+                    <span />
+                  </div>
+                ))}
+              </motion.div>
+            ) : loadError ? (
+              <motion.div key="error" className={styles.empty} initial={riseFrom} animate={riseTo} exit={fadeOnly} role="alert">
+                <span>Něco se zaseklo.</span>
+                <button type="button" onClick={onRetry}>
+                  Zkusit znovu <i>↻</i>
+                </button>
+                <LocalizedClientLink href="/store">Pokračovat do obchodu</LocalizedClientLink>
+              </motion.div>
+            ) : products.length > 0 ? (
+              <motion.div
+                key={`${normalizeSearch(query) || "vse"}:${pulse}:${activeFacets.join()}:${activeTaxonomy.join()}`}
+                className={`${styles.quarryTrack} ${styles.shopTrack}`}
+                data-testid="navbar-search-results"
+                variants={listVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                {products.map((hit, index) => (
+                  <motion.div
+                    className={`${styles.productSlot} ${styles.shopSlot}`}
+                    key={hit.objectID ?? hit.id ?? `${hit.handle}-${index}`}
+                    variants={itemVariants}
+                  >
+                    <ProductCard product={hit as any} priority={index < 3} />
+                  </motion.div>
+                ))}
+              </motion.div>
+            ) : (
+              <motion.div key="empty" className={styles.empty} initial={riseFrom} animate={riseTo} exit={fadeOnly}>
+                <span {...editableItem(copy, "prazdne")}>{text("prazdne")}</span>
+                <button type="button" onClick={clearAll}>
+                  {text("prazdne.tlacitko")} <i>→</i>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div className={styles.shopFoot}>
+          <LocalizedClientLink href={storeHref} className={styles.toStore} data-testid="search-to-store" onClick={onClose}>
+            Přejít do obchodu <span aria-hidden="true">→</span>
+          </LocalizedClientLink>
+        </div>
+      </div>
+
+      <aside
+        className={`${styles.shopFilters} ${filtersOpen ? styles.shopFiltersOpen : ""}`}
+        aria-label="Filtry hledání"
+        data-lenis-prevent
       >
-        {helpers.length > 0 && (
-          <>
-            <span className={styles.helperLabel} {...editableItem(copy, "prochazet")}>
+        <div className={styles.shopFiltersHead}>
+          <span>Filtry</span>
+          <button type="button" className={styles.filtersDone} onClick={() => setFiltersOpen(false)}>
+            Hotovo
+          </button>
+        </div>
+
+        {taxonomy.length > 0 && (
+          <div className={styles.filterGroup}>
+            <span className={styles.filterGroupLabel} {...editableItem(copy, "prochazet")}>
               {text("prochazet")}
             </span>
-            <motion.div className={styles.suggestions}>
-              {helpers.map((helper, index) => (
-                <motion.button
-                  key={`${helper.type}-${helper.label}`}
-                  type="button"
-                  aria-pressed={query === helper.label}
-                  onClick={() =>
-                    onQueryChange(query === helper.label ? "" : helper.label)
-                  }
-                  initial={chipInitial}
-                  animate="rest"
-                  whileHover="hover"
-                  whileFocus="hover"
-                  variants={chipVariants}
-                  transition={chipTransitions[index]}
-                >
-                  <motion.i
-                    variants={chipFillVariants}
-                    initial={chipFillInitial}
-                    style={chipFillStyle}
-                    transition={chipFillTransition}
-                    aria-hidden="true"
-                  />
-                  <small>{helper.type}</small>
-                  <span>{helper.label}</span>
-                </motion.button>
-              ))}
-            </motion.div>
-
-            <motion.div className={styles.facets}>
-              {FACETS.map((facet) => (
+            <div className={styles.filterList}>
+              {taxonomy.map((item) => (
                 <button
-                  key={facet.id}
+                  key={`${item.type}-${item.label}`}
                   type="button"
-                  className={
-                    activeFacets.includes(facet.id) ? styles.facetActive : undefined
-                  }
-                  aria-pressed={activeFacets.includes(facet.id)}
-                  onClick={() => toggleFacet(facet.id)}
+                  className={activeTaxonomy.includes(item.label) ? styles.filterActive : undefined}
+                  aria-pressed={activeTaxonomy.includes(item.label)}
+                  onClick={() => setActiveTaxonomy((list) => toggle(list, item.label))}
                 >
-                  {facet.label}
+                  <small>{item.type}</small>
+                  <span>{item.label}</span>
                 </button>
               ))}
-
-              {hasFilters && (
-                <button
-                  type="button"
-                  className={styles.clearFilters}
-                  onClick={clearAll}
-                >
-                  Vymazat filtry
-                </button>
-              )}
-            </motion.div>
-          </>
+            </div>
+          </div>
         )}
-      </motion.div>
 
-      <motion.div className={styles.resultsHeader} variants={sectionVariants}>
-        <p aria-live="polite">
-          {isLoading ? "Načítám…" : resultLabel}
-        </p>
-        <button type="button" onClick={onClose} aria-label="Zavřít vyhledávání">
-          Zavřít
-        </button>
-      </motion.div>
+        <div className={styles.filterGroup}>
+          <span className={styles.filterGroupLabel}>Výběr</span>
+          <div className={styles.filterList}>
+            {FACETS.map((facet) => (
+              <button
+                key={facet.id}
+                type="button"
+                className={activeFacets.includes(facet.id) ? styles.filterActive : undefined}
+                aria-pressed={activeFacets.includes(facet.id)}
+                onClick={() => setActiveFacets((list) => toggle(list, facet.id))}
+              >
+                <span>{facet.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
-      <motion.div
-        ref={railRef}
-        className={styles.quarryViewport}
-        variants={sectionVariants}
-      >
-        <AnimatePresence mode="wait" initial={false}>
-          {isLoading ? (
-            <motion.div
-              key="loading"
-              className={styles.skeletonTrack}
-              initial={fadeOnly}
-              animate={fadeIn}
-              exit={fadeOnly}
-            >
-              {Array.from({ length: 5 }, (_, index) => (
-                <div className={styles.skeleton} key={index}>
-                  <i />
-                  <span />
-                </div>
-              ))}
-            </motion.div>
-          ) : loadError ? (
-            <motion.div
-              key="error"
-              className={styles.empty}
-              initial={riseFrom}
-              animate={riseTo}
-              exit={fadeOnly}
-              role="alert"
-            >
-              <span>Něco se zaseklo.</span>
-              <button type="button" onClick={onRetry}>
-                Zkusit znovu <i>↻</i>
-              </button>
-              <LocalizedClientLink href="/store">
-                Pokračovat do obchodu
-              </LocalizedClientLink>
-            </motion.div>
-          ) : products.length > 0 ? (
-            <motion.div
-              key={normalizedQuery || "complete-catalogue"}
-              className={styles.quarryTrack}
-              data-testid="navbar-search-results"
-              variants={listVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
-              {products.map((hit, index) => (
-                <motion.div
-                  className={styles.productSlot}
-                  key={hit.objectID ?? hit.id ?? `${hit.handle}-${index}`}
-                  variants={itemVariants}
-                >
-                  <ProductQuarry hit={hit} />
-                </motion.div>
-              ))}
-            </motion.div>
-          ) : (
-            <motion.div
-              key="empty"
-              className={styles.empty}
-              initial={riseFrom}
-              animate={riseTo}
-              exit={fadeOnly}
-            >
-              <span {...editableItem(copy, "prazdne")}>{text("prazdne")}</span>
-              {/* Bez úpravy v místě — tlačítko nese i šipku. */}
-              <button type="button" onClick={() => onQueryChange("")}>
-                {text("prazdne.tlacitko")} <i>→</i>
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </motion.div>
+        {hasFilters && (
+          <button type="button" className={styles.clearFilters} onClick={clearAll}>
+            Vymazat filtry
+          </button>
+        )}
+      </aside>
+    </div>
   )
 }
 
@@ -704,27 +689,7 @@ export default function NavbarSearch({
    * se uloží a po zavření vrátí, takže stránka neposkočí. Při odchodu na
    * výrobek pak odroluje nahoru `ScrollResetOnRoute` jako vždy.
    */
-  useEffect(() => {
-    if (!openedByVisitor) return
-    const body = document.body
-    const y = window.scrollY
-    const predtim = {
-      position: body.style.position,
-      top: body.style.top,
-      left: body.style.left,
-      right: body.style.right,
-      width: body.style.width,
-    }
-    body.style.position = "fixed"
-    body.style.top = `-${y}px`
-    body.style.left = "0"
-    body.style.right = "0"
-    body.style.width = "100%"
-    return () => {
-      Object.assign(body.style, predtim)
-      window.scrollTo(0, y)
-    }
-  }, [openedByVisitor])
+  useScrollLock(openedByVisitor)
 
   useEffect(() => {
     if (!openedByVisitor) return

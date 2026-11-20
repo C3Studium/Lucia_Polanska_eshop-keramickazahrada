@@ -346,9 +346,11 @@ export const listStoreCatalogue = async ({
   if (onlyIds && onlyIds.size === 0) return { products: [], count: 0 }
 
   const searchTerm = filters.search.trim()
-  const taxonomy = searchTerm
-    ? await matchCatalogueTaxonomy(searchTerm, filters)
-    : { categoryIds: [], collectionIds: [] }
+  /* Od 20. 11. 2026 hledá obchod nad katalogem v paměti podle relevance
+     a s tolerancí překlepů (lib/util/search-rank) — názvy kategorií a kolekcí
+     jsou v textech pro hledání, dohledávat taxonomii zvlášť už netřeba. */
+  void matchCatalogueTaxonomy
+  const taxonomy = { categoryIds: [] as string[], collectionIds: [] as string[] }
   const searchAcrossTaxonomy =
     taxonomy.categoryIds.length > 0 || taxonomy.collectionIds.length > 0
 
@@ -412,7 +414,7 @@ export const listStoreCatalogue = async ({
      * backend, který přidání do košíku normálně přijal.
      */
     fields:
-      "*bundle,*type,*categories,*images,+variants.inventory_quantity,+variants.allow_backorder,+metadata",
+      "*bundle,*type,*categories,*images,+variants.inventory_quantity,+variants.allow_backorder,+metadata,+collection.title",
   }
 
   if (searchTerm) {
@@ -445,7 +447,7 @@ export const listStoreCatalogue = async ({
    * backend (dřív 1,2–2,6 s). Minuta je strop pro „Prodáno" v mřížce; detail
    * výrobku a košík čtou sklad živě. Hledání jde dál přes Medusu (`q`).
    */
-  if (!searchTerm) {
+  {
     const celyKatalog = await fetchAllPages(
       { limit: 100, fields: queryParams.fields },
       { cacheMode: "force-cache", revalidate: KATALOG_FILTR_REVALIDATE }
@@ -467,6 +469,16 @@ export const listStoreCatalogue = async ({
             : 0,
       collectionCategoryIds,
       onlyIds,
+      /* Hledání: název, kategorie, kolekce, druh a popis (search-rank). */
+      searchFieldsOf: (product) => ({
+        title: product.title,
+        taxonomy: [
+          ...(product.categories ?? []).map((category) => category.name),
+          (product as { collection?: { title?: string | null } | null }).collection?.title,
+          product.type?.value,
+        ],
+        description: product.description,
+      }),
       offset: normalizedOffset,
       limit: normalizedLimit,
     })

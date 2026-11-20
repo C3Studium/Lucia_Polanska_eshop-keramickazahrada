@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion, type Variants } from "framer-motion"
 import { useEffect, useId, useRef, useState, type MouseEvent } from "react"
+import { useScrollLock } from "@lib/hooks/use-scroll-lock"
 import { createPortal } from "react-dom"
 
 import { deleteAccount, signout } from "@lib/data/customer"
@@ -148,6 +149,9 @@ const DeleteAccountModal = ({
     onClose()
   }
 
+  /* Stránka pod oknem stojí a po zavření zůstane, kde byla (lib/hooks/use-scroll-lock). */
+  useScrollLock(open)
+
   useEffect(() => {
     if (!open) return
 
@@ -156,11 +160,8 @@ const DeleteAccountModal = ({
         ? document.activeElement
         : null
 
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = "hidden"
-
     const focusTimer = window.setTimeout(() => {
-      closeButtonRef.current?.focus()
+      closeButtonRef.current?.focus({ preventScroll: true })
     }, 80)
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -202,8 +203,7 @@ const DeleteAccountModal = ({
     return () => {
       window.clearTimeout(focusTimer)
       document.removeEventListener("keydown", handleKeyDown)
-      document.body.style.overflow = previousOverflow
-      returnFocusRef.current?.focus()
+      returnFocusRef.current?.focus({ preventScroll: true })
     }
   }, [open, onClose])
 

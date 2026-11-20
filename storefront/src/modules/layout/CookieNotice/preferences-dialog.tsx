@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { useScrollLock } from "@lib/hooks/use-scroll-lock"
 import Link from "next/link"
 import { useEffect, useId, useRef, useState } from "react"
 
@@ -49,6 +50,8 @@ export default function PreferencesDialog({
   const [draft, setDraft] = useState<ConsentChoice>(initial)
   const panelRef = useRef<HTMLDivElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
+  /* Stránka pod oknem stojí a po zavření zůstane, kde byla (lib/hooks/use-scroll-lock). */
+  useScrollLock(true)
   const reduceMotion = useSiteReducedMotion()
   const titleId = useId()
   const descriptionId = useId()
@@ -90,15 +93,12 @@ export default function PreferencesDialog({
       }
     }
 
-    const previousOverflow = document.body.style.overflow
-    const focusTimer = window.setTimeout(() => closeRef.current?.focus(), 160)
+    const focusTimer = window.setTimeout(() => closeRef.current?.focus({ preventScroll: true }), 160)
 
-    document.body.style.overflow = "hidden"
     window.addEventListener("keydown", handleKeyDown)
 
     return () => {
       window.clearTimeout(focusTimer)
-      document.body.style.overflow = previousOverflow
       window.removeEventListener("keydown", handleKeyDown)
     }
   }, [onClose])

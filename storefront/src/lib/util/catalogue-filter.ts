@@ -9,6 +9,7 @@
  * Čistá funkce bez Medusy a bez Nextu — cenu dodává volající (`priceOf`),
  * takže jde testovat a nezávisí na regionu.
  */
+import { rankBySearch, type SearchFields } from "./search-rank"
 
 export type CatalogueItem = {
   id: string
@@ -42,6 +43,11 @@ export type CatalogueContext<T extends CatalogueItem> = {
    * Obchod se jinak otvíral samými „Prodáno".
    */
   shelfRankOf?: (item: T) => 0 | 1 | 2
+  /**
+   * Texty výrobku pro hledání (20. 11. 2026) — s nimi se `filters.search`
+   * vyhodnotí podle relevance a s tolerancí překlepů (lib/util/search-rank).
+   */
+  searchFieldsOf?: (item: T) => SearchFields
   now?: number
   offset?: number
   limit?: number
@@ -72,7 +78,11 @@ export const filterCatalogue = <T extends CatalogueItem>(
   const range = parsePriceRange(filters.priceRange)
   const kolekceKategorie = new Set(ctx.collectionCategoryIds ?? [])
 
-  const vysledek = all.filter((item) => {
+  /* Hledání: nejdřív relevance (a jen to, co k dotazu patří), pak filtry. */
+  const hledam = Boolean(filters.search?.trim() && ctx.searchFieldsOf)
+  const zaklad = hledam ? rankBySearch(all, filters.search!, ctx.searchFieldsOf!) : all
+
+  const vysledek = zaklad.filter((item) => {
     if (ctx.onlyIds && !ctx.onlyIds.has(item.id)) return false
 
     const kategorie = item.categories ?? []
@@ -117,6 +127,8 @@ export const filterCatalogue = <T extends CatalogueItem>(
     })
   } else if (filters.sort === "newest") {
     vysledek.sort((a, b) => casVytvoreni(b) - casVytvoreni(a))
+  } else if (hledam) {
+    /* „Doporučené" při hledání = podle relevance (pořadí z `rankBySearch`). */
   } else if (ctx.shelfRankOf) {
     /* Stabilní řazení: uvnitř stejné poličky zůstává pořadí katalogu. */
     const rank = ctx.shelfRankOf
