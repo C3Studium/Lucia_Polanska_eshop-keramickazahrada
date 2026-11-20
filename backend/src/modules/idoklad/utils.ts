@@ -1,4 +1,8 @@
-import { withPackagingUnderProducts } from "../../lib/packaging-lines"
+import {
+  isPackagingLine,
+  PACKAGING_TITLE,
+  withPackagingUnderProducts,
+} from "../../lib/packaging-lines"
 import { orderLanguageOf } from "../../lib/email-locale"
 import { toAmount } from "../../lib/ship-gate"
 import {
@@ -421,8 +425,19 @@ export const buildInvoiceItems = (
   vatPayer: boolean
 ): IdokladInvoiceItemPayload[] => {
   const lines: IdokladInvoiceItemPayload[] = []
+  /*
+   * Balné JEDNOU položkou dole (20. 11. 2026, Lucie po první ostré
+   * objednávce: „pod každým výrobkem rozepsané balné … aby se sečetlo a bylo
+   * jako jedna položka Balné až dole"). Jen na faktuře — košík i objednávka
+   * dál nesou balné u každého výrobku. Nulové balné se nevypisuje.
+   */
+  let balne = 0
 
   for (const item of withPackagingUnderProducts(order.items ?? [])) {
+    if (isPackagingLine(item as never)) {
+      balne += toAmount(item.total)
+      continue
+    }
     const quantity = Math.max(1, Math.trunc(toAmount(item.quantity)) || 1)
     const total = toAmount(item.total)
     lines.push(
@@ -434,6 +449,10 @@ export const buildInvoiceItems = (
         "ks"
       )
     )
+  }
+
+  if (round2(balne) > 0) {
+    lines.push(invoiceLine(PACKAGING_TITLE, 1, round2(balne), vatPayer))
   }
 
   const shippingTotal = round2(toAmount(order.shipping_total))
@@ -525,27 +544,38 @@ export const pickBankAccount = (
   return shoda.find((ucet) => ucet.IsDefault) ?? shoda[0]
 }
 
+/*
+ * Bankovní spojení na KAŽDÉ faktuře (20. 11. 2026, první ostrá objednávka:
+ * „na faktuře chybí číslo účtu"). Dřív se posílalo jen u eurové faktury,
+ * korunová měla účet „/". A `BankId` nesl id ÚČTU, kdežto iDoklad čeká id
+ * BANKY z číselníku (u účtů agendy je to `BankId`, např. 19).
+ *
+ * Odkud: účet v měně dokladu (`account`), jinak výchozí účet agendy z výchozí
+ * faktury (`defaults` — korunový). Eurový IBAN z prostředí jen u eurové
+ * faktury, ať se na korunovou nedostane.
+ */
 const bankovniSpojeni = (
   defaults: IdokladInvoiceDefault,
-  account?: IdokladBankAccount | null
+  account: IdokladBankAccount | null | undefined,
+  european: boolean
 ): Pick<IdokladInvoicePayload, "BankId" | "Iban" | "Swift" | "AccountNumber"> => {
   const iban = (
     account?.Iban ||
-    process.env.IDOKLAD_EU_IBAN ||
-    defaults.Iban ||
+    (european ? process.env.IDOKLAD_EU_IBAN : "") ||
+    (account ? "" : defaults.Iban) ||
     ""
   ).replace(/\s+/g, "")
   const swift = (
     account?.Swift ||
-    process.env.IDOKLAD_EU_SWIFT ||
-    defaults.Swift ||
+    (european ? process.env.IDOKLAD_EU_SWIFT : "") ||
+    (account ? "" : defaults.Swift) ||
     ""
   ).trim()
+  const accountNumber = account ? account.AccountNumber : defaults.AccountNumber
+  const bankId = account ? account.BankId : defaults.BankId
   return {
-    ...(account ? { BankId: account.Id } : {}),
-    ...(account?.AccountNumber
-      ? { AccountNumber: truncate(account.AccountNumber, 50) }
-      : {}),
+    ...(bankId ? { BankId: bankId } : {}),
+    ...(accountNumber ? { AccountNumber: truncate(accountNumber, 50) } : {}),
     ...(iban ? { Iban: truncate(iban, 50) } : {}),
     ...(swift ? { Swift: truncate(swift, 11) } : {}),
   }
@@ -598,9 +628,7 @@ const invoiceFlavourPayload = (
      Čecha jede na eurový účet, korunová pro Slováka na korunový. */
   return {
     ReportLanguage: flavour.reportLanguage,
-    ...(flavour.european || bankAccount
-      ? bankovniSpojeni(defaults, bankAccount)
-      : {}),
+    ...bankovniSpojeni(defaults, bankAccount, flavour.european),
   }
 }
 
@@ -627,9 +655,18 @@ export const pickPaymentOptionId = (
         normalized(option.Code).includes(needle)
     )?.Id
 
+  /* Agenda Lucie má názvy ANGLICKY („Credit card", „Bank transfer", „Cash
+     on delivery" — změřeno 20. 11. 2026), české výrazy nic nenašly a každá
+     faktura dostala výchozí „Převodem", i placená kartou. Obojí jazyky. */
   if (input.cod) {
-    return byNeedle("dobirk") ?? input.defaultId
+    return byNeedle("dobirk") ?? byNeedle("on delivery") ?? input.defaultId
   }
 
-  return byNeedle("kart") ?? byNeedle("prevod") ?? input.defaultId
+  return (
+    byNeedle("kart") ??
+    byNeedle("card") ??
+    byNeedle("prevod") ??
+    byNeedle("transfer") ??
+    input.defaultId
+  )
 }

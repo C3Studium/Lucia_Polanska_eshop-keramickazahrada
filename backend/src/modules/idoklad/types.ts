@@ -110,6 +110,8 @@ export type IdokladBankAccount = {
   Name?: string | null
   CurrencyId: number
   AccountNumber?: string | null
+  /** Banka z číselníku iDokladu (kód banky na faktuře), NE id účtu. */
+  BankId?: number | null
   Iban?: string | null
   Swift?: string | null
   IsDefault?: boolean
