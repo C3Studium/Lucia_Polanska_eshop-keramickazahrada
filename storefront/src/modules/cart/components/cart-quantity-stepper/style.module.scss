@@ -154,3 +154,8 @@
   height: 100%;
 }
 .root { grid-template-rows: 100%; }
+
+/* Telefon: dotykový cíl aspoň ~44 px (Apple HIG), 20. 11. 2026 — naměřeno pod 40 px. */
+@media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  .control { min-width: 3.5rem; min-height: 3.5rem; }
+}

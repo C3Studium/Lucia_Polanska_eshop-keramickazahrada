@@ -343,3 +343,29 @@ $touch-floor: 2.75rem;
   width: 1.75rem;
   height: 1.75rem;
 }
+
+/*
+ * Telefon: slevový kód dost velký na prst (20. 11. 2026, Matěj: „zadání
+ * slevového kódu je malé na výšku"). `$touch-floor` 2.75rem je při měřítku
+ * 0,8 jen 35 px a globální telefonní pravidlo tlačítek je stáhne na výšku
+ * textu. Pole, „Použít" i přepínač na 3.5rem (~45 px, Apple HIG 44),
+ * písmo pole 16 px, ať iOS při psaní nepřibližuje.
+ */
+@media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  .input,
+  input.input {
+    min-height: 3.5rem !important;
+    font-size: max(16px, 1rem) !important;
+  }
+  .applyBtn button,
+  .toggleBtn button,
+  .applyBtn :global(button),
+  .toggleBtn :global(button) {
+    min-height: 3.5rem !important;
+    padding-block: .5rem !important;
+  }
+  .promoRow button {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}

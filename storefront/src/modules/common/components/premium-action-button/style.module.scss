@@ -231,3 +231,50 @@
     padding-block: 2.5px !important;
   }
 }
+
+/*
+ * Tmavá varianta — tlačítka „Pokračovat…" v pokladně (20. 11. 2026, Lucie:
+ * „ta tlačítka dole, aby byla taky tmavá"). V klidu tmavá s bílým textem
+ * i šipkou, při najetí, stisku a zaměření olivová, text pořád bílý.
+ * Na telefonu vyšší (48 px jako ostatní ovládání), ať se dobře trefuje.
+ */
+.dark {
+  --premium-button-surface: var(--ink-05);
+  --premium-button-ink: var(--white, #fff);
+  --premium-button-fill: var(--darkOlive);
+  --premium-button-active-ink: var(--white, #fff);
+}
+.dark .button,
+.dark .plainButton {
+  border-color: var(--ink-05);
+  background: var(--ink-05);
+  color: var(--white, #fff);
+}
+.dark .label,
+.dark .arrow {
+  color: var(--white, #fff) !important;
+}
+@media (hover: hover) and (pointer: fine) {
+  .dark .plainButton:hover:not(:disabled) {
+    border-color: var(--darkOlive);
+    background: var(--darkOlive);
+  }
+}
+.dark .plainButton:active:not(:disabled),
+.dark .plainButton:focus-visible,
+.dark .plainActive {
+  border-color: var(--darkOlive);
+  background: var(--darkOlive);
+}
+.dark .button:disabled,
+.dark .plainButton:disabled {
+  opacity: 0.45;
+}
+@media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  .dark .plainButton,
+  .dark .button {
+    min-height: 3.75rem !important;
+    padding-block: 0.5rem !important;
+    padding-inline: 1.5rem 0.5rem !important;
+  }
+}

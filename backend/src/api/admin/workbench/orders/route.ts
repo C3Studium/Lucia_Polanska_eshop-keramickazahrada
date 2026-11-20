@@ -1,4 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import { isPersonalPickupOrder } from "../../../../lib/personal-pickup"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { outstandingFor } from "../../../../lib/balance-payment"
 import { MADE_TO_ORDER_MODULE } from "../../../../modules/made-to-order"
@@ -336,9 +337,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       const fulfillments = order.fulfillments ?? []
       const state = stageByOrder.get(order.id)
 
-      const isPickup = (order.shipping_methods ?? []).some((method: any) =>
-        String(method?.shipping_option?.provider_id ?? "").includes("pickup")
-      )
+      /* Tatáž detekce jako detail objednávky (lib/personal-pickup): na produkci
+         jde osobní odběr přes údaje metody (service_code / personal_pickup), ne
+         přes poskytovatele s „pickup" v názvu — seznam pak u odběru psal
+         „Odesláno · na cestě" (20. 11. 2026, Lucie). */
+      const isPickup = isPersonalPickupOrder(order)
 
       return {
         // Expert mode (?expert=1): the whole graph row rides along, so the
@@ -399,7 +402,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
    * computed from the production orders already in hand (MTO orders are few).
    */
   const stageCountEntries = await Promise.all(
-    (["received", "working", "shipping", "payment_problem"] as const).map(
+    (["received", "working", "shipping", "shipped", "payment_problem"] as const).map(
       async (stage) => {
         const [, stageCount] =
           await merchantOrders.listAndCountMerchantOrderStates(

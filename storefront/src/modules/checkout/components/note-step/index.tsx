@@ -81,10 +81,12 @@ export default function CheckoutNoteStep({ cart }: { cart: any }) {
     <div className={brief.root}>
       <header className={brief.head}>
         <h2>Poznámka k objednávce</h2>
+        {/* Text podle Lucie (20. 11. 2026): prostor pro doplňující údaje
+            k objednávce, ne nabídka dárkového balení. */}
         <p>
-          Chcete nám něco vzkázat — třeba kdy jste doma, komu balíček předat,
-          nebo že jde o dárek? Napište to sem. Pole je nepovinné, můžete ho
-          nechat prázdné.
+          Prostor pro doplňující informace k objednávce — třeba velikost,
+          barva, provedení nebo cokoli dalšího, co bychom měli vědět. Pole je
+          nepovinné, můžete ho nechat prázdné.
         </p>
       </header>
 
@@ -96,7 +98,7 @@ export default function CheckoutNoteStep({ cart }: { cart: any }) {
           maxLength={CUSTOMER_NOTE_MAX}
           onChange={(event) => zmena(event.currentTarget.value)}
           onBlur={() => void uloz(text)}
-          placeholder="Např. prosím zabalit jako dárek"
+          placeholder="Např. velikost, barva, provedení…"
           data-testid="checkout-customer-note"
           rows={5}
         />

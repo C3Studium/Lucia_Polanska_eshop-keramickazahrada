@@ -186,3 +186,11 @@
     }
   }
 }
+
+/* Telefon: dotykový cíl aspoň ~44 px (Apple HIG), 20. 11. 2026 — naměřeno pod 40 px. */
+@media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  .sort select { min-height: 3.5rem; }
+  /* Kolečko „i" zůstává malé, dotyková plocha kolem něj ~45 px. */
+  .sortInfoButton { position: relative; }
+  .sortInfoButton::after { content: ""; position: absolute; top: -1rem; right: -1rem; bottom: -1rem; left: -1rem; }
+}

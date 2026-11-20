@@ -59,3 +59,31 @@
   color: rgb(var(--ink-05-rgb) / .62);
   font: 400 max(var(--text-min, 0px), calc(.875rem * var(--read, 1))) / 1.45 "Sansation-Regular", sans-serif;
 }
+
+/* Stejně jako ostatní „Pokračovat…" v pokladně (20. 11. 2026): tmavé
+   s bílým textem, olivové při najetí a stisku, na telefonu 48 px. */
+.next {
+  min-height: 3.25rem;
+  background: var(--ink-05);
+  color: var(--white, #fff);
+  transition: background-color 120ms linear;
+
+  &:active:not(:disabled),
+  &:focus-visible {
+    background: var(--darkOlive);
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .next:hover:not(:disabled) {
+    background: var(--darkOlive);
+  }
+}
+@media (orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px) {
+  .next {
+    min-height: 3.75rem;
+    padding-inline: 1.5rem;
+  }
+  .back {
+    min-height: 3rem;
+  }
+}
