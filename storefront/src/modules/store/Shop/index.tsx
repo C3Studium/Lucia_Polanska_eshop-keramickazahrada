@@ -4,6 +4,7 @@ import { editable } from "@c3studium/valecms/edit"
 import { useParams } from "next/navigation"
 import { listStoreCatalogue } from "@lib/data/products"
 import { jeObnoveniStranky, prisliJsmeZpet } from "@lib/helpers/navigace-zpet"
+import { polohaStranky } from "@lib/hooks/use-scroll-lock"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import { useEditRerender } from "@lib/hooks/use-edit-rerender"
 import type { CopyBlock } from "@lib/util/site-copy"
@@ -458,7 +459,8 @@ export default function ECom({
       saveShopSnapshot({
         filters,
         loaded: products.length,
-        scrollY: window.scrollY,
+        /* Pod zámkem okna (menu, hledání) hlásí scrollY nulu. */
+        scrollY: polohaStranky(),
       })
     }
 

@@ -1198,11 +1198,15 @@
 .kurzyAudience.kurzyAudience--card {
   display: flex;
   flex-direction: column;
-  padding: clamp(0.75rem, 1.2vw, 1.125rem) clamp(0.75rem, 1.2vw, 1.125rem) clamp(1rem, 1.6vw, 1.5rem);
-  border: 1px solid rgb(var(--ink-05-rgb) / .12);
+  /* Víc vzduchu (20. 11. 2026, Matěj): karta je vyšší, nadpis, text
+     a tlačítko od sebe odstupují. Svislé míry na vh — scéna je vysoká jako
+     okno a ořezává, krátký laptop si je tak stáhne sám. */
+  padding: clamp(0.875rem, 1.3vw, 1.25rem) clamp(0.875rem, 1.3vw, 1.25rem) clamp(1.25rem, 3vh, 2.25rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .09);
   border-radius: 1.25rem;
-  background: rgb(var(--white-rgb) / .5);
-  box-shadow: 0 18px 40px -32px rgb(var(--ink-02-rgb) / .55);
+  /* V klidu tlumeně: méně bílé a slabší stín; plnou kartu ukáže až najetí. */
+  background: rgb(var(--white-rgb) / .3);
+  box-shadow: 0 14px 34px -30px rgb(var(--ink-02-rgb) / .3);
   cursor: pointer;
   transition: border-color .25s ease, box-shadow .25s ease, background-color .25s ease;
 }
@@ -1211,14 +1215,26 @@
   overflow: hidden;
   border-radius: .875rem;
 }
+.kurzyAudience--card .kurzyAudience__figure {
+  margin-bottom: clamp(1rem, 2.8vh, 2rem);
+}
+.kurzyAudience--card h3 {
+  margin-top: clamp(0.625rem, 1.6vh, 1rem);
+}
+.kurzyAudience--card p {
+  margin-top: clamp(0.875rem, 2.4vh, 1.5rem);
+}
+/* Tlačítko dole: `auto` ho tlačí na spodek karty, odsazení nad ním drží
+   odstup od textu i u karty, která se natáhnout nemusí. */
 .kurzyAudience--card .kurzyAudience__action {
   margin-top: auto;
+  padding-top: clamp(1.25rem, 3.4vh, 2.5rem);
 }
 @media (hover: hover) and (pointer: fine) {
   .kurzyAudience--card:hover {
     border-color: rgb(var(--ink-05-rgb) / .28);
-    background: rgb(var(--white-rgb) / .72);
-    box-shadow: 0 26px 50px -30px rgb(var(--ink-02-rgb) / .6);
+    background: rgb(var(--white-rgb) / .66);
+    box-shadow: 0 26px 50px -30px rgb(var(--ink-02-rgb) / .5);
   }
 }
 .kurzyAudience--card:active {

@@ -272,5 +272,10 @@
     letter-spacing: .02em;
     transform: translateY(-50%);
     cursor: pointer;
+    transition: background-color .28s ease, color .28s ease;
+}
+/* Najetí tlačítko jemně ztlumí (20. 11. 2026). */
+@media (hover: hover) and (pointer: fine) {
+    .searchGo:hover { background: rgb(var(--ink-05-rgb) / .78); color: rgb(var(--white-rgb) / .9); }
 }
 .searchControl.active .input { padding-right: 5rem; }

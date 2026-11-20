@@ -738,47 +738,328 @@
 
 /*
  * ─── Hledání jako malý obchod (20. 11. 2026) ─────────────────────────────────
- * Vlevo hlavička s počtem, řada karet z obchodu a „Přejít do obchodu";
- * vpravo filtry. Na telefonu filtry vyjedou PŘES výsledky uvnitř okna —
- * zavření filtrů okno nezavře. Okno je vyšší, aby se karta vešla celá.
+ * Okno je sloupec: hlavička (počet, aktivní filtry, Zavřít) · obsah (pás
+ * karet ve 2 řadách + filtry vpravo) · patička (Přejít do obchodu, čas).
+ * Okno má pevnou výšku podle obrazovky; pás si ji rozdělí na dvě řady
+ * a karty (ProductCard `compact`) se do buňky zmenší — fotka bere, co zbude.
  */
-.panel { min-height: min(40rem, calc(100dvh - var(--panel-top) - 1.25rem)); }
-.shop {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(14rem, 19vw, 17.5rem);
-  gap: clamp(1rem, 1.6vw, 1.75rem);
-  padding: clamp(1rem, 2vh, 1.5rem) var(--search-gutter, 1.5rem);
-  min-height: inherit;
+.panel {
+  --search-h: min(54rem, calc(100dvh - var(--panel-top) - 1.25rem));
+  display: flex;
+  height: var(--search-h);
+  max-height: var(--search-h);
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bgWhite);
 }
-.shopMain { display: flex; flex-direction: column; min-width: 0; }
+:global(html.kz-klavesnice) .panel {
+  --search-h: calc(var(--kz-vvh, 100dvh) - max(80px, var(--panel-top) + 0.75rem));
+}
+
+.shop {
+  /* Míry karty z obchodu (ProductGrid je drží na své mřížce), zmenšené. */
+  --card-title-size: clamp(.875rem, calc(.95vw * var(--ui-scale, 1)), 1.06rem);
+  --card-title-leading: 1.1;
+  --card-desc-size: .75rem;
+  --card-desc-leading: 1.4;
+  --card-radius: 0;
+  --shop-gap: clamp(.75rem, 1.4vw, 1.25rem);
+
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+  gap: var(--shop-gap);
+  padding: clamp(.875rem, 1.8vh, 1.375rem) var(--search-gutter, 1.5rem);
+}
+
+/* ── Hlavička ── */
 .shopHead {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: .75rem;
-  margin-bottom: .75rem;
-
-  p { margin: 0 auto 0 0; color: var(--olive-04); font-size: .875rem; }
+  min-width: 0;
 }
-.filtersToggle { display: none; }
+.shopCount {
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--olive-04);
+  font-size: .875rem;
+  white-space: nowrap;
+}
+.activePills {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: .5rem;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+  &::-webkit-scrollbar { display: none; }
+
+  button {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: .5rem;
+    min-height: 2.25rem !important;
+    padding: 0 .5rem 0 .875rem;
+    border: 1px solid var(--ink-05);
+    border-radius: 999px;
+    background: var(--ink-05);
+    color: var(--cream-10);
+    font: 400 .8125rem/1 "Sansation-Regular", sans-serif;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .25s ease;
+
+    i {
+      display: grid;
+      width: 1.375rem;
+      height: 1.375rem;
+      place-items: center;
+      border-radius: 50%;
+      background: rgb(var(--cream-10-rgb) / .16);
+      font-size: .875rem;
+      font-style: normal;
+      line-height: 1;
+    }
+    &:hover { background: var(--darkOlive); }
+  }
+}
+.pillsHint { color: rgb(var(--ink-05-rgb) / .45); font-size: .8125rem; white-space: nowrap; }
+
+/* Zavřít — kroužek s křížkem jako v kontaktu (ContactDialog), jen větší. */
 .closeX {
   display: inline-flex;
+  flex: 0 0 auto;
+  width: 3rem;
+  height: 3rem;
   align-items: center;
-  gap: .4rem;
-  min-height: 2.75rem;
-  padding: 0 1rem;
-  border: 1px solid rgb(var(--ink-05-rgb) / .2);
+  justify-content: center;
+  margin-left: auto;
+  padding: 0;
+  border: 1px solid rgb(var(--ink-06-rgb) / .22);
   border-radius: 999px;
-  background: transparent;
-  color: var(--ink-05);
-  font-size: .9375rem;
+  background: rgb(var(--cream-10-rgb) / .44);
+  box-shadow: 0 4px 12px -8px rgb(var(--ink-04-rgb) / .48);
   cursor: pointer;
+  transition: background-color .28s ease, transform .28s ease, box-shadow .28s ease;
 
-  span[aria-hidden] { font-size: 1.25rem; line-height: 1; }
-  &:hover { border-color: var(--ink-05); }
+  i {
+    position: relative;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: var(--ink-11);
+    transition: transform .46s cubic-bezier(.76, 0, .24, 1);
+
+    &::before,
+    &::after {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: .75rem;
+      height: 1px;
+      background: var(--cream-06);
+      content: "";
+    }
+    &::before { transform: translate(-50%, -50%) rotate(45deg); }
+    &::after { transform: translate(-50%, -50%) rotate(-45deg); }
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: var(--cream-06);
+    box-shadow: inset 0 0 0 1px rgb(var(--olive-15-rgb) / .08), 0 9px 22px -17px rgb(var(--ink-06-rgb) / .8);
+    transform: translateY(-1px);
+  }
+  &:hover i,
+  &:focus-visible i { transform: rotate(90deg); }
+  &:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: .1875rem; }
 }
-.shopTrack { padding-inline: 0; }
-.shopSlot { flex: 0 0 clamp(15rem, 19vw, 18.5rem); }
-.shopFoot { display: flex; justify-content: flex-end; margin-top: .75rem; }
+.filtersToggle { display: none; }
+
+/* ── Obsah: pás + filtry vpravo ── */
+.shopBody {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1fr) clamp(14rem, 18vw, 17rem);
+  gap: var(--shop-gap);
+  min-height: 0;
+}
+.rail {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: .625rem;
+  cursor: grab;
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-color: rgb(var(--olive-15-rgb) / .55) rgb(var(--ink-09-rgb) / .09);
+  scrollbar-width: thin;
+
+  &::-webkit-scrollbar { height: 6px; }
+  &::-webkit-scrollbar-track { border-radius: 999px; background: rgb(var(--ink-09-rgb) / .09); }
+  &::-webkit-scrollbar-thumb { border-radius: 999px; background: rgb(var(--olive-15-rgb) / .55); }
+
+  /* Tažení: ruka, žádný výběr textu a karty pod myší nereagují na najetí. */
+  &[data-dragging] {
+    cursor: grabbing;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  &[data-dragging] * { pointer-events: none !important; }
+  img { -webkit-user-drag: none; user-select: none; }
+}
+.shopTrack {
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  grid-auto-columns: var(--rail-col, 15rem);
+  grid-auto-flow: column;
+  grid-template-rows: repeat(var(--rail-rows, 2), minmax(0, 1fr));
+  gap: 14px;
+}
+/* Málo výsledků: po řádcích, první řada vlevo nahoře. */
+.shopTrackRows {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(var(--rail-cols, 4), var(--rail-col, 15rem));
+}
+.shopSlot {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  > * { flex: 1 1 auto; min-width: 0; }
+}
+.shopSkeleton {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: .625rem;
+
+  i,
+  span {
+    display: block;
+    overflow: hidden;
+    border-radius: .375rem;
+    background: rgb(var(--ink-09-rgb) / .08);
+    &::after {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(100deg, transparent 20%, rgb(var(--white-rgb) / .7) 50%, transparent 80%);
+      content: "";
+      animation: navbar-search-shimmer 1.4s linear infinite;
+      transform: translateX(-100%);
+    }
+  }
+  i { flex: 1 1 auto; }
+  span { flex: 0 0 auto; width: 70%; height: 3.5rem; }
+}
+.rail .empty { margin-inline: 0; }
+
+/* Filtry — stejná tmavá lišta jako v obchodě (FilterPanel). */
+.shopFilters {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgb(var(--black-03-rgb) / .15);
+  border-radius: clamp(1rem, 1.4vw, 1.375rem);
+  background: var(--ink-05);
+  color: var(--cream-07);
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+.shopFiltersHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.125rem .875rem;
+  border-bottom: 1px solid rgb(var(--white-rgb) / .16);
+
+  span { color: var(--cream-06); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; }
+  h2 { margin: .25rem 0 0; font-family: "Sentient-Regular", serif; font-size: clamp(1.25rem, 1.6vw, 1.5rem); font-weight: 400; }
+}
+.filtersDone { display: none; }
+.filterGroup {
+  padding: .875rem 1.125rem;
+  border-bottom: 1px solid rgb(var(--white-rgb) / .16);
+
+  header { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .5rem; }
+  h3 { margin: 0; font-size: .8125rem; font-weight: 400; letter-spacing: .06em; text-transform: uppercase; }
+  header small {
+    display: inline-grid;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 .3rem;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--cream-06);
+    color: var(--ink-05);
+    font-size: .6875rem;
+  }
+}
+.filterList {
+  display: flex;
+  flex-direction: column;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    min-height: 2.125rem !important;
+    padding: .2rem .5rem;
+    margin-inline: -.5rem;
+    border: 0;
+    border-radius: .5rem;
+    background: transparent;
+    color: var(--grey-05);
+    font-size: .875rem;
+    text-align: left;
+    cursor: pointer;
+    transition: color .25s ease, background-color .25s ease;
+
+    /* Čárka před aktivní položkou — jako kategorie v obchodě. */
+    i { flex: 0 0 auto; width: 0; height: 1px; background: var(--cream-06); transition: width .35s cubic-bezier(.76, 0, .24, 1); }
+    span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    small { margin-left: auto; color: var(--grey-04); font-size: .625rem; letter-spacing: .1em; text-transform: uppercase; }
+    &:hover { color: var(--white); }
+  }
+  button.filterActive {
+    background: rgb(var(--cream-06-rgb) / .14);
+    color: var(--cream-06);
+    font-weight: 600;
+    i { width: 1.25rem; }
+  }
+}
+.shopFilters .clearFilters {
+  align-self: flex-start;
+  margin: .875rem 1.125rem;
+  color: var(--cream-06) !important;
+}
+
+/* ── Patička ── */
+.shopFoot {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  flex-wrap: wrap;
+}
 .toStore {
   display: inline-flex;
   align-items: center;
@@ -790,67 +1071,30 @@
   color: var(--white, #fff);
   font-size: .9375rem;
   text-decoration: none;
+  transition: background-color .25s ease;
 
   &:hover { background: var(--darkOlive); }
 }
-.shopFilters {
+.shopInfo {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  min-width: 0;
-  max-height: calc(100dvh - var(--panel-top) - 4rem);
-  overflow-y: auto;
-  padding: 1rem;
-  border-radius: 1rem;
-  background: var(--bgBlack, #20211c);
-  color: var(--cream-06);
-}
-.shopFiltersHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .25rem 1.25rem;
+  margin: 0 0 0 auto;
+  color: rgb(var(--ink-05-rgb) / .55);
   font-size: .75rem;
-  letter-spacing: .12em;
-  text-transform: uppercase;
+  letter-spacing: .04em;
+
+  span:first-child::first-letter { text-transform: uppercase; }
 }
-.filtersDone { display: none; }
-.filterGroup { display: flex; flex-direction: column; gap: .5rem; }
-.filterGroupLabel { color: rgb(var(--cream-06-rgb) / .6); font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; }
-.filterList {
-  display: flex;
-  flex-direction: column;
-  gap: .25rem;
 
-  button {
-    display: flex;
-    align-items: baseline;
-    gap: .5rem;
-    min-height: 2.5rem;
-    padding: .35rem .625rem;
-    border: 0;
-    border-radius: .5rem;
-    background: transparent;
-    color: rgb(var(--cream-06-rgb) / .82);
-    font-size: .875rem;
-    text-align: left;
-    cursor: pointer;
-
-    small { flex: 0 0 auto; color: rgb(var(--cream-06-rgb) / .45); font-size: .625rem; letter-spacing: .1em; text-transform: uppercase; }
-    &:hover { background: rgb(var(--cream-06-rgb) / .08); }
-  }
-  button.filterActive {
-    background: rgb(var(--cream-06-rgb) / .16);
-    box-shadow: inset 3px 0 0 var(--cream-06);
-    color: var(--cream-06);
-    font-weight: 600;
-  }
-}
-.shopFilters .clearFilters { align-self: flex-start; color: var(--cream-06) !important; }
-
+/* ── Telefon a úzké okno ── */
 @media (max-width: 899.98px) {
-  .shop { grid-template-columns: minmax(0, 1fr); padding-inline: 1rem; }
+  .shop { padding-inline: 1rem; }
+  .shopBody { grid-template-columns: minmax(0, 1fr); }
+  .shopCount { display: none; }
   .filtersToggle {
     display: inline-flex;
+    flex: 0 0 auto;
     align-items: center;
     min-height: 2.75rem;
     padding: 0 1rem;
@@ -859,16 +1103,15 @@
     background: var(--ink-05);
     color: var(--white, #fff);
     font-size: .875rem;
+    white-space: nowrap;
   }
-  .closeXLabel { display: none; }
-  .closeX { padding: 0; width: 2.75rem; justify-content: center; }
-  .shopSlot { flex-basis: min(72vw, 17rem); }
-  /* Filtry přes výsledky — uvnitř okna, takže zavření filtrů okno nezavře. */
+  .closeX { width: 2.75rem; height: 2.75rem; margin-left: 0; }
+  .closeX i { width: 2rem; height: 2rem; }
+  /* Filtry přes celé okno — „Hotovo" je zavře, hledání zůstane otevřené. */
   .shopFilters {
     position: absolute;
     inset: 0;
     z-index: 5;
-    max-height: none;
     border-radius: inherit;
     transform: translateX(100%);
     visibility: hidden;
@@ -889,16 +1132,29 @@
     background: var(--cream-06);
     color: var(--ink-05);
     font-size: .875rem;
-    letter-spacing: 0;
-    text-transform: none;
   }
-  .shopFoot { justify-content: stretch; }
-  .toStore { width: 100%; justify-content: center; }
+  .toStore { flex: 1 1 auto; justify-content: center; }
+  .shopFoot { flex-wrap: nowrap; gap: .75rem; }
+  /* Telefon: jen den a čas, vedle tlačítka — patička zůstane na jeden řádek. */
+  .shopInfo { flex: 0 0 auto; flex-direction: column; gap: 0; margin-left: 0; text-align: right; }
+  .shopInfo span:nth-child(n + 2) { display: none; }
 }
-/* Neprůhledné okno (stránka za ním prosvítala) a patička hned pod kartami. */
-.panel:has(.shop), .panel { background: var(--bgWhite); }
-.shopMain { align-self: start; }
-/* Telefon: menší karta, ať je pod ní vidět „Přejít do obchodu". */
-@media (max-width: 899.98px) {
-  .shopSlot { flex-basis: min(58vw, 14rem); }
+
+/* Telefon: okno končí nad spodní lištou (viz phone-search-overlay výš). */
+@include below-px(600px) {
+  .panel { --search-h: calc(100dvh - 64px - 84px); }
+  .shop { gap: .625rem; padding-block: .75rem; }
+}
+@include phs-h {
+  .panel { --search-h: calc(100dvh - 64px - 84px); }
+}
+:global(html.kz-klavesnice) .panel {
+  --search-h: calc(var(--kz-vvh, 100dvh) - max(80px, var(--panel-top) + 0.75rem));
+}
+/* Hlavička filtrů s „Hotovo" zůstává nahoře, i když se seznam posune. */
+.shopFiltersHead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--ink-05);
 }

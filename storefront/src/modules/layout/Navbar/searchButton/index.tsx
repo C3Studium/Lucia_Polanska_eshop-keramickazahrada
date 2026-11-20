@@ -1,4 +1,4 @@
-import { Easing, motion } from 'framer-motion';
+import { AnimatePresence, Easing, motion } from 'framer-motion';
 import styles from './styles.module.scss';
 import Image from 'next/image';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
@@ -216,11 +216,24 @@ export default function SearchButton({
         transition={transition2}
         style={isActive ? undefined : closedInputStyle}
       />
-      {isActive && (
-        <button type="button" className={styles.searchGo} onClick={hledat} data-testid="navbar-search-go">
-          Hledat
-        </button>
-      )}
+      {/* „Hledat" naskočí až po roztažení pole a při zavření zmizí hned
+          (20. 11. 2026, Matěj) — jinak visel přes zužující se pole. */}
+      <AnimatePresence>
+        {isActive && (
+          <motion.button
+            key="hledat"
+            type="button"
+            className={styles.searchGo}
+            onClick={hledat}
+            data-testid="navbar-search-go"
+            initial={goHidden}
+            animate={goShown}
+            exit={goExit}
+          >
+            Hledat
+          </motion.button>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
@@ -235,3 +248,7 @@ const animate = { opacity: 1, x: 0 }
 const transition2 = { duration: 0.25, delay: 0.12, ease }
 /* Zavřené pole: v DOM kvůli fokusu v ťuknutí, ale neviditelné a neklikatelné. */
 const closedInputStyle = { pointerEvents: "none" as const }
+/* „Hledat": příchod se zpožděním (pole se roztahuje 0.6 s), odchod rychle. */
+const goHidden = { opacity: 0 }
+const goShown = { opacity: 1, transition: { delay: 0.42, duration: 0.3, ease } }
+const goExit = { opacity: 0, transition: { duration: 0.1, ease: "easeOut" as const } }

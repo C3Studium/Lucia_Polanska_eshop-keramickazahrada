@@ -323,16 +323,82 @@ const searchFieldsOfHit = (hit: NavbarProductHit) => ({
   description: (hit as any).description as string | null | undefined,
 })
 
+// The same facets the store page offers, so the overlay is not a weaker second search.
+const FACETS = [
+  { id: "sale", label: "Ve slevě" },
+  { id: "new", label: "Novinky" },
+  { id: "under-500", label: "Do 500 Kč" },
+  { id: "500-1000", label: "500–1 000 Kč" },
+  { id: "1000-2500", label: "1 000–2 500 Kč" },
+  { id: "over-2500", label: "Nad 2 500 Kč" },
+] as const
+
+const facetLabel = (id: string) => FACETS.find((facet) => facet.id === id)?.label ?? id
+
+/* Mezera mezi kartami v pásu — totéž číslo jako `gap` v .shopTrack (px při rem 16). */
+const RAIL_GAP = 14
+
 /**
- * Hledání jako malý obchod (20. 11. 2026, Matěj: „lidé chtějí hledání používat
- * jako stránku obchodu — kompaktní, ale se vším").
+ * Kolik sloupců a řad se vejde do pásu: 4 sloupce na počítači, 3 na úzkém
+ * okně, 2 na telefonu; 2 řady, dokud je pás aspoň na dvě karty vysoký.
+ */
+function useRailGrid(railRef: React.RefObject<HTMLDivElement | null>) {
+  const [grid, setGrid] = useState({ cols: 4, rows: 2, width: 0 })
+
+  useEffect(() => {
+    const el = railRef.current
+    if (!el || typeof ResizeObserver === "undefined") return
+    const measure = () => {
+      const width = el.clientWidth
+      const height = el.clientHeight
+      const cols = width >= 820 ? 4 : width >= 520 ? 3 : 2
+      /* Nejmenší karta: na telefonu bez druhu a popisu (~170 px), jinak ~210. */
+      const minCard = width < 600 ? 168 : 208
+      const rows = height >= 2 * minCard + RAIL_GAP ? 2 : 1
+      setGrid((current) =>
+        current.cols === cols && current.rows === rows && current.width === width
+          ? current
+          : { cols, rows, width }
+      )
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [railRef])
+
+  return grid
+}
+
+/** „pátek 20. 11. · 14:32" — obnovuje se po půl minutě. */
+function useNow() {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 30000)
+    return () => window.clearInterval(timer)
+  }, [])
+  return now
+}
+
+const dayFormat = new Intl.DateTimeFormat("cs-CZ", {
+  weekday: "long",
+  day: "numeric",
+  month: "numeric",
+})
+const timeFormat = new Intl.DateTimeFormat("cs-CZ", { hour: "2-digit", minute: "2-digit" })
+
+/**
+ * Hledání jako malý obchod (20. 11. 2026, Matěj).
  *
- * - výsledky podle relevance s tolerancí překlepů (lib/util/search-rank),
- * - karty TYTÉŽ jako v obchodě (štítky, sleva, oblíbené, košík),
- * - jedna řada, táhne se myší i prstem (useDragScroll),
- * - filtry vpravo (na telefonu přes „Filtry" přes výsledky, okno zůstane),
- * - dole „Přejít do obchodu" s hledaným výrazem,
- * - Enter / „Hledat" výsledky krátce oživí (událost `kz:hledat`).
+ * Okno je sloupec o třech pásech:
+ * - hlavička: počet, aktivní filtry jako pilulky s křížkem (na telefonu se
+ *   posouvají do stran) a vpravo kulaté „Zavřít" jako v kontaktu;
+ * - obsah: karty z obchodu (zmenšené, `compact`) ve 2 řadách po 4 sloupcích,
+ *   pás se táhne myší a posouvá prstem; vpravo filtry jako v obchodě
+ *   (na telefonu vyjedou přes okno, „Hotovo" je zavře a okno zůstane);
+ * - patička: vlevo „Přejít do obchodu", vpravo den, čas a počet výrobků.
+ *
+ * Enter / „Hledat" výsledky krátce oživí (událost `kz:hledat`).
  */
 function SearchContent({
   isLoading,
@@ -347,12 +413,14 @@ function SearchContent({
   const text = (label: keyof typeof SEARCH_DEFAULTS) =>
     itemText(copy, label, SEARCH_DEFAULTS[label])
   const railRef = useDragScroll<HTMLDivElement>()
+  const grid = useRailGrid(railRef)
+  const now = useNow()
   const [activeFacets, setActiveFacets] = useState<string[]>([])
   const [activeTaxonomy, setActiveTaxonomy] = useState<string[]>([])
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [pulse, setPulse] = useState(0)
 
-  /* Enter v poli i „Hledat" vedle něj — výsledky se krátce oživí a řada
+  /* Enter v poli i „Hledat" vedle něj — výsledky se krátce oživí a pás
      se vrátí na začátek, ať je vidět, že se hledalo. */
   useEffect(() => {
     const hledat = () => {
@@ -372,8 +440,9 @@ function SearchContent({
     onQueryChange("")
   }
 
-  const hasFilters = activeFacets.length > 0 || activeTaxonomy.length > 0 || Boolean(query)
+  const trimmedQuery = query.trim()
   const filterCount = activeFacets.length + activeTaxonomy.length
+  const hasFilters = filterCount > 0 || Boolean(trimmedQuery)
 
   const products = useMemo(() => {
     const ranked = rankBySearch(catalogueProducts, query, searchFieldsOfHit)
@@ -387,16 +456,6 @@ function SearchContent({
       ? byTaxonomy.filter((product) => matchesFacets(product, activeFacets))
       : byTaxonomy
   }, [catalogueProducts, query, activeFacets, activeTaxonomy])
-
-  // The same facets the store page offers, so the overlay is not a weaker second search.
-  const FACETS = [
-    { id: "sale", label: "Ve slevě" },
-    { id: "new", label: "Novinky" },
-    { id: "under-500", label: "Do 500 Kč" },
-    { id: "500-1000", label: "500–1 000 Kč" },
-    { id: "1000-2500", label: "1 000–2 500 Kč" },
-    { id: "over-2500", label: "Nad 2 500 Kč" },
-  ] as const
 
   /* Kategorie a kolekce z katalogu, nejčastější nahoře. */
   const taxonomy = useMemo(() => {
@@ -417,44 +476,83 @@ function SearchContent({
     return Array.from(counts.values()).sort((a, b) => b.n - a.n).slice(0, 14)
   }, [catalogueProducts])
 
-  const resultLabel = query.trim() || filterCount
+  const resultLabel = trimmedQuery || filterCount
     ? products.length > 0
       ? `${products.length} ${products.length === 1 ? "nalezený výrobek" : products.length < 5 ? "nalezené výrobky" : "nalezených výrobků"}`
       : text("nic")
     : `${catalogueProducts.length} výrobků v nabídce`
 
-  const storeHref = query.trim() ? `/store?search=${encodeURIComponent(query.trim())}` : "/store"
+  const storeHref = trimmedQuery ? `/store?search=${encodeURIComponent(trimmedQuery)}` : "/store"
+
+  /* Málo výsledků (vejdou se na jednu obrazovku) → po řádcích, ať první
+     řada začne vlevo nahoře; jinak po sloupcích, ať se táhne do strany. */
+  const fitsOneScreen = products.length <= grid.cols * grid.rows
+  const railStyle = {
+    "--rail-cols": grid.cols,
+    "--rail-rows": grid.rows,
+    "--rail-col": grid.width
+      ? `${(grid.width - (grid.cols - 1) * RAIL_GAP) / grid.cols}px`
+      : undefined,
+  } as React.CSSProperties
 
   return (
     <div className={styles.shop}>
-      <div className={styles.shopMain}>
-        <div className={styles.shopHead}>
-          <p aria-live="polite">{isLoading ? "Načítám…" : resultLabel}</p>
-          <button
-            type="button"
-            className={styles.filtersToggle}
-            onClick={() => setFiltersOpen(true)}
-            aria-expanded={filtersOpen}
-          >
-            Filtry{filterCount ? ` (${filterCount})` : ""}
-          </button>
-          <button
-            type="button"
-            className={styles.closeX}
-            onClick={onClose}
-            aria-label="Zavřít vyhledávání"
-          >
-            <span aria-hidden="true">×</span>
-            <span className={styles.closeXLabel}>Zavřít</span>
-          </button>
+      <header className={styles.shopHead}>
+        <p className={styles.shopCount} aria-live="polite">
+          {isLoading ? "Načítám…" : resultLabel}
+        </p>
+        <div className={styles.activePills} data-lenis-prevent>
+          {trimmedQuery && (
+            <button type="button" onClick={() => onQueryChange("")} aria-label={`Zrušit hledání „${trimmedQuery}"`}>
+              <span>„{trimmedQuery}“</span>
+              <i aria-hidden="true">×</i>
+            </button>
+          )}
+          {activeTaxonomy.map((label) => (
+            <button key={`t-${label}`} type="button" onClick={() => setActiveTaxonomy((list) => toggle(list, label))} aria-label={`Zrušit filtr ${label}`}>
+              <span>{label}</span>
+              <i aria-hidden="true">×</i>
+            </button>
+          ))}
+          {activeFacets.map((id) => (
+            <button key={`f-${id}`} type="button" onClick={() => setActiveFacets((list) => toggle(list, id))} aria-label={`Zrušit filtr ${facetLabel(id)}`}>
+              <span>{facetLabel(id)}</span>
+              <i aria-hidden="true">×</i>
+            </button>
+          ))}
+          {!hasFilters && <span className={styles.pillsHint}>Bez filtrů</span>}
         </div>
+        <button
+          type="button"
+          className={styles.filtersToggle}
+          onClick={() => setFiltersOpen(true)}
+          aria-expanded={filtersOpen}
+        >
+          Filtry{filterCount ? ` (${filterCount})` : ""}
+        </button>
+        <button
+          type="button"
+          className={styles.closeX}
+          onClick={onClose}
+          aria-label="Zavřít vyhledávání"
+          title="Zavřít"
+        >
+          <i aria-hidden="true" />
+        </button>
+      </header>
 
-        <div ref={railRef} className={styles.quarryViewport} data-testid="navbar-search-rail">
+      <div className={styles.shopBody}>
+        <div
+          ref={railRef}
+          className={styles.rail}
+          style={railStyle}
+          data-testid="navbar-search-rail"
+        >
           <AnimatePresence mode="wait" initial={false}>
             {isLoading ? (
-              <motion.div key="loading" className={styles.skeletonTrack} initial={fadeOnly} animate={fadeIn} exit={fadeOnly}>
-                {Array.from({ length: 5 }, (_, index) => (
-                  <div className={styles.skeleton} key={index}>
+              <motion.div key="loading" className={`${styles.shopTrack} ${styles.shopTrackRows}`} initial={fadeOnly} animate={fadeIn} exit={fadeOnly}>
+                {Array.from({ length: grid.cols * grid.rows }, (_, index) => (
+                  <div className={styles.shopSkeleton} key={index}>
                     <i />
                     <span />
                   </div>
@@ -471,7 +569,7 @@ function SearchContent({
             ) : products.length > 0 ? (
               <motion.div
                 key={`${normalizeSearch(query) || "vse"}:${pulse}:${activeFacets.join()}:${activeTaxonomy.join()}`}
-                className={`${styles.quarryTrack} ${styles.shopTrack}`}
+                className={`${styles.shopTrack} ${fitsOneScreen ? styles.shopTrackRows : ""}`}
                 data-testid="navbar-search-results"
                 variants={listVariants}
                 initial="hidden"
@@ -480,11 +578,11 @@ function SearchContent({
               >
                 {products.map((hit, index) => (
                   <motion.div
-                    className={`${styles.productSlot} ${styles.shopSlot}`}
+                    className={styles.shopSlot}
                     key={hit.objectID ?? hit.id ?? `${hit.handle}-${index}`}
-                    variants={itemVariants}
+                    variants={index < 12 ? itemVariants : undefined}
                   >
-                    <ProductCard product={hit as any} priority={index < 3} />
+                    <ProductCard product={hit as any} priority={index < 4} compact />
                   </motion.div>
                 ))}
               </motion.div>
@@ -499,70 +597,90 @@ function SearchContent({
           </AnimatePresence>
         </div>
 
-        <div className={styles.shopFoot}>
-          <LocalizedClientLink href={storeHref} className={styles.toStore} data-testid="search-to-store" onClick={onClose}>
-            Přejít do obchodu <span aria-hidden="true">→</span>
-          </LocalizedClientLink>
-        </div>
-      </div>
+        <aside
+          className={`${styles.shopFilters} ${filtersOpen ? styles.shopFiltersOpen : ""}`}
+          aria-label="Filtry hledání"
+          data-lenis-prevent
+        >
+          <div className={styles.shopFiltersHead}>
+            <div>
+              <span>Upřesnit</span>
+              <h2>Filtry</h2>
+            </div>
+            <button type="button" className={styles.filtersDone} onClick={() => setFiltersOpen(false)}>
+              Hotovo
+            </button>
+          </div>
 
-      <aside
-        className={`${styles.shopFilters} ${filtersOpen ? styles.shopFiltersOpen : ""}`}
-        aria-label="Filtry hledání"
-        data-lenis-prevent
-      >
-        <div className={styles.shopFiltersHead}>
-          <span>Filtry</span>
-          <button type="button" className={styles.filtersDone} onClick={() => setFiltersOpen(false)}>
-            Hotovo
-          </button>
-        </div>
+          {taxonomy.length > 0 && (
+            <div className={styles.filterGroup}>
+              <header>
+                <h3 {...editableItem(copy, "prochazet")}>{text("prochazet")}</h3>
+                {activeTaxonomy.length > 0 && <small>{activeTaxonomy.length}</small>}
+              </header>
+              <div className={styles.filterList}>
+                {taxonomy.map((item) => {
+                  const active = activeTaxonomy.includes(item.label)
+                  return (
+                    <button
+                      key={`${item.type}-${item.label}`}
+                      type="button"
+                      className={active ? styles.filterActive : undefined}
+                      aria-pressed={active}
+                      onClick={() => setActiveTaxonomy((list) => toggle(list, item.label))}
+                    >
+                      <i aria-hidden="true" />
+                      <span>{item.label}</span>
+                      <small>{item.type}</small>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
-        {taxonomy.length > 0 && (
           <div className={styles.filterGroup}>
-            <span className={styles.filterGroupLabel} {...editableItem(copy, "prochazet")}>
-              {text("prochazet")}
-            </span>
+            <header>
+              <h3>Výběr</h3>
+              {activeFacets.length > 0 && <small>{activeFacets.length}</small>}
+            </header>
             <div className={styles.filterList}>
-              {taxonomy.map((item) => (
-                <button
-                  key={`${item.type}-${item.label}`}
-                  type="button"
-                  className={activeTaxonomy.includes(item.label) ? styles.filterActive : undefined}
-                  aria-pressed={activeTaxonomy.includes(item.label)}
-                  onClick={() => setActiveTaxonomy((list) => toggle(list, item.label))}
-                >
-                  <small>{item.type}</small>
-                  <span>{item.label}</span>
-                </button>
-              ))}
+              {FACETS.map((facet) => {
+                const active = activeFacets.includes(facet.id)
+                return (
+                  <button
+                    key={facet.id}
+                    type="button"
+                    className={active ? styles.filterActive : undefined}
+                    aria-pressed={active}
+                    onClick={() => setActiveFacets((list) => toggle(list, facet.id))}
+                  >
+                    <i aria-hidden="true" />
+                    <span>{facet.label}</span>
+                  </button>
+                )
+              })}
             </div>
           </div>
-        )}
 
-        <div className={styles.filterGroup}>
-          <span className={styles.filterGroupLabel}>Výběr</span>
-          <div className={styles.filterList}>
-            {FACETS.map((facet) => (
-              <button
-                key={facet.id}
-                type="button"
-                className={activeFacets.includes(facet.id) ? styles.filterActive : undefined}
-                aria-pressed={activeFacets.includes(facet.id)}
-                onClick={() => setActiveFacets((list) => toggle(list, facet.id))}
-              >
-                <span>{facet.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+          {hasFilters && (
+            <button type="button" className={styles.clearFilters} onClick={clearAll}>
+              Vymazat filtry
+            </button>
+          )}
+        </aside>
+      </div>
 
-        {hasFilters && (
-          <button type="button" className={styles.clearFilters} onClick={clearAll}>
-            Vymazat filtry
-          </button>
-        )}
-      </aside>
+      <footer className={styles.shopFoot}>
+        <LocalizedClientLink href={storeHref} className={styles.toStore} data-testid="search-to-store" onClick={onClose}>
+          Přejít do obchodu <span aria-hidden="true">→</span>
+        </LocalizedClientLink>
+        <p className={styles.shopInfo}>
+          <span>{dayFormat.format(now)} · {timeFormat.format(now)}</span>
+          <span>{catalogueProducts.length || "—"} výrobků v nabídce</span>
+          <span>ručně z dílny v Putimi</span>
+        </p>
+      </footer>
     </div>
   )
 }
