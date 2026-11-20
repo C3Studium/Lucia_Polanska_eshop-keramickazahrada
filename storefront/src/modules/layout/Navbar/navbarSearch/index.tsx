@@ -8,6 +8,13 @@ import { AnimatePresence, motion, type Variants } from "framer-motion"
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDragScroll } from "./useDragScroll"
 import ProductCard from "@modules/store/Shop/components/ProductCard"
+import {
+  PriceFilter,
+  Toggle,
+  priceScaleFor,
+} from "@modules/store/Shop/components/FilterPanel"
+import { parsePriceRange } from "@lib/util/catalogue-filter"
+import { useParams } from "next/navigation"
 import { normalizeSearch, rankBySearch } from "@lib/util/search-rank"
 import { useScrollLock } from "@lib/hooks/use-scroll-lock"
 import styles from "./style.module.scss"
@@ -112,32 +119,42 @@ const itemVariants: Variants = {
   },
 }
 
-/** Facet predicates, kept beside the facet list so the two cannot drift apart. */
-function matchesFacets(product: any, facets: string[]) {
-  const variant = product?.variants?.[0]
-  const amount = Number(
-    variant?.calculated_price?.calculated_amount ?? product?.price ?? NaN
-  )
-  const isSale =
-    variant?.calculated_price?.calculated_price?.price_list_type === "sale"
+/**
+ * Výběr a cena — stejná pravidla jako filtry obchodu (lib/util/catalogue-filter):
+ * cena = nejnižší z variant, druh kusu podle metadat výrobku.
+ */
+function matchesFacets(product: any, facets: string[], priceRange: string) {
+  const prices = ((product?.variants ?? []) as any[])
+    .map((variant) => ({
+      amount: Number(variant?.calculated_price?.calculated_amount ?? NaN),
+      sale: variant?.calculated_price?.calculated_price?.price_list_type === "sale",
+    }))
+    .filter((price) => Number.isFinite(price.amount))
+  const cheapest = prices.length
+    ? prices.reduce((low, price) => (price.amount < low.amount ? price : low))
+    : null
+  const meta = (product?.metadata ?? {}) as Record<string, unknown>
   const isNew =
     product?.created_at &&
     new Date(product.created_at).getTime() > Date.now() - 30 * 86400000
 
+  const range = parsePriceRange(priceRange)
+  if (range && (!cheapest || cheapest.amount < range.min || cheapest.amount > range.max)) {
+    return false
+  }
+
   return facets.every((facet) => {
     switch (facet) {
       case "sale":
-        return Boolean(isSale)
+        return Boolean(cheapest?.sale)
       case "new":
         return Boolean(isNew)
-      case "under-500":
-        return Number.isFinite(amount) && amount < 500
-      case "500-1000":
-        return Number.isFinite(amount) && amount >= 500 && amount < 1000
-      case "1000-2500":
-        return Number.isFinite(amount) && amount >= 1000 && amount < 2500
-      case "over-2500":
-        return Number.isFinite(amount) && amount >= 2500
+      case "clearance":
+        return meta.clearance === true
+      case "bundle":
+        return meta.is_bundle === true
+      case "madeToOrder":
+        return meta.made_to_order === true
       default:
         return true
     }
@@ -323,20 +340,33 @@ const searchFieldsOfHit = (hit: NavbarProductHit) => ({
   description: (hit as any).description as string | null | undefined,
 })
 
-// The same facets the store page offers, so the overlay is not a weaker second search.
+/* Stejný „Výběr" jako v obchodě (FilterPanel). Poškozené, Balíčky a Zakázky
+   jsou druh kusu — vylučují se navzájem jako `kind` v obchodě. */
 const FACETS = [
-  { id: "sale", label: "Ve slevě" },
   { id: "new", label: "Novinky" },
-  { id: "under-500", label: "Do 500 Kč" },
-  { id: "500-1000", label: "500–1 000 Kč" },
-  { id: "1000-2500", label: "1 000–2 500 Kč" },
-  { id: "over-2500", label: "Nad 2 500 Kč" },
+  { id: "sale", label: "Ve slevě" },
+  { id: "clearance", label: "Poškozené" },
+  { id: "bundle", label: "Balíčky" },
+  { id: "madeToOrder", label: "Zakázky" },
 ] as const
+const KIND_FACETS = new Set(["clearance", "bundle", "madeToOrder"])
 
 const facetLabel = (id: string) => FACETS.find((facet) => facet.id === id)?.label ?? id
 
-/* Mezera mezi kartami v pásu — totéž číslo jako `gap` v .shopTrack (px při rem 16). */
+const priceNumber = new Intl.NumberFormat("cs-CZ")
+/** „200–1 500 Kč", „od 500 Kč", „do 800 Kč" — štítek ceny v hlavičce. */
+const priceRangeLabel = (value: string, unit: string) => {
+  const range = parsePriceRange(value)
+  if (!range) return ""
+  if (!Number.isFinite(range.max)) return `od ${priceNumber.format(range.min)} ${unit}`
+  if (range.min <= 0) return `do ${priceNumber.format(range.max)} ${unit}`
+  return `${priceNumber.format(range.min)}–${priceNumber.format(range.max)} ${unit}`
+}
+
+/* Mezera mezi sloupci v pásu — totéž číslo jako `column-gap` v .shopTrack;
+   mezi řadami je víc (`--rail-row-gap`, nejvýš ~36 px). */
 const RAIL_GAP = 14
+const RAIL_ROW_GAP = 36
 
 /**
  * Kolik sloupců a řad se vejde do pásu: 4 sloupce na počítači, 3 na úzkém
@@ -354,7 +384,7 @@ function useRailGrid(railRef: React.RefObject<HTMLDivElement | null>) {
       const cols = width >= 820 ? 4 : width >= 520 ? 3 : 2
       /* Nejmenší karta: na telefonu bez druhu a popisu (~170 px), jinak ~210. */
       const minCard = width < 600 ? 168 : 208
-      const rows = height >= 2 * minCard + RAIL_GAP ? 2 : 1
+      const rows = height >= 2 * minCard + RAIL_ROW_GAP ? 2 : 1
       setGrid((current) =>
         current.cols === cols && current.rows === rows && current.width === width
           ? current
@@ -394,7 +424,7 @@ const timeFormat = new Intl.DateTimeFormat("cs-CZ", { hour: "2-digit", minute: "
  * - hlavička: počet, aktivní filtry jako pilulky s křížkem (na telefonu se
  *   posouvají do stran) a vpravo kulaté „Zavřít" jako v kontaktu;
  * - obsah: karty z obchodu (zmenšené, `compact`) ve 2 řadách po 4 sloupcích,
- *   pás se táhne myší a posouvá prstem; vpravo filtry jako v obchodě
+ *   pás se táhne myší a posouvá prstem; vlevo filtry jako v obchodě (cena, výběr, kolekce)
  *   (na telefonu vyjedou přes okno, „Hotovo" je zavře a okno zůstane);
  * - patička: vlevo „Přejít do obchodu", vpravo den, čas a počet výrobků.
  *
@@ -417,6 +447,9 @@ function SearchContent({
   const now = useNow()
   const [activeFacets, setActiveFacets] = useState<string[]>([])
   const [activeTaxonomy, setActiveTaxonomy] = useState<string[]>([])
+  const [priceRange, setPriceRange] = useState("")
+  const { countryCode } = useParams<{ countryCode?: string }>() ?? {}
+  const priceLabel = priceRangeLabel(priceRange, priceScaleFor(countryCode).unit)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [pulse, setPulse] = useState(0)
 
@@ -433,15 +466,23 @@ function SearchContent({
 
   const toggle = (list: string[], value: string) =>
     list.includes(value) ? list.filter((item) => item !== value) : [...list, value]
+  /* Druh kusu (Poškozené / Balíčky / Zakázky) jen jeden naráz, jako v obchodě. */
+  const toggleFacet = (id: string) =>
+    setActiveFacets((list) =>
+      list.includes(id)
+        ? list.filter((item) => item !== id)
+        : [...list.filter((item) => !(KIND_FACETS.has(id) && KIND_FACETS.has(item))), id]
+    )
 
   const clearAll = () => {
     setActiveFacets([])
     setActiveTaxonomy([])
+    setPriceRange("")
     onQueryChange("")
   }
 
   const trimmedQuery = query.trim()
-  const filterCount = activeFacets.length + activeTaxonomy.length
+  const filterCount = activeFacets.length + activeTaxonomy.length + (priceRange ? 1 : 0)
   const hasFilters = filterCount > 0 || Boolean(trimmedQuery)
 
   const products = useMemo(() => {
@@ -452,10 +493,10 @@ function SearchContent({
           return names.some((name) => activeTaxonomy.includes(name as string))
         })
       : ranked
-    return activeFacets.length
-      ? byTaxonomy.filter((product) => matchesFacets(product, activeFacets))
+    return activeFacets.length || priceRange
+      ? byTaxonomy.filter((product) => matchesFacets(product, activeFacets, priceRange))
       : byTaxonomy
-  }, [catalogueProducts, query, activeFacets, activeTaxonomy])
+  }, [catalogueProducts, query, activeFacets, activeTaxonomy, priceRange])
 
   /* Kategorie a kolekce z katalogu, nejčastější nahoře. */
   const taxonomy = useMemo(() => {
@@ -515,11 +556,17 @@ function SearchContent({
             </button>
           ))}
           {activeFacets.map((id) => (
-            <button key={`f-${id}`} type="button" onClick={() => setActiveFacets((list) => toggle(list, id))} aria-label={`Zrušit filtr ${facetLabel(id)}`}>
+            <button key={`f-${id}`} type="button" onClick={() => toggleFacet(id)} aria-label={`Zrušit filtr ${facetLabel(id)}`}>
               <span>{facetLabel(id)}</span>
               <i aria-hidden="true">×</i>
             </button>
           ))}
+          {priceLabel && (
+            <button type="button" onClick={() => setPriceRange("")} aria-label={`Zrušit filtr ceny ${priceLabel}`}>
+              <span>{priceLabel}</span>
+              <i aria-hidden="true">×</i>
+            </button>
+          )}
           {!hasFilters && <span className={styles.pillsHint}>Bez filtrů</span>}
         </div>
         <button
@@ -568,7 +615,7 @@ function SearchContent({
               </motion.div>
             ) : products.length > 0 ? (
               <motion.div
-                key={`${normalizeSearch(query) || "vse"}:${pulse}:${activeFacets.join()}:${activeTaxonomy.join()}`}
+                key={`${normalizeSearch(query) || "vse"}:${pulse}:${activeFacets.join()}:${activeTaxonomy.join()}:${priceRange}`}
                 className={`${styles.shopTrack} ${fitsOneScreen ? styles.shopTrackRows : ""}`}
                 data-testid="navbar-search-results"
                 variants={listVariants}
@@ -618,48 +665,59 @@ function SearchContent({
                 <h3 {...editableItem(copy, "prochazet")}>{text("prochazet")}</h3>
                 {activeTaxonomy.length > 0 && <small>{activeTaxonomy.length}</small>}
               </header>
-              <div className={styles.filterList}>
-                {taxonomy.map((item) => {
-                  const active = activeTaxonomy.includes(item.label)
-                  return (
-                    <button
-                      key={`${item.type}-${item.label}`}
-                      type="button"
-                      className={active ? styles.filterActive : undefined}
-                      aria-pressed={active}
-                      onClick={() => setActiveTaxonomy((list) => toggle(list, item.label))}
-                    >
-                      <i aria-hidden="true" />
-                      <span>{item.label}</span>
-                      <small>{item.type}</small>
-                    </button>
-                  )
-                })}
-              </div>
+              {(["Kolekce", "Kategorie"] as const).map((type) => {
+                const items = taxonomy.filter((item) => item.type === type)
+                if (!items.length) return null
+                return (
+                  <div key={type}>
+                    <p className={styles.filterSub}>{type}</p>
+                    <div className={styles.filterList}>
+                      {items.map((item) => {
+                        const active = activeTaxonomy.includes(item.label)
+                        return (
+                          <button
+                            key={`${item.type}-${item.label}`}
+                            type="button"
+                            className={active ? styles.filterActive : undefined}
+                            aria-pressed={active}
+                            title={item.label}
+                            onClick={() => setActiveTaxonomy((list) => toggle(list, item.label))}
+                          >
+                            <i aria-hidden="true" />
+                            <span>{item.label}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
+
+          {/* Cena a Výběr — tytéž ovládací prvky jako filtry obchodu. */}
+          <div className={styles.filterGroup}>
+            <header>
+              <h3>Cena</h3>
+              {priceRange && <small>1</small>}
+            </header>
+            <PriceFilter value={priceRange} onChange={setPriceRange} />
+          </div>
 
           <div className={styles.filterGroup}>
             <header>
               <h3>Výběr</h3>
               {activeFacets.length > 0 && <small>{activeFacets.length}</small>}
             </header>
-            <div className={styles.filterList}>
-              {FACETS.map((facet) => {
-                const active = activeFacets.includes(facet.id)
-                return (
-                  <button
-                    key={facet.id}
-                    type="button"
-                    className={active ? styles.filterActive : undefined}
-                    aria-pressed={active}
-                    onClick={() => setActiveFacets((list) => toggle(list, facet.id))}
-                  >
-                    <i aria-hidden="true" />
-                    <span>{facet.label}</span>
-                  </button>
-                )
-              })}
+            <div className={styles.filterToggles}>
+              {FACETS.map((facet) => (
+                <Toggle
+                  key={facet.id}
+                  label={facet.label}
+                  active={activeFacets.includes(facet.id)}
+                  onClick={() => toggleFacet(facet.id)}
+                />
+              ))}
             </div>
           </div>
 
