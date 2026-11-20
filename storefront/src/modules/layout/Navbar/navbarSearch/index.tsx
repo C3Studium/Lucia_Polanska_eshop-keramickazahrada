@@ -367,6 +367,10 @@ const priceRangeLabel = (value: string, unit: string) => {
 /* Mezera mezi sloupci v pásu — totéž číslo jako `column-gap` v .shopTrack;
    mezi řadami je víc (`--rail-row-gap`, nejvýš ~36 px). */
 const RAIL_GAP = 14
+
+/** Rohy okna hledání — stejná čísla jako `border-radius` .panel ve stylu. */
+const PANEL_RADIUS = 15
+const PANEL_RADIUS_NARROW = 11
 const RAIL_ROW_GAP = 36
 
 /**
@@ -862,6 +866,22 @@ export default function NavbarSearch({
   const panelRef = useRef<HTMLDivElement>(null)
 
   /*
+   * Poloměr rohů okna — poloviční proti dřívějšku (20. 11. 2026, Matěj:
+   * „roh ukusuje obsah"). Musí být stejné číslo v CSS (.panel) i v ořezu
+   * animace níž, jinak ořez (dřív pevně 30 px na 22px telefonním okně)
+   * ukusuje rohy obsahu i po otevření.
+   */
+  const [panelRadius, setPanelRadius] = useState(PANEL_RADIUS)
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return
+    const query = window.matchMedia("(max-width: 720px)")
+    const sync = () => setPanelRadius(query.matches ? PANEL_RADIUS_NARROW : PANEL_RADIUS)
+    sync()
+    query.addEventListener?.("change", sync)
+    return () => query.removeEventListener?.("change", sync)
+  }, [])
+
+  /*
    * Stránka pod otevřeným hledáním stojí (19. 11. 2026, Matěj: „ať to
    * nescrolluje pod tím na stránce"). Tah ve výsledcích nebo na podkladu
    * propadal na stránku za nimi.
@@ -931,17 +951,17 @@ export default function NavbarSearch({
             initial={{
               opacity: 0.72,
               y: -12,
-              clipPath: "inset(0 0 100% 0 round 30px)",
+              clipPath: `inset(0 0 100% 0 round ${panelRadius}px)`,
             }}
             animate={{
               opacity: 1,
               y: 0,
-              clipPath: "inset(0 0 0% 0 round 30px)",
+              clipPath: `inset(0 0 0% 0 round ${panelRadius}px)`,
             }}
             exit={{
               opacity: 0,
               y: -8,
-              clipPath: "inset(0 0 100% 0 round 30px)",
+              clipPath: `inset(0 0 100% 0 round ${panelRadius}px)`,
             }}
             transition={panelTransition}
           >

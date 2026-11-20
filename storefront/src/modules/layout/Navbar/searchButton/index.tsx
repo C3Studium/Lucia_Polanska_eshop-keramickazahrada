@@ -23,6 +23,9 @@ const MAX_OPEN_WIDTH = 420
  */
 const RESERVED_FOR_SIBLINGS = 148
 
+/** Mezera mezi otevřeným polem (levou pilulkou) a prostřední lištou. */
+const CENTER_GAP = 12
+
 /**
  * Collapsed: a dense control in the desktop bar, a 44px target on a phone.
  *
@@ -74,17 +77,46 @@ export default function SearchButton({
    */
   const [closedWidth, setClosedWidth] = useState(CLOSED_WIDTH)
 
+  /*
+   * Otevřené pole nesmí vjet pod prostřední lištu (20. 11. 2026, Matěj:
+   * „ať to nejde přes prostřední lištu"). Ta stojí na počítači absolutně
+   * uprostřed, levá pilulka se tedy rozšiřuje POD ni — 420 px stačilo, aby na
+   * ~1550px okně zakrylo „Výrobu". Pole proto končí `CENTER_GAP` před její
+   * levou hranou. Na telefonu je prostředek v řadě (static) a pole ho
+   * odsune samo, tam se nic neomezuje.
+   */
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     const measure = () => {
-      setOpenWidth(
-        Math.max(180, Math.min(MAX_OPEN_WIDTH, window.innerWidth - RESERVED_FOR_SIBLINGS))
-      )
+      let limit = Math.min(MAX_OPEN_WIDTH, window.innerWidth - RESERVED_FOR_SIBLINGS)
+      const wrap = wrapperRef.current
+      const pill = wrap?.closest<HTMLElement>(".navbar__left")
+      const center = document.querySelector<HTMLElement>(".navbar__center")
+      if (wrap && pill && center && getComputedStyle(center).position === "absolute") {
+        const pillStyle = getComputedStyle(pill)
+        const inset =
+          (parseFloat(pillStyle.paddingRight) || 0) + (parseFloat(pillStyle.borderRightWidth) || 0)
+        const free =
+          center.getBoundingClientRect().left - CENTER_GAP - inset - wrap.getBoundingClientRect().left
+        limit = Math.min(limit, Math.floor(free))
+      }
+      setOpenWidth(Math.max(160, limit))
     }
 
     measure()
     window.addEventListener("resize", measure)
-    return () => window.removeEventListener("resize", measure)
-  }, [])
+    /* Prostředek mění šířku s písmem a měřítkem — přeměřit i s ním. */
+    const center = document.querySelector<HTMLElement>(".navbar__center")
+    const observer =
+      center && typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null
+    if (center) observer?.observe(center)
+    if (isActive) measure()
+    return () => {
+      window.removeEventListener("resize", measure)
+      observer?.disconnect()
+    }
+  }, [isActive])
 
   /*
    * The closed width follows the disc's own height, so the circle stays a circle while the height
@@ -164,6 +196,7 @@ export default function SearchButton({
 
   return (
     <motion.div
+      ref={wrapperRef}
       className={`${styles.searchControl} ${isActive ? styles.active : ""}`}
       /* Část hledání: ťuknutí sem hledání nezavírá (NavbarSearch). */
       data-search-control=""

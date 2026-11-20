@@ -85,9 +85,10 @@
   scrollbar-color: rgb(var(--olive-15-rgb) / .55) rgb(var(--ink-09-rgb) / .09);
   scrollbar-width: thin;
   border: 1px solid rgb(var(--ink-09-rgb) / .16);
-  /* Physical, and deliberately so: the reveal in index.tsx clips with `inset(… round 30px)` and
-     the two radii have to be the same number or the corners tear while the panel opens. */
-  border-radius: 30px;
+  /* Physical, and deliberately so: the reveal in index.tsx clips with `inset(… round Npx)` and
+     the two radii have to be the same number (PANEL_RADIUS) or the corners tear. Halved
+     20. 11. 2026 — the old 30px clip on the 22px phone panel cut into the content. */
+  border-radius: 15px;
   background: color-mix(in srgb, var(--bgWhite) 94%, transparent);
   box-shadow: 0 24px 70px rgb(var(--ink-02-rgb) / .2);
   pointer-events: auto;
@@ -534,7 +535,7 @@
   .panel {
     top: 68px;
     max-height: calc(100dvh - 84px);
-    border-radius: 22px;
+    border-radius: 11px; /* PANEL_RADIUS_NARROW */
   }
 
   .content {
@@ -632,9 +633,10 @@
  */
 @mixin phone-search-overlay {
   .panel {
-    top: 64px;
+    /* 2 % níž pod lištu s hledáním (20. 11. 2026, Matěj) — o tolik i nižší. */
+    top: calc(64px + 2dvh);
     /* 68px of bottom bar (56px + its 12px inset) plus a 16px breath. */
-    max-height: calc(100dvh - 64px - 84px);
+    max-height: calc(100dvh - 64px - 84px - 2dvh);
     overflow-y: auto;
     overscroll-behavior: contain;
   }
@@ -1160,11 +1162,11 @@
 
 /* Telefon: okno končí nad spodní lištou (viz phone-search-overlay výš). */
 @include below-px(600px) {
-  .panel { --search-h: calc(100dvh - 64px - 84px); }
+  .panel { --search-h: calc(100dvh - 64px - 84px - 2dvh); }
   .shop { gap: .625rem; padding-block: .75rem; }
 }
 @include phs-h {
-  .panel { --search-h: calc(100dvh - 64px - 84px); }
+  .panel { --search-h: calc(100dvh - 64px - 84px - 2dvh); }
 }
 :global(html.kz-klavesnice) .panel {
   --search-h: calc(var(--kz-vvh, 100dvh) - max(80px, var(--panel-top) + 0.75rem));
@@ -1247,4 +1249,34 @@
 .filterList button span {
   white-space: normal;
   line-height: 1.2;
+}
+
+/* Telefon: filtry jsou posuvné a je to na nich vidět (20. 11. 2026, Matěj:
+   „na iPhonu Air nejsou celé, ať jde posunout a dojet na konec"). Svislý
+   posun prstem výslovně povolený, tenká lišta při posunu a dole stín, dokud
+   je pod ním další obsah — na konci seznamu stín sedí pod posledním řádkem
+   a nic nezakrývá. */
+@media (max-width: 899.98px) {
+  .shopFilters {
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--cream-06-rgb) / .45) transparent;
+    padding-bottom: .5rem;
+
+    &::-webkit-scrollbar { display: block; width: 4px; }
+    &::-webkit-scrollbar-thumb { border-radius: 999px; background: rgb(var(--cream-06-rgb) / .45); }
+
+    &::after {
+      position: sticky;
+      bottom: -.5rem;
+      display: block;
+      flex: 0 0 auto;
+      height: 3rem;
+      margin-bottom: -.5rem;
+      background: linear-gradient(to bottom, rgb(var(--ink-05-rgb) / 0), var(--ink-05) 85%);
+      content: "";
+      pointer-events: none;
+    }
+  }
 }
