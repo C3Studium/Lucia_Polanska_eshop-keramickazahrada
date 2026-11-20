@@ -10,6 +10,7 @@ import {
   MADE_TO_ORDER_NO_RETURN_SHORT,
   madeToOrderBadgeText,
 } from "@lib/util/made-to-order"
+import { convertToLocale } from "@lib/util/money"
 import { isPriceOnRequest } from "@lib/util/price-on-request"
 import { usePriceReference } from "@modules/products/ProductPage/product/details/Cta/Price/use-price-reference"
 import type { HttpTypes } from "@medusajs/types"
@@ -260,7 +261,7 @@ function ProductCard({
      (`usePriceReference`). Bez reference karta ukáže jen aktuální cenu —
      žádný štítek „Sleva" ani procento: i holý štítek je oznámení slevy, ke
      kterému § 12a ZOS žádá předchozí cenu. Přeškrtnutá běžná cena by mohla
-     klamat, proto tu není vůbec. */
+     klamat — přeškrtá se jen ta nejnižší za 30 dní. */
   const reference = usePriceReference(
     hasSale ? cheapestPrice?.variant_id : undefined,
     cheapestPrice?.currency_code
@@ -550,11 +551,18 @@ function ProductCard({
         </div>
 
         <div className={styles.price}>
-          {/* Sleva na kartě jen štítkem s procentem a zelenou cenou (20. 11.
-              2026, Matěj: přeškrtnutá cena a věta pod ní karty natahovaly).
-              Procento se dál počítá z nejnižší ceny za 30 dní před slevou
-              (§ 12a ZOS); přeškrtnutou cenu s vysvětlením má stránka výrobku. */}
+          {/* Sleva na kartě: štítek s procentem, přeškrtnutá nejnižší cena za
+              30 dní před slevou (§ 12a ZOS) a nová cena zeleně. Bez věty pod
+              cenou — vysvětlení má stránka výrobku (20. 11. 2026, Matěj). */}
           <span className={styles.priceRow}>
+          {salePercent != null && lowest30d != null && (
+            <del className={styles.priceWas} data-testid="card-price-was">
+              {convertToLocale({
+                amount: lowest30d,
+                currency_code: cheapestPrice?.currency_code ?? "czk",
+              })}
+            </del>
+          )}
           <strong className={salePercent != null && lowest30d != null ? styles.priceSale : undefined}>
             {customVoucher
               ? voucherFromLabel(

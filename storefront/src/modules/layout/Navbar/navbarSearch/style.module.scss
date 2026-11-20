@@ -744,7 +744,9 @@
  * a karty (ProductCard `compact`) se do buňky zmenší — fotka bere, co zbude.
  */
 .panel {
-  --search-h: min(54rem, calc(100dvh - var(--panel-top) - 1.25rem));
+  /* Okno do spodu obrazovky (20. 11. 2026, Matěj: „aspoň 75vh, ať jsou
+     filtry celé"). Strop 54rem ho na notebooku useknul o ~100 px. */
+  --search-h: min(calc(100dvh - var(--panel-top) - 1.25rem), 90dvh);
   display: flex;
   height: var(--search-h);
   max-height: var(--search-h);
@@ -886,15 +888,18 @@
 }
 .filtersToggle { display: none; }
 
-/* ── Obsah: pás + filtry vpravo ── */
+/* ── Obsah: filtry vlevo + pás ──
+   Filtry vlevo jako v obchodě a širší; karty jsou díky tomu o ~15 % užší
+   (20. 11. 2026, Matěj). */
 .shopBody {
   display: grid;
   flex: 1 1 auto;
-  grid-template-columns: minmax(0, 1fr) clamp(14rem, 18vw, 17rem);
+  grid-template-columns: clamp(16rem, 26vw, 30rem) minmax(0, 1fr);
   gap: var(--shop-gap);
   min-height: 0;
 }
 .rail {
+  --rail-row-gap: clamp(1.25rem, 3.2vh, 2.25rem);
   position: relative;
   min-width: 0;
   min-height: 0;
@@ -929,7 +934,9 @@
   grid-auto-columns: var(--rail-col, 15rem);
   grid-auto-flow: column;
   grid-template-rows: repeat(var(--rail-rows, 2), minmax(0, 1fr));
-  gap: 14px;
+  /* Mezi horní a spodní řadou víc vzduchu než mezi sloupci. */
+  column-gap: 14px;
+  row-gap: var(--rail-row-gap);
 }
 /* Málo výsledků: po řádcích, první řada vlevo nahoře. */
 .shopTrackRows {
@@ -971,6 +978,7 @@
 
 /* Filtry — stejná tmavá lišta jako v obchodě (FilterPanel). */
 .shopFilters {
+  order: -1;
   display: flex;
   min-width: 0;
   min-height: 0;
@@ -1013,9 +1021,19 @@
     font-size: .6875rem;
   }
 }
+/* Kolekce a kategorie ve dvou sloupcích, jakmile je lišta dost široká. */
+.filterSub {
+  margin: .625rem 0 .25rem;
+  color: var(--grey-04);
+  font-size: .625rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  &:first-of-type { margin-top: 0; }
+}
 .filterList {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 10.5rem), 1fr));
+  column-gap: 1.25rem;
 
   button {
     display: flex;
@@ -1045,6 +1063,10 @@
     font-weight: 600;
     i { width: 1.25rem; }
   }
+}
+.filterToggles {
+  display: flex;
+  flex-direction: column;
 }
 .shopFilters .clearFilters {
   align-self: flex-start;
@@ -1113,7 +1135,7 @@
     inset: 0;
     z-index: 5;
     border-radius: inherit;
-    transform: translateX(100%);
+    transform: translateX(-100%);
     visibility: hidden;
     transition: transform .3s ease, visibility 0s linear .3s;
   }
@@ -1157,4 +1179,18 @@
   top: 0;
   z-index: 1;
   background: var(--ink-05);
+}
+
+/* Celé filtry bez posouvání i na notebooku (20. 11. 2026, Matěj: „ať je
+   lišta celá"). Jen myš — na dotyku zůstávají velké cíle pro prst. */
+@media (min-width: 900px) and (pointer: fine) {
+  .filterGroup { padding-block: clamp(.5rem, 1.2vh, .875rem); }
+  .shopFiltersHead { padding-block: clamp(.625rem, 1.4vh, 1rem) clamp(.5rem, 1.2vh, .875rem); }
+  .filterList button { min-height: clamp(1.5rem, 3vh, 2.125rem) !important; }
+  .filterToggles button { padding-block: clamp(.2rem, .55vh, .5rem); }
+}
+/* Nižší obrazovka: nad „Filtry" bez nadpisku „Upřesnit". */
+@media (min-width: 900px) and (pointer: fine) and (max-height: 999.98px) {
+  .shopFiltersHead span { display: none; }
+  .shopFiltersHead h2 { margin-top: 0; }
 }

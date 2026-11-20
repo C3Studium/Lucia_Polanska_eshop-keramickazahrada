@@ -298,7 +298,7 @@ function FilterButton({ active, label, onClick }: { active: boolean; label: stri
  * „bez horní meze" (input Do je pak prázdný); commit do filtrů jede
  * s krátkým odstupem, aby tažení palce nespouštělo dotaz na každý pixel.
  */
-function PriceFilter({ value, onChange }: { value: string; onChange: (next: string) => void }) {
+export function PriceFilter({ value, onChange }: { value: string; onChange: (next: string) => void }) {
   const { countryCode } = useParams<{ countryCode?: string }>() ?? {}
   const { ceil: PRICE_CEIL, step: PRICE_STEP, unit: priceUnit } =
     PRICE_SCALE[currencyForCountry(countryCode)] ?? PRICE_SCALE.czk
@@ -390,7 +390,7 @@ function PriceFilter({ value, onChange }: { value: string; onChange: (next: stri
   )
 }
 
-function Toggle({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
+export function Toggle({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
   return (
     <button type="button" className={styles.toggle} aria-pressed={active} onClick={onClick}>
       {label}<span><i /></span>
