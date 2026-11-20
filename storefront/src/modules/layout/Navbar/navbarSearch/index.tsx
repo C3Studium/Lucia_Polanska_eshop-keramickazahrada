@@ -7,6 +7,7 @@ import Thumbnail from "@modules/products/components/thumbnail"
 import { AnimatePresence, motion, type Variants } from "framer-motion"
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDragScroll } from "./useDragScroll"
+import { RailScrollbar } from "./RailScrollbar"
 import ProductCard from "@modules/store/Shop/components/ProductCard"
 import {
   PriceFilter,
@@ -589,6 +590,7 @@ function SearchContent({
       </header>
 
       <div className={styles.shopBody}>
+        <div className={styles.railCol}>
         <div
           ref={railRef}
           className={styles.rail}
@@ -642,6 +644,11 @@ function SearchContent({
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
+        <RailScrollbar
+          railRef={railRef}
+          watch={`${isLoading}:${products.length}:${grid.cols}:${grid.rows}:${pulse}:${activeFacets.join()}:${activeTaxonomy.join()}:${priceRange}:${query}`}
+        />
         </div>
 
         <aside

@@ -894,7 +894,7 @@
 .shopBody {
   display: grid;
   flex: 1 1 auto;
-  grid-template-columns: clamp(16rem, 26vw, 30rem) minmax(0, 1fr);
+  grid-template-columns: clamp(14.5rem, 20vw, 22rem) minmax(0, 1fr);
   gap: var(--shop-gap);
   min-height: 0;
 }
@@ -903,20 +903,16 @@
   position: relative;
   min-width: 0;
   min-height: 0;
-  height: 100%;
+  flex: 1 1 auto;
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: .625rem;
+  /* Nativní lišta pryč — pod pásem je vlastní (RailScrollbar). */
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
   cursor: grab;
   touch-action: pan-x pan-y;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
-  scrollbar-color: rgb(var(--olive-15-rgb) / .55) rgb(var(--ink-09-rgb) / .09);
-  scrollbar-width: thin;
-
-  &::-webkit-scrollbar { height: 6px; }
-  &::-webkit-scrollbar-track { border-radius: 999px; background: rgb(var(--ink-09-rgb) / .09); }
-  &::-webkit-scrollbar-thumb { border-radius: 999px; background: rgb(var(--olive-15-rgb) / .55); }
 
   /* Tažení: ruka, žádný výběr textu a karty pod myší nereagují na najetí. */
   &[data-dragging] {
@@ -1032,8 +1028,8 @@
 }
 .filterList {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 10.5rem), 1fr));
-  column-gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 7.25rem), 1fr));
+  column-gap: .75rem;
 
   button {
     display: flex;
@@ -1193,4 +1189,62 @@
 @media (min-width: 900px) and (pointer: fine) and (max-height: 999.98px) {
   .shopFiltersHead span { display: none; }
   .shopFiltersHead h2 { margin-top: 0; }
+}
+
+/* ── Pás + vlastní vodorovný posuvník pod ním (RailScrollbar) ──
+   Stejná řeč jako svislá lišta stránky: vlásek dráhy, pilulka úchopu,
+   po najetí zesílí. Chytá se celý 16px pruh, vidět je jen vlásek. */
+.railCol {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  gap: clamp(.375rem, 1vh, .75rem);
+}
+.railBar {
+  --bar-h: 4px;
+  position: relative;
+  flex: 0 0 auto;
+  height: 16px;
+  cursor: pointer;
+  touch-action: none;
+  transition: opacity .25s ease;
+
+  &::before {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    left: 0;
+    height: var(--bar-h);
+    border-radius: 999px;
+    background: rgb(var(--ink-05-rgb) / .1);
+    content: "";
+    transform: translateY(-50%);
+    transition: height .24s cubic-bezier(.22, 1, .36, 1);
+  }
+  &[data-vidi="ne"] { opacity: 0; pointer-events: none; }
+  &:hover,
+  &[data-taha] { --bar-h: 8px; }
+}
+.railThumb {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: var(--bar-h);
+  margin-top: calc(var(--bar-h) / -2);
+  border-radius: 999px;
+  background: rgb(var(--ink-05-rgb) / .42);
+  cursor: grab;
+  will-change: transform;
+  transition: height .24s cubic-bezier(.22, 1, .36, 1),
+    margin-top .24s cubic-bezier(.22, 1, .36, 1),
+    background-color .24s ease;
+}
+.railBar:hover .railThumb { background: rgb(var(--ink-05-rgb) / .7); }
+.railBar[data-taha] .railThumb { background: var(--ink-05); cursor: grabbing; }
+
+/* Užší lišta filtrů: dlouhý název kolekce se zalomí, neusekne. */
+.filterList button span {
+  white-space: normal;
+  line-height: 1.2;
 }

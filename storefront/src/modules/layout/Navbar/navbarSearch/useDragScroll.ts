@@ -171,6 +171,23 @@ export function useDragScroll<T extends HTMLElement>() {
       }
     }
 
+    /*
+     * Plynulý posun zvenku (klik do dráhy RailScrollbar). Nativní
+     * `scrollTo({behavior: "smooth"})` tu nejde: první událost `scroll`
+     * srovná pružinu a ta zápisem `scrollLeft` plynulý posun utne.
+     */
+    const handleGlide = (event: Event) => {
+      const left = Number((event as CustomEvent<number>).detail)
+      if (!Number.isFinite(left)) return
+      if (reduceMotion) {
+        el.scrollLeft = clamp(left)
+        syncTo(el.scrollLeft)
+        return
+      }
+      target.set(clamp(left))
+    }
+
+    el.addEventListener("kz:rail-glide", handleGlide)
     el.addEventListener("wheel", handleWheel, { passive: false })
     el.addEventListener("pointerdown", handlePointerDown)
     el.addEventListener("pointermove", handlePointerMove)
@@ -181,6 +198,7 @@ export function useDragScroll<T extends HTMLElement>() {
     el.addEventListener("scroll", syncFromNativeScroll, { passive: true })
 
     return () => {
+      el.removeEventListener("kz:rail-glide", handleGlide)
       el.removeEventListener("wheel", handleWheel)
       el.removeEventListener("pointerdown", handlePointerDown)
       el.removeEventListener("pointermove", handlePointerMove)
