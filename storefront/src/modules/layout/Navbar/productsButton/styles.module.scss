@@ -722,7 +722,11 @@
 
   /* Likewise the expanded panel: in flow, so the row grows to hold it. */
   .expandedContent {
-    position: static;
+    /* V toku, ale NAD odkazem celé karty (ten má z-index 2): ťuk na
+       kategorii musí dostat kategorie. Obsah sám ťuk propouští
+       (pointer-events: none), chytají ho jen odkazy kategorií. */
+    position: relative;
+    z-index: 3;
     inset: auto;
     bottom: auto;
     padding: 12px 16px 14px;
@@ -781,12 +785,25 @@
   }
 
   /*
-   * Bounded to the header. Full-bleed it would sit over the categories it just revealed, and
-   * every tap meant for one of them would open the collection instead.
+   * Celá karta je odkaz na kolekci (21. 11. 2026, Matěj: „malé tlačítko
+   * vpravo nahoře nestačí, klikat se má na celou kartu"). Odkaz leží přes
+   * celou kartu; kategorie jsou NAD ním a ťuk chytají jen samy odkazy
+   * kategorií — mezery mezi nimi i fotka pod nimi propadnou na kartu.
+   * (Dřív byl odkaz jen 52px hlavička, aby nepřekrýval kategorie — to teď
+   * řeší pointer-events níž.)
    */
   .cardHitArea {
-    bottom: auto;
-    height: 52px;
+    top: 0;
+    bottom: 0;
+    height: auto;
+  }
+
+  .categoryLinks {
+    pointer-events: none;
+  }
+
+  .categoryLinks a {
+    pointer-events: auto;
   }
 
   /* Moved into the header row, where the tap that uses it happens. */
@@ -835,9 +852,8 @@
         /*
          * Řádky harmoniky 1.5× vyšší — na tabletu je na ně místo, které telefon nemá.
          *
-         * `.cardHitArea` je záměrně omezená na hlavičku řádku, aby ťuk nepadal na
-         * kategorie, které řádek rozbalil; musí tedy růst s ním, jinak by dole zůstal
-         * pruh, který nereaguje. `.openLabel` má v telefonní verzi `top: 13px`, což je
+         * `.cardHitArea` kryje celou kartu (mixin výš), kategorie ťuk chytají
+         * samy. `.openLabel` má v telefonní verzi `top: 13px`, což je
          * přesně jeho vystředění v 52px; o polovinu přírůstku výš zůstane vystředěný
          * i v 78px, ať je štítek vysoký kolik chce.
          */
@@ -845,9 +861,6 @@
             min-height: 78px;
         }
 
-        .cardHitArea {
-            height: 78px;
-        }
 
         .openLabel {
             top: 26px;

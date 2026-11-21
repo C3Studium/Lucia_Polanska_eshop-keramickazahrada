@@ -319,6 +319,9 @@ const Inner = () => {
   // globální, tohle je naše vazba. Stejné pravidlo jako menu obchodu
   // (21. 11. 2026): kategorie JINÉ kolekce se tu neukáže, i když ji výrobek
   // má („Přidat i sem") — dřív to vypadalo, že se celá kategorie zkopírovala.
+  const collectionOfCategoryId = (categoryId: string): string | null =>
+    ((allCategories.find((category: any) => category.id === categoryId)?.metadata as any)
+      ?.collection_id ?? null) as string | null;
   const categoriesOf = (collId: string): any[] =>
     categoriesForCollection(collId, products, allCategories);
   /* Pořadí kategorie čte celý záznam — řádky z produktů (category_refs)
@@ -1578,7 +1581,10 @@ const Inner = () => {
                 );
               }
               return (
-            <div key={product.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+            /* Dva řádky (21. 11. 2026, Matěj): nahoře výrobek, pod ním lišta
+               kolekce a kategorie. Ve stejném řádku výběry mačkaly název na
+               „Kera…" a s další kategorií by ho přerostly. */
+            <div key={product.id} className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-4 py-3">
               <input
                 type="checkbox" className="size-5 shrink-0 cursor-pointer"
                 checked={selected.has(product.id)}
@@ -1607,104 +1613,120 @@ const Inner = () => {
                   {product.status !== "published" && <StateMark kind="hidden" />}
                 </span>
               </div>
-              <select
-                className="bg-ui-bg-field border-ui-border-base txt-small rounded-md border px-2 py-1"
-                value={draft.collection_id ?? ""}
-                onChange={(e) =>
-                  setDraft(product, { collection_id: e.target.value || null })
-                }>
-                <option value="">Bez kolekce</option>
-                {collections.map((c) => (
-                  <option key={c.id} value={c.id}>{c.title}</option>
-                ))}
-              </select>
-              {/* Kategorie až po kolekci — a jen ty, které do ní patří. */}
-              {draft.collection_id && (
+              <div className="flex items-center gap-3">
+                <VisibilityEye
+                  visible={product.status === "published"}
+                  label={`produkt ${product.title}`}
+                  hideText="Zákazníci ho v obchodě neuvidí a nekoupí, dokud ho zase nezveřejníte."
+                  showText="Produkt se vrátí do obchodu a půjde koupit."
+                  onToggle={(next) =>
+                    sdk.client.fetch(`/admin/products/${product.id}`, {
+                      method: "POST",
+                      body: { status: next ? "published" : "draft" },
+                    })
+                  }
+                  onDone={invalidate}
+                />
+                <Link to={`/produkt/${product.id}`} className="text-ui-fg-interactive txt-small hover:underline">
+                  Upravit
+                </Link>
+              </div>
+              <div className="col-span-2 col-start-3 flex flex-wrap items-center gap-2">
                 <select
                   className="bg-ui-bg-field border-ui-border-base txt-small rounded-md border px-2 py-1"
-                  value={draft.category_id ?? ""}
+                  value={draft.collection_id ?? ""}
                   onChange={(e) =>
-                    setDraft(product, { category_id: e.target.value || null })
+                    setDraft(product, { collection_id: e.target.value || null })
                   }>
-                  <option value="">Bez kategorie</option>
-                  {categoriesOf(draft.collection_id).map((c: any) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+                  <option value="">Bez kolekce</option>
+                  {collections.map((c) => (
+                    <option key={c.id} value={c.id}>{c.title}</option>
                   ))}
                 </select>
-              )}
-              {/* Potvrzení u řádku (19. 11. 2026): jeden řádek → Potvrdit /
-                  Zrušit; změna ve výběru víc kusů → u řádku, kde se změnila,
-                  Potvrdit vše / Zrušit vše, ostatní změněné jen „změněno". */}
-              {dirty &&
-                (() => {
-                  const inBulk = selected.size > 1 && selected.has(product.id);
-                  if (!inBulk) {
+                {/* Kategorie až po kolekci — a jen ty, které do ní patří. */}
+                {draft.collection_id && (
+                  <select
+                    className="bg-ui-bg-field border-ui-border-base txt-small rounded-md border px-2 py-1"
+                    value={draft.category_id ?? ""}
+                    onChange={(e) =>
+                      setDraft(product, { category_id: e.target.value || null })
+                    }>
+                    <option value="">Bez kategorie</option>
+                    {categoriesOf(draft.collection_id).map((c: any) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                )}
+                {/* Potvrzení u řádku (19. 11. 2026): jeden řádek → Potvrdit /
+                    Zrušit; změna ve výběru víc kusů → u řádku, kde se změnila,
+                    Potvrdit vše / Zrušit vše, ostatní změněné jen „změněno". */}
+                {dirty &&
+                  (() => {
+                    const inBulk = selected.size > 1 && selected.has(product.id);
+                    if (!inBulk) {
+                      return (
+                        <>
+                          <Button size="small" isLoading={applyingThis}
+                            onClick={() => applyPending.mutate([product.id])}>
+                            Potvrdit
+                          </Button>
+                          <Button size="small" variant="transparent"
+                            disabled={applyingThis}
+                            onClick={() =>
+                              setPending((prev) => {
+                                const { [product.id]: _dropped, ...rest } = prev;
+                                return rest;
+                              })
+                            }>
+                            Zrušit
+                          </Button>
+                        </>
+                      );
+                    }
+                    const bulkIds = Object.keys(pending).filter((id) => selected.has(id));
+                    const owner =
+                      lastEdited && bulkIds.includes(lastEdited) ? lastEdited : bulkIds[0];
+                    if (product.id !== owner) {
+                      return (
+                        <Badge size="2xsmall" color="orange">
+                          změněno
+                        </Badge>
+                      );
+                    }
                     return (
                       <>
-                        <Button size="small" isLoading={applyingThis}
-                          onClick={() => applyPending.mutate([product.id])}>
-                          Potvrdit
+                        <Button size="small"
+                          isLoading={applyPending.isPending}
+                          onClick={() => applyPending.mutate(bulkIds)}>
+                          Potvrdit vše ({bulkIds.length})
                         </Button>
                         <Button size="small" variant="transparent"
-                          disabled={applyingThis}
+                          disabled={applyPending.isPending}
                           onClick={() =>
                             setPending((prev) => {
-                              const { [product.id]: _dropped, ...rest } = prev;
+                              const rest = { ...prev };
+                              for (const id of bulkIds) delete rest[id];
                               return rest;
                             })
                           }>
-                          Zrušit
+                          Zrušit vše
                         </Button>
                       </>
                     );
-                  }
-                  const bulkIds = Object.keys(pending).filter((id) => selected.has(id));
-                  const owner =
-                    lastEdited && bulkIds.includes(lastEdited) ? lastEdited : bulkIds[0];
-                  if (product.id !== owner) {
-                    return (
-                      <Badge size="2xsmall" color="orange">
-                        změněno
-                      </Badge>
-                    );
-                  }
-                  return (
-                    <>
-                      <Button size="small"
-                        isLoading={applyPending.isPending}
-                        onClick={() => applyPending.mutate(bulkIds)}>
-                        Potvrdit vše ({bulkIds.length})
-                      </Button>
-                      <Button size="small" variant="transparent"
-                        disabled={applyPending.isPending}
-                        onClick={() =>
-                          setPending((prev) => {
-                            const rest = { ...prev };
-                            for (const id of bulkIds) delete rest[id];
-                            return rest;
-                          })
-                        }>
-                        Zrušit vše
-                      </Button>
-                    </>
-                  );
-                })()}
-              <VisibilityEye
-                visible={product.status === "published"}
-                label={`produkt ${product.title}`}
-                hideText="Zákazníci ho v obchodě neuvidí a nekoupí, dokud ho zase nezveřejníte."
-                showText="Produkt se vrátí do obchodu a půjde koupit."
-                onToggle={(next) =>
-                  sdk.client.fetch(`/admin/products/${product.id}`, {
-                    method: "POST",
-                    body: { status: next ? "published" : "draft" },
+                  })()}
+                {/* Kategorie z JINÝCH kolekcí (výrobek je i tam) — jen ukázat,
+                    spravují se v Zařazení na detailu nebo hromadně. */}
+                {(product.category_refs ?? [])
+                  .filter((ref: any) => {
+                    const own = collectionOfCategoryId(ref.id);
+                    return own && own !== (draft.collection_id ?? null);
                   })
-                }
-                onDone={invalidate}
-              />
-              <Link to={`/produkt/${product.id}`} className="text-ui-fg-interactive txt-small hover:underline">
-                Upravit
-              </Link>
+                  .map((ref: any) => (
+                    <Badge key={ref.id} size="2xsmall" color="grey" title="Výrobek je přes tuhle kategorii i v jiné kolekci.">
+                      i v: {ref.name}
+                    </Badge>
+                  ))}
+              </div>
             </div>
               );
             })}

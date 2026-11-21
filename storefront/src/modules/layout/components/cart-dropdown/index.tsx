@@ -24,6 +24,11 @@ import { Fragment, useCallback, useEffect, useRef, useState, useTransition, type
 import { motion } from 'framer-motion';
 import { useFormStatus } from 'react-dom';
 import CartDropdownQuantity from "./quantity"
+
+/* Stejná hranice jako telefonní styly panelu (style.module.scss). */
+const TELEFON =
+  "(orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px)"
+const jeTelefon = () => typeof window !== "undefined" && window.matchMedia(TELEFON).matches
 import { itemText } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
 import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
@@ -143,11 +148,35 @@ const CartDropdown = ({
 
   // open cart dropdown when modifying the cart items, but only if we're not on the cart page
   useEffect(() => {
-    if (itemRef.current !== totalItems && !pathname.includes("/cart")) {
+    /*
+     * Telefon: po přidání se košík NEOTEVÍRÁ (21. 11. 2026, zpětná vazba
+     * zákazníků — panel přes celou stránku zakryl výrobek i tlačítko).
+     * Otevře se jen klepnutím na košík; přidání potvrdí číslo u ikony.
+     * Stejná hranice jako telefonní styly panelu (style.module.scss).
+     */
+    if (itemRef.current !== totalItems && !pathname.includes("/cart") && !jeTelefon()) {
       timedOpen()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalItems, itemRef.current])
+
+  /*
+   * Potvrzení přidání na telefonu (21. 11. 2026, zpětná vazba starších
+   * zákazníků — bez otevřeného panelu nebylo vidět, že se něco stalo):
+   * tlačítko košíku na pár vteřin ztmavne a nad ním vyskočí bublina
+   * „Výrobek přidán do košíku". Jen při ZVÝŠENÍ počtu, ne při ubrání.
+   */
+  const [pridano, setPridano] = useState(false)
+  const predchoziPocet = useRef(totalItems)
+  useEffect(() => {
+    const predtim = predchoziPocet.current
+    predchoziPocet.current = totalItems
+    if (totalItems <= predtim || pathname.includes("/cart") || !jeTelefon()) return
+    setPridano(true)
+    const casovac = setTimeout(() => setPridano(false), 3500)
+    return () => clearTimeout(casovac)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalItems])
 
   const handleWheel = (e: WheelEvent<HTMLDivElement>) => {
     const el = itemsRef.current
@@ -195,7 +224,7 @@ const CartDropdown = ({
         */}
         <LocalizedClientLink
           href="/cart"
-          className={styles.popoverButton}
+          className={pridano ? `${styles.popoverButton} ${styles.popoverButtonAdded}` : styles.popoverButton}
           aria-label={`Košík, ${totalItems} položek`}
           data-testid="nav-cart-link"
           onClick={close}
@@ -209,6 +238,10 @@ const CartDropdown = ({
             </Magnetic>
           </span>
         </LocalizedClientLink>
+        {/* Bublina nad košíkem (telefon) — role=status ji přečte i čtečka. */}
+        <span className={styles.addedBubble} data-visible={pridano ? "true" : "false"} role="status" aria-live="polite">
+          {pridano ? "Výrobek přidán do košíku" : ""}
+        </span>
         <Transition
           show={cartDropdownOpen || studioOpen}
           as={Fragment}
