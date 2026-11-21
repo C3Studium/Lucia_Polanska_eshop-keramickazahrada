@@ -24,7 +24,19 @@ const STATIC_PATHS = [
   "/cookies",
 ]
 
-type HandleRow = { handle: string | null; updated_at?: string | null }
+type HandleRow = {
+  handle: string | null
+  updated_at?: string | null
+  thumbnail?: string | null
+  images?: { url?: string | null }[] | null
+}
+
+/** Fotky výrobku do sitemapy (image sitemap) — hledání obrázků je najde dřív. */
+const imagesOf = (row: HandleRow, base: string) => {
+  const urls = (row.images ?? []).map((image) => image?.url).filter((url): url is string => Boolean(url))
+  if (!urls.length && row.thumbnail) urls.push(row.thumbnail)
+  return urls.slice(0, 10).map((url) => new URL(url, base).href)
+}
 
 const backendBase = () =>
   (process.env.MEDUSA_BACKEND_URL || process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "").replace(/\/$/, "")
@@ -63,7 +75,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
 
   const [products, categories, collections] = await Promise.all([
-    fetchHandles("/store/products?limit=1000&fields=handle,updated_at&status[]=published", "products"),
+    fetchHandles("/store/products?limit=1000&fields=handle,updated_at,thumbnail,images.url", "products"),
     fetchHandles("/store/product-categories?limit=100&fields=handle", "product_categories"),
     fetchHandles("/store/collections?limit=100&fields=handle", "collections"),
   ])
@@ -73,6 +85,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entries.push({
       url: `${prefix}/products/${product.handle}`,
       lastModified: product.updated_at ? new Date(product.updated_at) : now,
+      images: imagesOf(product, base),
       changeFrequency: "weekly",
       priority: 0.8,
     })

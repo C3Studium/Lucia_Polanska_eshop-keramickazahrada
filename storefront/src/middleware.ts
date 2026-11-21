@@ -1,6 +1,7 @@
 import { HttpTypes } from "@medusajs/types"
 import { NextRequest, NextResponse } from "next/server"
 import { studioPreviewNeedsResolve, studioPreviewPageFor } from "@lib/studio-preview/pages"
+import { legacyRedirect } from "@lib/seo/legacy-wordpress"
 
 // Prefer server-side URL, then public; normalize trailing slash
 const RAW_BACKEND_URL =
@@ -193,6 +194,10 @@ async function resolveStudioPreview(request: NextRequest): Promise<NextResponse 
   )
 }
 
+/** Starý WordPress dál běží tady (obrázky z hledání, přihlášení majitelky). */
+const LEGACY_WORDPRESS_URL =
+  process.env.LEGACY_WORDPRESS_URL ?? "https://dev.keramickazahrada.cz"
+
 /**
  * Middleware to handle region selection and onboarding status.
  */
@@ -200,6 +205,16 @@ export async function middleware(request: NextRequest) {
   // If the request is for the studio, we skip the middleware.
   if ( request.nextUrl.pathname.startsWith("/studio")) {
     return NextResponse.next()
+  }
+
+  /*
+   * Adresy starého webu (21. 11. 2026): výrobky z hledání obrázků na Seznamu
+   * a Googlu vedly na /shop/<název>/ → „Stránka nenalezena". Před regiony —
+   * nepotřebuje backend a starý web byl jen český, proto pevně „cz".
+   */
+  const legacy = legacyRedirect(request.nextUrl.pathname, "cz", LEGACY_WORDPRESS_URL)
+  if (legacy) {
+    return NextResponse.redirect(new URL(legacy.location, request.nextUrl.origin), legacy.status)
   }
 
   const studioPreview = await resolveStudioPreview(request)
