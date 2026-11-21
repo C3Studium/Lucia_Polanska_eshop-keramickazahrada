@@ -73,6 +73,18 @@ export async function GET(request: NextRequest) {
     const country = page.path.split('/')[1] || 'cz'
     const missing = () => answer({ missing: page.missing ?? 'ukázková data' })
 
+    // Bez sdíleného tajemství se storefront u backendu neprokáže a každá
+    // ukázka by hlásila jen „spojení s backendem". Říct přesně, co chybí
+    // (21. 11. 2026: na Railway ho měl jen Backend, Storefront ne).
+    // Právní stránky backend nepotřebují.
+    if (!page.legal && !(process.env.ADMIN_BRIDGE_SECRET ?? '').trim()) {
+        console.error('[studio-preview] ADMIN_BRIDGE_SECRET není ve storefrontu nastavený')
+        return answer(
+            { missing: 'nastavení propojení — proměnná ADMIN_BRIDGE_SECRET ve službě Storefront (stejná hodnota jako v Backendu)' },
+            503
+        )
+    }
+
     try {
         if (page.cart) {
             if (!fresh(cartCache, CART_TTL_MS)) {
