@@ -17,6 +17,9 @@ import ProductReviews from "@modules/products/components/product-reviews"
 import { getCustomerWishlistItems, retrieveCustomer } from "@lib/data/customer"
 import { getProductionProfile } from "@lib/data/made-to-order"
 import { getPageCopy } from "@lib/data/site-copy"
+import { asciiHandle, productHandle } from "@lib/util/product-handle"
+import { getBaseURL } from "@lib/util/env"
+import { jsonLdScript, productJsonLd } from "@lib/seo/product-jsonld"
 
 type Props = {
   params: Promise<{ countryCode: string; handle: string }>
@@ -69,35 +72,6 @@ export async function generateStaticParams() {
   }
 }
 
-/**
- * Handle z adresy, jak ho zná Medusa.
- *
- * Next 15 dává parametr cesty ještě ZAKÓDOVANÝ: pro „zvonkové-tlačítko-jeřabina"
- * přijde `zvonkov%C3%A9-tla%C4%8D…` a Medusa takový handle nezná → „Stránka
- * nenalezena", přestože obchod výrobek ukazuje (13. 11. 2026). Rozbalit
- * a sjednotit na NFC — tak jsou handly uložené; macOS/iOS umí poslat
- * rozložené „é" (NFD). Osamělé „%" se rozbalit nedá, pak zůstane, jak je.
- */
-/** „modelovaný-květináč-…-vážkou-20" → „modelovany-kvetinac-…-vazkou-20". */
-function asciiHandle(handle: string) {
-  return handle
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-}
-
-function productHandle(raw: string) {
-  let handle = raw
-  try {
-    handle = decodeURIComponent(raw)
-  } catch {
-    // není co rozbalit
-  }
-  return handle.normalize("NFC")
-}
-
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
   const handle = productHandle(params.handle)
@@ -128,6 +102,8 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   return {
     title: product.title,
     description,
+    /* Jedna adresa pro vyhledávač — ne varianty s ?filtry nebo starou diakritikou. */
+    alternates: { canonical: `/${params.countryCode}/products/${product.handle}` },
     openGraph: {
       title: `${product.title} | Keramická zahrada`,
       description,
@@ -282,9 +258,29 @@ export default async function ProductPage(props: Props) {
    */
   const productCopy = (await getPageCopy("global"))["global.produkt"]
 
+  /* Cena, dostupnost a obrázky pro Google/Seznam (hledání obrázků, nákupy) —
+     viz lib/seo/product-jsonld. Kategorie pro drobečky: nejhlubší zařazení. */
+  const mainCategory =
+    productCategories.find((cat) => !productCategories.some((other) => other.parent_category_id === cat.id)) ??
+    productCategories[0]
+  const structuredData = productJsonLd({
+    product: pricedProduct,
+    countryCode,
+    currencyCode: region.currency_code,
+    baseUrl: getBaseURL(),
+    category: mainCategory?.handle ? { name: mainCategory.name, handle: mainCategory.handle } : null,
+    rating: { average: Number(reviewsData.average_rating) || 0, count: Number(reviewsData.count) || 0 },
+  })
+
   return (
     <PlainShop>
     <main>
+      {structuredData && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLdScript(structuredData) }}
+        />
+      )}
       {/* Karta výrobku začíná vždy nahoře — i po kroku vpřed v historii. */}
       <Product
         product={pricedProduct}
