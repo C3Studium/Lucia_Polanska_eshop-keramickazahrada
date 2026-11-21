@@ -72,6 +72,17 @@ export const FACTS = {
   // Odpovědi Lucie z 20. 10. 2026; odhad nákladů na vrácení potvrdil Matěj 24. 10.
   "course.pickupDeadline":
     "1 měsíce od kurzu, termín si domluvíme; mimo Písek je můžu poslat poštou",
+  /* Řádky Podmínek kurzů na stránce Kurzy (21. 11. 2026) — vyplňují se v adminu, Právní údaje › Kurzy. */
+  "course.organizerCancellation":
+    "Vrátím vám celou zaplacenou částku, nebo si vyberete náhradní termín.",
+  "course.payment":
+    "Předem online, nebo na místě v den kurzu. Online rezervace, která není do 24 hodin zaplacená, propadne a místo se uvolní.",
+  "course.children":
+    "Rezervaci dělá rodič nebo jiný zákonný zástupce. Mimo vedenou práci (příchod, přestávky, odchod) za dítě odpovídá rodič.",
+  "course.products":
+    "Po kurzu je vysuším a vypálím.",
+  "course.photos":
+    "Fotky, na kterých jste vy nebo vaše dítě, zveřejním jen s vaším souhlasem.",
   /**
    * Dodací lhůta zboží skladem (předsmluvní informace v posledním kroku
    * pokladny, § 1820 odst. 1 písm. g) OZ). Celá fráze, např. „odešleme do …".
@@ -105,6 +116,11 @@ const MISSING: Record<LegalFactKey, string> = {
   "withdrawal.returnCostEstimate": "odhad nákladů na vrácení zboží poštou v Kč",
   "course.minAge": "minimální věk dítěte na kurzu",
   "course.pickupDeadline": "do kdy si vyzvednout výrobek z kurzu",
+  "course.organizerCancellation": "co když kurz zruší lektorka",
+  "course.payment": "jak a kdy se kurz platí",
+  "course.children": "kdo dělá rezervaci za dítě a kdo za něj odpovídá",
+  "course.products": "co se po kurzu děje s výrobky",
+  "course.photos": "fotky z kurzu a souhlas se zveřejněním",
   "delivery.dispatchTime":
     "dodací lhůta zboží skladem — stránka Doprava dnes uvádí „předáváme přepravci zpravidla do dvou pracovních dnů od přijetí platby“, doručení 1–3 pracovní dny",
 }

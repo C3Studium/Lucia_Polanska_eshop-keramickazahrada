@@ -183,17 +183,68 @@ export default function Intro({
    * SSR renderuje pinned variantu (false); na telefonu se po mountu jen
    * odeberou scroll styly a pustí entry — bez skoku layoutu, ten drží CSS.
    */
-  const [staticFlow, setStaticFlow] = useState(false)
+  const [phoneFlow, setPhoneFlow] = useState(false)
   useEffect(() => {
     const query = window.matchMedia(
       /* Telefon na výšku, nebo naležato (phs-h ve stylech) — viz mixin kurzy-static-flow. */
       "(orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (min-width: 480px) and (max-height: 520px)"
     )
-    const sync = () => setStaticFlow(query.matches)
+    const sync = () => setPhoneFlow(query.matches)
     sync()
     query.addEventListener("change", sync)
     return () => query.removeEventListener("change", sync)
   }, [])
+
+  /*
+   * Nízké okno laptopu (21. 11. 2026, Matěj: „karty se nesmí uříznout").
+   *
+   * Pinned scéna je přesně jedno okno vysoká a ořezává. Výšky v CSS jsou
+   * spočítané na okna od 660px, ale ty počty se rozjedou s každou změnou
+   * karet, zvětšeným písmem nebo lištou prohlížeče navíc — a pak spodek
+   * karet s tlačítky tiše zmizí. Proto se tu neodhaduje, ale měří: když se
+   * obsah „Pro koho" do okna nevejde, timeline přestane připínat (třída
+   * `is-flow`) a scéna se natáhne na svou skutečnou výšku. Rozvržení zůstává
+   * laptopové (tři karty vedle sebe), jen bez scroll choreografie.
+   *
+   * Měří se z rozložení (offsetTop/offsetHeight transformace ignorují), takže
+   * výsledek je v pinned i v rozvolněném režimu stejný a nepřeskakuje sem
+   * a tam: v rozvolněném má scéna `min-height: 100svh` a mřížka se stejně
+   * roztáhne, takže když se obsah vejde, vyjde přesně výška okna.
+   */
+  const aboutRef = useRef<HTMLElement>(null)
+  const [tallFlow, setTallFlow] = useState(false)
+  useEffect(() => {
+    const scene = aboutRef.current
+    if (!scene || phoneFlow) {
+      setTallFlow(false)
+      return
+    }
+    const parts = Array.from(
+      scene.querySelectorAll<HTMLElement>(
+        ":scope > .kurzyAbout__intro, :scope > .kurzyAbout__lede, :scope > .kurzyAbout__blocks"
+      )
+    )
+    let frame = 0
+    const measure = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const bottom = Math.max(0, ...parts.map((el) => el.offsetTop + el.offsetHeight))
+        const needed = bottom + (parseFloat(getComputedStyle(scene).paddingBottom) || 0)
+        setTallFlow(needed > window.innerHeight + 1)
+      })
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    parts.forEach((el) => observer.observe(el))
+    window.addEventListener("resize", measure)
+    return () => {
+      cancelAnimationFrame(frame)
+      observer.disconnect()
+      window.removeEventListener("resize", measure)
+    }
+  }, [phoneFlow])
+
+  const staticFlow = phoneFlow || tallFlow
 
   /* Vstupní přiznání sekce ve statickém toku — jednou, při najetí do okna. */
   const flowEntry = (delay = 0) =>
@@ -361,7 +412,7 @@ export default function Intro({
 
   return (
     <section
-      className="kurzyTimeline"
+      className={`kurzyTimeline${tallFlow ? " is-flow" : ""}`}
       ref={timelineRef}
       id="kurzy"
       data-scroll-section
@@ -522,6 +573,7 @@ export default function Intro({
         </motion.article>
 
         <motion.section
+          ref={aboutRef}
           className={`kurzyScene kurzyAbout${
             activeScene === 1 ? " is-active" : ""
           }`}

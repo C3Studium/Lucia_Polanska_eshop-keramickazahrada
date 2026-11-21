@@ -46,6 +46,11 @@ export const LEGAL_FACT_KEYS = [
   "withdrawal.returnCostEstimate",
   "course.minAge",
   "course.pickupDeadline",
+  "course.organizerCancellation",
+  "course.payment",
+  "course.children",
+  "course.products",
+  "course.photos",
   "delivery.dispatchTime",
 ] as const
 
@@ -113,6 +118,17 @@ export const LEGAL_FACT_DEFAULTS: Readonly<LegalFactValues> = Object.freeze({
   // Odpovědi Lucie z 20. 10. 2026; odhad nákladů na vrácení potvrdil Matěj 24. 10.
   "course.pickupDeadline":
     "1 měsíce od kurzu, termín si domluvíme; mimo Písek je můžu poslat poštou",
+  // Řádky Podmínek kurzů na stránce Kurzy (21. 11. 2026) — dosavadní text z kódu.
+  "course.organizerCancellation":
+    "Vrátím vám celou zaplacenou částku, nebo si vyberete náhradní termín.",
+  "course.payment":
+    "Předem online, nebo na místě v den kurzu. Online rezervace, která není do 24 hodin zaplacená, propadne a místo se uvolní.",
+  "course.children":
+    "Rezervaci dělá rodič nebo jiný zákonný zástupce. Mimo vedenou práci (příchod, přestávky, odchod) za dítě odpovídá rodič.",
+  "course.products":
+    "Po kurzu je vysuším a vypálím.",
+  "course.photos":
+    "Fotky, na kterých jste vy nebo vaše dítě, zveřejním jen s vaším souhlasem.",
   // Převzato z dosavadní veřejné stránky Doprava a platba (tentýž slib je
   // v OP čl. VII) — není to odhad; potvrzení je v OPEN_QUESTIONS (3a).
   "delivery.dispatchTime":
@@ -304,6 +320,56 @@ export const LEGAL_FACT_META: Record<LegalFactKey, LegalFactMeta> = {
     group: "Kurzy",
     multiline: false,
     maxLength: 150,
+  },
+  "course.organizerCancellation": {
+    label: "Když kurz zrušíte vy",
+    help:
+      "Co dostane zákazník, když kurz zrušíte vy (nemoc, málo přihlášených). Na stránce Kurzy v Podmínkách kurzů, řádek „Když kurz zruším já“. Celá věta nebo dvě.",
+    example:
+      "Vrátím vám celou zaplacenou částku, nebo si vyberete náhradní termín.",
+    group: "Kurzy",
+    multiline: true,
+    maxLength: 400,
+  },
+  "course.payment": {
+    label: "Platba kurzu",
+    help:
+      "Jak a kdy se kurz platí. Na stránce Kurzy v Podmínkách kurzů, řádek „Platba“. Dnes obchod nezaplacenou online rezervaci po 24 hodinách sám zruší — když napíšete jiné pravidlo, řekněte Matějovi, ať upraví i automatiku.",
+    example:
+      "Předem online, nebo na místě v den kurzu. Online rezervace, která není do 24 hodin zaplacená, propadne a místo se uvolní.",
+    group: "Kurzy",
+    multiline: true,
+    maxLength: 600,
+  },
+  "course.children": {
+    label: "Děti na kurzu",
+    help:
+      "Kdo za dítě dělá rezervaci a kdo za něj odpovídá. Na stránce Kurzy v Podmínkách kurzů, řádek „Děti“; za text se připojí „Věk: …“ z pole Věk dítěte na kurzu.",
+    example:
+      "Rezervaci dělá rodič nebo jiný zákonný zástupce. Mimo vedenou práci (příchod, přestávky, odchod) za dítě odpovídá rodič.",
+    group: "Kurzy",
+    multiline: true,
+    maxLength: 600,
+  },
+  "course.products": {
+    label: "Výrobky po kurzu",
+    help:
+      "Co s výrobky uděláte po kurzu. Na stránce Kurzy v Podmínkách kurzů, řádek „Výrobky“; za text se připojí „Vyzvednete si je v ateliéru do …“ z pole Lhůta na vyzvednutí výrobků.",
+    example:
+      "Po kurzu je vysuším a vypálím.",
+    group: "Kurzy",
+    multiline: true,
+    maxLength: 400,
+  },
+  "course.photos": {
+    label: "Fotky z kurzu",
+    help:
+      "Jak zacházíte s fotkami účastníků. Na stránce Kurzy v Podmínkách kurzů, řádek „Fotky“. Celá věta.",
+    example:
+      "Fotky, na kterých jste vy nebo vaše dítě, zveřejním jen s vaším souhlasem.",
+    group: "Kurzy",
+    multiline: true,
+    maxLength: 400,
   },
   "voucher.validity": {
     label: "Platnost dárkového poukazu",
