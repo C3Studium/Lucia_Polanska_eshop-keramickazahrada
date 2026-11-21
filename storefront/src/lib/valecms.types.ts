@@ -19,6 +19,8 @@
 import { defineField, defineType } from '@c3studium/valecms/core'
 import siteCopy from '@c3studium/valecms/schemas/siteCopy.js'
 import review from '@c3studium/valecms/schemas/review.js'
+// SEO a sdílení ve Studiu (popisy, obrázek pro WhatsApp/Messenger/X, ikony).
+import siteSeo from '@c3studium/valecms/schemas/siteSeo.js'
 // S příponou a atributem, ne `./legal/registry`: tenhle soubor čtou i Node
 // skripty (`--import @c3studium/valecms/register.mjs`) a relativní import bez
 // přípony by tam neprošel. JSON s `with { type: 'json' }` Node načte sám.
@@ -896,7 +898,7 @@ const certifikat = defineType({
 
 /* Ukázkový typ „Článek" ze šablony ValeCMS je pryč (15. 11. 2026) — web ho
    nikde nezobrazoval a ve Studiu žádný článek nebyl. */
-export const types = [siteCopy, review, tlacitko, soubor, pravniDokument, faqKategorie, faqOtazka, certifikat]
+export const types = [siteCopy, review, tlacitko, soubor, pravniDokument, faqKategorie, faqOtazka, certifikat, siteSeo]
 
 // Typ, o kterém se píšou recenze (např. 'consultant'), nebo null.
 export const reviewSubjectType = null

@@ -1,3 +1,5 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
 .root {
   margin: 1rem 0 0;
   color: rgb(var(--ink-05-rgb) / .78);

@@ -1,2 +1,1 @@
-patchedDependencies:
-  '@c3studium/valecms@0.1.64': patches/@c3studium__valecms@0.1.64.patch
+# Záplata 0.1.64 (skupiny stránek, PDF v nahrávání) je od 2.0.0-beta.1 v knihovně.

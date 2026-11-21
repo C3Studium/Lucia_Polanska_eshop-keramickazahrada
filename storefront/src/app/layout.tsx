@@ -19,8 +19,19 @@ import { getLegalFacts } from "@lib/data/legal-facts"
 import { LegalFactsProvider } from "@lib/legal/facts-context"
 import "styles/globals.scss"
 import StudioClient from "@c3studium/valecms/manage/appClient.jsx";
+import { getSiteSeo, seoMetadata } from "@c3studium/valecms/server/site"
 
-export const metadata: Metadata = {
+/* Obrázek pro sdílení (WhatsApp, Messenger, X). Dřív app/opengraph-image.jpg —
+   soubor v app/ má ale v Next přednost před vším, takže by obrázek nastavený
+   ve Studiu (SEO a sdílení) nikdy nevyhrál. Teď je výchozí a Studio ho přepíše. */
+const OG_DEFAULT = {
+  url: "/og-default.jpg",
+  alt: "Keramická zahrada — autorská keramika pro zahradu i domov, Lucie Polanská, ateliér v Putimi",
+}
+
+const baseMetadata: Metadata = {
+  openGraph: { images: [OG_DEFAULT] },
+  twitter: { card: "summary_large_image", images: [OG_DEFAULT.url] },
   metadataBase: new URL(getBaseURL()),
   /* Ikona v záložce: logo „Lu" s ptáčkem na krémovém čtverci (19. 11. 2026) —
      černé logo samo by na tmavém panelu prohlížeče zmizelo. */
@@ -40,6 +51,16 @@ export const metadata: Metadata = {
   },
   description:
     "Ručně tvořená keramika pro zahradu i domov z ateliéru Lucie Polanské v Putimi. Hotové kusy, zakázková výroba i keramické kurzy.",
+}
+
+/* SEO ze Studia (SEO a sdílení) nad metadaty z kódu: přepíše jen to, co je ve
+   Studiu vyplněné — prázdný dokument nechá web přesně jako dřív. */
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    return seoMetadata(await getSiteSeo(), null, baseMetadata)
+  } catch {
+    return baseMetadata
+  }
 }
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
