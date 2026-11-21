@@ -161,6 +161,10 @@ export const sluzbyProZasilku = (vstup: {
     sluzby.push(vstup.velikost ?? "M")
     /* Křehce jen na adresu — viz hlavička. */
     if (vstup.krehke) sluzby.push(SLUZBY.krehce)
+  } else if (vstup.velikost) {
+    /* Balíkovna velikost nevyžaduje, ale přijme ji (b2b-test 21. 11. 2026,
+       i vzor ČP posílá NB + "M") — widget štítku ji volí u každé zásilky. */
+    sluzby.push(vstup.velikost)
   }
 
   if (vstup.maDobirku) sluzby.push(SLUZBY.dobirka)

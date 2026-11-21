@@ -107,7 +107,7 @@ export const CpLabelPanel = ({ order }: { order: AdminOrder }) => {
         `/admin/merchant-orders/${order.id}/label${test ? "?test=1" : ""}`,
         {
           method: "POST",
-          body: naAdresu ? { size: zvolenaVelikost, packages: pocet } : {},
+          body: { size: zvolenaVelikost, packages: pocet },
         }
       ),
     onSuccess: async (result, test) => {
@@ -351,19 +351,16 @@ export const CpLabelPanel = ({ order }: { order: AdminOrder }) => {
                       ? "Objednávka je zrušená — štítek se k ní nevystavuje."
                       : hotovo
                         ? "Objednávka je označená jako odeslaná a štítek u ní nemáme — zásilka šla mimo systém a Česká pošta štítek znovu nevydá. Jestli část objednávky ještě leží, podat ji jde i teď."
-                        : /* Ve fázi „K odeslání" je zásilka připravená — hláška backendu
-                             „Nejdřív ji připravte k odeslání" (vrací ji, dokud nemá plnění,
-                             a plnění vzniká až štítkem) tu majitelku posílala o krok zpět
-                             (živý test 13. 11. 2026, objednávka #70). */
-                          stage === "shipping"
-                          ? "Zatím bez štítku. Podáním u České pošty vznikne štítek i číslo zásilky."
-                          : (data?.reason ??
-                            "Zatím bez štítku. Podáním u České pošty vznikne štítek i číslo zásilky.")}
+                        : /* Štítek jde vystavit v kterékoli fázi — plnění vzniká až jím
+                             (21. 11. 2026, Matěj: hned volba balíků, žádné „nejdřív
+                             připravte"). Důvod z backendu jen když nějaký je. */
+                          (data?.reason ??
+                            "Vyberte velikost a počet balíků a potvrďte — vznikne štítek i číslo zásilky.")}
                   </Text>
                   {/* Velikost a počet balíků — jdou na štítek, proto PŘED podáním.
-                      Jen na adresu: Balíkovna na výdejnu velikost nebere a víc
-                      balíků ČP tiše zahodí (max_packages = 1). */}
-                  {!zrusena && naAdresu && (
+                      U každé zásilky stejné okno (21. 11. 2026); Balíkovna na
+                      výdejnu jen jeden balík — víc kusů ČP tiše zahodí. */}
+                  {!zrusena && (
                     <div className="bg-ui-bg-subtle flex flex-col gap-3 rounded-lg p-3" data-testid="cp-label-parcel-form">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span>
@@ -386,7 +383,9 @@ export const CpLabelPanel = ({ order }: { order: AdminOrder }) => {
                         <span>
                           <Text size="small" weight="plus">Počet balíků</Text>
                           <Text size="xsmall" className="text-ui-fg-subtle">
-                            Každý balík dostane svůj štítek 1/2, 2/2… (nejvýš {maxBaliku})
+                            {naAdresu
+                              ? `Každý balík dostane svůj štítek 1/2, 2/2… (nejvýš ${maxBaliku})`
+                              : "Do Balíkovny na výdejnu jde jen jeden balík."}
                           </Text>
                         </span>
                         <div className="flex items-center gap-1" role="group" aria-label="Počet balíků">
@@ -427,9 +426,7 @@ export const CpLabelPanel = ({ order }: { order: AdminOrder }) => {
                         disabled={generate.isPending}
                         onClick={() => generate.mutate(false)}
                       >
-                        {!naAdresu
-                          ? "Vygenerovat štítek pro Českou poštu"
-                          : pocet > 1
+                        {pocet > 1
                             ? `Potvrdit a vygenerovat ${pocet} ${pocet < 5 ? "štítky" : "štítků"} (${zvolenaVelikost})`
                             : `Potvrdit a vygenerovat štítek (${zvolenaVelikost})`}
                       </Button>

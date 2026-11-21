@@ -289,12 +289,16 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     liveFulfillments.find((item: any) => typeof item?.data?.label_pdf_base64 === "string") ??
     liveFulfillments[0]
 
+  /*
+   * Bez plnění = štítek ještě nebyl. Žádný důvod (21. 11. 2026, Matěj):
+   * plnění vzniká právě štítkem, takže dřívější „Nejdřív ji připravte
+   * k odeslání" posílalo pryč od jediného tlačítka, které to vyřeší. Widget
+   * rovnou ukáže volbu velikosti a počtu balíků.
+   */
   if (!fulfillment) {
     res.status(200).json(
       withContext({
         available: false,
-        reason:
-          "Zásilka ještě není připravená. Nejdřív ji připravte k odeslání, štítek bude až potom.",
         labels: [],
       })
     )
