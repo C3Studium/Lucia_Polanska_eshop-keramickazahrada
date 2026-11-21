@@ -125,3 +125,25 @@ test("relativní obrázek dostane doménu obchodu", () => {
   })!
   assert.deepEqual(productNode(ld).image, [`${BASE}/assets/img/1.jpg`])
 })
+
+test("fotka pro vyhledávače z adminu jde první; náhled odkazu ji použije", async () => {
+  const { seoImageOf } = await import("../product-jsonld")
+  const chosen = product({ metadata: { seo_image: "https://img.example/b.jpg" } })
+  assert.deepEqual(productNode(productJsonLd({ product: chosen, countryCode: "cz", currencyCode: "czk", baseUrl: BASE })!).image, [
+    "https://img.example/b.jpg",
+    "https://img.example/a.jpg",
+  ])
+  assert.equal(seoImageOf(chosen), "https://img.example/b.jpg")
+  // bez volby = náhled kusu
+  assert.equal(seoImageOf(product()), "https://img.example/a.jpg")
+})
+
+test("vybraná fotka, která už u výrobku není, se ignoruje", async () => {
+  const { seoImageOf } = await import("../product-jsonld")
+  const stale = product({ metadata: { seo_image: "https://img.example/smazana.jpg" } })
+  assert.equal(seoImageOf(stale), "https://img.example/a.jpg")
+  assert.deepEqual(productNode(productJsonLd({ product: stale, countryCode: "cz", currencyCode: "czk", baseUrl: BASE })!).image, [
+    "https://img.example/a.jpg",
+    "https://img.example/b.jpg",
+  ])
+})

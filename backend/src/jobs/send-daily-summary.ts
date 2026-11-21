@@ -2,7 +2,7 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { getOrdersListWorkflow } from "@medusajs/medusa/core-flows"
 import { getMerchantSettings } from "../lib/merchant-settings"
-import { resolveAllRecipients } from "../lib/notify"
+import { resolveSummaryRecipients } from "../lib/notify"
 import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
@@ -13,8 +13,10 @@ import { sUlohou } from "../lib/provozni-hlidka/uloha"
  * full order report on purpose — the orders themselves belong in Denní práce,
  * and a competing list in an inbox is how people end up working from two places.
  *
- * Goes to **both** notification addresses. If neither is configured it logs and
- * sends nothing, per D7's never-crash rule.
+ * Goes to the **shop's** address only (21. 11. 2026 — it used to go to both,
+ * so the developer got it too); the developer's address is just the fallback
+ * when the shop's is missing. If neither is configured it logs and sends
+ * nothing, per D7's never-crash rule.
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -61,7 +63,7 @@ async function sendDailySummary(container: MedusaContainer) {
   }
 
   // Adresy z administrace mají přednost, prázdné spadnou na env.
-  const recipients = resolveAllRecipients({
+  const recipients = resolveSummaryRecipients({
     dev:
       (settings.dev_notification_email || "").trim() ||
       process.env.DEV_NOTIFICATION_EMAIL,

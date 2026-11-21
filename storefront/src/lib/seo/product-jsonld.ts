@@ -86,6 +86,23 @@ function returnPolicy(madeToOrder: boolean, country: string) {
   }
 }
 
+/**
+ * „Fotka pro vyhledávače" z adminu (Produkty+ „…", `metadata.seo_image`,
+ * 21. 11. 2026) — jen dokud ta fotka u výrobku pořád je. Smazaná fotka by
+ * jinak dál visela v náhledu odkazu, i když ji obchod už neukazuje.
+ */
+function chosenSeoImage(product: HttpTypes.StoreProduct): string | null {
+  const chosen = (product.metadata as Record<string, unknown> | null)?.seo_image
+  if (typeof chosen !== "string" || !chosen) return null
+  const own = [...(product.images ?? []).map((image) => image.url), product.thumbnail]
+  return own.includes(chosen) ? chosen : null
+}
+
+/** Fotka pro náhled odkazu (og:image): vybraná v adminu, jinak náhled kusu. */
+export function seoImageOf(product: HttpTypes.StoreProduct): string | null {
+  return chosenSeoImage(product) ?? product.thumbnail ?? product.images?.[0]?.url ?? null
+}
+
 /** Graf pro `<script type="application/ld+json">`, nebo `null`, když není co říct. */
 export function productJsonLd(input: ProductJsonLdInput): Record<string, unknown> | null {
   const { product, countryCode, currencyCode, category, rating } = input
@@ -103,6 +120,13 @@ export function productJsonLd(input: ProductJsonLdInput): Record<string, unknown
 
   const images = (product.images ?? []).map((image) => image.url).filter(Boolean)
   if (!images.length && product.thumbnail) images.push(product.thumbnail)
+  // Fotka pro vyhledávače z adminu jde první — tu vyhledávač bere nejspíš.
+  const chosen = chosenSeoImage(product)
+  if (chosen) {
+    const at = images.indexOf(chosen)
+    if (at >= 0) images.splice(at, 1)
+    images.unshift(chosen)
+  }
   // Vyhledávač chce absolutní adresy; relativní cesta (např. /assets/…) se doplní o doménu.
   const absoluteImages = images.map((src) => new URL(src, `${base}/`).href)
 

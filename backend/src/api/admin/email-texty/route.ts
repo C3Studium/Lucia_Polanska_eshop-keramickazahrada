@@ -1,6 +1,11 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { getMerchantSettings, setMerchantSettings } from "../../../lib/merchant-settings"
-import { cleanEmailTexts, emailTextCatalog, isEditableEmail } from "../../../lib/email-texts"
+import {
+  EMAIL_CATEGORIES,
+  cleanEmailTexts,
+  emailTextCatalog,
+  isEditableEmail,
+} from "../../../lib/email-texts"
 
 /**
  * Administrace → Emaily (15. 11. 2026): seznam e-mailů s výchozím zněním
@@ -11,7 +16,9 @@ import { cleanEmailTexts, emailTextCatalog, isEditableEmail } from "../../../lib
  */
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const settings = await getMerchantSettings(req.scope)
-  res.status(200).json({ emaily: emailTextCatalog(settings.email_texts) })
+  res
+    .status(200)
+    .json({ emaily: emailTextCatalog(settings.email_texts), kategorie: EMAIL_CATEGORIES })
 }
 
 export const POST = async (
@@ -28,5 +35,7 @@ export const POST = async (
     (req.body?.values && typeof req.body.values === "object" ? req.body.values : {}) as Record<string, unknown>
   )
   const settings = await setMerchantSettings(req.scope, { email_texts: { [template]: values } })
-  res.status(200).json({ emaily: emailTextCatalog(settings.email_texts) })
+  res
+    .status(200)
+    .json({ emaily: emailTextCatalog(settings.email_texts), kategorie: EMAIL_CATEGORIES })
 }

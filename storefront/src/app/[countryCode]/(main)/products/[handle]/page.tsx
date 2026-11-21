@@ -19,7 +19,7 @@ import { getProductionProfile } from "@lib/data/made-to-order"
 import { getPageCopy } from "@lib/data/site-copy"
 import { asciiHandle, productHandle } from "@lib/util/product-handle"
 import { getBaseURL } from "@lib/util/env"
-import { jsonLdScript, productJsonLd } from "@lib/seo/product-jsonld"
+import { jsonLdScript, productJsonLd, seoImageOf } from "@lib/seo/product-jsonld"
 
 type Props = {
   params: Promise<{ countryCode: string; handle: string }>
@@ -83,7 +83,9 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
   const product = await listProducts({
     countryCode: params.countryCode,
-    queryParams: { handle },
+    /* `+metadata`: obchodní API metadata samo nevrací — bez nich by se
+       „Fotka pro vyhledávače" z adminu do náhledu odkazu nedostala. */
+    queryParams: { handle, fields: "+metadata" },
   }).then(({ response }) => response.products[0])
 
   /* Nenalezený výrobek řeší stránka (přesměrování ze staré adresy
@@ -98,6 +100,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     product.description || product.subtitle,
     `${product.title} — ručně vyrobená keramika z ateliéru Lucie Polanské.`
   )
+  const seoImage = seoImageOf(product)
 
   return {
     title: product.title,
@@ -107,7 +110,8 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     openGraph: {
       title: `${product.title} | Keramická zahrada`,
       description,
-      images: product.thumbnail ? [product.thumbnail] : [],
+      /* Fotka pro vyhledávače z adminu (Produkty+ „…"), jinak náhled kusu. */
+      images: seoImage ? [seoImage] : [],
     },
   }
 }

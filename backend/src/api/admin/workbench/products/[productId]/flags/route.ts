@@ -95,6 +95,13 @@ export const PatchFlagsSchema = z
      * `/admin/uploads`, sem jde seznam adres v pořadí. `null`/`[]` maže.
      */
     detail_images: z.array(z.string().trim().min(1).max(1000)).max(12).nullable().optional(),
+    /**
+     * Fotka pro vyhledávače (21. 11. 2026) — adresa jedné z fotek výrobku,
+     * kterou storefront dá do náhledu odkazu (og:image) a jako první do
+     * strukturovaných dat výrobku (lib/seo/product-jsonld). Volí se v
+     * Produkty+ „…" › Fotka pro vyhledávače. `null` = zpět na náhled kusu.
+     */
+    seo_image: z.string().trim().min(1).max(1000).nullable().optional(),
     /** Whether the piece survives frost — pots and garden pieces care. */
     frost_resistant: z.boolean().optional(),
     /**

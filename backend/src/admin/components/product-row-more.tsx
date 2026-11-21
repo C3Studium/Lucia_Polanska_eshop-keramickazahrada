@@ -19,6 +19,7 @@ import { BundleEditor } from "./bundle-editor";
 import { ConfirmDialog } from "./confirm-dialog";
 import { PanelZpet } from "./panel-shell";
 import { ProductionProfileEditor } from "./production-profile-editor";
+import { SeoImageEditor } from "./seo-image-editor";
 import { ShippingProfileEditor } from "./shipping-profile-editor";
 import { VariantsEditor } from "./variants-editor";
 import type { ShippingClass } from "../../lib/shipping-rates";
@@ -124,7 +125,7 @@ export const ProductRowMore = ({
   const [ptaSeNaSmazani, setPtaSeNaSmazani] = useState(false);
   /* Nabídka zůstává otevřená; vybrané nastavení se otevře VLEVO vedle ní
      (19. 11. 2026, Matěj — dřív okno po výběru hned zase zmizelo). */
-  type PanelKey = "variants" | "commission" | "bundle" | "profile";
+  type PanelKey = "variants" | "commission" | "bundle" | "profile" | "seo";
   const [menuOpen, setMenuOpen] = useState(false);
   const [panel, setPanel] = useState<PanelKey | null>(null);
   const refresh = async () => {
@@ -362,6 +363,8 @@ export const ProductRowMore = ({
       <ProductionProfileEditor inline onClose={() => setPanel(null)} productId={product.id} productTitle={product.title} />
     ) : panel === "bundle" && bundleId ? (
       <BundleEditor inline onClose={() => setPanel(null)} bundleId={bundleId} />
+    ) : panel === "seo" ? (
+      <SeoImageEditor inline onClose={() => setPanel(null)} productId={product.id} productTitle={product.title} />
     ) : panel === "profile" ? (
       <ShippingProfileEditor
         inline
@@ -504,6 +507,12 @@ export const ProductRowMore = ({
                 <Switch size="small" checked={hodnota("no_promo")} aria-label="Bez slevových kódů" onCheckedChange={(v) => zmenit("no_promo", v)} />
               </Radek>
             )}
+            <Otevrit
+              aktivni={panel === "seo"}
+              onToggle={() => setPanel(panel === "seo" ? null : "seo")}
+              nazev="Fotka pro vyhledávače"
+              popis={typeof meta.seo_image === "string" && meta.seo_image ? "Vybraná fotka — Seznam, Google, sdílení" : "Automaticky — náhled výrobku"}
+            />
           </Skupina>
           <Skupina nazev="Materiál a rozměry">
             <Radek nazev={`Materiál${zmeneno("material") ? " •" : ""}`}>

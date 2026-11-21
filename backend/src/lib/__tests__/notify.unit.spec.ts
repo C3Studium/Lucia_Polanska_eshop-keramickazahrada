@@ -5,6 +5,7 @@ import {
   notifyMerchant,
   resolveAllRecipients,
   resolveRecipient,
+  resolveSummaryRecipients,
 } from "../notify"
 
 const containerWith = (created: unknown[][], warnings: string[]) => ({
@@ -52,6 +53,18 @@ describe("recipient routing (D7)", () => {
     ).toEqual(["same@example.com"])
 
     expect(resolveAllRecipients({ dev: "", owner: null })).toEqual([])
+  })
+
+  it("sends the shop summaries to the owner only, dev just as the fallback", () => {
+    expect(
+      resolveSummaryRecipients({ dev: "dev@example.com", owner: "owner@example.com" })
+    ).toEqual(["owner@example.com"])
+
+    expect(resolveSummaryRecipients({ dev: "dev@example.com", owner: "  " })).toEqual([
+      "dev@example.com",
+    ])
+
+    expect(resolveSummaryRecipients({ dev: "", owner: null })).toEqual([])
   })
 })
 

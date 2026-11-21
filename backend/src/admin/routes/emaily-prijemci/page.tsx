@@ -120,7 +120,8 @@ const Inner = () => {
         <Text size="small" weight="plus">E-mail vývojáře</Text>
         <Text size="xsmall" className="text-ui-fg-subtle">
           Technické hlídky — nezdařené e-maily, chyby dopravce a podobné věci,
-          které má řešit vývojář, ne majitelka.
+          které má řešit vývojář, ne majitelka. Souhrny obchodu sem nechodí
+          (jen když e-mail obchodu chybí).
         </Text>
         <Input
           size="small"

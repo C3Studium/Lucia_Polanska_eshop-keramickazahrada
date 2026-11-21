@@ -1,7 +1,7 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { getOrdersListWorkflow } from "@medusajs/medusa/core-flows"
-import { getNotificationAddresses, resolveAllRecipients } from "../lib/notify"
+import { getNotificationAddresses, resolveSummaryRecipients } from "../lib/notify"
 import { sUlohou } from "../lib/provozni-hlidka/uloha"
 
 /**
@@ -12,8 +12,9 @@ import { sUlohou } from "../lib/provozni-hlidka/uloha"
  * to the one before it, and which objects actually sold. It answers the
  * question the daily numbers never add up to on their own.
  *
- * Same D7 rules as the daily digest: goes to both notification addresses,
- * logs and sends nothing when neither is configured, one send per week per
+ * Same rules as the daily digest: goes to the shop's address only (the
+ * developer's is just the fallback when it is missing — 21. 11. 2026), logs
+ * and sends nothing when neither is configured, one send per week per
  * recipient whatever happens to the schedule.
  */
 
@@ -59,7 +60,7 @@ async function sendWeeklySummary(container: MedusaContainer) {
   const notifications = container.resolve(Modules.NOTIFICATION)
 
   // Adresy z administrace mají přednost, prázdné spadnou na env.
-  const recipients = resolveAllRecipients(
+  const recipients = resolveSummaryRecipients(
     await getNotificationAddresses(container)
   )
 
