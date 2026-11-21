@@ -1,6 +1,11 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { getLegalFacts } from "../../../../lib/merchant-settings"
-import { cleanEmailTexts, isEditableEmail, renderEmailPreview } from "../../../../lib/email-texts"
+import {
+  cleanEmailTexts,
+  isEditableEmail,
+  isPreviewableEmail,
+  renderEmailPreview,
+} from "../../../../lib/email-texts"
 
 /**
  * Náhled e-mailu v administraci → Emaily — vzorová data šablony a právě
@@ -11,14 +16,17 @@ export const POST = async (
   res: MedusaResponse
 ) => {
   const template = typeof req.body?.template === "string" ? req.body.template : ""
-  if (!isEditableEmail(template)) {
+  if (!isPreviewableEmail(template)) {
     res.status(400).json({ message: "Takový e-mail neznáme." })
     return
   }
-  const values = cleanEmailTexts(
-    template,
-    (req.body?.values && typeof req.body.values === "object" ? req.body.values : {}) as Record<string, unknown>
-  )
+  /* Podoby „Nové objednávky" (šablona#podoba) nemají co přepsat — jen náhled. */
+  const values = isEditableEmail(template)
+    ? cleanEmailTexts(
+        template,
+        (req.body?.values && typeof req.body.values === "object" ? req.body.values : {}) as Record<string, unknown>
+      )
+    : {}
   const legal = await getLegalFacts(req.scope).catch(() => null)
   const preview = await renderEmailPreview(
     template,

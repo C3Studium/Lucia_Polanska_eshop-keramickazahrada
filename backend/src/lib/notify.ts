@@ -109,6 +109,22 @@ export const resolveRecipient = (
   return trimmed.length ? trimmed : null
 }
 
+/**
+ * Komu jde denní a týdenní souhrn obchodu (21. 11. 2026, Matěj: „všechny
+ * e-maily pro obchod na e-mail majitelky"). Dřív chodil oběma adresám, takže
+ * ho dostával i vývojář. Vývojářská adresa zůstává jen jako záloha, když
+ * e-mail obchodu není nastavený — souhrn nesmí zmizet potichu.
+ */
+export const resolveSummaryRecipients = (addresses: {
+  dev?: string | null
+  owner?: string | null
+}): string[] => {
+  const owner = resolveRecipient("owner", addresses)
+  if (owner) return [owner]
+  const dev = resolveRecipient("dev", addresses)
+  return dev ? [dev] : []
+}
+
 /** Both configured addresses, for the digest that goes to everyone (D7). */
 export const resolveAllRecipients = (addresses: {
   dev?: string | null
