@@ -534,7 +534,7 @@
 @include below-px(720px) {
   .panel {
     top: 68px;
-    max-height: calc(100dvh - 84px);
+    max-height: calc(100dvh - max(84px, var(--nav-bottom-clearance, 68px) + 16px));
     border-radius: 11px; /* PANEL_RADIUS_NARROW */
   }
 
@@ -635,8 +635,8 @@
   .panel {
     /* 2 % níž pod lištu s hledáním (20. 11. 2026, Matěj) — o tolik i nižší. */
     top: calc(64px + 2dvh);
-    /* 68px of bottom bar (56px + its 12px inset) plus a 16px breath. */
-    max-height: calc(100dvh - 64px - 84px - 2dvh);
+    /* Lišta dole (56 + 12 px, nad sbalenou lištou Safari zvednutá o 32–46 px) + 16 px vůle — skutečnou míru hlásí mobileBar v --nav-bottom-clearance (21. 11. 2026: pevných 84 px nechalo zvednutou lištu překrýt „Přejít do obchodu"). */
+    max-height: calc(100dvh - 64px - max(84px, var(--nav-bottom-clearance, 68px) + 16px) - 2dvh);
     overflow-y: auto;
     overscroll-behavior: contain;
   }
@@ -1119,11 +1119,11 @@
 
 /* Telefon: okno končí nad spodní lištou (viz phone-search-overlay výš). */
 @include below-px(600px) {
-  .panel { --search-h: calc(100dvh - 64px - 84px - 2dvh); }
+  .panel { --search-h: calc(100dvh - 64px - max(84px, var(--nav-bottom-clearance, 68px) + 16px) - 2dvh); }
   .shop { gap: .625rem; padding-block: .75rem; }
 }
 @include phs-h {
-  .panel { --search-h: calc(100dvh - 64px - 84px - 2dvh); }
+  .panel { --search-h: calc(100dvh - 64px - max(84px, var(--nav-bottom-clearance, 68px) + 16px) - 2dvh); }
 }
 :global(html.kz-klavesnice) .panel {
   --search-h: calc(var(--kz-vvh, 100dvh) - max(80px, var(--panel-top) + 0.75rem));
