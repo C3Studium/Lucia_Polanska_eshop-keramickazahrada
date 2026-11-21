@@ -12,6 +12,31 @@ export const collectionOf = (category: Category): string | null => {
   return typeof value === "string" && value ? value : null;
 };
 
+/**
+ * Kategorie, které patří pod kolekci (Rozdělení, 21. 11. 2026) — stejné
+ * pravidlo jako menu obchodu (`storefront lib/data/navigation.ts`):
+ * přiřazené kolekci (`metadata.collection_id`), k tomu NEpřiřazené, které
+ * mají výrobky kolekce. Kategorie JINÉ kolekce sem nepatří, ani když ji
+ * výrobek má — „Přidat i sem" dá výrobku kategorii z druhé kolekce a dřív
+ * se pak celá ta kategorie ukazovala i tady, jako by se zkopírovala.
+ * Řádky z výrobků (`category_refs`) nesou jen id a název, proto se
+ * přiřazení čte z plného seznamu.
+ */
+export const categoriesForCollection = <C extends Category>(
+  collId: string,
+  products: { collection_id?: string | null; category_refs?: { id: string; name?: string }[] | null }[],
+  allCategories: C[]
+): C[] => {
+  const full = new Map(allCategories.map((category) => [category.id, category]));
+  const fromProducts = products
+    .filter((product) => product.collection_id === collId)
+    .flatMap((product) => product.category_refs ?? [])
+    .map((ref) => full.get(ref.id) ?? (ref as C))
+    .filter((category) => !collectionOf(category));
+  const assigned = allCategories.filter((category) => collectionOf(category) === collId);
+  return [...new Map([...fromProducts, ...assigned].map((category) => [category.id, category])).values()];
+};
+
 export type BulkClassificationDraft = {
   /** Kategorie přidat všem vybraným. */
   add: string[];

@@ -36,10 +36,7 @@ import { OrderStepsPanel } from "./order-steps";
  */
 const OrderWorkspaceMain = ({ order }: { order: AdminOrder }) => {
   const wide = useWideLayout();
-  /* Rozvržení podle šířky SLOUPCE (ne okna): na notebooku je hlavní sloupec
-     vedle menu a pravého sloupce kolem 800 px i při okně přes 1500 px. */
-  const [top, columnWidth] = useElementWidth<HTMLDivElement>();
-  const sideBySide = columnWidth >= 760;
+  const [top] = useElementWidth<HTMLDivElement>();
   const bottom = useHideNativeCards<HTMLDivElement>([
     "Platby",
     "Payments",
@@ -62,26 +59,12 @@ const OrderWorkspaceMain = ({ order }: { order: AdminOrder }) => {
         {/* Postup hned pod číslem objednávky (17. 11. 2026). Všude stejný
             vodorovný proužek teček — i na telefonu (přání majitele: „stejně
             jako na šířku, je to jednodušší"); dlouhý svislý seznam kroků
-            skončil. V širokém sloupci vedle něj štítek České pošty, v úzkém
-            pod ním. Když štítek nemá co ukázat (osobní odběr), Postup zabere
-            celou šířku. */}
-        <div
-          className={
-            sideBySide ? "flex flex-row items-stretch gap-3" : "flex flex-col gap-3"
-          }
-        >
-          <div className="min-w-0 flex-1 [&>*]:h-full">
-            <OrderStepsPanel order={order} layout="row" />
-          </div>
-          <div
-            className={
-              sideBySide
-                ? "empty:hidden w-[18rem] shrink-0 [&>*]:h-full"
-                : "empty:hidden"
-            }
-          >
-            <CpLabelPanel order={order} />
-          </div>
+            skončil. Štítek České pošty POD ním, v jednom sloupci na každé
+            šířce (21. 11. 2026, Matěj — vedle sebe měl Postup prázdnou
+            plochu a štítek se mačkal do úzkého proužku). */}
+        <OrderStepsPanel order={order} layout="row" />
+        <div className="empty:hidden">
+          <CpLabelPanel order={order} />
         </div>
         <OrderCustomerPanel order={order} />
       </div>
