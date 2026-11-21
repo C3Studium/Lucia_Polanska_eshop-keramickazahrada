@@ -67,12 +67,23 @@ export const VIEWPORT_GUARD_JS = `(function () {
       return !/^(button|submit|reset|checkbox|radio|range|file|color|image|hidden)$/i.test(el.type || '');
     };
     /*
-     * Safari 26+ (plovoucí ovládání) pevný obsah pod svou lištu vůbec
-     * nevykreslí, takže zvedat není co — a jeho lišta se animuje ~30 snímků
-     * a v každém mění innerHeight (AGENTS.md). Zvedání jen pro starší iOS.
+     * Kdo zvedání potřebuje (21. 11. 2026) — JEN aplikace Safari na iPhonu
+     * před verzí 26:
+     *  - Safari 26+ (plovoucí ovládání) pevný obsah pod svou lištu vůbec
+     *    nevykreslí, takže zvedat není co — a jeho lišta se animuje ~30
+     *    snímků a v každém mění innerHeight (AGENTS.md).
+     *  - Ostatní prohlížeče na iPhonu (Chrome, Firefox, Edge, Seznam, Opera,
+     *    vestavěné prohlížeče aplikací) mají vlastní lišty a ťuknutí u spodní
+     *    hrany si neberou. Dřív se zvedaly omylem: nemají v UA „Version/",
+     *    verze vyšla 0 = „starý Safari" — i na iOS 26. Tam lišta poskakovala
+     *    při každém posunu (Matěj: „these issues are in Seznam Browser").
+     *  - Android (i Seznam) nezvedá nikdy, lišta jede s oknem sama.
      */
+    var thirdParty = /CriOS|FxiOS|EdgiOS|OPiOS|OPT\\/|SznProhlizec|Seznam|YaBrowser|DuckDuckGo|GSA\\/|FBAN|FBAV|FB_IAB|Instagram|LinkedInApp|Snapchat|Twitter|Pinterest|Line\\//.test(ua);
     var safariMajor = (function () { var m = /Version\\/(\\d+)/.exec(ua); return m ? +m[1] : 0; })();
-    var liftable = iPhone && !standalone && !(safariMajor >= 26);
+    var realSafari = iPhone && !thirdParty && safariMajor > 0 && /Safari\\//.test(ua);
+    var liftable = realSafari && !standalone && safariMajor < 26;
+    if (liftable) root.classList.add('kz-zvedani');
     var lastWidth = -1, settleTimer = 0, keyboard = false;
     var computePad = function () {
       settleTimer = 0;
@@ -82,6 +93,15 @@ export const VIEWPORT_GUARD_JS = `(function () {
         var sw = Math.min(screen.width, screen.height), sh = Math.max(screen.width, screen.height);
         var collapsed = (sh - ih) < 90 || (minH < Infinity && ih > minH + 40);
         if (collapsed) pad = sh / sw > 2 ? 46 : 32;
+        /*
+         * Rovnováha (21. 11. 2026): Safari svou lištu rozbalí při každém
+         * posunu nahoru a sbalí při posunu dolů — lišta, která to kopírovala,
+         * skákala o 32–46 px sem a tam. Zvednutá proto ZŮSTANE i po rozbalení
+         * a pustí se až nahoře na stránce (do 40 px), kde Safari lištu
+         * ukazuje vždy. Za návštěvu stránky tak nejvýš jeden pohyb nahoru
+         * a jeden dolů; ťuknutí jdou pořád na naši lištu.
+         */
+        else if (lastPad > 0 && (w.pageYOffset || root.scrollTop || 0) > 40) pad = lastPad;
       }
       if (root.style.getPropertyValue('--kz-ios-bottom') !== pad + 'px') root.style.setProperty('--kz-ios-bottom', pad + 'px');
       if (pad !== lastPad) {
@@ -93,6 +113,7 @@ export const VIEWPORT_GUARD_JS = `(function () {
       frame = 0;
       ensureMeta();
       if (iOS) root.classList.add('kz-ios');
+      if (liftable) root.classList.add('kz-zvedani');
       var ih = w.innerHeight, iw = w.innerWidth;
       var portrait = ih >= iw;
       if (portrait !== lastOrient) { lastOrient = portrait; minH = Infinity; maxH = 0; }

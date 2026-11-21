@@ -30,7 +30,7 @@
    * the navbar, and an asymmetric top allowance here only pushed the content down into the cookie
    * card at 320x568. The navbar clearance belongs at `phs`/`phl`, where it is actually needed.
    */
-  min-height: 100dvh;
+  min-height: 100svh;
   padding-block: 2rem;
   padding-inline: 1.25rem;
 

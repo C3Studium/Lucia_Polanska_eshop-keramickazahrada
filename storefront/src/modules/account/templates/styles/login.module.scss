@@ -19,22 +19,22 @@
     z-index: -1;
     position: absolute;
     width: 120dvw;
-    height: 120dvh;
+    height: 120svh;
     top: -40%;
     left: -170%;
 
     @include hb((
-      mdt: (top: -70%, left: -150%, width: 140dvw, height: 140dvh),
+      mdt: (top: -70%, left: -150%, width: 140dvw, height: 140svh),
       md: (top: -30%, left: -100%),
       sm: (top: -30%, left: -100%),
-      xs: (top: -40%, left: -80%, width: 250dvw, height: 250dvh),
-      xxs: (top: -40%, left: -80%, width: 250dvw, height: 250dvh),
+      xs: (top: -40%, left: -80%, width: 250dvw, height: 250svh),
+      xxs: (top: -40%, left: -80%, width: 250dvw, height: 250svh),
     ));
 
     @include vb((
-      lg: (top: -80%, left: -150%, width: 140dvw, height: 140dvh),
-      md: (top: -80%, left: -100%, width: 140dvw, height: 140dvh),
-      s: (top: -80%, left: -50%, width: 200dvw, height: 200dvh),
+      lg: (top: -80%, left: -150%, width: 140dvw, height: 140svh),
+      md: (top: -80%, left: -100%, width: 140dvw, height: 140svh),
+      s: (top: -80%, left: -50%, width: 200dvw, height: 200svh),
     ));
 
     .Image{

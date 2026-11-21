@@ -3,7 +3,7 @@
 // Styles for Verify Email page (nested SCSS)
 
 .section {
-	height: 100dvh;
+	height: 100svh;
 	width: 100dvw;
 	display: flex;
 	flex-direction: column;
@@ -58,15 +58,15 @@
 
 		@include hb((
 			sm: (width: 50%, height: 70%),
-			xs: (width: 50%, height: 80%, margin-top: 10dvh),
-			xxs: (width: 50%, height: 80%, margin-top: 10dvh),
+			xs: (width: 50%, height: 80%, margin-top: 10svh),
+			xxs: (width: 50%, height: 80%, margin-top: 10svh),
 		));
 
 		@include vb((
-			md: (width: 70%, height: 50%, margin-top: 10dvh),
-			s: (width: 90%, height: 60%, margin-top: 10dvh),
-			sm: (width: 90%, height: 60%, margin-top: 10dvh),
-			xs: (width: 90%, height: 60%, margin-top: 10dvh),
+			md: (width: 70%, height: 50%, margin-top: 10svh),
+			s: (width: 90%, height: 60%, margin-top: 10svh),
+			sm: (width: 90%, height: 60%, margin-top: 10svh),
+			xs: (width: 90%, height: 60%, margin-top: 10svh),
 		));
 
 		.title {
