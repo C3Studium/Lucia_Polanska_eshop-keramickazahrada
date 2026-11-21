@@ -83,7 +83,7 @@ export const VIEWPORT_GUARD_JS = `(function () {
         var collapsed = (sh - ih) < 90 || (minH < Infinity && ih > minH + 40);
         if (collapsed) pad = sh / sw > 2 ? 46 : 32;
       }
-      root.style.setProperty('--kz-ios-bottom', pad + 'px');
+      if (root.style.getPropertyValue('--kz-ios-bottom') !== pad + 'px') root.style.setProperty('--kz-ios-bottom', pad + 'px');
       if (pad !== lastPad) {
         lastPad = pad;
         try { w.dispatchEvent(new Event('kz:viewport')); } catch (e) {}
@@ -106,7 +106,15 @@ export const VIEWPORT_GUARD_JS = `(function () {
         lastWidth = iw;
         root.style.setProperty('--kz-vh', (ih / 100) + 'px');
       }
-      root.style.setProperty('--kz-vvh', Math.round(vh) + 'px');
+      /* --kz-vvh čte jen hledání s otevřenou klávesnicí. Psát ho při každém
+         snímku posunu (lišta Safari mění výšku ~30 snímků po sobě) nutilo
+         prohlížeč přepočítat styl CELÉ stránky v každém z nich — sekání na
+         začátku posunu na starších telefonech (21. 11. 2026). Proto jen při
+         poli s fokusem / otevřené klávesnici, a jen když se hodnota změní. */
+      var vvh = Math.round(vh) + 'px';
+      if ((focused || keyboard || !root.style.getPropertyValue('--kz-vvh')) && root.style.getPropertyValue('--kz-vvh') !== vvh) {
+        root.style.setProperty('--kz-vvh', vvh);
+      }
       keyboard = !!(focused && (vh < ih - 120 || (maxH > 0 && ih < maxH - 150)));
       root.classList.toggle('kz-klavesnice', keyboard);
       /* Zvednutí až po ustálení (300 ms bez změny) — za animace lišty
