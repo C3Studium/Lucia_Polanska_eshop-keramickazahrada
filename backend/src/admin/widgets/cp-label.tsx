@@ -9,7 +9,9 @@ import {
   toast,
 } from "@medusajs/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { sdk } from "../lib/sdk";
+import { Volby } from "../components/nastaveni-kousky";
 import { useExpertMode } from "../lib/expert-mode";
 import { isCeskaPosta, isPersonalPickup } from "../lib/cp-shipping";
 import {
@@ -37,7 +39,21 @@ type LabelResponse = {
   label_url?: string | null;
   filename?: string | null;
   generated_at?: string | null;
+  /** Předvyplnění: velikost podle výrobků, 1 balík, max. počet balíků. */
+  parcel_defaults?: { size: Velikost; packages: number; max_packages: number };
+  /** Jak zásilka odešla. */
+  parcel?: { size: string | null; count: number } | null;
+  /** Víc balíků: každý jako samostatné PDF („1/2", „2/2"). */
+  parcels?: Array<{ index: number; total: number; tracking_number: string | null; pdf_base64: string }>;
 };
+
+type Velikost = "S" | "M" | "L" | "XL";
+const VELIKOSTI: { value: Velikost; label: string }[] = [
+  { value: "S", label: "S" },
+  { value: "M", label: "M" },
+  { value: "L", label: "L" },
+  { value: "XL", label: "XL" },
+];
 
 /**
  * Štítek České pošty na detailu objednávky (doplněk k frontě Denní práce).
@@ -71,11 +87,28 @@ export const CpLabelPanel = ({ order }: { order: AdminOrder }) => {
     enabled: ceskaPosta && !personalPickup,
   });
 
+  /*
+   * Velikost a počet balíků před podáním (21. 11. 2026, Matěj). Velikost je
+   * předvybraná podle výrobků (jen malé = S, velký = M), počet 1; obsluha je
+   * přepne a teprve pak potvrdí. Víc balíků jen na adresu — Balíkovna na
+   * výdejnu víc kusů neumí (ČP druhý kus tiše zahodí).
+   */
+  const defaults = labelQuery.data?.parcel_defaults;
+  const [velikost, setVelikost] = useState<Velikost | null>(null);
+  const [baliku, setBaliku] = useState(1);
+  const zvolenaVelikost: Velikost = velikost ?? defaults?.size ?? "M";
+  const maxBaliku = Math.max(1, defaults?.max_packages ?? 1);
+  const naAdresu = maxBaliku > 1;
+  const pocet = Math.min(baliku, maxBaliku);
+
   const generate = useMutation<LabelResponse, Error, boolean>({
     mutationFn: (test: boolean) =>
       sdk.client.fetch(
         `/admin/merchant-orders/${order.id}/label${test ? "?test=1" : ""}`,
-        { method: "POST" }
+        {
+          method: "POST",
+          body: naAdresu ? { size: zvolenaVelikost, packages: pocet } : {},
+        }
       ),
     onSuccess: async (result, test) => {
       await queryClient.invalidateQueries({ queryKey: ["cp-label", order.id] });
@@ -225,6 +258,46 @@ export const CpLabelPanel = ({ order }: { order: AdminOrder }) => {
                   </div>
                 )}
 
+                {data.parcel && (data.parcel.size || data.parcel.count > 1) && (
+                  <Text size="small" className="text-ui-fg-subtle">
+                    {[
+                      data.parcel.size ? `Velikost ${data.parcel.size}` : null,
+                      data.parcel.count > 1
+                        ? `${data.parcel.count} ${data.parcel.count < 5 ? "balíky" : "balíků"} — tlačítka níž stáhnou všechny štítky v jednom PDF`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </Text>
+                )}
+
+                {/* Víc balíků: každý štítek i zvlášť (stránky PDF od ČP rozdělené). */}
+                {(data.parcels ?? []).length > 1 && (
+                  <div className="flex flex-col gap-2" data-testid="cp-label-parcels">
+                    {(data.parcels ?? []).map((part) => (
+                      <div key={part.index} className="flex flex-wrap items-center justify-between gap-2">
+                        <Text size="small">
+                          Balík {part.index}/{part.total}
+                          {part.tracking_number ? ` · ${part.tracking_number}` : ""}
+                        </Text>
+                        <Button
+                          size="small"
+                          variant="secondary"
+                          onClick={() => {
+                            const ok = stahnoutStitek(
+                              { url: "", tracking_number: part.tracking_number, pdf_base64: part.pdf_base64 },
+                              filename.replace(/\.pdf$/i, `-balik-${part.index}-z-${part.total}.pdf`)
+                            );
+                            if (!ok) toast.error("Štítek se nepodařilo stáhnout.");
+                          }}
+                        >
+                          Stáhnout {part.index}/{part.total}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <div className="flex flex-wrap gap-2">
                   <Button
                     size="small"
@@ -287,6 +360,63 @@ export const CpLabelPanel = ({ order }: { order: AdminOrder }) => {
                           : (data?.reason ??
                             "Zatím bez štítku. Podáním u České pošty vznikne štítek i číslo zásilky.")}
                   </Text>
+                  {/* Velikost a počet balíků — jdou na štítek, proto PŘED podáním.
+                      Jen na adresu: Balíkovna na výdejnu velikost nebere a víc
+                      balíků ČP tiše zahodí (max_packages = 1). */}
+                  {!zrusena && naAdresu && (
+                    <div className="bg-ui-bg-subtle flex flex-col gap-3 rounded-lg p-3" data-testid="cp-label-parcel-form">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span>
+                          <Text size="small" weight="plus">Velikost balíku</Text>
+                          <Text size="xsmall" className="text-ui-fg-subtle">
+                            {velikost === null
+                              ? `Podle výrobků: ${defaults?.size ?? "M"}`
+                              : "Změněno ručně"}
+                          </Text>
+                        </span>
+                        <Volby
+                          popisek="Velikost balíku"
+                          hodnota={zvolenaVelikost}
+                          moznosti={VELIKOSTI}
+                          onVyber={(v) => setVelikost(v as Velikost)}
+                          vypnuto={generate.isPending}
+                        />
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span>
+                          <Text size="small" weight="plus">Počet balíků</Text>
+                          <Text size="xsmall" className="text-ui-fg-subtle">
+                            Každý balík dostane svůj štítek 1/2, 2/2… (nejvýš {maxBaliku})
+                          </Text>
+                        </span>
+                        <div className="flex items-center gap-1" role="group" aria-label="Počet balíků">
+                          <Button
+                            size="small"
+                            variant="secondary"
+                            className="min-h-[36px] min-w-[36px]"
+                            aria-label="Ubrat balík"
+                            disabled={generate.isPending || baliku <= 1}
+                            onClick={() => setBaliku((n) => Math.max(1, n - 1))}
+                          >
+                            −
+                          </Button>
+                          <Text size="base" weight="plus" className="min-w-[2ch] text-center" aria-live="polite">
+                            {Math.min(baliku, maxBaliku)}
+                          </Text>
+                          <Button
+                            size="small"
+                            variant="secondary"
+                            className="min-h-[36px] min-w-[36px]"
+                            aria-label="Přidat balík"
+                            disabled={generate.isPending || baliku >= maxBaliku}
+                            onClick={() => setBaliku((n) => Math.min(maxBaliku, n + 1))}
+                          >
+                            +
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   {/* Zrušená objednávka se nepodává — tlačítko by lhalo. */}
                   {!zrusena && (
                     <div className="flex flex-wrap items-center gap-2">
@@ -297,7 +427,11 @@ export const CpLabelPanel = ({ order }: { order: AdminOrder }) => {
                         disabled={generate.isPending}
                         onClick={() => generate.mutate(false)}
                       >
-                        Vygenerovat štítek pro Českou poštu
+                        {!naAdresu
+                          ? "Vygenerovat štítek pro Českou poštu"
+                          : pocet > 1
+                            ? `Potvrdit a vygenerovat ${pocet} ${pocet < 5 ? "štítky" : "štítků"} (${zvolenaVelikost})`
+                            : `Potvrdit a vygenerovat štítek (${zvolenaVelikost})`}
                       </Button>
                       {expert && (
                         <Button

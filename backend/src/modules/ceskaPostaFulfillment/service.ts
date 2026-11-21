@@ -20,11 +20,14 @@ import {
 import { rozhodniDobirku } from "./dobirka"
 import {
   chybaZOdpovedi,
+  jeVelikost,
+  pocetKusu,
   prectiOdpoved,
   sestavPodani,
   popisChyb,
   sluzbyProZasilku,
   variabilniSymbol,
+  velikostPodleTrid,
   type KodSluzby,
   type VelikostZasilky,
   type VydejnaBalikovny,
@@ -527,9 +530,22 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
       }
       const dobirka = rozhodnuti.dobirka
 
+      /*
+       * Velikost a počet balíků z widgetu štítku (21. 11. 2026): route
+       * `merchant-orders/:id/label` je otiskne do `cp_parcel_size` /
+       * `cp_parcel_count` těsně před podáním. Bez nich (podání odjinud)
+       * platí automatika podle výrobků a jeden balík.
+       */
+      const velikost: VelikostZasilky = jeVelikost(metadata.cp_parcel_size)
+        ? metadata.cp_parcel_size
+        : this.options_.default_size_category ?? velikostPodleTrid(this.shipClasses(items))
+      const kusu = pocetKusu(metadata.cp_parcel_count ?? 1, kod)
+
       const telo = sestavPodani({
         serviceCode: kod,
         vaha,
+        velikost,
+        pocetKusu: kusu,
         prijemce: (order?.shipping_address ?? {}) as any,
         /*
          * `order.email` se do `createFulfillment` nenačítá (není v polích
@@ -554,7 +570,7 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
           serviceCode: kod,
           krehke: Boolean(data?.fragile),
           maDobirku: Boolean(dobirka),
-          velikost: this.options_.default_size_category,
+          velikost,
         }),
       })
 
@@ -575,7 +591,7 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
         )
       }
 
-      const { ok, cisloZasilky, stitekBase64, chyby } = prectiOdpoved(odpoved.body)
+      const { ok, cisloZasilky, cislaZasilek, stitekBase64, chyby } = prectiOdpoved(odpoved.body)
 
       /*
        * Tady se rozhoduje podle těla, ne podle stavového kódu HTTP. ČP
@@ -591,7 +607,9 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
       }
 
       this.logger_.info(
-        `[ceska-posta] Objednávka ${oznaceni}: podána zásilka ${cisloZasilky} (${kod}, ${vaha} kg)` +
+        `[ceska-posta] Objednávka ${oznaceni}: podána zásilka ${cisloZasilky} (${kod}, ${vaha} kg, ${velikost}` +
+          (kusu > 1 ? `, ${kusu} balíky: ${(cislaZasilek ?? []).join(", ")}` : "") +
+          ")" +
           (dobirka ? `, dobírka ${dobirka.castka} Kč / VS ${dobirka.variabilniSymbol}` : "")
       )
 
@@ -602,6 +620,10 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
           weight_kg: vaha,
           recorded_at: new Date().toISOString(),
           parcel_code: cisloZasilky,
+          /* Velikost a kusy, jak odešly ČP — widget je ukáže u štítku. */
+          size_category: velikost,
+          parcel_count: kusu,
+          ...(kusu > 1 ? { parcel_codes: cislaZasilek ?? [cisloZasilky] } : {}),
           /*
            * Štítek se veze s vyskladněním, ne na disku: je to jediná kopie,
            * kterou máme, a `parcelPrinting` by ho sice dotiskl, ale jen dokud
@@ -690,6 +712,13 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
       return Math.round(summed * 1000) / 1000
     }
     return Number(this.options_.default_parcel_weight_kg ?? 2.5)
+  }
+
+  /** Třídy zásilky výrobků (`ship_class` z košíku: male / velke / poukaz). */
+  private shipClasses(items: Partial<Omit<FulfillmentItemDTO, "fulfillment">>[]): string[] {
+    return (items || []).map((item) =>
+      String((item as any)?.line_item?.metadata?.ship_class ?? (item as any)?.metadata?.ship_class ?? "")
+    )
   }
 
   /**
