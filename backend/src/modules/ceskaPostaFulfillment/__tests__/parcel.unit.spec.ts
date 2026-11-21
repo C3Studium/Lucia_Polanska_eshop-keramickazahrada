@@ -276,17 +276,19 @@ describe("výběr doplňkových služeb", () => {
     expect(sluzbyProZasilku({ serviceCode: "NB", maDobirku: true })).toContain("41")
   })
 
-  it("velikostní třída jen u zásilek na adresu", () => {
+  it("velikost: na adresu povinná, u Balíkovny jen zvolená", () => {
     /*
      * `DR` bez ní vrátí `261 MISSING_SIZE_CATEGORY`; `NB` s pouhým ["7"]
-     * prošla. Obojí změřeno proti testovacímu prostředí.
+     * prošla. 21. 11. 2026: `NB` přijme i S/L/XL (vzor ČP v Postmanu posílá
+     * NB + "M") — widget štítku ji teď volí u každé zásilky.
      */
     expect(sluzbyProZasilku({ serviceCode: "DR" })).toContain("M")
     expect(sluzbyProZasilku({ serviceCode: "DR", velikost: "XL" })).toContain("XL")
 
-    const balikovna = sluzbyProZasilku({ serviceCode: "NB", velikost: "XL" })
+    expect(sluzbyProZasilku({ serviceCode: "NB", velikost: "XL" })).toContain("XL")
+    const bezVolby = sluzbyProZasilku({ serviceCode: "NB" })
     for (const velikost of ["S", "M", "L", "XL"]) {
-      expect(balikovna).not.toContain(velikost)
+      expect(bezVolby).not.toContain(velikost)
     }
   })
 
