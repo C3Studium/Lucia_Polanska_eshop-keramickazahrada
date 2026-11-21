@@ -1240,3 +1240,59 @@
 .kurzyAudience--card:active {
   background: rgb(var(--white-rgb) / .8);
 }
+
+/* ── Nízké okno laptopu: „Pro koho" se nevejde → bez připnutí ──
+
+   Třídu `is-flow` dává index.tsx, když změří, že obsah scény „Pro koho"
+   (nadpis, popisek, tři karty) je vyšší než okno (21. 11. 2026). Pinned
+   jeviště je jedno okno vysoké a ořezává — spodek karet s tlačítky by
+   zmizel. Tady se jeviště rozpustí jako na telefonu, ale rozvržení zůstává
+   laptopové: hero dál přes celé okno, „Pro koho" pod ním se třemi kartami
+   vedle sebe a výškou podle obsahu (nejmíň okno, ať se nic nesmrskne).
+   Transformace ze scrollu se ruší jako v mixinu kurzy-static-flow — framer
+   po přepnutí nechává na prvcích poslední inline polohu. */
+.kurzyTimeline.is-flow {
+  height: auto;
+
+  .kurzyTimeline__stage {
+    position: relative;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    background: var(--kurzy-charcoal);
+  }
+
+  .kurzyTimeline__ambient,
+  .kurzyTimeline__rail {
+    display: none;
+  }
+
+  .kurzyScene {
+    position: relative;
+    inset: auto;
+    pointer-events: auto;
+  }
+
+  .kurzyHero {
+    height: 100svh;
+    min-height: min(43.75rem, 100svh);
+    transform: none !important;
+  }
+
+  .kurzyHero__title,
+  .kurzyHero__copy {
+    transform: none !important;
+  }
+
+  .kurzyAbout {
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+    background: var(--kurzy-paper);
+
+    &__intro,
+    &__lede {
+      transform: none !important;
+    }
+  }
+}

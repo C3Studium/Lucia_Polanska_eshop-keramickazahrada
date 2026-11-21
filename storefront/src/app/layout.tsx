@@ -55,7 +55,9 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   )
 
   return (
-    <html lang="cs" data-mode="light">
+    /* suppressHydrationWarning: skript výšky okna (viewport-guard) píše na
+       <html> proměnné --kz-vh ještě před hydratací — patří jen tomuto prvku. */
+    <html lang="cs" data-mode="light" suppressHydrationWarning>
       <body>
         {/* Doplňky funkcí pro starší prohlížeče — jako ÚPLNĚ první, ještě
             před kódem Next.js (lib/util/viewport-guard, 20. 11. 2026). */}

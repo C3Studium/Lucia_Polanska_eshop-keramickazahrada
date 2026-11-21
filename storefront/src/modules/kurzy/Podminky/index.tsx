@@ -9,34 +9,23 @@ import styles from "./styles.module.scss"
  * rezervaci. Shrnutí obchodních podmínek čl. X (kotva `#kurzy`); při změně
  * OP upravit i tady.
  *
- * Text je v kódu, ne v CMS: jde o poučení, které musí odpovídat OP. Storno,
- * minimální věk a lhůta pro vyzvednutí jsou právní údaje z administrace
- * obchodu (`getLegalFacts()`) — dokud je zadavatel nedodá, svítí jako
- * `[[DOPLNIT]]`. Serverová komponenta, fakty si načte sama.
+ * Řádky jsou právní údaje z administrace obchodu (Právní údaje › Kurzy,
+ * `getLegalFacts()`) — nevyplněný svítí jako `[[DOPLNIT]]`. Poučení
+ * o vyloučení odstoupení (§ 1837 písm. j) OZ) tu od 21. 11. 2026 není
+ * (Matěj): zákazník ho dostane v okně rezervace a v obchodních podmínkách.
+ * Serverová komponenta, fakty si načte sama.
  */
 
 const TERMS: { term: string; text: string }[] = [
   { term: "Storno", text: "{{course.cancellation}}" },
-  {
-    term: "Když kurz zruším já",
-    text: "Vrátím vám celou zaplacenou částku, nebo si vyberete náhradní termín.",
-  },
-  {
-    term: "Platba",
-    text: "Předem online, nebo na místě v den kurzu. Online rezervace, která není do 24 hodin zaplacená, propadne a místo se uvolní.",
-  },
-  {
-    term: "Děti",
-    text: "Rezervaci dělá rodič nebo jiný zákonný zástupce. Věk: {{course.minAge}}. Mimo vedenou práci (příchod, přestávky, odchod) za dítě odpovídá rodič.",
-  },
+  { term: "Když kurz zruším já", text: "{{course.organizerCancellation}}" },
+  { term: "Platba", text: "{{course.payment}}" },
+  { term: "Děti", text: "{{course.children}} Věk: {{course.minAge}}." },
   {
     term: "Výrobky",
-    text: "Po kurzu je vysuším a vypálím; vyzvednete si je v ateliéru do {{course.pickupDeadline}}.",
+    text: "{{course.products}} Vyzvednete si je v ateliéru do {{course.pickupDeadline}}.",
   },
-  {
-    term: "Fotky",
-    text: "Fotky, na kterých jste vy nebo vaše dítě, zveřejním jen s vaším souhlasem.",
-  },
+  { term: "Fotky", text: "{{course.photos}}" },
 ]
 
 export default async function KurzyPodminky({ countryCode = "cz" }: { countryCode?: string }) {
@@ -65,14 +54,6 @@ export default async function KurzyPodminky({ countryCode = "cz" }: { countryCod
         </header>
 
         <div className={styles.body}>
-          <div className={styles.notice} role="note">
-            <p>
-              {inline(
-                "**Od rezervace kurzu nelze odstoupit do 14 dnů.** Kurz je služba spojená s využitím volného času poskytovaná v určitém termínu — u takové služby zákon právo odstoupit od smlouvy bez udání důvodu vylučuje (§ 1837 písm. j) občanského zákoníku). Místo toho platí storno podmínky níže."
-              )}
-            </p>
-          </div>
-
           <dl className={styles.terms}>
             {TERMS.map((item) => (
               <div key={item.term}>
