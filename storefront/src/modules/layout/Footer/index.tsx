@@ -283,13 +283,16 @@ export default function Footer({
       resizeObserver.observe(observedElement)
     }
 
-    window.addEventListener("resize", scheduleUpdate)
+    /* I změna velikosti až po uklidnění (21. 11. 2026): lišta prohlížeče na
+       telefonu (iOS 26 ~30 snímků) posílá `resize` v každém snímku a projít
+       celou sekci v každém z nich je přesně ta práce, kterou výš odkládáme. */
+    window.addEventListener("resize", scheduleSettled)
     window.addEventListener("load", scheduleUpdate)
 
     return () => {
       window.cancelAnimationFrame(frame)
       window.clearTimeout(settle)
-      window.removeEventListener("resize", scheduleUpdate)
+      window.removeEventListener("resize", scheduleSettled)
       window.removeEventListener("load", scheduleUpdate)
       mutationObserver.disconnect()
       resizeObserver.disconnect()
