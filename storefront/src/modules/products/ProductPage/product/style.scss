@@ -1098,6 +1098,16 @@
    a dotykový cíl taky — na myši se nic nemění, tam je prvek 40 px a blok
    neplatí. Psáno AŽ ZA pravidlem, které přebíjí. */
 @include touch {
+  /* Kroužek aspoň 46 px = 44px dotykový prvek + 2 × 1px rámeček (21. 11. 2026).
+     Na telefonu (měřítko 0.8) vycházel kroužek ~40 px a 44px prvek z něj
+     přetékal o 4 px — `place-items: center` při přetečení spadne na start
+     a záložka seděla vpravo dole (iPhone, stránka výrobku). Se spodní mezí
+     se prvek vejde vždy a záporný okraj ho drží přesně uprostřed. */
+  .product__details__cta__buy__button__add {
+    width: max(2.75rem, 46px);
+    height: max(2.75rem, 46px);
+  }
+
   .product__details__cta__buy__button__add button,
   .product__details__cta__buy__button__add > a {
     margin: -1px;

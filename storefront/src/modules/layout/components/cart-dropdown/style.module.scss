@@ -865,25 +865,113 @@
     padding-block: 2.5px !important;
   }
 
+  /*
+   * Množství a „Odebrat" VŽDY v jednom řádku (21. 11. 2026, zpětná vazba
+   * zákazníků): dvojnásobná výška z 19. 11. (60 px) se do úzkého panelu
+   * nevešla a „Odebrat" padalo pod stepper. Velikosti jedou se šířkou
+   * displeje (vw) — na 375 px ~41 px vysoké, na 320 px ~40 px — a celé
+   * dvojice se vejde i do nejužšího panelu. Dotyková podlaha 44 px
+   * (globals + stepper na telefonu) se tu ruší, jinak by řádek zase přetekl.
+   */
   .cartItem {
-    --qty-stepper-height: 3.75rem;
-    --qty-stepper-side: 3.25rem;
-    --qty-stepper-mid: 2.75rem;
-    --qty-stepper-glyph: 1.25rem;
+    --qty-stepper-height: clamp(2.5rem, 11vw, 2.75rem);
+    --qty-stepper-side: clamp(1.875rem, 9.5vw, 2.75rem);
+    --qty-stepper-mid: clamp(1.5rem, 7vw, 2.25rem);
+    --qty-stepper-glyph: clamp(.875rem, 3.6vw, 1.0625rem);
   }
 
   .cartItem .itemDetails .itemActions {
-    margin-top: 0.625rem;
+    flex-wrap: nowrap;
+    gap: clamp(.375rem, 1.8vw, .5rem);
+    margin-top: 0.5rem;
+  }
+
+  .cartItem .itemActions button {
+    min-width: 0 !important;
+    min-height: 0 !important;
   }
 
   .cartItem .removeBtn {
-    font-size: max(var(--text-min, 0px), calc(.9375rem * var(--read, 1))) !important;
+    flex: 0 1 auto;
+    min-width: 0;
+    font-size: max(var(--text-min, 0px), calc(clamp(.75rem, 3.5vw, .875rem) * var(--read, 1))) !important;
   }
 
   .cartItem :global([data-testid="product-delete-button"]),
   .cartItem .removeBtn button {
-    min-height: 3.75rem !important;
-    height: 3.75rem !important;
-    padding-inline: 1.125rem !important;
+    min-height: 0 !important;
+    height: var(--qty-stepper-height) !important;
+    padding-inline: clamp(.5rem, 2.6vw, .875rem) !important;
+    white-space: nowrap;
   }
+}
+
+/*
+ * Potvrzení přidání na telefonu (21. 11. 2026): tlačítko košíku ztmavne
+ * a nad ním vyskočí bublina „Výrobek přidán do košíku" — panel se na
+ * telefonu po přidání neotvírá (index.tsx, `pridano`). Bublina je vždy
+ * v DOM (role=status), ukazuje se přes data-visible.
+ */
+/* Tři třídy jako základní pravidlo (.root .popover .popoverButton), jinak
+   jeho `background: transparent` vyhraje. */
+.root .popover .popoverButton.popoverButtonAdded {
+  border-radius: 999px;
+  background: var(--ink-05);
+  color: var(--cream-07);
+  transition: background-color 220ms ease, color 220ms ease;
+}
+
+.root .popover .popoverButton.popoverButtonAdded svg,
+.root .popover .popoverButton.popoverButtonAdded p {
+  color: var(--cream-07) !important;
+}
+
+/* Ikona košíku má barvu natvrdo ve `fill` (icons/cart.tsx) — `color` ji nezmění. */
+.root .popover .popoverButton.popoverButtonAdded svg path {
+  fill: var(--cream-07) !important;
+}
+
+.addedBubble {
+  position: absolute;
+  bottom: calc(100% + 0.875rem);
+  left: 50%;
+  z-index: 60;
+  max-width: calc(100vw - 2rem);
+  padding: 0.625rem 1rem;
+  border-radius: 999px;
+  background: var(--ink-05);
+  color: var(--cream-07);
+  font-size: max(var(--text-min, 0px), calc(1rem * var(--read, 1)));
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 0.5rem 1.5rem rgb(var(--ink-05-rgb) / .28);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 0.375rem);
+  transition: opacity 200ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.addedBubble::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  border: 0.4375rem solid transparent;
+  border-top-color: var(--ink-05);
+  transform: translateX(-50%);
+}
+
+.addedBubble[data-visible="true"] {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.addedBubble:empty {
+  padding: 0;
+  box-shadow: none;
+}
+
+.addedBubble:empty::after {
+  display: none;
 }
