@@ -1,4 +1,5 @@
 import {
+  Button,
   Container,
   Heading,
   Input,
@@ -15,6 +16,27 @@ import { adminQueryClient } from "../../lib/query-client"
 import { ceskaChyba } from "../../lib/ceska-chyba";
 import { SaveBar } from "../../components/save-bar";
 import { movedTo } from "../../components/section-tabs";
+
+type ZkusebniVysledek = {
+  adresa: string | null;
+  odeslani: string;
+  stav: string | null;
+  resend_id: string | null;
+};
+
+/** Jedna věta o tom, jak dopadl zkušební e-mail na jednu adresu. */
+const vetaVysledku = (kdo: string, v: ZkusebniVysledek): { ok: boolean; text: string } => {
+  if (!v.adresa || v.odeslani === "no-recipient") {
+    return { ok: false, text: `${kdo}: adresa není nastavená, nic se neposlalo.` };
+  }
+  if (v.stav === "failure") {
+    return { ok: false, text: `${kdo} (${v.adresa}): Resend e-mail nepřijal — zkontrolujte klíč a ověřenou doménu v Resendu.` };
+  }
+  if (v.stav === "success" || v.resend_id) {
+    return { ok: true, text: `${kdo} (${v.adresa}): odesláno, Resend ho přijal.` };
+  }
+  return { ok: true, text: `${kdo} (${v.adresa}): odesláno, stav doručení zatím neznámý.` };
+};
 
 /**
  * E-maily obchodu — kam chodí provozní a vývojářské zprávy.
@@ -89,6 +111,23 @@ const Inner = () => {
       ),
   });
 
+  /* Zkušební e-maily (21. 11. 2026) — na uložené adresy, zákazníkům nic. */
+  const [vysledek, setVysledek] = useState<Array<{ ok: boolean; text: string }> | null>(null);
+  const zkouska = useMutation({
+    mutationFn: () =>
+      sdk.client.fetch<{ obchod: ZkusebniVysledek; vyvojar: ZkusebniVysledek }>(
+        "/admin/workbench/zkusebni-emaily",
+        { method: "POST" }
+      ),
+    onSuccess: (result) => {
+      const radky = [vetaVysledku("E-mail obchodu", result.obchod), vetaVysledku("Vývojář", result.vyvojar)];
+      setVysledek(radky);
+      if (radky.every((radek) => radek.ok)) toast.success("Zkušební e-maily odeslané — zkontrolujte obě schránky.");
+      else toast.error("Některý zkušební e-mail neodešel — podrobnosti pod tlačítkem.");
+    },
+    onError: (error) => toast.error(ceskaChyba(error, "Zkušební e-maily se nepodařilo poslat.")),
+  });
+
   return (
     <Container className="divide-y p-0">
       <header className="px-6 pb-4 pt-6">
@@ -137,6 +176,41 @@ const Inner = () => {
           Necháte-li pole prázdné, použije se adresa z nastavení serveru
           (OWNER/DEV_NOTIFICATION_EMAIL).
         </Text>
+      </section>
+
+      <section className="flex flex-col items-start gap-y-2 px-6 py-5">
+        <Text size="small" weight="plus">Zkouška</Text>
+        <Text size="xsmall" className="text-ui-fg-subtle max-w-2xl">
+          Pošle jeden zkušební e-mail na e-mail obchodu a jeden vývojáři — na
+          uložené adresy. Zákazníkům nic neodchází. Hodí se po změně adres
+          nebo účtu Resend.
+        </Text>
+        <Button
+          size="small"
+          variant="secondary"
+          isLoading={zkouska.isPending}
+          disabled={changes > 0}
+          onClick={() => zkouska.mutate()}
+        >
+          Poslat zkušební e-maily
+        </Button>
+        {changes > 0 && (
+          <Text size="xsmall" className="text-ui-fg-muted">
+            Nejdřív uložte změny — zkouška jde na uložené adresy.
+          </Text>
+        )}
+        {vysledek && (
+          <ul className="flex flex-col gap-y-1">
+            {vysledek.map((radek) => (
+              <li key={radek.text}>
+                <Text size="small" className={radek.ok ? "text-ui-fg-base" : "text-ui-fg-error"}>
+                  {radek.ok ? "✓ " : "✗ "}
+                  {radek.text}
+                </Text>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="flex flex-col gap-y-2 px-6 py-5">
