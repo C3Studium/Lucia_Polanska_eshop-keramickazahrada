@@ -7,7 +7,7 @@
 	gap: clamp(.75rem, 1.67vh, 1.25rem);
 	align-items: center;
 	justify-content: center;
-	min-height: calc(100dvh - 4rem);
+	min-height: calc(100svh - 4rem);
 	/* Svisle vh (7.4vh je 80px na 1080, 53px na 720 — na nízkém laptopu se stránka
 	   sevře sama), vodorovně vw. Kraje v rem, aby je nad 1921 zvedl ramp. */
 	padding: clamp(3rem, 7.4vh, 6rem) clamp(1.25rem, 2vw, 1.75rem);

@@ -25,7 +25,7 @@
 .mouse-anim{
     position: relative;
     flex: 0 0 auto;
-    height: clamp(2.1rem, 5.6dvh, 3.4rem);
+    height: clamp(2.1rem, 5.6svh, 3.4rem);
     aspect-ratio: 3 / 5;
     overflow: hidden;
     z-index: 1;
@@ -45,11 +45,11 @@
      * dávala původní základní 3dvw.
      */
     @include vb((
-        xs: (height: 4dvh, width: 4dvw),
-        sm: (height: 4dvh, width: 5dvw),
-        s:  (height: 4dvh, width: 5dvw),
-        md: (height: 3.5dvh, width: auto),
-        lg: (height: 3.5dvh, width: auto),
+        xs: (height: 4svh, width: 4dvw),
+        sm: (height: 4svh, width: 5dvw),
+        s:  (height: 4svh, width: 5dvw),
+        md: (height: 3.5svh, width: auto),
+        lg: (height: 3.5svh, width: auto),
     ));
 
     .mouse-anim__border{
