@@ -13,6 +13,28 @@ import {
 } from "../../../../../lib/order-quantity"
 import { ensureParcelTracking } from "../../../../../lib/parcel-tracking/start"
 import { isPersonalPickupOrder } from "../../../../../lib/personal-pickup"
+import {
+  labelPerParcel,
+  parcelDefaultsFor,
+  type ParcelDefaults,
+  type ParcelLabel,
+} from "../../../../../lib/cp-label-parcels"
+import { jeVelikost, pocetKusu } from "../../../../../modules/ceskaPostaFulfillment/parcel"
+
+/** Velikost a počet balíků, jak odešly ČP (z `fulfillment.data`). */
+const sentParcelOf = (fulfillment: any): { size: string | null; count: number; codes: string[] } => {
+  const data = fulfillment?.data ?? {}
+  const codes = Array.isArray(data.parcel_codes)
+    ? (data.parcel_codes as unknown[]).map(String)
+    : typeof data.parcel_code === "string"
+      ? [data.parcel_code]
+      : []
+  return {
+    size: typeof data.size_category === "string" ? data.size_category : null,
+    count: Math.max(1, Number(data.parcel_count) || codes.length || 1),
+    codes,
+  }
+}
 
 /**
  * Přístupy k ČP jsou KOMPLETNÍ až se všemi šesti údaji — stejná podmínka, jakou
@@ -85,6 +107,12 @@ type LabelResponse = {
   filename?: string | null
   /** Kdy byl štítek vygenerován (ISO), když byl. */
   generated_at?: string | null
+  /** Co widget předvyplní před podáním (velikost podle výrobků, 1 balík). */
+  parcel_defaults?: ParcelDefaults
+  /** Jak zásilka odešla: velikost a počet balíků. */
+  parcel?: { size: string | null; count: number } | null
+  /** Vícekusová zásilka: každý balík jako samostatné PDF („1/2", „2/2"). */
+  parcels?: ParcelLabel[]
 }
 
 const fold = (value: string) =>
@@ -107,7 +135,10 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       // nechodí (lib/order-quantity).
       ...LINE_QUANTITY_FIELDS,
       "items.metadata",
+      "items.variant_id",
+      "items.product_id",
       "shipping_methods.name",
+      "shipping_methods.data",
       "fulfillments.id",
       "fulfillments.canceled_at",
       "fulfillments.data",
@@ -175,8 +206,14 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       ? orderMeta.cp_label_generated_at
       : null
 
+  const parcelDefaults = parcelDefaultsFor({
+    items: order?.items ?? [],
+    balikovnaPickup: viaBalikovna,
+  })
+
   const withContext = (body: LabelResponse): LabelResponse => ({
     ...body,
+    parcel_defaults: parcelDefaults,
     destination,
     warnings,
     credentials_ready: credentialsReady,
@@ -300,7 +337,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
 
-  res.status(200).json(withContext({ available: true, labels }))
+  const sent = sentParcelOf(fulfillment)
+  const parcels = pdfBase64 && sent.count > 1 ? await labelPerParcel(pdfBase64, sent.codes) : []
+  res.status(200).json(
+    withContext({ available: true, labels, parcel: { size: sent.size, count: sent.count }, parcels })
+  )
 }
 
 /**
@@ -427,14 +468,28 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     String(req.query.test ?? "") === "1" || req.query.test === "true"
   const orderModule = req.scope.resolve(Modules.ORDER) as any
 
-  if (isTest) {
-    await orderModule.updateOrders([
-      {
-        id: req.params.orderId,
-        metadata: { ...(order.metadata ?? {}), cp_test_zip: "10000" },
+  /*
+   * Velikost a počet balíků z widgetu (21. 11. 2026). Provider je čte
+   * z metadat objednávky — jiná cesta dovnitř `createFulfillment` z workflow
+   * nevede. Píšou se VŽDY (i prázdné), ať nezůstane volba z minulého
+   * štítku: Medusa metadata slučuje, vynechaný klíč by přežil.
+   * Balíkovna na výdejnu jen jeden balík (víc ČP tiše zahodí).
+   */
+  const volba = (req.body ?? {}) as { size?: unknown; packages?: unknown }
+  const naVydejnu = (order.shipping_methods ?? []).some((method: any) =>
+    isBalikovnaPickupMethod(method)
+  )
+  await orderModule.updateOrders([
+    {
+      id: req.params.orderId,
+      metadata: {
+        ...(order.metadata ?? {}),
+        cp_parcel_size: jeVelikost(volba.size) ? volba.size : "",
+        cp_parcel_count: naVydejnu ? 1 : pocetKusu(volba.packages ?? 1, "DR"),
+        ...(isTest ? { cp_test_zip: "10000" } : {}),
       },
-    ])
-  }
+    },
+  ])
 
   // Podání u ČP (vznikne štítek) bez odeslání. Brána i razítko dobírky jsou
   // uvnitř workflow — případné „nezaplaceno" vyhodí srozumitelnou hlášku sem.
@@ -619,12 +674,17 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     // Upozornění je doplněk — štítek vracíme tak jako tak.
   }
 
+  const sent = sentParcelOf(fulfillment)
+  const parcels = sent.count > 1 ? await labelPerParcel(pdfBase64, sent.codes) : []
+
   res.status(200).json({
     available: true,
     credentials_ready: true,
     label_url: labelUrl,
     filename,
     generated_at: generatedAt,
+    parcel: { size: sent.size, count: sent.count },
+    parcels,
     labels: [
       {
         url: labelUrl ?? "",

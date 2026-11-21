@@ -1956,6 +1956,16 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
     : product.thumbnail
       ? [product.thumbnail]
       : [];
+  /*
+   * Fotka pro vyhledávače (21. 11. 2026, Matěj): zelený štítek „SEO" vedle
+   * „hlavní". Bez volby (nebo když vybraná fotka zmizela) ho nese hlavní
+   * fotka — tu web vyhledávačům dává (storefront lib/seo/product-jsonld).
+   */
+  const seoChoice =
+    typeof product.metadata?.seo_image === "string" && viewerPhotos.includes(product.metadata.seo_image)
+      ? (product.metadata.seo_image as string)
+      : null;
+  const seoUrl = seoChoice ?? product.thumbnail ?? viewerPhotos[0] ?? null;
   const openMainPhoto = () => {
     if (!viewerPhotos.length) {
       fileInput.current?.click();
@@ -2109,13 +2119,26 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
           setViewing(null);
           setConfirmDeleteUrl(null);
         }}
-        caption={(index) =>
-          viewerPhotos[index] === product.thumbnail ? (
-            <Badge size="2xsmall" color="blue">
-              Hlavní fotka
-            </Badge>
-          ) : null
-        }
+        caption={(index) => {
+          const url = viewerPhotos[index];
+          const main = url === product.thumbnail;
+          const seo = url === seoUrl;
+          if (!main && !seo) return null;
+          return (
+            <span className="inline-flex items-center gap-1">
+              {seo && (
+                <Badge size="2xsmall" color="green" title="Tuhle fotku dostanou Seznam, Google a náhled sdíleného odkazu.">
+                  SEO
+                </Badge>
+              )}
+              {main && (
+                <Badge size="2xsmall" color="blue">
+                  Hlavní fotka
+                </Badge>
+              )}
+            </span>
+          );
+        }}
         actions={(index) => {
           const url = viewerPhotos[index];
           const stahnoutTl = (
@@ -2162,6 +2185,25 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                   Nastavit jako hlavní
                 </Button>
               )}
+              {url !== seoUrl ? (
+                <Button
+                  variant="secondary"
+                  isLoading={saveFlags.isPending}
+                  title="Tuhle fotku dostanou Seznam, Google a náhled sdíleného odkazu."
+                  onClick={() => saveFlags.mutate({ seo_image: url === product.thumbnail ? null : url })}
+                >
+                  Nastavit pro vyhledávače (SEO)
+                </Button>
+              ) : seoChoice ? (
+                <Button
+                  variant="secondary"
+                  isLoading={saveFlags.isPending}
+                  title="Vyhledávače pak dostanou hlavní fotku."
+                  onClick={() => saveFlags.mutate({ seo_image: null })}
+                >
+                  SEO zpět na hlavní
+                </Button>
+              ) : null}
               <Button
                 variant="secondary"
                 className="text-ui-fg-error"
@@ -2502,6 +2544,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                       <PhotoStrip
                         photos={gallery}
                         mainUrl={product.thumbnail}
+                        seoUrl={seoChoice}
                         onOpen={setViewing}
                       />
                     )}

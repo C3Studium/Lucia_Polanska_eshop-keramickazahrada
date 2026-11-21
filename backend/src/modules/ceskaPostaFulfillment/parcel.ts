@@ -56,6 +56,10 @@ export type VstupPodani = {
   sluzby: string[]
   /** Kvůli testovatelnosti — jinak dnešní datum. */
   datum?: string
+  /** Velikost balíku (u víc balíků platí pro každý). Jen u `DR`. */
+  velikost?: VelikostZasilky
+  /** Kolik balíků jede na adresu (1–5). Víc než 1 = vícekusová zásilka, jen `DR`. */
+  pocetKusu?: number
 }
 
 /**
@@ -76,10 +80,51 @@ export const SLUZBY = {
   krehce: "11",
   /** Bezdokladová dobírka na účet podavatele. Vyžaduje `amount` + `vsVoucher` + `weight`. */
   dobirka: "41",
+  /** Vícekusová zásilka — každý kus ji nese, viz `sestavPodani`. */
+  vicekusova: "70",
 } as const
 
 /** Velikostní kategorie zásilky. U zásilek na adresu ji ČP vyžaduje. */
 export type VelikostZasilky = "S" | "M" | "L" | "XL"
+
+export const VELIKOSTI: VelikostZasilky[] = ["S", "M", "L", "XL"]
+
+export const jeVelikost = (value: unknown): value is VelikostZasilky =>
+  VELIKOSTI.includes(value as VelikostZasilky)
+
+/**
+ * Velikost, kterou widget štítku nabídne předvybranou (21. 11. 2026, Matěj):
+ * jen malé výrobky = S, aspoň jeden velký = M. Obsluha ji před podáním
+ * přepne, když balík vyjde jinak. (Dřív šlo všechno jako M — výchozí
+ * velikost provideru nebyla nikde nastavená.)
+ */
+export const velikostPodleTrid = (tridy: string[]): VelikostZasilky =>
+  tridy.includes("velke") ? "M" : "S"
+
+/**
+ * Vícekusová zásilka: nejvýš 5 kusů (poštovní podmínky Balík Do ruky 2026).
+ * Balíkovna (NB) víc kusů neumí — v testovacím prostředí ČP podání přijalo,
+ * ale druhý kus tiše zahodilo (jedno číslo zásilky, 21. 11. 2026).
+ */
+export const MAX_KUSU = 5
+
+export const pocetKusu = (value: unknown, serviceCode: KodSluzby | string): number => {
+  if (serviceCode !== "DR") return 1
+  const n = Math.trunc(Number(value))
+  if (!Number.isFinite(n) || n < 1) return 1
+  return Math.min(n, MAX_KUSU)
+}
+
+/**
+ * Hmotnost zásilky rozdělená na kusy rovným dílem (na gramy, poslední kus
+ * dorovná zbytek). Každý kus aspoň 0,1 kg — nulovou váhu ČP nebere.
+ */
+export const rozdelVahu = (celkem: number, kusu: number): number[] => {
+  const n = Math.max(1, Math.trunc(kusu))
+  const gramy = Math.max(Math.round(Number(celkem) * 1000) || 0, n * 100)
+  const dil = Math.floor(gramy / n)
+  return Array.from({ length: n }, (_, i) => (i === n - 1 ? gramy - dil * (n - 1) : dil) / 1000)
+}
 
 /**
  * Které služby k téhle zásilce.
@@ -256,12 +301,17 @@ export const sestavPodani = (vstup: VstupPodani): Record<string, unknown> => {
   const jmeno = String(prijemce.first_name ?? "").trim()
   const prijmeni = String(prijemce.last_name ?? "").trim()
 
+  /* Víc balíků jen na adresu — Balíkovna je tiše zahodí (viz `MAX_KUSU`). */
+  const kusu = pocetKusu(vstup.pocetKusu ?? 1, serviceCode)
+  const vahy = rozdelVahu(vstup.vaha, kusu)
+
   const parcelParams: Record<string, unknown> = {
     recordID: "1",
     prefixParcelCode: serviceCode,
     /* ČP chce váhu jako řetězec v kilogramech. */
-    weight: String(vstup.vaha),
+    weight: String(kusu > 1 ? vahy[0] : vstup.vaha),
     currency: "CZK",
+    ...(kusu > 1 ? { sequenceParcel: 1, quantityParcel: kusu } : {}),
   }
 
   /*
@@ -329,15 +379,41 @@ export const sestavPodani = (vstup: VstupPodani): Record<string, unknown> => {
     },
     parcelServiceData: {
       parcelParams,
-      parcelServices: vstup.sluzby,
+      parcelServices: kusu > 1 ? [...vstup.sluzby, SLUZBY.vicekusova] : vstup.sluzby,
       parcelAddress,
     },
+    /*
+     * Další kusy vícekusové zásilky (21. 11. 2026, ověřeno na b2b-test):
+     * každý nese službu 70, svou velikost a svou váhu; dobírka a udaná cena
+     * zůstávají na hlavním kusu a platí za celou zásilku. ČP vrátí číslo pro
+     * každý kus a jedno PDF se stránkou na kus („1/2", „2/2").
+     */
+    ...(kusu > 1
+      ? {
+          multipartParcelData: vahy.slice(1).map((vaha, index) => ({
+            addParcelData: {
+              recordID: String(index + 2),
+              prefixParcelCode: serviceCode,
+              weight: String(vaha),
+              sequenceParcel: index + 2,
+              quantityParcel: kusu,
+            },
+            addParcelDataServices: [
+              SLUZBY.vicekusova,
+              vstup.velikost ?? "M",
+              ...(vstup.sluzby.includes(SLUZBY.krehce) ? [SLUZBY.krehce] : []),
+            ],
+          })),
+        }
+      : {}),
   }
 }
 
 export type VysledekPodani = {
   /** Přijala ČP zásilku? Jen tohle rozhoduje — ne stavový kód HTTP. */
   ok: boolean
+  /** Čísla všech kusů v pořadí (u jednoho balíku jen to jedno). */
+  cislaZasilek?: string[]
   cisloZasilky?: string
   stitekBase64?: string
   /** Důvody odmítnutí, česky složené z kódů ČP. */
@@ -374,13 +450,18 @@ export type VysledekPodani = {
 export const prectiOdpoved = (telo: any): VysledekPodani => {
   const hlavicka = telo?.responseHeader ?? telo?.parcelServiceHeaderResult ?? telo
   const zasilky = hlavicka?.resultParcelData ?? telo?.resultParcelData
-  const kus = Array.isArray(zasilky) ? zasilky[0] : undefined
+  const kusy: any[] = Array.isArray(zasilky) ? zasilky : []
+  const kus = kusy[0]
 
   const cisloZasilky = String(kus?.parcelCode ?? telo?.parcelCode ?? "").trim()
+  const cislaZasilek = kusy.map((k) => String(k?.parcelCode ?? "").trim()).filter(Boolean)
   const stitekBase64 =
     telo?.responsePrintParams?.file ?? hlavicka?.responsePrintParams?.file ?? undefined
 
-  const stavy: any[] = kus?.parcelStateResponse ?? []
+  /* Stavy všech kusů — chyba u druhého balíku je odmítnutí celé zásilky. */
+  const stavy: any[] = kusy.length
+    ? kusy.flatMap((k) => (Array.isArray(k?.parcelStateResponse) ? k.parcelStateResponse : []))
+    : []
   const chyby = stavy
     .filter((s) => !String(s?.responseText ?? "").startsWith("INFO_") && s?.responseCode !== 1)
     .map((s) => `${s?.responseCode} ${s?.responseText}`)
@@ -394,6 +475,7 @@ export const prectiOdpoved = (telo: any): VysledekPodani => {
   return {
     ok: Boolean(cisloZasilky) && !chyby.length,
     ...(cisloZasilky ? { cisloZasilky } : {}),
+    ...(cislaZasilek.length ? { cislaZasilek } : {}),
     ...(stitekBase64 ? { stitekBase64: String(stitekBase64) } : {}),
     chyby,
   }

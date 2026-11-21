@@ -389,6 +389,7 @@ describe("čtení odpovědi", () => {
     expect(prectiOdpoved(prijato)).toEqual({
       ok: true,
       cisloZasilky: "NB1249224595U",
+      cislaZasilek: ["NB1249224595U"],
       stitekBase64: "JVBERi0xLjQK",
       chyby: [],
     })

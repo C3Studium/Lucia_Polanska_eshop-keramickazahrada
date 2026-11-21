@@ -18,6 +18,7 @@ import type { ReactNode } from "react";
 export const PhotoStrip = ({
   photos,
   mainUrl,
+  seoUrl,
   onOpen,
   sizeClassName = "size-20",
   trailing,
@@ -26,6 +27,11 @@ export const PhotoStrip = ({
   photos: string[];
   /** Hlavní fotka dostane rámeček a štítek. */
   mainUrl?: string | null;
+  /**
+   * Fotka pro vyhledávače (21. 11. 2026) — zelený štítek „SEO" nad
+   * „hlavní". Bez výslovné volby ho nese hlavní fotka (tu vyhledávač dostane).
+   */
+  seoUrl?: string | null;
   onOpen: (index: number) => void;
   sizeClassName?: string;
   /** Např. dlaždice „Nahrát" na konci pásu. */
@@ -35,6 +41,7 @@ export const PhotoStrip = ({
   <ul className="flex flex-wrap gap-2">
     {photos.map((url, index) => {
       const isMain = mainUrl === url;
+      const isSeo = seoUrl !== undefined && (seoUrl ? seoUrl === url : isMain);
       return (
         <li key={url} className="relative">
           <button
@@ -48,11 +55,18 @@ export const PhotoStrip = ({
           >
             <img src={url} alt="" loading="lazy" draggable={false} className="size-full object-cover" />
           </button>
-          {isMain && (
-            <span className="pointer-events-none absolute bottom-1 left-1">
-              <Badge size="2xsmall" color="blue">
-                hlavní
-              </Badge>
+          {(isMain || isSeo) && (
+            <span className="pointer-events-none absolute bottom-1 left-1 flex flex-col items-start gap-0.5">
+              {isSeo && (
+                <Badge size="2xsmall" color="green">
+                  SEO
+                </Badge>
+              )}
+              {isMain && (
+                <Badge size="2xsmall" color="blue">
+                  hlavní
+                </Badge>
+              )}
             </span>
           )}
         </li>
