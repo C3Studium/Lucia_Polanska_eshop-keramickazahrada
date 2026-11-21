@@ -4,6 +4,7 @@ import { sdk } from "@lib/config"
 import { revalidateTag } from "next/cache"
 
 import { BUILD_STAMP } from "@lib/util/session-version"
+import { carriableLines } from "@lib/util/cart-carry"
 import { retrieveCart } from "./cart"
 import {
   getAuthHeaders,
@@ -170,7 +171,8 @@ export async function carryCartToCurrentVersion(): Promise<VysledekPrevodu> {
    * `bundle_group_id`; `bundle_quantity` a `bundle_item_id` v metadatech
    * stačí na to, aby se sada složila přesně tak, jak ji zákazník poskládal.
    */
-  const radky: any[] = cart.items ?? []
+  // Balné a doběrečné ne — nemají variantu a server je založí znovu sám.
+  const radky: any[] = carriableLines(cart.items)
   const sady = new Map<string, any[]>()
   const jednotlive: any[] = []
 
