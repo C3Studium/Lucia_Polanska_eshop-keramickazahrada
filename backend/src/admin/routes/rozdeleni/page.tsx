@@ -7,6 +7,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
+import { categoriesForCollection } from "../../components/classification-draft";
 import {
   SortableContext,
   arrayMove,
@@ -315,22 +316,11 @@ const Inner = () => {
       ? products
       : products.filter((product) => product.collection_id === collectionId);
   // Kategorie „patří" kolekci přes metadata.collection_id — Medusa je má
-  // globální, tohle je naše vazba, aby seděl model kolekce → podkategorie
-  // i pro prázdné kategorie — plus kategorie, které se v kolekci reálně
-  // vyskytují na produktech. Stejná unie jako storefront menu.
-  const categoriesOf = (collId: string) => [
-    ...new Map(
-      [
-        ...products
-          .filter((product) => product.collection_id === collId)
-          .flatMap((product) => product.category_refs ?? []),
-        ...allCategories.filter(
-          (category: any) =>
-            (category.metadata as any)?.collection_id === collId
-        ),
-      ].map((category: any) => [category.id, category])
-    ).values(),
-  ];
+  // globální, tohle je naše vazba. Stejné pravidlo jako menu obchodu
+  // (21. 11. 2026): kategorie JINÉ kolekce se tu neukáže, i když ji výrobek
+  // má („Přidat i sem") — dřív to vypadalo, že se celá kategorie zkopírovala.
+  const categoriesOf = (collId: string): any[] =>
+    categoriesForCollection(collId, products, allCategories);
   /* Pořadí kategorie čte celý záznam — řádky z produktů (category_refs)
      nesou jen id a název, metadata ne. */
   const categoryOrderOf = (category: any) =>
