@@ -9,6 +9,7 @@ import type ActivityLogModuleService from "../../modules/activity-log/service"
 import { jeMenaObchodu, MENA_ZAKLADNI, vypisMen } from "../currencies"
 import { isPersonalPickupOrder } from "../personal-pickup"
 import type { Kontrola, NalezKontroly } from "./typy"
+import { zkontrolujUcetResend } from "../resend-ucet"
 import { najdiChybyZarazeni, nactiZarazeni } from "../zarazeni-hlidka"
 
 /**
@@ -860,12 +861,24 @@ const zarazeni: Kontrola = {
   },
 }
 
+/**
+ * Jde pošta přes produkční účet Resend s ověřenou doménou? (22. 11. 2026 —
+ * 21. 11. šla půl dne přes testovací účet a 8 minut přes neověřenou doménu,
+ * aniž to bylo kde vidět). Podrobnosti v lib/resend-ucet.
+ */
+const ucetEmailu: Kontrola = {
+  klic: "ucet-emailu",
+  nazev: "Účet pro e-maily (Resend)",
+  spust: () => zkontrolujUcetResend(),
+}
+
 export const KONTROLY: Kontrola[] = [
   databaze,
   obchod,
   platby,
   faktury,
   emailyZakaznikum,
+  ucetEmailu,
   limitEmailu,
   zasilky,
   sklad,
