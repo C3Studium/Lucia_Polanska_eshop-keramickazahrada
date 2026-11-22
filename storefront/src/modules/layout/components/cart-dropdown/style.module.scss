@@ -912,23 +912,15 @@
  * telefonu po přidání neotvírá (index.tsx, `pridano`). Bublina je vždy
  * v DOM (role=status), ukazuje se přes data-visible.
  */
-/* Tři třídy jako základní pravidlo (.root .popover .popoverButton), jinak
-   jeho `background: transparent` vyhraje. */
+/* Trvalé tmavé pozadí neprázdného košíku drží spodní lišta
+   (Navbar/mobileBar/style.module.scss, `data-plny`). Po přidání k němu na
+   pár vteřin přibude olivový lem — „tady to přibylo". Tři třídy jako
+   základní pravidlo (.root .popover .popoverButton). */
 .root .popover .popoverButton.popoverButtonAdded {
-  border-radius: 999px;
-  background: var(--ink-05);
-  color: var(--cream-07);
-  transition: background-color 220ms ease, color 220ms ease;
-}
-
-.root .popover .popoverButton.popoverButtonAdded svg,
-.root .popover .popoverButton.popoverButtonAdded p {
-  color: var(--cream-07) !important;
-}
-
-/* Ikona košíku má barvu natvrdo ve `fill` (icons/cart.tsx) — `color` ji nezmění. */
-.root .popover .popoverButton.popoverButtonAdded svg path {
-  fill: var(--cream-07) !important;
+  box-shadow:
+    0 0 0 var(--cart-fill-spread, 3px) var(--ink-05),
+    0 0 0 calc(var(--cart-fill-spread, 3px) + 3px) var(--olive-15);
+  transition: box-shadow 220ms ease;
 }
 
 .addedBubble {
