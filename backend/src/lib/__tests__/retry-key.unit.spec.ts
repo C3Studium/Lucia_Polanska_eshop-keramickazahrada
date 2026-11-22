@@ -6,17 +6,8 @@
  * true.
  */
 
-/** Mirrors `nextAttemptKey` in `api/admin/notifications/[id]/retry/route.ts`. */
-const nextAttemptKey = (key: string | null | undefined): string | undefined => {
-  if (!key) {
-    return undefined
-  }
-  const match = key.match(/^(.*):r(\d+)$/)
-  if (match) {
-    return `${match[1]}:r${Number(match[2]) + 1}`
-  }
-  return `${key}:r2`
-}
+/** Sdílený klíč pokusu — ruční „Poslat znovu" i automatické opakování. */
+import { nextAttemptKey } from "../email-retry"
 
 describe("notification retry keys", () => {
   it("gives a first retry its own key", () => {
