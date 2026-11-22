@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       '@c3studium/valecms':
-        specifier: 2.0.0-beta.14
-        version: 2.0.0-beta.14(next@15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0))(react-dom@19.0.5(react@19.0.5))(react@19.0.5)
+        specifier: 2.0.0-beta.15
+        version: 2.0.0-beta.15(next@15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0))(react-dom@19.0.5(react@19.0.5))(react@19.0.5)
       '@headlessui/react':
         specifier: ^2.2.7
         version: 2.2.7(react-dom@19.0.5(react@19.0.5))(react@19.0.5)
@@ -261,8 +261,8 @@ packages:
     resolution: {integrity: sha512-ruv7Ae4J5dUYULmeXw1gmb7rYRz57OWCPM57pHojnLq/3Z1CK2lNSLTCVjxVk1F/TZHwOZZrOWi0ur95BbLxNQ==}
     engines: {node: '>=6.9.0'}
 
-  '@c3studium/valecms@2.0.0-beta.14':
-    resolution: {integrity: sha512-wCOhnUi69xzbZ60SdYg7hSX/k/e4dk621tiEfc/2CX0O9R8YOvEB2JD8nglk4bah3YGor9pw0vFdxpCdUc6hkw==, tarball: https://npm.pkg.github.com/download/@c3studium/valecms/2.0.0-beta.14/74b1e3892ea528fec027f8a71f8d5b4256bf674c}
+  '@c3studium/valecms@2.0.0-beta.15':
+    resolution: {integrity: sha512-ckeYAPGqnMSif+/DPe14j4b7KHauTtwCb9zF/p1u1PRtIY3BcVLAK7Umw92C3hffDjgp7gKei4VgZLFrg3PCmQ==, tarball: https://npm.pkg.github.com/download/@c3studium/valecms/2.0.0-beta.15/39b440770c7efe66d2123408c71495c37ebecb76}
     engines: {node: '>=18.18'}
     hasBin: true
     peerDependencies:
@@ -5381,7 +5381,7 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.27.1
 
-  '@c3studium/valecms@2.0.0-beta.14(next@15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0))(react-dom@19.0.5(react@19.0.5))(react@19.0.5)':
+  '@c3studium/valecms@2.0.0-beta.15(next@15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0))(react-dom@19.0.5(react@19.0.5))(react@19.0.5)':
     dependencies:
       next: 15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0)
       react: 19.0.5
