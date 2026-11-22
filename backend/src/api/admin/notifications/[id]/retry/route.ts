@@ -1,5 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { MedusaError, Modules } from "@medusajs/framework/utils"
+import { nextAttemptKey } from "../../../../../lib/email-retry"
 
 /**
  * Send a notification again (WorkflowPlan.md §15, §22).
@@ -19,16 +20,8 @@ import { MedusaError, Modules } from "@medusajs/framework/utils"
  * notification record.
  */
 
-const nextAttemptKey = (key: string | null | undefined): string | undefined => {
-  if (!key) {
-    return undefined
-  }
-  const match = key.match(/^(.*):r(\d+)$/)
-  if (match) {
-    return `${match[1]}:r${Number(match[2]) + 1}`
-  }
-  return `${key}:r2`
-}
+/* `nextAttemptKey` je sdílený s automatickým opakováním (lib/email-retry,
+   úloha watch-failed-emails) — ruční i automatický pokus tvoří jeden řetěz. */
 
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   const notifications = req.scope.resolve(Modules.NOTIFICATION)
