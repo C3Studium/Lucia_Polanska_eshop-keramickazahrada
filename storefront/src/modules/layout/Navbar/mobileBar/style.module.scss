@@ -179,6 +179,36 @@
 }
 
 /*
+ * Neprázdný košík trvale zvýrazněný (22. 11. 2026, Matěj — starší zákazníci
+ * jinak nevidí, kam se zboží přidalo). Tmavé pozadí kryje ikonu i počítadlo
+ * a přesahuje 44px pole o `--cart-fill-spread` na každou stranu (stín bez
+ * rozmazání = plná barva), takže číslo v rohu nesedí na hraně. Ikona
+ * i číslo krémově. Platí jen tady ve spodní liště — telefon a svislý tablet.
+ *
+ * `.root` navíc kvůli pořadí: tlačítko patří modulu cart-dropdown, jehož
+ * `.root .popover .popoverButton { background: transparent }` má stejnou
+ * váhu (0,3,0) a pořadí načtení modulů zaručené není.
+ */
+.root .cartSlot [data-testid="nav-cart-link"][data-plny="true"] {
+  --cart-fill-spread: calc(3px * var(--bar-scale));
+
+  border-radius: calc(14px * var(--bar-scale));
+  background: var(--ink-05);
+  box-shadow: 0 0 0 var(--cart-fill-spread) var(--ink-05);
+  transition: background-color 220ms ease, box-shadow 220ms ease;
+}
+
+.root .cartSlot [data-testid="nav-cart-link"][data-plny="true"] svg path {
+  /* Barva ikony je natvrdo ve `fill` (icons/cart.tsx) — přebít jde jen takhle. */
+  fill: var(--cream-07);
+}
+
+.root .cartSlot [data-testid="nav-cart-link"][data-plny="true"] p {
+  color: var(--cream-07);
+  font-weight: 600;
+}
+
+/*
  * `<Magnetic>` sits between the trigger and its contents, wrapping the icon and the count
  * together in a `<div class="magnetic" style="position: relative">`. That inline style makes it
  * the containing block for anything absolute inside it, so the count was being positioned

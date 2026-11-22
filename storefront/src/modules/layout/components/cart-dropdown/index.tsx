@@ -25,10 +25,18 @@ import { motion } from 'framer-motion';
 import { useFormStatus } from 'react-dom';
 import CartDropdownQuantity from "./quantity"
 
-/* Stejná hranice jako telefonní styly panelu (style.module.scss). */
-const TELEFON =
-  "(orientation: portrait) and (max-width: 599.98px), (orientation: landscape) and (max-height: 500px)"
-const jeTelefon = () => typeof window !== "undefined" && window.matchMedia(TELEFON).matches
+/*
+ * „Telefonní" chování košíku (bublina po přidání, panel se sám neotvírá)
+ * platí přesně tam, kde je vidět spodní lišta — telefon na výšku i naležato
+ * a svislý tablet (22. 11. 2026). Hranici drží CSS lišty
+ * (Navbar/mobileBar/style.module.scss), proto se čte z ní, ne z druhé
+ * kopie media query, která by se jednou rozešla.
+ */
+const jeTelefon = () => {
+  if (typeof document === "undefined") return false
+  const lista = document.querySelector(".navbar__bottomBar")
+  return Boolean(lista) && getComputedStyle(lista as Element).display !== "none"
+}
 import { itemText } from "@lib/util/site-copy"
 import { editableItem } from "@modules/common/components/cms-text"
 import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
@@ -227,6 +235,8 @@ const CartDropdown = ({
           className={pridano ? `${styles.popoverButton} ${styles.popoverButtonAdded}` : styles.popoverButton}
           aria-label={`Košík, ${totalItems} položek`}
           data-testid="nav-cart-link"
+          /* Neprázdný košík — spodní lišta ho trvale zvýrazní (mobileBar/style.module.scss). */
+          data-plny={totalItems > 0 ? "true" : undefined}
           onClick={close}
         >
           <span className={styles.cartLink}>
