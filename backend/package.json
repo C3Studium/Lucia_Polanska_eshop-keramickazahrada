@@ -23,6 +23,7 @@
     "dev": "medusa exec ./src/scripts/assign-shipping-profile.ts && medusa develop",
     "dev:email": "email dev --dir ./src/modules/resend/emails",
     "legal:upload": "node scripts/legal-upload.mjs",
+    "check:resend": "npx tsx scripts/check-resend-ucet.ts",
     "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --config jest.integration.config.js --runInBand --forceExit"
   },
   "dependencies": {
