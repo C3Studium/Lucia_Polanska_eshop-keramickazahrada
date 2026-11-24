@@ -13,6 +13,7 @@ import { OrderHistoryPanel } from "./order-history";
 import { OrderInvoicePanel } from "./order-invoice";
 import { OrderPersonalizedPanel } from "./order-personalized";
 import { OrderStepsPanel } from "./order-steps";
+import { useSouhrnOdkazy } from "../lib/use-souhrn-odkazy";
 
 /**
  * „Práce s objednávkou" — hlavní sloupec detailu objednávky (17. 11. 2026).
@@ -53,6 +54,8 @@ const OrderWorkspaceMain = ({ order }: { order: AdminOrder }) => {
     -1,
     "souhrn"
   );
+  /* Výrobky v Souhrnu: řádek → e-shop, tlačítko „Upravit výrobek" → admin. */
+  useSouhrnOdkazy(order.id);
   return (
     <>
       <div ref={top} {...OWN} className="flex flex-col gap-y-3" style={{ order: -2 }}>
