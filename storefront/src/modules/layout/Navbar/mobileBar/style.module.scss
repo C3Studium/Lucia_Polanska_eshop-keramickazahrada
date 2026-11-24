@@ -203,7 +203,11 @@
   fill: var(--cream-07);
 }
 
-.root .cartSlot [data-testid="nav-cart-link"][data-plny="true"] p {
+/* Číslo: o `.magnetic` silnější (0,5,1) než pravidlo barvy počítadla níž
+   (`.root .cartSlot … :global(.magnetic) p`, 0,4,1), které je v souboru
+   později — se stejnou vahou by vyhrálo a číslo zůstalo tmavé na tmavém
+   (22. 11. 2026, Matěj z telefonu). */
+.root .cartSlot [data-testid="nav-cart-link"][data-plny="true"] :global(.magnetic) p {
   color: var(--cream-07);
   font-weight: 600;
 }
