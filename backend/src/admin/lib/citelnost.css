@@ -178,3 +178,23 @@ main .grid > * {
     margin-left: auto;
   }
 }
+
+/*
+ * Výrobek v Souhrnu objednávky = odkaz do e-shopu (24. 11. 2026, lib/use-souhrn-odkazy).
+ * Celý řádek klikací, název se při najetí podtrhne; vedle tlačítko „Upravit výrobek".
+ */
+[data-kz-card="souhrn"] [data-kz-odkaz="obchod"] {
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background-color 120ms ease;
+}
+[data-kz-card="souhrn"] [data-kz-odkaz="obchod"]:hover,
+[data-kz-card="souhrn"] [data-kz-odkaz="obchod"]:focus-visible {
+  background-color: var(--bg-base-hover, rgba(0, 0, 0, 0.03));
+  outline: none;
+}
+[data-kz-card="souhrn"] [data-kz-odkaz="obchod"]:hover .text-ui-fg-base,
+[data-kz-card="souhrn"] [data-kz-odkaz="obchod"]:focus-visible .text-ui-fg-base {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
