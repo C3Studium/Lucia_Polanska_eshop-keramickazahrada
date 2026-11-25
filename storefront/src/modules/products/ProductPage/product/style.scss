@@ -569,17 +569,22 @@
   display: none;
 }
 
+/* Popiska NAD tlačítky, na všech šířkách (25. 11. 2026, Matěj). Vedle sebe
+   se na desktopu tři delší pilulky („Červená střecha") do buňky nevešly
+   a přes `justify-content: center` přetekly doleva přes popisku. Ve sloupci
+   má řada pilulek celou šířku a zalomí se zleva. */
 .product__details__subDetails__colors {
-  display: grid;
-  /* Popiska vždy celá na jednom řádku (16. 11. 2026, Matěj: „PROVEDENÍ |"
-     se lámalo). Sloupec má dosavadní šířku jako podlahu, delší popisce se
-     roztáhne. */
-  grid-template-columns: minmax(clamp(5.125rem, 6vw, 7rem), max-content) minmax(0, 1fr);
-  align-items: center;
-  gap: 0.75rem;
-  min-height: 3.875rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.625rem;
   padding: 0.6875rem 0;
   border-bottom: 1px solid rgb(var(--cream-06-rgb) / .1);
+}
+
+.product__details__subDetails__colors__items__select > * {
+  flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 .product__details__subDetails__colors:last-child {

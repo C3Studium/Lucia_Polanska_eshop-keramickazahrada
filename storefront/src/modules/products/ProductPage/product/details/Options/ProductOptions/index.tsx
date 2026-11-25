@@ -43,7 +43,7 @@ export default function ProductOptions({
 
         return (
           <div className="product__details__subDetails__colors" key={option.id}>
-            <p>{labelFor(option.title)} |</p>
+            <p>{labelFor(option.title)}</p>
             <div className="product__details__subDetails__colors__items">
               <div className="product__details__subDetails__colors__items__select">
                 <Select
