@@ -94,6 +94,15 @@ const HERO_HOLD = 0.21
 const HERO_OUT = 0.44
 const ABOUT_IN = 0.47
 
+/*
+ * Kam lockup „Kurzy" ustoupí, aby vedle něj stál popisek: o 15vw doleva a na 0.76.
+ * Tutéž polohu drží styles.scss (`.is-aside`) pro hero bez scroll choreografie — nízké
+ * okno (`is-flow`) a omezený pohyb. Tam by jinak lockup v plné velikosti ležel přes
+ * popisek (27. 11. 2026: o 219px na 1536×695, o 282px na 1920×1080).
+ */
+const TITLE_ASIDE_X = "-15vw"
+const TITLE_ASIDE_SCALE = 0.76
+
 export default function Intro({
   block,
   gallery,
@@ -245,6 +254,9 @@ export default function Intro({
   }, [phoneFlow])
 
   const staticFlow = phoneFlow || tallFlow
+  /* Lockup bez scrollu (nízké okno, omezený pohyb) stojí rovnou stranou vedle popisku.
+     Telefon ne — ten má hero v toku pod sebou (mixin kurzy-static-flow). */
+  const titleAside = !phoneFlow && (tallFlow || reduceMotion)
 
   /* Vstupní přiznání sekce ve statickém toku — jednou, při najetí do okna. */
   const flowEntry = (delay = 0) =>
@@ -322,7 +334,7 @@ export default function Intro({
   const heroTitleX = useTransform(
     scrollYProgress,
     [0, 0.08, 0.25, HERO_OUT],
-    ["0vw", "0vw", "-15vw", "-17vw"]
+    ["0vw", "0vw", TITLE_ASIDE_X, "-17vw"]
   )
   const heroTitleY = useTransform(
     scrollYProgress,
@@ -332,7 +344,7 @@ export default function Intro({
   const heroTitleScale = useTransform(
     scrollYProgress,
     [0, 0.08, 0.25, HERO_OUT],
-    [1, 1, 0.76, 0.73]
+    [1, 1, TITLE_ASIDE_SCALE, 0.73]
   )
 
   const image1 = useTransform(
@@ -412,7 +424,7 @@ export default function Intro({
 
   return (
     <section
-      className={`kurzyTimeline${tallFlow ? " is-flow" : ""}`}
+      className={`kurzyTimeline${tallFlow ? " is-flow" : ""}${titleAside ? " is-aside" : ""}`}
       ref={timelineRef}
       id="kurzy"
       data-scroll-section
@@ -519,13 +531,14 @@ export default function Intro({
                (heroReveal na dětech níž) a pak prostě stojí na stránce.
                Opacity je tu NAPSANÁ, ne vynechaná: framer po odebrání motion
                hodnoty nechá na prvku poslední inline stav — u scrollu na
-               nule je to opacity 0 a texty by zmizely nadobro. */
+               nule je to opacity 0 a texty by zmizely nadobro.
+               Omezený pohyb taky jedničku: lockup tam stojí stranou už od
+               načtení, tak k němu popisek patří hned — s celou scénou odejde
+               přes heroOpacity na článku. */
             style={
-              staticFlow
+              staticFlow || reduceMotion
                 ? { opacity: 1 }
-                : reduceMotion
-                  ? { opacity: heroCopyOpacity }
-                  : { opacity: heroCopyOpacity, y: heroCopyY }
+                : { opacity: heroCopyOpacity, y: heroCopyY }
             }
           >
             {/* Entrance on the children, not this element: its opacity and y are scroll-driven

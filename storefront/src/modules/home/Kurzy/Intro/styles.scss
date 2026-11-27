@@ -1279,7 +1279,7 @@
     transform: none !important;
   }
 
-  .kurzyHero__title,
+  /* Lockup ne — ten bere polohu z `.is-aside` níž. */
   .kurzyHero__copy {
     transform: none !important;
   }
@@ -1295,4 +1295,20 @@
       transform: none !important;
     }
   }
+}
+
+/* ── Hero bez scroll choreografie: lockup rovnou stranou ──
+
+   Třídu `is-aside` dává index.tsx nízkému oknu (`is-flow`) a omezenému pohybu,
+   tedy kdykoli lockup nejede se scrollem. Popisek tam stojí plný od začátku,
+   takže lockup musí stát tam, kde ho scroll nechává vedle popisku: o 15vw
+   doleva a na 0.76 (TITLE_ASIDE_* v index.tsx). V plné velikosti uprostřed
+   ležel přes popisek — 182px na 1280×720, 219px na 1536×695, 282px na
+   1920×1080, 377px na 2560×1440 (27. 11. 2026). Telefon třídu nedostane,
+   tam je hero v toku pod sebou.
+
+   !important jako u is-flow výš: framer po přepnutí nechává na prvku
+   poslední inline transformaci ze scrollu. */
+.kurzyTimeline.is-aside .kurzyHero__title {
+  transform: translateX(-15vw) scale(0.76) !important;
 }
