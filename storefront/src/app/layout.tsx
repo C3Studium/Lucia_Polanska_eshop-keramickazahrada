@@ -41,6 +41,14 @@ export const metadata: Metadata = {
   },
   description:
     "Ručně tvořená keramika pro zahradu i domov z ateliéru Lucie Polanské v Putimi. Hotové kusy, zakázková výroba i keramické kurzy.",
+  /* Ověření vlastnictví webu v Ahrefs (27. 11. 2026) — jen značka v <head>,
+     nic neměří ani neukládá. Měření samo je až se souhlasem (@modules/analytics). */
+  verification: {
+    other: {
+      "ahrefs-site-verification":
+        "e1a03122fb3171dc8d0c8d485bff084decae3410da77560f4500db6ef2a7d9b3",
+    },
+  },
 }
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
