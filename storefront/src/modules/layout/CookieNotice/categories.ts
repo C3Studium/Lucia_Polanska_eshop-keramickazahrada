@@ -34,7 +34,7 @@ export const consentCategories: readonly CategoryCopy[] = [
     key: "analytics",
     title: "Analytické",
     description:
-      "Google Analytics 4 (Google Ireland Ltd.) — statistiky, které stránky lidé navštěvují a kde se v obchodě ztrácejí, abychom ho mohli zlepšovat. Načte se jen s vaším souhlasem a jen pokud měření na webu právě používáme. Google přitom zpracuje i vaši IP adresu a data může přenést do USA.",
+      "Google Analytics 4 (Google Ireland Ltd.) — statistiky, které stránky lidé navštěvují a kde se v obchodě ztrácejí, abychom ho mohli zlepšovat. Načte se jen s vaším souhlasem a jen pokud měření na webu právě používáme. Google přitom zpracuje i vaši IP adresu a data může přenést do USA. Ahrefs Web Analytics (Ahrefs Pte. Ltd., Singapur) — počet návštěv a odkud lidé na web přišli, bez cookies; také jen s vaším souhlasem.",
   },
   {
     key: "marketing",

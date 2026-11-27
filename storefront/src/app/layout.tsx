@@ -10,6 +10,7 @@ import { StateProvider } from "@lib/context/StateContext"
 import { getBaseURL } from "@lib/util/env"
 import CookieNotice from "@modules/layout/CookieNotice"
 import Analytics from "@modules/analytics"
+import AhrefsAnalytics from "@modules/analytics/ahrefs-analytics"
 import {
   consentDefaultScript,
   gaMeasurementId,
@@ -104,6 +105,8 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         </MotionPreferenceProvider>
         {/* Google Analytics — jen s ID v prostředí a se souhlasem. */}
         <Analytics />
+        {/* Ahrefs Web Analytics — se souhlasem, mimo stránky s tokenem a účet. */}
+        <AhrefsAnalytics />
         <StudioClient />
       </body>
     </html>
